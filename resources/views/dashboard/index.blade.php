@@ -19,7 +19,7 @@
                 <div class="icon">
                     <i class="fas fa-users"></i>
                 </div>
-                <a href="{{ route('clientes.index') }}" class="small-box-footer">
+                <a href="{{ route('admin.clientes.index') }}" class="small-box-footer">
                     Ver más <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
@@ -35,7 +35,7 @@
                 <div class="icon">
                     <i class="fas fa-check-circle"></i>
                 </div>
-                <a href="{{ route('inscripciones.index') }}" class="small-box-footer">
+                <a href="{{ route('admin.inscripciones.index') }}" class="small-box-footer">
                     Ver más <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
@@ -51,7 +51,7 @@
                 <div class="icon">
                     <i class="fas fa-dollar-sign"></i>
                 </div>
-                <a href="{{ route('pagos.index') }}" class="small-box-footer">
+                <a href="{{ route('admin.pagos.index') }}" class="small-box-footer">
                     Ver más <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
