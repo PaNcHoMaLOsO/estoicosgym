@@ -67,11 +67,19 @@ class DashboardController extends Controller
             ->orderBy('pagos_count', 'desc')
             ->get();
         
-        // Inscripciones por estado (contar inscripciones agrupadas por estado)
+        // Inscripciones por estado (contar inscripciones agrupadas por estado de MEMBRESÍA)
         $inscripcionesPorEstado = Inscripcion::selectRaw('id_estado, count(*) as total')
             ->groupBy('id_estado')
-            ->with('estado')
+            ->with(['estado' => function($q) {
+                $q->where('categoria', 'membresia');
+            }])
+            ->whereHas('estado', function($q) {
+                $q->where('categoria', 'membresia');
+            })
             ->get();
+        
+        // Filtrar solo los que tengan estado (evitar nulos)
+        $inscripcionesPorEstado = $inscripcionesPorEstado->filter(fn($item) => $item->estado !== null);
         
         // Datos para gráficos - Ingresos por mes (últimos 6 meses)
         $ingresosPorMes = Pago::selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as año, SUM(monto_abonado) as total')
