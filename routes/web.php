@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\SearchApiController;
 use App\Http\Controllers\Api\MembresiaApiController;
 use App\Http\Controllers\Api\ClienteApiController;
 use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\Api\PausaApiController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -77,4 +78,10 @@ Route::prefix('api')->group(function () {
     
     // Calcular precio final y fecha vencimiento
     Route::post('/inscripciones/calcular', [InscripcionApiController::class, 'calcular']);
+    
+    // Pausas - Manejo de pausas en membresías
+    Route::post('/pausas/{id}/pausar', [PausaApiController::class, 'pausar']);
+    Route::post('/pausas/{id}/reanudar', [PausaApiController::class, 'reanudar']);
+    Route::get('/pausas/{id}/info', [PausaApiController::class, 'info']);
+    Route::post('/pausas/verificar-expiradas', [PausaApiController::class, 'verificarExpiradas']);
 });
