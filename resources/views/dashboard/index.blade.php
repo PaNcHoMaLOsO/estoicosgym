@@ -221,8 +221,6 @@
 @stop
 
 @section('js')
-    <link rel="stylesheet" href="{{ asset('build/style.css') }}">
-    <script src="{{ asset('build/app.js') }}" defer></script>
     <script>
         console.log('Dashboard AdminLTE v3 cargado correctamente');
     </script>
