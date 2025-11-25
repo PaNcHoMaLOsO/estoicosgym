@@ -46,34 +46,43 @@ class EnhancedTestDataSeeder extends Seeder
             ]);
 
             // Generar inscripciones para cada cliente (0 a 5)
-            for ($j = 0; $j < $faker->numberBetween(0, 5); $j++) {
+            $num_inscripciones = $faker->numberBetween(0, 5);
+            for ($j = 0; $j < $num_inscripciones; $j++) {
                 $membresia = $faker->randomElement($membresias);
                 $convenio = $faker->randomElement($convenios);
                 $estado = $faker->randomElement($estados);
                 
+                // Obtener precio acordado
+                $precio_membresia = $membresia->precios()->latest()->first();
+                if (!$precio_membresia) {
+                    continue;
+                }
+                
                 $fecha_inicio = $faker->dateTimeBetween('-12 months', 'now');
                 $fecha_vencimiento = Carbon::instance($fecha_inicio)->addDays($membresia->duracion_dias);
                 
-                $precio_base = $membresia->precios()->latest()->first()?->precio_normal ?? 99.99;
-                $descuento = 0;
+                $precio_base = $precio_membresia->precio_normal;
+                $descuento_aplicado = 0;
                 
                 // Aplicar descuentos aleatorios
                 if ($faker->boolean(40)) {
-                    $descuento = $faker->numberBetween(5, 30);
+                    $descuento_aplicado = $faker->numberBetween(5, 30);
                 }
                 
-                $precio_final = $precio_base - ($precio_base * $descuento / 100);
+                $precio_final = $precio_base - ($precio_base * $descuento_aplicado / 100);
                 
                 $inscripcion = Inscripcion::create([
                     'id_cliente' => $cliente->id,
                     'id_membresia' => $membresia->id,
                     'id_convenio' => $faker->boolean(60) ? $convenio->id : null,
+                    'id_precio_acordado' => $precio_membresia->id,
                     'id_estado' => $estado->id,
                     'id_motivo_descuento' => $faker->boolean(30) ? $faker->randomElement($motivos_descuento->pluck('id')->toArray()) : null,
+                    'fecha_inscripcion' => $faker->dateTimeBetween('-12 months', 'now'),
                     'fecha_inicio' => $fecha_inicio,
                     'fecha_vencimiento' => $fecha_vencimiento,
                     'precio_base' => $precio_base,
-                    'descuento_aplicado' => $descuento,
+                    'descuento_aplicado' => $descuento_aplicado,
                     'precio_final' => $precio_final,
                     'observaciones' => $faker->optional(0.2)->text(100),
                     'created_at' => $faker->dateTimeBetween('-12 months', 'now'),
@@ -86,10 +95,8 @@ class EnhancedTestDataSeeder extends Seeder
                     
                     for ($k = 0; $k < $num_pagos; $k++) {
                         if ($k == $num_pagos - 1) {
-                            // Último pago: paga el monto restante
                             $monto = $monto_restante;
                         } else {
-                            // Pagos parciales
                             $monto = $faker->randomFloat(2, $monto_restante * 0.1, $monto_restante * 0.6);
                             $monto_restante -= $monto;
                         }
@@ -143,18 +150,26 @@ class EnhancedTestDataSeeder extends Seeder
 
         for ($i = 0; $i < 4; $i++) {
             $membresia = $membresias->random();
+            $precio_membresia = $membresia->precios()->latest()->first();
+            
+            if (!$precio_membresia) {
+                continue;
+            }
+            
             $fecha_inicio = Carbon::now()->subMonths($i);
             
             Inscripcion::create([
                 'id_cliente' => $cliente_activo->id,
                 'id_membresia' => $membresia->id,
                 'id_convenio' => $convenios->random()->id,
+                'id_precio_acordado' => $precio_membresia->id,
                 'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
+                'fecha_inscripcion' => $fecha_inicio,
                 'fecha_inicio' => $fecha_inicio,
                 'fecha_vencimiento' => $fecha_inicio->copy()->addDays($membresia->duracion_dias),
-                'precio_base' => $membresia->precios()->latest()->first()?->precio_normal ?? 99.99,
+                'precio_base' => $precio_membresia->precio_normal,
                 'descuento_aplicado' => 0,
-                'precio_final' => $membresia->precios()->latest()->first()?->precio_normal ?? 99.99,
+                'precio_final' => $precio_membresia->precio_normal,
             ]);
         }
 
@@ -171,16 +186,23 @@ class EnhancedTestDataSeeder extends Seeder
             'activo' => true,
         ]);
 
-        Inscripcion::create([
-            'id_cliente' => $cliente_vencido->id,
-            'id_membresia' => $membresias->first()->id,
-            'id_estado' => $estados->where('nombre', 'Cancelada')->first()->id,
-            'fecha_inicio' => Carbon::now()->subMonths(6),
-            'fecha_vencimiento' => Carbon::now()->subMonths(2),
-            'precio_base' => 99.99,
-            'descuento_aplicado' => 0,
-            'precio_final' => 99.99,
-        ]);
+        $membresia = $membresias->first();
+        $precio_membresia = $membresia->precios()->latest()->first();
+        
+        if ($precio_membresia) {
+            Inscripcion::create([
+                'id_cliente' => $cliente_vencido->id,
+                'id_membresia' => $membresia->id,
+                'id_precio_acordado' => $precio_membresia->id,
+                'id_estado' => $estados->where('nombre', 'Cancelada')->first()->id,
+                'fecha_inscripcion' => Carbon::now()->subMonths(6),
+                'fecha_inicio' => Carbon::now()->subMonths(6),
+                'fecha_vencimiento' => Carbon::now()->subMonths(2),
+                'precio_base' => $precio_membresia->precio_normal,
+                'descuento_aplicado' => 0,
+                'precio_final' => $precio_membresia->precio_normal,
+            ]);
+        }
 
         // 4. Cliente sin convenio
         $cliente_sin_convenio = Cliente::create([
@@ -196,16 +218,23 @@ class EnhancedTestDataSeeder extends Seeder
             'activo' => true,
         ]);
 
-        Inscripcion::create([
-            'id_cliente' => $cliente_sin_convenio->id,
-            'id_membresia' => $membresias->random()->id,
-            'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
-            'fecha_inicio' => Carbon::now()->subMonths(1),
-            'fecha_vencimiento' => Carbon::now()->addMonths(11),
-            'precio_base' => 99.99,
-            'descuento_aplicado' => 15,
-            'precio_final' => 84.99,
-        ]);
+        $membresia = $membresias->random();
+        $precio_membresia = $membresia->precios()->latest()->first();
+        
+        if ($precio_membresia) {
+            Inscripcion::create([
+                'id_cliente' => $cliente_sin_convenio->id,
+                'id_membresia' => $membresia->id,
+                'id_precio_acordado' => $precio_membresia->id,
+                'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
+                'fecha_inscripcion' => Carbon::now()->subMonths(1),
+                'fecha_inicio' => Carbon::now()->subMonths(1),
+                'fecha_vencimiento' => Carbon::now()->addMonths(11),
+                'precio_base' => $precio_membresia->precio_normal,
+                'descuento_aplicado' => 15,
+                'precio_final' => $precio_membresia->precio_normal * 0.85,
+            ]);
+        }
 
         // 5. Cliente inactivo
         Cliente::create([
