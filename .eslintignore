@@ -1,0 +1,4 @@
+resources/views/**/*.blade.php
+node_modules/
+dist/
+build/

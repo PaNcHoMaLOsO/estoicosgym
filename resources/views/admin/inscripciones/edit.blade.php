@@ -328,6 +328,9 @@
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+// Variables globales para Blade
+const INSCRIPCION_ID = {{ $inscripcion->id }};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar Select2 para Cliente
     $('.select2-cliente').select2({
@@ -435,9 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btnConfirmarPausa.addEventListener('click', function() {
             const dias = selectDiasPausa.value;
             const razon = document.getElementById('modalRazonPausa').value;
-            const inscripcionId = {{ $inscripcion->id }};
 
-            fetch(`/api/pausas/${inscripcionId}/pausar`, {
+            fetch(`/api/pausas/${INSCRIPCION_ID}/pausar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -467,9 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnReanudar) {
         btnReanudar.addEventListener('click', function() {
             if (confirm('¿Confirma que desea reanudar esta membresía?')) {
-                const inscripcionId = {{ $inscripcion->id }};
-
-                fetch(`/api/pausas/${inscripcionId}/reanudar`, {
+                fetch(`/api/pausas/${INSCRIPCION_ID}/reanudar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
