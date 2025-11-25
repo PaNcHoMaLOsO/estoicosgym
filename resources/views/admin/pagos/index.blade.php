@@ -2,6 +2,20 @@
 
 @section('title', 'Pagos - EstóicosGym')
 
+@section('css')
+    <style>
+        /* Reducir tamaño de flechas de paginación */
+        .pagination svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+        .pagination a, .pagination span {
+            font-size: 14px;
+            padding: 0.5rem 0.75rem;
+        }
+    </style>
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
