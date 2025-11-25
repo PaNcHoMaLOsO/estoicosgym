@@ -9,6 +9,8 @@ class MembresiasSeeder extends Seeder
 {
     public function run(): void
     {
+        $now = now();
+        
         DB::table('membresias')->insert([
             [
                 'nombre' => 'Anual',
@@ -16,6 +18,8 @@ class MembresiasSeeder extends Seeder
                 'duracion_dias' => 365,
                 'descripcion' => 'Membresía válida por 12 meses',
                 'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'nombre' => 'Semestral',
@@ -23,6 +27,8 @@ class MembresiasSeeder extends Seeder
                 'duracion_dias' => 180,
                 'descripcion' => 'Membresía válida por 6 meses',
                 'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'nombre' => 'Trimestral',
@@ -30,6 +36,8 @@ class MembresiasSeeder extends Seeder
                 'duracion_dias' => 90,
                 'descripcion' => 'Membresía válida por 3 meses',
                 'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'nombre' => 'Mensual',
@@ -37,6 +45,8 @@ class MembresiasSeeder extends Seeder
                 'duracion_dias' => 30,
                 'descripcion' => 'Membresía válida por 1 mes',
                 'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'nombre' => 'Pase Diario',
@@ -44,6 +54,8 @@ class MembresiasSeeder extends Seeder
                 'duracion_dias' => 1,
                 'descripcion' => 'Acceso por un solo día',
                 'activo' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
         ]);
     }
