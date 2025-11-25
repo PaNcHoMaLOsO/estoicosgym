@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
 use App\Http\Controllers\Admin\PagoController;
+use App\Http\Controllers\Admin\MembresiaController;
 use App\Http\Controllers\Api\InscripcionApiController;
 use App\Http\Controllers\Api\SearchApiController;
 
@@ -19,6 +20,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::prefix('admin')->name('admin.')->group(function () {
     // CRUD Clientes
     Route::resource('clientes', ClienteController::class);
+
+    // CRUD Membresias
+    Route::resource('membresias', MembresiaController::class);
 
     // CRUD Inscripciones
     Route::resource('inscripciones', InscripcionController::class);

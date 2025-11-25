@@ -10,21 +10,19 @@ class HistorialPrecio extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'int';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_precio_membresia',
-        'precio_anterior_normal',
-        'precio_anterior_convenio',
-        'precio_nuevo_normal',
-        'precio_nuevo_convenio',
-        'fecha_cambio',
-        'motivo_cambio',
-        'usuario_modificador',
+        'precio_anterior',
+        'precio_nuevo',
+        'razon_cambio',
+        'usuario_cambio',
     ];
 
     protected $casts = [
-        'fecha_cambio' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function precioMembresia()
