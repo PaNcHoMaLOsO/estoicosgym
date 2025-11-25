@@ -15,6 +15,8 @@ class Convenio extends Model
     protected $fillable = [
         'nombre',
         'tipo',
+        'descuento_porcentaje',
+        'descuento_monto',
         'descripcion',
         'contacto_nombre',
         'contacto_telefono',

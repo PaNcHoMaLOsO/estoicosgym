@@ -207,3 +207,66 @@
         </div>
     </div>
 @stop
+
+@section('js')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const idMembresia = document.getElementById('id_membresia');
+    const idConvenio = document.getElementById('id_convenio');
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaVencimiento = document.getElementById('fecha_vencimiento');
+    const precioBase = document.getElementById('precio_base');
+    const descuentoAplicado = document.getElementById('descuento_aplicado');
+
+    // Función para calcular automáticamente
+    async function calcularInscripcion() {
+        if (!idMembresia.value || !fechaInicio.value || !precioBase.value) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/inscripciones/calcular', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                },
+                body: JSON.stringify({
+                    id_membresia: idMembresia.value,
+                    id_convenio: idConvenio.value,
+                    fecha_inicio: fechaInicio.value,
+                    precio_base: parseFloat(precioBase.value),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                fechaVencimiento.value = data.fecha_vencimiento;
+                descuentoAplicado.value = data.descuento_aplicado;
+                
+                // Mostrar notificación visual
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    <i class="fas fa-check-circle"></i> Fecha y descuento calculados automáticamente.
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                `;
+                form.parentElement.insertBefore(alert, form);
+                
+                setTimeout(() => alert.remove(), 3000);
+            }
+        } catch (error) {
+            console.error('Error al calcular:', error);
+        }
+    }
+
+    // Escuchar cambios
+    idMembresia.addEventListener('change', calcularInscripcion);
+    idConvenio.addEventListener('change', calcularInscripcion);
+    fechaInicio.addEventListener('change', calcularInscripcion);
+    precioBase.addEventListener('blur', calcularInscripcion);
+});
+</script>
+@stop
