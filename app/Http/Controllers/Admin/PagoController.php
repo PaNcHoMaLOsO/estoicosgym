@@ -16,7 +16,8 @@ class PagoController extends Controller
     public function index()
     {
         $pagos = Pago::with(['inscripcion', 'metodoPago'])->orderBy('fecha_pago', 'desc')->paginate(15);
-        return view('admin.pagos.index', compact('pagos'));
+        $metodos_pago = MetodoPago::all();
+        return view('admin.pagos.index', compact('pagos', 'metodos_pago'));
     }
 
     /**
@@ -25,8 +26,8 @@ class PagoController extends Controller
     public function create()
     {
         $inscripciones = Inscripcion::with('cliente')->get();
-        $metodos = MetodoPago::all();
-        return view('admin.pagos.create', compact('inscripciones', 'metodos'));
+        $metodos_pago = MetodoPago::all();
+        return view('admin.pagos.create', compact('inscripciones', 'metodos_pago'));
     }
 
     /**
@@ -63,8 +64,8 @@ class PagoController extends Controller
     public function edit(Pago $pago)
     {
         $inscripciones = Inscripcion::with('cliente')->get();
-        $metodos = MetodoPago::all();
-        return view('admin.pagos.edit', compact('pago', 'inscripciones', 'metodos'));
+        $metodos_pago = MetodoPago::all();
+        return view('admin.pagos.edit', compact('pago', 'inscripciones', 'metodos_pago'));
     }
 
     /**
