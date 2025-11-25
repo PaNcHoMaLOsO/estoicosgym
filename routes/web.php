@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
 use App\Http\Controllers\Admin\PagoController;
 use App\Http\Controllers\Admin\MembresiaController;
+use App\Http\Controllers\Admin\ConvenioController;
+use App\Http\Controllers\Admin\MetodoPagoController;
+use App\Http\Controllers\Admin\MotivoDescuentoController;
 use App\Http\Controllers\Api\InscripcionApiController;
 use App\Http\Controllers\Api\SearchApiController;
 
@@ -21,6 +24,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // CRUD Clientes
     Route::resource('clientes', ClienteController::class);
 
+    // CRUD Convenios
+    Route::resource('convenios', ConvenioController::class);
+
     // CRUD Membresias
     Route::resource('membresias', MembresiaController::class);
 
@@ -29,6 +35,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class);
+
+    // CRUD Métodos de Pago
+    Route::resource('metodos-pago', MetodoPagoController::class);
+
+    // CRUD Motivos de Descuento
+    Route::resource('motivos-descuento', MotivoDescuentoController::class);
 });
 
 // API Routes - Grupo con prefijo 'api'

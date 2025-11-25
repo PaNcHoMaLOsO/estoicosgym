@@ -30,6 +30,15 @@ class Cliente extends Model
         'activo',
     ];
 
+    protected $dates = [
+        'fecha_nacimiento',
+    ];
+
+    protected $casts = [
+        'fecha_nacimiento' => 'date',
+        'activo' => 'boolean',
+    ];
+
     public function convenio()
     {
         return $this->belongsTo(Convenio::class, 'id_convenio');

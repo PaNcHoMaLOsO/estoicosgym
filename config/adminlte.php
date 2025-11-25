@@ -327,6 +327,11 @@ return [
             'icon' => 'fas fa-fw fa-users',
         ],
         [
+            'text' => 'Convenios',
+            'url' => 'admin/convenios',
+            'icon' => 'fas fa-fw fa-handshake',
+        ],
+        [
             'text' => 'Membresias',
             'url' => 'admin/membresias',
             'icon' => 'fas fa-fw fa-dumbbell',
@@ -340,6 +345,16 @@ return [
             'text' => 'Pagos',
             'url' => 'admin/pagos',
             'icon' => 'fas fa-fw fa-dollar-sign',
+        ],
+        [
+            'text' => 'Métodos de Pago',
+            'url' => 'admin/metodos-pago',
+            'icon' => 'fas fa-fw fa-money-bill',
+        ],
+        [
+            'text' => 'Motivos de Descuento',
+            'url' => 'admin/motivos-descuento',
+            'icon' => 'fas fa-fw fa-tag',
         ],
         ['header' => 'ADMINISTRACIÓN'],
         [
