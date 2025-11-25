@@ -63,7 +63,7 @@ return [
     |
     */
 
-    'logo' => '<b>Estoicos</b>Gym',
+    'logo' => '',
     'logo_img' => 'vendor/adminlte/dist/img/Logo_Estoicos_Gym.svg',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
