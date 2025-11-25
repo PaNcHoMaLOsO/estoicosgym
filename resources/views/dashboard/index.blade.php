@@ -323,9 +323,11 @@
                     data: @json($datosIngresos),
                     borderColor: '#007bff',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                     pointBackgroundColor: '#007bff',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2
@@ -334,9 +336,17 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top'
+                    },
+                    filler: {
+                        propagate: true
                     }
                 },
                 scales: {
@@ -344,7 +354,7 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
+                                return '$' + (value / 1000).toFixed(0) + 'K';
                             }
                         }
                     }
