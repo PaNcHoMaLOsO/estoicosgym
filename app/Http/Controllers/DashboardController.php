@@ -6,6 +6,8 @@ use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\Estado;
+use App\Models\MetodoPago;
+use App\Models\Membresia;
 use Carbon\Carbon;
 use Illuminate\View\View;
 
@@ -15,78 +17,53 @@ class DashboardController extends Controller
     {
         $hoy = Carbon::now();
         
-        // Estadísticas generales
+        // Estadísticas principales
         $totalClientes = Cliente::where('activo', true)->count();
-        $clientesActivos = Inscripcion::where('id_estado', 201)->distinct('id_cliente')->count();
+        $totalInscripciones = Inscripcion::where('activo', true)->count();
+        $pagosDelMes = Pago::whereYear('created_at', $hoy->year)
+            ->whereMonth('created_at', $hoy->month)
+            ->sum('monto');
+        $ingresosTotales = Pago::sum('monto');
         
-        // Ingresos del mes actual
-        $ingresosMesActual = Pago::whereYear('fecha_pago', $hoy->year)
-            ->whereMonth('fecha_pago', $hoy->month)
-            ->sum('monto_abonado');
-        
-        // Pagos pendientes
-        $pagosPendientes = Pago::whereIn('id_estado', [301, 303])
-            ->sum('monto_pendiente');
-        
-        // Membresías por vencer (próximos 7 días)
-        $membresiasProximas = Inscripcion::where('id_estado', 201)
-            ->whereBetween('fecha_vencimiento', [
-                $hoy->startOfDay(),
-                $hoy->addDays(7)->endOfDay()
-            ])
-            ->with('cliente', 'membresia')
-            ->get();
-        
-        // Pagos recientes
-        $pagosRecientes = Pago::latest('fecha_pago')
-            ->with('cliente', 'inscripcion.membresia', 'estado')
-            ->limit(10)
-            ->get();
-        
-        // Clientes recientes
-        $clientesRecientes = Cliente::latest('created_at')
+        // Últimos pagos
+        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodo_pago')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
-        // Gráfico: Ingresos por método de pago (mes actual)
-        $ingresosPorMetodo = Pago::whereYear('fecha_pago', $hoy->year)
-            ->whereMonth('fecha_pago', $hoy->month)
-            ->with('metodoPago')
-            ->get()
-            ->groupBy('id_metodo_pago')
-            ->map(function ($pagos) {
-                return [
-                    'metodo' => $pagos->first()->metodoPago?->nombre ?? 'N/A',
-                    'total' => $pagos->sum('monto_abonado')
-                ];
-            });
+        // Inscripciones recientes
+        $inscripcionesRecientes = Inscripcion::with('cliente', 'membresia', 'estado')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
         
         // Membresías más vendidas
-        $membresiasVendidas = Inscripcion::whereYear('fecha_inscripcion', $hoy->year)
-            ->whereMonth('fecha_inscripcion', $hoy->month)
-            ->with('membresia')
-            ->get()
-            ->groupBy('id_membresia')
-            ->map(function ($inscripciones) {
-                return [
-                    'membresia' => $inscripciones->first()->membresia?->nombre ?? 'N/A',
-                    'cantidad' => $inscripciones->count(),
-                    'ingresos' => $inscripciones->sum('precio_final')
-                ];
-            })
-            ->sortByDesc('cantidad')
-            ->take(5);
+        $membresiasVendidas = Membresia::withCount('inscripciones')
+            ->orderBy('inscripciones_count', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Métodos de pago más usados
+        $metodosPago = MetodoPago::withCount('pagos')
+            ->orderBy('pagos_count', 'desc')
+            ->get();
+        
+        // Clientes por estado
+        $clientesPorEstado = Estado::withCount('clientes')
+            ->orderBy('clientes_count', 'desc')
+            ->get();
         
         return view('dashboard.index', compact(
             'totalClientes',
-            'clientesActivos',
-            'ingresosMesActual',
-            'pagosPendientes',
-            'membresiasProximas',
-            'pagosRecientes',
-            'clientesRecientes',
-            'ingresosPorMetodo',
-            'membresiasVendidas'
+            'totalInscripciones',
+            'pagosDelMes',
+            'ingresosTotales',
+            'ultimosPagos',
+            'inscripcionesRecientes',
+            'membresiasVendidas',
+            'metodosPago',
+            'clientesPorEstado'
         ));
     }
 }
+
