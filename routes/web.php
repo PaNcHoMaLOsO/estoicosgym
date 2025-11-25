@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
 use App\Http\Controllers\Admin\PagoController;
 use App\Http\Controllers\Api\InscripcionApiController;
+use App\Http\Controllers\Api\SearchApiController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -28,6 +29,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 // API Routes - Grupo con prefijo 'api'
 Route::prefix('api')->group(function () {
+    // Búsqueda
+    Route::get('/clientes/search', [SearchApiController::class, 'searchClientes']);
+    Route::get('/inscripciones/search', [SearchApiController::class, 'searchInscripciones']);
+    
     // Obtener datos de membresía
     Route::get('/membresias/{id}', [InscripcionApiController::class, 'showMembresia']);
     

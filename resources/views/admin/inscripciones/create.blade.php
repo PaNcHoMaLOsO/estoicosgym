@@ -10,6 +10,11 @@
     </div>
 @stop
 
+@section('css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+@stop
+
 @section('content')
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -34,14 +39,19 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_cliente">Cliente <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_cliente') is-invalid @enderror" 
-                                    id="id_cliente" name="id_cliente" required>
+                            <select class="form-control select2-cliente @error('id_cliente') is-invalid @enderror" 
+                                    id="id_cliente" name="id_cliente" required style="width: 100%;">
                                 <option value="">-- Seleccionar Cliente --</option>
-                                @foreach($clientes as $cliente)
-                                    <option value="{{ $cliente->id }}" {{ old('id_cliente') == $cliente->id ? 'selected' : '' }}>
-                                        {{ $cliente->nombres }} {{ $cliente->apellido_paterno }} ({{ $cliente->email }})
-                                    </option>
-                                @endforeach
+                                @if(old('id_cliente'))
+                                    @php
+                                        $clienteSeleccionado = $clientes->find(old('id_cliente'));
+                                    @endphp
+                                    @if($clienteSeleccionado)
+                                        <option value="{{ $clienteSeleccionado->id }}" selected>
+                                            {{ $clienteSeleccionado->nombres }} {{ $clienteSeleccionado->apellido_paterno }} ({{ $clienteSeleccionado->email }})
+                                        </option>
+                                    @endif
+                                @endif
                             </select>
                             @error('id_cliente')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -209,6 +219,7 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
@@ -218,6 +229,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const fechaVencimiento = document.getElementById('fecha_vencimiento');
     const precioBase = document.getElementById('precio_base');
     const descuentoAplicado = document.getElementById('descuento_aplicado');
+
+    // Inicializar Select2 para Cliente
+    $('.select2-cliente').select2({
+        theme: 'bootstrap-5',
+        allowClear: true,
+        ajax: {
+            url: '/api/clientes/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || '',
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data,
+                };
+            },
+        },
+        minimumInputLength: 2,
+    });
 
     // Función para calcular automáticamente
     async function calcularInscripcion() {
