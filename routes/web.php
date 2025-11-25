@@ -7,7 +7,11 @@ use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\PagoController;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return view('dashboard.test');
+});
+
+Route::get('/test', function () {
+    return view('dashboard.test');
 });
 
 // Dashboard
