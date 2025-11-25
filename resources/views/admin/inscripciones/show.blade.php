@@ -52,7 +52,7 @@
                         <dt class="col-sm-4">Días Restantes:</dt>
                         <dd class="col-sm-8">
                             @php
-                                $diasRestantes = now()->diffInDays($inscripcion->fecha_vencimiento, false);
+                                $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
                             @endphp
                             @if($diasRestantes > 0)
                                 <span class="badge badge-success">{{ $diasRestantes }} días</span>

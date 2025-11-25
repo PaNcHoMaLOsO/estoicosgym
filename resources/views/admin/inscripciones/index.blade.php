@@ -92,7 +92,7 @@
                             <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
                             <td>
                                 @php
-                                    $diasRestantes = now()->diffInDays($inscripcion->fecha_vencimiento, false);
+                                    $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
                                 @endphp
                                 @if($diasRestantes > 7)
                                     <span class="badge bg-info">{{ $diasRestantes }} días</span>
