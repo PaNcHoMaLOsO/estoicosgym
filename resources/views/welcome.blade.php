@@ -1,137 +1,142 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('adminlte::page')
 
-        <title>{{ config('app.name', 'EstóicosGym') }}</title>
+@section('title', 'EstóicosGym - Bienvenido')
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+@section('content_header')
+    <h1>
+        <i class="fas fa-dumbbell"></i> EstóicosGym
+    </h1>
+@endsection
 
-        <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-        <!-- Estilos personalizados -->
-        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-
-        <style>
-            body {
-                background-color: #f8f9fa;
-                font-family: 'Figtree', sans-serif;
-            }
-            .welcome-container {
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 2rem;
-            }
-            .welcome-card {
-                background: white;
-                border-radius: 12px;
-                padding: 3rem;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                max-width: 600px;
-                width: 100%;
-            }
-            .logo-text {
-                font-size: 2rem;
-                font-weight: 700;
-                color: #1a73e8;
-                margin-bottom: 1.5rem;
-            }
-            .welcome-title {
-                font-size: 1.5rem;
-                font-weight: 600;
-                color: #212529;
-                margin-bottom: 1rem;
-            }
-            .welcome-description {
-                color: #6c757d;
-                margin-bottom: 2rem;
-                line-height: 1.6;
-            }
-            .nav-links {
-                display: flex;
-                gap: 1rem;
-                margin-bottom: 2rem;
-                flex-wrap: wrap;
-            }
-            .btn-link-default {
-                display: inline-flex;
-                align-items: center;
-                padding: 0.75rem 1.5rem;
-                border: 1px solid #dee2e6;
-                border-radius: 6px;
-                text-decoration: none;
-                color: #495057;
-                font-weight: 500;
-                transition: all 0.2s;
-            }
-            .btn-link-default:hover {
-                border-color: #1a73e8;
-                color: #1a73e8;
-                background-color: #f8f9fa;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="welcome-container">
-            <div class="welcome-card">
-                <div class="logo-text">EstóicosGym</div>
-
-                @auth
-                    <div class="welcome-title">¡Bienvenido de vuelta!</div>
-                    <p class="welcome-description">Accede a tu panel de control para gestionar tus actividades.</p>
-                    <div class="nav-links">
-                        <a href="{{ route('dashboard') }}" class="btn btn-primary">
-                            Ir al Dashboard
+@section('content')
+    @auth
+        <!-- Usuario autenticado -->
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">¡Bienvenido de vuelta, {{ auth()->user()->name }}!</h3>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <p class="lead text-muted mb-4">
+                            Accede a tu panel de control para gestionar tus actividades
+                        </p>
+                        <a href="{{ route('dashboard') }}" class="btn btn-lg btn-success">
+                            <i class="fas fa-chart-line"></i> Ir al Dashboard
                         </a>
                     </div>
-                @else
-                    <div class="welcome-title">Sistema de Gestión de Gimnasio</div>
-                    <p class="welcome-description">
-                        Bienvenido al sistema integrado de gestión de membresías, pagos, inscripciones y administración de clientes.
-                    </p>
-
-                    <div class="nav-links">
-                        @if (Route::has('login'))
-                            <a href="{{ route('login') }}" class="btn-link-default">Iniciar Sesión</a>
-                        @endif
-
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-primary">Registrarse</a>
-                        @endif
-                    </div>
-
-                    <hr>
-
-                    <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Características</h3>
-                    <ul style="list-style: none; padding: 0;">
-                        <li style="padding: 0.5rem 0; color: #495057;">
-                            ✓ Gestión de clientes y membresías
-                        </li>
-                        <li style="padding: 0.5rem 0; color: #495057;">
-                            ✓ Registro de pagos e inscripciones
-                        </li>
-                        <li style="padding: 0.5rem 0; color: #495057;">
-                            ✓ Panel de control con estadísticas
-                        </li>
-                        <li style="padding: 0.5rem 0; color: #495057;">
-                            ✓ Auditoría y notificaciones
-                        </li>
-                    </ul>
-                @endauth
+                </div>
             </div>
         </div>
+    @else
+        <!-- Usuario no autenticado -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Tarjeta principal de bienvenida -->
+                <div class="card card-primary card-outline">
+                    <div class="card-body text-center py-5">
+                        <h2 class="mb-3">
+                            <i class="fas fa-dumbbell text-primary"></i> Sistema de Gestión
+                        </h2>
+                        <p class="text-muted lead mb-4">
+                            Bienvenido al sistema integrado de gestión de membresías, pagos, inscripciones y administración de clientes.
+                        </p>
 
-        <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <p class="text-secondary mb-2">¿Ya eres miembro?</p>
+                                @if (Route::has('login'))
+                                    <a href="{{ route('login') }}" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <p class="text-secondary mb-2">¿Nuevo usuario?</p>
+                                @if (Route::has('register'))
+                                    <a href="{{ route('register') }}" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-user-plus"></i> Registrarse
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- JavaScript personalizado -->
-        <script src="{{ asset('js/main.js') }}"></script>
-    </body>
-</html>
+                <!-- Tarjeta de características -->
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-bar"></i> Características
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> Gestión de clientes y membresías
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> Registro de pagos e inscripciones
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> Panel de control con estadísticas
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check text-success"></i> Auditoría y notificaciones
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="card card-warning">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt"></i> Ventajas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-lock text-warning"></i> Seguridad total de datos
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-tachometer-alt text-warning"></i> Interfaz rápida y eficiente
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-mobile-alt text-warning"></i> Acceso desde cualquier dispositivo
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-headset text-warning"></i> Soporte profesional
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endauth
+@endsection
+
+@section('css')
+    <style>
+        .card {
+            box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+            transition: box-shadow 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 3px 6px rgba(0,0,0,.15), 0 2px 4px rgba(0,0,0,.12);
+        }
+        .btn-lg {
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+        }
+        .lead {
+            font-size: 1.1rem;
+        }
+    </style>
+@endsection
