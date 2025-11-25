@@ -30,7 +30,7 @@ class DashboardController extends Controller
         $ingresosTotales = Pago::sum('monto_abonado');
         
         // Últimos pagos
-        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodo_pago')
+        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodoPago')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -52,9 +52,10 @@ class DashboardController extends Controller
             ->orderBy('pagos_count', 'desc')
             ->get();
         
-        // Clientes por estado
-        $clientesPorEstado = Estado::withCount('clientes')
-            ->orderBy('clientes_count', 'desc')
+        // Inscripciones por estado (contar inscripciones agrupadas por estado)
+        $inscripcionesPorEstado = Inscripcion::selectRaw('id_estado, count(*) as total')
+            ->groupBy('id_estado')
+            ->with('estado')
             ->get();
         
         return view('dashboard.index', compact(
@@ -66,7 +67,7 @@ class DashboardController extends Controller
             'inscripcionesRecientes',
             'membresiasVendidas',
             'metodosPago',
-            'clientesPorEstado'
+            'inscripcionesPorEstado'
         ));
     }
 }

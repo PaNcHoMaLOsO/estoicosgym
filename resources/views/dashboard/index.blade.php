@@ -95,9 +95,9 @@
                         <tbody>
                             @forelse($ultimosPagos as $pago)
                                 <tr>
-                                    <td>{{ $pago->inscripcion->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>${{ number_format($pago->monto, 2) }}</td>
-                                    <td>{{ $pago->metodo_pago->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $pago->inscripcion->cliente->nombres ?? 'N/A' }}</td>
+                                    <td>${{ number_format($pago->monto_abonado, 2) }}</td>
+                                    <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
                                     <td>{{ $pago->created_at->format('d/m/Y') }}</td>
                                 </tr>
                             @empty
@@ -196,14 +196,14 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header with-border">
-                    <h3 class="card-title">Estados de Clientes</h3>
+                    <h3 class="card-title">Estados de Inscripciones</h3>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
-                        @forelse($clientesPorEstado as $estado)
+                        @forelse($inscripcionesPorEstado as $item)
                             <li class="mb-2">
-                                <strong>{{ $estado->nombre }}</strong>
-                                <span class="float-right badge badge-secondary">{{ $estado->count }}</span>
+                                <strong>{{ $item->estado->nombre ?? 'N/A' }}</strong>
+                                <span class="float-right badge badge-secondary">{{ $item->total }}</span>
                             </li>
                         @empty
                             <li class="text-muted">Sin datos</li>
