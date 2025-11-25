@@ -5,13 +5,25 @@
 @section('css')
     <style>
         /* Reducir tamaño de flechas de paginación */
+        .pagination {
+            gap: 0;
+        }
         .pagination svg {
-            width: 20px !important;
-            height: 20px !important;
+            width: 12px !important;
+            height: 12px !important;
+            stroke-width: 2 !important;
         }
         .pagination a, .pagination span {
-            font-size: 14px;
-            padding: 0.5rem 0.75rem;
+            font-size: 12px !important;
+            padding: 0.375rem 0.5rem !important;
+            line-height: 1.2 !important;
+            min-height: 28px !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pagination .page-link {
+            padding: 0.375rem 0.5rem !important;
         }
     </style>
 @stop
