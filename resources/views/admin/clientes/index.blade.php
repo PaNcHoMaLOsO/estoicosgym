@@ -4,24 +4,6 @@
 
 @section('css')
     <style>
-        /* Reducir tamaño de flechas de paginación */
-        .pagination {
-            gap: 0;
-        }
-        .pagination svg {
-            width: 12px !important;
-            height: 12px !important;
-            stroke-width: 2 !important;
-        }
-        .pagination a, .pagination span {
-            font-size: 12px !important;
-            padding: 0.375rem 0.5rem !important;
-            line-height: 1.2 !important;
-            min-height: 28px !important;
-        }
-        .pagination .page-link {
-            padding: 0.375rem 0.5rem !important;
-        }
         .table-responsive { overflow-x: auto; }
         .btn-sm { margin: 0 2px; }
     </style>
