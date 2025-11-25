@@ -26,10 +26,29 @@
     @endif
 
     <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Editar Datos del Cliente</h3>
+        </div>
         <div class="card-body">
             <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST">
                 @csrf
                 @method('PUT')
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="run_pasaporte">RUT/Pasaporte <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
+                                   id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
+                                   value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}" required>
+                            <small class="form-text text-muted">Formato: XX.XXX.XXX-X (Ej: 12.345.678-K)</small>
+                            @error('run_pasaporte')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6"></div>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -44,10 +63,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="apellidos">Apellidos <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('apellidos') is-invalid @enderror" 
-                                   id="apellidos" name="apellidos" value="{{ old('apellidos', $cliente->apellidos) }}" required>
-                            @error('apellidos')
+                            <label for="apellido_paterno">Apellido Paterno <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('apellido_paterno') is-invalid @enderror" 
+                                   id="apellido_paterno" name="apellido_paterno" value="{{ old('apellido_paterno', $cliente->apellido_paterno) }}" required>
+                            @error('apellido_paterno')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -55,6 +74,16 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="apellido_materno">Apellido Materno</label>
+                            <input type="text" class="form-control @error('apellido_materno') is-invalid @enderror" 
+                                   id="apellido_materno" name="apellido_materno" value="{{ old('apellido_materno', $cliente->apellido_materno) }}">
+                            @error('apellido_materno')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="email">Email <span class="text-danger">*</span></label>
@@ -65,12 +94,25 @@
                             @enderror
                         </div>
                     </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="telefono">Teléfono <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('telefono') is-invalid @enderror" 
-                                   id="telefono" name="telefono" value="{{ old('telefono', $cliente->telefono) }}" required>
-                            @error('telefono')
+                            <label for="celular">Celular <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('celular') is-invalid @enderror" 
+                                   id="celular" name="celular" value="{{ old('celular', $cliente->celular) }}" required>
+                            @error('celular')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control @error('fecha_nacimiento') is-invalid @enderror" 
+                                   id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento', $cliente->fecha_nacimiento) }}">
+                            @error('fecha_nacimiento')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -78,16 +120,19 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="form-group">
-                            <label for="ciudad">Ciudad <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('ciudad') is-invalid @enderror" 
-                                   id="ciudad" name="ciudad" value="{{ old('ciudad', $cliente->ciudad) }}" required>
-                            @error('ciudad')
+                            <label for="direccion">Dirección</label>
+                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
+                                   id="direccion" name="direccion" value="{{ old('direccion', $cliente->direccion) }}">
+                            @error('direccion')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="activo">Estado</label>

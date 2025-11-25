@@ -26,9 +26,28 @@
     @endif
 
     <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Formulario de Registro</h3>
+        </div>
         <div class="card-body">
             <form action="{{ route('admin.clientes.store') }}" method="POST">
                 @csrf
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="run_pasaporte">RUT/Pasaporte <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
+                                   id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
+                                   value="{{ old('run_pasaporte') }}" required>
+                            <small class="form-text text-muted">Formato: XX.XXX.XXX-X (Ej: 12.345.678-K)</small>
+                            @error('run_pasaporte')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6"></div>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -43,10 +62,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="apellidos">Apellidos <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('apellidos') is-invalid @enderror" 
-                                   id="apellidos" name="apellidos" value="{{ old('apellidos') }}" required>
-                            @error('apellidos')
+                            <label for="apellido_paterno">Apellido Paterno <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('apellido_paterno') is-invalid @enderror" 
+                                   id="apellido_paterno" name="apellido_paterno" value="{{ old('apellido_paterno') }}" required>
+                            @error('apellido_paterno')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -54,6 +73,16 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="apellido_materno">Apellido Materno</label>
+                            <input type="text" class="form-control @error('apellido_materno') is-invalid @enderror" 
+                                   id="apellido_materno" name="apellido_materno" value="{{ old('apellido_materno') }}">
+                            @error('apellido_materno')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="email">Email <span class="text-danger">*</span></label>
@@ -64,12 +93,38 @@
                             @enderror
                         </div>
                     </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="telefono">Teléfono <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('telefono') is-invalid @enderror" 
-                                   id="telefono" name="telefono" value="{{ old('telefono') }}" required>
-                            @error('telefono')
+                            <label for="celular">Celular <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('celular') is-invalid @enderror" 
+                                   id="celular" name="celular" placeholder="+56912345678" value="{{ old('celular') }}" required>
+                            @error('celular')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control @error('fecha_nacimiento') is-invalid @enderror" 
+                                   id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento') }}">
+                            @error('fecha_nacimiento')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="direccion">Dirección</label>
+                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
+                                   id="direccion" name="direccion" value="{{ old('direccion') }}">
+                            @error('direccion')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -79,20 +134,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="ciudad">Ciudad <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('ciudad') is-invalid @enderror" 
-                                   id="ciudad" name="ciudad" value="{{ old('ciudad') }}" required>
-                            @error('ciudad')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
                             <label for="activo">Estado</label>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" 
-                                       {{ old('activo') ? 'checked' : '' }}>
+                                       {{ old('activo') ? 'checked' : 'checked' }}>
                                 <label class="custom-control-label" for="activo">Activo</label>
                             </div>
                         </div>

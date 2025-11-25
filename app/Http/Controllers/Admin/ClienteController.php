@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Rules\RutValido;
 use Illuminate\Http\Request;
 
 class ClienteController extends Controller
@@ -31,11 +32,14 @@ class ClienteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'run_pasaporte' => ['required', 'unique:clientes', new RutValido()],
             'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
+            'apellido_paterno' => 'required|string|max:255',
+            'apellido_materno' => 'nullable|string|max:255',
+            'celular' => 'required|string|max:20',
             'email' => 'required|email|unique:clientes',
-            'telefono' => 'required|string|max:20',
-            'ciudad' => 'required|string|max:100',
+            'direccion' => 'nullable|string|max:500',
+            'fecha_nacimiento' => 'nullable|date',
             'activo' => 'boolean',
         ]);
 
@@ -68,11 +72,14 @@ class ClienteController extends Controller
     public function update(Request $request, Cliente $cliente)
     {
         $validated = $request->validate([
+            'run_pasaporte' => ['required', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
             'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
+            'apellido_paterno' => 'required|string|max:255',
+            'apellido_materno' => 'nullable|string|max:255',
+            'celular' => 'required|string|max:20',
             'email' => 'required|email|unique:clientes,email,' . $cliente->id,
-            'telefono' => 'required|string|max:20',
-            'ciudad' => 'required|string|max:100',
+            'direccion' => 'nullable|string|max:500',
+            'fecha_nacimiento' => 'nullable|date',
             'activo' => 'boolean',
         ]);
 

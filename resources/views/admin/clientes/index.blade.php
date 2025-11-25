@@ -37,10 +37,10 @@
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>RUT</th>
                         <th>Nombre Completo</th>
                         <th>Email</th>
-                        <th>Teléfono</th>
-                        <th>Ciudad</th>
+                        <th>Celular</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -49,15 +49,15 @@
                     @forelse($clientes as $cliente)
                         <tr>
                             <td>{{ $cliente->id }}</td>
+                            <td><strong>{{ $cliente->run_pasaporte }}</strong></td>
                             <td>
-                                <strong>{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</strong>
+                                {{ $cliente->nombres }} {{ $cliente->apellido_paterno }}
                                 @if($cliente->apellido_materno)
                                     {{ $cliente->apellido_materno }}
                                 @endif
                             </td>
                             <td>{{ $cliente->email }}</td>
                             <td>{{ $cliente->celular }}</td>
-                            <td>{{ $cliente->direccion }}</td>
                             <td>
                                 @if($cliente->activo)
                                     <span class="badge bg-success">Activo</span>

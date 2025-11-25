@@ -37,6 +37,9 @@
                         <dt class="col-sm-4">ID:</dt>
                         <dd class="col-sm-8">{{ $cliente->id }}</dd>
 
+                        <dt class="col-sm-4">RUT/Pasaporte:</dt>
+                        <dd class="col-sm-8"><strong>{{ $cliente->run_pasaporte }}</strong></dd>
+
                         <dt class="col-sm-4">Nombre Completo:</dt>
                         <dd class="col-sm-8">
                             <strong>{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</strong>
@@ -48,11 +51,14 @@
                         <dt class="col-sm-4">Email:</dt>
                         <dd class="col-sm-8"><a href="mailto:{{ $cliente->email }}">{{ $cliente->email }}</a></dd>
 
-                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dt class="col-sm-4">Celular:</dt>
                         <dd class="col-sm-8">{{ $cliente->celular }}</dd>
 
-                        <dt class="col-sm-4">Ciudad:</dt>
-                        <dd class="col-sm-8">{{ $cliente->direccion }}</dd>
+                        <dt class="col-sm-4">Dirección:</dt>
+                        <dd class="col-sm-8">{{ $cliente->direccion ?? 'N/A' }}</dd>
+
+                        <dt class="col-sm-4">Fecha Nacimiento:</dt>
+                        <dd class="col-sm-8">{{ $cliente->fecha_nacimiento ? $cliente->fecha_nacimiento->format('d/m/Y') : 'N/A' }}</dd>
 
                         <dt class="col-sm-4">Estado:</dt>
                         <dd class="col-sm-8">
