@@ -17,9 +17,13 @@ class DashboardController extends Controller
     {
         $hoy = Carbon::now();
         
+        // Obtener ID del estado "Activa"
+        $estadoActiva = Estado::where('nombre', 'Activa')->first();
+        $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 1;
+        
         // Estadísticas principales
         $totalClientes = Cliente::where('activo', true)->count();
-        $totalInscripciones = Inscripcion::where('activo', true)->count();
+        $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
         $pagosDelMes = Pago::whereYear('created_at', $hoy->year)
             ->whereMonth('created_at', $hoy->month)
             ->sum('monto');
