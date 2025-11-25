@@ -26,8 +26,8 @@ class DashboardController extends Controller
         $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
         $pagosDelMes = Pago::whereYear('created_at', $hoy->year)
             ->whereMonth('created_at', $hoy->month)
-            ->sum('monto');
-        $ingresosTotales = Pago::sum('monto');
+            ->sum('monto_abonado');
+        $ingresosTotales = Pago::sum('monto_abonado');
         
         // Últimos pagos
         $ultimosPagos = Pago::with('inscripcion.cliente', 'metodo_pago')
