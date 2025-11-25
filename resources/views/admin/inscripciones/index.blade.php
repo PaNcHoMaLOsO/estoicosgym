@@ -67,6 +67,9 @@
                         <th>Cliente</th>
                         <th>Estado</th>
                         <th>Pausa</th>
+                        <th>Monto</th>
+                        <th>Abonado</th>
+                        <th>Pendiente</th>
                         <th>Inicio</th>
                         <th>Vencimiento</th>
                         <th>Días Restantes</th>
@@ -88,6 +91,26 @@
                                     <span class="badge bg-warning"><i class="fas fa-pause-circle"></i> {{ $inscripcion->dias_pausa }}d</span>
                                 @else
                                     <span class="badge bg-success">Activo</span>
+                                @endif
+                            </td>
+                            <td>
+                                <strong>${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 2) }}</strong>
+                            </td>
+                            <td>
+                                @php
+                                    $abonado = $inscripcion->pagos()->where('id_estado', 102)->sum('monto');
+                                @endphp
+                                <span class="text-success"><strong>${{ number_format($abonado, 2) }}</strong></span>
+                            </td>
+                            <td>
+                                @php
+                                    $monto_total = $inscripcion->precio_final ?? $inscripcion->precio_base;
+                                    $pendiente = $monto_total - $abonado;
+                                @endphp
+                                @if($pendiente > 0)
+                                    <span class="text-danger"><strong>${{ number_format($pendiente, 2) }}</strong></span>
+                                @else
+                                    <span class="text-success badge badge-success">Pagado</span>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
@@ -122,7 +145,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted">No hay inscripciones registradas</td>
+                            <td colspan="11" class="text-center text-muted">No hay inscripciones registradas</td>
                         </tr>
                     @endforelse
                 </tbody>

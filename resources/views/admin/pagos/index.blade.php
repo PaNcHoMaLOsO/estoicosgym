@@ -80,8 +80,10 @@
                             <th>ID</th>
                             <th>Cliente</th>
                             <th>Inscripción</th>
+                            <th>Monto Total</th>
                             <th>Fecha Pago</th>
                             <th>Monto Abonado</th>
+                            <th>Saldo Pendiente</th>
                             <th>Estado</th>
                             <th>Método Pago</th>
                             <th>Acciones</th>
@@ -101,8 +103,25 @@
                                         #{{ $pago->inscripcion->id }}
                                     </a>
                                 </td>
+                                <td>
+                                    <strong>${{ number_format($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base, 2, ',', '.') }}</strong>
+                                </td>
                                 <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
-                                <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
+                                <td>
+                                    <span class="text-success"><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></span>
+                                </td>
+                                <td>
+                                    @php
+                                        $monto_total = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base;
+                                        $total_abonado = $pago->inscripcion->pagos()->where('id_estado', 102)->sum('monto_abonado');
+                                        $pendiente = $monto_total - $total_abonado;
+                                    @endphp
+                                    @if($pendiente > 0)
+                                        <span class="text-danger"><strong>${{ number_format($pendiente, 2, ',', '.') }}</strong></span>
+                                    @else
+                                        <span class="badge badge-success">Pagado</span>
+                                    @endif
+                                </td>
                                 <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
                                 <td>{{ $pago->metodoPago->nombre }}</td>
                                 <td>
