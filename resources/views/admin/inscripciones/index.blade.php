@@ -130,10 +130,41 @@
                                 {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
                             </td>
                             <td>
-                                @if($inscripcion->pausada)
-                                    <span class="badge bg-warning"><i class="fas fa-pause-circle fa-fw"></i> Pausado</span>
+                                @php
+                                    // Verificar si está pausada y si la pausa sigue vigente
+                                    $estaPausada = false;
+                                    $razonPausa = null;
+                                    
+                                    if ($inscripcion->pausada) {
+                                        // Verificar si la pausa ha expirado
+                                        if ($inscripcion->fecha_pausa_fin && now()->greaterThan($inscripcion->fecha_pausa_fin)) {
+                                            // Pausa expirada
+                                            $estaPausada = false;
+                                        } else {
+                                            // Pausa vigente
+                                            $estaPausada = true;
+                                            $razonPausa = $inscripcion->razon_pausa;
+                                        }
+                                    }
+                                @endphp
+                                
+                                @if($estaPausada)
+                                    <span class="badge bg-warning" title="{{ $razonPausa }}">
+                                        <i class="fas fa-pause-circle fa-fw"></i> 
+                                        @if($inscripcion->dias_pausa == 7)
+                                            Pausada - 7 días
+                                        @elseif($inscripcion->dias_pausa == 14)
+                                            Pausada - 14 días
+                                        @elseif($inscripcion->dias_pausa == 30)
+                                            Pausada - 30 días
+                                        @else
+                                            Pausada
+                                        @endif
+                                    </span>
                                 @else
-                                    <span class="badge bg-success"><i class="fas fa-play-circle fa-fw"></i> Activo</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-play-circle fa-fw"></i> Activo
+                                    </span>
                                 @endif
                             </td>
                             <td>
