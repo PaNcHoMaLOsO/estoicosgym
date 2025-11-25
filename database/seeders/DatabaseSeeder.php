@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             MembresiasSeeder::class,
             PreciosMembresiasSeeder::class,
             ConveniosSeeder::class,
+            ClientesInscripcionesPagosSeeder::class,
         ]);
 
         // Crear usuario admin

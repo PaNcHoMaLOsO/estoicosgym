@@ -8,7 +8,7 @@ class Inscripcion extends Model
 {
     protected $table = 'inscripciones';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
 

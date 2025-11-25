@@ -8,7 +8,7 @@ class Cliente extends Model
 {
     protected $table = 'clientes';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
 

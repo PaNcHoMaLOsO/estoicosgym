@@ -8,7 +8,7 @@ class Pago extends Model
 {
     protected $table = 'pagos';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
 
