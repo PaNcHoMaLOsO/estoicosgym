@@ -104,8 +104,7 @@
                         <th>Estado</th>
                         <th>Pausa</th>
                         <th>Monto</th>
-                        <th>Abonado</th>
-                        <th>Pendiente</th>
+                        <th>Estado de Pago</th>
                         <th>
                             <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_inicio', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 Inicio <i class="fas fa-sort"></i>
@@ -142,19 +141,53 @@
                             </td>
                             <td>
                                 @php
-                                    $abonado = $inscripcion->pagos()->where('id_estado', 102)->sum('monto_abonado');
+                                    // Obtener todos los pagos de esta inscripción
+                                    $allPagos = $inscripcion->pagos()->get();
+                                    
+                                    // Sumar solo los pagos completados (id_estado 102 = Pagado)
+                                    $totalAbonado = $allPagos
+                                        ->where('id_estado', 102)
+                                        ->sum('monto_abonado');
+                                    
+                                    // Obtener el monto total de la inscripción
+                                    $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
+                                    
+                                    // Calcular pendiente
+                                    $pendiente = $montoTotal - $totalAbonado;
+                                    
+                                    // Determinar porcentaje
+                                    $porcentajePagado = ($totalAbonado / $montoTotal) * 100;
                                 @endphp
-                                <span class="text-success"><strong>${{ number_format($abonado, 2) }}</strong></span>
-                            </td>
-                            <td>
-                                @php
-                                    $monto_total = $inscripcion->precio_final ?? $inscripcion->precio_base;
-                                    $pendiente = $monto_total - $abonado;
-                                @endphp
-                                @if($pendiente > 0)
-                                    <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 2) }}</span>
+                                
+                                @if($pendiente <= 0)
+                                    <!-- Pagado completamente -->
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle fa-fw"></i> Pagado Completo
+                                    </span>
+                                @elseif($totalAbonado > 0 && $pendiente > 0)
+                                    <!-- Pago parcial -->
+                                    <div class="d-flex flex-column gap-2">
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-hourglass-half fa-fw"></i> Parcial
+                                        </span>
+                                        <small class="text-muted">
+                                            Pagado: ${{ number_format($totalAbonado, 2) }}<br>
+                                            Pendiente: <strong class="text-danger">${{ number_format($pendiente, 2) }}</strong>
+                                        </small>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ $porcentajePagado }}%;" 
+                                                 aria-valuenow="{{ $porcentajePagado }}" aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                    </div>
                                 @else
-                                    <span class="badge bg-success">Pagado</span>
+                                    <!-- Sin pagos aún -->
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente Completo
+                                    </span>
+                                    <br>
+                                    <small class="text-muted mt-1">Total: <strong>${{ number_format($montoTotal, 2) }}</strong></small>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
