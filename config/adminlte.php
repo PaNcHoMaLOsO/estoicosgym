@@ -320,19 +320,14 @@ return [
             'url' => 'dashboard',
             'icon' => 'fas fa-fw fa-home',
         ],
-        ['header' => 'MÓDULOS'],
+        ['header' => 'OPERACIONAL'],
         [
             'text' => 'Clientes',
             'url' => 'admin/clientes',
             'icon' => 'fas fa-fw fa-users',
         ],
         [
-            'text' => 'Convenios',
-            'url' => 'admin/convenios',
-            'icon' => 'fas fa-fw fa-handshake',
-        ],
-        [
-            'text' => 'Membresias',
+            'text' => 'Membresías',
             'url' => 'admin/membresias',
             'icon' => 'fas fa-fw fa-dumbbell',
         ],
@@ -346,6 +341,12 @@ return [
             'url' => 'admin/pagos',
             'icon' => 'fas fa-fw fa-dollar-sign',
         ],
+        ['header' => 'CONFIGURACIÓN'],
+        [
+            'text' => 'Convenios',
+            'url' => 'admin/convenios',
+            'icon' => 'fas fa-fw fa-handshake',
+        ],
         [
             'text' => 'Métodos de Pago',
             'url' => 'admin/metodos-pago',
@@ -356,7 +357,7 @@ return [
             'url' => 'admin/motivos-descuento',
             'icon' => 'fas fa-fw fa-tag',
         ],
-        ['header' => 'ADMINISTRACIÓN'],
+        ['header' => 'REPORTES'],
         [
             'text' => 'Reportes',
             'icon' => 'fas fa-fw fa-chart-bar',
