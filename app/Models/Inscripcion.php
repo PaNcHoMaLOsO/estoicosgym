@@ -15,6 +15,7 @@ class Inscripcion extends Model
     protected $fillable = [
         'id_cliente',
         'id_membresia',
+        'id_convenio',
         'id_precio_acordado',
         'fecha_inscripcion',
         'fecha_inicio',
@@ -57,6 +58,11 @@ class Inscripcion extends Model
     public function motivoDescuento()
     {
         return $this->belongsTo(MotivoDescuento::class, 'id_motivo_descuento');
+    }
+
+    public function convenio()
+    {
+        return $this->belongsTo(Convenio::class, 'id_convenio');
     }
 
     public function pagos()
