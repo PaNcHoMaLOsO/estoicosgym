@@ -101,13 +101,26 @@ class EnhancedTestDataSeeder extends Seeder
                             $monto_restante -= $monto;
                         }
                         
+                        $fecha_pago = $faker->dateTimeBetween($fecha_inicio, $now);
+                        $periodo_inicio = Carbon::instance($fecha_pago);
+                        $estado_pago = $k == $num_pagos - 1 && $monto_restante <= 0 
+                            ? $estados->where('nombre', 'Pagado')->first()?->id 
+                            : $estados->where('nombre', 'Pendiente')->first()?->id;
+                        
                         Pago::create([
                             'id_inscripcion' => $inscripcion->id,
                             'id_cliente' => $cliente->id,
                             'id_metodo_pago' => $faker->randomElement($metodos_pago->pluck('id')->toArray()),
-                            'fecha_pago' => $faker->dateTimeBetween($fecha_inicio, $now),
+                            'monto_total' => $precio_final,
                             'monto_abonado' => $monto,
-                            'referencia' => $faker->optional(0.5)->numerify('REF-########'),
+                            'monto_pendiente' => max(0, $monto_restante - $monto),
+                            'descuento_aplicado' => 0,
+                            'id_motivo_descuento' => null,
+                            'fecha_pago' => $fecha_pago,
+                            'periodo_inicio' => $periodo_inicio->copy(),
+                            'periodo_fin' => $periodo_inicio->copy()->addDays(30),
+                            'referencia_pago' => $faker->optional(0.5)->numerify('REF-########'),
+                            'id_estado' => $estado_pago,
                             'observaciones' => $faker->optional(0.1)->text(50),
                             'created_at' => $faker->dateTimeBetween('-12 months', 'now'),
                         ]);
