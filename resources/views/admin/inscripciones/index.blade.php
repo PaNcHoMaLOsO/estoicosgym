@@ -28,7 +28,7 @@
     <!-- Filtros -->
     <div class="card card-primary collapsed-card">
         <div class="card-header with-border">
-            <h3 class="card-title">Filtros</h3>
+            <h3 class="card-title"><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
             <div class="card-tools pull-right">
                 <button type="button" class="btn btn-box-tool" data-widget="collapse">
                     <i class="fa fa-plus"></i>
@@ -36,21 +36,53 @@
             </div>
         </div>
         <div class="card-body" style="display:none;">
-            <form method="GET" class="form-inline">
-                <div class="form-group mr-2">
-                    <label for="estado">Estado:</label>
-                    <select id="estado" name="estado" class="form-control ml-2">
-                        <option value="">-- Todos --</option>
-                        <option value="1">Activa</option>
-                        <option value="2">Próxima a Vencer</option>
-                        <option value="3">Vencida</option>
-                    </select>
+            <form method="GET" class="form-horizontal">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="cliente">Cliente:</label>
+                            <input type="text" id="cliente" name="cliente" class="form-control" 
+                                   placeholder="Nombre, apellido o email..." value="{{ request('cliente') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="estado">Estado:</label>
+                            <select id="estado" name="estado" class="form-control">
+                                <option value="">-- Todos --</option>
+                                @foreach($estados as $estado)
+                                    <option value="{{ $estado->id }}" {{ request('estado') == $estado->id ? 'selected' : '' }}>
+                                        {{ $estado->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="membresia">Membresía:</label>
+                            <select id="membresia" name="membresia" class="form-control">
+                                <option value="">-- Todas --</option>
+                                @foreach($membresias as $membresia)
+                                    <option value="{{ $membresia->id }}" {{ request('membresia') == $membresia->id ? 'selected' : '' }}>
+                                        {{ $membresia->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-secondary btn-block mt-2">
+                                <i class="fas fa-redo"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group mr-2">
-                    <label for="cliente">Cliente:</label>
-                    <input type="text" id="cliente" name="cliente" class="form-control ml-2" placeholder="Buscar cliente...">
-                </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filtrar</button>
             </form>
         </div>
     </div>
@@ -64,14 +96,26 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Cliente</th>
+                        <th>
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'cliente', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                                Cliente <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
                         <th>Estado</th>
                         <th>Pausa</th>
                         <th>Monto</th>
                         <th>Abonado</th>
                         <th>Pendiente</th>
-                        <th>Inicio</th>
-                        <th>Vencimiento</th>
+                        <th>
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_inicio', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                                Inicio <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                                Vencimiento <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
                         <th>Días Restantes</th>
                         <th>Acciones</th>
                     </tr>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pago;
 use App\Models\Inscripcion;
 use App\Models\MetodoPago;
+use App\Models\Estado;
 use Illuminate\Http\Request;
 
 class PagoController extends Controller
@@ -13,10 +14,44 @@ class PagoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $pagos = Pago::with(['inscripcion', 'metodoPago'])->orderBy('fecha_pago', 'desc')->paginate(15);
+        $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
+        
+        // Filtro por cliente
+        if ($request->filled('cliente')) {
+            $query->whereHas('inscripcion.cliente', function($q) use ($request) {
+                $q->where('nombres', 'like', '%' . $request->cliente . '%')
+                  ->orWhere('apellido_paterno', 'like', '%' . $request->cliente . '%');
+            });
+        }
+        
+        // Filtro por método de pago
+        if ($request->filled('metodo_pago')) {
+            $query->where('id_metodo_pago', $request->metodo_pago);
+        }
+        
+        // Filtro por estado
+        if ($request->filled('estado')) {
+            $query->where('id_estado', $request->estado);
+        }
+        
+        // Filtro por rango de fechas
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('fecha_pago', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+        
+        // Ordenamiento
+        $ordenar = $request->get('ordenar', 'fecha_pago');
+        $direccion = $request->get('direccion', 'desc');
+        $query->orderBy($ordenar, $direccion);
+        
+        $pagos = $query->paginate(15);
         $metodos_pago = MetodoPago::all();
+        
         return view('admin.pagos.index', compact('pagos', 'metodos_pago'));
     }
 

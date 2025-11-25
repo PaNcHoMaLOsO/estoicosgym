@@ -26,6 +26,55 @@
     @endif
 
     <div class="card">
+        <!-- Filtros -->
+        <div class="card card-outline card-info collapsed-card mb-3">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
+                <div class="card-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="display:none;">
+                <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-horizontal">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="cliente">Cliente:</label>
+                                <input type="text" id="cliente" name="cliente" class="form-control" 
+                                       placeholder="Nombre o apellido..." value="{{ request('cliente') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="metodo_pago">Método de Pago:</label>
+                                <select id="metodo_pago" name="metodo_pago" class="form-control">
+                                    <option value="">-- Todos --</option>
+                                    @foreach($metodos_pago as $metodo)
+                                        <option value="{{ $metodo->id }}" {{ request('metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                            {{ $metodo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary btn-block mt-2">
+                                    <i class="fas fa-redo"></i> Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
         <div class="card-header">
             <h3 class="card-title">Listado de Pagos</h3>
             <div class="card-tools">
@@ -35,20 +84,6 @@
             </div>
         </div>
         <div class="card-body">
-            <!-- Filtros -->
-            <div class="card card-outline card-info collapsed-card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <a data-toggle="collapse" href="#filtros">
-                            <i class="fas fa-filter"></i> Filtros
-                        </a>
-                    </h3>
-                </div>
-                <div id="filtros" class="collapse">
-                    <div class="card-body">
-                        <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-inline">
-                            <div class="form-group mr-2">
-                                <label for="id_inscripcion" class="mr-2">Inscripción:</label>
                                 <input type="number" name="id_inscripcion" id="id_inscripcion" 
                                        class="form-control" placeholder="ID Inscripción" 
                                        value="{{ request('id_inscripcion') }}">

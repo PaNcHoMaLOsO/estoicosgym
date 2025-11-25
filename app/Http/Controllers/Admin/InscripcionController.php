@@ -16,10 +16,49 @@ class InscripcionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $inscripciones = Inscripcion::with(['cliente', 'estado'])->paginate(15);
-        return view('admin.inscripciones.index', compact('inscripciones'));
+        $query = Inscripcion::with(['cliente', 'estado', 'membresia']);
+        
+        // Filtro por cliente
+        if ($request->filled('cliente')) {
+            $query->whereHas('cliente', function($q) use ($request) {
+                $q->where('nombres', 'like', '%' . $request->cliente . '%')
+                  ->orWhere('apellido_paterno', 'like', '%' . $request->cliente . '%')
+                  ->orWhere('email', 'like', '%' . $request->cliente . '%');
+            });
+        }
+        
+        // Filtro por estado
+        if ($request->filled('estado')) {
+            $query->where('id_estado', $request->estado);
+        }
+        
+        // Filtro por membresía
+        if ($request->filled('membresia')) {
+            $query->where('id_membresia', $request->membresia);
+        }
+        
+        // Filtro por rango de fechas
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('fecha_inicio', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+        
+        // Ordenamiento
+        $ordenar = $request->get('ordenar', 'fecha_inicio');
+        $direccion = $request->get('direccion', 'desc');
+        $query->orderBy($ordenar, $direccion);
+        
+        $inscripciones = $query->paginate(15);
+        
+        // Datos para los selects de filtro
+        $estados = Estado::where('categoria', 'membresia')->get();
+        $membresias = Membresia::all();
+        
+        return view('admin.inscripciones.index', compact('inscripciones', 'estados', 'membresias'));
     }
 
     /**
