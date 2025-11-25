@@ -147,6 +147,9 @@
                                 @enderror
                             </div>
                             <small class="text-muted">Se carga automáticamente al seleccionar membresía</small>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -206,6 +209,115 @@
             </form>
         </div>
     </div>
+
+    @if ($inscripcion->id_estado && in_array($inscripcion->id_estado, [1, 8, 9]))
+        <!-- Sección de Pausas -->
+        <div class="card mt-3">
+            <div class="card-header bg-info">
+                <h5 class="mb-0"><i class="fas fa-pause-circle"></i> Sistema de Pausas</h5>
+            </div>
+            <div class="card-body">
+                @if ($inscripcion->pausada)
+                    <!-- Membresía Pausada -->
+                    <div class="alert alert-warning">
+                        <strong>Estado Actual:</strong> Membresía pausada
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>Días de Pausa:</strong>
+                            <p class="text-muted">{{ $inscripcion->dias_pausa }} días</p>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Fecha de Inicio:</strong>
+                            <p class="text-muted">{{ $inscripcion->fecha_pausa_inicio?->format('d/m/Y') }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Fecha de Fin:</strong>
+                            <p class="text-muted">{{ $inscripcion->fecha_pausa_fin?->format('d/m/Y') }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Razón:</strong>
+                            <p class="text-muted">{{ $inscripcion->razon_pausa ?? 'No especificada' }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Pausas Realizadas:</strong>
+                            <p class="text-muted">{{ $inscripcion->pausas_realizadas }} / {{ $inscripcion->max_pausas_permitidas }}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-success" id="btnReanudar">
+                        <i class="fas fa-play-circle"></i> Reanudar Membresía
+                    </button>
+                @else
+                    <!-- Membresía Activa - Opción para Pausar -->
+                    <div class="alert alert-success">
+                        <strong>Estado Actual:</strong> Membresía activa
+                    </div>
+                    <div class="form-group">
+                        <label for="dias_pausa">Pausar por:</label>
+                        <div class="input-group mb-2">
+                            <select class="form-control" id="dias_pausa">
+                                <option value="">-- Seleccionar duración --</option>
+                                <option value="7">7 días</option>
+                                <option value="14">14 días (2 semanas)</option>
+                                <option value="30">30 días (1 mes)</option>
+                            </select>
+                            <div class="input-group-append">
+                                <button class="btn btn-warning" type="button" id="btnAbrirModalPausa" disabled>
+                                    <i class="fas fa-pause-circle"></i> Pausar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Pausas Disponibles:</strong>
+                            <p class="text-muted">{{ $inscripcion->max_pausas_permitidas - $inscripcion->pausas_realizadas }} / {{ $inscripcion->max_pausas_permitidas }}</p>
+                        </div>
+                    </div>
+                    @if ($inscripcion->pausas_realizadas >= $inscripcion->max_pausas_permitidas)
+                        <div class="alert alert-danger">
+                            <strong>No se pueden realizar más pausas.</strong> Se alcanzó el límite permitido.
+                        </div>
+                    @endif
+                @endif
+            </div>
+        </div>
+
+        <!-- Modal para Pausa -->
+        <div class="modal fade" id="modalPausa" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Pausar Membresía</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="formPausa">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="modalRazonPausa">Razón de la Pausa (Opcional)</label>
+                                <input type="text" class="form-control" id="modalRazonPausa" placeholder="Ej: Vacaciones, Viaje, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="modalDiasPausa">Duración:</label>
+                                <p id="modalDiasPausa" class="text-muted"></p>
+                            </div>
+                            <div id="resumenPausa" class="alert alert-info"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-warning" id="btnConfirmarPausa">
+                                <i class="fas fa-pause-circle"></i> Confirmar Pausa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 @stop
 
 @section('js')
@@ -279,6 +391,102 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('id_convenio').addEventListener('change', calcularInscripcion);
     document.getElementById('fecha_inicio').addEventListener('change', calcularInscripcion);
     document.getElementById('precio_base').addEventListener('change', calcularInscripcion);
+
+    // Sistema de Pausas
+    const btnAbrirModalPausa = document.getElementById('btnAbrirModalPausa');
+    const selectDiasPausa = document.getElementById('dias_pausa');
+    const btnConfirmarPausa = document.getElementById('btnConfirmarPausa');
+    const btnReanudar = document.getElementById('btnReanudar');
+
+    if (selectDiasPausa) {
+        selectDiasPausa.addEventListener('change', function() {
+            if (this.value) {
+                btnAbrirModalPausa.disabled = false;
+            } else {
+                btnAbrirModalPausa.disabled = true;
+            }
+        });
+    }
+
+    if (btnAbrirModalPausa) {
+        btnAbrirModalPausa.addEventListener('click', function() {
+            const dias = selectDiasPausa.value;
+            document.getElementById('modalDiasPausa').textContent = dias + ' días';
+            
+            const fechaFin = new Date();
+            fechaFin.setDate(fechaFin.getDate() + parseInt(dias));
+            const fechaFinFormato = fechaFin.toLocaleDateString('es-ES');
+            
+            document.getElementById('resumenPausa').innerHTML = `
+                <strong>La membresía estará pausada desde hoy hasta:</strong><br>
+                <strong>${fechaFinFormato}</strong>
+            `;
+            
+            $('#modalPausa').modal('show');
+        });
+    }
+
+    if (btnConfirmarPausa) {
+        btnConfirmarPausa.addEventListener('click', function() {
+            const dias = selectDiasPausa.value;
+            const razon = document.getElementById('modalRazonPausa').value;
+            const inscripcionId = {{ $inscripcion->id }};
+
+            fetch(`/api/pausas/${inscripcionId}/pausar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    dias: parseInt(dias),
+                    razon: razon || '',
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✓ Membresía pausada exitosamente');
+                    location.reload();
+                } else {
+                    alert('✗ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar la pausa');
+            });
+        });
+    }
+
+    if (btnReanudar) {
+        btnReanudar.addEventListener('click', function() {
+            if (confirm('¿Confirma que desea reanudar esta membresía?')) {
+                const inscripcionId = {{ $inscripcion->id }};
+
+                fetch(`/api/pausas/${inscripcionId}/reanudar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✓ Membresía reanudada exitosamente');
+                        location.reload();
+                    } else {
+                        alert('✗ Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la reanudación');
+                });
+            }
+        });
+    }
 });
 </script>
 @stop

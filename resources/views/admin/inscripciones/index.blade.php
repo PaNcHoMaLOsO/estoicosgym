@@ -66,6 +66,7 @@
                         <th>ID</th>
                         <th>Cliente</th>
                         <th>Estado</th>
+                        <th>Pausa</th>
                         <th>Inicio</th>
                         <th>Vencimiento</th>
                         <th>Días Restantes</th>
@@ -81,6 +82,13 @@
                             </td>
                             <td>
                                 {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
+                            </td>
+                            <td>
+                                @if($inscripcion->pausada)
+                                    <span class="badge bg-warning"><i class="fas fa-pause-circle"></i> {{ $inscripcion->dias_pausa }}d</span>
+                                @else
+                                    <span class="badge bg-success">Activo</span>
+                                @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
                             <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
@@ -114,7 +122,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">No hay inscripciones registradas</td>
+                            <td colspan="8" class="text-center text-muted">No hay inscripciones registradas</td>
                         </tr>
                     @endforelse
                 </tbody>
