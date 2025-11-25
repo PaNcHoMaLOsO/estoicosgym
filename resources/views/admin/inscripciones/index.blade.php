@@ -98,7 +98,7 @@
                             </td>
                             <td>
                                 @php
-                                    $abonado = $inscripcion->pagos()->where('id_estado', 102)->sum('monto');
+                                    $abonado = $inscripcion->pagos()->where('id_estado', 102)->sum('monto_abonado');
                                 @endphp
                                 <span class="text-success"><strong>${{ number_format($abonado, 2) }}</strong></span>
                             </td>
