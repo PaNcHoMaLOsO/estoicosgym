@@ -210,7 +210,12 @@
         </div>
     </div>
 
-    @if ($inscripcion->id_estado && in_array($inscripcion->id_estado, [1, 8, 9]))
+    @php
+        $estadoPermitidosPausa = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // Todos los estados de membresía
+        $puedeUsarPausas = in_array($inscripcion->id_estado, $estadoPermitidosPausa);
+    @endphp
+
+    @if ($puedeUsarPausas)
         <!-- Sección de Pausas -->
         <div class="card mt-3">
             <div class="card-header bg-info">
