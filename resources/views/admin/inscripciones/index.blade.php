@@ -196,7 +196,11 @@
             </table>
         </div>
         <div class="card-footer">
-            {{ $inscripciones->links() }}
+            <nav aria-label="Page navigation">
+                <div class="d-flex justify-content-center">
+                    {{ $inscripciones->links() }}
+                </div>
+            </nav>
         </div>
     </div>
 @stop

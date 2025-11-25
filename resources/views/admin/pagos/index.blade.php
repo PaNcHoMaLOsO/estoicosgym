@@ -192,7 +192,11 @@
     <!-- Paginación -->
     <div class="row mt-3">
         <div class="col-12">
-            {{ $pagos->links() }}
+            <nav aria-label="Page navigation">
+                <div class="d-flex justify-content-center">
+                    {{ $pagos->links() }}
+                </div>
+            </nav>
         </div>
     </div>
 @stop

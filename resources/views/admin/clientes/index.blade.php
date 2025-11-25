@@ -90,7 +90,11 @@
             </table>
         </div>
         <div class="card-footer">
-            {{ $clientes->links() }}
+            <nav aria-label="Page navigation">
+                <div class="d-flex justify-content-center">
+                    {{ $clientes->links() }}
+                </div>
+            </nav>
         </div>
     </div>
 @stop

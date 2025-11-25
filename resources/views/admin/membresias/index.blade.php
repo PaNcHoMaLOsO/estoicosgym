@@ -108,9 +108,11 @@
                 </table>
 
                 <!-- Pagination -->
-                <div class="d-flex justify-content-center">
-                    {{ $membresias->links() }}
-                </div>
+                <nav aria-label="Page navigation">
+                    <div class="d-flex justify-content-center mt-3">
+                        {{ $membresias->links() }}
+                    </div>
+                </nav>
             @else
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> No hay membresias registradas
