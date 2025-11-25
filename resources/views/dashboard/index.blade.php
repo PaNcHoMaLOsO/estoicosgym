@@ -6,6 +6,10 @@
     <h1>Dashboard</h1>
 @stop
 
+@section('css')
+    @vite('resources/css/app.css')
+@endsection
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -221,7 +225,8 @@
 @stop
 
 @section('js')
+    @vite('resources/js/app.js')
     <script>
-        console.log('Dashboard AdminLTE cargado correctamente');
+        console.log('Dashboard AdminLTE v3 cargado correctamente con Vite');
     </script>
 @stop
