@@ -17,6 +17,7 @@ class Estado extends Model
         'nombre',
         'descripcion',
         'categoria',
+        'color',
         'activo',
     ];
 

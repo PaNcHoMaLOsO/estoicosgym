@@ -82,6 +82,7 @@
                             <th>Inscripción</th>
                             <th>Fecha Pago</th>
                             <th>Monto Abonado</th>
+                            <th>Estado</th>
                             <th>Método Pago</th>
                             <th>Acciones</th>
                         </tr>
@@ -102,6 +103,7 @@
                                 </td>
                                 <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                                 <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
+                                <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
                                 <td>{{ $pago->metodoPago->nombre }}</td>
                                 <td>
                                     <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver">
@@ -122,7 +124,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">
+                                <td colspan="8" class="text-center text-muted">
                                     <i class="fas fa-inbox"></i> No hay pagos registrados
                                 </td>
                             </tr>

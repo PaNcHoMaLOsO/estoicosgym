@@ -34,13 +34,7 @@
 
                         <dt class="col-sm-4">Estado:</dt>
                         <dd class="col-sm-8">
-                            @if($inscripcion->estado->nombre === 'Activa')
-                                <span class="badge badge-success">{{ $inscripcion->estado->nombre }}</span>
-                            @elseif($inscripcion->estado->nombre === 'Por Vencer')
-                                <span class="badge badge-warning">{{ $inscripcion->estado->nombre }}</span>
-                            @else
-                                <span class="badge badge-danger">{{ $inscripcion->estado->nombre }}</span>
-                            @endif
+                            {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
                         </dd>
 
                         <dt class="col-sm-4">Fecha Inicio:</dt>
@@ -116,6 +110,7 @@
                                     <th>ID</th>
                                     <th>Fecha</th>
                                     <th>Monto</th>
+                                    <th>Estado</th>
                                     <th>Método</th>
                                 </tr>
                             </thead>
@@ -127,6 +122,7 @@
                                         </td>
                                         <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                                         <td>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</td>
+                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
                                         <td>{{ $pago->metodo_pago->nombre ?? 'N/A' }}</td>
                                     </tr>
                                 @endforeach

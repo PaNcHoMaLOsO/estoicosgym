@@ -16,6 +16,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Activa',
                 'descripcion' => 'Membresía vigente y activa',
                 'categoria' => 'inscripcion',
+                'color' => 'success',
                 'activo' => true,
             ],
             [
@@ -23,6 +24,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Vencida',
                 'descripcion' => 'Membresía expirada',
                 'categoria' => 'inscripcion',
+                'color' => 'danger',
                 'activo' => true,
             ],
             [
@@ -30,6 +32,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Pausada',
                 'descripcion' => 'Membresía temporalmente suspendida',
                 'categoria' => 'inscripcion',
+                'color' => 'warning',
                 'activo' => true,
             ],
             [
@@ -37,6 +40,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Cancelada',
                 'descripcion' => 'Membresía cancelada por el cliente',
                 'categoria' => 'inscripcion',
+                'color' => 'secondary',
                 'activo' => true,
             ],
             [
@@ -44,6 +48,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Pendiente',
                 'descripcion' => 'Pago pendiente, inicio futuro',
                 'categoria' => 'inscripcion',
+                'color' => 'info',
                 'activo' => true,
             ],
             // Estados de pagos (300-399)
@@ -52,6 +57,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Pendiente',
                 'descripcion' => 'Pago incompleto o por realizar',
                 'categoria' => 'pago',
+                'color' => 'warning',
                 'activo' => true,
             ],
             [
@@ -59,6 +65,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Pagado',
                 'descripcion' => 'Pago completado',
                 'categoria' => 'pago',
+                'color' => 'success',
                 'activo' => true,
             ],
             [
@@ -66,6 +73,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Parcial',
                 'descripcion' => 'Abono realizado, resta saldo',
                 'categoria' => 'pago',
+                'color' => 'info',
                 'activo' => true,
             ],
             [
@@ -73,6 +81,7 @@ class EstadoSeeder extends Seeder
                 'nombre' => 'Vencido',
                 'descripcion' => 'Pago no realizado en fecha límite',
                 'categoria' => 'pago',
+                'color' => 'danger',
                 'activo' => true,
             ],
         ]);

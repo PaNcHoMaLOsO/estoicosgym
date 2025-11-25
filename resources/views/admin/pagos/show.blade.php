@@ -33,7 +33,12 @@
                             <span class="badge badge-info">{{ $pago->metodoPago->nombre }}</span>
                         </dd>
 
-                        @if($pago->referencia)
+                        <dt class="col-sm-5">Estado:</dt>
+                        <dd class="col-sm-7">
+                            {!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}
+                        </dd>
+
+                        @if($pago->referencia_pago)
                             <dt class="col-sm-5">Referencia:</dt>
                             <dd class="col-sm-7">{{ $pago->referencia }}</dd>
                         @endif
@@ -71,13 +76,7 @@
 
                         <dt class="col-sm-5">Estado:</dt>
                         <dd class="col-sm-7">
-                            @if($pago->inscripcion->estado->nombre === 'Activa')
-                                <span class="badge badge-success">{{ $pago->inscripcion->estado->nombre }}</span>
-                            @elseif($pago->inscripcion->estado->nombre === 'Por Vencer')
-                                <span class="badge badge-warning">{{ $pago->inscripcion->estado->nombre }}</span>
-                            @else
-                                <span class="badge badge-danger">{{ $pago->inscripcion->estado->nombre }}</span>
-                            @endif
+                            {!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->inscripcion->estado) !!}
                         </dd>
 
                         <dt class="col-sm-5">Inicio:</dt>

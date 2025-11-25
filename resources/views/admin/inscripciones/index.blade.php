@@ -80,13 +80,7 @@
                                 <strong>{{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}</strong>
                             </td>
                             <td>
-                                @if($inscripcion->id_estado == 1)
-                                    <span class="badge bg-success">Activa</span>
-                                @elseif($inscripcion->id_estado == 2)
-                                    <span class="badge bg-warning">Por Vencer</span>
-                                @else
-                                    <span class="badge bg-danger">Vencida</span>
-                                @endif
+                                {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
                             <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
