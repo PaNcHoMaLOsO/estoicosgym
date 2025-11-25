@@ -58,10 +58,7 @@
                                 <td>{{ $membresia->id }}</td>
                                 <td>{{ $membresia->nombre }}</td>
                                 <td>
-                                    @if ($membresia->duracion_meses > 0)
-                                        {{ $membresia->duracion_meses }} meses
-                                    @endif
-                                    {{ $membresia->duracion_dias }} días
+                                    <span class="badge badge-info">{{ $membresia->duracion_dias }} días</span>
                                 </td>
                                 <td>
                                     @php
