@@ -6,10 +6,6 @@
     <h1>Dashboard</h1>
 @stop
 
-@section('css')
-    @vite('resources/css/app.css')
-@endsection
-
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -225,8 +221,9 @@
 @stop
 
 @section('js')
-    @vite('resources/js/app.js')
+    <link rel="stylesheet" href="{{ asset('build/style.css') }}">
+    <script src="{{ asset('build/app.js') }}" defer></script>
     <script>
-        console.log('Dashboard AdminLTE v3 cargado correctamente con Vite');
+        console.log('Dashboard AdminLTE v3 cargado correctamente');
     </script>
 @stop
