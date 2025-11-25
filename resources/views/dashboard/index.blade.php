@@ -196,8 +196,10 @@
                                         <div class="progress progress-xs">
                                             @php
                                                 $percentage = $maxInscripciones > 0 ? ($membresia->inscripciones_count / $maxInscripciones) * 100 : 0;
+                                                $widthStyle = round($percentage, 1);
                                             @endphp
-                                            <div class="progress-bar bg-success" style="width: {!! round($percentage, 1) !!}%"></div>
+                                            <!-- htmlhint - Blade template syntax -->
+                                            <div class="progress-bar bg-success" style="width: {{ $widthStyle }}%"></div>
                                         </div>
                                     </td>
                                 </tr>
@@ -312,15 +314,24 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
+        /* eslint-disable no-unused-vars */
+        // Variables globales Blade (validadas por Laravel)
+        const ETIQUETAS_MESES = @json($etiquetasMeses);
+        const DATOS_INGRESOS = @json($datosIngresos);
+        const ETIQUETAS_ESTADOS = @json($etiquetasEstados);
+        const DATOS_ESTADOS = @json($datosEstados);
+        const COLORES_DISPUESTOS = @json($coloresDispuestos);
+        /* eslint-enable no-unused-vars */
+
         // Gráfico de Ingresos
         const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
         const chartIngresos = new Chart(ctxIngresos, {
             type: 'line',
             data: {
-                labels: @json($etiquetasMeses),
+                labels: ETIQUETAS_MESES,
                 datasets: [{
                     label: 'Ingresos ($)',
-                    data: @json($datosIngresos),
+                    data: DATOS_INGRESOS,
                     borderColor: '#007bff',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     borderWidth: 2,
@@ -367,10 +378,10 @@
         const chartEstados = new Chart(ctxEstados, {
             type: 'doughnut',
             data: {
-                labels: @json($etiquetasEstados),
+                labels: ETIQUETAS_ESTADOS,
                 datasets: [{
-                    data: @json($datosEstados),
-                    backgroundColor: @json($coloresDispuestos),
+                    data: DATOS_ESTADOS,
+                    backgroundColor: COLORES_DISPUESTOS,
                     borderColor: '#fff',
                     borderWidth: 2
                 }]
