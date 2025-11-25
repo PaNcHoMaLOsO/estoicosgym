@@ -161,17 +161,17 @@
                                 <td>{{ $pago->metodoPago->nombre }}</td>
                                 <td>
                                     <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye fa-fw"></i>
                                     </a>
                                     <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-sm btn-warning" title="Editar">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit fa-fw"></i>
                                     </a>
                                     <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" 
                                                 onclick="return confirm('¿Eliminar este pago?')" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>
                                 </td>

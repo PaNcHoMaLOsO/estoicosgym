@@ -63,17 +63,17 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.metodos-pago.show', $metodo) }}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{{ route('admin.metodos-pago.show', $metodo) }}" class="btn btn-sm btn-info" title="Ver">
+                                        <i class="fas fa-eye fa-fw"></i>
                                     </a>
-                                    <a href="{{ route('admin.metodos-pago.edit', $metodo) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ route('admin.metodos-pago.edit', $metodo) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit fa-fw"></i>
                                     </a>
                                     <form action="{{ route('admin.metodos-pago.destroy', $metodo) }}" method="POST" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro?')">
-                                            <i class="fas fa-trash"></i>
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro?')" title="Eliminar">
+                                            <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>
                                 </td>

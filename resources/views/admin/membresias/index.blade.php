@@ -85,11 +85,11 @@
                                 <td>
                                     <a href="{{ route('admin.membresias.show', $membresia) }}" 
                                        class="btn btn-sm btn-info" title="Ver">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye fa-fw"></i>
                                     </a>
                                     <a href="{{ route('admin.membresias.edit', $membresia) }}" 
                                        class="btn btn-sm btn-warning" title="Editar">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit fa-fw"></i>
                                     </a>
                                     <form action="{{ route('admin.membresias.destroy', $membresia) }}" 
                                           method="POST" style="display:inline;">
@@ -98,7 +98,7 @@
                                         <button type="submit" class="btn btn-sm btn-danger" 
                                                 onclick="return confirm('¿Estás seguro? Se eliminarán todos los registros asociados.')" 
                                                 title="Eliminar">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>
                                 </td>
