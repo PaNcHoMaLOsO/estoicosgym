@@ -134,7 +134,7 @@
                                 @if($inscripcion->pausada)
                                     <span class="badge bg-warning"><i class="fas fa-pause-circle fa-fw"></i> Pausado</span>
                                 @else
-                                    <span class="badge bg-success"><i class="fas fa-check-circle fa-fw"></i> En pausa</span>
+                                    <span class="badge bg-success"><i class="fas fa-play-circle fa-fw"></i> Activo</span>
                                 @endif
                             </td>
                             <td>
