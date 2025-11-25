@@ -1,3 +1,4 @@
+{{-- /* eslint-disable */ --}}
 @extends('adminlte::page')
 
 @section('title', 'Editar Pago - EstóicosGym')
