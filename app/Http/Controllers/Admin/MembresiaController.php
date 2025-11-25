@@ -99,7 +99,9 @@ class MembresiaController extends Controller
         $membresia->load('precios');
         $precioActual = $membresia->precios()
             ->where('activo', true)
-            ->orWhere('fecha_vigencia_desde', '<=', now())
+            ->orWhere(function($q) {
+                $q->where('fecha_vigencia_desde', '<=', now());
+            })
             ->orderBy('fecha_vigencia_desde', 'desc')
             ->first();
 

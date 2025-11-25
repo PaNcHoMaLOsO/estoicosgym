@@ -23,9 +23,12 @@ class InscripcionApiController extends Controller
         }
 
         // Obtener precio actual vigente
-        $precioActual = PrecioMembresia::where('id_membresia', $id)
-            ->where('vigencia_desde', '<=', now())
-            ->orderBy('vigencia_desde', 'desc')
+        $precioActual = $membresia->precios()
+            ->where(function($q) {
+                $q->where('activo', true)
+                    ->orWhere('fecha_vigencia_desde', '<=', now());
+            })
+            ->orderBy('fecha_vigencia_desde', 'desc')
             ->first();
 
         return response()->json([
@@ -33,8 +36,8 @@ class InscripcionApiController extends Controller
             'nombre' => $membresia->nombre,
             'duracion_meses' => $membresia->duracion_meses,
             'duracion_dias' => $membresia->duracion_dias,
-            'precio' => $precioActual ? $precioActual->precio_normal : 0,
-            'id_precio' => $precioActual ? $precioActual->id : null,
+            'precio_normal' => $precioActual?->precio_normal ?? 0,
+            'id_precio' => $precioActual?->id ?? null,
         ]);
     }
 

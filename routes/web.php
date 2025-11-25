@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MetodoPagoController;
 use App\Http\Controllers\Admin\MotivoDescuentoController;
 use App\Http\Controllers\Api\InscripcionApiController;
 use App\Http\Controllers\Api\SearchApiController;
+use App\Http\Controllers\Api\MembresiaApiController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -49,8 +50,10 @@ Route::prefix('api')->group(function () {
     Route::get('/clientes/search', [SearchApiController::class, 'searchClientes']);
     Route::get('/inscripciones/search', [SearchApiController::class, 'searchInscripciones']);
     
-    // Obtener datos de membresía
-    Route::get('/membresias/{id}', [InscripcionApiController::class, 'showMembresia']);
+    // Membresias
+    Route::get('/membresias', [MembresiaApiController::class, 'index']);
+    Route::get('/membresias/search', [MembresiaApiController::class, 'search']);
+    Route::get('/membresias/{id}', [MembresiaApiController::class, 'show']);
     
     // Obtener descuento de convenio
     Route::get('/convenios/{id}/descuento', [InscripcionApiController::class, 'getConvenioDescuento']);
