@@ -113,7 +113,8 @@
                         <div class="form-group">
                             <label for="fecha_inicio">Fecha Inicio <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
-                                   id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', $inscripcion->fecha_inicio->format('Y-m-d')) }}" required>
+                                   id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', $inscripcion->fecha_inicio->format('Y-m-d')) }}" 
+                                   readonly required>
                             @error('fecha_inicio')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
@@ -123,10 +124,12 @@
                         <div class="form-group">
                             <label for="fecha_vencimiento">Fecha Vencimiento <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_vencimiento') is-invalid @enderror" 
-                                   id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento', $inscripcion->fecha_vencimiento->format('Y-m-d')) }}" required>
+                                   id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento', $inscripcion->fecha_vencimiento->format('Y-m-d')) }}" 
+                                   readonly required>
                             @error('fecha_vencimiento')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
+                            <small class="text-muted">Se calcula automáticamente</small>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -138,14 +141,12 @@
                                 </div>
                                 <input type="number" class="form-control @error('precio_base') is-invalid @enderror" 
                                        id="precio_base" name="precio_base" step="0.01" min="0.01" 
-                                       value="{{ old('precio_base', $inscripcion->precio_base) }}" placeholder="0.00" required>
+                                       value="{{ old('precio_base', $inscripcion->precio_base) }}" placeholder="0.00" readonly required>
                                 @error('precio_base')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>
-                        </div>
-                    </div>
-                </div>
+                            <small class="text-muted">Se carga automáticamente al seleccionar membresía</small>
 
                 <div class="row">
                     <div class="col-md-6">

@@ -33,7 +33,7 @@ class InscripcionApiController extends Controller
             'nombre' => $membresia->nombre,
             'duracion_meses' => $membresia->duracion_meses,
             'duracion_dias' => $membresia->duracion_dias,
-            'precio' => $precioActual ? $precioActual->precio : 0,
+            'precio' => $precioActual ? $precioActual->precio_normal : 0,
             'id_precio' => $precioActual ? $precioActual->id : null,
         ]);
     }

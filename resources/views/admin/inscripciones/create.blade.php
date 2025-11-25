@@ -119,20 +119,24 @@
                         <div class="form-group">
                             <label for="fecha_inicio">Fecha Inicio <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
-                                   id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}" required>
+                                   id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}" 
+                                   readonly required>
                             @error('fecha_inicio')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
+                            <small class="text-muted">Se completa automáticamente con la fecha de hoy</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="fecha_vencimiento">Fecha Vencimiento <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_vencimiento') is-invalid @enderror" 
-                                   id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}" required>
+                                   id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}" 
+                                   readonly required>
                             @error('fecha_vencimiento')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
+                            <small class="text-muted">Se calcula automáticamente</small>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -144,11 +148,12 @@
                                 </div>
                                 <input type="number" class="form-control @error('precio_base') is-invalid @enderror" 
                                        id="precio_base" name="precio_base" step="0.01" min="0.01" 
-                                       value="{{ old('precio_base') }}" placeholder="0.00" required>
+                                       value="{{ old('precio_base') }}" placeholder="0.00" readonly required>
                                 @error('precio_base')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>
+                            <small class="text-muted">Se carga automáticamente al seleccionar membresía</small>
                         </div>
                     </div>
                 </div>
@@ -252,6 +257,26 @@ document.addEventListener('DOMContentLoaded', function() {
         minimumInputLength: 2,
     });
 
+    // Cargar precio al seleccionar membresía
+    async function cargarPrecioMembresia() {
+        if (!idMembresia.value) {
+            precioBase.value = '';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/membresias/${idMembresia.value}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                precioBase.value = data.precio || 0;
+                calcularInscripcion(); // Recalcular con el nuevo precio
+            }
+        } catch (error) {
+            console.error('Error al cargar precio:', error);
+        }
+    }
+
     // Función para calcular automáticamente
     async function calcularInscripcion() {
         if (!idMembresia.value || !fechaInicio.value || !precioBase.value) {
@@ -277,18 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 fechaVencimiento.value = data.fecha_vencimiento;
-                descuentoAplicado.value = data.descuento_aplicado;
-                
-                // Mostrar notificación visual
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-success alert-dismissible fade show';
-                alert.innerHTML = `
-                    <i class="fas fa-check-circle"></i> Fecha y descuento calculados automáticamente.
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                `;
-                form.parentElement.insertBefore(alert, form);
-                
-                setTimeout(() => alert.remove(), 3000);
+                if (descuentoAplicado) {
+                    descuentoAplicado.value = data.descuento_aplicado;
+                }
             }
         } catch (error) {
             console.error('Error al calcular:', error);
@@ -296,10 +312,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Escuchar cambios
-    idMembresia.addEventListener('change', calcularInscripcion);
+    idMembresia.addEventListener('change', cargarPrecioMembresia);
     idConvenio.addEventListener('change', calcularInscripcion);
     fechaInicio.addEventListener('change', calcularInscripcion);
-    precioBase.addEventListener('blur', calcularInscripcion);
 });
 </script>
 @stop
