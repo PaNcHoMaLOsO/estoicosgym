@@ -84,11 +84,15 @@
                             <dd class="col-sm-8">{{ $membresia->descripcion }}</dd>
                         @endif
 
-                        <dt class="col-sm-4">Creado:</dt>
-                        <dd class="col-sm-8">{{ $membresia->created_at->format('d/m/Y H:i') }}</dd>
+                        @if ($membresia->created_at)
+                            <dt class="col-sm-4">Creado:</dt>
+                            <dd class="col-sm-8">{{ $membresia->created_at->format('d/m/Y H:i') }}</dd>
+                        @endif
 
-                        <dt class="col-sm-4">Actualizado:</dt>
-                        <dd class="col-sm-8">{{ $membresia->updated_at->format('d/m/Y H:i') }}</dd>
+                        @if ($membresia->updated_at)
+                            <dt class="col-sm-4">Actualizado:</dt>
+                            <dd class="col-sm-8">{{ $membresia->updated_at->format('d/m/Y H:i') }}</dd>
+                        @endif
                     </dl>
                 </div>
             </div>
@@ -160,7 +164,7 @@
                             <tbody>
                                 @foreach ($historialPrecios as $cambio)
                                     <tr>
-                                        <td>{{ $cambio->created_at->format('d/m/Y H:i') }}</td>
+                                        <td>{{ $cambio->created_at ? $cambio->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
                                         <td>
                                             <span class="badge badge-secondary">{{ $cambio->usuario_cambio }}</span>
                                         </td>
