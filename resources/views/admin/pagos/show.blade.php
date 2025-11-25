@@ -30,7 +30,7 @@
 
                         <dt class="col-sm-5">Método Pago:</dt>
                         <dd class="col-sm-7">
-                            <span class="badge badge-info">{{ $pago->metodo_pago->nombre }}</span>
+                            <span class="badge badge-info">{{ $pago->metodoPago->nombre }}</span>
                         </dd>
 
                         @if($pago->referencia)

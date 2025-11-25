@@ -102,7 +102,7 @@
                                 </td>
                                 <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                                 <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
-                                <td>{{ $pago->metodo_pago->nombre }}</td>
+                                <td>{{ $pago->metodoPago->nombre }}</td>
                                 <td>
                                     <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver">
                                         <i class="fas fa-eye"></i>
