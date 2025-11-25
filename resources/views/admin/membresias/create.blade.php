@@ -28,23 +28,38 @@
                         </div>
 
                         <!-- Duración -->
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="duracion_meses">Duración (Meses)</label>
+                        <div class="form-group">
+                            <label for="duracion_meses">Duración (Meses) *</label>
+                            <div class="input-group">
                                 <input type="number" class="form-control @error('duracion_meses') is-invalid @enderror" 
-                                       id="duracion_meses" name="duracion_meses" value="{{ old('duracion_meses', 0) }}" min="0">
-                                @error('duracion_meses')
-                                    <span class="invalid-feedback">{{ $message }}</span>
-                                @enderror
+                                       id="duracion_meses" name="duracion_meses" 
+                                       value="{{ old('duracion_meses', 0) }}" min="0" placeholder="0" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar-alt"></i> meses
+                                    </span>
+                                </div>
                             </div>
-                            <div class="form-group col-md-6">
-                                <label for="duracion_dias">Duración (Días) *</label>
-                                <input type="number" class="form-control @error('duracion_dias') is-invalid @enderror" 
-                                       id="duracion_dias" name="duracion_dias" value="{{ old('duracion_dias') }}" min="1" required>
-                                @error('duracion_dias')
-                                    <span class="invalid-feedback">{{ $message }}</span>
-                                @enderror
+                            @error('duracion_meses')
+                                <span class="invalid-feedback d-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duracion_dias_calculado">Duración Total (Días)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" 
+                                       id="duracion_dias_calculado" readonly>
+                                <input type="hidden" id="duracion_dias" name="duracion_dias">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i> días
+                                    </span>
+                                </div>
                             </div>
+                            <small class="form-text text-muted">
+                                Se calcula automáticamente: (Meses × 30) + 5 días
+                            </small>
                         </div>
 
                         <!-- Descripción -->
@@ -89,4 +104,29 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('js')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const duracionMeses = document.getElementById('duracion_meses');
+    const duracionDiasCalculado = document.getElementById('duracion_dias_calculado');
+    const duracionDiasHidden = document.getElementById('duracion_dias');
+
+    // Función para calcular días
+    function calcularDias() {
+        const meses = parseInt(duracionMeses.value) || 0;
+        const dias = (meses * 30) + 5; // Cada mes cuenta como 30 días + 5 días adicionales
+        duracionDiasCalculado.value = dias;
+        duracionDiasHidden.value = dias;
+    }
+
+    // Escuchar cambios en meses
+    duracionMeses.addEventListener('change', calcularDias);
+    duracionMeses.addEventListener('input', calcularDias);
+
+    // Calcular al cargar la página
+    calcularDias();
+});
+</script>
 @endsection

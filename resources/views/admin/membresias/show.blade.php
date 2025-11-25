@@ -42,10 +42,12 @@
 
                         <dt class="col-sm-4">Duración:</dt>
                         <dd class="col-sm-8">
+                            <span class="badge badge-primary" style="font-size: 1em;">
+                                {{ $membresia->duracion_dias }} días
+                            </span>
                             @if ($membresia->duracion_meses > 0)
-                                {{ $membresia->duracion_meses }} mes(es)
+                                <small class="text-muted">({{ $membresia->duracion_meses }} meses)</small>
                             @endif
-                            {{ $membresia->duracion_dias }} día(s)
                         </dd>
 
                         @php
