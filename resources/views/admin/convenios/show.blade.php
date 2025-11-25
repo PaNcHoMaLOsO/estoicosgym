@@ -30,14 +30,36 @@
                         <dt class="col-sm-4">Nombre:</dt>
                         <dd class="col-sm-8"><strong>{{ $convenio->nombre }}</strong></dd>
 
+                        <dt class="col-sm-4">Tipo:</dt>
+                        <dd class="col-sm-8">
+                            @php
+                                $tipos = [
+                                    'institucion_educativa' => 'Institución Educativa',
+                                    'empresa' => 'Empresa',
+                                    'organizacion' => 'Organización',
+                                    'otro' => 'Otro'
+                                ];
+                            @endphp
+                            <span class="badge bg-info">{{ $tipos[$convenio->tipo] ?? $convenio->tipo }}</span>
+                        </dd>
+
                         <dt class="col-sm-4">Descripción:</dt>
                         <dd class="col-sm-8">{{ $convenio->descripcion ?? 'N/A' }}</dd>
 
-                        <dt class="col-sm-4">Descuento (%):</dt>
-                        <dd class="col-sm-8">{{ $convenio->descuento_porcentaje }}%</dd>
-
-                        <dt class="col-sm-4">Descuento (Monto):</dt>
-                        <dd class="col-sm-8">${{ number_format($convenio->descuento_cantidad ?? 0, 2) }}</dd>
+                        <dt class="col-sm-4">Contacto:</dt>
+                        <dd class="col-sm-8">
+                            @if($convenio->contacto_nombre)
+                                <strong>{{ $convenio->contacto_nombre }}</strong><br>
+                                @if($convenio->contacto_telefono)
+                                    <i class="fas fa-phone"></i> {{ $convenio->contacto_telefono }}<br>
+                                @endif
+                                @if($convenio->contacto_email)
+                                    <i class="fas fa-envelope"></i> <a href="mailto:{{ $convenio->contacto_email }}">{{ $convenio->contacto_email }}</a>
+                                @endif
+                            @else
+                                No disponible
+                            @endif
+                        </dd>
 
                         <dt class="col-sm-4">Estado:</dt>
                         <dd class="col-sm-8">

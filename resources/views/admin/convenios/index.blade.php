@@ -36,8 +36,8 @@
                         <tr>
                             <th>ID</th>
                             <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Descuento %</th>
+                            <th>Tipo</th>
+                            <th>Contacto</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -47,8 +47,25 @@
                             <tr>
                                 <td>{{ $convenio->id }}</td>
                                 <td><strong>{{ $convenio->nombre }}</strong></td>
-                                <td>{{ Str::limit($convenio->descripcion, 50) }}</td>
-                                <td>{{ $convenio->descuento_porcentaje }}%</td>
+                                <td>
+                                    @php
+                                        $tipos = [
+                                            'institucion_educativa' => 'Institución Educativa',
+                                            'empresa' => 'Empresa',
+                                            'organizacion' => 'Organización',
+                                            'otro' => 'Otro'
+                                        ];
+                                    @endphp
+                                    <span class="badge bg-info">{{ $tipos[$convenio->tipo] ?? $convenio->tipo }}</span>
+                                </td>
+                                <td>
+                                    @if($convenio->contacto_nombre)
+                                        {{ $convenio->contacto_nombre }}<br>
+                                        <small>{{ $convenio->contacto_telefono ?? '' }}</small>
+                                    @else
+                                        <em>-</em>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($convenio->activo)
                                         <span class="badge bg-success">Activo</span>

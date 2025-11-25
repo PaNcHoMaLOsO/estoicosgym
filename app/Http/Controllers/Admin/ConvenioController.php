@@ -31,10 +31,12 @@ class ConvenioController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:convenios',
-            'descripcion' => 'nullable|string|max:500',
-            'descuento_porcentaje' => 'required|numeric|min:0|max:100',
-            'descuento_cantidad' => 'nullable|numeric|min:0',
+            'nombre' => 'required|string|max:100|unique:convenios',
+            'tipo' => 'required|in:institucion_educativa,empresa,organizacion,otro',
+            'descripcion' => 'nullable|string',
+            'contacto_nombre' => 'nullable|string|max:100',
+            'contacto_telefono' => 'nullable|string|max:20',
+            'contacto_email' => 'nullable|email|max:100',
             'activo' => 'boolean',
         ]);
 
@@ -67,10 +69,12 @@ class ConvenioController extends Controller
     public function update(Request $request, Convenio $convenio)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:convenios,nombre,' . $convenio->id,
-            'descripcion' => 'nullable|string|max:500',
-            'descuento_porcentaje' => 'required|numeric|min:0|max:100',
-            'descuento_cantidad' => 'nullable|numeric|min:0',
+            'nombre' => 'required|string|max:100|unique:convenios,nombre,' . $convenio->id,
+            'tipo' => 'required|in:institucion_educativa,empresa,organizacion,otro',
+            'descripcion' => 'nullable|string',
+            'contacto_nombre' => 'nullable|string|max:100',
+            'contacto_telefono' => 'nullable|string|max:20',
+            'contacto_email' => 'nullable|email|max:100',
             'activo' => 'boolean',
         ]);
 
