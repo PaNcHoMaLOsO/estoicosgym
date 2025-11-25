@@ -2,6 +2,11 @@
 
 @section('title', 'Editar Pago - EstóicosGym')
 
+@section('css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
@@ -38,14 +43,12 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_inscripcion">Inscripción <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_inscripcion') is-invalid @enderror" 
-                                    id="id_inscripcion" name="id_inscripcion" required>
+                            <select class="form-control select2-inscripcion @error('id_inscripcion') is-invalid @enderror" 
+                                    id="id_inscripcion" name="id_inscripcion" required style="width: 100%;">
                                 <option value="">-- Seleccionar Inscripción --</option>
-                                @foreach($inscripciones as $inscripcion)
-                                    <option value="{{ $inscripcion->id }}" {{ old('id_inscripcion', $pago->id_inscripcion) == $inscripcion->id ? 'selected' : '' }}>
-                                        #{{ $inscripcion->id }} - {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
-                                    </option>
-                                @endforeach
+                                <option value="{{ $pago->id_inscripcion }}" selected>
+                                    #{{ $pago->inscripcion->id }} - {{ $pago->inscripcion->cliente->nombres }} ({{ $pago->inscripcion->estado->nombre }})
+                                </option>
                             </select>
                             @error('id_inscripcion')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -119,4 +122,33 @@
             </form>
         </div>
     </div>
+@stop
+
+@section('js')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Select2 para Inscripción
+    $('.select2-inscripcion').select2({
+        theme: 'bootstrap-5',
+        allowClear: true,
+        ajax: {
+            url: '/api/inscripciones/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || '',
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data,
+                };
+            },
+        },
+        minimumInputLength: 2,
+    });
+});
+</script>
 @stop
