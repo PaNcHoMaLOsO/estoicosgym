@@ -328,8 +328,10 @@
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-// Variables globales para Blade
+/* eslint-disable no-unused-vars */
+// Variables globales para Blade (validadas por Laravel)
 const INSCRIPCION_ID = {{ $inscripcion->id }};
+/* eslint-enable no-unused-vars */
 
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar Select2 para Cliente
