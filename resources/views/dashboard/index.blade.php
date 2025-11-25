@@ -140,14 +140,14 @@
                                     <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
                                     <td>
                                         @php
-                                            $dias = now()->diffInDays($inscripcion->fecha_vencimiento);
+                                            $dias = (int) now()->diffInDays($inscripcion->fecha_vencimiento);
                                         @endphp
                                         @if($dias <= 7)
-                                            <span class="badge badge-danger">{{ $dias }}</span>
+                                            <span class="badge badge-danger">{{ $dias }} días</span>
                                         @elseif($dias <= 14)
-                                            <span class="badge badge-warning">{{ $dias }}</span>
+                                            <span class="badge badge-warning">{{ $dias }} días</span>
                                         @else
-                                            <span class="badge badge-info">{{ $dias }}</span>
+                                            <span class="badge badge-info">{{ $dias }} días</span>
                                         @endif
                                     </td>
                                 </tr>
