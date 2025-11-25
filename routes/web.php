@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\MotivoDescuentoController;
 use App\Http\Controllers\Api\InscripcionApiController;
 use App\Http\Controllers\Api\SearchApiController;
 use App\Http\Controllers\Api\MembresiaApiController;
+use App\Http\Controllers\Api\ClienteApiController;
+use App\Http\Controllers\Api\DashboardApiController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -46,9 +48,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 // API Routes - Grupo con prefijo 'api'
 Route::prefix('api')->group(function () {
+    // Dashboard
+    Route::get('/dashboard/stats', [DashboardApiController::class, 'stats']);
+    Route::get('/dashboard/ingresos-mes', [DashboardApiController::class, 'ingresosPorMes']);
+    Route::get('/dashboard/inscripciones-estado', [DashboardApiController::class, 'inscripcionesPorEstado']);
+    Route::get('/dashboard/membresias-populares', [DashboardApiController::class, 'membresiasPopulares']);
+    Route::get('/dashboard/metodos-pago', [DashboardApiController::class, 'metodosPagoPopulares']);
+    Route::get('/dashboard/ultimos-pagos', [DashboardApiController::class, 'ultimosPagos']);
+    Route::get('/dashboard/proximas-vencer', [DashboardApiController::class, 'proximasAVencer']);
+    Route::get('/dashboard/resumen-clientes', [DashboardApiController::class, 'resumenClientes']);
+    
     // Búsqueda
     Route::get('/clientes/search', [SearchApiController::class, 'searchClientes']);
     Route::get('/inscripciones/search', [SearchApiController::class, 'searchInscripciones']);
+    
+    // Clientes
+    Route::get('/clientes', [ClienteApiController::class, 'index']);
+    Route::get('/clientes/{id}', [ClienteApiController::class, 'show']);
+    Route::get('/clientes/{id}/stats', [ClienteApiController::class, 'stats']);
     
     // Membresias
     Route::get('/membresias', [MembresiaApiController::class, 'index']);

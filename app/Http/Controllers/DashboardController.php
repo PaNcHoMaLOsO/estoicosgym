@@ -17,28 +17,40 @@ class DashboardController extends Controller
     {
         $hoy = Carbon::now();
         
-        // Obtener ID del estado "Activa"
+        // Obtener IDs de estados
         $estadoActiva = Estado::where('nombre', 'Activa')->first();
         $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 1;
         
         // Estadísticas principales
         $totalClientes = Cliente::where('activo', true)->count();
+        $clientesInactivos = Cliente::where('activo', false)->count();
         $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
-        $pagosDelMes = Pago::whereYear('created_at', $hoy->year)
-            ->whereMonth('created_at', $hoy->month)
+        $inscripcionesVencidas = Inscripcion::where('id_estado', Estado::where('nombre', 'Vencida')->first()?->id ?? 202)->count();
+        
+        $pagosDelMes = Pago::whereYear('fecha_pago', $hoy->year)
+            ->whereMonth('fecha_pago', $hoy->month)
             ->sum('monto_abonado');
         $ingresosTotales = Pago::sum('monto_abonado');
+        $pagosPendientes = Pago::where('id_estado', Estado::where('nombre', 'Vencido')->where('categoria', 'pago')->first()?->id ?? 304)->sum('monto_pendiente');
         
         // Últimos pagos
-        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodoPago')
+        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodoPago', 'estado')
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(10)
             ->get();
         
         // Inscripciones recientes
         $inscripcionesRecientes = Inscripcion::with('cliente', 'membresia', 'estado')
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(8)
+            ->get();
+        
+        // Inscripciones próximas a vencer
+        $proximasAVencer = Inscripcion::where('id_estado', $idEstadoActiva)
+            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(30)])
+            ->with(['cliente', 'membresia'])
+            ->orderBy('fecha_vencimiento')
+            ->limit(10)
             ->get();
         
         // Membresías más vendidas
@@ -58,16 +70,51 @@ class DashboardController extends Controller
             ->with('estado')
             ->get();
         
+        // Datos para gráficos - Ingresos por mes (últimos 6 meses)
+        $ingresosPorMes = Pago::selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as año, SUM(monto_abonado) as total')
+            ->where('fecha_pago', '>=', now()->subMonths(6))
+            ->groupBy('año', 'mes')
+            ->orderBy('año')
+            ->orderBy('mes')
+            ->get();
+        
+        $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $etiquetasMeses = $ingresosPorMes->map(fn($d) => $meses[$d->mes - 1])->toArray();
+        $datosIngresos = $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray();
+        
+        // Datos para gráfico de estados
+        $coloresEstados = [
+            'success' => '#28a745',
+            'danger' => '#dc3545',
+            'warning' => '#ffc107',
+            'info' => '#17a2b8',
+            'primary' => '#007bff',
+            'secondary' => '#6c757d',
+        ];
+        
+        $etiquetasEstados = $inscripcionesPorEstado->map(fn($d) => $d->estado?->nombre ?? 'Desconocido')->toArray();
+        $datosEstados = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
+        $coloresDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado?->color ?? 'secondary'])->toArray();
+        
         return view('dashboard.index', compact(
             'totalClientes',
+            'clientesInactivos',
             'totalInscripciones',
+            'inscripcionesVencidas',
             'pagosDelMes',
             'ingresosTotales',
+            'pagosPendientes',
             'ultimosPagos',
             'inscripcionesRecientes',
+            'proximasAVencer',
             'membresiasVendidas',
             'metodosPago',
-            'inscripcionesPorEstado'
+            'inscripcionesPorEstado',
+            'etiquetasMeses',
+            'datosIngresos',
+            'etiquetasEstados',
+            'datosEstados',
+            'coloresDispuestos'
         ));
     }
 }
