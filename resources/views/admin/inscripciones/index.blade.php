@@ -97,7 +97,7 @@
                     <tr>
                         <th>ID</th>
                         <th>
-                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'cliente', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'id_cliente', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 Cliente <i class="fas fa-sort"></i>
                             </a>
                         </th>
@@ -107,12 +107,12 @@
                         <th>Abonado</th>
                         <th>Pendiente</th>
                         <th>
-                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_inicio', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_inicio', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 Inicio <i class="fas fa-sort"></i>
                             </a>
                         </th>
                         <th>
-                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}">
+                            <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 Vencimiento <i class="fas fa-sort"></i>
                             </a>
                         </th>
@@ -132,9 +132,9 @@
                             </td>
                             <td>
                                 @if($inscripcion->pausada)
-                                    <span class="badge bg-warning"><i class="fas fa-pause-circle"></i> {{ $inscripcion->dias_pausa }}d</span>
+                                    <span class="badge bg-warning"><i class="fas fa-pause-circle fa-fw"></i> Pausado</span>
                                 @else
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge bg-success"><i class="fas fa-check-circle fa-fw"></i> En pausa</span>
                                 @endif
                             </td>
                             <td>
@@ -152,9 +152,9 @@
                                     $pendiente = $monto_total - $abonado;
                                 @endphp
                                 @if($pendiente > 0)
-                                    <span class="text-danger"><strong>${{ number_format($pendiente, 2) }}</strong></span>
+                                    <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 2) }}</span>
                                 @else
-                                    <span class="text-success badge badge-success">Pagado</span>
+                                    <span class="badge bg-success">Pagado</span>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>

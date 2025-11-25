@@ -152,9 +152,9 @@
                                         $pendiente = $monto_total - $total_abonado;
                                     @endphp
                                     @if($pendiente > 0)
-                                        <span class="text-danger"><strong>${{ number_format($pendiente, 2, ',', '.') }}</strong></span>
+                                        <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 2, ',', '.') }}</span>
                                     @else
-                                        <span class="badge badge-success">Pagado</span>
+                                        <span class="badge bg-success">Pagado</span>
                                     @endif
                                 </td>
                                 <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>

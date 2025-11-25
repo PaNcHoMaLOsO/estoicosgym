@@ -47,9 +47,16 @@ class InscripcionController extends Controller
             ]);
         }
         
-        // Ordenamiento
+        // Ordenamiento - solo campos de la tabla inscripciones
         $ordenar = $request->get('ordenar', 'fecha_inicio');
         $direccion = $request->get('direccion', 'desc');
+        
+        // Validar que el campo sea válido
+        $camposValidos = ['id', 'id_cliente', 'id_membresia', 'id_estado', 'fecha_inicio', 'fecha_vencimiento', 'precio_base', 'precio_final', 'created_at'];
+        if (!in_array($ordenar, $camposValidos)) {
+            $ordenar = 'fecha_inicio';
+        }
+        
         $query->orderBy($ordenar, $direccion);
         
         $inscripciones = $query->paginate(15);

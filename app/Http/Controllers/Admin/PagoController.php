@@ -44,9 +44,16 @@ class PagoController extends Controller
             ]);
         }
         
-        // Ordenamiento
+        // Ordenamiento - solo campos de la tabla pagos
         $ordenar = $request->get('ordenar', 'fecha_pago');
         $direccion = $request->get('direccion', 'desc');
+        
+        // Validar que el campo sea válido
+        $camposValidos = ['id', 'id_inscripcion', 'id_cliente', 'monto_total', 'monto_abonado', 'fecha_pago', 'id_metodo_pago', 'id_estado', 'created_at'];
+        if (!in_array($ordenar, $camposValidos)) {
+            $ordenar = 'fecha_pago';
+        }
+        
         $query->orderBy($ordenar, $direccion);
         
         $pagos = $query->paginate(15);

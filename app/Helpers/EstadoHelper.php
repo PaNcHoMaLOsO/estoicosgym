@@ -51,13 +51,14 @@ class EstadoHelper
         }
 
         if (!$estado) {
-            return '<span class="badge badge-secondary"><i class="fas fa-circle"></i> Desconocido</span>';
+            return '<span class="badge badge-secondary" style="font-size: 0.85em;"><i class="fas fa-circle fa-fw"></i> Desconocido</span>';
         }
 
         $color = $estado->color ?? 'secondary';
         $icono = self::$iconos[$color] ?? '<i class="fas fa-circle"></i>';
+        $icono = str_replace('fas ', 'fas fa-fw ', $icono);
         
-        return '<span class="badge badge-' . $color . '">' . $icono . ' ' . $estado->nombre . '</span>';
+        return '<span class="badge badge-' . $color . '" style="font-size: 0.85em;">' . $icono . ' ' . $estado->nombre . '</span>';
     }
 
     /**
