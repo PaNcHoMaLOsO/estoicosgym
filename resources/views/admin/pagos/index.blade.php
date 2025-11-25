@@ -143,7 +143,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted">
+                                <td colspan="10" class="text-center text-muted">
                                     <i class="fas fa-inbox"></i> No hay pagos registrados
                                 </td>
                             </tr>

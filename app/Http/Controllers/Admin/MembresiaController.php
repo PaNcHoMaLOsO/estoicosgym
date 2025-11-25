@@ -7,6 +7,7 @@ use App\Models\Membresia;
 use App\Models\PrecioMembresia;
 use App\Models\HistorialPrecio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MembresiaController extends Controller
 {
@@ -64,7 +65,7 @@ class MembresiaController extends Controller
             'precio_anterior' => 0,
             'precio_nuevo' => $validated['precio_normal'],
             'razon_cambio' => 'Creación de membresía',
-            'usuario_cambio' => auth()->user()->name,
+            'usuario_cambio' => Auth::user()->name,
         ]);
 
         return redirect()->route('admin.membresias.show', $membresia)
@@ -98,10 +99,8 @@ class MembresiaController extends Controller
     {
         $membresia->load('precios');
         $precioActual = $membresia->precios()
-            ->where(function($q) {
-                $q->where('activo', true)
-                  ->orWhere('fecha_vigencia_desde', '<=', now());
-            })
+            ->where('activo', true)
+            ->where('fecha_vigencia_desde', '<=', now())
             ->orderBy('fecha_vigencia_desde', 'desc')
             ->first();
 
@@ -159,7 +158,7 @@ class MembresiaController extends Controller
                 'precio_anterior' => $precioAnterior,
                 'precio_nuevo' => $validated['precio_normal'],
                 'razon_cambio' => $validated['razon_cambio'] ?? 'Actualización de precio',
-                'usuario_cambio' => auth()->user()->name,
+                'usuario_cambio' => Auth::user()->name,
             ]);
         }
 

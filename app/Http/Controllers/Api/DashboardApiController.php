@@ -152,7 +152,7 @@ class DashboardApiController extends Controller
                 'id' => $p->id,
                 'cliente' => $p->inscripcion->cliente->nombres . ' ' . $p->inscripcion->cliente->apellido_paterno,
                 'monto' => $p->monto_abonado,
-                'fecha' => $p->fecha_pago->format('d/m/Y H:i'),
+                'fecha' => \Carbon\Carbon::parse($p->fecha_pago)->format('d/m/Y H:i'),
                 'metodo' => $p->metodoPago?->nombre,
                 'estado' => $p->estado?->nombre,
                 'estado_color' => $p->estado?->color,
