@@ -2,26 +2,26 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\InscripcionController;
-use App\Http\Controllers\PagoController;
+use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\Admin\InscripcionController;
+use App\Http\Controllers\Admin\PagoController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-Route::get('/test', function () {
-    return view('dashboard.test');
-});
-
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Clientes
-Route::resource('clientes', ClienteController::class);
+// Rutas Admin - Grupo con prefijo 'admin'
+Route::prefix('admin')->name('admin.')->group(function () {
+    // CRUD Clientes
+    Route::resource('clientes', ClienteController::class);
 
-// Inscripciones
-Route::resource('inscripciones', InscripcionController::class);
+    // CRUD Inscripciones
+    Route::resource('inscripciones', InscripcionController::class);
 
-// Pagos
-Route::resource('pagos', PagoController::class);
+    // CRUD Pagos
+    Route::resource('pagos', PagoController::class);
+});
+

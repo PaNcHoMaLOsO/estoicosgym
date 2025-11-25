@@ -56,4 +56,9 @@ class Cliente extends Model
         }
         return $nombre;
     }
+
+    public function scopeActive($query)
+    {
+        return $query->where('activo', true);
+    }
 }
