@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\Convenio;
 use App\Rules\RutValido;
 use Illuminate\Http\Request;
 
@@ -23,7 +24,8 @@ class ClienteController extends Controller
      */
     public function create()
     {
-        return view('admin.clientes.create');
+        $convenios = Convenio::all();
+        return view('admin.clientes.create', compact('convenios'));
     }
 
     /**
@@ -40,6 +42,8 @@ class ClienteController extends Controller
             'email' => 'required|email|unique:clientes',
             'direccion' => 'nullable|string|max:500',
             'fecha_nacimiento' => 'nullable|date',
+            'id_convenio' => 'nullable|exists:convenios,id',
+            'observaciones' => 'nullable|string|max:500',
             'activo' => 'boolean',
         ]);
 
@@ -63,7 +67,8 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
-        return view('admin.clientes.edit', compact('cliente'));
+        $convenios = Convenio::all();
+        return view('admin.clientes.edit', compact('cliente', 'convenios'));
     }
 
     /**
@@ -80,6 +85,8 @@ class ClienteController extends Controller
             'email' => 'required|email|unique:clientes,email,' . $cliente->id,
             'direccion' => 'nullable|string|max:500',
             'fecha_nacimiento' => 'nullable|date',
+            'id_convenio' => 'nullable|exists:convenios,id',
+            'observaciones' => 'nullable|string|max:500',
             'activo' => 'boolean',
         ]);
 

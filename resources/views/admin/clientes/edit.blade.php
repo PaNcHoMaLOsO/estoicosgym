@@ -120,7 +120,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="direccion">Dirección</label>
                             <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
@@ -130,6 +130,32 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_convenio">Convenio (Opcional)</label>
+                            <select class="form-control @error('id_convenio') is-invalid @enderror" 
+                                    id="id_convenio" name="id_convenio">
+                                <option value="">-- Sin Convenio --</option>
+                                @foreach($convenios as $convenio)
+                                    <option value="{{ $convenio->id }}" {{ old('id_convenio', $cliente->id_convenio) == $convenio->id ? 'selected' : '' }}>
+                                        {{ $convenio->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_convenio')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                              id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales...">{{ old('observaciones', $cliente->observaciones) }}</textarea>
+                    @error('observaciones')
+                        <span class="invalid-feedback">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div class="row">
