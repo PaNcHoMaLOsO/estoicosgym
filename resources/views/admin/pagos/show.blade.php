@@ -40,7 +40,7 @@
 
                         @if($pago->referencia_pago)
                             <dt class="col-sm-5">Referencia:</dt>
-                            <dd class="col-sm-7">{{ $pago->referencia }}</dd>
+                            <dd class="col-sm-7">{{ $pago->referencia_pago }}</dd>
                         @endif
 
                         <dt class="col-sm-5">Creado:</dt>

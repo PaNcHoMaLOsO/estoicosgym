@@ -123,7 +123,7 @@
                                         <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                                         <td>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</td>
                                         <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                                        <td>{{ $pago->metodo_pago->nombre ?? 'N/A' }}</td>
+                                        <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
