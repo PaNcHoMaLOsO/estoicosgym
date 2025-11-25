@@ -195,9 +195,9 @@
                                     <td>
                                         <div class="progress progress-xs">
                                             @php
-                                                $percentage = ($membresia->inscripciones_count / $maxInscripciones) * 100;
+                                                $percentage = $maxInscripciones > 0 ? ($membresia->inscripciones_count / $maxInscripciones) * 100 : 0;
                                             @endphp
-                                            <div class="progress-bar bg-success" style="width: {{ $percentage }}%"></div>
+                                            <div class="progress-bar bg-success" style="width: {!! round($percentage, 1) !!}%"></div>
                                         </div>
                                     </td>
                                 </tr>

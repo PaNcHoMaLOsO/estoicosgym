@@ -57,15 +57,18 @@ class ClienteApiController extends Controller
             'activo' => $cliente->activo,
             'convenio' => $cliente->convenio?->nombre,
             'inscripciones' => $cliente->inscripciones->map(function($ins) {
+                $pagos = $ins->pagos ?? collect([]);
+                $pagos_total = $pagos->sum('monto_abonado');
+                $precio = $ins->precio_final ?? $ins->precio_base ?? 0;
                 return [
                     'id' => $ins->id,
                     'membresia' => $ins->membresia?->nombre,
                     'estado' => $ins->estado?->nombre,
                     'fecha_inicio' => \Carbon\Carbon::parse($ins->fecha_inicio)->format('Y-m-d'),
                     'fecha_vencimiento' => \Carbon\Carbon::parse($ins->fecha_vencimiento)->format('Y-m-d'),
-                    'precio_final' => $ins->precio_final,
-                    'pagos_total' => $ins->pagos->sum('monto_abonado'),
-                    'pagos_pendientes' => $ins->precio_final - $ins->pagos->sum('monto_abonado'),
+                    'precio_final' => $precio,
+                    'pagos_total' => $pagos_total,
+                    'pagos_pendientes' => $precio - $pagos_total,
                 ];
             }),
         ]);

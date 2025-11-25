@@ -31,7 +31,7 @@ class DashboardController extends Controller
             ->whereMonth('fecha_pago', $hoy->month)
             ->sum('monto_abonado');
         $ingresosTotales = Pago::sum('monto_abonado');
-        $pagosPendientes = Pago::where('id_estado', Estado::where('nombre', 'Vencido')->where('categoria', 'pago')->first()?->id ?? 304)->sum('monto_pendiente');
+        $pagosPendientes = Pago::sum('monto_pendiente');
         
         // Últimos pagos
         $ultimosPagos = Pago::with('inscripcion.cliente', 'metodoPago', 'estado')
@@ -59,6 +59,9 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
+        // Máximo de inscripciones para graficar
+        $maxInscripciones = max(1, $membresiasVendidas->max('inscripciones_count') ?? 1);
+        
         // Métodos de pago más usados
         $metodosPago = MetodoPago::withCount('pagos')
             ->orderBy('pagos_count', 'desc')
@@ -73,14 +76,16 @@ class DashboardController extends Controller
         // Datos para gráficos - Ingresos por mes (últimos 6 meses)
         $ingresosPorMes = Pago::selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as año, SUM(monto_abonado) as total')
             ->where('fecha_pago', '>=', now()->subMonths(6))
-            ->groupBy('año', 'mes')
+            ->groupByRaw('YEAR(fecha_pago), MONTH(fecha_pago)')
             ->orderBy('año')
             ->orderBy('mes')
             ->get();
         
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        $etiquetasMeses = $ingresosPorMes->map(fn($d) => $meses[$d->mes - 1])->toArray();
-        $datosIngresos = $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray();
+        $etiquetasMeses = $ingresosPorMes->count() > 0 ? $ingresosPorMes->map(function($d) use ($meses) {
+            return ($d->mes && $d->mes >= 1 && $d->mes <= 12 ? $meses[$d->mes - 1] : 'Desconocido') . ' ' . $d->año;
+        })->toArray() : [];
+        $datosIngresos = $ingresosPorMes->count() > 0 ? $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray() : [];
         
         // Datos para gráfico de estados
         $coloresEstados = [
@@ -92,9 +97,9 @@ class DashboardController extends Controller
             'secondary' => '#6c757d',
         ];
         
-        $etiquetasEstados = $inscripcionesPorEstado->map(fn($d) => $d->estado?->nombre ?? 'Desconocido')->toArray();
-        $datosEstados = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
-        $coloresDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado?->color ?? 'secondary'])->toArray();
+        $etiquetasEstados = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => $d->estado?->nombre ?? 'Desconocido')->toArray() : [];
+        $datosEstados = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray() : [];
+        $coloresDispuestos = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado?->color ?? 'secondary'])->toArray() : [];
         
         return view('dashboard.index', compact(
             'totalClientes',

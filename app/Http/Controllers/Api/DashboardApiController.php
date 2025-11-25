@@ -175,12 +175,12 @@ class DashboardApiController extends Controller
             ->get();
 
         return response()->json($inscripciones->map(function($i) {
-            $dias = now()->diffInDays($i->fecha_vencimiento);
+            $dias = now()->diffInDays(\Carbon\Carbon::parse($i->fecha_vencimiento));
             return [
                 'id' => $i->id,
                 'cliente' => $i->cliente->nombres . ' ' . $i->cliente->apellido_paterno,
                 'membresia' => $i->membresia?->nombre,
-                'vencimiento' => $i->fecha_vencimiento->format('d/m/Y'),
+                'vencimiento' => \Carbon\Carbon::parse($i->fecha_vencimiento)->format('d/m/Y'),
                 'dias_restantes' => $dias,
                 'urgencia' => $dias <= 7 ? 'alta' : ($dias <= 14 ? 'media' : 'baja'),
             ];
