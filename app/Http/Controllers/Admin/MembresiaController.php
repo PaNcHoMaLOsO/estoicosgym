@@ -15,7 +15,7 @@ class MembresiaController extends Controller
      */
     public function index()
     {
-        $membresias = Membresia::with(['precios', 'inscripciones'])->paginate(15);
+        $membresias = Membresia::withCount('inscripciones')->with(['precios', 'inscripciones'])->paginate(15);
         return view('admin.membresias.index', compact('membresias'));
     }
 
@@ -170,12 +170,7 @@ class MembresiaController extends Controller
      */
     public function destroy(Membresia $membresia)
     {
-        // Evitar eliminar membresias con inscripciones activas
-        if ($membresia->inscripciones()->where('id_estado', '!=', 3)->exists()) {
-            return redirect()->route('admin.membresias.index')
-                ->with('error', 'No se puede eliminar una membresía con inscripciones activas');
-        }
-
+        // Eliminará la membresía (las relaciones se manejan según la BD)
         $membresia->delete();
 
         return redirect()->route('admin.membresias.index')

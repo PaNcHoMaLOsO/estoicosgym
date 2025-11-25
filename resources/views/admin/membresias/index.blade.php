@@ -94,17 +94,16 @@
                                        class="btn btn-sm btn-warning" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    @if (!$membresia->inscripciones()->where('id_estado', '!=', 3)->exists())
-                                        <form action="{{ route('admin.membresias.destroy', $membresia) }}" 
-                                              method="POST" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" 
-                                                    onclick="return confirm('¿Estás seguro?')" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <form action="{{ route('admin.membresias.destroy', $membresia) }}" 
+                                          method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" 
+                                                onclick="return confirm('¿Estás seguro? Se eliminarán todos los registros asociados.')" 
+                                                title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach
