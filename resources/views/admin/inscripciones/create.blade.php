@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: 'bootstrap-5',
         allowClear: true,
         ajax: {
-            url: '/api/clientes/search',
+            url: '/api/clientes',
             dataType: 'json',
             delay: 250,
             data: function (params) {
@@ -250,11 +250,16 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             processResults: function (data) {
                 return {
-                    results: data,
+                    results: data.map(function(item) {
+                        return {
+                            id: item.id,
+                            text: item.nombre_completo + ' (' + item.email + ')'
+                        };
+                    }),
                 };
             },
         },
-        minimumInputLength: 2,
+        minimumInputLength: 0,
     });
 
     // Cargar precio al seleccionar membresía
@@ -269,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                precioBase.value = data.precio || 0;
+                precioBase.value = data.precio_normal || 0;
                 calcularInscripcion(); // Recalcular con el nuevo precio
             }
         } catch (error) {

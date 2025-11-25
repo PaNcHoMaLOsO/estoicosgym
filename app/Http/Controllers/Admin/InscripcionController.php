@@ -27,8 +27,8 @@ class InscripcionController extends Controller
      */
     public function create()
     {
-        $clientes = Cliente::active()->get();
-        $estados = Estado::where('categoria', 'inscripcion')->get();
+        $clientes = Cliente::where('activo', true)->get();
+        $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
         $convenios = Convenio::all();
         $motivos = MotivoDescuento::all();
