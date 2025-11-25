@@ -27,7 +27,22 @@ class InscripcionController extends Controller
      */
     public function create()
     {
-        $clientes = Cliente::where('activo', true)->get();
+        // Obtener IDs de estados activos para inscripciones
+        $estadoActiva = Estado::where('nombre', 'Activa')->first();
+        $estadoActivaId = $estadoActiva?->id ?? 1;
+        
+        // Clientes con inscripción ACTIVA (no pueden tener otra)
+        $clientesConInscripcionActiva = Inscripcion::where('id_estado', $estadoActivaId)
+            ->pluck('id_cliente')
+            ->unique()
+            ->toArray();
+        
+        // Mostrar SOLO: Clientes activos SIN inscripción activa
+        $clientes = Cliente::where('activo', true)
+            ->whereNotIn('id', $clientesConInscripcionActiva)
+            ->orderBy('nombres')
+            ->get();
+        
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
         $convenios = Convenio::all();

@@ -12,7 +12,6 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 @stop
 
 @section('content')
@@ -42,20 +41,18 @@
                             <select class="form-control select2-cliente @error('id_cliente') is-invalid @enderror" 
                                     id="id_cliente" name="id_cliente" required style="width: 100%;">
                                 <option value="">-- Seleccionar Cliente --</option>
-                                @if(old('id_cliente'))
-                                    @php
-                                        $clienteSeleccionado = $clientes->find(old('id_cliente'));
-                                    @endphp
-                                    @if($clienteSeleccionado)
-                                        <option value="{{ $clienteSeleccionado->id }}" selected>
-                                            {{ $clienteSeleccionado->nombres }} {{ $clienteSeleccionado->apellido_paterno }} ({{ $clienteSeleccionado->email }})
-                                        </option>
-                                    @endif
-                                @endif
+                                @forelse($clientes as $cliente)
+                                    <option value="{{ $cliente->id }}" {{ old('id_cliente') == $cliente->id ? 'selected' : '' }}>
+                                        {{ $cliente->nombres }} {{ $cliente->apellido_paterno }} ({{ $cliente->email }})
+                                    </option>
+                                @empty
+                                    <option value="" disabled>No hay clientes disponibles</option>
+                                @endforelse
                             </select>
                             @error('id_cliente')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
+                            <small class="text-muted">Se muestran solo clientes sin inscripción activa</small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -235,31 +232,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const precioBase = document.getElementById('precio_base');
     const descuentoAplicado = document.getElementById('descuento_aplicado');
 
-    // Inicializar Select2 para Cliente
-    $('.select2-cliente').select2({
-        theme: 'bootstrap-5',
+    // Inicializar Select2 básico para Cliente
+    $('#id_cliente').select2({
+        width: '100%',
         allowClear: true,
-        ajax: {
-            url: '/api/clientes',
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return {
-                    q: params.term || '',
-                };
-            },
-            processResults: function (data) {
-                return {
-                    results: data.map(function(item) {
-                        return {
-                            id: item.id,
-                            text: item.nombre_completo + ' (' + item.email + ')'
-                        };
-                    }),
-                };
-            },
-        },
-        minimumInputLength: 0,
     });
 
     // Cargar precio al seleccionar membresía
