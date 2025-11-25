@@ -25,7 +25,7 @@ class InscripcionController extends Controller
     public function create()
     {
         $clientes = Cliente::active()->get();
-        $estados = Estado::all();
+        $estados = Estado::where('categoria', 'inscripcion')->get();
         return view('admin.inscripciones.create', compact('clientes', 'estados'));
     }
 
@@ -62,7 +62,7 @@ class InscripcionController extends Controller
     public function edit(Inscripcion $inscripcion)
     {
         $clientes = Cliente::active()->get();
-        $estados = Estado::all();
+        $estados = Estado::where('categoria', 'inscripcion')->get();
         return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados'));
     }
 

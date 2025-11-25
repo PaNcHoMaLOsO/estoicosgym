@@ -75,6 +75,11 @@
                     </div>
                 </div>
 
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Nota:</strong> El estado del pago se asignará automáticamente según el monto abonado.
+                </div>
+
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">

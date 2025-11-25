@@ -25,7 +25,7 @@ class PagoController extends Controller
      */
     public function create()
     {
-        $inscripciones = Inscripcion::with('cliente')->get();
+        $inscripciones = Inscripcion::with('cliente')->limit(30)->get();
         $metodos_pago = MetodoPago::all();
         return view('admin.pagos.create', compact('inscripciones', 'metodos_pago'));
     }
@@ -63,7 +63,7 @@ class PagoController extends Controller
      */
     public function edit(Pago $pago)
     {
-        $inscripciones = Inscripcion::with('cliente')->get();
+        $inscripciones = Inscripcion::with('cliente')->limit(30)->get();
         $metodos_pago = MetodoPago::all();
         return view('admin.pagos.edit', compact('pago', 'inscripciones', 'metodos_pago'));
     }
