@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -58,6 +59,7 @@ class Pago extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'uuid',
         'id_inscripcion',
         'id_cliente',
         'monto_total',
@@ -79,6 +81,17 @@ class Pago extends Model
         'periodo_inicio' => 'date',
         'periodo_fin' => 'date',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid();
+            }
+        });
+    }
 
     public function inscripcion()
     {

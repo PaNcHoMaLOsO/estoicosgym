@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 /**
@@ -78,6 +79,7 @@ class Inscripcion extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'uuid',
         'id_cliente',
         'id_membresia',
         'id_convenio',
@@ -109,6 +111,17 @@ class Inscripcion extends Model
         'fecha_pausa_fin' => 'datetime',
         'pausada' => 'boolean',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid();
+            }
+        });
+    }
 
     public function cliente()
     {

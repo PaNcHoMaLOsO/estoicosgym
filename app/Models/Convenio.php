@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -45,6 +46,7 @@ class Convenio extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'uuid',
         'nombre',
         'tipo',
         'descripcion',
@@ -53,6 +55,17 @@ class Convenio extends Model
         'contacto_email',
         'activo',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid();
+            }
+        });
+    }
 
     public function clientes()
     {

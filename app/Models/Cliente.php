@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -62,6 +63,7 @@ class Cliente extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'uuid',
         'run_pasaporte',
         'nombres',
         'apellido_paterno',
@@ -85,6 +87,17 @@ class Cliente extends Model
         'fecha_nacimiento' => 'date',
         'activo' => 'boolean',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid();
+            }
+        });
+    }
 
     public function convenio()
     {
