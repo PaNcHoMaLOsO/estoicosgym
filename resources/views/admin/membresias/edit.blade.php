@@ -156,6 +156,30 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="precio_convenio" class="form-label">Precio con Convenio ($) <small class="text-muted">(opcional)</small></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" class="form-control @error('precio_convenio') is-invalid @enderror" 
+                                       id="precio_convenio" name="precio_convenio" 
+                                       value="{{ old('precio_convenio', $precioActual->precio_convenio ?? '') }}" 
+                                       min="0" step="0.01" placeholder="Dejar vacío si no aplica">
+                            </div>
+                            @if ($precioActual && $precioActual->precio_convenio)
+                                <small class="form-text text-muted d-block mt-1">
+                                    Precio actual: ${{ number_format($precioActual->precio_convenio, 0, '.', '.') }}
+                                    (Descuento: ${{ number_format($precioActual->precio_normal - $precioActual->precio_convenio, 0, '.', '.') }})
+                                </small>
+                            @endif
+                            <small class="form-text text-muted d-block mt-1">Solo para membresías que aplican descuento por convenio</small>
+                            @error('precio_convenio')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sección Cambios -->

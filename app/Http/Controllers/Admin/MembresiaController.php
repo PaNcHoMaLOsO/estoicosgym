@@ -44,10 +44,11 @@ class MembresiaController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias',
-            'duracion_meses' => 'required|integer|min:0',
+            'duracion_meses' => 'required|integer|min:0|max:12',
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
+            'precio_convenio' => 'nullable|numeric|min:0|lt:precio_normal',
             'activo' => 'boolean',
         ]);
 
@@ -60,11 +61,10 @@ class MembresiaController extends Controller
         ]);
 
         // Crear precio inicial
-        // precio_convenio solo aplica para membresía Mensual (id=4)
         PrecioMembresia::create([
             'id_membresia' => $membresia->id,
             'precio_normal' => $validated['precio_normal'],
-            'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] - 15000 : null,
+            'precio_convenio' => $validated['precio_convenio'] ?? null,
             'fecha_vigencia_desde' => now(),
             'activo' => true,
         ]);
@@ -124,10 +124,11 @@ class MembresiaController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias,nombre,' . $membresia->id,
-            'duracion_meses' => 'required|integer|min:0',
+            'duracion_meses' => 'required|integer|min:0|max:12',
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
+            'precio_convenio' => 'nullable|numeric|min:0|lt:precio_normal',
             'razon_cambio' => 'nullable|string|max:255',
             'activo' => 'boolean',
         ]);
@@ -181,11 +182,10 @@ class MembresiaController extends Controller
             $precioActual->update(['activo' => false]);
 
             // Crear nuevo precio
-            // precio_convenio solo aplica para membresía Mensual (id=4)
             $nuevoPrecio = PrecioMembresia::create([
                 'id_membresia' => $membresia->id,
                 'precio_normal' => $validated['precio_normal'],
-                'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] - 15000 : null,
+                'precio_convenio' => $validated['precio_convenio'] ?? null,
                 'fecha_vigencia_desde' => now(),
                 'activo' => true,
             ]);
