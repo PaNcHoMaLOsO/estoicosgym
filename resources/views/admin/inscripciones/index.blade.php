@@ -166,6 +166,9 @@
                                     $pendiente = $estadoPago['pendiente'];
                                     $porcentajePagado = $estadoPago['porcentaje_pagado'];
                                     $estado = $estadoPago['estado'];
+                                    
+                                    // DEBUG: Mostrar información de pagos si hay muchos
+                                    // echo "Ins#" . $inscripcion->id . " - Pagos: " . $estadoPago['total_pagos'] . " | Completados: " . $estadoPago['pagos_completados'] . " | Otros: " . $estadoPago['pagos_otros_estados'] . "<br>";
                                 @endphp
                                 
                                 @if($estado === 'pagado')

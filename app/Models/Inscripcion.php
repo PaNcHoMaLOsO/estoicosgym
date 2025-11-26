@@ -206,10 +206,18 @@ class Inscripcion extends Model
     public function obtenerEstadoPago()
     {
         $montoTotal = $this->precio_final ?? $this->precio_base;
-        $totalAbonado = $this->pagos()
-            ->where('id_estado', 102) // Solo pagos completados
-            ->sum('monto_abonado');
         
+        // Obtener todos los pagos
+        $allPagos = $this->pagos()->get();
+        
+        // Sumar TODOS los montos abonados (sin filtrar por estado)
+        $totalAbonado = $allPagos->sum('monto_abonado');
+        
+        // También contar pagos por estado para debugging
+        $pagosCompletados = $allPagos->where('id_estado', 102)->sum('monto_abonado');
+        $pagosOtrosEstados = $allPagos->where('id_estado', '!=', 102)->sum('monto_abonado');
+        
+        // Calcular pendiente
         $pendiente = $montoTotal - $totalAbonado;
         $porcentajePagado = $montoTotal > 0 ? ($totalAbonado / $montoTotal) * 100 : 0;
 
@@ -218,6 +226,9 @@ class Inscripcion extends Model
             'total_abonado' => $totalAbonado,
             'pendiente' => $pendiente,
             'porcentaje_pagado' => $porcentajePagado,
+            'pagos_completados' => $pagosCompletados,
+            'pagos_otros_estados' => $pagosOtrosEstados,
+            'total_pagos' => $allPagos->count(),
             'estado' => $pendiente <= 0 ? 'pagado' : ($totalAbonado > 0 ? 'parcial' : 'pendiente'),
         ];
     }
