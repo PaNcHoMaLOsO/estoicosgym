@@ -156,9 +156,9 @@
                     </div>
                     <div class="card-body">
                         <h6 class="font-weight-bold mb-1">{{ $cliente->convenio->nombre }}</h6>
-                        <p class="text-muted mb-0 small">{{ $cliente->convenio->descripcion }}</p>
+                        <p class="text-muted mb-1 small">{{ $cliente->convenio->descripcion }}</p>
                         <div class="mt-2">
-                            <span class="badge badge-success">{{ $cliente->convenio->descuento_porcentaje ?? 0 }}% desc.</span>
+                            <span class="badge badge-info">{{ $cliente->convenio->tipo }}</span>
                         </div>
                     </div>
                 </div>

@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property int $id_membresia
- * @property string $precio_normal
- * @property string|null $precio_convenio NULL si no aplica convenio
- * @property \Illuminate\Support\Carbon $fecha_vigencia_desde
- * @property \Illuminate\Support\Carbon|null $fecha_vigencia_hasta NULL = vigente actualmente
- * @property int $activo
+ * @property decimal $precio_normal Precio para cliente sin convenio
+ * @property decimal|null $precio_convenio Precio con descuento para cliente con convenio (NULL = sin descuento)
+ * @property \Illuminate\Support\Carbon $fecha_vigencia_desde Fecha desde la cual este precio es válido
+ * @property \Illuminate\Support\Carbon|null $fecha_vigencia_hasta Fecha hasta la cual es válido (NULL = vigente actualmente)
+ * @property int $activo Si este precio está activo
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HistorialPrecio> $historialPrecios
