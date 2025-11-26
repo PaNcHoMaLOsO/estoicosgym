@@ -213,7 +213,7 @@
                                 <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-sm btn-warning" title="Editar">
                                     <i class="fas fa-edit fa-fw"></i>
                                 </a>
-                                <a href="{{ route('admin.pagos.index', ['id_inscripcion' => $inscripcion->id]) }}" class="btn btn-sm btn-success" title="Ver Pagos">
+                                <a href="{{ route('admin.pagos.index', ['uuid' => $inscripcion->uuid]) }}" class="btn btn-sm btn-success" title="Ver Pagos">
                                     <i class="fas fa-money-bill-wave fa-fw"></i>
                                 </a>
                                 <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" style="display:inline;">

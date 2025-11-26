@@ -47,7 +47,7 @@
                                 <option value="">-- Seleccionar Inscripción --</option>
                                 @foreach($inscripciones as $inscripcion)
                                     <option value="{{ $inscripcion->id }}" {{ old('id_inscripcion') == $inscripcion->id ? 'selected' : '' }}>
-                                        #{{ $inscripcion->id }} - {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
+                                        #{{ $inscripcion->uuid }} - {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
                                     </option>
                                 @endforeach
                             </select>

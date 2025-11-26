@@ -48,7 +48,7 @@
                                     id="id_inscripcion" name="id_inscripcion" required style="width: 100%;">
                                 <option value="">-- Seleccionar Inscripción --</option>
                                 <option value="{{ $pago->id_inscripcion }}" selected>
-                                    #{{ $pago->inscripcion->id }} - {{ $pago->inscripcion->cliente->nombres }} ({{ $pago->inscripcion->estado->nombre }})
+                                    #{{ $pago->inscripcion->uuid }} - {{ $pago->inscripcion->cliente->nombres }} ({{ $pago->inscripcion->estado->nombre }})
                                 </option>
                             </select>
                             @error('id_inscripcion')
