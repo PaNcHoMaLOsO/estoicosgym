@@ -451,8 +451,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     descuentoConvenio = 5000; // Descuento de 5000 para mensual con convenio
                 } 
                 
-                const descuentoAdicional = parseFloat(descuentoAdicional?.value) || 0;
-                const descuentoTotal = descuentoConvenio + descuentoAdicional;
+                const descuentoExtra = parseFloat(descuentoAdicional.value) || 0;
+                const descuentoTotal = descuentoConvenio + descuentoExtra;
                 const precioFinal = precioBase - descuentoTotal;
 
                 precioBaseEl.textContent = '$' + precioBase.toFixed(2);
