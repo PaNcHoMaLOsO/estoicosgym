@@ -11,17 +11,14 @@ return new class extends Migration
         Schema::create('historial_precios', function (Blueprint $table) {
             $table->unsignedInteger('id')->autoIncrement()->primary();
             $table->unsignedInteger('id_precio_membresia');
-            $table->decimal('precio_anterior_normal', 10, 2);
-            $table->decimal('precio_anterior_convenio', 10, 2)->nullable();
-            $table->decimal('precio_nuevo_normal', 10, 2);
-            $table->decimal('precio_nuevo_convenio', 10, 2)->nullable();
-            $table->date('fecha_cambio');
-            $table->text('motivo_cambio')->nullable();
-            $table->unsignedInteger('usuario_modificador')->nullable()->comment('Futuro: ID del usuario que hizo el cambio');
-            $table->timestamp('created_at')->useCurrent();
+            $table->decimal('precio_anterior', 10, 2)->comment('Precio anterior');
+            $table->decimal('precio_nuevo', 10, 2)->comment('Precio nuevo');
+            $table->string('razon_cambio', 255)->nullable()->comment('Razón del cambio');
+            $table->string('usuario_cambio', 255)->nullable()->comment('Usuario que realizó el cambio');
+            $table->timestamps();
             
             $table->foreign('id_precio_membresia')->references('id')->on('precios_membresias')->onDelete('restrict');
-            $table->index('fecha_cambio');
+            $table->index('created_at');
         });
     }
 

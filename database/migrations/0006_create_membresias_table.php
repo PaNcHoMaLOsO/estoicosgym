@@ -8,24 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('convenios', function (Blueprint $table) {
+        Schema::create('membresias', function (Blueprint $table) {
             $table->unsignedInteger('id')->autoIncrement()->primary();
-            $table->string('nombre', 100)->unique()->comment('Ej: INACAP, Cruz Verde, Falabella');
-            $table->enum('tipo', ['institucion_educativa', 'empresa', 'organizacion', 'otro']);
+            $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
+            $table->string('nombre', 50)->unique();
+            $table->unsignedInteger('duracion_meses')->comment('Meses de duración (0 para pase diario)');
+            $table->unsignedInteger('duracion_dias')->comment('0 para mensuales, 1 para pase diario, 365 para anual');
             $table->text('descripcion')->nullable();
-            $table->string('contacto_nombre', 100)->nullable();
-            $table->string('contacto_telefono', 20)->nullable();
-            $table->string('contacto_email', 100)->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
             
-            $table->index('tipo');
             $table->index('activo');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('convenios');
+        Schema::dropIfExists('membresias');
     }
 };

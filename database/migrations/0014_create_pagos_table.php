@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('pagos', function (Blueprint $table) {
             $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
             $table->unsignedInteger('id_inscripcion');
             $table->unsignedInteger('id_cliente')->comment('Redundante pero útil para queries');
             
@@ -28,6 +29,12 @@ return new class extends Migration
             $table->string('referencia_pago', 100)->nullable()->comment('Futuro: N° de transferencia, comprobante');
             
             $table->unsignedInteger('id_estado')->comment('Pendiente, Pagado, Parcial, Vencido');
+            
+            // Campos para manejo de cuotas
+            $table->unsignedTinyInteger('cantidad_cuotas')->default(1)->comment('Total de cuotas en que se pagará');
+            $table->unsignedTinyInteger('numero_cuota')->default(1)->comment('Cuota número (ej: 1 de 3)');
+            $table->decimal('monto_cuota', 10, 2)->nullable()->comment('Monto de cada cuota');
+            $table->date('fecha_vencimiento_cuota')->nullable()->comment('Fecha de vencimiento para esta cuota');
             
             $table->text('observaciones')->nullable();
             $table->timestamps();

@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('clientes', function (Blueprint $table) {
             $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
             $table->string('run_pasaporte', 20)->nullable()->unique()->comment('NULL para indocumentados');
             $table->string('nombres', 100);
             $table->string('apellido_paterno', 50);
