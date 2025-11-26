@@ -77,7 +77,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
-                                <input type="text" class="form-control" value="{{ $inscripcion->precio_base }}" readonly>
+                                <input type="text" class="form-control" value="{{ number_format($inscripcion->precio_base, 0, '.', '.') }}" readonly>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -86,7 +86,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
-                                <input type="text" class="form-control" value="{{ $inscripcion->descuento_aplicado }}" readonly>
+                                <input type="text" class="form-control" value="{{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}" readonly>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -96,7 +96,7 @@
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="text" class="form-control" id="monto_total_inscripcion" 
-                                       value="{{ $inscripcion->precio_base - $inscripcion->descuento_aplicado }}" readonly>
+                                       value="{{ number_format($inscripcion->precio_base - $inscripcion->descuento_aplicado, 0, '.', '.') }}" readonly>
                             </div>
                         </div>
                     </div>
