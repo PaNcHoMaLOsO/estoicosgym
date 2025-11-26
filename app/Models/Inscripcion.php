@@ -18,6 +18,7 @@ use Carbon\Carbon;
  * @property int|null $dia_pago 1-31: Día del mes elegido para pagar
  * @property string $precio_base Precio oficial de la membresía
  * @property string $descuento_aplicado Descuento en pesos
+ * @property string $precio_final precio_base - descuento_aplicado
  * @property int|null $id_motivo_descuento Justificación del descuento
  * @property int $id_estado Activa, Vencida, Pausada, Cancelada, Pendiente
  * @property string|null $observaciones
@@ -86,6 +87,7 @@ class Inscripcion extends Model
         'dia_pago',
         'precio_base',
         'descuento_aplicado',
+        'precio_final',
         'id_motivo_descuento',
         'id_estado',
         'observaciones',
@@ -107,6 +109,7 @@ class Inscripcion extends Model
         'pausada' => 'boolean',
         'precio_base' => 'decimal:2',
         'descuento_aplicado' => 'decimal:2',
+        'precio_final' => 'decimal:2',
     ];
 
     protected static function boot()

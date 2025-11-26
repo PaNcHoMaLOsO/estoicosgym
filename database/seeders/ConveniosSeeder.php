@@ -9,38 +9,135 @@ class ConveniosSeeder extends Seeder
 {
     public function run(): void
     {
+        // Instituciones Educativas
         Convenio::create([
             'nombre' => 'INACAP',
             'tipo' => 'institucion_educativa',
-            'descripcion' => 'Instituto profesional',
-            'descuento_porcentaje' => 10,
+            'descripcion' => 'Instituto de Capacitación - Estudiantes y egresados',
+            'descuento_porcentaje' => 15,
             'descuento_monto' => 0,
+            'contacto_nombre' => 'Departamento de Bienestar',
+            'contacto_email' => 'bienestar@inacap.cl',
+            'contacto_telefono' => '+56227891000',
             'activo' => true,
         ]);
 
         Convenio::create([
-            'nombre' => 'DUOC',
+            'nombre' => 'DUOC UC',
             'tipo' => 'institucion_educativa',
-            'descripcion' => 'Instituto profesional',
-            'descuento_porcentaje' => 10,
+            'descripcion' => 'Instituto Profesional - Estudiantes y trabajadores',
+            'descuento_porcentaje' => 12,
             'descuento_monto' => 0,
+            'contacto_nombre' => 'Departamento de Vida Universitaria',
+            'contacto_email' => 'vida.universitaria@duocuc.cl',
+            'contacto_telefono' => '+56227197000',
             'activo' => true,
         ]);
 
+        Convenio::create([
+            'nombre' => 'Universidad Andrés Bello',
+            'tipo' => 'institucion_educativa',
+            'descripcion' => 'UNAB - Estudiantes y personal administrativo',
+            'descuento_porcentaje' => 10,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Dirección de Bienestar',
+            'contacto_email' => 'bienestar@unab.cl',
+            'contacto_telefono' => '+56227703000',
+            'activo' => true,
+        ]);
+
+        // Empresas
         Convenio::create([
             'nombre' => 'Cruz Verde',
             'tipo' => 'empresa',
-            'descripcion' => 'Cadena de farmacias',
-            'descuento_porcentaje' => 5,
+            'descripcion' => 'Cadena de farmacias - Personal y ejecutivos',
+            'descuento_porcentaje' => 8,
             'descuento_monto' => 0,
+            'contacto_nombre' => 'Recursos Humanos',
+            'contacto_email' => 'rrhh@cruzverde.cl',
+            'contacto_telefono' => '+56226481000',
             'activo' => true,
         ]);
 
         Convenio::create([
             'nombre' => 'Falabella',
             'tipo' => 'empresa',
-            'descripcion' => 'Retail',
-            'descuento_porcentaje' => 5,
+            'descripcion' => 'Retail - Personal tiendas',
+            'descuento_porcentaje' => 10,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Relaciones Laborales',
+            'contacto_email' => 'rrll@falabella.cl',
+            'contacto_telefono' => '+56223835000',
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Banco Santander',
+            'tipo' => 'empresa',
+            'descripcion' => 'Entidad financiera - Personal y clientes gold',
+            'descuento_porcentaje' => 12,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Beneficios Corporativos',
+            'contacto_email' => 'beneficios@santander.cl',
+            'contacto_telefono' => '+56226381234',
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Clínica Montefiore',
+            'tipo' => 'empresa',
+            'descripcion' => 'Centro médico - Personal administrativo y asistencial',
+            'descuento_porcentaje' => 15,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Departamento de RR.HH.',
+            'contacto_email' => 'rrhh@montefiore.cl',
+            'contacto_telefono' => '+56227244000',
+            'activo' => true,
+        ]);
+
+        // Organizaciones
+        Convenio::create([
+            'nombre' => 'Colegio de Ingenieros',
+            'tipo' => 'organizacion',
+            'descripcion' => 'Asociación profesional - Miembros activos',
+            'descuento_porcentaje' => 8,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Secretaría General',
+            'contacto_email' => 'beneficios@ingenieros.cl',
+            'contacto_telefono' => '+56226395700',
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Cámara de Comercio Santiago',
+            'tipo' => 'organizacion',
+            'descripcion' => 'Asociación empresarial - Socios y afiliados',
+            'descuento_porcentaje' => 7,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Departamento de Afiliados',
+            'contacto_email' => 'afiliados@ccsantiago.cl',
+            'contacto_telefono' => '+56227973000',
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Club de Empresarios',
+            'tipo' => 'organizacion',
+            'descripcion' => 'Red de negocios - Miembros premium',
+            'descuento_porcentaje' => 20,
+            'descuento_monto' => 0,
+            'contacto_nombre' => 'Coordinador de Beneficios',
+            'contacto_email' => 'beneficios@clubempresarios.cl',
+            'contacto_telefono' => '+56227445566',
+            'activo' => true,
+        ]);
+
+        // Sin descuento (referencia)
+        Convenio::create([
+            'nombre' => 'Miembro Regular',
+            'tipo' => 'otro',
+            'descripcion' => 'Membresía sin convenio especial',
+            'descuento_porcentaje' => 0,
             'descuento_monto' => 0,
             'activo' => true,
         ]);

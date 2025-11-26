@@ -11,6 +11,7 @@ use App\Models\Membresia;
 use App\Models\Estado;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
+use App\Models\PrecioMembresia;
 use Faker\Factory as Faker;
 use Carbon\Carbon;
 
@@ -28,238 +29,230 @@ class EnhancedTestDataSeeder extends Seeder
         $metodos_pago = MetodoPago::all();
         $motivos_descuento = MotivoDescuento::all();
 
-        // Crear 50 clientes con diferentes tipos
-        for ($i = 0; $i < 50; $i++) {
+        // Nombres chilenos realistas
+        $nombresChilenos = [
+            'Juan', 'Carlos', 'Miguel', 'Roberto', 'Fernando', 'Javier', 'Ricardo', 'Andrés',
+            'Jorge', 'Francisco', 'Diego', 'Pablo', 'Raúl', 'Sergio', 'Claudio', 'Luis',
+            'Marcos', 'José', 'Rodrigo', 'Alejandro', 'Felipe', 'Victor', 'Mario', 'Oscar',
+            'Manuel', 'Gabriel', 'Antonio', 'Arturo', 'Iván', 'Héctor', 'Ramón', 'Ignacio',
+            'María', 'Gabriela', 'Patricia', 'Rosa', 'Carmen', 'Ana', 'Laura', 'Sandra',
+            'Beatriz', 'Verónica', 'Claudia', 'Lorena', 'Ximena', 'Catalina', 'Paola', 'Francisca',
+        ];
+
+        $apellidosChilenos = [
+            'González', 'Muñoz', 'Martínez', 'García', 'López', 'Rodríguez', 'Hernández', 'Pérez',
+            'Flores', 'Vargas', 'Castro', 'Torres', 'Silva', 'Morales', 'Ortiz', 'Jiménez',
+            'Ramírez', 'Carrasco', 'Soto', 'Núñez', 'Vega', 'Ruiz', 'Acuña', 'Fuentes',
+            'Rojas', 'Araya', 'Valenzuela', 'Reyes', 'Contreras', 'Moreno', 'Vidal', 'Bravo',
+        ];
+
+        // Crear 60 clientes con datos realistas
+        for ($i = 0; $i < 60; $i++) {
             $cliente = Cliente::create([
-                'run_pasaporte' => $faker->unique()->numerify('##.###.###-#'),
-                'nombres' => $faker->firstName(),
-                'apellido_paterno' => $faker->lastName(),
-                'apellido_materno' => $faker->lastName(),
+                'run_pasaporte' => $this->generarRutChileno($faker),
+                'nombres' => $faker->randomElement($nombresChilenos),
+                'apellido_paterno' => $faker->randomElement($apellidosChilenos),
+                'apellido_materno' => $faker->randomElement($apellidosChilenos),
                 'celular' => $faker->numerify('+569 #### ####'),
                 'email' => $faker->unique()->safeEmail(),
-                'direccion' => $faker->address(),
-                'fecha_nacimiento' => $faker->dateTimeBetween('-60 years', '-18 years'),
+                'direccion' => $faker->streetAddress(),
+                'fecha_nacimiento' => $faker->dateTimeBetween('-65 years', '-18 years'),
+                'contacto_emergencia' => $faker->randomElement($nombresChilenos) . ' ' . $faker->randomElement($apellidosChilenos),
+                'telefono_emergencia' => $faker->numerify('+569 #### ####'),
                 'id_convenio' => $faker->randomElement($convenios->pluck('id')->toArray()),
-                'observaciones' => $faker->optional(0.3)->text(100),
-                'activo' => $faker->boolean(80),
-                'created_at' => $faker->dateTimeBetween('-6 months', 'now'),
+                'observaciones' => $faker->optional(0.2)->text(80),
+                'activo' => $faker->boolean(85),
+                'created_at' => $faker->dateTimeBetween('-12 months', 'now'),
             ]);
 
-            // Generar inscripciones para cada cliente (0 a 5)
-            $num_inscripciones = $faker->numberBetween(0, 5);
+            // Generar inscripciones (0 a 4 por cliente)
+            $num_inscripciones = $faker->numberBetween(0, 4);
             for ($j = 0; $j < $num_inscripciones; $j++) {
-                $membresia = $faker->randomElement($membresias);
-                $convenio = $faker->randomElement($convenios);
-                $estado = $faker->randomElement($estados);
+                $membresia = $membresias->random();
+                $precioMembresia = PrecioMembresia::where('id_membresia', $membresia->id)->latest()->first();
                 
-                // Obtener precio acordado
-                $precio_membresia = $membresia->precios()->latest()->first();
-                if (!$precio_membresia) {
+                if (!$precioMembresia) {
                     continue;
                 }
+
+                $mesesAtras = $faker->numberBetween(1, 12);
+                $fechaInicio = $now->copy()->subMonths($mesesAtras)->startOfDay();
+                $fechaVencimiento = $fechaInicio->copy()->addDays($membresia->duracion_dias);
                 
-                $fecha_inicio = $faker->dateTimeBetween('-12 months', 'now');
-                $fecha_vencimiento = Carbon::instance($fecha_inicio)->addDays($membresia->duracion_dias);
+                $estado = $faker->randomElement($estados);
+                $tieneDescuento = $faker->boolean(35);
+                $descuentoAplicado = 0;
                 
-                $precio_base = $precio_membresia->precio_normal;
-                $descuento_aplicado = 0;
-                
-                // Aplicar descuentos aleatorios
-                if ($faker->boolean(40)) {
-                    $descuento_aplicado = $faker->numberBetween(5, 30);
+                if ($tieneDescuento) {
+                    $descuentoAplicado = $faker->randomFloat(2, 5000, 20000);
                 }
-                
-                $precio_final = $precio_base - ($precio_base * $descuento_aplicado / 100);
+
+                $precioFinal = max(0, $precioMembresia->precio_normal - $descuentoAplicado);
                 
                 $inscripcion = Inscripcion::create([
                     'id_cliente' => $cliente->id,
                     'id_membresia' => $membresia->id,
-                    'id_convenio' => $faker->boolean(60) ? $convenio->id : null,
-                    'id_precio_acordado' => $precio_membresia->id,
+                    'id_convenio' => $faker->boolean(70) ? $faker->randomElement($convenios->pluck('id')->toArray()) : null,
+                    'id_precio_acordado' => $precioMembresia->id,
                     'id_estado' => $estado->id,
-                    'id_motivo_descuento' => $faker->boolean(30) ? $faker->randomElement($motivos_descuento->pluck('id')->toArray()) : null,
-                    'fecha_inscripcion' => $faker->dateTimeBetween('-12 months', 'now'),
-                    'fecha_inicio' => $fecha_inicio,
-                    'fecha_vencimiento' => $fecha_vencimiento,
-                    'precio_base' => $precio_base,
-                    'descuento_aplicado' => $descuento_aplicado,
-                    'precio_final' => $precio_final,
-                    'observaciones' => $faker->optional(0.2)->text(100),
+                    'id_motivo_descuento' => $tieneDescuento && $faker->boolean(50) ? $faker->randomElement($motivos_descuento->pluck('id')->toArray()) : null,
+                    'fecha_inscripcion' => $fechaInicio,
+                    'fecha_inicio' => $fechaInicio,
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'dia_pago' => $faker->optional(0.7)->numberBetween(1, 28),
+                    'precio_base' => $precioMembresia->precio_normal,
+                    'descuento_aplicado' => $descuentoAplicado,
+                    'precio_final' => $precioFinal,
+                    'observaciones' => $faker->optional(0.15)->text(80),
                     'created_at' => $faker->dateTimeBetween('-12 months', 'now'),
                 ]);
 
-                // Generar pagos para inscripciones activas o pagadas
-                if ($estado->nombre != 'Cancelada' && $faker->boolean(70)) {
-                    $num_pagos = $faker->numberBetween(1, 3);
-                    $monto_restante = $precio_final;
-                    
-                    for ($k = 0; $k < $num_pagos; $k++) {
-                        if ($k == $num_pagos - 1) {
-                            $monto = $monto_restante;
+                // Generar pagos
+                if ($estado->nombre !== 'Cancelada' && $faker->boolean(75)) {
+                    $numPagos = $faker->numberBetween(1, 2);
+                    $montoRestante = $precioFinal;
+
+                    for ($k = 0; $k < $numPagos; $k++) {
+                        if ($k === $numPagos - 1) {
+                            $montoAbonado = $montoRestante;
                         } else {
-                            $monto = $faker->randomFloat(2, $monto_restante * 0.1, $monto_restante * 0.6);
-                            $monto_restante -= $monto;
+                            $montoAbonado = $faker->randomFloat(2, $montoRestante * 0.4, $montoRestante * 0.7);
                         }
-                        
-                        $fecha_pago = $faker->dateTimeBetween($fecha_inicio, $now);
-                        $periodo_inicio = Carbon::instance($fecha_pago);
-                        $estado_pago = $k == $num_pagos - 1 && $monto_restante <= 0 
-                            ? $estados->where('nombre', 'Pagado')->first()?->id 
-                            : $estados->where('nombre', 'Pendiente')->first()?->id;
-                        
+
+                        $fechaPago = $faker->dateTimeBetween($fechaInicio, $now);
+                        $periodoInicio = Carbon::instance($fechaPago)->startOfDay();
+                        $estadoPago = $estados->where('nombre', 'Pagado')->first()->id;
+
                         Pago::create([
                             'id_inscripcion' => $inscripcion->id,
                             'id_cliente' => $cliente->id,
                             'id_metodo_pago' => $faker->randomElement($metodos_pago->pluck('id')->toArray()),
-                            'monto_total' => $precio_final,
-                            'monto_abonado' => $monto,
-                            'monto_pendiente' => max(0, $monto_restante - $monto),
+                            'monto_total' => $precioFinal,
+                            'monto_abonado' => $montoAbonado,
+                            'monto_pendiente' => max(0, $montoRestante - $montoAbonado),
                             'descuento_aplicado' => 0,
                             'id_motivo_descuento' => null,
-                            'fecha_pago' => $fecha_pago,
-                            'periodo_inicio' => $periodo_inicio->copy(),
-                            'periodo_fin' => $periodo_inicio->copy()->addDays(30),
-                            'referencia_pago' => $faker->optional(0.5)->numerify('REF-########'),
-                            'id_estado' => $estado_pago,
+                            'fecha_pago' => $fechaPago,
+                            'periodo_inicio' => $periodoInicio,
+                            'periodo_fin' => $periodoInicio->copy()->addDays(30),
+                            'referencia_pago' => $faker->optional(0.4)->numerify('REF-########'),
+                            'id_estado' => $estadoPago,
+                            'cantidad_cuotas' => 1,
+                            'numero_cuota' => 1,
                             'observaciones' => $faker->optional(0.1)->text(50),
                             'created_at' => $faker->dateTimeBetween('-12 months', 'now'),
                         ]);
+
+                        $montoRestante -= $montoAbonado;
                     }
                 }
             }
         }
 
-        // Crear casos especiales para testing
-        $this->crearClientesEspeciales($faker, $convenios, $membresias, $estados, $metodos_pago, $motivos_descuento);
+        $this->crearClientesEspeciales($convenios, $membresias, $estados, $metodos_pago);
     }
 
-    private function crearClientesEspeciales($faker, $convenios, $membresias, $estados, $metodos_pago, $motivos_descuento)
+    private function crearClientesEspeciales($convenios, $membresias, $estados, $metodos_pago)
     {
-        // 1. Cliente sin inscripciones
+        // Cliente de prueba sin inscripciones
         Cliente::create([
-            'run_pasaporte' => '99.999.999-9',
-            'nombres' => 'Sin',
-            'apellido_paterno' => 'Inscripción',
-            'apellido_materno' => 'Test',
-            'celular' => '+569 9999 9999',
-            'email' => 'sin.inscripcion@test.com',
-            'direccion' => 'Dirección Test 1',
+            'run_pasaporte' => '10.000.001-5',
+            'nombres' => 'Prueba',
+            'apellido_paterno' => 'Sin',
+            'apellido_materno' => 'Inscripción',
+            'celular' => '+56991111111',
+            'email' => 'sin.inscripcion@estoicos.test',
+            'direccion' => 'Av. Paseo Colón 1000',
             'fecha_nacimiento' => Carbon::now()->subYears(30),
             'activo' => true,
         ]);
 
-        // 2. Cliente con múltiples inscripciones activas
-        $cliente_activo = Cliente::create([
-            'run_pasaporte' => '88.888.888-8',
-            'nombres' => 'Muy',
-            'apellido_paterno' => 'Activo',
-            'apellido_materno' => 'Test',
-            'celular' => '+569 8888 8888',
-            'email' => 'muy.activo@test.com',
-            'direccion' => 'Dirección Test 2',
-            'fecha_nacimiento' => Carbon::now()->subYears(25),
-            'activo' => true,
-        ]);
-
-        for ($i = 0; $i < 4; $i++) {
-            $membresia = $membresias->random();
-            $precio_membresia = $membresia->precios()->latest()->first();
-            
-            if (!$precio_membresia) {
-                continue;
-            }
-            
-            $fecha_inicio = Carbon::now()->subMonths($i);
-            
-            Inscripcion::create([
-                'id_cliente' => $cliente_activo->id,
-                'id_membresia' => $membresia->id,
-                'id_convenio' => $convenios->random()->id,
-                'id_precio_acordado' => $precio_membresia->id,
-                'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
-                'fecha_inscripcion' => $fecha_inicio,
-                'fecha_inicio' => $fecha_inicio,
-                'fecha_vencimiento' => $fecha_inicio->copy()->addDays($membresia->duracion_dias),
-                'precio_base' => $precio_membresia->precio_normal,
-                'descuento_aplicado' => 0,
-                'precio_final' => $precio_membresia->precio_normal,
-            ]);
-        }
-
-        // 3. Cliente con inscripción vencida
-        $cliente_vencido = Cliente::create([
-            'run_pasaporte' => '77.777.777-7',
-            'nombres' => 'Vencido',
-            'apellido_paterno' => 'Test',
-            'apellido_materno' => 'Cliente',
-            'celular' => '+569 7777 7777',
-            'email' => 'vencido@test.com',
-            'direccion' => 'Dirección Test 3',
+        // Cliente activo con múltiples membresías
+        $clienteActivo = Cliente::create([
+            'run_pasaporte' => '20.000.002-4',
+            'nombres' => 'Roberto',
+            'apellido_paterno' => 'González',
+            'apellido_materno' => 'Martínez',
+            'celular' => '+56992222222',
+            'email' => 'activo@estoicos.test',
+            'direccion' => 'Av. Las Condes 2500',
             'fecha_nacimiento' => Carbon::now()->subYears(35),
+            'id_convenio' => $convenios->where('nombre', 'Club de Empresarios')->first()->id,
             'activo' => true,
         ]);
 
-        $membresia = $membresias->first();
-        $precio_membresia = $membresia->precios()->latest()->first();
-        
-        if ($precio_membresia) {
-            Inscripcion::create([
-                'id_cliente' => $cliente_vencido->id,
-                'id_membresia' => $membresia->id,
-                'id_precio_acordado' => $precio_membresia->id,
-                'id_estado' => $estados->where('nombre', 'Cancelada')->first()->id,
-                'fecha_inscripcion' => Carbon::now()->subMonths(6),
-                'fecha_inicio' => Carbon::now()->subMonths(6),
-                'fecha_vencimiento' => Carbon::now()->subMonths(2),
-                'precio_base' => $precio_membresia->precio_normal,
-                'descuento_aplicado' => 0,
-                'precio_final' => $precio_membresia->precio_normal,
-            ]);
-        }
+        // 3 inscripciones activas
+        for ($i = 0; $i < 3; $i++) {
+            $membresia = $membresias->skip($i)->first();
+            $precioMembresia = PrecioMembresia::where('id_membresia', $membresia->id)->latest()->first();
+            
+            if (!$precioMembresia) continue;
 
-        // 4. Cliente sin convenio
-        $cliente_sin_convenio = Cliente::create([
-            'run_pasaporte' => '66.666.666-6',
-            'nombres' => 'Sin',
-            'apellido_paterno' => 'Convenio',
-            'apellido_materno' => 'Test',
-            'celular' => '+569 6666 6666',
-            'email' => 'sin.convenio@test.com',
-            'direccion' => 'Dirección Test 4',
-            'fecha_nacimiento' => Carbon::now()->subYears(28),
-            'id_convenio' => null,
-            'activo' => true,
-        ]);
-
-        $membresia = $membresias->random();
-        $precio_membresia = $membresia->precios()->latest()->first();
-        
-        if ($precio_membresia) {
             Inscripcion::create([
-                'id_cliente' => $cliente_sin_convenio->id,
+                'id_cliente' => $clienteActivo->id,
                 'id_membresia' => $membresia->id,
-                'id_precio_acordado' => $precio_membresia->id,
+                'id_convenio' => $convenios->where('nombre', 'Club de Empresarios')->first()->id,
+                'id_precio_acordado' => $precioMembresia->id,
                 'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
-                'fecha_inscripcion' => Carbon::now()->subMonths(1),
-                'fecha_inicio' => Carbon::now()->subMonths(1),
-                'fecha_vencimiento' => Carbon::now()->addMonths(11),
-                'precio_base' => $precio_membresia->precio_normal,
-                'descuento_aplicado' => 15,
-                'precio_final' => $precio_membresia->precio_normal * 0.85,
+                'fecha_inscripcion' => now()->subMonths($i),
+                'fecha_inicio' => now()->subMonths($i),
+                'fecha_vencimiento' => now()->addMonths(12 - $i),
+                'dia_pago' => 15,
+                'precio_base' => $precioMembresia->precio_normal,
+                'descuento_aplicado' => 0,
+                'precio_final' => $precioMembresia->precio_normal,
             ]);
         }
 
-        // 5. Cliente inactivo
+        // Cliente inactivo
         Cliente::create([
-            'run_pasaporte' => '55.555.555-5',
+            'run_pasaporte' => '30.000.003-3',
             'nombres' => 'Inactivo',
-            'apellido_paterno' => 'Test',
-            'apellido_materno' => 'Usuario',
-            'celular' => '+569 5555 5555',
-            'email' => 'inactivo@test.com',
-            'direccion' => 'Dirección Test 5',
-            'fecha_nacimiento' => Carbon::now()->subYears(40),
+            'apellido_paterno' => 'Usuario',
+            'apellido_materno' => 'Test',
+            'celular' => '+56993333333',
+            'email' => 'inactivo@estoicos.test',
+            'direccion' => 'Av. Providencia 1500',
+            'fecha_nacimiento' => Carbon::now()->subYears(50),
             'activo' => false,
         ]);
     }
+
+    private function generarRutChileno($faker)
+    {
+        $rut = $faker->numberBetween(5000000, 25000000);
+        $dv = $this->calcularDvRut($rut);
+        
+        return sprintf('%d.%s-%s',
+            intval($rut / 1000000),
+            substr(sprintf('%06d', $rut % 1000000), 0, 3) . '.' . substr(sprintf('%06d', $rut % 1000000), 3),
+            $dv
+        );
+    }
+
+    private function calcularDvRut($rut)
+    {
+        $s = 0;
+        $m = 2;
+        
+        while ($rut != 0) {
+            $s += ($rut % 10) * $m;
+            $rut = intval($rut / 10);
+            $m++;
+            if ($m > 7) {
+                $m = 2;
+            }
+        }
+        
+        $dv = 11 - ($s % 11);
+        
+        if ($dv === 10) {
+            return 'K';
+        } elseif ($dv === 11) {
+            return '0';
+        } else {
+            return (string)$dv;
+        }
+    }
 }
+
