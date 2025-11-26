@@ -155,7 +155,7 @@
                                 @endif
                             </td>
                             <td>
-                                <strong>${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 2) }}</strong>
+                                <strong>${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}</strong>
                             </td>
                             <td>
                                 @php
@@ -189,7 +189,7 @@
                                         <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
                                     </span>
                                     <br>
-                                    <small class="text-muted">Total: <strong>${{ number_format($montoTotal, 0, ',', '.') }}</strong></small>
+                                    <small class="text-muted">Total: <strong>${{ number_format($montoTotal, 0, '.', '.') }}</strong></small>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>

@@ -190,7 +190,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Precio Base</span>
-                            <span class="info-box-number">${{ number_format($inscripcion->precio_base, 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->precio_base, 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -202,7 +202,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Descuento</span>
-                            <span class="info-box-number">${{ number_format($inscripcion->descuento_aplicado, 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}</span>
                             @if($inscripcion->motivoDescuento)
                                 <small class="text-muted">{{ $inscripcion->motivoDescuento->nombre }}</small>
                             @endif
@@ -217,7 +217,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Precio Final</span>
-                            <span class="info-box-number">${{ number_format($inscripcion->precio_base - $inscripcion->descuento_aplicado, 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->precio_base - $inscripcion->descuento_aplicado, 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -352,7 +352,7 @@
                             @foreach($inscripcion->pagos->sortByDesc('fecha_pago')->take(10) as $pago)
                                 <tr>
                                     <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
-                                    <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
+                                    <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
                                     <td>
                                         @if($pago->cantidad_cuotas > 1)
                                             <span class="badge badge-info">{{ $pago->numero_cuota }}/{{ $pago->cantidad_cuotas }}</span>

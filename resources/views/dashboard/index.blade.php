@@ -276,7 +276,7 @@
                                                 {{ Str::limit($pago->inscripcion->cliente->nombres, 14) }}
                                             </a>
                                         </td>
-                                        <td><strong>${{ number_format($pago->monto_abonado, 0) }}</strong></td>
+                                        <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
                                         <td><small>{{ $pago->metodoPago?->nombre }}</small></td>
                                         <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
                                         <td><small>{{ $pago->fecha_pago->format('d/m H:i') }}</small></td>

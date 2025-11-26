@@ -115,11 +115,11 @@
                                 </a>
                             </td>
                             <td>
-                                <strong>${{ number_format($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base, 2, ',', '.') }}</strong>
+                                <strong>${{ number_format($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base, 0, '.', '.') }}</strong>
                             </td>
                             <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                             <td>
-                                <span class="text-success"><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></span>
+                                <span class="text-success"><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></span>
                             </td>
                             <td>
                                 @php
@@ -128,7 +128,7 @@
                                     $pendiente = $monto_total - $total_abonado;
                                 @endphp
                                 @if($pendiente > 0)
-                                    <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 2, ',', '.') }}</span>
+                                    <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}</span>
                                 @else
                                     <span class="badge bg-success">Pagado</span>
                                 @endif

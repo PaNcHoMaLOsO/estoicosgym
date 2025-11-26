@@ -4,6 +4,7 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="{{ asset('js/precio-formatter.js') }}"></script>
     <style>
         .form-section {
             border-left: 4px solid #0066cc;
@@ -429,6 +430,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Aumentar tamaño del contenedor del dropdown
     $('.select2-large-dropdown').css('min-height', '300px');
+    
+    // Inicializar formateador de precios para campos de entrada
+    PrecioFormatter.iniciarCampo('descuento_adicional', false);
+    PrecioFormatter.iniciarCampo('monto_abonado', false);
 
     // Cargar precio cuando se selecciona membresía - SOLO para mostrar información
     // El backend es quien calcula el descuento real
@@ -456,9 +461,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const precioFinalPreview = precioBase - descuentoTotalPreview;
 
                 // Mostrar precios en el resumen (ES SOLO UNA REFERENCIA VISUAL)
-                precioBaseEl.textContent = '$' + precioBase.toFixed(2);
-                precioDescuentoEl.textContent = '$' + descuentoTotalPreview.toFixed(2);
-                precioTotalEl.textContent = '$' + precioFinalPreview.toFixed(2);
+                precioBaseEl.textContent = '$' + PrecioFormatter.formatear(precioBase);
+                precioDescuentoEl.textContent = '$' + PrecioFormatter.formatear(descuentoTotalPreview);
+                precioTotalEl.textContent = '$' + PrecioFormatter.formatear(precioFinalPreview);
                 
                 // NO guardar en hidden field aquí - el backend calcula el valor real
                 // Solo mostrar mensaje informativo

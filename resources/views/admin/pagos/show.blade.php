@@ -37,7 +37,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Monto Abonado</span>
-                            <span class="info-box-number">${{ number_format($pago->monto_abonado, 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -192,7 +192,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total Pagos</span>
-                            <span class="info-box-number">${{ number_format($pago->inscripcion->pagos->sum('monto_abonado'), 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($pago->inscripcion->pagos->sum('monto_abonado'), 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
