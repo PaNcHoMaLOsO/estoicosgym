@@ -245,43 +245,104 @@
     <div class="card card-success mb-4">
         <div class="card-header">
             <h3 class="card-title">
-                <i class="fas fa-money-bill-wave"></i> Resumen de Pagos
+                <i class="fas fa-money-bill-wave"></i> Resumen de Pagos y Cuotas
             </h3>
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-3 mb-3">
                     <div class="info-box">
-                        <span class="info-box-icon bg-success">
+                        <span class="info-box-icon bg-primary">
                             <i class="fas fa-receipt"></i>
                         </span>
                         <div class="info-box-content">
-                            <span class="info-box-text">Total Pagos</span>
-                            <span class="info-box-number">${{ number_format($inscripcion->pagos->sum('monto_abonado'), 2, ',', '.') }}</span>
+                            <span class="info-box-text">Total a Pagar</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['monto_total'], 2, ',', '.') }}</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-3 mb-3">
                     <div class="info-box">
-                        <span class="info-box-icon bg-info">
-                            <i class="fas fa-list-ol"></i>
+                        <span class="info-box-icon bg-success">
+                            <i class="fas fa-check-circle"></i>
                         </span>
                         <div class="info-box-content">
-                            <span class="info-box-text">Cantidad de Pagos</span>
-                            <span class="info-box-number">{{ $inscripcion->pagos->count() }}</span>
+                            <span class="info-box-text">Total Abonado</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['total_abonado'], 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning">
+                            <i class="fas fa-hourglass-half"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pendiente</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['pendiente'], 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info">
+                            <i class="fas fa-percentage"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pagado</span>
+                            <span class="info-box-number">{{ number_format($estadoPago['porcentaje_pagado'], 1) }}%</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Barra de progreso -->
+            <div class="progress mb-3" style="height: 25px;">
+                @php
+                    $porcentaje = $estadoPago['porcentaje_pagado'];
+                    $colorBarra = $porcentaje >= 100 ? 'bg-success' : ($porcentaje >= 75 ? 'bg-info' : ($porcentaje >= 50 ? 'bg-warning' : 'bg-danger'));
+                @endphp
+                <div class="progress-bar {{ $colorBarra }}" role="progressbar" 
+                     style="width: {{ min($porcentaje, 100) }}%" 
+                     aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="100">
+                    {{ number_format($porcentaje, 1) }}%
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light">
+                        <strong><i class="fas fa-list-ol"></i> Cantidad de Pagos:</strong> {{ $estadoPago['total_pagos'] }}
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light">
+                        <strong><i class="fas fa-check-double"></i> Estado:</strong> 
+                        <span class="badge {{ $estadoPago['estado'] == 'pagado' ? 'badge-success' : ($estadoPago['estado'] == 'parcial' ? 'badge-warning' : 'badge-danger') }}">
+                            {{ ucfirst($estadoPago['estado']) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón para agregar pago -->
+            <div class="mt-3">
+                <a href="{{ route('admin.pagos.create', ['id_inscripcion' => $inscripcion->id]) }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Registrar Pago
+                </a>
+            </div>
+        </div>
+    </div>
 
             @if($inscripcion->pagos->count() > 0)
                 <div class="table-responsive mt-3">
                     <table class="table table-sm table-striped table-hover">
                         <thead class="bg-light">
                             <tr>
-                                <th>ID</th>
                                 <th>Fecha</th>
                                 <th>Monto</th>
+                                <th>Cuota</th>
+                                <th>Vencimiento Cuota</th>
                                 <th>Estado</th>
                                 <th>Método</th>
                                 <th>Acción</th>
@@ -290,9 +351,22 @@
                         <tbody>
                             @foreach($inscripcion->pagos->sortByDesc('fecha_pago')->take(10) as $pago)
                                 <tr>
-                                    <td>{{ $pago->id }}</td>
                                     <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
                                     <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
+                                    <td>
+                                        @if($pago->cantidad_cuotas > 1)
+                                            <span class="badge badge-info">{{ $pago->numero_cuota }}/{{ $pago->cantidad_cuotas }}</span>
+                                        @else
+                                            <span class="badge badge-secondary">Única</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($pago->fecha_vencimiento_cuota)
+                                            {{ $pago->fecha_vencimiento_cuota->format('d/m/Y') }}
+                                        @else
+                                            <small class="text-muted">-</small>
+                                        @endif
+                                    </td>
                                     <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
                                     <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
                                     <td>
