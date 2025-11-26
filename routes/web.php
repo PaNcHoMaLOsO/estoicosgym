@@ -57,6 +57,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // CRUD Membresias (configuración)
     Route::resource('membresias', MembresiaController::class);
+    Route::get('membresias-inactivas/ver', [MembresiaController::class, 'inactivas'])->name('membresias.inactivas');
 
     // CRUD Métodos de Pago
     Route::resource('metodos-pago', MetodoPagoController::class);

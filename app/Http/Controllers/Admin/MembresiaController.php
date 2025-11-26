@@ -21,6 +21,15 @@ class MembresiaController extends Controller
     }
 
     /**
+     * Display a listing of inactive memberships.
+     */
+    public function inactivas()
+    {
+        $membresias = Membresia::where('activo', false)->withCount('inscripciones')->with(['precios', 'inscripciones'])->paginate(20);
+        return view('admin.membresias.inactivas', compact('membresias'));
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -214,7 +223,7 @@ class MembresiaController extends Controller
             // Desactivar la membresía
             $membresia->update(['activo' => false]);
             
-            \Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . Auth::user()->name);
+            \Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
             
             return redirect()->route('admin.membresias.index')
                 ->with('success', "Membresía '{$nombreMembresia}' desactivada exitosamente. " .
@@ -225,7 +234,7 @@ class MembresiaController extends Controller
         if ($forceDelete) {
             $inscripcionesTotales = $membresia->inscripciones()->count();
             
-            \Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
+            \Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
             
             $membresia->delete();
             
@@ -236,7 +245,7 @@ class MembresiaController extends Controller
         // Si no hay inscripciones activas, eliminar directamente
         $inscripcionesTotales = $membresia->inscripciones()->count();
         
-        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
+        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
         
         $membresia->delete();
         

@@ -72,7 +72,7 @@
                             <div class="input-group">
                                 <input type="number" class="form-control @error('duracion_meses') is-invalid @enderror" 
                                        id="duracion_meses" name="duracion_meses" 
-                                       value="{{ old('duracion_meses', $membresia->duracion_meses) }}" min="0" placeholder="0" required>
+                                       value="{{ old('duracion_meses', $membresia->duracion_meses) }}" min="0" max="12" placeholder="0" required>
                                 <div class="input-group-append">
                                     <span class="input-group-text">meses</span>
                                 </div>
@@ -90,13 +90,13 @@
                             <label for="duracion_dias_calculado" class="form-label">Duración Total (Días)</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" 
-                                       id="duracion_dias_calculado" readonly placeholder="Calculado automáticamente">
-                                <input type="hidden" id="duracion_dias" name="duracion_dias">
+                                       id="duracion_dias_calculado" placeholder="Calculado automáticamente" min="1">
+                                <input type="hidden" id="duracion_dias" name="duracion_dias" value="{{ old('duracion_dias', $membresia->duracion_dias) }}">
                                 <div class="input-group-append">
                                     <span class="input-group-text">días</span>
                                 </div>
                             </div>
-                            <small class="form-text text-muted d-block mt-1">Se calcula: (Meses × 30) + 5</small>
+                            <small class="form-text text-muted d-block mt-1" id="dias_info">Se calcula: (Meses × 30) + 5</small>
                         </div>
                     </div>
                 </div>
@@ -227,18 +227,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== Lógica de Duración de Días ==========
     const duracionMeses = document.getElementById('duracion_meses');
     const duracionDias = document.getElementById('duracion_dias');
+    const duracionDiasCalculado = document.getElementById('duracion_dias_calculado');
     const diasInfo = document.getElementById('dias_info');
 
     function actualizarDias() {
         const meses = parseInt(duracionMeses.value) || 0;
         
         if (meses === 0) {
-            duracionDias.removeAttribute('readonly');
-            diasInfo.textContent = 'Ingresa manualmente la duración en días (Ej: Pase Diario=1)';
+            // Modo manual: permitir entrada de días
+            duracionDiasCalculado.removeAttribute('readonly');
+            duracionDiasCalculado.value = '';
+            duracionDiasCalculado.placeholder = 'Ingresa duración manual (Ej: Pase Diario=1)';
+            diasInfo.textContent = '⚠️ Meses = 0: Ingresa manualmente la duración en días';
+            
+            // Sincronizar cambios en el campo visible al hidden
+            duracionDiasCalculado.addEventListener('input', function() {
+                duracionDias.value = this.value;
+            });
         } else {
+            // Modo automático: calcular días
             const dias = (meses * 30) + 5;
             duracionDias.value = dias;
-            diasInfo.textContent = `Duración automática: (${meses} meses × 30) + 5 = ${dias} días`;
+            duracionDiasCalculado.value = dias;
+            duracionDiasCalculado.setAttribute('readonly', 'readonly');
+            duracionDiasCalculado.placeholder = 'Calculado automáticamente';
+            diasInfo.textContent = `Cálculo automático: (${meses} meses × 30) + 5 = ${dias} días`;
+            duracionDiasCalculado.removeEventListener('input', null);
         }
     }
 

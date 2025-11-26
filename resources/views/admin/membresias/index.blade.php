@@ -9,9 +9,14 @@
             <small class="text-muted">Gestión de planes y precios</small>
         </div>
         <div class="col-sm-6">
-            <a href="{{ route('admin.membresias.create') }}" class="btn btn-primary float-right">
-                <i class="fas fa-plus"></i> Nueva Membresía
-            </a>
+            <div class="btn-group float-right" role="group">
+                <a href="{{ route('admin.membresias.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Membresía
+                </a>
+                <a href="{{ route('admin.membresias.inactivas') }}" class="btn btn-warning">
+                    <i class="fas fa-ban"></i> Ver Desactivadas
+                </a>
+            </div>
         </div>
     </div>
 @endsection
