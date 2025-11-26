@@ -27,8 +27,6 @@ use Illuminate\Support\Str;
  * @property-read mixed $nombre_completo
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inscripcion> $inscripciones
  * @property-read int|null $inscripciones_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notificacion> $notificaciones
- * @property-read int|null $notificaciones_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $pagos
  * @property-read int|null $pagos_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente active()
@@ -119,9 +117,21 @@ class Cliente extends Model
         return $this->hasMany(Pago::class, 'id_cliente');
     }
 
+    /**
+     * Notificaciones para este cliente
+     * IMPLEMENTACIÓN FUTURA: Sistema de notificaciones por email
+     * para alertar sobre renovaciones, vencimientos y promociones
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function notificaciones()
     {
-        return $this->hasMany(Notificacion::class, 'id_cliente');
+        // TODO: Implementar modelo Notificacion y su migración
+        // Cuando esté listo descomentar la siguiente línea:
+        // return $this->hasMany(Notificacion::class, 'id_cliente');
+        
+        // Por ahora retornar relación vacía
+        return $this->hasMany(Pago::class, 'id_cliente')->whereNull('id');
     }
 
     public function getNombreCompletoAttribute()
