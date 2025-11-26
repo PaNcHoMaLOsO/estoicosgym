@@ -18,9 +18,13 @@ class InscripcionController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
+        /** @var \Illuminate\Database\Eloquent\Builder $query */
         $query = Inscripcion::with(['cliente', 'estado', 'membresia']);
         
         // Filtro por cliente
