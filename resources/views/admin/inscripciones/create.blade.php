@@ -4,6 +4,68 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .form-section {
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+        .form-section-title {
+            font-weight: bold;
+            color: #0066cc;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .conditional-field {
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        .conditional-field.visible {
+            display: block;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .price-summary {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .price-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .badge-info {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .info-alert {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 2px;
+        }
+    </style>
 @stop
 
 @section('content_header')
@@ -24,7 +86,7 @@
 @section('content')
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle"></i> <strong>Errores de Validación:</strong>
+            <i class="fas fa-exclamation-circle"></i> <strong>Errores:</strong>
             <ul class="mb-0 mt-2">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -39,11 +101,11 @@
     <form action="{{ route('admin.inscripciones.store') }}" method="POST" id="formInscripcion">
         @csrf
 
-        <!-- Información Principal -->
+        <!-- PASO 1: INFORMACIÓN DEL CLIENTE Y MEMBRESÍA -->
         <div class="card card-primary mb-4">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-user-check"></i> Información Principal
+                    <i class="fas fa-user-check"></i> Paso 1: Cliente y Membresía
                 </h3>
             </div>
             <div class="card-body">
@@ -53,19 +115,18 @@
                         <select class="form-control select2-cliente @error('id_cliente') is-invalid @enderror" 
                                 id="id_cliente" name="id_cliente" required style="width: 100%;">
                             <option value="">-- Seleccionar Cliente --</option>
-                            @forelse($clientes as $cliente)
+                            @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" {{ old('id_cliente') == $cliente->id ? 'selected' : '' }}>
                                     {{ $cliente->nombres }} {{ $cliente->apellido_paterno }} ({{ $cliente->email }})
                                 </option>
-                            @empty
-                                <option value="" disabled>No hay clientes disponibles</option>
-                            @endforelse
+                            @endforeach
                         </select>
                         @error('id_cliente')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Se muestran solo clientes sin inscripción activa</small>
+                        <small class="text-muted d-block mt-1">Solo se muestran clientes con membresía vencida</small>
                     </div>
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-layer-group"></i> Membresía <span class="text-danger">*</span></label>
                         <select class="form-control @error('id_membresia') is-invalid @enderror" 
@@ -73,7 +134,7 @@
                             <option value="">-- Seleccionar Membresía --</option>
                             @foreach($membresias as $membresia)
                                 <option value="{{ $membresia->id }}" {{ old('id_membresia') == $membresia->id ? 'selected' : '' }}>
-                                    {{ $membresia->nombre }} ({{ $membresia->duracion_meses }} meses)
+                                    {{ $membresia->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -83,51 +144,34 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-handshake"></i> Convenio (Opcional)</label>
-                        <select class="form-control @error('id_convenio') is-invalid @enderror" 
-                                id="id_convenio" name="id_convenio">
-                            <option value="">-- Sin Convenio --</option>
-                            @foreach($convenios as $convenio)
-                                <option value="{{ $convenio->id }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
-                                    {{ $convenio->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_convenio')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
+                <!-- RESUMEN DE PRECIOS (Dinámico) -->
+                <div id="priceSummary" class="price-summary" style="display: none;">
+                    <div class="price-item">
+                        <span>Precio Base:</span>
+                        <span id="precioBase">$0.00</span>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-toggle-on"></i> Estado <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_estado') is-invalid @enderror" 
-                                id="id_estado" name="id_estado" required>
-                            <option value="">-- Seleccionar Estado --</option>
-                            @foreach($estados as $estado)
-                                <option value="{{ $estado->id }}" {{ old('id_estado') == $estado->id ? 'selected' : '' }}>
-                                    {{ $estado->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_estado')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
+                    <div class="price-item">
+                        <span>Descuento:</span>
+                        <span id="precioDescuento">$0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Precio Total:</span>
+                        <span id="precioTotal">$0.00</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Fechas y Precios -->
+        <!-- PASO 2: FECHAS Y ESTADO -->
         <div class="card card-info mb-4">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-calendar-alt"></i> Fechas y Precios
+                    <i class="fas fa-calendar-alt"></i> Paso 2: Fechas
                 </h3>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-calendar-check"></i> Fecha Inicio <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}" 
@@ -135,57 +179,67 @@
                         @error('fecha_inicio')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Fecha en que inicia la membresía (puede ser futura)</small>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
-                               id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 1) }}" 
-                               min="1" max="12" required>
-                        @error('cantidad_cuotas')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted d-block mt-1">Número de cuotas (1-12)</small>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Precio Cuota</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">$</span>
-                            </div>
-                            <input type="number" class="form-control" 
-                                   id="monto_cuota" name="monto_cuota" step="0.01" min="0.01" 
-                                   readonly>
-                        </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="fas fa-calendar-times"></i> Fecha Vencimiento</label>
+                        <input type="date" class="form-control" id="fecha_vencimiento" readonly>
                         <small class="text-muted d-block mt-1">Se calcula automáticamente</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Descuentos -->
+        <!-- Estado está oculto, siempre será "Activa" -->
+        <input type="hidden" name="id_estado" value="201">
+
+        <!-- PASO 3: DESCUENTOS (Opcional) -->
         <div class="card card-warning mb-4">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-percent"></i> Descuentos
+                    <i class="fas fa-percent"></i> Paso 3: Convenio y Descuentos
                 </h3>
             </div>
             <div class="card-body">
+                @if($convenios->count() > 0)
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><i class="fas fa-handshake"></i> Convenio (Solo aplica a membresía mensual)</label>
+                            <select class="form-control @error('id_convenio') is-invalid @enderror" 
+                                    id="id_convenio" name="id_convenio">
+                                <option value="">-- Sin Convenio --</option>
+                                @foreach($convenios as $convenio)
+                                    <option value="{{ $convenio->id }}" data-nombre="{{ $convenio->nombre }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
+                                        {{ $convenio->nombre }} - {{ $convenio->tipo }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_convenio')
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted d-block mt-1">Se aplicará descuento automático de $5.000 si aplica</small>
+                        </div>
+                    </div>
+                    <hr>
+                @endif
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Monto Descuento (Opcional)</label>
+                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Adicional (Opcional)</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
                             <input type="number" class="form-control @error('descuento_aplicado') is-invalid @enderror" 
-                                   id="descuento_aplicado" name="descuento_aplicado" step="0.01" min="0" 
-                                   value="{{ old('descuento_aplicado', 0) }}" placeholder="0.00">
+                                   id="descuento_adicional" step="0.01" min="0" 
+                                   value="{{ old('descuento_aplicado', 0) }}">
                         </div>
-                        @error('descuento_aplicado')
+                        @error('descuento_adicado')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted d-block mt-1">Descuento extra además del convenio</small>
                     </div>
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-tag"></i> Motivo Descuento</label>
                         <select class="form-control @error('id_motivo_descuento') is-invalid @enderror" 
@@ -200,45 +254,141 @@
                         @error('id_motivo_descuento')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted d-block mt-1">Se auto-completa según convenio si aplica</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Observaciones -->
-        <div class="card card-secondary mb-4">
+        <!-- PASO 4: INFORMACIÓN DE PAGO -->
+        <div class="card card-success mb-4">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-align-left"></i> Observaciones
+                    <i class="fas fa-money-bill-wave"></i> Paso 4: Información de Pago
                 </h3>
             </div>
             <div class="card-body">
-                <div class="form-group">
-                    <textarea class="form-control @error('observaciones') is-invalid @enderror" 
-                              id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales...">{{ old('observaciones') }}</textarea>
-                    @error('observaciones')
-                        <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                    @enderror
+                <div class="info-alert">
+                    <strong><i class="fas fa-info-circle"></i> Nota:</strong> Marca "Pago Pendiente" si el cliente realizará el pago después.
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="pago_pendiente" name="pago_pendiente">
+                            <label class="custom-control-label" for="pago_pendiente">
+                                <strong>Dejar pago pendiente</strong> - El cliente pagará después
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="seccionPago">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar"></i> Fecha Pago <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
+                                   id="fecha_pago" name="fecha_pago" value="{{ old('fecha_pago', now()->format('Y-m-d')) }}" required>
+                            @error('fecha_pago')
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Monto Abonado <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
+                                       id="monto_abonado" name="monto_abonado" step="0.01" min="0.01" 
+                                       value="{{ old('monto_abonado') }}" placeholder="0.00" required>
+                            </div>
+                            @error('monto_abonado')
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-credit-card"></i> Método Pago <span class="text-danger">*</span></label>
+                            <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
+                                    id="id_metodo_pago" name="id_metodo_pago" required>
+                                <option value="">-- Seleccionar Método --</option>
+                                @foreach($metodosPago as $metodo)
+                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                        {{ $metodo->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_metodo_pago')
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- CAMPOS CONDICIONALES: Solo visible si pago es parcial -->
+                    <div id="cuotasSection" class="conditional-field" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas</label>
+                                <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
+                                       id="cantidad_cuotas" name="cantidad_cuotas" min="2" max="12" value="1">
+                                <small class="text-muted d-block mt-1">Solo si el pago es parcial</small>
+                                @error('cantidad_cuotas')
+                                    <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fas fa-receipt"></i> Monto por Cuota</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+                                    <input type="number" class="form-control" id="monto_cuota" readonly>
+                                </div>
+                                <small class="text-muted d-block mt-1">Se calcula automáticamente</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fas fa-calendar-times"></i> Vencimiento Cuota</label>
+                                <input type="date" class="form-control @error('fecha_vencimiento_cuota') is-invalid @enderror" 
+                                       id="fecha_vencimiento_cuota" name="fecha_vencimiento_cuota">
+                                @error('fecha_vencimiento_cuota')
+                                    <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Información General -->
-        <div class="alert alert-info" role="alert">
-            <i class="fas fa-info-circle"></i> 
-            <strong>Nota:</strong> La inscripción se crea con la fecha de hoy. El precio final se calcula automáticamente como: Precio Base - Descuento.
+        <!-- OBSERVACIONES -->
+        <div class="card card-secondary mb-4">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-align-left"></i> Observaciones (Opcional)
+                </h3>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                          id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales...">{{ old('observaciones') }}</textarea>
+                @error('observaciones')
+                    <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
+        <!-- BOTONES -->
         <hr class="my-4">
-
-        <!-- Botones de Acción -->
         <div class="row">
             <div class="col-12">
                 <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-save"></i> Crear Inscripción
+                    <i class="fas fa-save"></i> Crear Inscripción con Pago
                 </button>
             </div>
         </div>
@@ -249,26 +399,42 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const formInscripcion = document.getElementById('formInscripcion');
+    // Elementos del formulario
     const idMembresia = document.getElementById('id_membresia');
     const fechaInicio = document.getElementById('fecha_inicio');
-    const fechaVencimiento = document.getElementById('fecha_vencimiento');
-    const precioBase = document.getElementById('precio_base');
+    const descuentoAdicional = document.getElementById('descuento_adicional');
+    const montoAbonado = document.getElementById('monto_abonado');
     const cantidadCuotas = document.getElementById('cantidad_cuotas');
-    const montoCuota = document.getElementById('monto_cuota');
+    const cuotasSection = document.getElementById('cuotasSection');
+    const priceSummary = document.getElementById('priceSummary');
+    const idConvenio = document.getElementById('id_convenio');
+    const idMotivoDescuento = document.getElementById('id_motivo_descuento');
+    const pagoPendiente = document.getElementById('pago_pendiente');
+    const seccionPago = document.getElementById('seccionPago');
+    
+    // Elementos para mostrar precios
+    const precioBaseEl = document.getElementById('precioBase');
+    const precioDescuentoEl = document.getElementById('precioDescuento');
+    const precioTotalEl = document.getElementById('precioTotal');
+    const montoCuotaEl = document.getElementById('monto_cuota');
+    const fechaVencimientoEl = document.getElementById('fecha_vencimiento');
 
-    // Inicializar Select2 para Cliente
+    // Inicializar Select2
     $('#id_cliente').select2({
         width: '100%',
         allowClear: true,
         language: 'es',
+        dropdownParent: $('#id_cliente').parent(),
+        dropdownCssClass: 'select2-large-dropdown'
     });
+    
+    // Aumentar tamaño del contenedor del dropdown
+    $('.select2-large-dropdown').css('min-height', '300px');
 
-    // Cargar precio al seleccionar membresía
+    // Cargar precio cuando se selecciona membresía
     async function cargarPrecioMembresia() {
         if (!idMembresia.value) {
-            precioBase.value = '';
-            montoCuota.value = '';
+            priceSummary.style.display = 'none';
             return;
         }
 
@@ -277,62 +443,135 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                precioBase.value = data.precio_normal || 0;
-                calcularMontoCuota();
-                calcularInscripcion();
+                const precioBase = parseFloat(data.precio_normal) || 0;
+                
+                // Aplicar descuento de convenio si es membresía mensual (id=1) Y hay convenio seleccionado
+                let descuentoConvenio = 0;
+                if (idConvenio.value && data.id === 1) { // 1 es membresía mensual
+                    descuentoConvenio = 5000; // Descuento de 5000 para mensual con convenio
+                } 
+                
+                const descuentoAdicional = parseFloat(descuentoAdicional?.value) || 0;
+                const descuentoTotal = descuentoConvenio + descuentoAdicional;
+                const precioFinal = precioBase - descuentoTotal;
+
+                precioBaseEl.textContent = '$' + precioBase.toFixed(2);
+                precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
+                precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
+
+                priceSummary.style.display = 'block';
+                calcularVencimiento();
+                validarPagoCompleto();
             }
         } catch (error) {
             console.error('Error al cargar precio:', error);
         }
     }
 
-    // Calcular monto de cuota
-    function calcularMontoCuota() {
-        if (!precioBase.value || !cantidadCuotas.value) {
-            montoCuota.value = '';
-            return;
-        }
-
-        const precio = parseFloat(precioBase.value);
-        const cuotas = parseInt(cantidadCuotas.value);
-        const monto = precio / cuotas;
-        montoCuota.value = monto.toFixed(2);
-    }
-
-    // Función para calcular automáticamente
-    async function calcularInscripcion() {
-        if (!idMembresia.value || !fechaInicio.value || !precioBase.value) {
-            return;
-        }
+    // Calcular fecha de vencimiento
+    async function calcularVencimiento() {
+        if (!idMembresia.value || !fechaInicio.value) return;
 
         try {
-            const response = await fetch('/api/inscripciones/calcular', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                },
-                body: JSON.stringify({
-                    id_membresia: idMembresia.value,
-                    fecha_inicio: fechaInicio.value,
-                    precio_base: parseFloat(precioBase.value),
-                }),
-            });
-
-            const data = await response.json();
+            const response = await fetch(`/api/membresias/${idMembresia.value}`);
+            const membresiaData = await response.json();
 
             if (response.ok) {
-                fechaVencimiento.value = data.fecha_vencimiento;
-                document.getElementById('descuento_aplicado').value = data.descuento_aplicado || 0;
+                // Calcular vencimiento basado en duracion_meses
+                const fechaInicioParsed = new Date(fechaInicio.value);
+                const duracionMeses = membresiaData.duracion_meses || 1;
+                const fechaVencimiento = new Date(fechaInicioParsed);
+                fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
+                
+                // Formatear a YYYY-MM-DD
+                const year = fechaVencimiento.getFullYear();
+                const month = String(fechaVencimiento.getMonth() + 1).padStart(2, '0');
+                const day = String(fechaVencimiento.getDate()).padStart(2, '0');
+                const fechaVencimientoFormato = `${year}-${month}-${day}`;
+                
+                fechaVencimientoEl.value = fechaVencimientoFormato;
             }
         } catch (error) {
-            console.error('Error al calcular:', error);
+            console.error('Error al calcular vencimiento:', error);
         }
     }
 
-    // Escuchar cambios
+    // Validar si el pago es completo o parcial
+    function validarPagoCompleto() {
+        const precioTotal = parseFloat(precioTotalEl.textContent.replace('$', '')) || 0;
+        const monto = parseFloat(montoAbonado.value) || 0;
+
+        if (monto > 0 && monto < precioTotal) {
+            // Pago parcial: mostrar opciones de cuotas
+            cuotasSection.classList.add('visible');
+            cuotasSection.style.display = 'block';
+            cantidadCuotas.value = 2;
+            calcularMontoCuota();
+        } else {
+            // Pago completo o sin especificar: ocultar opciones de cuotas
+            cuotasSection.classList.remove('visible');
+            cuotasSection.style.display = 'none';
+            cantidadCuotas.value = 1;
+        }
+    }
+
+    // Manejar cambio en convenio
+    function manejarCambioConvenio() {
+        cargarPrecioMembresia(); // Recalcular precio con descuento
+        
+        // Auto-rellenar motivo descuento según convenio
+        if (idConvenio.value) {
+            const nombreConvenio = idConvenio.options[idConvenio.selectedIndex].getAttribute('data-nombre');
+            
+            // Mapeo: Si el convenio es INACAP, rellenar con "Estudiante"
+            if (nombreConvenio && nombreConvenio.toUpperCase().includes('INACAP')) {
+                // Buscar opción "Estudiante" en motivos
+                for (let option of idMotivoDescuento.options) {
+                    if (option.textContent.toLowerCase().includes('estudiante')) {
+                        idMotivoDescuento.value = option.value;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Manejar checkbox pago pendiente
+    function manejarPagoPendiente() {
+        const campos = seccionPago.querySelectorAll('input[required], select[required]');
+        
+        if (pagoPendiente.checked) {
+            // Ocultar sección de pago
+            seccionPago.style.display = 'none';
+            // Quitar required de todos los campos
+            campos.forEach(campo => campo.removeAttribute('required'));
+        } else {
+            // Mostrar sección de pago
+            seccionPago.style.display = 'block';
+            // Agregar required a todos los campos
+            campos.forEach(campo => campo.setAttribute('required', 'required'));
+        }
+    }
+
+    // Calcular monto por cuota
+    function calcularMontoCuota() {
+        const precioTotal = parseFloat(precioTotalEl.textContent.replace('$', '')) || 0;
+        const cuotas = parseInt(cantidadCuotas.value) || 1;
+        const montoPorCuota = precioTotal / cuotas;
+
+        montoCuotaEl.value = montoPorCuota.toFixed(2);
+    }
+
+    // Event listeners
     idMembresia.addEventListener('change', cargarPrecioMembresia);
-    fechaInicio.addEventListener('change', calcularInscripcion);
+    idMembresia.addEventListener('change', calcularVencimiento);
+    fechaInicio.addEventListener('change', calcularVencimiento);
+    descuentoAdicional.addEventListener('change', cargarPrecioMembresia);
+    descuentoAdicional.addEventListener('input', cargarPrecioMembresia);
+    idConvenio.addEventListener('change', manejarCambioConvenio);
+    pagoPendiente.addEventListener('change', manejarPagoPendiente);
+    montoAbonado.addEventListener('change', validarPagoCompleto);
+    montoAbonado.addEventListener('input', validarPagoCompleto);
     cantidadCuotas.addEventListener('change', calcularMontoCuota);
 });
 </script>

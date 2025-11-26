@@ -9,6 +9,8 @@ use App\Models\Estado;
 use App\Models\Membresia;
 use App\Models\Convenio;
 use App\Models\MotivoDescuento;
+use App\Models\MetodoPago;
+use App\Models\Pago;
 use Illuminate\Http\Request;
 
 class InscripcionController extends Controller
@@ -73,27 +75,22 @@ class InscripcionController extends Controller
      */
     public function create()
     {
-        // Obtener IDs de estados activos para inscripciones
-        $estadoActiva = Estado::where('nombre', 'Activa')->first();
-        $estadoActivaId = $estadoActiva?->id ?? 1;
-        
-        // Clientes con inscripción ACTIVA (no pueden tener otra)
-        $clientesConInscripcionActiva = Inscripcion::where('id_estado', $estadoActivaId)
-            ->pluck('id_cliente')
-            ->unique()
-            ->toArray();
-        
-        // Mostrar SOLO: Clientes activos SIN inscripción activa
+        // Clientes con membresía VENCIDA
+        $clientesConMembresiaVencida = Inscripcion::where('fecha_vencimiento', '<', now())
+            ->pluck('id_cliente')->unique();
+
         $clientes = Cliente::where('activo', true)
-            ->whereNotIn('id', $clientesConInscripcionActiva)
+            ->whereIn('id', $clientesConMembresiaVencida)
             ->orderBy('nombres')
             ->get();
-        
+
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
         $convenios = Convenio::all();
         $motivos = MotivoDescuento::all();
-        return view('admin.inscripciones.create', compact('clientes', 'estados', 'membresias', 'convenios', 'motivos'));
+        $metodosPago = MetodoPago::where('activo', true)->get();
+
+        return view('admin.inscripciones.create', compact('clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago'));
     }
 
     /**
@@ -101,28 +98,70 @@ class InscripcionController extends Controller
      */
     public function store(Request $request)
     {
+        $pagoPendiente = $request->has('pago_pendiente');
+
         $validated = $request->validate([
             'id_cliente' => 'required|exists:clientes,id',
             'id_membresia' => 'required|exists:membresias,id',
             'id_convenio' => 'nullable|exists:convenios,id',
             'id_estado' => 'required|exists:estados,id',
             'fecha_inicio' => 'required|date',
-            'fecha_vencimiento' => 'required|date|after:fecha_inicio',
-            'precio_base' => 'required|numeric|min:0.01',
             'descuento_aplicado' => 'nullable|numeric|min:0',
             'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
             'observaciones' => 'nullable|string|max:500',
+            'monto_abonado' => $pagoPendiente ? 'nullable' : 'required|numeric|min:0.01',
+            'id_metodo_pago' => $pagoPendiente ? 'nullable' : 'required|exists:metodos_pago,id',
+            'fecha_pago' => $pagoPendiente ? 'nullable' : 'required|date',
+            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
+            'fecha_vencimiento_cuota' => 'nullable|date',
         ]);
 
-        // Calcular precio_final
-        $validated['precio_final'] = $validated['precio_base'] - ($validated['descuento_aplicado'] ?? 0);
+        // Obtener precio base de la membresía
+        $membresia = Membresia::findOrFail($validated['id_membresia']);
+        $precioBase = $membresia->precio_normal;
+        $descuento = $validated['descuento_aplicado'] ?? 0;
+        $precioFinal = $precioBase - $descuento;
+
+        // Calcular fecha de vencimiento
+        $fechaInicio = \Carbon\Carbon::parse($validated['fecha_inicio']);
+        $duracionDias = ($membresia->duracion_meses ?? 1) * 30;
+        $fechaVencimiento = $fechaInicio->addDays($duracionDias);
+
+        // Crear inscripción
+        $validated['precio_base'] = $precioBase;
+        $validated['precio_final'] = $precioFinal;
         $validated['fecha_inscripcion'] = now()->format('Y-m-d');
-        $validated['id_precio_acordado'] = 1; // Temporal: necesita API para seleccionar precio
+        $validated['fecha_vencimiento'] = $fechaVencimiento->format('Y-m-d');
+        $validated['id_precio_acordado'] = 1;
 
-        Inscripcion::create($validated);
+        $inscripcion = Inscripcion::create($validated);
 
-        return redirect()->route('admin.inscripciones.index')
-            ->with('success', 'Inscripción creada exitosamente');
+        // Solo crear pago si no es pendiente
+        if (!$pagoPendiente) {
+            $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
+            $montoAbonado = $validated['monto_abonado'];
+            $montoCuota = $precioFinal / $cantidadCuotas;
+            $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+
+            Pago::create([
+                'id_inscripcion' => $inscripcion->id,
+                'id_cliente' => $validated['id_cliente'],
+                'id_membresia' => $validated['id_membresia'],
+                'monto_total' => $precioFinal,
+                'monto_abonado' => $montoAbonado,
+                'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
+                'cantidad_cuotas' => $cantidadCuotas,
+                'numero_cuota' => 1,
+                'monto_cuota' => $montoCuota,
+                'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
+                'id_estado' => $idEstadoPago,
+                'id_metodo_pago' => $validated['id_metodo_pago'],
+                'fecha_pago' => $validated['fecha_pago'],
+            ]);
+        }
+
+        return redirect()->route('admin.inscripciones.show', $inscripcion)
+            ->with('success', 'Inscripción creada exitosamente' . ($pagoPendiente ? ' - Pago pendiente de registrar' : ' con pago registrado'));
     }
 
     /**

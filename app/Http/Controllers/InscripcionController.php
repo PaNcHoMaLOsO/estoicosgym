@@ -26,13 +26,14 @@ class InscripcionController extends Controller
 
     public function create(): View
     {
-        // Obtener clientes activos que NO tengan inscripciones activas
-        $clientesConInscripcion = Inscripcion::whereIn('id_estado', [201, 202, 203, 205, 206])
+        // Obtener clientes con membresías vencidas
+        // Membresías vencidas = fecha_vencimiento < hoy
+        $clientesConMembresiaVencida = Inscripcion::where('fecha_vencimiento', '<', now())
             ->pluck('id_cliente')
             ->unique();
         
         $clientes = Cliente::where('activo', true)
-            ->whereNotIn('id', $clientesConInscripcion)
+            ->whereIn('id', $clientesConMembresiaVencida)
             ->orderBy('nombres')
             ->get();
             
@@ -40,8 +41,9 @@ class InscripcionController extends Controller
         $motivos = MotivoDescuento::where('activo', true)->get();
         $estados = Estado::whereIn('id', [201, 202, 203, 205, 206])->get();
         $convenios = Convenio::where('activo', true)->get();
+        $metodosPago = \App\Models\MetodoPago::where('activo', true)->get();
         
-        return view('admin.inscripciones.create', compact('clientes', 'membresias', 'motivos', 'estados', 'convenios'));
+        return view('admin.inscripciones.create', compact('clientes', 'membresias', 'motivos', 'estados', 'convenios', 'metodosPago'));
     }
 
     public function store(Request $request)
@@ -52,10 +54,15 @@ class InscripcionController extends Controller
             'id_estado' => 'required|integer|exists:estados,id',
             'fecha_inicio' => 'required|date|after_or_equal:today',
             'id_convenio' => 'nullable|integer|exists:convenios,id',
-            'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'id_motivo_descuento' => 'nullable|integer|exists:motivos_descuento,id',
             'descuento_aplicado' => 'nullable|numeric|min:0',
             'observaciones' => 'nullable|string',
+            // Campos de pago
+            'monto_abonado' => 'required|numeric|min:0.01',
+            'id_metodo_pago' => 'required|integer|exists:metodo_pagos,id',
+            'fecha_pago' => 'required|date',
+            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
+            'fecha_vencimiento_cuota' => 'nullable|date',
         ]);
 
         $membresia = Membresia::find($validated['id_membresia']);
@@ -71,11 +78,10 @@ class InscripcionController extends Controller
         $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias);
         $descuento = $validated['descuento_aplicado'] ?? 0;
         $precioFinal = $precioActual->precio_normal - $descuento;
-        
-        // Calcular monto de cuota
-        $montoCuota = $precioFinal / $validated['cantidad_cuotas'];
+        $montoAbonado = floatval($validated['monto_abonado']);
 
-        Inscripcion::create([
+        // Crear inscripción
+        $inscripcion = Inscripcion::create([
             'id_cliente' => $validated['id_cliente'],
             'id_membresia' => $validated['id_membresia'],
             'id_precio_acordado' => $precioActual->id,
@@ -90,7 +96,34 @@ class InscripcionController extends Controller
             'observaciones' => $validated['observaciones'],
         ]);
 
-        return redirect()->route('admin.inscripciones.index')->with('success', 'Inscripción creada exitosamente.');
+        // Crear UN SOLO pago
+        $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
+        $montoCuota = $precioFinal / $cantidadCuotas;
+        
+        // Determinar estado del pago
+        $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+
+        \App\Models\Pago::create([
+            'uuid' => \Illuminate\Support\Str::uuid(),
+            'id_inscripcion' => $inscripcion->id,
+            'id_cliente' => $validated['id_cliente'],
+            'monto_total' => $precioFinal,
+            'monto_abonado' => $montoAbonado,
+            'monto_pendiente' => $precioFinal - $montoAbonado,
+            'descuento_aplicado' => $descuento,
+            'fecha_pago' => $validated['fecha_pago'],
+            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'id_estado' => $idEstadoPago,
+            'cantidad_cuotas' => $cantidadCuotas,
+            'numero_cuota' => 1,
+            'monto_cuota' => $montoCuota,
+            'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
+            'periodo_inicio' => $validated['fecha_inicio'],
+            'periodo_fin' => $fechaVencimiento->toDateString(),
+        ]);
+
+        return redirect()->route('admin.inscripciones.show', $inscripcion)
+            ->with('success', 'Inscripción y pago creados exitosamente.');
     }
 
     public function show(Inscripcion $inscripcion): View
