@@ -42,163 +42,135 @@
         </div>
     @endif
 
-    <!-- Información Personal -->
+    <!-- HEADER CON DATOS PRINCIPALES Y ESTADÍSTICAS -->
     <div class="row mb-4">
-        <!-- Card Información Personal -->
-        <div class="col-lg-6 mb-4">
+        <!-- Información Personal Compacta -->
+        <div class="col-lg-4 mb-4">
             <div class="card card-primary card-outline">
-                <div class="card-header bg-primary">
+                <div class="card-header bg-primary d-flex align-items-center">
+                    <h3 class="card-title flex-grow-1">
+                        <i class="fas fa-user-circle"></i> {{ $cliente->nombres }} {{ $cliente->apellido_paterno }}
+                        @if($cliente->apellido_materno)
+                            {{ $cliente->apellido_materno }}
+                        @endif
+                    </h3>
+                    <span class="badge" style="background-color: {{ $cliente->activo ? '#28a745' : '#6c757d' }};">
+                        {{ $cliente->activo ? 'ACTIVO' : 'INACTIVO' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label class="text-muted small">RUT / Pasaporte</label>
+                        <p class="h6 mb-0"><strong>{{ $cliente->run_pasaporte }}</strong></p>
+                    </div>
+                    <hr class="my-2">
+                    <div class="form-group mb-3">
+                        <label class="text-muted small">Email</label>
+                        <p class="mb-0"><a href="mailto:{{ $cliente->email }}" class="text-primary">{{ $cliente->email }}</a></p>
+                    </div>
+                    <hr class="my-2">
+                    <div class="form-group mb-3">
+                        <label class="text-muted small">Teléfono</label>
+                        <p class="mb-0"><a href="tel:{{ $cliente->celular }}" class="text-primary">{{ $cliente->celular }}</a></p>
+                    </div>
+                    <hr class="my-2">
+                    <div class="form-group mb-0">
+                        <label class="text-muted small">Nacimiento</label>
+                        <p class="mb-0"><small>{{ $cliente->fecha_nacimiento ? $cliente->fecha_nacimiento->format('d/m/Y') : 'N/A' }}</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dirección y Contacto -->
+        <div class="col-lg-4 mb-4">
+            <div class="card card-info card-outline">
+                <div class="card-header bg-info">
                     <h3 class="card-title">
-                        <i class="fas fa-user"></i> Información Personal
+                        <i class="fas fa-map-marker-alt"></i> Dirección y Contacto
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>ID:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><span class="badge badge-primary">{{ $cliente->id }}</span></dd>
-                        </div>
+                    <div class="form-group mb-3">
+                        <label class="text-muted small">Domicilio</label>
+                        <p class="mb-0 small">{{ $cliente->direccion ?? '<span class="text-muted">No registrado</span>' }}</p>
                     </div>
-
                     <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>RUT/Pasaporte:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><strong>{{ $cliente->run_pasaporte }}</strong></dd>
-                        </div>
+                    <div class="form-group mb-0">
+                        <label class="text-muted small">Contacto de Emergencia</label>
+                        @if($cliente->contacto_emergencia)
+                            <p class="mb-0"><strong class="small">{{ $cliente->contacto_emergencia }}</strong></p>
+                            <p class="mb-0"><a href="tel:{{ $cliente->telefono_emergencia }}" class="text-primary small">{{ $cliente->telefono_emergencia }}</a></p>
+                        @else
+                            <p class="mb-0 text-muted small">No registrado</p>
+                        @endif
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Nombre Completo:</dt>
+        <!-- Estadísticas y Convenio -->
+        <div class="col-lg-4 mb-4">
+            <!-- Card Estadísticas -->
+            <div class="card card-success card-outline mb-3">
+                <div class="card-header bg-success">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Resumen
+                    </h3>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="info-box" style="margin: 0;">
+                                <span class="info-box-icon bg-info" style="font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">
+                                    <i class="far fa-credit-card"></i>
+                                </span>
+                                <div class="info-box-content" style="margin-left: 5px;">
+                                    <span class="info-box-text" style="font-size: 0.75rem;">Inscripciones</span>
+                                    <span class="info-box-number" style="font-size: 1.2rem;">{{ $cliente->inscripciones->count() }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-sm-7">
-                            <dd>
-                                <strong>{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</strong>
-                                @if($cliente->apellido_materno)
-                                    {{ $cliente->apellido_materno }}
-                                @endif
-                            </dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Email:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><a href="mailto:{{ $cliente->email }}" class="text-primary">{{ $cliente->email }}</a></dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Celular:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><a href="tel:{{ $cliente->celular }}" class="text-primary">{{ $cliente->celular }}</a></dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Contacto Emergencia:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd>
-                                @if($cliente->contacto_emergencia)
-                                    <strong>{{ $cliente->contacto_emergencia }}</strong><br>
-                                    <a href="tel:{{ $cliente->telefono_emergencia }}" class="text-primary">{{ $cliente->telefono_emergencia }}</a>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Dirección:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd>{{ $cliente->direccion ?? '<span class="text-muted">N/A</span>' }}</dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Fecha Nacimiento:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd>{{ $cliente->fecha_nacimiento ? $cliente->fecha_nacimiento->format('d/m/Y') : '<span class="text-muted">N/A</span>' }}</dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Estado:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd>
-                                @if($cliente->activo)
-                                    <span class="badge badge-success badge-lg">
-                                        <i class="fas fa-check-circle"></i> Activo
-                                    </span>
-                                @else
-                                    <span class="badge badge-secondary badge-lg">
-                                        <i class="fas fa-ban"></i> Inactivo
-                                    </span>
-                                @endif
-                            </dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Registro:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><small class="text-muted">{{ $cliente->created_at->format('d/m/Y H:i') }}</small></dd>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <div class="row">
-                        <div class="col-sm-5">
-                            <dt>Última Actualización:</dt>
-                        </div>
-                        <div class="col-sm-7">
-                            <dd><small class="text-muted">{{ $cliente->updated_at->format('d/m/Y H:i') }}</small></dd>
+                        <div class="col-6 mb-2">
+                            <div class="info-box" style="margin: 0;">
+                                <span class="info-box-icon bg-success" style="font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </span>
+                                <div class="info-box-content" style="margin-left: 5px;">
+                                    <span class="info-box-text" style="font-size: 0.75rem;">Pagos</span>
+                                    <span class="info-box-number" style="font-size: 1.1rem;">${{ number_format($cliente->pagos->sum('monto_abonado'), 0, '.', '.') }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Card Observaciones -->
-            @if($cliente->observaciones)
-                <div class="card card-secondary card-outline mt-4">
+            <!-- Card Convenio -->
+            @if($cliente->convenio)
+                <div class="card card-warning card-outline">
+                    <div class="card-header bg-warning">
+                        <h3 class="card-title">
+                            <i class="fas fa-handshake"></i> Convenio
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="font-weight-bold mb-1">{{ $cliente->convenio->nombre }}</h6>
+                        <p class="text-muted mb-0 small">{{ $cliente->convenio->descripcion }}</p>
+                        <div class="mt-2">
+                            <span class="badge badge-success">{{ $cliente->convenio->descuento_porcentaje ?? 0 }}% desc.</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- OBSERVACIONES SI EXISTEN -->
+    @if($cliente->observaciones)
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card card-secondary card-outline">
                     <div class="card-header bg-secondary">
                         <h3 class="card-title">
                             <i class="fas fa-sticky-note"></i> Observaciones
@@ -208,11 +180,64 @@
                         <p class="mb-0">{{ $cliente->observaciones }}</p>
                     </div>
                 </div>
-            @endif
+            </div>
+        </div>
+    @endif
+
+    <!-- INSCRIPCIONES -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card card-warning card-outline">
+                <div class="card-header bg-warning">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> Inscripciones Activas
+                    </h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    @if($cliente->inscripciones->count() > 0)
+                        <table class="table table-hover table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Membresía</th>
+                                    <th>Estado</th>
+                                    <th>Inicio</th>
+                                    <th>Vencimiento</th>
+                                    <th>Pagos</th>
+                                    <th>Monto Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($cliente->inscripciones as $inscripcion)
+                                    <tr>
+                                        <td>{{ $inscripcion->id }}</td>
+                                        <td>{{ $inscripcion->membresia->nombre ?? 'N/A' }}</td>
+                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
+                                        <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
+                                        <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
+                                        <td><span class="badge badge-info">{{ $inscripcion->pagos->count() }}</span></td>
+                                        <td><strong>${{ number_format($inscripcion->pagos->sum('monto_abonado'), 0, '.', '.') }}</strong></td>
+                                        <td>
+                                            <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" class="btn btn-xs btn-info" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-0">
+                            <i class="fas fa-info-circle"></i> No hay inscripciones registradas
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Pagos Históricos -->
+    <!-- HISTORIAL DE PAGOS -->
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="card card-success card-outline">
@@ -264,108 +289,6 @@
                     @else
                         <div class="alert alert-info m-0">
                             <i class="fas fa-info-circle"></i> No hay pagos registrados
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <!-- Card Estadísticas -->
-        <div class="col-lg-6 mb-4">
-            <div class="card card-info card-outline">
-                <div class="card-header bg-info">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-line"></i> Estadísticas
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-6 mb-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-info"><i class="far fa-credit-card"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Inscripciones</span>
-                                    <span class="info-box-number">{{ $cliente->inscripciones->count() }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Pagos Totales</span>
-                                    <span class="info-box-number">${{ number_format($cliente->pagos->sum('monto_abonado'), 0, '.', '.') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card Convenio -->
-            @if($cliente->convenio)
-                <div class="card card-success card-outline">
-                    <div class="card-header bg-success">
-                        <h3 class="card-title">
-                            <i class="fas fa-handshake"></i> Convenio
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <h5>{{ $cliente->convenio->nombre }}</h5>
-                        <p class="text-muted mb-0">{{ $cliente->convenio->descripcion }}</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Inscripciones -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card card-warning card-outline">
-                <div class="card-header bg-warning">
-                    <h3 class="card-title">
-                        <i class="fas fa-list"></i> Inscripciones
-                    </h3>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    @if($cliente->inscripciones->count() > 0)
-                        <table class="table table-hover table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Membresía</th>
-                                    <th>Estado</th>
-                                    <th>Inicio</th>
-                                    <th>Vencimiento</th>
-                                    <th>Pagos</th>
-                                    <th>Monto Total</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($cliente->inscripciones as $inscripcion)
-                                    <tr>
-                                        <td>{{ $inscripcion->id }}</td>
-                                        <td>{{ $inscripcion->membresia->nombre ?? 'N/A' }}</td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
-                                        <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
-                                        <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
-                                        <td><span class="badge badge-info">{{ $inscripcion->pagos->count() }}</span></td>
-                                        <td><strong>${{ number_format($inscripcion->pagos->sum('monto_abonado'), 0, '.', '.') }}</strong></td>
-                                        <td>
-                                            <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" class="btn btn-xs btn-info" title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @else
-                        <div class="alert alert-info m-0">
-                            <i class="fas fa-info-circle"></i> No hay inscripciones registradas
                         </div>
                     @endif
                 </div>
