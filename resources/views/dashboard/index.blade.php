@@ -57,7 +57,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>${{ number_format($pagosDelMes, 0) }}</h3>
+                    <h3>${{ number_format($pagosDelMes, 0, '.', '.') }}</h3>
                     <p><i class="fas fa-calendar"></i> Este Mes</p>
                     <small class="text-light">{{ now()->format('M Y') }}</small>
                 </div>
@@ -74,7 +74,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>${{ number_format($ingresosTotales, 0) }}</h3>
+                    <h3>${{ number_format($ingresosTotales, 0, '.', '.') }}</h3>
                     <p><i class="fas fa-chart-line"></i> Ingresos Totales</p>
                     <small class="text-dark">{{ $ultimosPagos->count() }} transacciones</small>
                 </div>

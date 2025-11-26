@@ -4,6 +4,7 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="{{ asset('js/precio-formatter.js') }}"></script>
 @stop
 
 @section('content_header')
@@ -253,6 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const montoCuota = document.getElementById('monto_cuota');
     const montoTotalInscripcion = document.getElementById('monto_total_inscripcion');
 
+    // Inicializar formateador de precios
+    PrecioFormatter.iniciarCampo('monto_abonado', false);
+    
     // Calcular monto de cuota
     function calcularMontoCuota() {
         if (!montoAbonado.value || !cantidadCuotas.value) {

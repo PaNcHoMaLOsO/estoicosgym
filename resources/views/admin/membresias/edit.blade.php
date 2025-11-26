@@ -148,7 +148,7 @@
                             </div>
                             @if ($precioActual)
                                 <small class="form-text text-muted d-block mt-1">
-                                    Precio actual: ${{ number_format($precioActual->precio_normal, 2) }}
+                                    Precio actual: ${{ number_format($precioActual->precio_normal, 0, '.', '.') }}
                                 </small>
                             @endif
                             @error('precio_normal')

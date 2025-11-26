@@ -180,8 +180,8 @@
                                     </span>
                                     <br>
                                     <small class="text-muted">
-                                        Abonado: <strong>${{ number_format($totalAbonado, 0, ',', '.') }}</strong><br>
-                                        Pendiente: <strong class="text-danger">${{ number_format($pendiente, 0, ',', '.') }}</strong>
+                                        Abonado: <strong>${{ number_format($totalAbonado, 0, '.', '.') }}</strong><br>
+                                        Pendiente: <strong class="text-danger">${{ number_format($pendiente, 0, '.', '.') }}</strong>
                                     </small>
                                 @else
                                     <!-- Sin pagos aún -->

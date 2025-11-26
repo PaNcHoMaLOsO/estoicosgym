@@ -67,7 +67,7 @@
                                             ->first() ?? $membresia->precios->last();
                                     @endphp
                                     @if ($precioActual)
-                                        ${{ number_format($precioActual->precio_normal, 2) }}
+                                        ${{ number_format($precioActual->precio_normal, 0, '.', '.') }}
                                     @else
                                         N/A
                                     @endif

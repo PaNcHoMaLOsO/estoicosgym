@@ -257,7 +257,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total a Pagar</span>
-                            <span class="info-box-number">${{ number_format($estadoPago['monto_total'], 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['monto_total'], 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -268,7 +268,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total Abonado</span>
-                            <span class="info-box-number">${{ number_format($estadoPago['total_abonado'], 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['total_abonado'], 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -279,7 +279,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Pendiente</span>
-                            <span class="info-box-number">${{ number_format($estadoPago['pendiente'], 2, ',', '.') }}</span>
+                            <span class="info-box-number">${{ number_format($estadoPago['pendiente'], 0, '.', '.') }}</span>
                         </div>
                     </div>
                 </div>

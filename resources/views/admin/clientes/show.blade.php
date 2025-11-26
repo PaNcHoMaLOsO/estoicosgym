@@ -180,7 +180,7 @@
                                 <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Pagos Totales</span>
-                                    <span class="info-box-number">${{ number_format($cliente->pagos->sum('monto_abonado'), 0) }}</span>
+                                    <span class="info-box-number">${{ number_format($cliente->pagos->sum('monto_abonado'), 0, '.', '.') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -238,7 +238,7 @@
                                         <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
                                         <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
                                         <td><span class="badge badge-info">{{ $inscripcion->pagos->count() }}</span></td>
-                                        <td><strong>${{ number_format($inscripcion->pagos->sum('monto_abonado'), 0) }}</strong></td>
+                                        <td><strong>${{ number_format($inscripcion->pagos->sum('monto_abonado'), 0, '.', '.') }}</strong></td>
                                         <td>
                                             <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" class="btn btn-xs btn-info" title="Ver detalles">
                                                 <i class="fas fa-eye"></i>

@@ -83,7 +83,7 @@
                             <span class="info-box-text">Precio Actual</span>
                             <span class="info-box-number">
                                 @if ($precioActual)
-                                    ${{ number_format($precioActual->precio_normal, 2) }}
+                                    ${{ number_format($precioActual->precio_normal, 0, '.', '.') }}
                                 @else
                                     N/A
                                 @endif
@@ -161,7 +161,7 @@
                             <i class="fas fa-dollar-sign bg-{{ $precio->activo ? 'success' : 'gray' }}"></i>
                             <div class="timeline-item">
                                 <h3 class="timeline-header">
-                                    <strong>${{ number_format($precio->precio_normal, 2) }}</strong>
+                                    <strong>${{ number_format($precio->precio_normal, 0, '.', '.') }}</strong>
                                     @if ($precio->activo)
                                         <span class="badge badge-success ml-2">Vigente</span>
                                     @endif
@@ -213,15 +213,15 @@
                                     <td>
                                         <span class="badge badge-secondary">{{ $cambio->usuario_cambio }}</span>
                                     </td>
-                                    <td>${{ number_format($cambio->precio_anterior, 2) }}</td>
-                                    <td>${{ number_format($cambio->precio_nuevo, 2) }}</td>
+                                    <td>${{ number_format($cambio->precio_anterior, 0, '.', '.') }}</td>
+                                    <td>${{ number_format($cambio->precio_nuevo, 0, '.', '.') }}</td>
                                     <td>
                                         @php
                                             $diferencia = $cambio->precio_nuevo - $cambio->precio_anterior;
                                             $clase = $diferencia > 0 ? 'danger' : ($diferencia < 0 ? 'success' : 'secondary');
                                         @endphp
                                         <span class="badge badge-{{ $clase }}">
-                                            {{ $diferencia >= 0 ? '+' : '' }}${{ number_format($diferencia, 2) }}
+                                            {{ $diferencia >= 0 ? '+' : '' }}${{ number_format($diferencia, 0, '.', '.') }}
                                         </span>
                                     </td>
                                     <td>
@@ -276,7 +276,7 @@
                                     </td>
                                     <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
                                     <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
-                                    <td>${{ number_format($inscripcion->precio_base, 2) }}</td>
+                                    <td>${{ number_format($inscripcion->precio_base, 0, '.', '.') }}</td>
                                     <td>
                                         <span class="badge badge-{{ $inscripcion->estado->id == 1 ? 'warning' : ($inscripcion->estado->id == 2 ? 'success' : 'secondary') }}">
                                             {{ $inscripcion->estado->nombre }}
