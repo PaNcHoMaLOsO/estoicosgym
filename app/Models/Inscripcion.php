@@ -239,8 +239,8 @@ class Inscripcion extends Model
      */
     public function estaPausada()
     {
-        // Si pausada es false, no está pausada
-        if (!$this->pausada) {
+        // Si pausada es null o false, no está pausada
+        if (!$this->pausada || $this->pausada === null) {
             return false;
         }
 

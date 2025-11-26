@@ -166,40 +166,30 @@
                                     $pendiente = $estadoPago['pendiente'];
                                     $porcentajePagado = $estadoPago['porcentaje_pagado'];
                                     $estado = $estadoPago['estado'];
-                                    
-                                    // DEBUG: Mostrar información de pagos si hay muchos
-                                    // echo "Ins#" . $inscripcion->id . " - Pagos: " . $estadoPago['total_pagos'] . " | Completados: " . $estadoPago['pagos_completados'] . " | Otros: " . $estadoPago['pagos_otros_estados'] . "<br>";
                                 @endphp
                                 
                                 @if($estado === 'pagado')
                                     <!-- Pagado completamente -->
                                     <span class="badge bg-success">
-                                        <i class="fas fa-check-circle fa-fw"></i> Pagado Completo
+                                        <i class="fas fa-check-circle fa-fw"></i> Pagado
                                     </span>
                                 @elseif($estado === 'parcial')
                                     <!-- Pago parcial -->
-                                    <div class="d-flex flex-column gap-2">
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-hourglass-half fa-fw"></i> Parcial
-                                        </span>
-                                        <small class="text-muted">
-                                            Pagado: ${{ number_format($totalAbonado, 0, ',', '.') }}<br>
-                                            Pendiente: <strong class="text-danger">${{ number_format($pendiente, 0, ',', '.') }}</strong>
-                                        </small>
-                                        <div class="progress" style="height: 8px;">
-                                            <div class="progress-bar bg-success" role="progressbar" 
-                                                 style="width: {{ $porcentajePagado }}%;" 
-                                                 aria-valuenow="{{ $porcentajePagado }}" aria-valuemin="0" aria-valuemax="100">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-hourglass-half fa-fw"></i> Parcial
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        Abonado: <strong>${{ number_format($totalAbonado, 0, ',', '.') }}</strong><br>
+                                        Pendiente: <strong class="text-danger">${{ number_format($pendiente, 0, ',', '.') }}</strong>
+                                    </small>
                                 @else
                                     <!-- Sin pagos aún -->
                                     <span class="badge bg-danger">
                                         <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
                                     </span>
                                     <br>
-                                    <small class="text-muted mt-1">Total: <strong>${{ number_format($montoTotal, 0, ',', '.') }}</strong></small>
+                                    <small class="text-muted">Total: <strong>${{ number_format($montoTotal, 0, ',', '.') }}</strong></small>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>
@@ -217,11 +207,14 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" class="btn btn-sm btn-info" title="Ver">
+                                <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" class="btn btn-sm btn-info" title="Ver Inscripción">
                                     <i class="fas fa-eye fa-fw"></i>
                                 </a>
                                 <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-sm btn-warning" title="Editar">
                                     <i class="fas fa-edit fa-fw"></i>
+                                </a>
+                                <a href="{{ route('admin.pagos.index', ['id_inscripcion' => $inscripcion->id]) }}" class="btn btn-sm btn-success" title="Ver Pagos">
+                                    <i class="fas fa-money-bill-wave fa-fw"></i>
                                 </a>
                                 <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" style="display:inline;">
                                     @csrf
