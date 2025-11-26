@@ -37,10 +37,12 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // Rutas Admin - Grupo con prefijo 'admin'
 Route::prefix('admin')->name('admin.')->group(function () {
-    // CRUD Clientes + Rutas adicionales
-    Route::resource('clientes', ClienteController::class);
+    // Rutas personalizadas de clientes (deben ir antes del resource)
     Route::get('clientes-desactivados/ver', [ClienteController::class, 'showInactive'])->name('clientes.inactive');
     Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
+    
+    // CRUD Clientes
+    Route::resource('clientes', ClienteController::class);
 
     // CRUD Convenios
     Route::resource('convenios', ConvenioController::class);

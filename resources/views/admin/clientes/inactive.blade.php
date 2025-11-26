@@ -121,7 +121,7 @@
                                         <button type="button" 
                                                 class="btn btn-success restore-btn" 
                                                 title="Reactivar cliente"
-                                                onclick="confirmarReactivacion({{ $cliente->id }}, '{{ $cliente->nombres }}')">
+                                                onclick="confirmarReactivacion('{{ $cliente->uuid }}', '{{ $cliente->nombres }}')">
                                             <i class="fas fa-undo"></i> Reactivar
                                         </button>
                                     </div>
@@ -188,7 +188,9 @@
     <script>
         function confirmarReactivacion(clienteId, nombre) {
             document.getElementById('nombreCliente').textContent = nombre;
-            document.getElementById('formReactivar').action = `/admin/clientes/${clienteId}/reactivar`;
+            // Usar la ruta helper de Laravel en lugar de construir URL manualmente
+            const actionUrl = "{{ route('admin.clientes.reactivate', ':id') }}".replace(':id', clienteId);
+            document.getElementById('formReactivar').action = actionUrl;
             $('#reactivarClienteModal').modal('show');
         }
     </script>
