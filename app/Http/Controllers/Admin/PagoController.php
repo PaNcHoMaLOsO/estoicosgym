@@ -18,6 +18,11 @@ class PagoController extends Controller
     {
         $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
         
+        // Filtro por inscripción (desde el link de Ver Pagos en inscripciones)
+        if ($request->filled('id_inscripcion')) {
+            $query->where('id_inscripcion', $request->id_inscripcion);
+        }
+        
         // Filtro por cliente
         if ($request->filled('cliente')) {
             $query->whereHas('inscripcion.cliente', function($q) use ($request) {
