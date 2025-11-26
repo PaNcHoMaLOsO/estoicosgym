@@ -202,6 +202,7 @@ class InscripcionController extends Controller
      */
     public function edit(Inscripcion $inscripcion)
     {
+        $inscripcion->load(['cliente', 'estado', 'membresia', 'convenio', 'motivoDescuento']);
         $clientes = Cliente::active()->get();
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();

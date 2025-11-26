@@ -20,10 +20,10 @@ class PausaApiController extends Controller
         ]);
 
         try {
-            $inscripcion = Inscripcion::findOrFail($id);
+            $inscripcion = Inscripcion::with('cliente', 'estado')->findOrFail($id);
 
             // Verificar que pueda pausarse
-            if (!$inscripcion->puedepausarse()) {
+            if (!$inscripcion->puedePausarse()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Esta membresía no puede ser pausada',
@@ -69,7 +69,7 @@ class PausaApiController extends Controller
     public function reanudar($id)
     {
         try {
-            $inscripcion = Inscripcion::findOrFail($id);
+            $inscripcion = Inscripcion::with('cliente', 'estado')->findOrFail($id);
 
             if (!$inscripcion->pausada) {
                 return response()->json([
@@ -108,7 +108,7 @@ class PausaApiController extends Controller
     public function info($id)
     {
         try {
-            $inscripcion = Inscripcion::findOrFail($id);
+            $inscripcion = Inscripcion::with('cliente', 'estado')->findOrFail($id);
             $infoPausa = $inscripcion->obtenerInfoPausa();
 
             return response()->json([
@@ -135,7 +135,7 @@ class PausaApiController extends Controller
      */
     public function verificarExpiradas()
     {
-        $inscripcionesPausadas = Inscripcion::where('pausada', true)->get();
+        $inscripcionesPausadas = Inscripcion::where('pausada', true)->with('cliente')->get();
         $reactivadas = 0;
 
         foreach ($inscripcionesPausadas as $inscripcion) {

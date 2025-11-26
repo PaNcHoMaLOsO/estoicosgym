@@ -63,8 +63,9 @@ class PagoController extends Controller
         
         $pagos = $query->paginate(20);
         $metodos_pago = MetodoPago::all();
+        $estados = Estado::where('categoria', 'pago')->get();
         
-        return view('admin.pagos.index', compact('pagos', 'metodos_pago'));
+        return view('admin.pagos.index', compact('pagos', 'metodos_pago', 'estados'));
     }
 
     /**
@@ -95,7 +96,7 @@ class PagoController extends Controller
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
-            'id_metodo_pago' => 'required|exists:metodo_pagos,id',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
@@ -159,7 +160,7 @@ class PagoController extends Controller
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
-            'id_metodo_pago' => 'required|exists:metodo_pagos,id',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',

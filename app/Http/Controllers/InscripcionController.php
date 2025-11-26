@@ -59,7 +59,7 @@ class InscripcionController extends Controller
             'observaciones' => 'nullable|string',
             // Campos de pago
             'monto_abonado' => 'required|numeric|min:0.01',
-            'id_metodo_pago' => 'required|integer|exists:metodo_pagos,id',
+            'id_metodo_pago' => 'required|integer|exists:metodos_pago,id',
             'fecha_pago' => 'required|date',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
             'fecha_vencimiento_cuota' => 'nullable|date',
