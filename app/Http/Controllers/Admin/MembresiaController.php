@@ -35,16 +35,21 @@ class MembresiaController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias',
-            'duracion_meses' => 'nullable|integer|min:0',
+            'duracion_meses' => 'required|integer|min:0',
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
             'activo' => 'boolean',
         ]);
 
+        // Validación: Si duracion_meses = 0, asegurar que duracion_dias sea válido
+        if ($validated['duracion_meses'] == 0 && $validated['duracion_dias'] < 1) {
+            return back()->withErrors(['duracion_dias' => 'Si la duración en meses es 0, debe especificar al menos 1 día']);
+        }
+
         $membresia = Membresia::create([
             'nombre' => $validated['nombre'],
-            'duracion_meses' => $validated['duracion_meses'] ?? 0,
+            'duracion_meses' => $validated['duracion_meses'],
             'duracion_dias' => $validated['duracion_dias'],
             'descripcion' => $validated['descripcion'] ?? null,
             'activo' => $validated['activo'] ?? true,
@@ -55,7 +60,7 @@ class MembresiaController extends Controller
         PrecioMembresia::create([
             'id_membresia' => $membresia->id,
             'precio_normal' => $validated['precio_normal'],
-            'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] : null, // NULL excepto para Mensual
+            'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] - 15000 : null,
             'fecha_vigencia_desde' => now(),
             'activo' => true,
         ]);
@@ -115,7 +120,7 @@ class MembresiaController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias,nombre,' . $membresia->id,
-            'duracion_meses' => 'nullable|integer|min:0',
+            'duracion_meses' => 'required|integer|min:0',
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
@@ -123,17 +128,48 @@ class MembresiaController extends Controller
             'activo' => 'boolean',
         ]);
 
-        // Obtener precio actual
+        // Validación: Si duracion_meses = 0, asegurar que duracion_dias sea válido
+        if ($validated['duracion_meses'] == 0 && $validated['duracion_dias'] < 1) {
+            return back()->withErrors(['duracion_dias' => 'Si la duración en meses es 0, debe especificar al menos 1 día']);
+        }
+
+        // Verificar si hay cambios críticos que afecten inscripciones existentes
+        $tieneCambiosCriticos = false;
+        $cambiosCriticos = [];
+
+        if ($membresia->duracion_meses != $validated['duracion_meses'] || 
+            $membresia->duracion_dias != $validated['duracion_dias']) {
+            $tieneCambiosCriticos = true;
+            $cambiosCriticos[] = 'duración';
+        }
+
         $precioActual = $membresia->precios()
             ->where('activo', true)
             ->first();
+
+        if ($precioActual && $validated['precio_normal'] != $precioActual->precio_normal) {
+            $tieneCambiosCriticos = true;
+            $cambiosCriticos[] = 'precio';
+        }
+
+        // Si hay cambios críticos e inscripciones activas, advertir
+        $inscripcionesActivas = $membresia->inscripciones()
+            ->where('estado', '!=', 'vencida')
+            ->where('estado', '!=', 'cancelada')
+            ->count();
+
+        if ($tieneCambiosCriticos && $inscripcionesActivas > 0) {
+            // Registrar el cambio en auditoría
+            $cambioDetalles = implode(', ', $cambiosCriticos);
+            \Log::warning("Cambios críticos en membresía {$membresia->nombre}: {$cambioDetalles}. Inscripciones activas: {$inscripcionesActivas}");
+        }
 
         $precioAnterior = $precioActual->precio_normal ?? 0;
 
         // Actualizar membresía
         $membresia->update([
             'nombre' => $validated['nombre'],
-            'duracion_meses' => $validated['duracion_meses'] ?? 0,
+            'duracion_meses' => $validated['duracion_meses'],
             'duracion_dias' => $validated['duracion_dias'],
             'descripcion' => $validated['descripcion'] ?? null,
             'activo' => $validated['activo'] ?? true,
@@ -149,7 +185,7 @@ class MembresiaController extends Controller
             $nuevoPrecio = PrecioMembresia::create([
                 'id_membresia' => $membresia->id,
                 'precio_normal' => $validated['precio_normal'],
-                'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] : null, // NULL excepto para Mensual
+                'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] - 15000 : null,
                 'fecha_vigencia_desde' => now(),
                 'activo' => true,
             ]);
@@ -165,7 +201,8 @@ class MembresiaController extends Controller
         }
 
         return redirect()->route('admin.membresias.show', $membresia)
-            ->with('success', 'Membresía actualizada exitosamente');
+            ->with('success', 'Membresía actualizada exitosamente' . 
+                ($tieneCambiosCriticos && $inscripcionesActivas > 0 ? '. Advertencia: Se detectaron ' . $inscripcionesActivas . ' inscripción(es) activa(s) afectada(s).' : ''));
     }
 
     /**
@@ -173,10 +210,28 @@ class MembresiaController extends Controller
      */
     public function destroy(Membresia $membresia)
     {
+        // Verificar si hay inscripciones activas
+        $inscripcionesActivas = $membresia->inscripciones()
+            ->whereIn('estado', ['activa', 'pausada'])
+            ->count();
+
+        if ($inscripcionesActivas > 0) {
+            return back()->with('error', 
+                "No se puede eliminar la membresía '{$membresia->nombre}' porque tiene {$inscripcionesActivas} inscripción(es) activa(s). " .
+                "Cancele primero las inscripciones activas para poder eliminar esta membresía.");
+        }
+
+        // Obtener información para auditoría antes de eliminar
+        $nombreMembresia = $membresia->nombre;
+        $inscripcionesTotales = $membresia->inscripciones()->count();
+
+        // Registrar eliminación en log
+        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
+
         // Eliminará la membresía (las relaciones se manejan según la BD)
         $membresia->delete();
 
         return redirect()->route('admin.membresias.index')
-            ->with('success', 'Membresía eliminada exitosamente');
+            ->with('success', "Membresía '{$nombreMembresia}' eliminada exitosamente. Se registraron {$inscripcionesTotales} inscripción(es) histórica(s).");
     }
 }

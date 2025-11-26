@@ -225,19 +225,27 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const duracionMeses = document.getElementById('duracion_meses');
-    const duracionDiasCalculado = document.getElementById('duracion_dias_calculado');
-    const duracionDiasHidden = document.getElementById('duracion_dias');
+    const duracionDias = document.getElementById('duracion_dias');
+    const diasInfo = document.getElementById('dias_info');
 
-    function calcularDias() {
+    function actualizarDias() {
         const meses = parseInt(duracionMeses.value) || 0;
-        const dias = (meses * 30) + 5;
-        duracionDiasCalculado.value = dias;
-        duracionDiasHidden.value = dias;
+        
+        if (meses === 0) {
+            // Si meses = 0, permitir entrada manual de días
+            duracionDias.removeAttribute('readonly');
+            diasInfo.textContent = 'Ingresa manualmente la duración en días (Ej: Pase Diario=1)';
+        } else {
+            // Si meses > 0, calcular automáticamente
+            const dias = (meses * 30) + 5;
+            duracionDias.value = dias;
+            diasInfo.textContent = `Duración automática: (${meses} meses × 30) + 5 = ${dias} días`;
+        }
     }
 
-    duracionMeses.addEventListener('change', calcularDias);
-    duracionMeses.addEventListener('input', calcularDias);
-    calcularDias();
+    duracionMeses.addEventListener('change', actualizarDias);
+    duracionMeses.addEventListener('input', actualizarDias);
+    actualizarDias();
 });
 </script>
 @endsection

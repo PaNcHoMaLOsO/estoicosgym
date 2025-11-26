@@ -193,39 +193,58 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover table-sm">
                         <thead class="bg-light">
                             <tr>
-                                <th><i class="fas fa-calendar"></i> Fecha</th>
-                                <th><i class="fas fa-user"></i> Usuario</th>
-                                <th><i class="fas fa-arrow-left"></i> Precio Anterior</th>
-                                <th><i class="fas fa-arrow-right"></i> Precio Nuevo</th>
-                                <th><i class="fas fa-exchange-alt"></i> Diferencia</th>
-                                <th><i class="fas fa-comment"></i> Razón</th>
+                                <th style="width: 15%"><i class="fas fa-calendar"></i> Fecha/Hora</th>
+                                <th style="width: 12%"><i class="fas fa-user"></i> Usuario</th>
+                                <th style="width: 12%"><i class="fas fa-arrow-left"></i> Anterior</th>
+                                <th style="width: 12%"><i class="fas fa-arrow-right"></i> Nuevo</th>
+                                <th style="width: 12%"><i class="fas fa-exchange-alt"></i> Cambio</th>
+                                <th style="width: 37%"><i class="fas fa-comment"></i> Razón del Cambio</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($historialPrecios as $cambio)
                                 <tr>
                                     <td>
-                                        <small>{{ $cambio->created_at ? $cambio->created_at->format('d/m/Y H:i') : 'N/A' }}</small>
+                                        <small>
+                                            <strong>{{ $cambio->created_at ? $cambio->created_at->format('d/m/Y') : 'N/A' }}</strong><br>
+                                            <span class="text-muted">{{ $cambio->created_at ? $cambio->created_at->format('H:i') : '' }}</span>
+                                        </small>
                                     </td>
                                     <td>
-                                        <span class="badge badge-secondary">{{ $cambio->usuario_cambio }}</span>
+                                        <span class="badge badge-info">{{ $cambio->usuario_cambio }}</span>
                                     </td>
-                                    <td>${{ number_format($cambio->precio_anterior, 0, '.', '.') }}</td>
-                                    <td>${{ number_format($cambio->precio_nuevo, 0, '.', '.') }}</td>
+                                    <td>
+                                        <small class="font-weight-bold">
+                                            ${{ number_format($cambio->precio_anterior, 0, '.', '.') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="font-weight-bold">
+                                            ${{ number_format($cambio->precio_nuevo, 0, '.', '.') }}
+                                        </small>
+                                    </td>
                                     <td>
                                         @php
                                             $diferencia = $cambio->precio_nuevo - $cambio->precio_anterior;
                                             $clase = $diferencia > 0 ? 'danger' : ($diferencia < 0 ? 'success' : 'secondary');
+                                            $icono = $diferencia > 0 ? 'arrow-up' : ($diferencia < 0 ? 'arrow-down' : 'equals');
                                         @endphp
                                         <span class="badge badge-{{ $clase }}">
+                                            <i class="fas fa-{{ $icono }}"></i>
                                             {{ $diferencia >= 0 ? '+' : '' }}${{ number_format($diferencia, 0, '.', '.') }}
                                         </span>
                                     </td>
                                     <td>
-                                        <small>{{ $cambio->razon_cambio ?? 'Sin especificar' }}</small>
+                                        <small>
+                                            @if ($cambio->razon_cambio)
+                                                <strong>{{ $cambio->razon_cambio }}</strong>
+                                            @else
+                                                <span class="text-muted">Sin especificar</span>
+                                            @endif
+                                        </small>
                                     </td>
                                 </tr>
                             @endforeach
@@ -239,7 +258,7 @@
                         {{ $historialPrecios->links('pagination::bootstrap-4') }}
                     </div>
                 @endif
-            </td>
+            </div>
         </div>
     @endif
 

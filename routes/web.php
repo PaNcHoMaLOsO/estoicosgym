@@ -44,17 +44,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // CRUD Clientes
     Route::resource('clientes', ClienteController::class);
 
-    // CRUD Convenios
-    Route::resource('convenios', ConvenioController::class);
-
-    // CRUD Membresias
-    Route::resource('membresias', MembresiaController::class);
-
     // CRUD Inscripciones
     Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class);
+
+    // ===== CONFIGURACIÓN (Sección inferior) =====
+    
+    // CRUD Convenios
+    Route::resource('convenios', ConvenioController::class);
+
+    // CRUD Membresias (configuración)
+    Route::resource('membresias', MembresiaController::class);
 
     // CRUD Métodos de Pago
     Route::resource('metodos-pago', MetodoPagoController::class);
