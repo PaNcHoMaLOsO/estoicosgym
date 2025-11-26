@@ -9,14 +9,9 @@
             <small class="text-muted">Gestión de planes y precios</small>
         </div>
         <div class="col-sm-6">
-            <div class="btn-group float-right" role="group">
-                <a href="{{ route('admin.membresias.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva Membresía
-                </a>
-                <a href="{{ route('admin.membresias.inactivas') }}" class="btn btn-warning">
-                    <i class="fas fa-ban"></i> Ver Desactivadas
-                </a>
-            </div>
+            <a href="{{ route('admin.membresias.create') }}" class="btn btn-primary float-right">
+                <i class="fas fa-plus"></i> Nueva Membresía
+            </a>
         </div>
     </div>
 @endsection
@@ -121,13 +116,39 @@
                                            class="btn btn-sm btn-warning" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-danger" 
-                                                data-toggle="modal" data-target="#deleteModal{{ $membresia->id }}"
-                                                title="Desactivar o Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        @if (!$membresia->activo)
+                                            <!-- Botón Reactivar si está desactivada -->
+                                            <form action="{{ route('admin.membresias.update', $membresia) }}" method="POST" style="display:inline;">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="activo" value="1">
+                                                <input type="hidden" name="nombre" value="{{ $membresia->nombre }}">
+                                                <input type="hidden" name="duracion_meses" value="{{ $membresia->duracion_meses }}">
+                                                <input type="hidden" name="duracion_dias" value="{{ $membresia->duracion_dias }}">
+                                                @php
+                                                    $precioActual = $membresia->precios()->where('activo', true)->first() ?? $membresia->precios->last();
+                                                @endphp
+                                                @if ($precioActual)
+                                                    <input type="hidden" name="precio_normal" value="{{ $precioActual->precio_normal }}">
+                                                    @if ($precioActual->precio_convenio)
+                                                        <input type="hidden" name="precio_convenio" value="{{ $precioActual->precio_convenio }}">
+                                                    @endif
+                                                @endif
+                                                <button type="submit" class="btn btn-sm btn-success" title="Reactivar membresía">
+                                                    <i class="fas fa-redo"></i> Reactivar
+                                                </button>
+                                            </form>
+                                        @else
+                                            <!-- Botón Eliminar/Desactivar si está activa -->
+                                            <button type="button" class="btn btn-sm btn-danger" 
+                                                    data-toggle="modal" data-target="#deleteModal{{ $membresia->id }}"
+                                                    title="Desactivar o Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
                                         
-                                        <!-- Modal de Confirmación: Desactivar o Eliminar -->
+                                        <!-- Modal de Confirmación: Desactivar o Eliminar (solo para activas) -->
+                                        @if ($membresia->activo)
                                         <div class="modal fade" id="deleteModal{{ $membresia->id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -189,6 +210,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

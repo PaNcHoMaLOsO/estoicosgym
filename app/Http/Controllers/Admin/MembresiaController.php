@@ -21,15 +21,6 @@ class MembresiaController extends Controller
     }
 
     /**
-     * Display a listing of inactive memberships.
-     */
-    public function inactivas()
-    {
-        $membresias = Membresia::where('activo', false)->withCount('inscripciones')->with(['precios', 'inscripciones'])->paginate(20);
-        return view('admin.membresias.inactivas', compact('membresias'));
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
