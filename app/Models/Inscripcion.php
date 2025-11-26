@@ -240,3 +240,4 @@ class Inscripcion extends Model
 
         return true;
     }
+}
