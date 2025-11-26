@@ -327,16 +327,25 @@ class Inscripcion extends Model
 
     /**
      * Verificar si está efectivamente pausada
+     * Retorna true si:
+     * 1. El campo pausada es true O
+     * 2. El estado es uno de pausa (2, 3, 4)
+     * Y la pausa NO ha expirado
      * @return bool
      */
     public function estaPausada()
     {
-        // Si pausada es null o false, no está pausada
-        if (!$this->pausada || $this->pausada === null) {
+        // Estados de pausa (2, 3, 4 corresponden a Pausada - 7d, 14d, 30d)
+        $estadosPausa = [2, 3, 4];
+        
+        // Verificar por estado O por campo pausada
+        $tienePausa = in_array($this->id_estado, $estadosPausa) || ($this->pausada === true || $this->pausada === 1);
+        
+        if (!$tienePausa) {
             return false;
         }
 
-        // Si tiene fecha fin y ya pasó, no está pausada
+        // Si tiene fecha fin y ya pasó, no está pausada (auto-reanudación)
         if ($this->fecha_pausa_fin && now()->greaterThan($this->fecha_pausa_fin)) {
             return false;
         }
