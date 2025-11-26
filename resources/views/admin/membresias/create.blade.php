@@ -1,110 +1,194 @@
 @extends('adminlte::page')
 
-@section('title', 'Crear Membresía')
+@section('title', 'Crear Membresía - EstóicosGym')
 
 @section('content_header')
-    <h1>Nueva Membresía</h1>
-@endsection
+    <div class="row mb-4">
+        <div class="col-sm-8">
+            <h1 class="m-0">
+                <i class="fas fa-plus-circle"></i> Crear Nueva Membresía
+            </h1>
+        </div>
+        <div class="col-sm-4 text-right">
+            <a href="{{ route('admin.membresias.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+@stop
 
 @section('content')
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Formulario de Membresía</h3>
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-circle"></i> Errores en el formulario
+            </h5>
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="card card-primary">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-credit-card"></i> Datos de la Membresía
+            </h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('admin.membresias.store') }}" method="POST" class="needs-validation" novalidate>
+                @csrf
+
+                <!-- Sección Información Básica -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-info-circle"></i> Información Básica
+                        </h5>
+                    </div>
                 </div>
-                <form action="{{ route('admin.membresias.store') }}" method="POST">
-                    @csrf
-                    
-                    <div class="card-body">
-                        <!-- Nombre -->
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="nombre">Nombre *</label>
+                            <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
-                                   id="nombre" name="nombre" value="{{ old('nombre') }}" required>
+                                   id="nombre" name="nombre" placeholder="Ej: Plan Básico, Plan Premium" 
+                                   value="{{ old('nombre') }}" required>
                             @error('nombre')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-
-                        <!-- Duración -->
+                    </div>
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="duracion_meses">Duración (Meses) *</label>
+                            <label for="duracion_meses" class="form-label">Duración (Meses) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="number" class="form-control @error('duracion_meses') is-invalid @enderror" 
                                        id="duracion_meses" name="duracion_meses" 
                                        value="{{ old('duracion_meses', 0) }}" min="0" placeholder="0" required>
                                 <div class="input-group-append">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar-alt"></i> meses
-                                    </span>
+                                    <span class="input-group-text">meses</span>
                                 </div>
                             </div>
                             @error('duracion_meses')
-                                <span class="invalid-feedback d-block">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+                </div>
 
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="duracion_dias_calculado">Duración Total (Días)</label>
+                            <label for="duracion_dias_calculado" class="form-label">Duración Total (Días)</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" 
-                                       id="duracion_dias_calculado" readonly>
+                                       id="duracion_dias_calculado" readonly placeholder="Calculado automáticamente">
                                 <input type="hidden" id="duracion_dias" name="duracion_dias">
                                 <div class="input-group-append">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar"></i> días
-                                    </span>
+                                    <span class="input-group-text">días</span>
                                 </div>
                             </div>
-                            <small class="form-text text-muted">
-                                Se calcula automáticamente: (Meses × 30) + 5 días
-                            </small>
-                        </div>
-
-                        <!-- Descripción -->
-                        <div class="form-group">
-                            <label for="descripcion">Descripción</label>
-                            <textarea class="form-control @error('descripcion') is-invalid @enderror" 
-                                      id="descripcion" name="descripcion" rows="3">{{ old('descripcion') }}</textarea>
-                            @error('descripcion')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- Precio Normal -->
-                        <div class="form-group">
-                            <label for="precio_normal">Precio Normal ($) *</label>
-                            <input type="number" class="form-control @error('precio_normal') is-invalid @enderror" 
-                                   id="precio_normal" name="precio_normal" value="{{ old('precio_normal') }}" 
-                                   min="0" step="0.01" required>
-                            @error('precio_normal')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- Activo -->
-                        <div class="form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" checked>
-                                <label class="custom-control-label" for="activo">Activo</label>
-                            </div>
+                            <small class="form-text text-muted d-block mt-1">Se calcula: (Meses × 30) + 5</small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="card-footer">
-                        <a href="{{ route('admin.membresias.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
+                <!-- Sección Descripción -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-align-left"></i> Descripción
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <div class="form-group">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control @error('descripcion') is-invalid @enderror" 
+                                      id="descripcion" name="descripcion" rows="4" 
+                                      placeholder="Detalles y características de esta membresía...">{{ old('descripcion') }}</textarea>
+                            @error('descripcion')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Precio -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-dollar-sign"></i> Precio
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="precio_normal" class="form-label">Precio Normal ($) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" class="form-control @error('precio_normal') is-invalid @enderror" 
+                                       id="precio_normal" name="precio_normal" value="{{ old('precio_normal') }}" 
+                                       min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                            @error('precio_normal')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Estado -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" checked>
+                            <label class="custom-control-label" for="activo">Membresía Activa</label>
+                        </div>
+                        <small class="d-block text-muted mt-2">Los clientes podrán contratar esta membresía</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Botones de Acción -->
+                <div class="form-group d-flex gap-2 justify-content-between flex-wrap">
+                    <div>
+                        <a href="{{ route('admin.membresias.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
                         </a>
-                        <button type="submit" class="btn btn-primary float-right">
-                            <i class="fas fa-save"></i> Guardar
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Crear Membresía
                         </button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
-@endsection
+@stop
 
 @section('js')
 <script>
@@ -113,19 +197,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const duracionDiasCalculado = document.getElementById('duracion_dias_calculado');
     const duracionDiasHidden = document.getElementById('duracion_dias');
 
-    // Función para calcular días
     function calcularDias() {
         const meses = parseInt(duracionMeses.value) || 0;
-        const dias = (meses * 30) + 5; // Cada mes cuenta como 30 días + 5 días adicionales
+        const dias = (meses * 30) + 5;
         duracionDiasCalculado.value = dias;
         duracionDiasHidden.value = dias;
     }
 
-    // Escuchar cambios en meses
     duracionMeses.addEventListener('change', calcularDias);
     duracionMeses.addEventListener('input', calcularDias);
-
-    // Calcular al cargar la página
     calcularDias();
 });
 </script>
