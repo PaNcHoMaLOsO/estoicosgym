@@ -1,0 +1,35 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - routes
+        - tests
+
+    # Level 0 = least strict, 9 = most strict
+    level: 5
+
+    # Ignore certain errors
+    ignoreErrors:
+        - '#Call to an undefined method.*#'
+        - '#Class.*not found#'
+
+    # Laravel-specific config
+    laravel:
+        container_path: bootstrap/container.php
+
+    # Exclude paths
+    excludePaths:
+        - vendor/
+        - storage/
+        - node_modules/
+
+    # Report unused variables
+    reportUnusedClassConstants: true
+    reportUnusedProperties: true
+    reportUnusedParameters: true
+    reportUnusedVariables: true
