@@ -18,7 +18,6 @@ use Carbon\Carbon;
  * @property int|null $dia_pago 1-31: Día del mes elegido para pagar
  * @property string $precio_base Precio oficial de la membresía
  * @property string $descuento_aplicado Descuento en pesos
- * @property string $precio_final precio_base - descuento_aplicado
  * @property int|null $id_motivo_descuento Justificación del descuento
  * @property int $id_estado Activa, Vencida, Pausada, Cancelada, Pendiente
  * @property string|null $observaciones
@@ -36,8 +35,6 @@ use Carbon\Carbon;
  * @property-read \App\Models\Estado $estado
  * @property-read \App\Models\Membresia $membresia
  * @property-read \App\Models\MotivoDescuento|null $motivoDescuento
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notificacion> $notificaciones
- * @property-read int|null $notificaciones_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $pagos
  * @property-read int|null $pagos_count
  * @property-read \App\Models\PrecioMembresia $precioAcordado
@@ -64,9 +61,8 @@ use Carbon\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion whereObservaciones($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion wherePausada($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion wherePausasRealizadas($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion wherePrecioBase($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion wherePrecioFinal($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion whereRazonPausa($value)
+    @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion wherePrecioBase($value)
+    @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion whereRazonPausa($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Inscripcion whereUpdatedAt($value)
  * @mixin \Eloquent
  */
@@ -90,7 +86,6 @@ class Inscripcion extends Model
         'dia_pago',
         'precio_base',
         'descuento_aplicado',
-        'precio_final',
         'id_motivo_descuento',
         'id_estado',
         'observaciones',
@@ -110,6 +105,8 @@ class Inscripcion extends Model
         'fecha_pausa_inicio' => 'datetime',
         'fecha_pausa_fin' => 'datetime',
         'pausada' => 'boolean',
+        'precio_base' => 'decimal:2',
+        'descuento_aplicado' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -163,9 +160,21 @@ class Inscripcion extends Model
         return $this->hasMany(Pago::class, 'id_inscripcion');
     }
 
+    /**
+     * Notificaciones para esta inscripción
+     * IMPLEMENTACIÓN FUTURA: Sistema de notificaciones por email
+     * para alertar cuando la membresía o inscripción está por vencer
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function notificaciones()
     {
-        return $this->hasMany(Notificacion::class, 'id_inscripcion');
+        // TODO: Implementar modelo Notificacion y su migración
+        // Cuando esté listo descomentar la siguiente línea:
+        // return $this->hasMany(Notificacion::class, 'id_inscripcion');
+        
+        // Por ahora retornar relación vacía
+        return $this->hasMany(Pago::class, 'id_inscripcion')->whereNull('id');
     }
 
     /**
@@ -274,11 +283,11 @@ class Inscripcion extends Model
      * Puede pausarse esta membresía?
      * @return bool
      */
-    public function puedepausarse()
+    public function puedePausarse()
     {
         return !$this->pausada 
             && $this->pausas_realizadas < $this->max_pausas_permitidas
-            && $this->id_estado == 1; // Solo si está activa
+            && !$this->estaPausada(); // Solo si no está pausada
     }
 
     /**
@@ -287,7 +296,8 @@ class Inscripcion extends Model
      */
     public function obtenerEstadoPago()
     {
-        $montoTotal = $this->precio_final ?? $this->precio_base;
+        // Calcular precio final: precio_base - descuento_aplicado
+        $montoTotal = ($this->precio_base ?? 0) - ($this->descuento_aplicado ?? 0);
         
         // Obtener todos los pagos
         $allPagos = $this->pagos()->get();
