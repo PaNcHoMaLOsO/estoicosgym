@@ -421,6 +421,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const montoCuotaEl = document.getElementById('monto_cuota');
     const fechaVencimientoEl = document.getElementById('fecha_vencimiento');
 
+    // Variable para mantener el descuento de convenio
+    let descuentoConvenioActual = 0;
+
     // Inicializar Select2
     $('#id_cliente').select2({
         width: '100%',
@@ -447,26 +450,40 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const precioBase = parseFloat(data.precio_normal) || 0;
                 
-                // Aplicar descuento de convenio si es membresía mensual (id=1) Y hay convenio seleccionado
-                let descuentoConvenio = 0;
+                // Calcular descuento de convenio SOLO si es membresía mensual (id=1) Y hay convenio seleccionado
                 if (idConvenio.value && data.id === 1) { // 1 es membresía mensual
-                    descuentoConvenio = 15000; // Descuento de 15.000 para membresía mensual con convenio
-                } 
+                    descuentoConvenioActual = 15000; // Descuento de 15.000 para membresía mensual con convenio
+                } else {
+                    descuentoConvenioActual = 0;
+                }
                 
-                const descuentoExtra = parseFloat(descuentoAdicional.value) || 0;
-                const descuentoTotal = descuentoConvenio + descuentoExtra;
+                // El descuento adicional es lo que el usuario especifica
+                const descuentoAdicionalManual = parseFloat(descuentoAdicional.value) || 0;
+                
+                // Descuento total es la suma
+                const descuentoTotal = descuentoConvenioActual + descuentoAdicionalManual;
                 const precioFinal = precioBase - descuentoTotal;
 
-                // Mostrar descuentos
+                // Mostrar precios
                 precioBaseEl.textContent = '$' + precioBase.toFixed(2);
                 precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
                 precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
                 
-                // Actualizar campo de descuento SOLO si cambió por convenio
-                if (descuentoConvenio > 0) {
+                // El campo guarda el TOTAL (convenio + adicional)
+                // Pero NO lo sobrescribimos si el usuario está editando
+                // Solo actualizamos si no hay valor previo o se cambió convenio
+                if (!descuentoAdicional.value || descuentoConvenioActual > 0) {
                     descuentoAdicional.value = descuentoTotal.toFixed(2);
-                    document.getElementById('descuento_info').textContent = `Descuento automático $${descuentoConvenio.toFixed(2)} (convenio) + $${descuentoExtra.toFixed(2)} (adicional)`;
                 }
+                
+                // Actualizar el mensaje de descuento
+                let mensajeDescuento = 'Descuento a aplicar (se calcula automáticamente si hay convenio)';
+                if (descuentoConvenioActual > 0) {
+                    mensajeDescuento = `Descuento: $${descuentoConvenioActual.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (adicional) = $${descuentoTotal.toFixed(2)}`;
+                } else if (descuentoAdicionalManual > 0) {
+                    mensajeDescuento = `Descuento adicional: $${descuentoAdicionalManual.toFixed(2)}`;
+                }
+                document.getElementById('descuento_info').textContent = mensajeDescuento;
 
                 priceSummary.style.display = 'block';
                 calcularVencimiento();
@@ -539,8 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Manejar cambio en convenio
     function manejarCambioConvenio() {
-        cargarPrecioMembresia(); // Recalcular precio con descuento
-        
         // Auto-rellenar motivo descuento según convenio
         if (idConvenio.value) {
             const nombreConvenio = idConvenio.options[idConvenio.selectedIndex].getAttribute('data-nombre');
@@ -555,15 +570,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
-            // Mostrar mensaje de descuento automático
-            document.getElementById('descuento_info').textContent = 'Descuento automático de $15.000 aplicado (membresía mensual + convenio)';
         } else {
-            // Si se quita el convenio, limpiar motivo descuento y restaurar descuento a 0
+            // Si se quita el convenio, limpiar motivo descuento
             idMotivoDescuento.value = '';
+            // Y restaurar descuento a 0
             descuentoAdicional.value = '0.00';
-            document.getElementById('descuento_info').textContent = 'Descuento a aplicar (se calcula automáticamente si hay convenio)';
-            cargarPrecioMembresia(); // Recalcular sin descuento
         }
+        
+        // Recalcular precio CON el nuevo descuento de convenio
+        cargarPrecioMembresia();
     }
 
     // Manejar checkbox pago pendiente
