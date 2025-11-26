@@ -3,9 +3,16 @@
 @section('title', 'Editar Cliente - EstóicosGym')
 
 @section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1>Editar Cliente</h1>
+    <div class="row mb-4">
+        <div class="col-sm-8">
+            <h1 class="m-0">
+                <i class="fas fa-edit"></i> Editar Cliente
+            </h1>
+        </div>
+        <div class="col-sm-4 text-right">
+            <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
 @stop
@@ -13,126 +20,177 @@
 @section('content')
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error!</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-circle"></i> Errores en el formulario
+            </h5>
             <ul class="mb-0">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
         </div>
     @endif
 
-    <div class="card">
+    <div class="card card-warning">
         <div class="card-header">
-            <h3 class="card-title">Editar Datos del Cliente</h3>
+            <h3 class="card-title">
+                <i class="fas fa-user-edit"></i> Editar Datos del Cliente
+            </h3>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST">
+            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST" class="needs-validation" novalidate>
                 @csrf
                 @method('PUT')
 
+                <!-- Sección Identificación -->
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-id-card"></i> Identificación
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="run_pasaporte">RUT/Pasaporte <span class="text-danger">*</span></label>
+                            <label for="run_pasaporte" class="form-label">RUT/Pasaporte <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
                                    id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
                                    value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}" required>
-                            <small class="form-text text-muted">Formato: XX.XXX.XXX-X (Ej: 12.345.678-K)</small>
+                            <small class="form-text text-muted d-block mt-1">Formato: XX.XXX.XXX-X (Ej: 12.345.678-K)</small>
                             @error('run_pasaporte')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-6"></div>
+                </div>
+
+                <!-- Sección Datos Personales -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-user"></i> Datos Personales
+                        </h5>
+                    </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="nombres">Nombres <span class="text-danger">*</span></label>
+                            <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nombres') is-invalid @enderror" 
                                    id="nombres" name="nombres" value="{{ old('nombres', $cliente->nombres) }}" required>
                             @error('nombres')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="apellido_paterno">Apellido Paterno <span class="text-danger">*</span></label>
+                            <label for="apellido_paterno" class="form-label">Apellido Paterno <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('apellido_paterno') is-invalid @enderror" 
                                    id="apellido_paterno" name="apellido_paterno" value="{{ old('apellido_paterno', $cliente->apellido_paterno) }}" required>
                             @error('apellido_paterno')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="apellido_materno">Apellido Materno</label>
+                            <label for="apellido_materno" class="form-label">Apellido Materno</label>
                             <input type="text" class="form-control @error('apellido_materno') is-invalid @enderror" 
                                    id="apellido_materno" name="apellido_materno" value="{{ old('apellido_materno', $cliente->apellido_materno) }}">
                             @error('apellido_materno')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="email">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                   id="email" name="email" value="{{ old('email', $cliente->email) }}" required>
-                            @error('email')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="celular">Celular <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('celular') is-invalid @enderror" 
-                                   id="celular" name="celular" value="{{ old('celular', $cliente->celular) }}" required>
-                            @error('celular')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                             <input type="date" class="form-control @error('fecha_nacimiento') is-invalid @enderror" 
                                    id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento', $cliente->fecha_nacimiento) }}">
                             @error('fecha_nacimiento')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                 </div>
 
+                <!-- Sección Contacto -->
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-phone"></i> Contacto
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="direccion">Dirección</label>
-                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
-                                   id="direccion" name="direccion" value="{{ old('direccion', $cliente->direccion) }}">
-                            @error('direccion')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                   id="email" name="email" placeholder="correo@ejemplo.com" value="{{ old('email', $cliente->email) }}" required>
+                            @error('email')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="id_convenio">Convenio (Opcional)</label>
+                            <label for="celular" class="form-label">Celular <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('celular') is-invalid @enderror" 
+                                   id="celular" name="celular" placeholder="+56912345678" value="{{ old('celular', $cliente->celular) }}" required>
+                            @error('celular')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Dirección -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-map-marker-alt"></i> Domicilio
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <div class="form-group">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
+                                   id="direccion" name="direccion" placeholder="Calle, número, apartado..." value="{{ old('direccion', $cliente->direccion) }}">
+                            @error('direccion')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Convenio -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-handshake"></i> Convenio
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="id_convenio" class="form-label">Convenio (Opcional)</label>
                             <select class="form-control @error('id_convenio') is-invalid @enderror" 
                                     id="id_convenio" name="id_convenio">
                                 <option value="">-- Sin Convenio --</option>
@@ -143,43 +201,68 @@
                                 @endforeach
                             </select>
                             @error('id_convenio')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="observaciones">Observaciones</label>
-                    <textarea class="form-control @error('observaciones') is-invalid @enderror" 
-                              id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales...">{{ old('observaciones', $cliente->observaciones) }}</textarea>
-                    @error('observaciones')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
+                <!-- Sección Notas -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-sticky-note"></i> Observaciones
+                        </h5>
+                    </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12 mb-3">
                         <div class="form-group">
-                            <label for="activo">Estado</label>
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" 
-                                       {{ old('activo', $cliente->activo) ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="activo">Activo</label>
-                            </div>
+                            <label for="observaciones" class="form-label">Notas Adicionales</label>
+                            <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                                      id="observaciones" name="observaciones" rows="3" placeholder="Información adicional sobre el cliente...">{{ old('observaciones', $cliente->observaciones) }}</textarea>
+                            @error('observaciones')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
 
-                <hr>
+                <!-- Sección Estado -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </h5>
+                    </div>
+                </div>
 
-                <div class="form-group">
-                    <a href="{{ route('admin.clientes.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Actualizar Cliente
-                    </button>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" 
+                                   {{ old('activo', $cliente->activo) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="activo">Cliente Activo</label>
+                        </div>
+                        <small class="d-block text-muted mt-2">El cliente podrá realizar inscripciones</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Botones de Acción -->
+                <div class="form-group d-flex gap-2 justify-content-between flex-wrap">
+                    <div>
+                        <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-save"></i> Actualizar Cliente
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
