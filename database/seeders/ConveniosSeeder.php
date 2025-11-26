@@ -2,38 +2,47 @@
 
 namespace Database\Seeders;
 
+use App\Models\Convenio;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ConveniosSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('convenios')->insert([
-            [
-                'nombre' => 'INACAP',
-                'tipo' => 'institucion_educativa',
-                'descripcion' => 'Instituto profesional',
-                'activo' => true,
-            ],
-            [
-                'nombre' => 'DUOC',
-                'tipo' => 'institucion_educativa',
-                'descripcion' => 'Instituto profesional',
-                'activo' => true,
-            ],
-            [
-                'nombre' => 'Cruz Verde',
-                'tipo' => 'empresa',
-                'descripcion' => 'Cadena de farmacias',
-                'activo' => true,
-            ],
-            [
-                'nombre' => 'Falabella',
-                'tipo' => 'empresa',
-                'descripcion' => 'Retail',
-                'activo' => true,
-            ],
+        Convenio::create([
+            'nombre' => 'INACAP',
+            'tipo' => 'institucion_educativa',
+            'descripcion' => 'Instituto profesional',
+            'descuento_porcentaje' => 10,
+            'descuento_monto' => 0,
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'DUOC',
+            'tipo' => 'institucion_educativa',
+            'descripcion' => 'Instituto profesional',
+            'descuento_porcentaje' => 10,
+            'descuento_monto' => 0,
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Cruz Verde',
+            'tipo' => 'empresa',
+            'descripcion' => 'Cadena de farmacias',
+            'descuento_porcentaje' => 5,
+            'descuento_monto' => 0,
+            'activo' => true,
+        ]);
+
+        Convenio::create([
+            'nombre' => 'Falabella',
+            'tipo' => 'empresa',
+            'descripcion' => 'Retail',
+            'descuento_porcentaje' => 5,
+            'descuento_monto' => 0,
+            'activo' => true,
         ]);
     }
 }

@@ -35,7 +35,7 @@ class Membresia extends Model
 {
     protected $table = 'membresias';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
 

@@ -41,7 +41,7 @@ class Convenio extends Model
 {
     protected $table = 'convenios';
     protected $primaryKey = 'id';
-    public $incrementing = false;
+    public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
 
