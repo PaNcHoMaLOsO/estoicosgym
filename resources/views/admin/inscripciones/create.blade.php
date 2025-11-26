@@ -227,20 +227,17 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Total a Aplicar</label>
+                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Manual (Opcional)</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
-                            <input type="number" class="form-control @error('descuento_aplicado') is-invalid @enderror" 
+                            <input type="number" class="form-control" 
                                    id="descuento_adicional" step="0.01" min="0" 
-                                   placeholder="0.00" value="{{ old('descuento_aplicado', 0) }}">
+                                   placeholder="0.00" value="0">
                             <!-- Campo oculto que guarda el descuento TOTAL (convenio + adicional) -->
                             <input type="hidden" id="descuento_total_hidden" name="descuento_aplicado" value="0">
                         </div>
-                        @error('descuento_aplicado')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
                         <small class="text-muted d-block mt-1" id="descuento_info">Descuento a aplicar (se calcula automáticamente si hay convenio)</small>
                     </div>
 
