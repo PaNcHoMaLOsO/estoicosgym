@@ -42,11 +42,6 @@ class MembresiaController extends Controller
             'activo' => 'boolean',
         ]);
 
-        // Validación: Si duracion_meses = 0, asegurar que duracion_dias sea válido
-        if ($validated['duracion_meses'] == 0 && $validated['duracion_dias'] < 1) {
-            return back()->withErrors(['duracion_dias' => 'Si la duración en meses es 0, debe especificar al menos 1 día']);
-        }
-
         $membresia = Membresia::create([
             'nombre' => $validated['nombre'],
             'duracion_meses' => $validated['duracion_meses'],
@@ -128,11 +123,6 @@ class MembresiaController extends Controller
             'activo' => 'boolean',
         ]);
 
-        // Validación: Si duracion_meses = 0, asegurar que duracion_dias sea válido
-        if ($validated['duracion_meses'] == 0 && $validated['duracion_dias'] < 1) {
-            return back()->withErrors(['duracion_dias' => 'Si la duración en meses es 0, debe especificar al menos 1 día']);
-        }
-
         // Verificar si hay cambios críticos que afecten inscripciones existentes
         $tieneCambiosCriticos = false;
         $cambiosCriticos = [];
@@ -153,9 +143,9 @@ class MembresiaController extends Controller
         }
 
         // Si hay cambios críticos e inscripciones activas, advertir
+        // Usar id_estado para verificar inscripciones activas
         $inscripcionesActivas = $membresia->inscripciones()
-            ->where('estado', '!=', 'vencida')
-            ->where('estado', '!=', 'cancelada')
+            ->whereNotIn('id_estado', [3, 5]) // Excluyendo vencida (3) y cancelada (5)
             ->count();
 
         if ($tieneCambiosCriticos && $inscripcionesActivas > 0) {
@@ -210,27 +200,45 @@ class MembresiaController extends Controller
      */
     public function destroy(Membresia $membresia)
     {
+        $forceDelete = request()->input('force_delete') === '1';
+        $nombreMembresia = $membresia->nombre;
+        
         // Verificar si hay inscripciones activas
         $inscripcionesActivas = $membresia->inscripciones()
-            ->whereIn('estado', ['activa', 'pausada'])
+            ->whereNotIn('id_estado', [3, 5]) // Excluyendo vencida (3) y cancelada (5)
             ->count();
 
-        if ($inscripcionesActivas > 0) {
-            return back()->with('error', 
-                "No se puede eliminar la membresía '{$membresia->nombre}' porque tiene {$inscripcionesActivas} inscripción(es) activa(s). " .
-                "Cancele primero las inscripciones activas para poder eliminar esta membresía.");
+        // Si hay inscripciones activas y no es eliminación forzada, solo desactivar
+        if ($inscripcionesActivas > 0 && !$forceDelete) {
+            // Desactivar la membresía
+            $membresia->update(['activo' => false]);
+            
+            \Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . Auth::user()->name);
+            
+            return redirect()->route('admin.membresias.index')
+                ->with('success', "Membresía '{$nombreMembresia}' desactivada exitosamente. " .
+                    "Tiene {$inscripcionesActivas} inscripción(es) activa(s) que se mantendrán hasta su vencimiento.");
         }
 
-        // Obtener información para auditoría antes de eliminar
-        $nombreMembresia = $membresia->nombre;
+        // Si force_delete = true, eliminar completamente
+        if ($forceDelete) {
+            $inscripcionesTotales = $membresia->inscripciones()->count();
+            
+            \Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
+            
+            $membresia->delete();
+            
+            return redirect()->route('admin.membresias.index')
+                ->with('success', "Membresía '{$nombreMembresia}' eliminada completamente. Se registraron {$inscripcionesTotales} inscripción(es) histórica(s).");
+        }
+
+        // Si no hay inscripciones activas, eliminar directamente
         $inscripcionesTotales = $membresia->inscripciones()->count();
-
-        // Registrar eliminación en log
-        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
-
-        // Eliminará la membresía (las relaciones se manejan según la BD)
+        
+        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . Auth::user()->name);
+        
         $membresia->delete();
-
+        
         return redirect()->route('admin.membresias.index')
             ->with('success', "Membresía '{$nombreMembresia}' eliminada exitosamente. Se registraron {$inscripcionesTotales} inscripción(es) histórica(s).");
     }

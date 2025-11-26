@@ -224,6 +224,7 @@
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ========== Lógica de Duración de Días ==========
     const duracionMeses = document.getElementById('duracion_meses');
     const duracionDias = document.getElementById('duracion_dias');
     const diasInfo = document.getElementById('dias_info');
@@ -232,11 +233,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const meses = parseInt(duracionMeses.value) || 0;
         
         if (meses === 0) {
-            // Si meses = 0, permitir entrada manual de días
             duracionDias.removeAttribute('readonly');
             diasInfo.textContent = 'Ingresa manualmente la duración en días (Ej: Pase Diario=1)';
         } else {
-            // Si meses > 0, calcular automáticamente
             const dias = (meses * 30) + 5;
             duracionDias.value = dias;
             diasInfo.textContent = `Duración automática: (${meses} meses × 30) + 5 = ${dias} días`;
@@ -246,6 +245,29 @@ document.addEventListener('DOMContentLoaded', function() {
     duracionMeses.addEventListener('change', actualizarDias);
     duracionMeses.addEventListener('input', actualizarDias);
     actualizarDias();
+
+    // ========== Formateo de Precio con Puntos de Miles ==========
+    const precioInput = document.getElementById('precio_normal');
+    
+    function formatearPrecio(valor) {
+        // Remover todo excepto números
+        const numeros = valor.replace(/\D/g, '');
+        // Formatear con puntos de miles
+        return numeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    precioInput.addEventListener('input', function(e) {
+        let valor = e.target.value;
+        let formateado = formatearPrecio(valor);
+        e.target.value = formateado;
+    });
+
+    precioInput.addEventListener('blur', function(e) {
+        // Al perder foco, asegurar que el valor esté bien formateado
+        let valor = e.target.value;
+        let formateado = formatearPrecio(valor);
+        e.target.value = formateado;
+    });
 });
 </script>
 @endsection

@@ -118,48 +118,66 @@
                                         </a>
                                         <button type="button" class="btn btn-sm btn-danger" 
                                                 data-toggle="modal" data-target="#deleteModal{{ $membresia->id }}"
-                                                title="Eliminar">
+                                                title="Desactivar o Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         
-                                        <!-- Modal de Confirmación de Eliminación -->
+                                        <!-- Modal de Confirmación: Desactivar o Eliminar -->
                                         <div class="modal fade" id="deleteModal{{ $membresia->id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
-                                                    <div class="modal-header bg-danger text-white">
+                                                    <div class="modal-header bg-warning text-dark">
                                                         <h5 class="modal-title">
-                                                            <i class="fas fa-trash-alt"></i> Eliminar Membresía
+                                                            <i class="fas fa-cog"></i> Gestionar Membresía
                                                         </h5>
                                                         <button type="button" class="close" data-dismiss="modal">
                                                             <span aria-hidden="true">&times;</span>
                                                         </button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <p><strong>¿Estás seguro de que deseas eliminar esta membresía?</strong></p>
-                                                        <div class="alert alert-warning">
+                                                        <p><strong>¿Qué deseas hacer con esta membresía?</strong></p>
+                                                        <div class="alert alert-info">
                                                             <strong>Membresía:</strong> {{ $membresia->nombre }}<br>
-                                                            <strong>Inscripciones asociadas:</strong> {{ $membresia->inscripciones_count ?? 0 }}
+                                                            <strong>Inscripciones activas:</strong> 
+                                                            @php
+                                                                $activas = $membresia->inscripciones()
+                                                                    ->whereNotIn('id_estado', [3, 5])
+                                                                    ->count();
+                                                            @endphp
+                                                            {{ $activas }}
                                                         </div>
-                                                        <p class="text-muted">
-                                                            Esta acción <strong>no se puede deshacer</strong>. 
-                                                            @if (($membresia->inscripciones_count ?? 0) > 0)
-                                                                <span class="text-danger">
-                                                                    <i class="fas fa-exclamation-circle"></i>
-                                                                    Hay {{ $membresia->inscripciones_count }} inscripción(es) asociada(s).
-                                                                </span>
-                                                            @endif
-                                                        </p>
+                                                        
+                                                        @if ($activas > 0)
+                                                            <div class="alert alert-warning">
+                                                                <i class="fas fa-exclamation-triangle"></i>
+                                                                <strong>Hay {{ $activas }} inscripción(es) activa(s).</strong><br>
+                                                                <small>Se recomienda <strong>Desactivar</strong> para mantener las inscripciones existentes.</small>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
                                                             <i class="fas fa-times"></i> Cancelar
                                                         </button>
+                                                        
                                                         <form action="{{ route('admin.membresias.destroy', $membresia) }}" 
                                                               method="POST" style="display:inline;">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger">
-                                                                <i class="fas fa-trash"></i> Sí, Eliminar
+                                                            <input type="hidden" name="force_delete" value="0">
+                                                            <button type="submit" class="btn btn-warning">
+                                                                <i class="fas fa-pause-circle"></i> Desactivar
+                                                            </button>
+                                                        </form>
+                                                        
+                                                        <form action="{{ route('admin.membresias.destroy', $membresia) }}" 
+                                                              method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <input type="hidden" name="force_delete" value="1">
+                                                            <button type="submit" class="btn btn-danger" 
+                                                                    onclick="return confirm('¿Estás SEGURO? Esta acción NO se puede deshacer.')">
+                                                                <i class="fas fa-trash"></i> Eliminar Completamente
                                                             </button>
                                                         </form>
                                                     </div>
