@@ -66,7 +66,7 @@ class MembresiaController extends Controller
             'precio_anterior' => 0,
             'precio_nuevo' => $validated['precio_normal'],
             'razon_cambio' => 'Creación de membresía',
-            'usuario_cambio' => Auth::user()->name,
+            'usuario_cambio' => Auth::user()?->name ?? 'Sistema',
         ]);
 
         return redirect()->route('admin.membresias.show', $membresia)
@@ -151,7 +151,8 @@ class MembresiaController extends Controller
         if ($tieneCambiosCriticos && $inscripcionesActivas > 0) {
             // Registrar el cambio en auditoría
             $cambioDetalles = implode(', ', $cambiosCriticos);
-            \Log::warning("Cambios críticos en membresía {$membresia->nombre}: {$cambioDetalles}. Inscripciones activas: {$inscripcionesActivas}");
+            $usuario = Auth::user()?->name ?? 'Sistema';
+            \Log::warning("Cambios críticos en membresía {$membresia->nombre}: {$cambioDetalles}. Inscripciones activas: {$inscripcionesActivas}. Usuario: {$usuario}");
         }
 
         $precioAnterior = $precioActual->precio_normal ?? 0;
@@ -186,7 +187,7 @@ class MembresiaController extends Controller
                 'precio_anterior' => $precioAnterior,
                 'precio_nuevo' => $validated['precio_normal'],
                 'razon_cambio' => $validated['razon_cambio'] ?? 'Actualización de precio',
-                'usuario_cambio' => Auth::user()->name,
+                'usuario_cambio' => Auth::user()?->name ?? 'Sistema',
             ]);
         }
 
