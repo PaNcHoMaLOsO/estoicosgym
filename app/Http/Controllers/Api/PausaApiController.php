@@ -116,7 +116,7 @@ class PausaApiController extends Controller
                 'data' => [
                     'id' => $inscripcion->id,
                     'cliente' => $inscripcion->cliente->nombres . ' ' . $inscripcion->cliente->apellido_paterno,
-                    'puede_pausarse' => $inscripcion->puedepausarse(),
+                    'puede_pausarse' => $inscripcion->puedePausarse(),
                     'pausa_info' => $infoPausa,
                     'estado' => $inscripcion->estado?->nombre,
                 ]
