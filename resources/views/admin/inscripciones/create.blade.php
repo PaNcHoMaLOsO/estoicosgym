@@ -227,14 +227,16 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Total</label>
+                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Total a Aplicar</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
                             <input type="number" class="form-control @error('descuento_aplicado') is-invalid @enderror" 
-                                   id="descuento_adicional" name="descuento_aplicado" step="0.01" min="0" 
-                                   value="{{ old('descuento_aplicado', 0) }}">
+                                   id="descuento_adicional" step="0.01" min="0" 
+                                   placeholder="0.00" value="{{ old('descuento_aplicado', 0) }}">
+                            <!-- Campo oculto que guarda el descuento TOTAL (convenio + adicional) -->
+                            <input type="hidden" id="descuento_total_hidden" name="descuento_aplicado" value="0">
                         </div>
                         @error('descuento_aplicado')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
@@ -405,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const idMembresia = document.getElementById('id_membresia');
     const fechaInicio = document.getElementById('fecha_inicio');
     const descuentoAdicional = document.getElementById('descuento_adicional');
+    const descuentoTotalHidden = document.getElementById('descuento_total_hidden');
     const montoAbonado = document.getElementById('monto_abonado');
     const cantidadCuotas = document.getElementById('cantidad_cuotas');
     const cuotasSection = document.getElementById('cuotasSection');
@@ -464,24 +467,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const descuentoTotal = descuentoConvenioActual + descuentoAdicionalManual;
                 const precioFinal = precioBase - descuentoTotal;
 
-                // Mostrar precios
+                // Mostrar precios en el resumen
                 precioBaseEl.textContent = '$' + precioBase.toFixed(2);
                 precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
                 precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
                 
-                // El campo guarda el TOTAL (convenio + adicional)
-                // Pero NO lo sobrescribimos si el usuario está editando
-                // Solo actualizamos si no hay valor previo o se cambió convenio
-                if (!descuentoAdicional.value || descuentoConvenioActual > 0) {
-                    descuentoAdicional.value = descuentoTotal.toFixed(2);
-                }
+                // Guardar el descuento TOTAL en el campo oculto (para el servidor)
+                descuentoTotalHidden.value = descuentoTotal.toFixed(2);
                 
                 // Actualizar el mensaje de descuento
                 let mensajeDescuento = 'Descuento a aplicar (se calcula automáticamente si hay convenio)';
-                if (descuentoConvenioActual > 0) {
-                    mensajeDescuento = `Descuento: $${descuentoConvenioActual.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (adicional) = $${descuentoTotal.toFixed(2)}`;
+                if (descuentoConvenioActual > 0 && descuentoAdicionalManual > 0) {
+                    mensajeDescuento = `✓ Descuento: $${descuentoConvenioActual.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (usuario) = $${descuentoTotal.toFixed(2)}`;
+                } else if (descuentoConvenioActual > 0) {
+                    mensajeDescuento = `✓ Descuento automático: $${descuentoConvenioActual.toFixed(2)} (convenio mensual)`;
                 } else if (descuentoAdicionalManual > 0) {
-                    mensajeDescuento = `Descuento adicional: $${descuentoAdicionalManual.toFixed(2)}`;
+                    mensajeDescuento = `Descuento del usuario: $${descuentoAdicionalManual.toFixed(2)}`;
                 }
                 document.getElementById('descuento_info').textContent = mensajeDescuento;
 
@@ -573,8 +574,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Si se quita el convenio, limpiar motivo descuento
             idMotivoDescuento.value = '';
-            // Y restaurar descuento a 0
-            descuentoAdicional.value = '0.00';
         }
         
         // Recalcular precio CON el nuevo descuento de convenio

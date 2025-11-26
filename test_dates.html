@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Fecha Vencimiento</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Cálculo de Fecha Vencimiento</h1>
+    
+    <div class="test">
+        <h3>Pase Diario (26 nov → 26 nov)</h3>
+        <p>
+            <label>Fecha Inicio: <input type="date" id="test1_inicio" value="2025-11-26"></label>
+            <button onclick="calcularTest(1, 0, 1)">Calcular</button>
+        </p>
+        <p>Vencimiento: <input type="date" id="test1_vencimiento" readonly></p>
+    </div>
+    
+    <div class="test">
+        <h3>Mensual (26 nov → 25 dic)</h3>
+        <p>
+            <label>Fecha Inicio: <input type="date" id="test2_inicio" value="2025-11-26"></label>
+            <button onclick="calcularTest(2, 1, 0)">Calcular</button>
+        </p>
+        <p>Vencimiento: <input type="date" id="test2_vencimiento" readonly></p>
+    </div>
+    
+    <div class="test">
+        <h3>Trimestral (26 nov → 25 feb)</h3>
+        <p>
+            <label>Fecha Inicio: <input type="date" id="test3_inicio" value="2025-11-26"></label>
+            <button onclick="calcularTest(3, 3, 0)">Calcular</button>
+        </p>
+        <p>Vencimiento: <input type="date" id="test3_vencimiento" readonly></p>
+    </div>
+
+    <script>
+        function calcularTest(testNum, duracionMeses, duracionDias) {
+            const inicioInput = document.getElementById(`test${testNum}_inicio`);
+            const vencimientoInput = document.getElementById(`test${testNum}_vencimiento`);
+            
+            const [year, month, day] = inicioInput.value.split('-').map(Number);
+            const fechaInicioParsed = new Date(year, month - 1, day); // month es 0-indexed
+            
+            const fechaVencimiento = new Date(fechaInicioParsed);
+            
+            if (duracionMeses === 0) {
+                // Para Pase Diario: sumar días directamente
+                fechaVencimiento.setDate(fechaVencimiento.getDate() + duracionDias - 1);
+            } else {
+                // Para membresías de meses: sumar meses y restar 1 día
+                fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
+                fechaVencimiento.setDate(fechaVencimiento.getDate() - 1);
+            }
+            
+            // Formatear a YYYY-MM-DD
+            const yearFormato = fechaVencimiento.getFullYear();
+            const monthFormato = String(fechaVencimiento.getMonth() + 1).padStart(2, '0');
+            const dayFormato = String(fechaVencimiento.getDate()).padStart(2, '0');
+            const fechaVencimientoFormato = `${yearFormato}-${monthFormato}-${dayFormato}`;
+            
+            vencimientoInput.value = fechaVencimientoFormato;
+            
+            console.log(`Test ${testNum}: ${inicioInput.value} → ${fechaVencimientoFormato}`);
+        }
+    </script>
+</body>
+</html>
