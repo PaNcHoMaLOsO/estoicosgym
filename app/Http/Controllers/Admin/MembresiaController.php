@@ -51,10 +51,11 @@ class MembresiaController extends Controller
         ]);
 
         // Crear precio inicial
+        // precio_convenio solo aplica para membresía Mensual (id=4)
         PrecioMembresia::create([
             'id_membresia' => $membresia->id,
             'precio_normal' => $validated['precio_normal'],
-            'precio_convenio' => $validated['precio_normal'],
+            'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] : null, // NULL excepto para Mensual
             'fecha_vigencia_desde' => now(),
             'activo' => true,
         ]);
@@ -144,10 +145,11 @@ class MembresiaController extends Controller
             $precioActual->update(['activo' => false]);
 
             // Crear nuevo precio
+            // precio_convenio solo aplica para membresía Mensual (id=4)
             $nuevoPrecio = PrecioMembresia::create([
                 'id_membresia' => $membresia->id,
                 'precio_normal' => $validated['precio_normal'],
-                'precio_convenio' => $validated['precio_normal'],
+                'precio_convenio' => $membresia->id === 4 ? $validated['precio_normal'] : null, // NULL excepto para Mensual
                 'fecha_vigencia_desde' => now(),
                 'activo' => true,
             ]);

@@ -123,12 +123,22 @@ class InscripcionController extends Controller
 
         // Obtener membresía y precio base
         $membresia = Membresia::findOrFail($validated['id_membresia']);
-        $precioBase = $membresia->precio_normal;
         
-        // Calcular descuento automático del convenio (membresía mensual + convenio = $15.000)
+        // Obtener precio vigente de membresía
+        $precioMembresia = $membresia->precios()
+            ->where('activo', true)
+            ->where('fecha_vigencia_desde', '<=', now())
+            ->orderBy('fecha_vigencia_desde', 'desc')
+            ->first();
+        
+        $precioBase = $precioMembresia->precio_normal ?? 0;
+        
+        // Calcular descuento automático del convenio (membresía mensual + convenio)
+        // Solo aplica precio_convenio si membresía es Mensual (id=4) y cliente tiene convenio
         $descuentoConvenio = 0;
-        if ($validated['id_convenio'] && $membresia->id === 1) { // id=1 es membresía mensual
-            $descuentoConvenio = 15000;
+        if ($validated['id_convenio'] && $membresia->id === 4 && $precioMembresia->precio_convenio) { // id=4 es membresía mensual
+            // El descuento es la diferencia entre precio normal y precio con convenio
+            $descuentoConvenio = $precioBase - $precioMembresia->precio_convenio;
         }
         
         // El descuento total es: descuento automático del convenio + descuento adicional del usuario
