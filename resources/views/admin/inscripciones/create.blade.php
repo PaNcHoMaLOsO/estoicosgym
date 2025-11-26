@@ -117,7 +117,9 @@
                             <option value="">-- Seleccionar Cliente --</option>
                             @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" {{ old('id_cliente') == $cliente->id ? 'selected' : '' }}>
-                                    {{ $cliente->nombres }} {{ $cliente->apellido_paterno }} ({{ $cliente->email }})
+                                    {{ $cliente->nombres }} {{ $cliente->apellido_paterno }} 
+                                    @if($cliente->apellido_materno) {{ $cliente->apellido_materno }} @endif
+                                    @if($cliente->run_pasaporte)- {{ $cliente->run_pasaporte }}@endif
                                 </option>
                             @endforeach
                         </select>
