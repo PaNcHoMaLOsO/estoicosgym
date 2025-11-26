@@ -77,18 +77,31 @@ class InscripcionApiController extends Controller
         $fechaInicio = \Carbon\Carbon::createFromFormat('Y-m-d', $validated['fecha_inicio']);
         $membresia = Membresia::find($validated['id_membresia']);
         
-        // Calcular fecha de vencimiento
-        $fechaVencimiento = $fechaInicio->clone()
-            ->addMonths($membresia->duracion_meses)
-            ->addDays($membresia->duracion_dias)
-            ->subDay();
+        // Calcular fecha de vencimiento usando duracion_dias si está disponible
+        if ($membresia->duracion_dias && $membresia->duracion_dias > 0) {
+            // Para Pase Diario y otros con duracion_dias: usar directamente
+            $fechaVencimiento = $fechaInicio->clone()
+                ->addDays($membresia->duracion_dias)
+                ->subDay();
+        } else {
+            // Para membresías por meses: sumar meses y restar 1 día
+            $duracionMeses = $membresia->duracion_meses ?? 1;
+            $fechaVencimiento = $fechaInicio->clone()
+                ->addMonths($duracionMeses)
+                ->subDay();
+        }
 
-        // Calcular descuento
+        // Calcular descuento (ahora también soporta descuento automático de convenio)
         $descuento = 0;
         if ($validated['id_convenio']) {
             $convenio = Convenio::find($validated['id_convenio']);
             if ($convenio) {
-                $descuento = $convenio->descuento_monto ?? 0;
+                // Si es membresía mensual (id=1) y hay convenio, aplicar $15.000
+                if ($membresia->id === 1) {
+                    $descuento = 15000;
+                } else {
+                    $descuento = $convenio->descuento_monto ?? 0;
+                }
             }
         }
 
