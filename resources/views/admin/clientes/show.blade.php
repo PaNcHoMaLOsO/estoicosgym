@@ -182,9 +182,94 @@
                             <dd><small class="text-muted">{{ $cliente->created_at->format('d/m/Y H:i') }}</small></dd>
                         </div>
                     </div>
+
+                    <hr class="my-2">
+
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <dt>Última Actualización:</dt>
+                        </div>
+                        <div class="col-sm-7">
+                            <dd><small class="text-muted">{{ $cliente->updated_at->format('d/m/Y H:i') }}</small></dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Observaciones -->
+            @if($cliente->observaciones)
+                <div class="card card-secondary card-outline mt-4">
+                    <div class="card-header bg-secondary">
+                        <h3 class="card-title">
+                            <i class="fas fa-sticky-note"></i> Observaciones
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ $cliente->observaciones }}</p>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Pagos Históricos -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card card-success card-outline">
+                <div class="card-header bg-success">
+                    <h3 class="card-title">
+                        <i class="fas fa-receipt"></i> Historial de Pagos
+                    </h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    @if($cliente->pagos->count() > 0)
+                        <table class="table table-hover table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Inscripción</th>
+                                    <th>Estado</th>
+                                    <th>Monto Abonado</th>
+                                    <th>Método Pago</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($cliente->pagos as $pago)
+                                    <tr>
+                                        <td>{{ $pago->id }}</td>
+                                        <td>
+                                            @if($pago->inscripcion)
+                                                <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="text-primary">
+                                                    {{ $pago->inscripcion->membresia->nombre ?? 'Membresía' }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
+                                        <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
+                                        <td><small>{{ $pago->metodoPago->nombre ?? 'N/A' }}</small></td>
+                                        <td><small>{{ $pago->fecha_pago->format('d/m/Y') }}</small></td>
+                                        <td>
+                                            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-xs btn-success" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-0">
+                            <i class="fas fa-info-circle"></i> No hay pagos registrados
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Card Estadísticas -->
         <div class="col-lg-6 mb-4">
