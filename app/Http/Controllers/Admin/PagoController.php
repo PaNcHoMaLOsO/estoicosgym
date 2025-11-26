@@ -70,15 +70,24 @@ class PagoController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $inscripciones = Inscripcion::with('cliente')->limit(30)->get();
+        $inscripcion = null;
+        
+        // Si viene desde inscripción.show
+        if ($request->filled('id_inscripcion')) {
+            $inscripcion = Inscripcion::with('cliente', 'membresia')->find($request->id_inscripcion);
+        } else {
+            $inscripcion = Inscripcion::with('cliente', 'membresia')->latest()->first();
+        }
+        
         $metodos_pago = MetodoPago::all();
-        return view('admin.pagos.create', compact('inscripciones', 'metodos_pago'));
+        return view('admin.pagos.create', compact('inscripcion', 'metodos_pago'));
     }
 
     /**
      * Store a newly created resource in storage.
+     * Ahora soporta pagos parciales y múltiples cuotas
      */
     public function store(Request $request)
     {
@@ -87,13 +96,38 @@ class PagoController extends Controller
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
             'id_metodo_pago' => 'required|exists:metodo_pagos,id',
+            'cantidad_cuotas' => 'required|integer|min:1|max:12',
+            'numero_cuota' => 'required|integer|min:1',
+            'fecha_vencimiento_cuota' => 'nullable|date',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
-        Pago::create($validated);
+        $inscripcion = Inscripcion::find($validated['id_inscripcion']);
+        
+        // Calcular monto de cuota
+        $montoCuota = $validated['monto_abonado'] / $validated['cantidad_cuotas'];
+
+        $pago = Pago::create([
+            'id_inscripcion' => $validated['id_inscripcion'],
+            'id_cliente' => $inscripcion->id_cliente,
+            'monto_total' => $inscripcion->precio_base - $inscripcion->descuento_aplicado,
+            'monto_abonado' => $validated['monto_abonado'],
+            'monto_pendiente' => ($inscripcion->precio_base - $inscripcion->descuento_aplicado) - $validated['monto_abonado'],
+            'descuento_aplicado' => $inscripcion->descuento_aplicado,
+            'fecha_pago' => $validated['fecha_pago'],
+            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'cantidad_cuotas' => $validated['cantidad_cuotas'],
+            'numero_cuota' => $validated['numero_cuota'],
+            'monto_cuota' => $montoCuota,
+            'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
+            'id_estado' => 102, // Pagado
+            'observaciones' => $validated['observaciones'],
+            'periodo_inicio' => $inscripcion->fecha_inicio,
+            'periodo_fin' => $inscripcion->fecha_vencimiento,
+        ]);
 
         return redirect()->route('admin.pagos.index')
-            ->with('success', 'Pago registrado exitosamente');
+            ->with('success', 'Pago registrado exitosamente (Cuota ' . $validated['numero_cuota'] . ' de ' . $validated['cantidad_cuotas'] . ')');
     }
 
     /**
@@ -117,6 +151,7 @@ class PagoController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * Actualiza pagos con soporte para cuotas
      */
     public function update(Request $request, Pago $pago)
     {
@@ -125,10 +160,31 @@ class PagoController extends Controller
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
             'id_metodo_pago' => 'required|exists:metodo_pagos,id',
+            'cantidad_cuotas' => 'required|integer|min:1|max:12',
+            'numero_cuota' => 'required|integer|min:1',
+            'fecha_vencimiento_cuota' => 'nullable|date',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
-        $pago->update($validated);
+        $inscripcion = Inscripcion::find($validated['id_inscripcion']);
+        $montoCuota = $validated['monto_abonado'] / $validated['cantidad_cuotas'];
+
+        $pago->update([
+            'id_inscripcion' => $validated['id_inscripcion'],
+            'id_cliente' => $inscripcion->id_cliente,
+            'monto_total' => $inscripcion->precio_base - $inscripcion->descuento_aplicado,
+            'monto_abonado' => $validated['monto_abonado'],
+            'monto_pendiente' => ($inscripcion->precio_base - $inscripcion->descuento_aplicado) - $validated['monto_abonado'],
+            'fecha_pago' => $validated['fecha_pago'],
+            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'cantidad_cuotas' => $validated['cantidad_cuotas'],
+            'numero_cuota' => $validated['numero_cuota'],
+            'monto_cuota' => $montoCuota,
+            'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
+            'observaciones' => $validated['observaciones'],
+            'periodo_inicio' => $inscripcion->fecha_inicio,
+            'periodo_fin' => $inscripcion->fecha_vencimiento,
+        ]);
 
         return redirect()->route('admin.pagos.show', $pago)
             ->with('success', 'Pago actualizado exitosamente');

@@ -20,6 +20,10 @@ use Illuminate\Support\Str;
  * @property int $id_metodo_pago
  * @property string|null $referencia_pago Futuro: N° de transferencia, comprobante
  * @property int $id_estado Pendiente, Pagado, Parcial, Vencido
+ * @property int $cantidad_cuotas Total de cuotas (default: 1)
+ * @property int $numero_cuota Número de cuota actual (ej: 1 de 3)
+ * @property string|null $monto_cuota Monto de cada cuota individual
+ * @property \Illuminate\Support\Carbon|null $fecha_vencimiento_cuota Fecha de vencimiento de esta cuota
  * @property string|null $observaciones
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -73,6 +77,10 @@ class Pago extends Model
         'id_metodo_pago',
         'referencia_pago',
         'id_estado',
+        'cantidad_cuotas',
+        'numero_cuota',
+        'monto_cuota',
+        'fecha_vencimiento_cuota',
         'observaciones',
     ];
 
@@ -80,6 +88,8 @@ class Pago extends Model
         'fecha_pago' => 'date',
         'periodo_inicio' => 'date',
         'periodo_fin' => 'date',
+        'fecha_vencimiento_cuota' => 'date',
+        'monto_cuota' => 'decimal:2',
     ];
 
     protected static function boot()

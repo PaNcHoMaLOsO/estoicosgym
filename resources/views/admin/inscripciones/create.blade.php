@@ -131,36 +131,33 @@
                         <label class="form-label"><i class="fas fa-calendar-check"></i> Fecha Inicio <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}" 
-                               readonly required>
+                               required>
                         @error('fecha_inicio')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Se completa automáticamente con la fecha de hoy</small>
+                        <small class="text-muted d-block mt-1">Fecha en que inicia la membresía (puede ser futura)</small>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-calendar-times"></i> Fecha Vencimiento <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('fecha_vencimiento') is-invalid @enderror" 
-                               id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}" 
-                               readonly required>
-                        @error('fecha_vencimiento')
+                        <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
+                               id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 1) }}" 
+                               min="1" max="12" required>
+                        @error('cantidad_cuotas')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Se calcula automáticamente</small>
+                        <small class="text-muted d-block mt-1">Número de cuotas (1-12)</small>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Precio Base <span class="text-danger">*</span></label>
+                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Precio Cuota</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
-                            <input type="number" class="form-control @error('precio_base') is-invalid @enderror" 
-                                   id="precio_base" name="precio_base" step="0.01" min="0.01" 
-                                   value="{{ old('precio_base') }}" placeholder="0.00" readonly required>
+                            <input type="number" class="form-control" 
+                                   id="monto_cuota" name="monto_cuota" step="0.01" min="0.01" 
+                                   readonly>
                         </div>
-                        @error('precio_base')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted d-block mt-1">Se carga automáticamente</small>
+                        <small class="text-muted d-block mt-1">Se calcula automáticamente</small>
                     </div>
                 </div>
             </div>
@@ -254,21 +251,24 @@
 document.addEventListener('DOMContentLoaded', function() {
     const formInscripcion = document.getElementById('formInscripcion');
     const idMembresia = document.getElementById('id_membresia');
-    const idConvenio = document.getElementById('id_convenio');
     const fechaInicio = document.getElementById('fecha_inicio');
     const fechaVencimiento = document.getElementById('fecha_vencimiento');
     const precioBase = document.getElementById('precio_base');
+    const cantidadCuotas = document.getElementById('cantidad_cuotas');
+    const montoCuota = document.getElementById('monto_cuota');
 
     // Inicializar Select2 para Cliente
     $('#id_cliente').select2({
         width: '100%',
         allowClear: true,
+        language: 'es',
     });
 
     // Cargar precio al seleccionar membresía
     async function cargarPrecioMembresia() {
         if (!idMembresia.value) {
             precioBase.value = '';
+            montoCuota.value = '';
             return;
         }
 
@@ -278,11 +278,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 precioBase.value = data.precio_normal || 0;
+                calcularMontoCuota();
                 calcularInscripcion();
             }
         } catch (error) {
             console.error('Error al cargar precio:', error);
         }
+    }
+
+    // Calcular monto de cuota
+    function calcularMontoCuota() {
+        if (!precioBase.value || !cantidadCuotas.value) {
+            montoCuota.value = '';
+            return;
+        }
+
+        const precio = parseFloat(precioBase.value);
+        const cuotas = parseInt(cantidadCuotas.value);
+        const monto = precio / cuotas;
+        montoCuota.value = monto.toFixed(2);
     }
 
     // Función para calcular automáticamente
@@ -300,7 +314,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     id_membresia: idMembresia.value,
-                    id_convenio: idConvenio.value,
                     fecha_inicio: fechaInicio.value,
                     precio_base: parseFloat(precioBase.value),
                 }),
@@ -310,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 fechaVencimiento.value = data.fecha_vencimiento;
-                document.getElementById('descuento_aplicado').value = data.descuento_aplicado;
+                document.getElementById('descuento_aplicado').value = data.descuento_aplicado || 0;
             }
         } catch (error) {
             console.error('Error al calcular:', error);
@@ -319,8 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Escuchar cambios
     idMembresia.addEventListener('change', cargarPrecioMembresia);
-    idConvenio.addEventListener('change', calcularInscripcion);
     fechaInicio.addEventListener('change', calcularInscripcion);
+    cantidadCuotas.addEventListener('change', calcularMontoCuota);
 });
 </script>
-@stop
+@endsection

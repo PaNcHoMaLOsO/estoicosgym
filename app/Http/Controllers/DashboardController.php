@@ -20,37 +20,44 @@ class DashboardController extends Controller
         // Obtener IDs de estados
         $estadoActiva = Estado::where('nombre', 'Activa')->first();
         $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 1;
+        $estadoVencida = Estado::where('nombre', 'Vencida')->first();
+        $idEstadoVencida = $estadoVencida ? $estadoVencida->id : 202;
         
-        // Estadísticas principales
+        // KPIs Principales - Clientes
         $totalClientes = Cliente::where('activo', true)->count();
         $clientesInactivos = Cliente::where('activo', false)->count();
-        $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
-        $inscripcionesVencidas = Inscripcion::where('id_estado', Estado::where('nombre', 'Vencida')->first()?->id ?? 202)->count();
         
+        // KPIs Principales - Inscripciones
+        $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
+        $inscripcionesVencidas = Inscripcion::where('id_estado', $idEstadoVencida)->count();
+        
+        // KPIs Principales - Ingresos
         $pagosDelMes = Pago::whereYear('fecha_pago', $hoy->year)
             ->whereMonth('fecha_pago', $hoy->month)
             ->sum('monto_abonado');
         $ingresosTotales = Pago::sum('monto_abonado');
-        $pagosPendientes = Pago::sum('monto_pendiente');
+        $pagosPendientes = Pago::where('id_estado', '!=', 102)->sum('monto_abonado');
         
-        // Últimos pagos
-        $ultimosPagos = Pago::with('inscripcion.cliente', 'metodoPago', 'estado')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
+        // Últimos pagos con relaciones eager loaded
+        $ultimosPagos = Pago::with(['inscripcion' => function($q) {
+            $q->with('cliente');
+        }, 'metodoPago', 'estado'])
+            ->orderBy('fecha_pago', 'desc')
+            ->limit(8)
             ->get();
         
         // Inscripciones recientes
         $inscripcionesRecientes = Inscripcion::with('cliente', 'membresia', 'estado')
             ->orderBy('created_at', 'desc')
-            ->limit(8)
+            ->limit(6)
             ->get();
         
-        // Inscripciones próximas a vencer
+        // Inscripciones próximas a vencer (30 días)
         $proximasAVencer = Inscripcion::where('id_estado', $idEstadoActiva)
             ->whereBetween('fecha_vencimiento', [now(), now()->addDays(30)])
             ->with(['cliente', 'membresia'])
-            ->orderBy('fecha_vencimiento')
-            ->limit(10)
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->limit(8)
             ->get();
         
         // Membresías más vendidas
@@ -59,55 +66,48 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
-        // Máximo de inscripciones para graficar
-        $maxInscripciones = max(1, $membresiasVendidas->max('inscripciones_count') ?? 1);
-        
         // Métodos de pago más usados
         $metodosPago = MetodoPago::withCount('pagos')
             ->orderBy('pagos_count', 'desc')
+            ->limit(5)
             ->get();
         
-        // Inscripciones por estado (contar inscripciones agrupadas por estado de MEMBRESÍA)
+        // Inscripciones por estado - Gráfico de estados
         $inscripcionesPorEstado = Inscripcion::selectRaw('id_estado, count(*) as total')
             ->groupBy('id_estado')
-            ->with(['estado' => function($q) {
-                $q->where('categoria', 'membresia');
-            }])
-            ->whereHas('estado', function($q) {
-                $q->where('categoria', 'membresia');
-            })
-            ->get();
-        
-        // Filtrar solo los que tengan estado (evitar nulos)
-        $inscripcionesPorEstado = $inscripcionesPorEstado->filter(fn($item) => $item->estado !== null);
+            ->with('estado')
+            ->get()
+            ->filter(fn($item) => $item->estado !== null);
         
         // Datos para gráficos - Ingresos por mes (últimos 6 meses)
         $ingresosPorMes = Pago::selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as año, SUM(monto_abonado) as total')
-            ->where('fecha_pago', '>=', now()->subMonths(6))
+            ->where('fecha_pago', '>=', now()->subMonths(5))
             ->groupByRaw('YEAR(fecha_pago), MONTH(fecha_pago)')
-            ->orderBy('año')
-            ->orderBy('mes')
+            ->orderBy('año', 'asc')
+            ->orderBy('mes', 'asc')
             ->get();
         
+        // Generar etiquetas y datos para gráfico de ingresos
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        $etiquetasMeses = $ingresosPorMes->count() > 0 ? $ingresosPorMes->map(function($d) use ($meses) {
+        $etiquetasMeses = $ingresosPorMes->map(function($d) use ($meses) {
             return ($d->mes && $d->mes >= 1 && $d->mes <= 12 ? $meses[$d->mes - 1] : 'Desconocido') . ' ' . $d->año;
-        })->toArray() : [];
-        $datosIngresos = $ingresosPorMes->count() > 0 ? $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray() : [];
+        })->toArray();
+        $datosIngresos = $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray();
         
-        // Datos para gráfico de estados
+        // Colores para estados
         $coloresEstados = [
-            'success' => '#28a745',
-            'danger' => '#dc3545',
-            'warning' => '#ffc107',
-            'info' => '#17a2b8',
-            'primary' => '#007bff',
-            'secondary' => '#6c757d',
+            'primary' => '#007bff',    // Activa
+            'success' => '#28a745',    // Completada
+            'warning' => '#ffc107',    // Pausada
+            'danger' => '#dc3545',     // Cancelada/Vencida
+            'info' => '#17a2b8',       // Pendiente
+            'secondary' => '#6c757d',  // Otros
         ];
         
-        $etiquetasEstados = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => $d->estado?->nombre ?? 'Desconocido')->toArray() : [];
-        $datosEstados = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray() : [];
-        $coloresDispuestos = $inscripcionesPorEstado->count() > 0 ? $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado?->color ?? 'secondary'])->toArray() : [];
+        // Datos para gráfico de estados
+        $etiquetasEstados = $inscripcionesPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
+        $datosEstados = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
+        $coloresDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado->color ?? 'secondary'])->toArray();
         
         return view('dashboard.index', compact(
             'totalClientes',
