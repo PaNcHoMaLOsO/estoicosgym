@@ -131,32 +131,19 @@
                             </td>
                             <td>
                                 @php
-                                    // Verificar si está pausada y si la pausa sigue vigente
-                                    $estaPausada = false;
-                                    $razonPausa = null;
-                                    
-                                    if ($inscripcion->pausada) {
-                                        // Verificar si la pausa ha expirado
-                                        if ($inscripcion->fecha_pausa_fin && now()->greaterThan($inscripcion->fecha_pausa_fin)) {
-                                            // Pausa expirada
-                                            $estaPausada = false;
-                                        } else {
-                                            // Pausa vigente
-                                            $estaPausada = true;
-                                            $razonPausa = $inscripcion->razon_pausa;
-                                        }
-                                    }
+                                    // Usar el método del modelo para verificar pausa
+                                    $estaPausada = $inscripcion->estaPausada();
                                 @endphp
                                 
                                 @if($estaPausada)
-                                    <span class="badge bg-warning" title="{{ $razonPausa }}">
+                                    <span class="badge bg-warning" title="{{ $inscripcion->razon_pausa }}">
                                         <i class="fas fa-pause-circle fa-fw"></i> 
                                         @if($inscripcion->dias_pausa == 7)
-                                            Pausada - 7 días
+                                            Pausada - 7d
                                         @elseif($inscripcion->dias_pausa == 14)
-                                            Pausada - 14 días
+                                            Pausada - 14d
                                         @elseif($inscripcion->dias_pausa == 30)
-                                            Pausada - 30 días
+                                            Pausada - 30d
                                         @else
                                             Pausada
                                         @endif
@@ -172,38 +159,29 @@
                             </td>
                             <td>
                                 @php
-                                    // Obtener todos los pagos de esta inscripción
-                                    $allPagos = $inscripcion->pagos()->get();
-                                    
-                                    // Sumar solo los pagos completados (id_estado 102 = Pagado)
-                                    $totalAbonado = $allPagos
-                                        ->where('id_estado', 102)
-                                        ->sum('monto_abonado');
-                                    
-                                    // Obtener el monto total de la inscripción
-                                    $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
-                                    
-                                    // Calcular pendiente
-                                    $pendiente = $montoTotal - $totalAbonado;
-                                    
-                                    // Determinar porcentaje
-                                    $porcentajePagado = ($totalAbonado / $montoTotal) * 100;
+                                    // Usar el método del modelo para obtener estado de pago preciso
+                                    $estadoPago = $inscripcion->obtenerEstadoPago();
+                                    $montoTotal = $estadoPago['monto_total'];
+                                    $totalAbonado = $estadoPago['total_abonado'];
+                                    $pendiente = $estadoPago['pendiente'];
+                                    $porcentajePagado = $estadoPago['porcentaje_pagado'];
+                                    $estado = $estadoPago['estado'];
                                 @endphp
                                 
-                                @if($pendiente <= 0)
+                                @if($estado === 'pagado')
                                     <!-- Pagado completamente -->
                                     <span class="badge bg-success">
                                         <i class="fas fa-check-circle fa-fw"></i> Pagado Completo
                                     </span>
-                                @elseif($totalAbonado > 0 && $pendiente > 0)
+                                @elseif($estado === 'parcial')
                                     <!-- Pago parcial -->
                                     <div class="d-flex flex-column gap-2">
                                         <span class="badge bg-warning">
                                             <i class="fas fa-hourglass-half fa-fw"></i> Parcial
                                         </span>
                                         <small class="text-muted">
-                                            Pagado: ${{ number_format($totalAbonado, 2) }}<br>
-                                            Pendiente: <strong class="text-danger">${{ number_format($pendiente, 2) }}</strong>
+                                            Pagado: ${{ number_format($totalAbonado, 0, ',', '.') }}<br>
+                                            Pendiente: <strong class="text-danger">${{ number_format($pendiente, 0, ',', '.') }}</strong>
                                         </small>
                                         <div class="progress" style="height: 8px;">
                                             <div class="progress-bar bg-success" role="progressbar" 
@@ -215,10 +193,10 @@
                                 @else
                                     <!-- Sin pagos aún -->
                                     <span class="badge bg-danger">
-                                        <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente Completo
+                                        <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
                                     </span>
                                     <br>
-                                    <small class="text-muted mt-1">Total: <strong>${{ number_format($montoTotal, 2) }}</strong></small>
+                                    <small class="text-muted mt-1">Total: <strong>${{ number_format($montoTotal, 0, ',', '.') }}</strong></small>
                                 @endif
                             </td>
                             <td>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</td>

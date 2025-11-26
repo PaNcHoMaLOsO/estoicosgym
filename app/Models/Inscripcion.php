@@ -198,4 +198,45 @@ class Inscripcion extends Model
             && $this->pausas_realizadas < $this->max_pausas_permitidas
             && $this->id_estado == 1; // Solo si está activa
     }
-}
+
+    /**
+     * Obtener el estado actual de pago
+     * @return array
+     */
+    public function obtenerEstadoPago()
+    {
+        $montoTotal = $this->precio_final ?? $this->precio_base;
+        $totalAbonado = $this->pagos()
+            ->where('id_estado', 102) // Solo pagos completados
+            ->sum('monto_abonado');
+        
+        $pendiente = $montoTotal - $totalAbonado;
+        $porcentajePagado = $montoTotal > 0 ? ($totalAbonado / $montoTotal) * 100 : 0;
+
+        return [
+            'monto_total' => $montoTotal,
+            'total_abonado' => $totalAbonado,
+            'pendiente' => $pendiente,
+            'porcentaje_pagado' => $porcentajePagado,
+            'estado' => $pendiente <= 0 ? 'pagado' : ($totalAbonado > 0 ? 'parcial' : 'pendiente'),
+        ];
+    }
+
+    /**
+     * Verificar si está efectivamente pausada
+     * @return bool
+     */
+    public function estaPausada()
+    {
+        // Si pausada es false, no está pausada
+        if (!$this->pausada) {
+            return false;
+        }
+
+        // Si tiene fecha fin y ya pasó, no está pausada
+        if ($this->fecha_pausa_fin && now()->greaterThan($this->fecha_pausa_fin)) {
+            return false;
+        }
+
+        return true;
+    }
