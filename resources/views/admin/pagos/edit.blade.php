@@ -120,14 +120,15 @@
                 </div>
 
                 <div class="form-group mb-0">
-                    <label class="form-label"><i class="fas fa-paperclip"></i> Referencia (Opcional)</label>
-                    <input type="text" class="form-control @error('referencia') is-invalid @enderror" 
-                           id="referencia" name="referencia" 
-                           placeholder="Ej: Comprobante #123" value="{{ old('referencia', $pago->referencia_pago) }}">
-                    @error('referencia')
+                    <label class="form-label"><i class="fas fa-fingerprint"></i> Referencia Pago</label>
+                    <input type="text" class="form-control @error('referencia_pago') is-invalid @enderror" 
+                           id="referencia_pago" name="referencia_pago" maxlength="100"
+                           placeholder="Ej: TRF-2025-001 o Nº de comprobante" 
+                           value="{{ old('referencia_pago', $pago->referencia_pago) }}">
+                    @error('referencia_pago')
                         <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                     @enderror
-                    <small class="text-muted d-block mt-1">Información adicional para identificar el pago</small>
+                    <small class="text-muted d-block mt-1">N° de transferencia, comprobante o referencia</small>
                 </div>
             </div>
         </div>

@@ -123,7 +123,7 @@
                             </td>
                             <td>
                                 @php
-                                    $pendiente = $pago->getSaldoPendienteTotal();
+                                    $pendiente = $pago->inscripcion->getSaldoPendiente();
                                 @endphp
                                 @if($pendiente > 0)
                                     <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}</span>

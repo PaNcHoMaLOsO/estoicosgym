@@ -355,4 +355,41 @@ class Inscripcion extends Model
 
         return true;
     }
+
+    /**
+     * Obtener el saldo pendiente total de la inscripción
+     * (suma de todos los pagos - monto total)
+     * Optimizado: Usa query única con sum()
+     * @return float
+     */
+    public function getSaldoPendiente()
+    {
+        $montoTotal = $this->precio_final ?? $this->precio_base;
+        $totalAbonado = $this->pagos()
+            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
+            ->sum('monto_abonado');
+        
+        return max(0, $montoTotal - $totalAbonado);
+    }
+
+    /**
+     * ¿Está pagada al día esta inscripción?
+     * @return bool
+     */
+    public function estaPagadaAlDia()
+    {
+        return $this->getSaldoPendiente() <= 0;
+    }
+
+    /**
+     * Obtener el último pago realizado
+     * @return \App\Models\Pago|null
+     */
+    public function getUltimoPago()
+    {
+        return $this->pagos()
+            ->whereIn('id_estado', [102, 103])
+            ->latest('fecha_pago')
+            ->first();
+    }
 }

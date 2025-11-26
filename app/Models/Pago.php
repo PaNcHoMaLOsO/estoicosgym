@@ -223,17 +223,4 @@ class Pago extends Model
     {
         return $this->numero_cuota > 0 && $this->numero_cuota <= $this->cantidad_cuotas;
     }
-
-    /**
-     * Obtener el saldo pendiente total por la inscripción (sumando todos los pagos)
-     */
-    public function getSaldoPendienteTotal()
-    {
-        $montoTotal = $this->getMontoTotalAttribute();
-        $totalAbonado = $this->inscripcion->pagos()
-            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
-            ->sum('monto_abonado');
-        
-        return max(0, $montoTotal - $totalAbonado);
-    }
 }
