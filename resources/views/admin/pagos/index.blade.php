@@ -123,9 +123,7 @@
                             </td>
                             <td>
                                 @php
-                                    $monto_total = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base;
-                                    $total_abonado = $pago->inscripcion->pagos()->where('id_estado', 102)->sum('monto_abonado');
-                                    $pendiente = $monto_total - $total_abonado;
+                                    $pendiente = $pago->getSaldoPendienteTotal();
                                 @endphp
                                 @if($pendiente > 0)
                                     <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}</span>

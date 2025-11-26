@@ -7,31 +7,28 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $uuid UUID único para identificación externa
+ * @property string|null $grupo_pago UUID para agrupar cuotas del mismo plan
  * @property int $id_inscripcion
- * @property int $id_cliente Redundante pero útil para queries
- * @property string $monto_total Total a pagar
  * @property string $monto_abonado Lo que se pagó en este registro
  * @property string $monto_pendiente Saldo restante
- * @property string $descuento_aplicado
- * @property int|null $id_motivo_descuento
+ * @property int|null $id_motivo_descuento Motivo del descuento (si aplica)
  * @property \Illuminate\Support\Carbon $fecha_pago
- * @property \Illuminate\Support\Carbon $periodo_inicio Inicio del período cubierto
- * @property \Illuminate\Support\Carbon $periodo_fin Fin del período cubierto
  * @property int $id_metodo_pago
- * @property string|null $referencia_pago Futuro: N° de transferencia, comprobante
- * @property int $id_estado Pendiente, Pagado, Parcial, Vencido
- * @property int $cantidad_cuotas Total de cuotas (default: 1)
+ * @property string|null $referencia_pago N° de transferencia, comprobante, referencia
+ * @property int $id_estado Pendiente, Pagado, Parcial, Vencido (calculado dinámicamente)
+ * @property int $cantidad_cuotas Total de cuotas en el plan (default: 1)
  * @property int $numero_cuota Número de cuota actual (ej: 1 de 3)
  * @property string|null $monto_cuota Monto de cada cuota individual
  * @property \Illuminate\Support\Carbon|null $fecha_vencimiento_cuota Fecha de vencimiento de esta cuota
  * @property string|null $observaciones
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Cliente $cliente
  * @property-read \App\Models\Estado $estado
  * @property-read \App\Models\Inscripcion $inscripcion
  * @property-read \App\Models\MetodoPago $metodoPago
  * @property-read \App\Models\MotivoDescuento|null $motivoDescuento
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $cuotasRelacionadas
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago query()
@@ -64,16 +61,12 @@ class Pago extends Model
 
     protected $fillable = [
         'uuid',
+        'grupo_pago',
         'id_inscripcion',
-        'id_cliente',
-        'monto_total',
         'monto_abonado',
         'monto_pendiente',
-        'descuento_aplicado',
         'id_motivo_descuento',
         'fecha_pago',
-        'periodo_inicio',
-        'periodo_fin',
         'id_metodo_pago',
         'referencia_pago',
         'id_estado',
@@ -131,5 +124,116 @@ class Pago extends Model
     public function motivoDescuento()
     {
         return $this->belongsTo(MotivoDescuento::class, 'id_motivo_descuento');
+    }
+
+    /**
+     * Obtener todas las cuotas relacionadas al mismo plan (mismo grupo_pago)
+     */
+    public function cuotasRelacionadas()
+    {
+        if (!$this->grupo_pago) {
+            return [];
+        }
+        return self::where('grupo_pago', $this->grupo_pago)
+            ->orderBy('numero_cuota')
+            ->get();
+    }
+
+    /**
+     * Obtener el monto total que debe pagar por la inscripción
+     * (precio_final = precio_base - descuento)
+     */
+    public function getMontoTotalAttribute()
+    {
+        return $this->inscripcion->precio_final ?? $this->inscripcion->precio_base;
+    }
+
+    /**
+     * Obtener el descuento aplicado en la inscripción
+     */
+    public function getDescuentoAplicadoAttribute()
+    {
+        return $this->inscripcion->descuento_aplicado;
+    }
+
+    /**
+     * Obtener la fecha de inicio del período (fecha_inicio de inscripción)
+     */
+    public function getPeriodoInicioAttribute()
+    {
+        return $this->inscripcion->fecha_inicio;
+    }
+
+    /**
+     * Obtener la fecha de fin del período (fecha_vencimiento de inscripción)
+     */
+    public function getPeriodoFinAttribute()
+    {
+        return $this->inscripcion->fecha_vencimiento;
+    }
+
+    /**
+     * Obtener el cliente de la inscripción
+     */
+    public function getClienteAttribute()
+    {
+        return $this->inscripcion->cliente;
+    }
+
+    /**
+     * Calcular el estado dinámico basado en montos y fechas
+     */
+    public function calculateEstadoDinamico()
+    {
+        $montoTotal = $this->getMontoTotalAttribute();
+        $montoPendiente = $this->monto_pendiente;
+        $hoy = now();
+
+        // Si todo está pagado
+        if ($montoPendiente <= 0) {
+            return 102; // Pagado
+        }
+
+        // Si hay monto pendiente pero aún está dentro de plazo
+        if ($this->fecha_vencimiento_cuota && $this->fecha_vencimiento_cuota->isBefore($hoy)) {
+            return 104; // Vencido
+        }
+
+        // Si hay monto abonado pero no todo
+        if ($this->monto_abonado > 0) {
+            return 103; // Parcial
+        }
+
+        // Si no hay nada pagado
+        return 101; // Pendiente
+    }
+
+    /**
+     * Determinar si esta cuota es la última del plan
+     */
+    public function esUltimaCuota()
+    {
+        return $this->numero_cuota >= $this->cantidad_cuotas;
+    }
+
+    /**
+     * Validar que el número de cuota sea válido
+     */
+    public function esNumeroCuotaValido()
+    {
+        return $this->numero_cuota > 0 && $this->numero_cuota <= $this->cantidad_cuotas;
+    }
+
+    /**
+     * Obtener el saldo pendiente total por la inscripción (sumando todos los pagos)
+     */
+    public function getSaldoPendienteTotal()
+    {
+        $montoTotal = $this->getMontoTotalAttribute();
+        $totalAbonado = $this->inscripcion->pagos()
+            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
+            ->sum('monto_abonado');
+        
+        return max(0, $montoTotal - $totalAbonado);
     }
 }

@@ -88,7 +88,7 @@ class PagoController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * Ahora soporta pagos parciales y múltiples cuotas
+     * Soporta pagos parciales, múltiples cuotas y validación dinámica de estado
      */
     public function store(Request $request)
     {
@@ -100,32 +100,57 @@ class PagoController extends Controller
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
+            'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
         $inscripcion = Inscripcion::find($validated['id_inscripcion']);
-        
+        $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
+
+        // Validar que número de cuota no sea mayor que cantidad de cuotas
+        if ($validated['numero_cuota'] > $validated['cantidad_cuotas']) {
+            return back()->withErrors([
+                'numero_cuota' => 'El número de cuota no puede ser mayor que la cantidad total de cuotas'
+            ])->withInput();
+        }
+
+        // Validar que monto abonado no sea mayor que monto total
+        if ($validated['monto_abonado'] > $montoTotal) {
+            return back()->withErrors([
+                'monto_abonado' => 'El monto abonado no puede ser mayor que el monto total (' . number_format($montoTotal, 2) . ')'
+            ])->withInput();
+        }
+
+        // Generar o usar grupo_pago existente
+        $grupoPago = $request->input('grupo_pago') ?? \Illuminate\Support\Str::uuid();
+
         // Calcular monto de cuota
         $montoCuota = $validated['monto_abonado'] / $validated['cantidad_cuotas'];
+        $montoPendiente = $montoTotal - $validated['monto_abonado'];
 
         $pago = Pago::create([
+            'grupo_pago' => $grupoPago,
             'id_inscripcion' => $validated['id_inscripcion'],
-            'id_cliente' => $inscripcion->id_cliente,
-            'monto_total' => $inscripcion->precio_base - $inscripcion->descuento_aplicado,
             'monto_abonado' => $validated['monto_abonado'],
-            'monto_pendiente' => ($inscripcion->precio_base - $inscripcion->descuento_aplicado) - $validated['monto_abonado'],
-            'descuento_aplicado' => $inscripcion->descuento_aplicado,
+            'monto_pendiente' => $montoPendiente,
+            'id_motivo_descuento' => $inscripcion->id_motivo_descuento,
             'fecha_pago' => $validated['fecha_pago'],
             'id_metodo_pago' => $validated['id_metodo_pago'],
+            'referencia_pago' => $validated['referencia_pago'],
             'cantidad_cuotas' => $validated['cantidad_cuotas'],
             'numero_cuota' => $validated['numero_cuota'],
             'monto_cuota' => $montoCuota,
             'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
-            'id_estado' => 102, // Pagado
+            'id_estado' => 102, // Se actualizará con calculateEstadoDinamico() en el boot
             'observaciones' => $validated['observaciones'],
-            'periodo_inicio' => $inscripcion->fecha_inicio,
-            'periodo_fin' => $inscripcion->fecha_vencimiento,
         ]);
+
+        // Actualizar estado dinámicamente
+        $pago->id_estado = $pago->calculateEstadoDinamico();
+        $pago->save();
+
+        // Registrar en auditoría
+        \Log::info("Pago registrado: ID={$pago->id}, Cuota {$validated['numero_cuota']} de {$validated['cantidad_cuotas']}, Monto=${validated['monto_abonado']}, Usuario=" . (auth()->user()?->name ?? 'Sistema'));
 
         return redirect()->route('admin.pagos.index')
             ->with('success', 'Pago registrado exitosamente (Cuota ' . $validated['numero_cuota'] . ' de ' . $validated['cantidad_cuotas'] . ')');
@@ -152,7 +177,7 @@ class PagoController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * Actualiza pagos con soporte para cuotas
+     * Actualiza pagos con soporte para cuotas y validación dinámica de estado
      */
     public function update(Request $request, Pago $pago)
     {
@@ -164,28 +189,51 @@ class PagoController extends Controller
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
+            'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
         $inscripcion = Inscripcion::find($validated['id_inscripcion']);
+        $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
+
+        // Validar que número de cuota no sea mayor que cantidad de cuotas
+        if ($validated['numero_cuota'] > $validated['cantidad_cuotas']) {
+            return back()->withErrors([
+                'numero_cuota' => 'El número de cuota no puede ser mayor que la cantidad total de cuotas'
+            ])->withInput();
+        }
+
+        // Validar que monto abonado no sea mayor que monto total
+        if ($validated['monto_abonado'] > $montoTotal) {
+            return back()->withErrors([
+                'monto_abonado' => 'El monto abonado no puede ser mayor que el monto total (' . number_format($montoTotal, 2) . ')'
+            ])->withInput();
+        }
+
         $montoCuota = $validated['monto_abonado'] / $validated['cantidad_cuotas'];
+        $montoPendiente = $montoTotal - $validated['monto_abonado'];
 
         $pago->update([
             'id_inscripcion' => $validated['id_inscripcion'],
-            'id_cliente' => $inscripcion->id_cliente,
-            'monto_total' => $inscripcion->precio_base - $inscripcion->descuento_aplicado,
             'monto_abonado' => $validated['monto_abonado'],
-            'monto_pendiente' => ($inscripcion->precio_base - $inscripcion->descuento_aplicado) - $validated['monto_abonado'],
+            'monto_pendiente' => $montoPendiente,
+            'id_motivo_descuento' => $inscripcion->id_motivo_descuento,
             'fecha_pago' => $validated['fecha_pago'],
             'id_metodo_pago' => $validated['id_metodo_pago'],
+            'referencia_pago' => $validated['referencia_pago'],
             'cantidad_cuotas' => $validated['cantidad_cuotas'],
             'numero_cuota' => $validated['numero_cuota'],
             'monto_cuota' => $montoCuota,
             'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
             'observaciones' => $validated['observaciones'],
-            'periodo_inicio' => $inscripcion->fecha_inicio,
-            'periodo_fin' => $inscripcion->fecha_vencimiento,
         ]);
+
+        // Actualizar estado dinámicamente
+        $pago->id_estado = $pago->calculateEstadoDinamico();
+        $pago->save();
+
+        // Registrar en auditoría
+        \Log::info("Pago actualizado: ID={$pago->id}, Cuota {$validated['numero_cuota']} de {$validated['cantidad_cuotas']}, Monto=${validated['monto_abonado']}, Usuario=" . (auth()->user()?->name ?? 'Sistema'));
 
         return redirect()->route('admin.pagos.show', $pago)
             ->with('success', 'Pago actualizado exitosamente');

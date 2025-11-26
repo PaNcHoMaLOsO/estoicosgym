@@ -96,7 +96,7 @@
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="text" class="form-control" id="monto_total_inscripcion" 
-                                       value="{{ number_format($inscripcion->precio_base - $inscripcion->descuento_aplicado, 0, '.', '.') }}" readonly>
+                                       value="{{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -207,6 +207,20 @@
                         @error('fecha_vencimiento_cuota')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="fas fa-fingerprint"></i> Referencia Pago</label>
+                        <input type="text" class="form-control @error('referencia_pago') is-invalid @enderror" 
+                               id="referencia_pago" name="referencia_pago" maxlength="100"
+                               placeholder="TRF-2025-001 o Nº de comprobante"
+                               value="{{ old('referencia_pago') }}">
+                        @error('referencia_pago')
+                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted d-block mt-1">Ej: N° transferencia, comprobante, referencia</small>
                     </div>
                 </div>
 
