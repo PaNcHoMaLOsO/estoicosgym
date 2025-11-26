@@ -19,36 +19,30 @@ return new class extends Migration
             $table->decimal('monto_pendiente', 10, 2)->comment('Saldo restante');
             
             $table->decimal('descuento_aplicado', 10, 2)->default(0);
-            $table->unsignedInteger('id_motivo_descuento')->nullable();
+            $table->date('fecha_pago')->comment('Fecha en que se realizó o realizará el pago');
+            $table->date('periodo_inicio')->comment('Inicio del período de cobertura');
+            $table->date('periodo_fin')->comment('Fin del período de cobertura');
             
-            $table->date('fecha_pago');
-            $table->date('periodo_inicio')->comment('Inicio del período cubierto');
-            $table->date('periodo_fin')->comment('Fin del período cubierto');
+            $table->unsignedInteger('id_metodo_pago')->comment('Forma de pago');
+            $table->unsignedInteger('id_estado')->comment('Pendiente, Pagado, Cancelado, etc');
             
-            $table->unsignedInteger('id_metodo_pago');
-            $table->string('referencia_pago', 100)->nullable()->comment('Futuro: N° de transferencia, comprobante');
+            $table->unsignedTinyInteger('cantidad_cuotas')->default(1)->comment('Cantidad de cuotas');
+            $table->unsignedTinyInteger('numero_cuota')->default(1)->comment('Número de cuota en que se dividió');
+            $table->decimal('monto_cuota', 10, 2)->comment('Monto por cada cuota');
             
-            $table->unsignedInteger('id_estado')->comment('Pendiente, Pagado, Parcial, Vencido');
-            
-            // Campos para manejo de cuotas
-            $table->unsignedTinyInteger('cantidad_cuotas')->default(1)->comment('Total de cuotas en que se pagará');
-            $table->unsignedTinyInteger('numero_cuota')->default(1)->comment('Cuota número (ej: 1 de 3)');
-            $table->decimal('monto_cuota', 10, 2)->nullable()->comment('Monto de cada cuota');
-            $table->date('fecha_vencimiento_cuota')->nullable()->comment('Fecha de vencimiento para esta cuota');
-            
-            $table->text('observaciones')->nullable();
             $table->timestamps();
             
-            $table->foreign('id_inscripcion')->references('id')->on('inscripciones')->onDelete('restrict');
-            $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
-            $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
+            // Relaciones
+            $table->foreign('id_inscripcion')->references('id')->on('inscripciones')->onDelete('cascade');
+            $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('id_metodo_pago')->references('id')->on('metodos_pago')->onDelete('restrict');
             $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
             
+            // Índices
             $table->index('id_cliente');
             $table->index('id_inscripcion');
-            $table->index('fecha_pago');
             $table->index('id_estado');
+            $table->index('fecha_pago');
         });
     }
 

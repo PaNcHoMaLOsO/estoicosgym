@@ -23,36 +23,35 @@ return new class extends Migration
             
             $table->decimal('precio_base', 10, 2)->comment('Precio oficial de la membresía');
             $table->decimal('descuento_aplicado', 10, 2)->default(0)->comment('Descuento en pesos');
-            $table->decimal('precio_final', 10, 2)->comment('precio_base - descuento_aplicado');
             $table->unsignedInteger('id_motivo_descuento')->nullable()->comment('Justificación del descuento');
             
             $table->unsignedInteger('id_estado')->comment('Activa, Vencida, Pausada, Cancelada, Pendiente');
+            $table->text('observaciones')->nullable();
             
             // Campos para control de pausas
-            $table->boolean('pausada')->default(false)->comment('Si está en pausa');
-            $table->integer('dias_pausa')->default(0)->comment('Días que durará la pausa');
-            $table->date('fecha_pausa_inicio')->nullable()->comment('Cuándo inicia la pausa');
-            $table->date('fecha_pausa_fin')->nullable()->comment('Cuándo termina la pausa');
-            $table->text('razon_pausa')->nullable()->comment('Motivo de la pausa');
-            $table->integer('pausas_realizadas')->default(0)->comment('Cantidad de pausas hechas');
-            $table->integer('max_pausas_permitidas')->default(2)->comment('Máximo de pausas permitidas por año');
+            $table->boolean('pausada')->default(false);
+            $table->unsignedTinyInteger('dias_pausa')->default(0);
+            $table->dateTime('fecha_pausa_inicio')->nullable();
+            $table->dateTime('fecha_pausa_fin')->nullable();
+            $table->text('razon_pausa')->nullable();
+            $table->unsignedTinyInteger('pausas_realizadas')->default(0);
+            $table->unsignedTinyInteger('max_pausas_permitidas')->default(2);
             
-            $table->text('observaciones')->nullable();
             $table->timestamps();
             
-            $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
+            // Relaciones
+            $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('id_membresia')->references('id')->on('membresias')->onDelete('restrict');
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');
             $table->foreign('id_precio_acordado')->references('id')->on('precios_membresias')->onDelete('restrict');
             $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
             $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
             
+            // Índices
             $table->index('id_cliente');
+            $table->index('id_membresia');
             $table->index('id_estado');
-            $table->index(['fecha_inicio', 'fecha_vencimiento']);
-            $table->index(['id_cliente', 'id_estado']);
             $table->index('pausada');
-            $table->index('fecha_pausa_fin');
         });
     }
 
