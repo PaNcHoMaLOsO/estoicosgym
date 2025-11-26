@@ -217,7 +217,7 @@
                             @error('id_convenio')
                                 <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
-                            <small class="text-muted d-block mt-1">Se aplicará descuento automático de $5.000 si aplica</small>
+                            <small class="text-muted d-block mt-1">Se aplicará descuento automático de $15.000 si aplica</small>
                         </div>
                     </div>
                     <hr>
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Aplicar descuento de convenio si es membresía mensual (id=1) Y hay convenio seleccionado
                 let descuentoConvenio = 0;
                 if (idConvenio.value && data.id === 1) { // 1 es membresía mensual
-                    descuentoConvenio = 5000; // Descuento de 5000 para mensual con convenio
+                    descuentoConvenio = 15000; // Descuento de 15.000 para membresía mensual con convenio
                 } 
                 
                 const descuentoExtra = parseFloat(descuentoAdicional.value) || 0;
