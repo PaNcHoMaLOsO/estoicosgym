@@ -3,156 +3,358 @@
 @section('title', 'Detalles Inscripción - EstóicosGym')
 
 @section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1>Inscripción #{{ $inscripcion->id }}</h1>
+    <div class="row mb-4">
+        <div class="col-sm-8">
+            <h1 class="m-0">
+                <i class="fas fa-list-check"></i> Detalles Inscripción
+            </h1>
+        </div>
+        <div class="col-sm-4 text-right">
+            <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-warning mr-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
 @stop
 
 @section('content')
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Información de Inscripción</h3>
+    <!-- Información Principal -->
+    <div class="card card-primary mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-user-check"></i> Información Principal
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Cliente</span>
+                            <span class="info-box-number">
+                                <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}">
+                                    {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
+                                </a>
+                            </span>
+                            <small class="text-muted">{{ $inscripcion->cliente->email }}</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ID Inscripción:</dt>
-                        <dd class="col-sm-8"><strong>{{ $inscripcion->id }}</strong></dd>
 
-                        <dt class="col-sm-4">Cliente:</dt>
-                        <dd class="col-sm-8">
-                            <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}">
-                                {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
-                            </a>
-                        </dd>
+                <div class="col-md-6 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-primary">
+                            <i class="fas fa-layer-group"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Membresía</span>
+                            <span class="info-box-number">{{ $inscripcion->membresia->nombre }}</span>
+                            <small class="text-muted">{{ $inscripcion->membresia->duracion_meses }} meses</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <dt class="col-sm-4">Email:</dt>
-                        <dd class="col-sm-8">{{ $inscripcion->cliente->email }}</dd>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon {{ $inscripcion->estado->activo ? 'bg-success' : 'bg-danger' }}">
+                            <i class="fas fa-circle"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Estado</span>
+                            <span class="info-box-number">
+                                {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
-                        <dt class="col-sm-4">Estado:</dt>
-                        <dd class="col-sm-8">
-                            {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
-                        </dd>
-
-                        <dt class="col-sm-4">Fecha Inicio:</dt>
-                        <dd class="col-sm-8">{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</dd>
-
-                        <dt class="col-sm-4">Fecha Vencimiento:</dt>
-                        <dd class="col-sm-8">{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</dd>
-
-                        <dt class="col-sm-4">Días Restantes:</dt>
-                        <dd class="col-sm-8">
-                            @php
-                                $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
-                            @endphp
-                            @if($diasRestantes > 0)
-                                <span class="badge badge-success">{{ $diasRestantes }} días</span>
-                            @else
-                                <span class="badge badge-danger">Vencida</span>
-                            @endif
-                        </dd>
-
-                        <dt class="col-sm-4">Duración:</dt>
-                        <dd class="col-sm-8">{{ $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento) }} días</dd>
-
-                        <dt class="col-sm-4">Creada:</dt>
-                        <dd class="col-sm-8">{{ $inscripcion->created_at->format('d/m/Y H:i') }}</dd>
-                    </dl>
+                <div class="col-md-6 mb-3">
+                    @if($inscripcion->convenio)
+                        <div class="info-box">
+                            <span class="info-box-icon bg-secondary">
+                                <i class="fas fa-handshake"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Convenio</span>
+                                <span class="info-box-number">{{ $inscripcion->convenio->nombre }}</span>
+                            </div>
+                        </div>
+                    @else
+                        <div class="info-box">
+                            <span class="info-box-icon bg-secondary">
+                                <i class="fas fa-ban"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Convenio</span>
+                                <span class="info-box-number">Sin Convenio</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Resumen de Pagos</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-info">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Total Pagos</span>
-                                    <span class="info-box-number">${{ number_format($inscripcion->pagos->sum('monto_abonado'), 2, ',', '.') }}</span>
-                                </div>
-                            </div>
+    <!-- Fechas y Duración -->
+    <div class="card card-info mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-calendar-alt"></i> Fechas y Duración
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success">
+                            <i class="fas fa-calendar-check"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Fecha Inicio</span>
+                            <span class="info-box-number">{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-success">
-                                    <i class="fas fa-receipt"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Cantidad Pagos</span>
-                                    <span class="info-box-number">{{ $inscripcion->pagos->count() }}</span>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning">
+                            <i class="fas fa-calendar-times"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Fecha Vencimiento</span>
+                            <span class="info-box-number">{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    @php
+                        $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
+                    @endphp
+                    <div class="info-box">
+                        <span class="info-box-icon {{ $diasRestantes > 0 ? 'bg-success' : 'bg-danger' }}">
+                            <i class="fas fa-hourglass-end"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Días Restantes</span>
+                            <span class="info-box-number">
+                                @if($diasRestantes > 0)
+                                    {{ $diasRestantes }} días
+                                @else
+                                    Vencida
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-info-circle"></i> Duración Total</label>
+                        <div class="border rounded p-3 bg-light">
+                            <strong>{{ $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento) }} días</strong>
+                            <small class="text-muted d-block mt-1">
+                                Desde {{ $inscripcion->fecha_inicio->format('d/m/Y') }} hasta {{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Precios y Descuentos -->
+    <div class="card card-warning mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-dollar-sign"></i> Precios y Descuentos
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info">
+                            <i class="fas fa-dollar-sign"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Precio Base</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->precio_base, 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning">
+                            <i class="fas fa-percent"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Descuento</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->descuento_aplicado, 2, ',', '.') }}</span>
+                            @if($inscripcion->motivoDescuento)
+                                <small class="text-muted">{{ $inscripcion->motivoDescuento->nombre }}</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success">
+                            <i class="fas fa-check-circle"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Precio Final</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->precio_base - $inscripcion->descuento_aplicado, 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observaciones -->
+    @if($inscripcion->observaciones)
+        <div class="card card-secondary mb-4">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-align-left"></i> Observaciones
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="border rounded p-3 bg-light">
+                    {{ $inscripcion->observaciones }}
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Resumen de Pagos -->
+    <div class="card card-success mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-money-bill-wave"></i> Resumen de Pagos
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success">
+                            <i class="fas fa-receipt"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Pagos</span>
+                            <span class="info-box-number">${{ number_format($inscripcion->pagos->sum('monto_abonado'), 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info">
+                            <i class="fas fa-list-ol"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Cantidad de Pagos</span>
+                            <span class="info-box-number">{{ $inscripcion->pagos->count() }}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             @if($inscripcion->pagos->count() > 0)
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Últimos Pagos</h3>
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="table table-sm table-striped">
-                            <thead>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-striped table-hover">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Método</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($inscripcion->pagos->sortByDesc('fecha_pago')->take(10) as $pago)
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Fecha</th>
-                                    <th>Monto</th>
-                                    <th>Estado</th>
-                                    <th>Método</th>
+                                    <td>{{ $pago->id }}</td>
+                                    <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
+                                    <td><strong>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</strong></td>
+                                    <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
+                                    <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($inscripcion->pagos->sortByDesc('fecha_pago')->take(5) as $pago)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ route('admin.pagos.show', $pago) }}">{{ $pago->id }}</a>
-                                        </td>
-                                        <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
-                                        <td>${{ number_format($pago->monto_abonado, 2, ',', '.') }}</td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                                        <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             @else
-                <div class="alert alert-info">
+                <div class="alert alert-info mt-3" role="alert">
                     <i class="fas fa-info-circle"></i> No hay pagos registrados para esta inscripción.
                 </div>
             @endif
         </div>
     </div>
 
-    <div class="row mt-3">
-        <div class="col-12">
-            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-            <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Editar
-            </a>
-            <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" class="d-inline">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que deseas eliminar esta inscripción?')">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </form>
+    <!-- Información Adicional -->
+    <div class="card card-light">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="d-block text-muted">
+                        <i class="fas fa-calendar-plus"></i> Creada: {{ $inscripcion->created_at->format('d/m/Y H:i') }}
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    <small class="d-block text-muted text-right">
+                        <i class="fas fa-sync"></i> Actualizada: {{ $inscripcion->updated_at->format('d/m/Y H:i') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Botones de Acción -->
+    <div class="card card-light">
+        <div class="card-body">
+            <div class="d-flex gap-2 justify-content-between flex-wrap">
+                <div>
+                    <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div>
+                    <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro? Esta acción no puede revertirse')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 @stop
