@@ -39,9 +39,14 @@ class MembresiaController extends Controller
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
-            'precio_convenio' => 'nullable|numeric|min:0|lt:precio_normal',
+            'precio_convenio' => 'nullable|numeric|min:0|less_than:precio_normal',
             'activo' => 'boolean',
         ]);
+
+        // Limpiar precio_convenio si viene vacío
+        if (empty($validated['precio_convenio'])) {
+            $validated['precio_convenio'] = null;
+        }
 
         $membresia = Membresia::create([
             'nombre' => $validated['nombre'],
@@ -119,7 +124,7 @@ class MembresiaController extends Controller
             'duracion_dias' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:1000',
             'precio_normal' => 'required|numeric|min:0',
-            'precio_convenio' => 'nullable|numeric|min:0|lt:precio_normal',
+            'precio_convenio' => 'nullable|numeric|min:0|less_than:precio_normal',
             'razon_cambio' => 'nullable|string|max:255',
             'activo' => 'boolean',
         ]);
@@ -158,6 +163,11 @@ class MembresiaController extends Controller
 
         $precioAnterior = $precioActual->precio_normal ?? 0;
 
+        // Limpiar precio_convenio si viene vacío
+        if (empty($validated['precio_convenio'])) {
+            $validated['precio_convenio'] = null;
+        }
+
         // Actualizar membresía
         $membresia->update([
             'nombre' => $validated['nombre'],
@@ -188,6 +198,11 @@ class MembresiaController extends Controller
                 'precio_nuevo' => $validated['precio_normal'],
                 'razon_cambio' => $validated['razon_cambio'] ?? 'Actualización de precio',
                 'usuario_cambio' => Auth::user()?->name ?? 'Sistema',
+            ]);
+        } else if ($precioActual && $validated['precio_convenio'] !== $precioActual->precio_convenio) {
+            // Solo actualizó precio_convenio, no el precio normal
+            $precioActual->update([
+                'precio_convenio' => $validated['precio_convenio'] ?? null,
             ]);
         }
 

@@ -48,6 +48,10 @@ class Membresia extends Model
         'activo',
     ];
 
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
     protected static function boot()
     {
         parent::boot();

@@ -180,6 +180,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="custom-control custom-checkbox">
+                            <input type="hidden" name="activo" value="0">
                             <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" checked>
                             <label class="custom-control-label" for="activo">Membresía Activa</label>
                         </div>
