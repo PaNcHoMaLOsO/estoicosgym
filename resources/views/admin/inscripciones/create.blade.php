@@ -233,12 +233,10 @@
                                 <span class="input-group-text">$</span>
                             </div>
                             <input type="number" class="form-control" 
-                                   id="descuento_adicional" step="0.01" min="0" 
+                                   id="descuento_adicional" name="descuento_aplicado" step="0.01" min="0" 
                                    placeholder="0.00" value="0">
-                            <!-- Campo oculto que guarda el descuento TOTAL (convenio + adicional) -->
-                            <input type="hidden" id="descuento_total_hidden" name="descuento_aplicado" value="0">
                         </div>
-                        <small class="text-muted d-block mt-1" id="descuento_info">Descuento a aplicar (se calcula automáticamente si hay convenio)</small>
+                        <small class="text-muted d-block mt-1" id="descuento_info">El descuento de convenio se aplica automáticamente en el servidor</small>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -404,7 +402,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const idMembresia = document.getElementById('id_membresia');
     const fechaInicio = document.getElementById('fecha_inicio');
     const descuentoAdicional = document.getElementById('descuento_adicional');
-    const descuentoTotalHidden = document.getElementById('descuento_total_hidden');
     const montoAbonado = document.getElementById('monto_abonado');
     const cantidadCuotas = document.getElementById('cantidad_cuotas');
     const cuotasSection = document.getElementById('cuotasSection');
@@ -421,9 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const montoCuotaEl = document.getElementById('monto_cuota');
     const fechaVencimientoEl = document.getElementById('fecha_vencimiento');
 
-    // Variable para mantener el descuento de convenio
-    let descuentoConvenioActual = 0;
-
     // Inicializar Select2
     $('#id_cliente').select2({
         width: '100%',
@@ -436,7 +430,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Aumentar tamaño del contenedor del dropdown
     $('.select2-large-dropdown').css('min-height', '300px');
 
-    // Cargar precio cuando se selecciona membresía
+    // Cargar precio cuando se selecciona membresía - SOLO para mostrar información
+    // El backend es quien calcula el descuento real
     async function cargarPrecioMembresia() {
         if (!idMembresia.value) {
             priceSummary.style.display = 'none';
@@ -450,36 +445,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const precioBase = parseFloat(data.precio_normal) || 0;
                 
-                // Calcular descuento de convenio SOLO si es membresía mensual (id=1) Y hay convenio seleccionado
-                if (idConvenio.value && data.id === 1) { // 1 es membresía mensual
-                    descuentoConvenioActual = 15000; // Descuento de 15.000 para membresía mensual con convenio
-                } else {
-                    descuentoConvenioActual = 0;
+                // PREVIEW: Mostrar si habría descuento (pero NO lo aplicamos aquí)
+                let descuentoConvenioPreview = 0;
+                if (idConvenio.value && data.id === 1) {
+                    descuentoConvenioPreview = 15000; // Solo PREVIEW, el backend lo calcula
                 }
                 
-                // El descuento adicional es lo que el usuario especifica
                 const descuentoAdicionalManual = parseFloat(descuentoAdicional.value) || 0;
-                
-                // Descuento total es la suma
-                const descuentoTotal = descuentoConvenioActual + descuentoAdicionalManual;
-                const precioFinal = precioBase - descuentoTotal;
+                const descuentoTotalPreview = descuentoConvenioPreview + descuentoAdicionalManual;
+                const precioFinalPreview = precioBase - descuentoTotalPreview;
 
-                // Mostrar precios en el resumen
+                // Mostrar precios en el resumen (ES SOLO UNA REFERENCIA VISUAL)
                 precioBaseEl.textContent = '$' + precioBase.toFixed(2);
-                precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
-                precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
+                precioDescuentoEl.textContent = '$' + descuentoTotalPreview.toFixed(2);
+                precioTotalEl.textContent = '$' + precioFinalPreview.toFixed(2);
                 
-                // Guardar el descuento TOTAL en el campo oculto (para el servidor)
-                descuentoTotalHidden.value = descuentoTotal.toFixed(2);
-                
-                // Actualizar el mensaje de descuento
-                let mensajeDescuento = 'Descuento a aplicar (se calcula automáticamente si hay convenio)';
-                if (descuentoConvenioActual > 0 && descuentoAdicionalManual > 0) {
-                    mensajeDescuento = `✓ Descuento: $${descuentoConvenioActual.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (usuario) = $${descuentoTotal.toFixed(2)}`;
-                } else if (descuentoConvenioActual > 0) {
-                    mensajeDescuento = `✓ Descuento automático: $${descuentoConvenioActual.toFixed(2)} (convenio mensual)`;
+                // NO guardar en hidden field aquí - el backend calcula el valor real
+                // Solo mostrar mensaje informativo
+                let mensajeDescuento = 'El descuento se calculará en el servidor';
+                if (descuentoConvenioPreview > 0 && descuentoAdicionalManual > 0) {
+                    mensajeDescuento = `Preview: $${descuentoConvenioPreview.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (manual) = $${descuentoTotalPreview.toFixed(2)}`;
+                } else if (descuentoConvenioPreview > 0) {
+                    mensajeDescuento = `Preview: -$${descuentoConvenioPreview.toFixed(2)} (convenio mensual)`;
                 } else if (descuentoAdicionalManual > 0) {
-                    mensajeDescuento = `Descuento del usuario: $${descuentoAdicionalManual.toFixed(2)}`;
+                    mensajeDescuento = `Manual: -$${descuentoAdicionalManual.toFixed(2)}`;
                 }
                 document.getElementById('descuento_info').textContent = mensajeDescuento;
 
@@ -492,7 +481,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Calcular fecha de vencimiento
+    // Calcular fecha de vencimiento - SOLO PREVIEW en el frontend
+    // El backend calcula la fecha real basado en duracion_dias
     async function calcularVencimiento() {
         if (!idMembresia.value || !fechaInicio.value) return;
 
@@ -502,31 +492,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 const [year, month, day] = fechaInicio.value.split('-').map(Number);
-                const fechaInicioParsed = new Date(year, month - 1, day); // month es 0-indexed
+                const fechaInicioParsed = new Date(year, month - 1, day);
                 
-                // Usar duracion_dias si está disponible (para Pase Diario), sino usar duracion_meses
                 const duracionDias = membresiaData.duracion_dias || (membresiaData.duracion_meses * 30);
                 const duracionMeses = membresiaData.duracion_meses || 1;
                 
-                // Calcular vencimiento
-                const fechaVencimiento = new Date(fechaInicioParsed);
+                // PREVIEW del cálculo (el backend lo hace de verdad)
+                const fechaVencimientoPreview = new Date(fechaInicioParsed);
                 
                 if (duracionMeses === 0) {
-                    // Para Pase Diario: sumar días directamente
-                    fechaVencimiento.setDate(fechaVencimiento.getDate() + duracionDias - 1);
+                    // Pase Diario: mismo día
+                    fechaVencimientoPreview.setDate(fechaVencimientoPreview.getDate() + duracionDias - 1);
                 } else {
-                    // Para membresías de meses: sumar meses y restar 1 día
-                    fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
-                    fechaVencimiento.setDate(fechaVencimiento.getDate() - 1);
+                    // Mensual, Trimestral, etc: N meses - 1 día
+                    fechaVencimientoPreview.setMonth(fechaVencimientoPreview.getMonth() + duracionMeses);
+                    fechaVencimientoPreview.setDate(fechaVencimientoPreview.getDate() - 1);
                 }
                 
-                // Formatear a YYYY-MM-DD
-                const yearFormato = fechaVencimiento.getFullYear();
-                const monthFormato = String(fechaVencimiento.getMonth() + 1).padStart(2, '0');
-                const dayFormato = String(fechaVencimiento.getDate()).padStart(2, '0');
+                const yearFormato = fechaVencimientoPreview.getFullYear();
+                const monthFormato = String(fechaVencimientoPreview.getMonth() + 1).padStart(2, '0');
+                const dayFormato = String(fechaVencimientoPreview.getDate()).padStart(2, '0');
                 const fechaVencimientoFormato = `${yearFormato}-${monthFormato}-${dayFormato}`;
                 
+                // Mostrar PREVIEW en campo (pero backend la calcula de verdad)
                 fechaVencimientoEl.value = fechaVencimientoFormato;
+                fechaVencimientoEl.setAttribute('readonly', 'readonly'); // Campo de lectura - informativo
             }
         } catch (error) {
             console.error('Error al calcular vencimiento:', error);
@@ -552,15 +542,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Manejar cambio en convenio
+    // Manejar cambio en convenio - SOLO auto-llenar motivo descuento
+    // El descuento se calcula en el backend
     function manejarCambioConvenio() {
-        // Auto-rellenar motivo descuento según convenio
         if (idConvenio.value) {
             const nombreConvenio = idConvenio.options[idConvenio.selectedIndex].getAttribute('data-nombre');
             
-            // Mapeo: Si el convenio es INACAP, rellenar con "Estudiante"
+            // Auto-rellenar motivo descuento según convenio
             if (nombreConvenio && nombreConvenio.toUpperCase().includes('INACAP')) {
-                // Buscar opción "Estudiante" en motivos
                 for (let option of idMotivoDescuento.options) {
                     if (option.textContent.toLowerCase().includes('estudiante')) {
                         idMotivoDescuento.value = option.value;
@@ -573,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
             idMotivoDescuento.value = '';
         }
         
-        // Recalcular precio CON el nuevo descuento de convenio
+        // Recalcular para mostrar preview actualizado
         cargarPrecioMembresia();
     }
 
