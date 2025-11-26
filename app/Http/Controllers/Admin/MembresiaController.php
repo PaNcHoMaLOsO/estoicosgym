@@ -16,7 +16,7 @@ class MembresiaController extends Controller
      */
     public function index()
     {
-        $membresias = Membresia::withCount('inscripciones')->with(['precios', 'inscripciones'])->paginate(15);
+        $membresias = Membresia::withCount('inscripciones')->with(['precios', 'inscripciones'])->paginate(20);
         return view('admin.membresias.index', compact('membresias'));
     }
 
@@ -87,7 +87,7 @@ class MembresiaController extends Controller
         $historialPrecios = HistorialPrecio::whereIn(
             'id_precio_membresia',
             $membresia->precios()->pluck('id')
-        )->orderBy('created_at', 'desc')->paginate(10);
+        )->orderBy('created_at', 'desc')->paginate(20);
 
         return view('admin.membresias.show', compact('membresia', 'historialPrecios'));
     }

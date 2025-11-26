@@ -56,7 +56,7 @@ class PagoController extends Controller
         
         $query->orderBy($ordenar, $direccion);
         
-        $pagos = $query->paginate(15);
+        $pagos = $query->paginate(20);
         $metodos_pago = MetodoPago::all();
         
         return view('admin.pagos.index', compact('pagos', 'metodos_pago'));

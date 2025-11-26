@@ -13,7 +13,7 @@ class MetodoPagoController extends Controller
      */
     public function index()
     {
-        $metodos = MetodoPago::paginate(15);
+        $metodos = MetodoPago::paginate(20);
         return view('admin.metodos-pago.index', compact('metodos'));
     }
 

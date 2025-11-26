@@ -13,7 +13,7 @@ class MotivoDescuentoController extends Controller
      */
     public function index()
     {
-        $motivos = MotivoDescuento::paginate(15);
+        $motivos = MotivoDescuento::paginate(20);
         return view('admin.motivos-descuento.index', compact('motivos'));
     }
 

@@ -59,7 +59,7 @@ class InscripcionController extends Controller
         
         $query->orderBy($ordenar, $direccion);
         
-        $inscripciones = $query->paginate(15);
+        $inscripciones = $query->paginate(20);
         
         // Datos para los selects de filtro
         $estados = Estado::where('categoria', 'membresia')->get();

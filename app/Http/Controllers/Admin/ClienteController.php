@@ -15,7 +15,7 @@ class ClienteController extends Controller
      */
     public function index()
     {
-        $clientes = Cliente::with(['inscripciones', 'pagos'])->paginate(15);
+        $clientes = Cliente::with(['inscripciones', 'pagos'])->paginate(20);
         return view('admin.clientes.index', compact('clientes'));
     }
 

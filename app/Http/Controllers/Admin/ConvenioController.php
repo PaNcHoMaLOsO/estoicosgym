@@ -13,7 +13,7 @@ class ConvenioController extends Controller
      */
     public function index()
     {
-        $convenios = Convenio::paginate(15);
+        $convenios = Convenio::paginate(20);
         return view('admin.convenios.index', compact('convenios'));
     }
 
