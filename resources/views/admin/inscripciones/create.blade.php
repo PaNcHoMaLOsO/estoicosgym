@@ -227,19 +227,19 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Adicional (Opcional)</label>
+                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Total</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
                             <input type="number" class="form-control @error('descuento_aplicado') is-invalid @enderror" 
-                                   id="descuento_adicional" step="0.01" min="0" 
+                                   id="descuento_adicional" name="descuento_aplicado" step="0.01" min="0" 
                                    value="{{ old('descuento_aplicado', 0) }}">
                         </div>
-                        @error('descuento_adicado')
+                        @error('descuento_aplicado')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Descuento extra además del convenio</small>
+                        <small class="text-muted d-block mt-1" id="descuento_info">Descuento a aplicar (se calcula automáticamente si hay convenio)</small>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -462,8 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
                 precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
                 
-                // Rellenar campo de descuento visible con el total
-                descuentoAdicional.value = descuentoTotal.toFixed(2);
+                // Actualizar campo de descuento SOLO si cambió por convenio
+                if (descuentoConvenio > 0) {
+                    descuentoAdicional.value = descuentoTotal.toFixed(2);
+                    document.getElementById('descuento_info').textContent = `Descuento automático $${descuentoConvenio.toFixed(2)} (convenio) + $${descuentoExtra.toFixed(2)} (adicional)`;
+                }
 
                 priceSummary.style.display = 'block';
                 calcularVencimiento();
@@ -483,15 +486,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const membresiaData = await response.json();
 
             if (response.ok) {
-                // Calcular vencimiento basado en duracion_meses
                 const [year, month, day] = fechaInicio.value.split('-').map(Number);
                 const fechaInicioParsed = new Date(year, month - 1, day); // month es 0-indexed
+                
+                // Usar duracion_dias si está disponible (para Pase Diario), sino usar duracion_meses
+                const duracionDias = membresiaData.duracion_dias || (membresiaData.duracion_meses * 30);
                 const duracionMeses = membresiaData.duracion_meses || 1;
                 
-                // Sumar meses y restar 1 día para que sea el último día de la membresía
+                // Calcular vencimiento
                 const fechaVencimiento = new Date(fechaInicioParsed);
-                fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
-                fechaVencimiento.setDate(fechaVencimiento.getDate() - 1); // -1 día
+                
+                if (duracionMeses === 0) {
+                    // Para Pase Diario: sumar días directamente
+                    fechaVencimiento.setDate(fechaVencimiento.getDate() + duracionDias - 1);
+                } else {
+                    // Para membresías de meses: sumar meses y restar 1 día
+                    fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
+                    fechaVencimiento.setDate(fechaVencimiento.getDate() - 1);
+                }
                 
                 // Formatear a YYYY-MM-DD
                 const yearFormato = fechaVencimiento.getFullYear();
@@ -543,9 +555,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            // Mostrar mensaje de descuento automático
+            document.getElementById('descuento_info').textContent = 'Descuento automático de $15.000 aplicado (membresía mensual + convenio)';
         } else {
-            // Si se quita el convenio, limpiar motivo descuento
+            // Si se quita el convenio, limpiar motivo descuento y restaurar descuento a 0
             idMotivoDescuento.value = '';
+            descuentoAdicional.value = '0.00';
+            document.getElementById('descuento_info').textContent = 'Descuento a aplicar (se calcula automáticamente si hay convenio)';
+            cargarPrecioMembresia(); // Recalcular sin descuento
         }
     }
 
