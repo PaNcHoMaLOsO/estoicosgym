@@ -193,7 +193,8 @@ class InscripcionController extends Controller
     public function show(Inscripcion $inscripcion)
     {
         $inscripcion->load(['cliente', 'estado', 'pagos']);
-        return view('admin.inscripciones.show', compact('inscripcion'));
+        $estadoPago = $inscripcion->obtenerEstadoPago();
+        return view('admin.inscripciones.show', compact('inscripcion', 'estadoPago'));
     }
 
     /**
