@@ -1,24 +1,49 @@
-# 🚀 INICIO RÁPIDO - EstóicosGym
+# 🚀 Inicio Rápido - EstóicosGym (5 minutos)
 
-## ⏱️ 5 Minutos para Comenzar
+Guía simplificada para instalar y ejecutar EstóicosGym en tu máquina.
 
-### 1️⃣ Clonar Proyecto
+---
+
+## 1. Requisitos Previos
+
+Instalar en tu sistema:
+
+- **PHP 8.2+** (descargar desde [php.net](https://www.php.net))
+- **Composer** (descargar desde [getcomposer.org](https://getcomposer.org))
+- **MySQL 8.0+** (descargar desde [mysql.com](https://www.mysql.com))
+- **Git** (descargar desde [git-scm.com](https://git-scm.com))
+
+Verificar que están instalados:
+```bash
+php --version
+composer --version
+mysql --version
+```
+
+---
+
+## 2. Descargar e Instalar
+
+Clonar repositorio e instalar dependencias:
+
 ```bash
 git clone https://github.com/PaNcHoMaLOsO/estoicosgym.git
 cd estoicosgym
-```
-
-### 2️⃣ Instalar Dependencias
-```bash
 composer install
 ```
 
-### 3️⃣ Configurar .env
+---
+
+## 3. Configurar Base de Datos
+
+Crear archivo `.env`:
+
 ```bash
 cp .env.example .env
 ```
 
-**Editar `.env` con tu configuración de BD:**
+Editar `.env` y configurar:
+
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -28,99 +53,63 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### 4️⃣ Generar Clave
-```bash
-php artisan key:generate
-```
+Crear la base de datos:
 
-### 5️⃣ Crear Base de Datos
 ```bash
 mysql -u root -p
 CREATE DATABASE estoicosgym CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 ```
 
-### 6️⃣ Migraciones
+---
+
+## 4. Inicializar Sistema
+
+Generar clave, migrar BD y cargar datos de prueba:
+
 ```bash
+php artisan key:generate
 php artisan migrate
 php artisan db:seed
 ```
 
-### 7️⃣ Iniciar Servidor
+---
+
+## 5. Ejecutar y Acceder
+
+Iniciar servidor:
+
 ```bash
 php artisan serve
 ```
 
-### 8️⃣ ¡Acceder!
-Abrir navegador: **`http://localhost:8000/dashboard`** ✨
+Abrir en navegador:
 
----
-
-## 📥 Qué Necesitas Descargar
-
-### Requisitos Obligatorios:
-1. **PHP 8.2+** 
-   - Windows: [php.net/downloads](https://www.php.net/downloads)
-   - Linux: `apt-get install php8.2 php8.2-mysql php8.2-mbstring php8.2-xml php8.2-curl`
-
-2. **Composer 2.x**
-   - [getcomposer.org/download](https://getcomposer.org/download/)
-
-3. **MySQL 8.0+**
-   - Windows: [mysql.com/downloads](https://www.mysql.com/downloads/)
-   - Linux: `apt-get install mysql-server`
-   - Mac: `brew install mysql`
-
-4. **Git**
-   - [git-scm.com/download](https://git-scm.com/download/)
-
----
-
-## 🤖 Scripts de Instalación Automática
-
-### Windows
-```bash
-INSTALL.bat
+```
+http://localhost:8000/dashboard
 ```
 
-### Linux/Mac
-```bash
-bash INSTALL.sh
-```
+✨ **¡Listo! El sistema está corriendo.**
 
 ---
 
-## ✅ Verificar Instalación
+## 📞 Ayuda Rápida
 
-```bash
-# PHP
-php --version
-
-# Composer
-composer --version
-
-# MySQL
-mysql --version
-
-# Git
-git --version
-```
+| Problema | Solución |
+|----------|----------|
+| MySQL no inicia | Abrir XAMPP y iniciar MySQL |
+| "Class not found" | Ejecutar `composer install` |
+| "Tabla no encontrada" | Ejecutar `php artisan migrate` |
+| Error 500 | Ver `storage/logs/laravel.log` |
 
 ---
 
-## 🔗 Enlaces Útiles
+## 📖 Más Información
 
-- **Dashboard:** `http://localhost:8000/dashboard`
-- **Clientes:** `http://localhost:8000/admin/clientes`
-- **Inscripciones:** `http://localhost:8000/admin/inscripciones`
-- **Pagos:** `http://localhost:8000/admin/pagos`
-
----
-
-## 📞 ¿Problemas?
-
-Ver sección **"Problemas Comunes"** en `README.md`
+- **Documentación completa:** Ver [README.md](README.md)
+- **API:** Ver [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- **Base de datos:** Ver [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)
 
 ---
 
-**¡Listo! Sistema en 5 minutos** ⚡
+**¡Disfruta del sistema EstóicosGym!** 💪

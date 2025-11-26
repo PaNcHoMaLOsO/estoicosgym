@@ -1,6 +1,0 @@
-{
-    "typeCheckingMode": "basic",
-    "diagnosticsMode": "workspace",
-    "extraPaths": ["./vendor"],
-    "include": ["./app"]
-}

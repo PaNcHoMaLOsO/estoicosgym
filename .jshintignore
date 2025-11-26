@@ -1,3 +1,0 @@
-resources/views/**/*.blade.php
-node_modules/
-vendor/

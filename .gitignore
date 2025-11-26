@@ -4,10 +4,8 @@
 .env.backup
 .env.production
 .phpactor.json
-.phpstorm.meta.php
+.phpunit.result.cache
 .pylanceignore
-_ide_helper.php
-_ide_helper_models.php
 /.fleet
 /.idea
 /.nova
@@ -22,4 +20,3 @@ _ide_helper_models.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.phpunit.result.cache

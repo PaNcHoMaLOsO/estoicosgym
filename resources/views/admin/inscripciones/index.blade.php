@@ -236,7 +236,7 @@
         <div class="card-footer">
             <nav aria-label="Page navigation">
                 <div class="d-flex justify-content-center">
-                    {{ $inscripciones->links() }}
+                    {{ $inscripciones->links('pagination::bootstrap-4') }}
                 </div>
             </nav>
         </div>

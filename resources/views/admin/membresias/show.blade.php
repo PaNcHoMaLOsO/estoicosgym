@@ -187,7 +187,7 @@
 
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center">
-                            {{ $historialPrecios->links() }}
+                            {{ $historialPrecios->links('pagination::bootstrap-4') }}
                         </div>
                     @else
                         <p class="text-muted">Sin cambios de precios registrados</p>

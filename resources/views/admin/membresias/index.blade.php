@@ -110,7 +110,7 @@
                 <!-- Pagination -->
                 <nav aria-label="Page navigation">
                     <div class="d-flex justify-content-center">
-                        {{ $membresias->links() }}
+                        {{ $membresias->links('pagination::bootstrap-4') }}
                     </div>
                 </nav>
             @else

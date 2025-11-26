@@ -75,7 +75,7 @@
                 </table>
                 <!-- Paginación -->
                 <div class="d-flex justify-content-center">
-                    {{ $motivos->links() }}
+                    {{ $motivos->links('pagination::bootstrap-4') }}
                 </div>
             @else
                 <p class="text-center text-muted p-3">No hay motivos de descuento registrados</p>
