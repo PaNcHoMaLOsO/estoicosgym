@@ -8,9 +8,7 @@ use Illuminate\Support\Str;
 /**
  * @property int $id
  * @property string $nombre Ej: INACAP, Cruz Verde, Falabella
- * @property string $tipo
- * @property string $descuento_porcentaje Porcentaje de descuento (0-100%)
- * @property string $descuento_monto Descuento en pesos fijos
+ * @property string $tipo Tipo de convenio
  * @property string|null $descripcion
  * @property string|null $contacto_nombre
  * @property string|null $contacto_telefono
@@ -29,8 +27,6 @@ use Illuminate\Support\Str;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereContactoTelefono($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereDescripcion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereDescuentoMonto($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereDescuentoPorcentaje($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereNombre($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Convenio whereTipo($value)
