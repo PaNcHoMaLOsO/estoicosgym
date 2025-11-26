@@ -30,6 +30,18 @@
         </div>
     @endif
 
+    @if ($message = Session::get('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-circle"></i> Error
+            </h5>
+            <p class="mb-0">{{ $message }}</p>
+        </div>
+    @endif
+
     <!-- Información Personal -->
     <div class="row mb-4">
         <!-- Card Información Personal -->
@@ -96,6 +108,24 @@
                         </div>
                         <div class="col-sm-7">
                             <dd><a href="tel:{{ $cliente->celular }}" class="text-primary">{{ $cliente->celular }}</a></dd>
+                        </div>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <dt>Contacto Emergencia:</dt>
+                        </div>
+                        <div class="col-sm-7">
+                            <dd>
+                                @if($cliente->contacto_emergencia)
+                                    <strong>{{ $cliente->contacto_emergencia }}</strong><br>
+                                    <a href="tel:{{ $cliente->telefono_emergencia }}" class="text-primary">{{ $cliente->telefono_emergencia }}</a>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </dd>
                         </div>
                     </div>
 
@@ -268,13 +298,70 @@
                 <a href="{{ route('admin.clientes.edit', $cliente) }}" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar
                 </a>
-                <form action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST" style="display:inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro? Esta acción no puede revertirse')">
-                        <i class="fas fa-trash"></i> Eliminar
+                @php
+                    $puedoDesactivar = !$cliente->inscripciones()->where('id_estado', 1)->exists() && 
+                                      !$cliente->pagos()->where('id_estado', 101)->exists();
+                @endphp
+                <button type="button" class="btn {{ $puedoDesactivar ? 'btn-danger' : 'btn-secondary disabled' }}" 
+                        {{ !$puedoDesactivar ? 'disabled' : '' }}
+                        @if($puedoDesactivar) data-toggle="modal" data-target="#desactivarClienteModal" @endif>
+                    <i class="fas fa-user-slash"></i> Desactivar Cliente
+                </button>
+                @if(!$puedoDesactivar)
+                    <small class="text-muted align-self-center">
+                        <i class="fas fa-info-circle"></i> No se puede desactivar: hay inscripciones activas o pagos pendientes
+                    </small>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación para Desactivar -->
+    <div class="modal fade" id="desactivarClienteModal" tabindex="-1" role="dialog" aria-labelledby="desactivarClienteLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="desactivarClienteLabel">
+                        <i class="fas fa-exclamation-triangle"></i> Desactivar Cliente
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
                     </button>
-                </form>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-bell"></i> Importante
+                        </h5>
+                        <p class="mb-0">
+                            Estás a punto de <strong>desactivar a {{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</strong>.
+                        </p>
+                    </div>
+                    <hr>
+                    <h6 class="font-weight-bold mb-2">¿Qué sucede al desactivar?</h6>
+                    <ul class="small text-muted">
+                        <li><i class="fas fa-check text-success"></i> El cliente <strong>NO será eliminado</strong> del sistema</li>
+                        <li><i class="fas fa-check text-success"></i> Todo su <strong>historial se conserva</strong> (inscripciones, pagos, datos)</li>
+                        <li><i class="fas fa-check text-success"></i> <strong>No aparecerá</strong> en el listado de clientes activos</li>
+                        <li><i class="fas fa-check text-success"></i> Podrá ser <strong>reactivado</strong> en el futuro si es necesario</li>
+                    </ul>
+                    <hr>
+                    <p class="text-danger font-weight-bold mb-0">
+                        <i class="fas fa-lock"></i> Para desactivar, confirma tu acción dos veces:
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <form action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('⚠️ SEGUNDA CONFIRMACIÓN\\n\\n¿Confirmas que deseas DESACTIVAR definitivamente a este cliente?\\n\\nSu información se conservará en el sistema.')">
+                            <i class="fas fa-check"></i> Sí, Desactivar
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

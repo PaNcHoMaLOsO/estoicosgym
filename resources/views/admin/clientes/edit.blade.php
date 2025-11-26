@@ -156,6 +156,40 @@
                     </div>
                 </div>
 
+                <!-- Sección Contacto de Emergencia -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-exclamation-triangle"></i> Contacto de Emergencia
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="contacto_emergencia" class="form-label">Nombre del Contacto</label>
+                            <input type="text" class="form-control @error('contacto_emergencia') is-invalid @enderror" 
+                                   id="contacto_emergencia" name="contacto_emergencia" placeholder="Ej: Juan García" 
+                                   value="{{ old('contacto_emergencia', $cliente->contacto_emergencia) }}">
+                            @error('contacto_emergencia')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="telefono_emergencia" class="form-label">Teléfono del Contacto</label>
+                            <input type="tel" class="form-control @error('telefono_emergencia') is-invalid @enderror" 
+                                   id="telefono_emergencia" name="telefono_emergencia" placeholder="+56912345678" 
+                                   value="{{ old('telefono_emergencia', $cliente->telefono_emergencia) }}">
+                            @error('telefono_emergencia')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Sección Dirección -->
                 <div class="row">
                     <div class="col-12">

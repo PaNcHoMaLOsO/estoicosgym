@@ -14,8 +14,11 @@
         <div class="col-sm-6">
             <h1>Gestión de Clientes</h1>
         </div>
-        <div class="col-sm-6">
-            <a href="{{ route('admin.clientes.create') }}" class="btn btn-primary float-right">
+        <div class="col-sm-6 text-right">
+            <a href="{{ route('admin.clientes.inactive') }}" class="btn btn-outline-secondary mr-2">
+                <i class="fas fa-user-slash"></i> Ver Desactivados
+            </a>
+            <a href="{{ route('admin.clientes.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Nuevo Cliente
             </a>
         </div>
