@@ -8,19 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('motivos_descuento', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->unsignedInteger('id')->autoIncrement()->primary();
-            $table->string('nombre', 100)->unique();
+            $table->string('nombre', 50)->unique();
             $table->text('descripcion')->nullable();
+            $table->json('permisos')->nullable()->comment('Array de permisos: ["crear_cliente", "editar_precio", etc.]');
             $table->boolean('activo')->default(true);
             $table->timestamps();
-            
-            $table->index('activo');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('motivos_descuento');
+        Schema::dropIfExists('roles');
     }
 };

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->boolean('activo')->default(true);
             $table->string('color', 20)->default('secondary')->comment('Color Bootstrap: primary, success, danger, warning, info, secondary');
             $table->timestamps();
-            
+
             $table->index('activo');
             $table->index('categoria');
         });

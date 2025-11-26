@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('fecha_vigencia_hasta')->nullable()->comment('NULL = vigente actualmente');
             $table->boolean('activo')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('id_membresia')->references('id')->on('membresias')->onDelete('restrict');
             $table->index(['fecha_vigencia_desde', 'fecha_vigencia_hasta'], 'idx_fechas_vigencia');
             $table->index('id_membresia');

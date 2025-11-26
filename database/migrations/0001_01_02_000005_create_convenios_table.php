@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('contacto_email', 100)->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
-            
+
             $table->index('tipo');
             $table->index('activo');
         });

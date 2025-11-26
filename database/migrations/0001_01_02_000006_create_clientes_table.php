@@ -25,7 +25,7 @@ return new class extends Migration
             $table->text('observaciones')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');
             $table->index('run_pasaporte');
             $table->index(['nombres', 'apellido_paterno']);
