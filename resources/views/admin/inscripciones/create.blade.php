@@ -457,9 +457,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const descuentoTotal = descuentoConvenio + descuentoExtra;
                 const precioFinal = precioBase - descuentoTotal;
 
+                // Mostrar descuentos
                 precioBaseEl.textContent = '$' + precioBase.toFixed(2);
                 precioDescuentoEl.textContent = '$' + descuentoTotal.toFixed(2);
                 precioTotalEl.textContent = '$' + precioFinal.toFixed(2);
+                
+                // Rellenar campo de descuento visible con el total
+                descuentoAdicional.value = descuentoTotal.toFixed(2);
 
                 priceSummary.style.display = 'block';
                 calcularVencimiento();
@@ -480,16 +484,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 // Calcular vencimiento basado en duracion_meses
-                const fechaInicioParsed = new Date(fechaInicio.value);
+                const [year, month, day] = fechaInicio.value.split('-').map(Number);
+                const fechaInicioParsed = new Date(year, month - 1, day); // month es 0-indexed
                 const duracionMeses = membresiaData.duracion_meses || 1;
+                
+                // Sumar meses y restar 1 día para que sea el último día de la membresía
                 const fechaVencimiento = new Date(fechaInicioParsed);
                 fechaVencimiento.setMonth(fechaVencimiento.getMonth() + duracionMeses);
+                fechaVencimiento.setDate(fechaVencimiento.getDate() - 1); // -1 día
                 
                 // Formatear a YYYY-MM-DD
-                const year = fechaVencimiento.getFullYear();
-                const month = String(fechaVencimiento.getMonth() + 1).padStart(2, '0');
-                const day = String(fechaVencimiento.getDate()).padStart(2, '0');
-                const fechaVencimientoFormato = `${year}-${month}-${day}`;
+                const yearFormato = fechaVencimiento.getFullYear();
+                const monthFormato = String(fechaVencimiento.getMonth() + 1).padStart(2, '0');
+                const dayFormato = String(fechaVencimiento.getDate()).padStart(2, '0');
+                const fechaVencimientoFormato = `${yearFormato}-${monthFormato}-${dayFormato}`;
                 
                 fechaVencimientoEl.value = fechaVencimientoFormato;
             }
@@ -535,6 +543,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        } else {
+            // Si se quita el convenio, limpiar motivo descuento
+            idMotivoDescuento.value = '';
         }
     }
 
