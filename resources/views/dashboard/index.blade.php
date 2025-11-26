@@ -3,9 +3,14 @@
 @section('title', 'Dashboard - EstóicosGym')
 
 @section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1>Dashboard Ejecutivo</h1>
+    <div class="row mb-4">
+        <div class="col-sm-8">
+            <h1 class="m-0">
+                <i class="fas fa-chart-line"></i> Dashboard Ejecutivo
+            </h1>
+        </div>
+        <div class="col-sm-4 text-right">
+            <small class="text-muted">Actualizado: {{ now()->format('d/m/Y H:i') }}</small>
         </div>
     </div>
 @stop
@@ -14,82 +19,84 @@
 <div class="container-fluid">
     <!-- KPIs Principales -->
     <div class="row mb-4">
-        <!-- Clientes -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <!-- Clientes Activos -->
+        <div class="col-lg-3 col-md-6 mb-3">
             <div class="small-box bg-primary">
                 <div class="inner">
                     <h3>{{ $totalClientes }}</h3>
-                    <p>Clientes Activos</p>
+                    <p><i class="fas fa-user-check"></i> Clientes Activos</p>
                     <small class="text-light">{{ $clientesInactivos }} inactivos</small>
                 </div>
                 <div class="icon">
                     <i class="fas fa-users"></i>
                 </div>
                 <a href="{{ route('admin.clientes.index') }}" class="small-box-footer">
-                    Ver más <i class="fas fa-arrow-circle-right"></i>
+                    Ir a Clientes <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
 
         <!-- Inscripciones Activas -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3>{{ $totalInscripciones }}</h3>
-                    <p>Inscripciones Activas</p>
+                    <p><i class="fas fa-check-circle"></i> Inscripciones Activas</p>
                     <small class="text-light">{{ $inscripcionesVencidas }} vencidas</small>
                 </div>
                 <div class="icon">
                     <i class="fas fa-dumbbell"></i>
                 </div>
                 <a href="{{ route('admin.inscripciones.index') }}" class="small-box-footer">
-                    Ver más <i class="fas fa-arrow-circle-right"></i>
+                    Ir a Inscripciones <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
 
-        <!-- Ingresos Mes -->
-        <div class="col-lg-3 col-md-6 mb-4">
+        <!-- Ingresos Este Mes -->
+        <div class="col-lg-3 col-md-6 mb-3">
             <div class="small-box bg-info">
                 <div class="inner">
                     <h3>${{ number_format($pagosDelMes, 0) }}</h3>
-                    <p>Ingresos Este Mes</p>
-                    <small class="text-light">${{ number_format($pagosPendientes, 0) }} pendiente</small>
+                    <p><i class="fas fa-calendar"></i> Este Mes</p>
+                    <small class="text-light">{{ now()->format('M Y') }}</small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-dollar-sign"></i>
+                    <i class="fas fa-calendar-check"></i>
                 </div>
                 <a href="{{ route('admin.pagos.index') }}" class="small-box-footer">
-                    Ver más <i class="fas fa-arrow-circle-right"></i>
+                    Ir a Pagos <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
 
         <!-- Ingresos Totales -->
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="small-box bg-danger">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="small-box bg-warning">
                 <div class="inner">
                     <h3>${{ number_format($ingresosTotales, 0) }}</h3>
-                    <p>Ingresos Totales</p>
-                    <small class="text-light">{{ count($ultimosPagos) }} transacciones</small>
+                    <p><i class="fas fa-chart-line"></i> Ingresos Totales</p>
+                    <small class="text-dark">{{ $ultimosPagos->count() }} transacciones</small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-money-bill-wave"></i>
                 </div>
                 <a href="{{ route('admin.pagos.index') }}" class="small-box-footer">
-                    Ver más <i class="fas fa-arrow-circle-right"></i>
+                    Ir a Pagos <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Gráficos -->
+    <!-- Gráficos y Análisis -->
     <div class="row mb-4">
         <!-- Gráfico de Ingresos por Mes -->
         <div class="col-lg-8">
             <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Ingresos - Últimos 6 Meses</h3>
+                <div class="card-header with-border">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Ingresos - Últimos 6 Meses
+                    </h3>
                 </div>
                 <div class="card-body">
                     <canvas id="chartIngresos" height="80"></canvas>
@@ -100,11 +107,13 @@
         <!-- Gráfico de Inscripciones por Estado -->
         <div class="col-lg-4">
             <div class="card card-success card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Inscripciones por Estado</h3>
+                <div class="card-header with-border">
+                    <h3 class="card-title">
+                        <i class="fas fa-pie-chart"></i> Inscripciones por Estado
+                    </h3>
                 </div>
                 <div class="card-body">
-                    <canvas id="chartEstados" height="150"></canvas>
+                    <canvas id="chartEstados" height="140"></canvas>
                 </div>
             </div>
         </div>
@@ -115,101 +124,120 @@
         <!-- Próximas a Vencer -->
         <div class="col-lg-6">
             <div class="card card-warning card-outline">
-                <div class="card-header">
+                <div class="card-header with-border">
                     <h3 class="card-title">
-                        <i class="fas fa-exclamation-triangle"></i> Próximas a Vencer (30 días)
+                        <i class="fas fa-clock"></i> Próximas a Vencer (30 días)
                     </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-warning">{{ $proximasAVencer->count() }}</span>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Membresía</th>
-                                <th>Vencimiento</th>
-                                <th>Días</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($proximasAVencer as $inscripcion)
+                    @if($proximasAVencer->count() > 0)
+                        <table class="table table-sm table-hover table-striped">
+                            <thead class="bg-warning">
                                 <tr>
-                                    <td>
-                                        <strong>{{ Str::limit($inscripcion->cliente->nombres, 15) }}</strong>
-                                    </td>
-                                    <td>{{ $inscripcion->membresia?->nombre }}</td>
-                                    <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
-                                    <td>
-                                        @php
-                                            $dias = (int) now()->diffInDays($inscripcion->fecha_vencimiento);
-                                        @endphp
-                                        @if($dias <= 7)
-                                            <span class="badge badge-danger">{{ $dias }} días</span>
-                                        @elseif($dias <= 14)
-                                            <span class="badge badge-warning">{{ $dias }} días</span>
-                                        @else
-                                            <span class="badge badge-info">{{ $dias }} días</span>
-                                        @endif
-                                    </td>
+                                    <th>Cliente</th>
+                                    <th>Membresía</th>
+                                    <th>Vencimiento</th>
+                                    <th>Días</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">Sin inscripciones próximas a vencer</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($proximasAVencer as $inscripcion)
+                                    <tr onclick="window.location='{{ route('admin.inscripciones.show', $inscripcion) }}'" style="cursor:pointer;">
+                                        <td>
+                                            <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}">
+                                                <strong>{{ Str::limit($inscripcion->cliente->nombres, 16) }}</strong>
+                                            </a>
+                                        </td>
+                                        <td><small>{{ $inscripcion->membresia?->nombre }}</small></td>
+                                        <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
+                                        <td>
+                                            @php
+                                                $dias = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
+                                            @endphp
+                                            @if($dias <= 5)
+                                                <span class="badge badge-danger">{{ $dias }} d</span>
+                                            @elseif($dias <= 14)
+                                                <span class="badge badge-warning">{{ $dias }} d</span>
+                                            @else
+                                                <span class="badge badge-info">{{ $dias }} d</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-check-circle"></i> No hay inscripciones próximas a vencer
+                        </div>
+                    @endif
                 </div>
                 <div class="card-footer">
-                    <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-sm btn-warning">Ver todas</a>
+                    <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-list"></i> Ver Todas
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Membresías Populares -->
+        <!-- Membresías Más Vendidas -->
         <div class="col-lg-6">
             <div class="card card-info card-outline">
-                <div class="card-header">
+                <div class="card-header with-border">
                     <h3 class="card-title">
-                        <i class="fas fa-star"></i> Membresías Más Vendidas
+                        <i class="fas fa-star"></i> Top Membresías
                     </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-info">{{ $membresiasVendidas->count() }}</span>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Membresía</th>
-                                <th>Duración</th>
-                                <th>Inscripciones</th>
-                                <th>Progreso</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                $maxInscripciones = $membresiasVendidas->max('inscripciones_count') ?? 1;
-                            @endphp
-                            @forelse($membresiasVendidas as $membresia)
+                    @if($membresiasVendidas->count() > 0)
+                        @php
+                            $maxInscripciones = $membresiasVendidas->max('inscripciones_count') ?? 1;
+                        @endphp
+                        <table class="table table-sm table-hover table-striped">
+                            <thead class="bg-info">
                                 <tr>
-                                    <td><strong>{{ $membresia->nombre }}</strong></td>
-                                    <td>{{ $membresia->duracion_dias }} días</td>
-                                    <td>{{ $membresia->inscripciones_count }}</td>
-                                    <td>
-                                        <div class="progress progress-xs">
-                                            @php
-                                                $percentage = $maxInscripciones > 0 ? ($membresia->inscripciones_count / $maxInscripciones) * 100 : 0;
-                                                $widthStyle = round($percentage, 1);
-                                            @endphp
-                                            <!-- htmlhint - Blade template syntax -->
-                                            <div class="progress-bar bg-success" style="width: {{ $widthStyle }}%"></div>
-                                        </div>
-                                    </td>
+                                    <th>Membresía</th>
+                                    <th>Duración</th>
+                                    <th>Inscritos</th>
+                                    <th>Progreso</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">Sin membresías</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($membresiasVendidas as $membresia)
+                                    <tr onclick="window.location='{{ route('admin.membresias.show', $membresia) }}'" style="cursor:pointer;">
+                                        <td><strong>{{ $membresia->nombre }}</strong></td>
+                                        <td><small>{{ $membresia->duracion_meses }} meses</small></td>
+                                        <td>
+                                            <span class="badge badge-primary">{{ $membresia->inscripciones_count }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress progress-xs">
+                                                @php
+                                                    $percentage = $maxInscripciones > 0 ? ($membresia->inscripciones_count / $maxInscripciones) * 100 : 0;
+                                                @endphp
+                                                <div class="progress-bar bg-success" style="width: {{ round($percentage) }}%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-info-circle"></i> Sin membresías registradas
+                        </div>
+                    @endif
+                </div>
+                <div class="card-footer">
+                    <a href="{{ route('admin.membresias.index') }}" class="btn btn-sm btn-info">
+                        <i class="fas fa-list"></i> Ver Todas
+                    </a>
                 </div>
             </div>
         </div>
@@ -220,45 +248,52 @@
         <!-- Últimos Pagos -->
         <div class="col-lg-6">
             <div class="card card-success card-outline">
-                <div class="card-header">
+                <div class="card-header with-border">
                     <h3 class="card-title">
                         <i class="fas fa-receipt"></i> Últimos Pagos
                     </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-success">{{ $ultimosPagos->count() }}</span>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Monto</th>
-                                <th>Método</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($ultimosPagos as $pago)
+                    @if($ultimosPagos->count() > 0)
+                        <table class="table table-sm table-hover table-striped">
+                            <thead class="bg-success">
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}">
-                                            {{ Str::limit($pago->inscripcion->cliente->nombres, 12) }}
-                                        </a>
-                                    </td>
-                                    <td><strong>${{ number_format($pago->monto_abonado, 0) }}</strong></td>
-                                    <td><small>{{ $pago->metodoPago?->nombre }}</small></td>
-                                    <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                                    <td><small>{{ $pago->created_at->format('d/m H:i') }}</small></td>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Método</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Sin pagos registrados</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($ultimosPagos as $pago)
+                                    <tr onclick="window.location='{{ route('admin.pagos.show', $pago) }}'" style="cursor:pointer;">
+                                        <td>
+                                            <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}">
+                                                {{ Str::limit($pago->inscripcion->cliente->nombres, 14) }}
+                                            </a>
+                                        </td>
+                                        <td><strong>${{ number_format($pago->monto_abonado, 0) }}</strong></td>
+                                        <td><small>{{ $pago->metodoPago?->nombre }}</small></td>
+                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
+                                        <td><small>{{ $pago->fecha_pago->format('d/m H:i') }}</small></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-info-circle"></i> Sin pagos registrados
+                        </div>
+                    @endif
                 </div>
                 <div class="card-footer">
-                    <a href="{{ route('admin.pagos.index') }}" class="btn btn-sm btn-success">Ver todos</a>
+                    <a href="{{ route('admin.pagos.index') }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-list"></i> Ver Todos
+                    </a>
                 </div>
             </div>
         </div>
@@ -266,45 +301,52 @@
         <!-- Inscripciones Recientes -->
         <div class="col-lg-6">
             <div class="card card-primary card-outline">
-                <div class="card-header">
+                <div class="card-header with-border">
                     <h3 class="card-title">
                         <i class="fas fa-plus-circle"></i> Inscripciones Recientes
                     </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-primary">{{ $inscripcionesRecientes->count() }}</span>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Membresía</th>
-                                <th>Estado</th>
-                                <th>Inicio</th>
-                                <th>Vencimiento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($inscripcionesRecientes as $inscripcion)
+                    @if($inscripcionesRecientes->count() > 0)
+                        <table class="table table-sm table-hover table-striped">
+                            <thead class="bg-primary">
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}">
-                                            {{ Str::limit($inscripcion->cliente->nombres, 12) }}
-                                        </a>
-                                    </td>
-                                    <td><small>{{ $inscripcion->membresia?->nombre }}</small></td>
-                                    <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
-                                    <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
-                                    <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
+                                    <th>Cliente</th>
+                                    <th>Membresía</th>
+                                    <th>Estado</th>
+                                    <th>Inicio</th>
+                                    <th>Vencimiento</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Sin inscripciones recientes</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($inscripcionesRecientes as $inscripcion)
+                                    <tr onclick="window.location='{{ route('admin.inscripciones.show', $inscripcion) }}'" style="cursor:pointer;">
+                                        <td>
+                                            <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}">
+                                                {{ Str::limit($inscripcion->cliente->nombres, 14) }}
+                                            </a>
+                                        </td>
+                                        <td><small>{{ $inscripcion->membresia?->nombre }}</small></td>
+                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
+                                        <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
+                                        <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-info-circle"></i> Sin inscripciones recientes
+                        </div>
+                    @endif
                 </div>
                 <div class="card-footer">
-                    <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-sm btn-primary">Ver todas</a>
+                    <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-list"></i> Ver Todas
+                    </a>
                 </div>
             </div>
         </div>
@@ -314,50 +356,34 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        /* eslint-disable no-unused-vars */
-        // Variables globales Blade (validadas por Laravel)
         const ETIQUETAS_MESES = @json($etiquetasMeses);
         const DATOS_INGRESOS = @json($datosIngresos);
         const ETIQUETAS_ESTADOS = @json($etiquetasEstados);
         const DATOS_ESTADOS = @json($datosEstados);
         const COLORES_DISPUESTOS = @json($coloresDispuestos);
-        /* eslint-enable no-unused-vars */
 
-        // Gráfico de Ingresos
+        // Gráfico de Ingresos por Mes
         const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
-        const chartIngresos = new Chart(ctxIngresos, {
-            type: 'line',
+        new Chart(ctxIngresos, {
+            type: 'bar',
             data: {
                 labels: ETIQUETAS_MESES,
                 datasets: [{
                     label: 'Ingresos ($)',
                     data: DATOS_INGRESOS,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#007bff',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    backgroundColor: '#007bff',
+                    borderColor: '#004085',
+                    borderWidth: 1,
+                    borderRadius: 5,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
                 plugins: {
                     legend: {
                         display: true,
                         position: 'top'
-                    },
-                    filler: {
-                        propagate: true
                     }
                 },
                 scales: {
@@ -373,9 +399,9 @@
             }
         });
 
-        // Gráfico de Estados
+        // Gráfico de Estados (Doughnut)
         const ctxEstados = document.getElementById('chartEstados').getContext('2d');
-        const chartEstados = new Chart(ctxEstados, {
+        new Chart(ctxEstados, {
             type: 'doughnut',
             data: {
                 labels: ETIQUETAS_ESTADOS,
@@ -391,7 +417,13 @@
                 maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
                     }
                 }
             }
