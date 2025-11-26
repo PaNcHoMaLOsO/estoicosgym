@@ -67,6 +67,11 @@ class Convenio extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     public function clientes()
     {
         return $this->hasMany(Cliente::class, 'id_convenio');

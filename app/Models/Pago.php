@@ -93,6 +93,11 @@ class Pago extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     public function inscripcion()
     {
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');

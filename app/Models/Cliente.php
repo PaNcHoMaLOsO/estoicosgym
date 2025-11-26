@@ -99,6 +99,11 @@ class Cliente extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     public function convenio()
     {
         return $this->belongsTo(Convenio::class, 'id_convenio');

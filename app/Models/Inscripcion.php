@@ -123,6 +123,11 @@ class Inscripcion extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'id_cliente');

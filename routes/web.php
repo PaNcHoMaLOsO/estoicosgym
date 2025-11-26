@@ -16,8 +16,17 @@ use App\Http\Controllers\Api\ClienteApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\PausaApiController;
 use App\Models\Inscripcion;
+use App\Models\Pago;
+use App\Models\Cliente;
+use App\Models\Membresia;
+use App\Models\Convenio;
 
+// Model Route Bindings - Buscar por UUID o ID
 Route::model('inscripcion', Inscripcion::class);
+Route::model('pago', Pago::class);
+Route::model('cliente', Cliente::class);
+Route::model('membresia', Membresia::class);
+Route::model('convenio', Convenio::class);
 
 Route::get('/', function () {
     return redirect()->route('dashboard');

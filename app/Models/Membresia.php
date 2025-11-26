@@ -59,6 +59,11 @@ class Membresia extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     public function precios()
     {
         return $this->hasMany(PrecioMembresia::class, 'id_membresia');
