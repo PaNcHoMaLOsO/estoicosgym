@@ -53,11 +53,13 @@ class InscripcionApiController extends Controller
             return response()->json(['error' => 'Convenio no encontrado'], 404);
         }
 
+        // Los descuentos ahora se definen en la tabla precios_membresias (precio_convenio)
+        // Este endpoint devuelve info del convenio únicamente
         return response()->json([
             'id' => $convenio->id,
             'nombre' => $convenio->nombre,
-            'descuento_porcentaje' => $convenio->descuento_porcentaje ?? 0,
-            'descuento_monto' => $convenio->descuento_monto ?? 0,
+            'tipo' => $convenio->tipo,
+            'descripcion' => $convenio->descripcion,
         ]);
     }
 
@@ -91,17 +93,18 @@ class InscripcionApiController extends Controller
                 ->subDay();
         }
 
-        // Calcular descuento (ahora también soporta descuento automático de convenio)
+        // Calcular descuento (ahora soporta descuento automático de convenio para Mensual)
         $descuento = 0;
-        if ($validated['id_convenio']) {
-            $convenio = Convenio::find($validated['id_convenio']);
-            if ($convenio) {
-                // Si es membresía mensual (id=1) y hay convenio, aplicar $15.000
-                if ($membresia->id === 1) {
-                    $descuento = 15000;
-                } else {
-                    $descuento = $convenio->descuento_monto ?? 0;
-                }
+        if ($validated['id_convenio'] && $membresia->id === 4) {
+            // Solo la membresía Mensual (id=4) tiene descuento por convenio
+            $precioMembresia = $membresia->precios()
+                ->where('activo', true)
+                ->where('fecha_vigencia_desde', '<=', now())
+                ->orderBy('fecha_vigencia_desde', 'desc')
+                ->first();
+
+            if ($precioMembresia && $precioMembresia->precio_convenio) {
+                $descuento = $validated['precio_base'] - $precioMembresia->precio_convenio;
             }
         }
 
