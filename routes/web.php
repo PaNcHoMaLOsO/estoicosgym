@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\MembresiaApiController;
 use App\Http\Controllers\Api\ClienteApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\PausaApiController;
+use App\Models\Inscripcion;
+
+Route::model('inscripcion', Inscripcion::class);
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -35,7 +38,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('membresias', MembresiaController::class);
 
     // CRUD Inscripciones
-    Route::resource('inscripciones', InscripcionController::class);
+    Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class);
