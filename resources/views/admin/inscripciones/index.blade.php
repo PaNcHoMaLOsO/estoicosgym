@@ -132,23 +132,16 @@
                                     Cliente <i class="fas fa-sort fa-xs"></i>
                                 </a>
                             </th>
-                            <th style="width: 120px;">Estado</th>
-                            <th style="width: 100px;">Pausa</th>
-                            <th style="width: 100px;"><i class="fas fa-dollar-sign"></i> Monto</th>
-                            <th style="width: 140px;">Pago</th>
-                            <th>
-                                <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_inicio', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
-                                   class="text-decoration-none text-dark">
-                                    Inicio <i class="fas fa-sort fa-xs"></i>
-                                </a>
-                            </th>
-                            <th>
+                            <th style="width: 140px;">
                                 <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
                                    class="text-decoration-none text-dark">
-                                    Vencimiento <i class="fas fa-sort fa-xs"></i>
+                                    Plazo <i class="fas fa-sort fa-xs"></i>
                                 </a>
                             </th>
-                            <th style="width: 90px;">Plazo</th>
+                            <th style="width: 110px;">Monto Final</th>
+                            <th style="width: 140px;">Estado Pago</th>
+                            <th style="width: 110px;">Convenio</th>
+                            <th style="width: 100px;" class="text-center">Estado</th>
                             <th style="width: 120px;" class="text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -159,73 +152,107 @@
                                 <td>
                                     <strong class="text-dark">{{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}</strong>
                                     <br>
-                                    <small class="text-muted">{{ $inscripcion->membresia->nombre }}</small>
-                                </td>
-                                <td>
-                                    {!! $inscripcion->estado->badge !!}
-                                </td>
-                                <td>
-                                    @php
-                                        $estaPausada = $inscripcion->estaPausada();
-                                    @endphp
-                                    
-                                    @if($estaPausada)
-                                        <span class="badge bg-warning" title="{{ $inscripcion->razon_pausa }}">
-                                            <i class="fas fa-pause-circle fa-fw"></i> 
-                                            {{ $inscripcion->dias_pausa }}d
-                                        </span>
-                                    @else
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-play-circle fa-fw"></i> Activo
-                                        </span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <strong class="text-primary">${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}</strong>
-                                </td>
-                                <td>
-                                    @php
-                                        $estadoPago = $inscripcion->obtenerEstadoPago();
-                                        $montoTotal = $estadoPago['monto_total'];
-                                        $totalAbonado = $estadoPago['total_abonado'];
-                                        $pendiente = $estadoPago['pendiente'];
-                                        $porcentajePagado = $estadoPago['porcentaje_pagado'];
-                                        $estado = $estadoPago['estado'];
-                                    @endphp
-                                    
-                                    @if($estado === 'pagado')
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check-circle fa-fw"></i> Pagado
-                                        </span>
-                                    @elseif($estado === 'parcial')
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-hourglass-half fa-fw"></i> Parcial
-                                        </span>
-                                        <br>
-                                        <small class="text-muted">
-                                            <strong>${{ number_format($totalAbonado, 0, '.', '.') }}</strong> / 
-                                            <strong class="text-danger">${{ number_format($pendiente, 0, '.', '.') }}</strong>
-                                        </small>
-                                    @else
-                                        <span class="badge bg-danger">
-                                            <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
-                                        </span>
-                                    @endif
-                                </td>
-                                <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
-                                <td>
-                                    <small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-dumbbell fa-fw"></i> {{ $inscripcion->membresia->nombre }}
+                                    </small>
                                 </td>
                                 <td>
                                     @php
                                         $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
                                     @endphp
-                                    @if($diasRestantes > 7)
-                                        <span class="badge bg-info">{{ $diasRestantes }}d</span>
-                                    @elseif($diasRestantes > 0)
-                                        <span class="badge bg-warning">{{ $diasRestantes }}d</span>
+                                    <div class="d-flex flex-column">
+                                        @if($diasRestantes > 30)
+                                            <span class="badge bg-success mb-1">
+                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }} días
+                                            </span>
+                                        @elseif($diasRestantes > 7)
+                                            <span class="badge bg-info mb-1">
+                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }} días
+                                            </span>
+                                        @elseif($diasRestantes > 0)
+                                            <span class="badge bg-warning mb-1">
+                                                <i class="fas fa-clock fa-fw"></i> {{ $diasRestantes }} días
+                                            </span>
+                                        @else
+                                            <span class="badge bg-danger mb-1">
+                                                <i class="fas fa-exclamation-triangle fa-fw"></i> Vencida
+                                            </span>
+                                        @endif
+                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                            Hasta: {{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong class="text-primary">
+                                        ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    @php
+                                        $estadoPago = $inscripcion->obtenerEstadoPago();
+                                        $estado = $estadoPago['estado'];
+                                        $totalAbonado = $estadoPago['total_abonado'];
+                                        $pendiente = $estadoPago['pendiente'];
+                                        $porcentaje = $estadoPago['porcentaje_pagado'];
+                                    @endphp
+                                    
+                                    <div class="d-flex flex-column">
+                                        @if($estado === 'pagado')
+                                            <span class="badge bg-success mb-1">
+                                                <i class="fas fa-check-circle fa-fw"></i> Pagado
+                                            </span>
+                                        @elseif($estado === 'parcial')
+                                            <span class="badge bg-warning mb-1">
+                                                <i class="fas fa-hourglass-half fa-fw"></i> Parcial
+                                            </span>
+                                            <small class="text-muted" style="font-size: 0.75rem;">
+                                                ${{ number_format($totalAbonado, 0, '.', '.') }} de ${{ number_format($totalAbonado + $pendiente, 0, '.', '.') }}
+                                            </small>
+                                        @else
+                                            <span class="badge bg-danger mb-1">
+                                                <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
+                                            </span>
+                                        @endif
+                                        
+                                        <!-- Progress bar -->
+                                        <div class="progress mt-1" style="height: 4px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ min($porcentaje, 100) }}%; background-color: {{ $porcentaje >= 100 ? '#28a745' : ($porcentaje >= 50 ? '#ffc107' : '#dc3545') }};" 
+                                                 aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if($inscripcion->id_convenio)
+                                        <span class="badge bg-primary" title="Convenio aplicado">
+                                            <i class="fas fa-handshake fa-fw"></i> Sí
+                                        </span>
+                                        @if($inscripcion->convenio)
+                                            <br>
+                                            <small class="text-muted">{{ $inscripcion->convenio->nombre }}</small>
+                                        @endif
                                     @else
-                                        <span class="badge bg-danger">Vencida</span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-minus fa-fw"></i> No
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @php
+                                        $estaPausada = $inscripcion->estaPausada();
+                                    @endphp
+                                    
+                                    @if($estaPausada)
+                                        <span class="badge bg-warning" title="Pausada - {{ $inscripcion->razon_pausa }}">
+                                            <i class="fas fa-pause-circle fa-fw"></i> 
+                                            Pausada
+                                            <br>
+                                            <small>{{ $inscripcion->dias_pausa }}d restantes</small>
+                                        </span>
+                                    @else
+                                        {!! $inscripcion->estado->badge !!}
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -247,7 +274,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2"></i><br>
                                     <strong>No hay inscripciones registradas</strong>
                                 </td>
@@ -285,10 +312,93 @@
         .table th {
             white-space: nowrap;
             vertical-align: middle;
+            font-weight: 600;
+            background-color: #f8f9fa;
+            border-top: 2px solid #dee2e6;
         }
         
         .table td {
             vertical-align: middle;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f0f5ff;
+        }
+        
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        
+        .progress {
+            border-radius: 3px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        
+        /* Estado column styling */
+        td:has(.badge.bg-success) {
+            font-weight: 500;
+        }
+        
+        /* Plazo column - compact layout */
+        .plazo-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .plazo-cell .badge {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Cliente column - enhanced */
+        .cliente-cell strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Pago status with progress */
+        .pago-status {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        
+        .pago-status .badge {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Hover effects */
+        .btn-group-sm {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        tr:hover .btn-group-sm {
+            opacity: 1;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .table-sm td {
+                padding: 0.5rem 0.3rem;
+            }
+            
+            .badge {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.75rem;
+            }
         }
     </style>
 @endpush
