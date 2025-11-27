@@ -175,19 +175,25 @@ class PagoApiController extends Controller
     /**
      * GET /api/inscripciones/{id}/saldo
      * Obtener saldo pendiente de una inscripción
+     * Devuelve datos en formato esperado por el formulario de pagos
      */
     public function getSaldo($id)
     {
         try {
             $inscripcion = Inscripcion::findOrFail($id);
+            $precioFinal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
             return response()->json([
-                'exito' => true,
-                'datos' => $inscripcion->getDetalleAbonos(),
+                'total_a_pagar' => $precioFinal,
+                'total_abonado' => $inscripcion->getTotalAbonado(),
+                'saldo_pendiente' => $inscripcion->getSaldoPendiente(),
+                'porcentaje_pagado' => ($precioFinal > 0) 
+                    ? round(($inscripcion->getTotalAbonado() / $precioFinal) * 100, 2) 
+                    : 0,
+                'estado' => $inscripcion->estaPagadaAlDia() ? 'Pagada' : 'Pendiente',
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'exito' => false,
                 'error' => 'Inscripción no encontrada',
             ], 404);
         }
