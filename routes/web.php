@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\MembresiaApiController;
 use App\Http\Controllers\Api\ClienteApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\PausaApiController;
+use App\Http\Controllers\Api\PagoApiController;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\Cliente;
@@ -102,4 +103,12 @@ Route::prefix('api')->group(function () {
     Route::post('/pausas/{id}/reanudar', [PausaApiController::class, 'reanudar']);
     Route::get('/pausas/{id}/info', [PausaApiController::class, 'info']);
     Route::post('/pausas/verificar-expiradas', [PausaApiController::class, 'verificarExpiradas']);
+    
+    // Pagos - API REST para pagos
+    Route::post('/pagos', [PagoApiController::class, 'store']);
+    Route::get('/pagos/{id}', [PagoApiController::class, 'show']);
+    Route::put('/pagos/{id}', [PagoApiController::class, 'update']);
+    Route::delete('/pagos/{id}', [PagoApiController::class, 'destroy']);
+    Route::get('/inscripciones/{id}/saldo', [PagoApiController::class, 'getSaldo']);
+    Route::post('/pagos/calcular-cuotas', [PagoApiController::class, 'calcularCuotas']);
 });

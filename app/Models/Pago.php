@@ -61,19 +61,21 @@ class Pago extends Model
 
     protected $fillable = [
         'uuid',
-        'grupo_pago',
         'id_inscripcion',
         'monto_abonado',
         'monto_pendiente',
         'id_motivo_descuento',
         'fecha_pago',
-        'id_metodo_pago',
+        'id_metodo_pago_principal',
+        'metodos_pago_json',
         'referencia_pago',
-        'id_estado',
-        'cantidad_cuotas',
+        'es_plan_cuotas',
         'numero_cuota',
+        'cantidad_cuotas',
         'monto_cuota',
         'fecha_vencimiento_cuota',
+        'grupo_pago',
+        'id_estado',
         'observaciones',
     ];
 
@@ -106,14 +108,9 @@ class Pago extends Model
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');
     }
 
-    public function cliente()
+    public function metodoPagoPrincipal()
     {
-        return $this->belongsTo(Cliente::class, 'id_cliente');
-    }
-
-    public function metodoPago()
-    {
-        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago');
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago_principal');
     }
 
     public function estado()
@@ -132,7 +129,7 @@ class Pago extends Model
     public function cuotasRelacionadas()
     {
         if (!$this->grupo_pago) {
-            return [];
+            return collect([]);
         }
         return self::where('grupo_pago', $this->grupo_pago)
             ->orderBy('numero_cuota')
@@ -140,87 +137,119 @@ class Pago extends Model
     }
 
     /**
-     * Obtener el monto total que debe pagar por la inscripción
-     * (precio_final = precio_base - descuento)
+     * ¿Este pago es parte de un plan de cuotas?
      */
-    public function getMontoTotalAttribute()
+    public function esParteDeCuotas()
     {
-        return $this->inscripcion->precio_final ?? $this->inscripcion->precio_base;
+        return $this->es_plan_cuotas ?? false;
     }
 
     /**
-     * Obtener el descuento aplicado en la inscripción
-     */
-    public function getDescuentoAplicadoAttribute()
-    {
-        return $this->inscripcion->descuento_aplicado;
-    }
-
-    /**
-     * Obtener la fecha de inicio del período (fecha_inicio de inscripción)
-     */
-    public function getPeriodoInicioAttribute()
-    {
-        return $this->inscripcion->fecha_inicio;
-    }
-
-    /**
-     * Obtener la fecha de fin del período (fecha_vencimiento de inscripción)
-     */
-    public function getPeriodoFinAttribute()
-    {
-        return $this->inscripcion->fecha_vencimiento;
-    }
-
-    /**
-     * Obtener el cliente de la inscripción
-     */
-    public function getClienteAttribute()
-    {
-        return $this->inscripcion->cliente;
-    }
-
-    /**
-     * Calcular el estado dinámico basado en montos y fechas
-     */
-    public function calculateEstadoDinamico()
-    {
-        $montoTotal = $this->getMontoTotalAttribute();
-        $montoPendiente = $this->monto_pendiente;
-        $hoy = now();
-
-        // Si todo está pagado
-        if ($montoPendiente <= 0) {
-            return 102; // Pagado
-        }
-
-        // Si hay monto pendiente pero aún está dentro de plazo
-        if ($this->fecha_vencimiento_cuota && $this->fecha_vencimiento_cuota->isBefore($hoy)) {
-            return 104; // Vencido
-        }
-
-        // Si hay monto abonado pero no todo
-        if ($this->monto_abonado > 0) {
-            return 103; // Parcial
-        }
-
-        // Si no hay nada pagado
-        return 101; // Pendiente
-    }
-
-    /**
-     * Determinar si esta cuota es la última del plan
+     * ¿Es la última cuota?
      */
     public function esUltimaCuota()
     {
+        if (!$this->esParteDeCuotas()) {
+            return false;
+        }
         return $this->numero_cuota >= $this->cantidad_cuotas;
     }
 
     /**
-     * Validar que el número de cuota sea válido
+     * ¿Es una cuota válida?
      */
     public function esNumeroCuotaValido()
     {
+        if (!$this->esParteDeCuotas()) {
+            return true;
+        }
         return $this->numero_cuota > 0 && $this->numero_cuota <= $this->cantidad_cuotas;
+    }
+
+    /**
+     * ¿Es pago mixto (múltiples métodos)?
+     */
+    public function esPagoMixto()
+    {
+        return $this->metodos_pago_json && count($this->metodos_pago_json) > 1;
+    }
+
+    /**
+     * Obtener desglose de métodos de pago
+     */
+    public function obtenerDesglose()
+    {
+        if (!$this->metodos_pago_json) {
+            return [
+                $this->metodoPagoPrincipal->codigo ?? 'desconocido' => $this->monto_abonado,
+            ];
+        }
+        return $this->metodos_pago_json;
+    }
+
+    /**
+     * Obtener saldo pendiente de la inscripción
+     */
+    public function getSaldoPendiente()
+    {
+        if (!$this->inscripcion) {
+            return 0;
+        }
+
+        $totalAbonado = $this->inscripcion->pagos()
+            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
+            ->sum('monto_abonado');
+
+        return max(0, $this->inscripcion->precio_final - $totalAbonado);
+    }
+
+    /**
+     * Obtener total abonado hasta ahora
+     */
+    public function getTotalAbonado()
+    {
+        if (!$this->inscripcion) {
+            return 0;
+        }
+
+        return $this->inscripcion->pagos()
+            ->whereIn('id_estado', [102, 103])
+            ->sum('monto_abonado');
+    }
+
+    /**
+     * Calcular el estado dinámico basado en montos y fechas
+     * 101: PENDIENTE
+     * 102: PAGADO
+     * 103: PARCIAL
+     * 104: VENCIDO
+     */
+    public function calculateEstadoDinamico()
+    {
+        if (!$this->inscripcion) {
+            return 101;
+        }
+
+        $saldoPendiente = $this->getSaldoPendiente();
+        $totalAbonado = $this->getTotalAbonado();
+
+        // Si todo está pagado
+        if ($saldoPendiente <= 0) {
+            return 102; // PAGADO
+        }
+
+        // Si es cuota vencida
+        if ($this->esParteDeCuotas() &&
+            $this->fecha_vencimiento_cuota &&
+            now()->isAfter($this->fecha_vencimiento_cuota)) {
+            return 104; // VENCIDO
+        }
+
+        // Si hay algo abonado (parcial)
+        if ($totalAbonado > 0 || $this->monto_abonado > 0) {
+            return 103; // PARCIAL
+        }
+
+        return 101; // PENDIENTE
     }
 }

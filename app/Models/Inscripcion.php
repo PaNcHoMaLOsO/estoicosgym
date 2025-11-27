@@ -373,6 +373,17 @@ class Inscripcion extends Model
     }
 
     /**
+     * Obtener total abonado hasta ahora
+     * @return float
+     */
+    public function getTotalAbonado()
+    {
+        return $this->pagos()
+            ->whereIn('id_estado', [102, 103])
+            ->sum('monto_abonado');
+    }
+
+    /**
      * ¿Está pagada al día esta inscripción?
      * @return bool
      */
@@ -391,5 +402,26 @@ class Inscripcion extends Model
             ->whereIn('id_estado', [102, 103])
             ->latest('fecha_pago')
             ->first();
+    }
+
+    /**
+     * Obtener detalle completo de abonos
+     * @return array
+     */
+    public function getDetalleAbonos()
+    {
+        $precioFinal = $this->precio_final ?? $this->precio_base;
+        $totalAbonado = $this->getTotalAbonado();
+        $saldoPendiente = $this->getSaldoPendiente();
+
+        return [
+            'precio_final' => $precioFinal,
+            'total_abonado' => $totalAbonado,
+            'saldo_pendiente' => $saldoPendiente,
+            'porcentaje_pagado' => ($precioFinal > 0) 
+                ? round(($totalAbonado / $precioFinal) * 100, 2) 
+                : 0,
+            'estado' => $this->estaPagadaAlDia() ? 'Pagada' : 'Pendiente',
+        ];
     }
 }
