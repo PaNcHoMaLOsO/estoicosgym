@@ -105,6 +105,14 @@ class PagoController extends Controller
         ]);
 
         $inscripcion = Inscripcion::find($validated['id_inscripcion']);
+        
+        // Verificar que la inscripción exista
+        if (!$inscripcion) {
+            return back()->withErrors([
+                'id_inscripcion' => 'La inscripción especificada no existe'
+            ])->withInput();
+        }
+
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
         // VALIDACIONES COMPREHENSIVAS
@@ -117,7 +125,7 @@ class PagoController extends Controller
         }
 
         // 2. Validar que número de cuota no sea mayor que cantidad de cuotas
-        if ($validated['numero_cuota'] > $validated['cantidad_cuotas']) {
+        if ($validated['numero_cuota'] && $validated['cantidad_cuotas'] && $validated['numero_cuota'] > $validated['cantidad_cuotas']) {
             return back()->withErrors([
                 'numero_cuota' => 'El número de cuota no puede ser mayor que la cantidad total de cuotas'
             ])->withInput();
@@ -224,9 +232,7 @@ class PagoController extends Controller
             'referencia_pago' => 'nullable|string|max:100|unique:pagos,referencia_pago,' . $pago->id,
             'observaciones' => 'nullable|string|max:500',
         ]);
-
         $inscripcion = Inscripcion::find($validated['id_inscripcion']);
-        $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
         // VALIDACIONES COMPREHENSIVAS
 
@@ -237,8 +243,10 @@ class PagoController extends Controller
             ])->withInput();
         }
 
+        $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
+
         // 2. Validar que número de cuota no sea mayor que cantidad de cuotas
-        if ($validated['numero_cuota'] > $validated['cantidad_cuotas']) {
+        if ($validated['numero_cuota'] && $validated['cantidad_cuotas'] && $validated['numero_cuota'] > $validated['cantidad_cuotas']) {
             return back()->withErrors([
                 'numero_cuota' => 'El número de cuota no puede ser mayor que la cantidad total de cuotas'
             ])->withInput();
