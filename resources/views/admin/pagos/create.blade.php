@@ -714,13 +714,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="fecha_pago">Fecha de Pago <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="fecha_pago" required>
+                            <input type="date" class="form-control" id="fecha_pago" name="fecha_pago" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="referencia_pago">Referencia (Comprobante)</label>
-                            <input type="text" class="form-control" id="referencia_pago" placeholder="Ej: Transferencia #123456">
+                            <input type="text" class="form-control" id="referencia_pago" name="referencia_pago" placeholder="Ej: Transferencia #123456">
                         </div>
                     </div>
                 </div>
@@ -729,7 +729,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="cantidad_cuotas">Cantidad de Cuotas</label>
-                            <select class="form-control" id="cantidad_cuotas">
+                            <select class="form-control" id="cantidad_cuotas" name="cantidad_cuotas">
                                 <option value="1">1 cuota</option>
                                 <option value="2">2 cuotas</option>
                                 <option value="3">3 cuotas</option>
@@ -742,7 +742,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="observaciones">Observaciones</label>
-                            <textarea class="form-control" id="observaciones" rows="3" placeholder="Notas adicionales..."></textarea>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales..."></textarea>
                         </div>
                     </div>
                 </div>
