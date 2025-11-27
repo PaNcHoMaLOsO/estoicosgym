@@ -26,16 +26,16 @@
     @endif
 
     <!-- Filtros -->
-    <div class="card card-outline card-info collapsed-card mb-3">
+    <div class="card card-outline card-info mb-3">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
             <div class="card-tools pull-right">
                 <button type="button" class="btn btn-box-tool" data-widget="collapse">
-                    <i class="fa fa-plus"></i>
+                    <i class="fa fa-minus"></i>
                 </button>
             </div>
         </div>
-        <div class="card-body" style="display:none;">
+        <div class="card-body">
             <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-horizontal">
                 <div class="row">
                     <div class="col-md-3">
