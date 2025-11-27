@@ -4,51 +4,94 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * TABLA PAGOS - ARQUITECTURA HÍBRIDA
+ * 
+ * Almacena todos los pagos y abonos de inscripciones
+ * Soporta:
+ * - Pagos simples (monto completo)
+ * - Abonos parciales
+ * - Planes de cuotas (múltiples cuotas)
+ * - Pagos mixtos (múltiples métodos)
+ */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::create('pagos', function (Blueprint $table) {
+            // ========== IDENTIFICADORES ==========
             $table->unsignedInteger('id')->autoIncrement()->primary();
-            $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
-            $table->unsignedInteger('id_inscripcion');
-            $table->unsignedInteger('id_cliente')->comment('Redundante pero útil para queries');
+            $table->uuid('uuid')->unique()->comment('UUID único para identificación externa en URLs');
+            $table->uuid('grupo_pago')->nullable()
+                  ->comment('UUID para agrupar cuotas del mismo plan de pago');
 
-            $table->decimal('monto_total', 10, 2)->comment('Total a pagar');
-            $table->decimal('monto_abonado', 10, 2)->comment('Lo que se pagó en este registro');
-            $table->decimal('monto_pendiente', 10, 2)->comment('Saldo restante');
+            // ========== RELACIONES PRINCIPALES ==========
+            $table->unsignedInteger('id_inscripcion')
+                  ->comment('FK: Inscripción a la que pertenece este pago');
+            $table->unsignedInteger('id_metodo_pago_principal')
+                  ->comment('FK: Método principal de pago (efectivo, tarjeta, transferencia)');
+            $table->unsignedInteger('id_estado')
+                  ->comment('FK: Estado del pago (Pendiente, Pagado, Parcial, Vencido)');
+            $table->unsignedInteger('id_motivo_descuento')->nullable()
+                  ->comment('FK: Si aplica descuento');
 
-            $table->decimal('descuento_aplicado', 10, 2)->default(0);
-            $table->unsignedInteger('id_motivo_descuento')->nullable();
+            // ========== MONTOS (NO DESNORMALIZAR) ==========
+            $table->decimal('monto_abonado', 10, 2)
+                  ->comment('Cantidad abonada en este registro de pago');
+            $table->decimal('monto_pendiente', 10, 2)
+                  ->comment('Saldo restante de la inscripción');
 
-            $table->date('fecha_pago');
-            $table->date('periodo_inicio')->comment('Inicio del período cubierto');
-            $table->date('periodo_fin')->comment('Fin del período cubierto');
+            // ========== FECHAS ==========
+            $table->date('fecha_pago')
+                  ->comment('Fecha en que se realizó el pago');
+            $table->date('fecha_vencimiento_cuota')->nullable()
+                  ->comment('Si es cuota, fecha de vencimiento de esta cuota');
 
-            $table->unsignedInteger('id_metodo_pago');
-            $table->string('referencia_pago', 100)->nullable()->comment('Futuro: Nº de transferencia, comprobante');
+            // ========== REFERENCIA Y MÉTODOS MÚLTIPLES ==========
+            $table->string('referencia_pago', 100)->nullable()
+                  ->comment('Número de transferencia, comprobante, referencia');
+            $table->json('metodos_pago_json')->nullable()
+                  ->comment('{"efectivo": 100, "tarjeta": 50} para pagos mixtos');
 
-            $table->unsignedInteger('id_estado')->comment('Pendiente, Pagado, Parcial, Vencido');
+            // ========== CUOTAS ==========
+            $table->boolean('es_plan_cuotas')->default(false)
+                  ->comment('¿Este pago es parte de un plan de cuotas?');
+            $table->unsignedTinyInteger('cantidad_cuotas')->nullable()
+                  ->comment('Total de cuotas en el plan (NULL si no es plan)');
+            $table->unsignedTinyInteger('numero_cuota')->nullable()
+                  ->comment('Número de cuota actual (NULL si no es plan)');
+            $table->decimal('monto_cuota', 10, 2)->nullable()
+                  ->comment('Monto individual de cada cuota');
 
-            // Campos para manejo de cuotas
-            $table->unsignedTinyInteger('cantidad_cuotas')->default(1)->comment('Total de cuotas en que se pagará');
-            $table->unsignedTinyInteger('numero_cuota')->default(1)->comment('Cuota número (ej: 1 de 3)');
-            $table->decimal('monto_cuota', 10, 2)->nullable()->comment('Monto de cada cuota');
-            $table->date('fecha_vencimiento_cuota')->nullable()->comment('Fecha de vencimiento para esta cuota');
+            // ========== OBSERVACIONES ==========
+            $table->text('observaciones')->nullable()
+                  ->comment('Notas adicionales sobre el pago');
 
-            $table->text('observaciones')->nullable();
+            // ========== TIMESTAMPS ==========
             $table->timestamps();
 
-            $table->foreign('id_inscripcion')->references('id')->on('inscripciones')->onDelete('restrict');
-            $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
-            $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
-            $table->foreign('id_metodo_pago')->references('id')->on('metodos_pago')->onDelete('restrict');
-            $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
+            // ========== FOREIGN KEYS ==========
+            $table->foreign('id_inscripcion')
+                  ->references('id')->on('inscripciones')
+                  ->onDelete('restrict');
+            $table->foreign('id_metodo_pago_principal')
+                  ->references('id')->on('metodos_pago')
+                  ->onDelete('restrict');
+            $table->foreign('id_estado')
+                  ->references('id')->on('estados')
+                  ->onDelete('restrict');
+            $table->foreign('id_motivo_descuento')
+                  ->references('id')->on('motivos_descuento')
+                  ->onDelete('set null');
 
-            $table->index('id_cliente');
+            // ========== ÍNDICES ==========
             $table->index('id_inscripcion');
-            $table->index('fecha_pago');
             $table->index('id_estado');
+            $table->index('fecha_pago');
+            $table->index('id_metodo_pago_principal');
+            $table->index('es_plan_cuotas');
+            $table->index('grupo_pago');
+            $table->index(['id_metodo_pago_principal', 'referencia_pago']);
         });
     }
 
@@ -57,3 +100,4 @@ return new class extends Migration
         Schema::dropIfExists('pagos');
     }
 };
+
