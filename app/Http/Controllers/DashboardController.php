@@ -42,7 +42,7 @@ class DashboardController extends Controller
         // Últimos pagos con relaciones eager loaded
         $ultimosPagos = Pago::with(['inscripcion' => function($q) {
             $q->with('cliente');
-        }, 'metodoPagoPrincipal', 'estado'])
+        }, 'metodoPago', 'estado'])
             ->orderBy('fecha_pago', 'desc')
             ->limit(8)
             ->get();
