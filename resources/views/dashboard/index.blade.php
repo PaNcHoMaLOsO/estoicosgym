@@ -277,8 +277,8 @@
                                             </a>
                                         </td>
                                         <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
-                                        <td><small>{{ $pago->metodoPago?->nombre }}</small></td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
+                                        <td><small>{{ $pago->metodoPagoPrincipal?->nombre }}</small></td>
+                                        <td><span class="badge badge-{{ $pago->estado?->color ?? 'secondary' }}">{{ $pago->estado?->nombre }}</span></td>
                                         <td><small>{{ $pago->fecha_pago->format('d/m H:i') }}</small></td>
                                     </tr>
                                 @endforeach
@@ -330,7 +330,7 @@
                                             </a>
                                         </td>
                                         <td><small>{{ $inscripcion->membresia?->nombre }}</small></td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
+                                        <td><span class="badge badge-{{ $inscripcion->estado?->color ?? 'secondary' }}">{{ $inscripcion->estado?->nombre }}</span></td>
                                         <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
                                         <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
                                     </tr>
