@@ -297,7 +297,7 @@
                                     <td>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</td>
                                     <td>${{ number_format($inscripcion->precio_base, 0, '.', '.') }}</td>
                                     <td>
-                                        <span class="badge badge-{{ $inscripcion->estado->id == 1 ? 'warning' : ($inscripcion->estado->id == 2 ? 'success' : 'secondary') }}">
+                                        <span class="badge badge-{{ in_array($inscripcion->estado->nombre, ['Activa']) ? 'success' : (in_array($inscripcion->estado->nombre, ['Pausada']) ? 'warning' : 'secondary') }}">
                                             {{ $inscripcion->estado->nombre }}
                                         </span>
                                     </td>

@@ -68,8 +68,8 @@ Archivo: `app/Http/Controllers/Admin/PagoController.php` (líneas 215-268)
 // Antes: $pago->update([...]) sin validar estado
 
 // Ahora: Lógica completa
-$estadoPagado = Estado::where('codigo', 102)->firstOrFail(); // Pagado
-$estadoParcial = Estado::where('codigo', 103)->firstOrFail(); // Parcial
+$estadoPagado = Estado::where('codigo', 201)->firstOrFail(); // Pagado
+$estadoParcial = Estado::where('codigo', 202)->firstOrFail(); // Parcial
 $nuevoIdEstado = $montoAbonado >= $montoTotal ? $estadoPagado->id : $estadoParcial->id;
 ```
 

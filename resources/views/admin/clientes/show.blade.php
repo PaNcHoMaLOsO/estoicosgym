@@ -311,8 +311,10 @@
                     <i class="fas fa-edit"></i> Editar
                 </a>
                 @php
-                    $puedoDesactivar = !$cliente->inscripciones()->where('id_estado', 1)->exists() && 
-                                      !$cliente->pagos()->where('id_estado', 101)->exists();
+                    $estadoActiva = \App\Models\Estado::where('codigo', 100)->first();
+                    $estadoPendiente = \App\Models\Estado::where('codigo', 200)->first();
+                    $puedoDesactivar = !$cliente->inscripciones()->where('id_estado', $estadoActiva?->id)->exists() && 
+                                      !$cliente->pagos()->where('id_estado', $estadoPendiente?->id)->exists();
                 @endphp
                 <button type="button" class="btn {{ $puedoDesactivar ? 'btn-danger' : 'btn-secondary disabled' }}" 
                         {{ !$puedoDesactivar ? 'disabled' : '' }}

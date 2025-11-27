@@ -166,8 +166,10 @@
                                                             <strong>Membresía:</strong> {{ $membresia->nombre }}<br>
                                                             <strong>Inscripciones activas:</strong> 
                                                             @php
+                                                                $estadoCancelada = \App\Models\Estado::where('codigo', 103)->first();
+                                                                $estadoVencida = \App\Models\Estado::where('codigo', 102)->first();
                                                                 $activas = $membresia->inscripciones()
-                                                                    ->whereNotIn('id_estado', [3, 5])
+                                                                    ->whereNotIn('id_estado', [$estadoCancelada?->id, $estadoVencida?->id])
                                                                     ->count();
                                                             @endphp
                                                             {{ $activas }}

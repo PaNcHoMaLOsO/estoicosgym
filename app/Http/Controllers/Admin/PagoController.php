@@ -74,8 +74,9 @@ class PagoController extends Controller
     public function create(Request $request)
     {
         // Obtener todas las inscripciones activas con sus relaciones
+        $estadoActiva = Estado::where('codigo', 100)->first(); // Activa
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
-            ->where('id_estado', 1) // Solo inscripciones activas
+            ->where('id_estado', $estadoActiva->id) // Solo inscripciones activas
             ->orderBy('id', 'desc')
             ->get();
         
@@ -109,7 +110,8 @@ class PagoController extends Controller
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
         // Validar estado de inscripción
-        if ($inscripcion->id_estado != 1) {
+        $estadoActiva = Estado::where('codigo', 100)->first();
+        if ($inscripcion->id_estado != $estadoActiva->id) {
             return back()->withErrors([
                 'id_inscripcion' => "La inscripción no está activa"
             ])->withInput();

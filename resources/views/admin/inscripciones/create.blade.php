@@ -194,7 +194,7 @@
         </div>
 
         <!-- Estado está oculto, siempre será "Activa" -->
-        <input type="hidden" name="id_estado" value="201">
+        <input type="hidden" name="id_estado" value="{{ $estadoActiva->id }}"
 
         <!-- PASO 3: DESCUENTOS (Opcional) -->
         <div class="card card-warning mb-4">

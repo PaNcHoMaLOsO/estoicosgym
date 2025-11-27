@@ -285,7 +285,7 @@ Cada pago registrado guarda:
     'id_metodo_pago_principal' => id,
     'referencia_pago'          => string|null,
     'observaciones'            => string + "[Tipo: abono|completo|mixto]",
-    'id_estado'                => 102 (Pagado) o 103 (Parcial),
+    'id_estado'                => 201 (Pagado) o 202 (Parcial),
 ]
 ```
 

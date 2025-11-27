@@ -42,8 +42,9 @@ class InscripcionController extends Controller
         $estados = Estado::whereIn('id', [201, 202, 203, 205, 206])->get();
         $convenios = Convenio::where('activo', true)->get();
         $metodosPago = \App\Models\MetodoPago::where('activo', true)->get();
+        $estadoActiva = Estado::where('codigo', 100)->first();
         
-        return view('admin.inscripciones.create', compact('clientes', 'membresias', 'motivos', 'estados', 'convenios', 'metodosPago'));
+        return view('admin.inscripciones.create', compact('clientes', 'membresias', 'motivos', 'estados', 'convenios', 'metodosPago', 'estadoActiva'));
     }
 
     public function store(Request $request)

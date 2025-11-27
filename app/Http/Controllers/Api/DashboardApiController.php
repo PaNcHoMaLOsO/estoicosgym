@@ -19,17 +19,25 @@ class DashboardApiController extends Controller
     {
         $hoy = Carbon::now();
         
+        // Obtener estados por nombre (más robusto que por ID)
         $estadoActiva = Estado::where('nombre', 'Activa')->first();
-        $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 1;
+        $estadoVencida = Estado::where('nombre', 'Vencida')->first();
+        $estadoPausada = Estado::where('nombre', 'Pausada')->first();
+        $estadoVencidoPago = Estado::where('nombre', 'Vencido')->where('categoria', 'pago')->first();
+        
+        $idEstadoActiva = $estadoActiva?->id ?? null;
+        $idEstadoVencida = $estadoVencida?->id ?? null;
+        $idEstadoPausada = $estadoPausada?->id ?? null;
+        $idEstadoVencidoPago = $estadoVencidoPago?->id ?? null;
         
         $totalClientes = Cliente::where('activo', true)->count();
-        $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
+        $totalInscripciones = $idEstadoActiva ? Inscripcion::where('id_estado', $idEstadoActiva)->count() : 0;
         $pagosDelMes = Pago::whereYear('created_at', $hoy->year)
             ->whereMonth('created_at', $hoy->month)
             ->sum('monto_abonado');
         $ingresosTotales = Pago::sum('monto_abonado');
-        $pagosVencidos = Pago::where('id_estado', Estado::where('nombre', 'Vencido')->where('categoria', 'pago')->first()?->id ?? 304)->count();
-        $inscripcionesVencidas = Inscripcion::where('id_estado', Estado::where('nombre', 'Vencida')->first()?->id ?? 202)->count();
+        $pagosVencidos = $idEstadoVencidoPago ? Pago::where('id_estado', $idEstadoVencidoPago)->count() : 0;
+        $inscripcionesVencidas = $idEstadoVencida ? Inscripcion::where('id_estado', $idEstadoVencida)->count() : 0;
 
         return response()->json([
             'clientes' => [
@@ -41,7 +49,7 @@ class DashboardApiController extends Controller
                 'total' => Inscripcion::count(),
                 'activas' => $totalInscripciones,
                 'vencidas' => $inscripcionesVencidas,
-                'pausadas' => Inscripcion::where('id_estado', Estado::where('nombre', 'Pausada')->first()?->id ?? 203)->count(),
+                'pausadas' => $idEstadoPausada ? Inscripcion::where('id_estado', $idEstadoPausada)->count() : 0,
             ],
             'pagos' => [
                 'mes_actual' => $pagosDelMes,

@@ -197,7 +197,7 @@ $estadoId = ($montoAbonado >= $montoTotal) ? 102 : 103;
 -- Foreign keys verifican integridad
 UPDATE pagos SET 
     monto_abonado = 50000,
-    id_estado = 103,  -- Foreign key valida
+    id_estado = 202,  -- Foreign key valida (Parcial)
     updated_at = NOW()
 WHERE id = 1;
 ```

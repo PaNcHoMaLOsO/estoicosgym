@@ -225,10 +225,11 @@ class Inscripcion extends Model
             $diasPausa = now()->diffInDays($this->fecha_pausa_fin);
             $nuevaFechaVencimiento = Carbon::parse($this->fecha_vencimiento)->addDays($diasPausa);
             
+            $estadoActiva = Estado::where('codigo', 100)->first(); // Activa
             $this->update([
                 'pausada' => false,
                 'fecha_vencimiento' => $nuevaFechaVencimiento,
-                'id_estado' => 1, // Activa
+                'id_estado' => $estadoActiva->id, // Activa
             ]);
         }
 
@@ -305,8 +306,9 @@ class Inscripcion extends Model
         $totalAbonado = $allPagos->sum('monto_abonado');
         
         // También contar pagos por estado para debugging
-        $pagosCompletados = $allPagos->where('id_estado', 102)->sum('monto_abonado');
-        $pagosOtrosEstados = $allPagos->where('id_estado', '!=', 102)->sum('monto_abonado');
+        $estadoPagado = Estado::where('codigo', 201)->first();
+        $pagosCompletados = $allPagos->where('id_estado', $estadoPagado->id)->sum('monto_abonado');
+        $pagosOtrosEstados = $allPagos->where('id_estado', '!=', $estadoPagado->id)->sum('monto_abonado');
         
         // Calcular pendiente
         $pendiente = $montoTotal - $totalAbonado;

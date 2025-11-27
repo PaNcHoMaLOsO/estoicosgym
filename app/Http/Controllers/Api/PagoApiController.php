@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Pago;
 use App\Models\Inscripcion;
+use App\Models\Estado;
 use App\Models\Auditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -39,7 +40,8 @@ class PagoApiController extends Controller
             $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
 
             // VALIDACIÓN 1: Inscripción debe estar ACTIVA
-            if ($inscripcion->id_estado != 1) {
+            $estadoActiva = Estado::where('codigo', 100)->first();
+            if ($inscripcion->id_estado != $estadoActiva->id) {
                 throw ValidationException::withMessages([
                     'error' => 'La inscripción no está activa',
                 ]);
@@ -158,8 +160,9 @@ class PagoApiController extends Controller
                 'observaciones' => $validated['observaciones'] ?? null,
             ]);
 
-            // Cuotas nuevas inician como PENDIENTE (101)
-            $pago->id_estado = 101;
+            // Cuotas nuevas inician como PENDIENTE (200)
+            $estadoPendiente = Estado::where('codigo', 200)->first();
+            $pago->id_estado = $estadoPendiente->id;
             $pago->save();
 
             $pagos[] = $pago;
@@ -312,7 +315,8 @@ class PagoApiController extends Controller
             $pago = Pago::findOrFail($id);
             
             // No permitir eliminar si está pagado
-            if ($pago->id_estado == 102) {
+            $estadoPagado = Estado::where('codigo', 201)->first();
+            if ($pago->id_estado == $estadoPagado->id) {
                 throw new \Exception('No se puede eliminar un pago ya completado');
             }
 

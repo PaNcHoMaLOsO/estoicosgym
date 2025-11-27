@@ -172,7 +172,7 @@ TABLA: pagos
 │  └── observaciones         [Nota... [Tipo: abono]]
 │
 └── ESTADO:
-   ├── id_estado             [103] ← 102=Pagado, 103=Parcial
+   ├── id_estado             [202] ← 201=Pagado, 202=Parcial
    ├── created_at
    └── updated_at
 
