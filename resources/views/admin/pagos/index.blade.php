@@ -215,13 +215,3 @@
         </div>
     </div>
 @stop
-
-        <div class="card-footer">
-            <nav aria-label="Page navigation">
-                <div class="d-flex justify-content-center">
-                    {{ $pagos->links('pagination::bootstrap-4') }}
-                </div>
-            </nav>
-        </div>
-    </div>
-@stop
