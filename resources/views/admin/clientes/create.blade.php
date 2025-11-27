@@ -621,17 +621,17 @@
                             @enderror
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="id_metodo_pago" class="form-label">Método de Pago <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
-                                    id="id_metodo_pago" name="id_metodo_pago">
+                            <label for="id_metodo_pago_principal" class="form-label">Método de Pago <span class="text-danger">*</span></label>
+                            <select class="form-control @error('id_metodo_pago_principal') is-invalid @enderror" 
+                                    id="id_metodo_pago_principal" name="id_metodo_pago_principal">
                                 <option value="">-- Seleccionar --</option>
                                 @foreach($metodos_pago as $metodo)
-                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago_principal') == $metodo->id ? 'selected' : '' }}>
                                         {{ $metodo->nombre }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('id_metodo_pago')
+                            @error('id_metodo_pago_principal')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -785,7 +785,7 @@
                 'id_membresia': 'Membresía',
                 'fecha_inicio': 'Fecha de Inicio',
                 'monto_abonado': 'Monto Abonado',
-                'id_metodo_pago': 'Método de Pago',
+                'id_metodo_pago_principal': 'Método de Pago',
                 'fecha_pago': 'Fecha de Pago'
             };
             
@@ -796,7 +796,7 @@
             } else if (step === 2) {
                 inputs = ['id_membresia', 'fecha_inicio'];
             } else if (step === 3) {
-                inputs = ['monto_abonado', 'id_metodo_pago', 'fecha_pago'];
+                inputs = ['monto_abonado', 'id_metodo_pago_principal', 'fecha_pago'];
             }
             
             let emptyFields = [];

@@ -124,17 +124,13 @@ class EnhancedTestDataSeeder extends Seeder
                         $estadoPago = $estados->where('nombre', 'Pagado')->first()->id;
 
                         Pago::create([
+                            'uuid' => \Illuminate\Support\Str::uuid(),
                             'id_inscripcion' => $inscripcion->id,
-                            'id_cliente' => $cliente->id,
-                            'id_metodo_pago' => $faker->randomElement($metodos_pago->pluck('id')->toArray()),
-                            'monto_total' => $precioFinal,
+                            'id_metodo_pago_principal' => $faker->randomElement($metodos_pago->pluck('id')->toArray()),
                             'monto_abonado' => $montoAbonado,
                             'monto_pendiente' => max(0, $montoRestante - $montoAbonado),
-                            'descuento_aplicado' => 0,
                             'id_motivo_descuento' => null,
                             'fecha_pago' => $fechaPago,
-                            'periodo_inicio' => $periodoInicio,
-                            'periodo_fin' => $periodoInicio->copy()->addDays(30),
                             'referencia_pago' => $faker->optional(0.4)->numerify('REF-########'),
                             'id_estado' => $estadoPago,
                             'cantidad_cuotas' => 1,

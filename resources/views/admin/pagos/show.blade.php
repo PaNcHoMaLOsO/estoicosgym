@@ -74,14 +74,18 @@
         <div class="col-md-4">
             <div class="resumen-box success">
                 <div class="metodo-icon">
-                    @if($pago->metodoPagoPrincipal->codigo === 'efectivo')
-                        <i class="fas fa-money-bill"></i>
-                    @elseif($pago->metodoPagoPrincipal->codigo === 'tarjeta')
-                        <i class="fas fa-credit-card"></i>
-                    @elseif($pago->metodoPagoPrincipal->codigo === 'transferencia')
-                        <i class="fas fa-university"></i>
+                    @if($pago->metodoPagoPrincipal)
+                        @if($pago->metodoPagoPrincipal->codigo === 'efectivo')
+                            <i class="fas fa-money-bill"></i>
+                        @elseif($pago->metodoPagoPrincipal->codigo === 'tarjeta')
+                            <i class="fas fa-credit-card"></i>
+                        @elseif($pago->metodoPagoPrincipal->codigo === 'transferencia')
+                            <i class="fas fa-university"></i>
+                        @else
+                            <i class="fas fa-exchange-alt"></i>
+                        @endif
                     @else
-                        <i class="fas fa-exchange-alt"></i>
+                        <i class="fas fa-question-circle"></i>
                     @endif
                 </div>
                 <h3>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</h3>

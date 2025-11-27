@@ -198,17 +198,23 @@
                                     @endif
                                 </td>
                                 <td class="text-center text-muted small">
-                                    <span class="badge-method badge bg-light text-dark" title="{{ $pago->metodoPagoPrincipal->nombre }}">
-                                        @if($pago->metodoPagoPrincipal->codigo === 'efectivo')
-                                            <i class="fas fa-money-bill"></i> Efectivo
-                                        @elseif($pago->metodoPagoPrincipal->codigo === 'tarjeta')
-                                            <i class="fas fa-credit-card"></i> Tarjeta
-                                        @elseif($pago->metodoPagoPrincipal->codigo === 'transferencia')
-                                            <i class="fas fa-university"></i> Transfer.
-                                        @else
-                                            <i class="fas fa-ellipsis-h"></i> {{ $pago->metodoPagoPrincipal->nombre }}
-                                        @endif
-                                    </span>
+                                    @if($pago->metodoPagoPrincipal)
+                                        <span class="badge-method badge bg-light text-dark" title="{{ $pago->metodoPagoPrincipal->nombre }}">
+                                            @if($pago->metodoPagoPrincipal->codigo === 'efectivo')
+                                                <i class="fas fa-money-bill"></i> Efectivo
+                                            @elseif($pago->metodoPagoPrincipal->codigo === 'tarjeta')
+                                                <i class="fas fa-credit-card"></i> Tarjeta
+                                            @elseif($pago->metodoPagoPrincipal->codigo === 'transferencia')
+                                                <i class="fas fa-university"></i> Transfer.
+                                            @else
+                                                <i class="fas fa-ellipsis-h"></i> {{ $pago->metodoPagoPrincipal->nombre }}
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary text-white">
+                                            <i class="fas fa-question-circle"></i> Sin método
+                                        </span>
+                                    @endif
                                     
                                     @if($pago->es_plan_cuotas)
                                         <span class="badge bg-warning text-dark" title="Plan de cuotas">

@@ -311,16 +311,16 @@
 
                         <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-credit-card"></i> Método Pago <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
-                                    id="id_metodo_pago" name="id_metodo_pago" required>
+                            <select class="form-control @error('id_metodo_pago_principal') is-invalid @enderror" 
+                                    id="id_metodo_pago_principal" name="id_metodo_pago_principal" required>
                                 <option value="">-- Seleccionar Método --</option>
                                 @foreach($metodosPago as $metodo)
-                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago_principal') == $metodo->id ? 'selected' : '' }}>
                                         {{ $metodo->nombre }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('id_metodo_pago')
+                            @error('id_metodo_pago_principal')
                                 <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
                         </div>

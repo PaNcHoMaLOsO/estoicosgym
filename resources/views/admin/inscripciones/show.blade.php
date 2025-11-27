@@ -368,7 +368,7 @@
                                         @endif
                                     </td>
                                     <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                                    <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $pago->metodoPagoPrincipal?->nombre ?? 'Sin método' }}</td>
                                     <td>
                                         <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver detalle">
                                             <i class="fas fa-eye"></i>

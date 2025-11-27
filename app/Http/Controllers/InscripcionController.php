@@ -59,7 +59,7 @@ class InscripcionController extends Controller
             'observaciones' => 'nullable|string',
             // Campos de pago
             'monto_abonado' => 'required|numeric|min:0.01',
-            'id_metodo_pago' => 'required|integer|exists:metodos_pago,id',
+            'id_metodo_pago_principal' => 'required|integer|exists:metodos_pago,id',
             'fecha_pago' => 'required|date',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
             'fecha_vencimiento_cuota' => 'nullable|date',
@@ -106,20 +106,15 @@ class InscripcionController extends Controller
         \App\Models\Pago::create([
             'uuid' => \Illuminate\Support\Str::uuid(),
             'id_inscripcion' => $inscripcion->id,
-            'id_cliente' => $validated['id_cliente'],
-            'monto_total' => $precioFinal,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => $precioFinal - $montoAbonado,
-            'descuento_aplicado' => $descuento,
             'fecha_pago' => $validated['fecha_pago'],
-            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
             'id_estado' => $idEstadoPago,
             'cantidad_cuotas' => $cantidadCuotas,
             'numero_cuota' => 1,
             'monto_cuota' => $montoCuota,
             'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
-            'periodo_inicio' => $validated['fecha_inicio'],
-            'periodo_fin' => $fechaVencimiento->toDateString(),
         ]);
 
         return redirect()->route('admin.inscripciones.show', $inscripcion)
