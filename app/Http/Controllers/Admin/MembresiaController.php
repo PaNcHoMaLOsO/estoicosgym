@@ -151,7 +151,7 @@ class MembresiaController extends Controller
         // Si hay cambios críticos e inscripciones activas, advertir
         // Usar id_estado para verificar inscripciones activas
         $inscripcionesActivas = $membresia->inscripciones()
-            ->whereNotIn('id_estado', [3, 5]) // Excluyendo vencida (3) y cancelada (5)
+            ->whereNotIn('id_estado', [102, 103]) // Excluyendo vencida (102) y cancelada (103)
             ->count();
 
         if ($tieneCambiosCriticos && $inscripcionesActivas > 0) {
@@ -221,7 +221,7 @@ class MembresiaController extends Controller
         
         // Verificar si hay inscripciones activas
         $inscripcionesActivas = $membresia->inscripciones()
-            ->whereNotIn('id_estado', [3, 5]) // Excluyendo vencida (3) y cancelada (5)
+            ->whereNotIn('id_estado', [102, 103]) // Excluyendo vencida (102) y cancelada (103)
             ->count();
 
         // Si hay inscripciones activas y no es eliminación forzada, solo desactivar

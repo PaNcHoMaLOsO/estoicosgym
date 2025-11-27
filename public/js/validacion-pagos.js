@@ -85,6 +85,8 @@ function initializeForm() {
     if (selectInscripcion.value) {
         console.log('👤 Cliente pre-seleccionado detectado, cargando datos...');
         setTimeout(() => {
+            // Trigger change event en Select2
+            $('#id_inscripcion').trigger('select2:select');
             handleClientChange();
         }, 100);
     }
@@ -112,12 +114,12 @@ function handleClientChange() {
     try {
         const precio = parseFloat(option.getAttribute('data-precio')) || 0;
         const pagos = parseFloat(option.getAttribute('data-pagos')) || 0;
+        const pendiente = parseFloat(option.getAttribute('data-pendiente')) || (precio - pagos);
         const cliente = option.getAttribute('data-cliente') || '';
         const membresia = option.getAttribute('data-membresia') || '';
         const vencimiento = option.getAttribute('data-vencimiento') || '';
-        const pendiente = precio - pagos;
 
-        console.log(`  Datos: cliente=${cliente}, precio=${precio}, pendiente=${pendiente}`);
+        console.log(`  Datos: cliente=${cliente}, precio=${precio}, pagos=${pagos}, pendiente=${pendiente}`);
 
         // Calcular días restantes
         const fechaVencimiento = new Date(vencimiento);
@@ -148,6 +150,10 @@ function handleClientChange() {
         document.getElementById('monto_completo').value = '$' + pendiente.toLocaleString('es-CO');
         document.getElementById('monto_abonado_completo').value = pendiente;
         document.getElementById('target-mixto').textContent = pendiente.toLocaleString('es-CO');
+
+        // Actualizar máximo permitido en abono
+        document.getElementById('monto_abonado_abono').max = pendiente;
+        document.getElementById('max-abono').textContent = `Máximo permitido: $${pendiente.toLocaleString('es-CO')}`;
 
         // Mostrar secciones
         document.getElementById('clienteInfoSection').classList.remove('d-none');

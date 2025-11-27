@@ -105,11 +105,12 @@
         .step-header.secondary { background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); }
 
         /* ===== CONDITIONAL SECTIONS ===== */
-        .pago-section {
+        .conditional-field {
+            display: none;
             animation: slideDown 0.3s ease;
         }
-        .d-none {
-            display: none !important;
+        .conditional-field.visible {
+            display: block;
         }
         @keyframes slideDown {
             from {
@@ -125,7 +126,7 @@
         /* ===== TIPO PAGO CARDS ===== */
         .tipo-pago-group {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -222,72 +223,19 @@
 
         /* ===== FORM STYLING ===== */
         .form-label {
-            font-weight: 700;
+            font-weight: 600;
             color: #333;
-            margin-bottom: 12px;
-            font-size: 1rem;
-            display: block;
+            margin-bottom: 8px;
         }
-        
-        .form-control {
-            border: 2px solid #d1d5db;
+        .form-control, .form-control:focus {
+            border: 2px solid #e9ecef;
             border-radius: 8px;
-            padding: 11px 14px;
+            padding: 12px;
             transition: all 0.3s ease;
-            font-size: 1rem;
-            height: auto;
-            min-height: 44px;
-            background-color: #fff;
-            color: #333;
-            font-weight: 500;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
-        
-        .form-control:hover:not(:disabled) {
-            border-color: #667eea;
-            box-shadow: 0 1px 4px rgba(102, 126, 234, 0.15);
-        }
-        
         .form-control:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            outline: none;
-        }
-        
-        .form-control::placeholder {
-            color: #999;
-            font-weight: normal;
-        }
-        
-        .form-control:disabled {
-            background-color: #f3f4f6;
-            color: #6b7280;
-            cursor: not-allowed;
-            border-color: #e5e7eb;
-        }
-        
-        .form-control[readonly] {
-            background-color: #f3f4f6;
-            color: #6b7280;
-            cursor: default;
-        }
-        
-        /* Input group styling */
-        .input-group-text {
-            background-color: #f3f4f6;
-            border: 2px solid #d1d5db;
-            border-right: none;
-            color: #667eea;
-            font-weight: 600;
-            padding: 9px 14px;
-        }
-        
-        .input-group .form-control {
-            border-left: none;
-        }
-        
-        .input-group .form-control:focus {
-            border-left: 2px solid #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
 
         /* ===== BUTTONS ===== */
@@ -367,13 +315,14 @@
         </div>
 
         <!-- PASO 1: INFORMACIÓN DEL CLIENTE Y MEMBRESÍA -->
+        <!-- PASO 1: INFORMACIÓN DEL CLIENTE Y MEMBRESÍA -->
         <div class="card step-card primary mb-4">
             <div class="step-header">
                 <h3><i class="fas fa-user-check"></i> Paso 1: Selecciona Cliente y Membresía</h3>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-user"></i> Cliente <span class="text-danger">*</span></label>
                         <select class="form-control select2-cliente @error('id_cliente') is-invalid @enderror" 
                                 id="id_cliente" name="id_cliente" required style="width: 100%;">
@@ -387,11 +336,11 @@
                             @endforeach
                         </select>
                         @error('id_cliente')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-layer-group"></i> Membresía <span class="text-danger">*</span></label>
                         <select class="form-control @error('id_membresia') is-invalid @enderror" 
                                 id="id_membresia" name="id_membresia" required>
@@ -403,13 +352,13 @@
                             @endforeach
                         </select>
                         @error('id_membresia')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
 
                 <!-- RESUMEN DE PRECIOS (Dinámico) -->
-                <div id="priceSummary" class="price-summary" style="display: none; margin-top: 25px;">
+                <div id="priceSummary" class="price-summary" style="display: none;">
                     <div class="price-item">
                         <span><i class="fas fa-dollar-sign"></i> Precio Base:</span>
                         <span id="precioBase">$0.00</span>
@@ -427,34 +376,35 @@
         </div>
 
         <!-- PASO 2: FECHAS Y DESCUENTOS -->
+        <!-- PASO 2: FECHAS Y DESCUENTOS -->
         <div class="card step-card info mb-4">
             <div class="step-header info">
                 <h3><i class="fas fa-calendar-alt"></i> Paso 2: Fechas y Descuentos</h3>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-calendar-check"></i> Fecha Inicio <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}" 
                                required>
                         @error('fecha_inicio')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-calendar-times"></i> Fecha Vencimiento</label>
                         <input type="date" class="form-control" id="fecha_vencimiento" readonly>
-                        <small class="text-muted d-block mt-2"><i class="fas fa-info-circle"></i> Se calcula automáticamente</small>
+                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Se calcula automáticamente</small>
                     </div>
                 </div>
 
-                <hr class="my-4">
+                <hr class="my-3">
 
                 @if($convenios->count() > 0)
-                    <div class="row mb-4">
-                        <div class="col-12">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
                             <label class="form-label"><i class="fas fa-handshake"></i> Convenio (Solo membresía mensual)</label>
                             <select class="form-control @error('id_convenio') is-invalid @enderror" 
                                     id="id_convenio" name="id_convenio">
@@ -466,18 +416,18 @@
                                 @endforeach
                             </select>
                             @error('id_convenio')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
-                            <small class="text-muted d-block mt-2">Se aplicará descuento automático de $15.000 si aplica</small>
+                            <small class="text-muted d-block mt-1">Se aplicará descuento automático de $15.000 si aplica</small>
                         </div>
                     </div>
-                    <hr class="my-4">
+                    <hr class="my-3">
                 @endif
 
                 <div class="row">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-dollar-sign"></i> Descuento Manual (Opcional)</label>
-                        <div class="input-group" style="height: 44px;">
+                        <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
@@ -485,10 +435,10 @@
                                    id="descuento_adicional" name="descuento_aplicado" step="0.01" min="0" 
                                    placeholder="0.00" value="0">
                         </div>
-                        <small class="text-muted d-block mt-2" id="descuento_info">El descuento de convenio se aplica automáticamente</small>
+                        <small class="text-muted d-block mt-1" id="descuento_info">El descuento de convenio se aplica automáticamente</small>
                     </div>
 
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-tag"></i> Motivo Descuento</label>
                         <select class="form-control @error('id_motivo_descuento') is-invalid @enderror" 
                                 id="id_motivo_descuento" name="id_motivo_descuento">
@@ -510,6 +460,7 @@
         <!-- Estado está oculto, siempre será "Activa" -->
         <input type="hidden" name="id_estado" value="{{ $estadoActiva->id }}">
 
+        <!-- PASO 3: TIPO DE PAGO -->
         <!-- PASO 3: TIPO DE PAGO -->
         <div class="card step-card warning mb-4">
             <div class="step-header warning">
@@ -583,34 +534,34 @@
                 <!-- SECCIÓN ABONO PARCIAL -->
                 <div id="seccion-abono" class="pago-section">
                     <div class="row">
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-calendar"></i> Fecha Pago <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
-                                   id="fecha_pago" name="fecha_pago" value="{{ old('fecha_pago', now()->format('Y-m-d')) }}" required>
+                                   id="fecha_pago" name="fecha_pago" value="{{ old('fecha_pago', now()->format('Y-m-d')) }}">
                             @error('fecha_pago')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-money-bill-wave"></i> Monto Abonado <span class="text-danger">*</span></label>
-                            <div class="input-group" style="height: 44px;">
+                            <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
                                        id="monto_abonado" name="monto_abonado" step="0.01" min="0.01" 
-                                       value="{{ old('monto_abonado') }}" placeholder="0.00" required>
+                                       value="{{ old('monto_abonado') }}" placeholder="0.00">
                             </div>
                             @error('monto_abonado')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-credit-card"></i> Método Pago <span class="text-danger">*</span></label>
                             <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
-                                    id="id_metodo_pago" name="id_metodo_pago" required>
+                                    id="id_metodo_pago" name="id_metodo_pago">
                                 <option value="">-- Seleccionar Método --</option>
                                 @foreach($metodosPago as $metodo)
                                     <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
@@ -619,48 +570,48 @@
                                 @endforeach
                             </select>
                             @error('id_metodo_pago')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
                     <!-- Cuotas para abono parcial -->
-                    <div id="cuotasSection" class="conditional-field" style="margin-top: 30px; padding-top: 25px; border-top: 2px solid #e9ecef;">
-                        <h5 class="mb-4"><i class="fas fa-receipt"></i> Información de Cuotas</h5>
+                    <div id="cuotasSection" class="conditional-field" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                        <h5 class="mb-3"><i class="fas fa-receipt"></i> Información de Cuotas</h5>
                         <div class="row">
-                            <div class="col-lg-4 mb-4">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas</label>
                                 <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
                                        id="cantidad_cuotas" name="cantidad_cuotas" min="2" max="12" value="1">
-                                <small class="text-muted d-block mt-2">Mínimo 2, máximo 12</small>
+                                <small class="text-muted d-block mt-1">Mínimo 2, máximo 12</small>
                                 @error('cantidad_cuotas')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                                 @enderror
                             </div>
 
-                            <div class="col-lg-4 mb-4">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label"><i class="fas fa-receipt"></i> Monto por Cuota</label>
-                                <div class="input-group" style="height: 44px;">
+                                <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">$</span>
                                     </div>
                                     <input type="number" class="form-control" id="monto_cuota" readonly>
                                 </div>
-                                <small class="text-muted d-block mt-2">Calculado automáticamente</small>
+                                <small class="text-muted d-block mt-1">Calculado automáticamente</small>
                             </div>
 
-                            <div class="col-lg-4 mb-4">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label"><i class="fas fa-calendar-times"></i> Vencimiento Cuota</label>
                                 <input type="date" class="form-control @error('fecha_vencimiento_cuota') is-invalid @enderror" 
                                        id="fecha_vencimiento_cuota" name="fecha_vencimiento_cuota">
                                 @error('fecha_vencimiento_cuota')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                     </div>
 
-                    <div class="resumen-pago alert alert-info mt-4" id="resumen-abono" style="display: none;">
+                    <div class="resumen-pago alert alert-info mt-3" id="resumen-abono" style="display: none;">
                         <strong><i class="fas fa-info-circle"></i> Resumen:</strong> 
                         Abonado: $<span id="nuevo-abonado">0</span> | Pendiente: $<span id="nuevo-pendiente">0</span>
                     </div>
@@ -672,26 +623,26 @@
                         <i class="fas fa-check-circle"></i> Se pagará el saldo completo de la membresía
                     </div>
                     <div class="row">
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-calendar"></i> Fecha Pago <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="fecha_pago_completo" 
-                                   value="{{ old('fecha_pago', now()->format('Y-m-d')) }}" required>
+                                   value="{{ old('fecha_pago', now()->format('Y-m-d')) }}">
                         </div>
 
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-money-bill-wave"></i> Monto (Automático)</label>
-                            <div class="input-group" style="height: 44px;">
+                            <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="text" class="form-control bg-light" id="monto_completo" disabled>
                             </div>
-                            <small class="text-muted d-block mt-2">✓ Se pagará automáticamente</small>
+                            <small class="text-muted d-block mt-1">✓ Se pagará automáticamente</small>
                         </div>
 
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label"><i class="fas fa-credit-card"></i> Método Pago <span class="text-danger">*</span></label>
-                            <select class="form-control" id="id_metodo_pago_completo" name="id_metodo_pago_completo" required>
+                            <select class="form-control" id="id_metodo_pago_completo" name="id_metodo_pago_completo">
                                 <option value="">-- Seleccionar Método --</option>
                                 @foreach($metodosPago as $metodo)
                                     <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
@@ -699,7 +650,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="resumen-pago alert alert-success mt-4">
+                    <div class="resumen-pago alert alert-success mt-3">
                         <strong>✓ Resultado:</strong> El cliente quedará PAGADO COMPLETAMENTE
                     </div>
                 </div>
@@ -710,24 +661,24 @@
                         <i class="fas fa-info-circle"></i> Divide el pago entre diferentes métodos. La suma debe ser exacta.
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label"><i class="fas fa-calendar"></i> Fecha Pago <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="fecha_pago_mixto" 
-                                   value="{{ old('fecha_pago', now()->format('Y-m-d')) }}" required>
+                                   value="{{ old('fecha_pago', now()->format('Y-m-d')) }}">
                         </div>
-                        <div class="col-lg-6"></div>
+                        <div class="col-md-6"></div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label"><i class="fas fa-credit-card"></i> Método 1 - Monto</label>
-                            <div class="input-group" style="height: 44px;">
+                            <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="number" class="form-control monto-mixto" id="monto_metodo1" step="0.01" min="0" placeholder="0.00">
                             </div>
                         </div>
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Seleccionar Método</label>
                             <select class="form-control" id="metodo_pago_1">
                                 <option value="">-- Seleccionar --</option>
@@ -738,16 +689,16 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label"><i class="fas fa-credit-card"></i> Método 2 - Monto</label>
-                            <div class="input-group" style="height: 44px;">
+                            <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
                                 <input type="number" class="form-control monto-mixto" id="monto_metodo2" step="0.01" min="0" placeholder="0.00">
                             </div>
                         </div>
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Seleccionar Método</label>
                             <select class="form-control" id="metodo_pago_2">
                                 <option value="">-- Seleccionar --</option>
@@ -792,15 +743,18 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ===== ELEMENTOS DEL FORMULARIO =====
+    // Elementos del formulario
     const idMembresia = document.getElementById('id_membresia');
     const fechaInicio = document.getElementById('fecha_inicio');
     const descuentoAdicional = document.getElementById('descuento_adicional');
+    const montoAbonado = document.getElementById('monto_abonado');
     const cantidadCuotas = document.getElementById('cantidad_cuotas');
     const cuotasSection = document.getElementById('cuotasSection');
     const priceSummary = document.getElementById('priceSummary');
     const idConvenio = document.getElementById('id_convenio');
     const idMotivoDescuento = document.getElementById('id_motivo_descuento');
+    const pagoPendiente = document.getElementById('pago_pendiente');
+    const seccionPago = document.getElementById('seccionPago');
     
     // Elementos para mostrar precios
     const precioBaseEl = document.getElementById('precioBase');
@@ -809,336 +763,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const montoCuotaEl = document.getElementById('monto_cuota');
     const fechaVencimientoEl = document.getElementById('fecha_vencimiento');
 
-    // Radio buttons tipo de pago
-    const tipoPagoRadios = document.querySelectorAll('input[name="tipo_pago"]');
-    const seccionAbono = document.getElementById('seccion-abono');
-    const seccionCompleto = document.getElementById('seccion-completo');
-    const seccionMixto = document.getElementById('seccion-mixto');
-    const seccionPendiente = document.getElementById('seccion-pendiente');
-
-    let precioTotalInscripcion = 0;
-
-    // ===== INICIALIZAR SELECT2 =====
+    // Inicializar Select2
     $('#id_cliente').select2({
         width: '100%',
         allowClear: true,
         language: 'es',
-        placeholder: '-- Seleccionar Cliente --',
-        minimumInputLength: 0,
-        dropdownAutoWidth: false,
-        containerCssClass: 'select2-container-custom',
-        dropdownCssClass: 'select2-dropdown-custom'
+        dropdownParent: $('#id_cliente').parent(),
+        dropdownCssClass: 'select2-large-dropdown'
     });
     
-    // Agregar CSS personalizado COMPLETO para Select2 y Form Controls
-    const style = document.createElement('style');
-    style.textContent = `
-        /* ===== SELECT2 STYLING ===== */
-        .select2-container-custom {
-            width: 100% !important;
-        }
-        
-        .select2-container-custom .select2-selection--single {
-            border: 2px solid #d1d5db !important;
-            border-radius: 8px !important;
-            padding: 0 !important;
-            height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
-            background-color: #fff !important;
-            transition: all 0.3s ease !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-        }
-        
-        .select2-container-custom .select2-selection--single:hover {
-            border-color: #667eea !important;
-        }
-        
-        .select2-container-custom.select2-container--open .select2-selection--single {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        }
-        
-        .select2-container-custom .select2-selection--single .select2-selection__rendered {
-            padding: 0 12px !important;
-            line-height: 42px !important;
-            font-size: 1rem !important;
-            color: #333 !important;
-            font-weight: 500 !important;
-        }
-        
-        .select2-container-custom .select2-selection--single .select2-selection__placeholder {
-            color: #999 !important;
-            font-weight: normal !important;
-        }
-        
-        .select2-container-custom .select2-selection__clear {
-            margin-right: 8px !important;
-            cursor: pointer !important;
-        }
-        
-        .select2-container-custom .select2-selection--single .select2-selection__arrow {
-            height: 42px !important;
-            right: 12px !important;
-            width: auto !important;
-        }
-        
-        .select2-container-custom .select2-selection--single .select2-selection__arrow b {
-            border-color: #667eea transparent transparent transparent !important;
-            margin-top: 8px !important;
-            border-width: 5px 4px 0 4px !important;
-        }
-        
-        /* Dropdown styling */
-        .select2-dropdown-custom {
-            border: 2px solid #d1d5db !important;
-            border-top: none !important;
-            border-radius: 0 0 8px 8px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            z-index: 9999 !important;
-            background: #fff !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__options {
-            padding: 8px 0 !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__option {
-            padding: 12px 16px !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
-            color: #333 !important;
-            transition: background-color 0.2s ease !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__option:hover {
-            background-color: #f0f4ff !important;
-            color: #333 !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__option--highlighted[aria-selected] {
-            background-color: #667eea !important;
-            color: white !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__option[aria-selected=true] {
-            background-color: #f0f0f0 !important;
-            color: #333 !important;
-        }
-        
-        .select2-dropdown-custom .select2-results__option[aria-selected=true]:hover {
-            background-color: #667eea !important;
-            color: white !important;
-        }
-        
-        .select2-search--dropdown .select2-search__field {
-            border: 1px solid #d1d5db !important;
-            border-radius: 4px !important;
-            padding: 8px 12px !important;
-            font-size: 1rem !important;
-            margin: 8px !important;
-            background-color: #f9fafb !important;
-        }
-        
-        .select2-search--dropdown .select2-search__field:focus {
-            outline: none !important;
-            border-color: #667eea !important;
-            background-color: #fff !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        }
-        
-        /* ===== FORM CONTROLS STYLING ===== */
-        .form-control {
-            border: 2px solid #d1d5db !important;
-            border-radius: 8px !important;
-            padding: 10px 14px !important;
-            font-size: 1rem !important;
-            height: auto !important;
-            min-height: 44px !important;
-            background-color: #fff !important;
-            transition: all 0.3s ease !important;
-            font-weight: 500 !important;
-            color: #333 !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-        }
-        
-        .form-control:hover {
-            border-color: #667eea !important;
-            box-shadow: 0 1px 4px rgba(102, 126, 234, 0.15) !important;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-            outline: none !important;
-        }
-        
-        .form-control::placeholder {
-            color: #999 !important;
-            font-weight: normal !important;
-        }
-        
-        .form-control:disabled {
-            background-color: #f3f4f6 !important;
-            color: #6b7280 !important;
-            cursor: not-allowed !important;
-            border-color: #e5e7eb !important;
-        }
-        
-        /* Input group styling */
-        .input-group-text {
-            background-color: #f3f4f6 !important;
-            border: 2px solid #d1d5db !important;
-            border-right: none !important;
-            color: #667eea !important;
-            font-weight: 600 !important;
-        }
-        
-        .input-group .form-control {
-            border-left: none !important;
-        }
-        
-        .input-group .form-control:focus {
-            border-left: 2px solid #667eea !important;
-        }
-        
-        /* Readonly input styling */
-        .form-control[readonly] {
-            background-color: #f3f4f6 !important;
-            color: #6b7280 !important;
-            cursor: default !important;
-        }
-        
-        .bg-light {
-            background-color: #f3f4f6 !important;
-        }
-    `;
-    document.head.appendChild(style);
+    // Aumentar tamaño del contenedor del dropdown
+    $('.select2-large-dropdown').css('min-height', '300px');
     
-    // ===== INICIALIZAR SELECT2 PARA OTROS SELECTS =====
-    // Membresía
-    $('#id_membresia').select2({
-        width: '100%',
-        language: 'es',
-        containerCssClass: 'select2-container-custom',
-        dropdownCssClass: 'select2-dropdown-custom'
-    });
-    
-    // Convenios
-    if ($('#id_convenio').length) {
-        $('#id_convenio').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
-    // Motivo Descuento
-    if ($('#id_motivo_descuento').length) {
-        $('#id_motivo_descuento').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
-    // Método Pago (Abono)
-    if ($('#id_metodo_pago').length) {
-        $('#id_metodo_pago').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
-    // Método Pago Completo
-    if ($('#id_metodo_pago_completo').length) {
-        $('#id_metodo_pago_completo').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
-    // Método Pago Mixto 1
-    if ($('#metodo_pago_1').length) {
-        $('#metodo_pago_1').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
-    // Método Pago Mixto 2
-    if ($('#metodo_pago_2').length) {
-        $('#metodo_pago_2').select2({
-            width: '100%',
-            language: 'es',
-            containerCssClass: 'select2-container-custom',
-            dropdownCssClass: 'select2-dropdown-custom'
-        });
-    }
-    
+    // Inicializar formateador de precios para campos de entrada
     PrecioFormatter.iniciarCampo('descuento_adicional', false);
+    PrecioFormatter.iniciarCampo('monto_abonado', false);
 
-    // ===== EVENT LISTENERS PARA TIPO DE PAGO =====
-    tipoPagoRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            cambiarTipoPago(this.value);
-        });
-    });
-
-    // ===== FUNCIÓN: CAMBIAR TIPO DE PAGO =====
-    function cambiarTipoPago(tipoPago) {
-        // Actualizar clases activas en cards
-        document.querySelectorAll('.tipo-pago-card').forEach(card => {
-            card.classList.remove('active');
-        });
-        document.querySelector(`#card-${tipoPago}`).classList.add('active');
-
-        // Mostrar/ocultar secciones
-        seccionAbono.classList.add('d-none');
-        seccionCompleto.classList.add('d-none');
-        seccionMixto.classList.add('d-none');
-        seccionPendiente.classList.add('d-none');
-
-        // Limpiar validaciones requeridas
-        document.getElementById('fecha_pago')?.removeAttribute('required');
-        document.getElementById('monto_abonado')?.removeAttribute('required');
-        document.getElementById('id_metodo_pago')?.removeAttribute('required');
-        document.getElementById('fecha_pago_completo')?.removeAttribute('required');
-        document.getElementById('id_metodo_pago_completo')?.removeAttribute('required');
-        document.getElementById('fecha_pago_mixto')?.removeAttribute('required');
-
-        switch(tipoPago) {
-            case 'abono':
-                seccionAbono.classList.remove('d-none');
-                document.getElementById('fecha_pago').setAttribute('required', 'required');
-                document.getElementById('monto_abonado').setAttribute('required', 'required');
-                document.getElementById('id_metodo_pago').setAttribute('required', 'required');
-                break;
-            case 'completo':
-                seccionCompleto.classList.remove('d-none');
-                document.getElementById('fecha_pago_completo').setAttribute('required', 'required');
-                document.getElementById('id_metodo_pago_completo').setAttribute('required', 'required');
-                actualizarMontoCompleto();
-                break;
-            case 'mixto':
-                seccionMixto.classList.remove('d-none');
-                document.getElementById('fecha_pago_mixto').setAttribute('required', 'required');
-                break;
-            case 'pendiente':
-                seccionPendiente.classList.remove('d-none');
-                break;
-        }
-    }
-
-    // ===== CARGAR PRECIO MEMBRESÍA =====
+    // Cargar precio cuando se selecciona membresía - SOLO para mostrar información
+    // El backend es quien calcula el descuento real
     async function cargarPrecioMembresia() {
         if (!idMembresia.value) {
             priceSummary.style.display = 'none';
@@ -1152,23 +794,35 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const precioBase = parseFloat(data.precio_normal) || 0;
                 
+                // PREVIEW: Mostrar si habría descuento (pero NO lo aplicamos aquí)
                 let descuentoConvenioPreview = 0;
                 if (idConvenio.value && data.id === 1) {
-                    descuentoConvenioPreview = 15000;
+                    descuentoConvenioPreview = 15000; // Solo PREVIEW, el backend lo calcula
                 }
                 
                 const descuentoAdicionalManual = parseFloat(descuentoAdicional.value) || 0;
                 const descuentoTotalPreview = descuentoConvenioPreview + descuentoAdicionalManual;
-                precioTotalInscripcion = precioBase - descuentoTotalPreview;
+                const precioFinalPreview = precioBase - descuentoTotalPreview;
 
+                // Mostrar precios en el resumen (ES SOLO UNA REFERENCIA VISUAL)
                 precioBaseEl.textContent = '$' + PrecioFormatter.formatear(precioBase);
                 precioDescuentoEl.textContent = '$' + PrecioFormatter.formatear(descuentoTotalPreview);
-                precioTotalEl.textContent = '$' + PrecioFormatter.formatear(precioTotalInscripcion);
+                precioTotalEl.textContent = '$' + PrecioFormatter.formatear(precioFinalPreview);
                 
+                // NO guardar en hidden field aquí - el backend calcula el valor real
+                // Solo mostrar mensaje informativo
+                let mensajeDescuento = 'El descuento se calculará en el servidor';
+                if (descuentoConvenioPreview > 0 && descuentoAdicionalManual > 0) {
+                    mensajeDescuento = `Preview: $${descuentoConvenioPreview.toFixed(2)} (convenio) + $${descuentoAdicionalManual.toFixed(2)} (manual) = $${descuentoTotalPreview.toFixed(2)}`;
+                } else if (descuentoConvenioPreview > 0) {
+                    mensajeDescuento = `Preview: -$${descuentoConvenioPreview.toFixed(2)} (convenio mensual)`;
+                } else if (descuentoAdicionalManual > 0) {
+                    mensajeDescuento = `Manual: -$${descuentoAdicionalManual.toFixed(2)}`;
+                }
+                document.getElementById('descuento_info').textContent = mensajeDescuento;
+
                 priceSummary.style.display = 'block';
                 calcularVencimiento();
-                actualizarMontoCompleto();
-                actualizarMontosCuotas();
                 validarPagoCompleto();
             }
         } catch (error) {
@@ -1176,7 +830,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== CALCULAR FECHA DE VENCIMIENTO =====
+    // Calcular fecha de vencimiento - SOLO PREVIEW en el frontend
+    // El backend calcula la fecha real basado en duracion_dias
     async function calcularVencimiento() {
         if (!idMembresia.value || !fechaInicio.value) return;
 
@@ -1191,11 +846,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const duracionDias = membresiaData.duracion_dias || (membresiaData.duracion_meses * 30);
                 const duracionMeses = membresiaData.duracion_meses || 1;
                 
+                // PREVIEW del cálculo (el backend lo hace de verdad)
                 const fechaVencimientoPreview = new Date(fechaInicioParsed);
                 
                 if (duracionMeses === 0) {
+                    // Pase Diario: mismo día
                     fechaVencimientoPreview.setDate(fechaVencimientoPreview.getDate() + duracionDias - 1);
                 } else {
+                    // Mensual, Trimestral, etc: N meses - 1 día
                     fechaVencimientoPreview.setMonth(fechaVencimientoPreview.getMonth() + duracionMeses);
                     fechaVencimientoPreview.setDate(fechaVencimientoPreview.getDate() - 1);
                 }
@@ -1205,88 +863,95 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dayFormato = String(fechaVencimientoPreview.getDate()).padStart(2, '0');
                 const fechaVencimientoFormato = `${yearFormato}-${monthFormato}-${dayFormato}`;
                 
+                // Mostrar PREVIEW en campo (pero backend la calcula de verdad)
                 fechaVencimientoEl.value = fechaVencimientoFormato;
-                fechaVencimientoEl.setAttribute('readonly', 'readonly');
+                fechaVencimientoEl.setAttribute('readonly', 'readonly'); // Campo de lectura - informativo
             }
         } catch (error) {
             console.error('Error al calcular vencimiento:', error);
         }
     }
 
-    // ===== ACTUALIZAR MONTO COMPLETO =====
-    function actualizarMontoCompleto() {
-        const montoCompletoEl = document.getElementById('monto_completo');
-        if (montoCompletoEl) {
-            montoCompletoEl.value = '$' + PrecioFormatter.formatear(precioTotalInscripcion);
-        }
-    }
-
-    // ===== ACTUALIZAR MONTOS DE CUOTAS =====
-    function actualizarMontosCuotas() {
-        if (!cuotasSection || cuotasSection.classList.contains('d-none')) return;
-        
-        const cantidad = parseInt(cantidadCuotas.value) || 1;
-        const montoPorCuota = precioTotalInscripcion / cantidad;
-        
-        montoCuotaEl.value = PrecioFormatter.formatear(montoPorCuota);
-        
-        // Mostrar resumen
-        const resumenAbono = document.getElementById('resumen-abono');
-        if (resumenAbono) {
-            const montoAbonado = parseFloat(document.getElementById('monto_abonado').value) || 0;
-            const pendiente = precioTotalInscripcion - montoAbonado;
-            
-            document.getElementById('nuevo-abonado').textContent = PrecioFormatter.formatear(montoAbonado);
-            document.getElementById('nuevo-pendiente').textContent = PrecioFormatter.formatear(Math.max(0, pendiente));
-            resumenAbono.style.display = 'block';
-        }
-    }
-
-    // ===== VALIDAR PAGO COMPLETO =====
+    // Validar si el pago es completo o parcial
     function validarPagoCompleto() {
-        const montoAbonado = parseFloat(document.getElementById('monto_abonado')?.value) || 0;
-        const pendiente = precioTotalInscripcion - montoAbonado;
-        
-        if (pendiente > 0) {
-            cuotasSection?.classList.add('visible');
+        const precioTotal = parseFloat(precioTotalEl.textContent.replace('$', '')) || 0;
+        const monto = parseFloat(montoAbonado.value) || 0;
+
+        if (monto > 0 && monto < precioTotal) {
+            // Pago parcial: mostrar opciones de cuotas
+            cuotasSection.classList.add('visible');
+            cuotasSection.style.display = 'block';
+            cantidadCuotas.value = 2;
+            calcularMontoCuota();
         } else {
-            cuotasSection?.classList.remove('visible');
+            // Pago completo o sin especificar: ocultar opciones de cuotas
+            cuotasSection.classList.remove('visible');
+            cuotasSection.style.display = 'none';
+            cantidadCuotas.value = 1;
         }
     }
 
-    // ===== EVENT LISTENERS =====
+    // Manejar cambio en convenio - SOLO auto-llenar motivo descuento
+    // El descuento se calcula en el backend
+    function manejarCambioConvenio() {
+        if (idConvenio.value) {
+            const nombreConvenio = idConvenio.options[idConvenio.selectedIndex].getAttribute('data-nombre');
+            
+            // Auto-rellenar motivo descuento según convenio
+            if (nombreConvenio && nombreConvenio.toUpperCase().includes('INACAP')) {
+                for (let option of idMotivoDescuento.options) {
+                    if (option.textContent.toLowerCase().includes('estudiante')) {
+                        idMotivoDescuento.value = option.value;
+                        break;
+                    }
+                }
+            }
+        } else {
+            // Si se quita el convenio, limpiar motivo descuento
+            idMotivoDescuento.value = '';
+        }
+        
+        // Recalcular para mostrar preview actualizado
+        cargarPrecioMembresia();
+    }
+
+    // Manejar checkbox pago pendiente
+    function manejarPagoPendiente() {
+        const campos = seccionPago.querySelectorAll('input[required], select[required]');
+        
+        if (pagoPendiente.checked) {
+            // Ocultar sección de pago
+            seccionPago.style.display = 'none';
+            // Quitar required de todos los campos
+            campos.forEach(campo => campo.removeAttribute('required'));
+        } else {
+            // Mostrar sección de pago
+            seccionPago.style.display = 'block';
+            // Agregar required a todos los campos
+            campos.forEach(campo => campo.setAttribute('required', 'required'));
+        }
+    }
+
+    // Calcular monto por cuota
+    function calcularMontoCuota() {
+        const precioTotal = parseFloat(precioTotalEl.textContent.replace('$', '')) || 0;
+        const cuotas = parseInt(cantidadCuotas.value) || 1;
+        const montoPorCuota = precioTotal / cuotas;
+
+        montoCuotaEl.value = montoPorCuota.toFixed(2);
+    }
+
+    // Event listeners
     idMembresia.addEventListener('change', cargarPrecioMembresia);
+    idMembresia.addEventListener('change', calcularVencimiento);
     fechaInicio.addEventListener('change', calcularVencimiento);
     descuentoAdicional.addEventListener('change', cargarPrecioMembresia);
     descuentoAdicional.addEventListener('input', cargarPrecioMembresia);
-    idConvenio.addEventListener('change', cargarPrecioMembresia);
-    
-    cantidadCuotas.addEventListener('change', actualizarMontosCuotas);
-    cantidadCuotas.addEventListener('input', actualizarMontosCuotas);
-
-    document.getElementById('monto_abonado')?.addEventListener('change', validarPagoCompleto);
-    document.getElementById('monto_abonado')?.addEventListener('input', validarPagoCompleto);
-
-    // Evento para actualizar total mixto
-    document.querySelectorAll('.monto-mixto').forEach(input => {
-        input.addEventListener('change', function() {
-            const monto1 = parseFloat(document.getElementById('monto_metodo1')?.value) || 0;
-            const monto2 = parseFloat(document.getElementById('monto_metodo2')?.value) || 0;
-            const total = monto1 + monto2;
-            
-            document.getElementById('total-mixto').textContent = PrecioFormatter.formatear(total);
-        });
-        input.addEventListener('input', function() {
-            const monto1 = parseFloat(document.getElementById('monto_metodo1')?.value) || 0;
-            const monto2 = parseFloat(document.getElementById('monto_metodo2')?.value) || 0;
-            const total = monto1 + monto2;
-            
-            document.getElementById('total-mixto').textContent = PrecioFormatter.formatear(total);
-        });
-    });
-
-    // Inicializar primera sección
-    cambiarTipoPago('abono');
+    idConvenio.addEventListener('change', manejarCambioConvenio);
+    pagoPendiente.addEventListener('change', manejarPagoPendiente);
+    montoAbonado.addEventListener('change', validarPagoCompleto);
+    montoAbonado.addEventListener('input', validarPagoCompleto);
+    cantidadCuotas.addEventListener('change', calcularMontoCuota);
 });
 </script>
-@stop
+@endsection

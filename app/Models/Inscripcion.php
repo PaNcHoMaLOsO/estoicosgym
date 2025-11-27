@@ -188,9 +188,9 @@ class Inscripcion extends Model
 
         // Determinar el estado según días
         $idEstado = match($dias) {
-            7 => 2,  // Pausada - 7 días
-            14 => 3, // Pausada - 14 días
-            30 => 4, // Pausada - 30 días
+            7 => 102,  // Pausada - 7 días
+            14 => 102, // Pausada - 14 días
+            30 => 102, // Pausada - 30 días
         };
 
         $this->update([
@@ -336,8 +336,8 @@ class Inscripcion extends Model
      */
     public function estaPausada()
     {
-        // Estados de pausa (2, 3, 4 corresponden a Pausada - 7d, 14d, 30d)
-        $estadosPausa = [2, 3, 4];
+        // Estados de pausa (102 = Pausada)
+        $estadosPausa = [102];
         
         // Verificar por estado O por campo pausada
         $tienePausa = in_array($this->id_estado, $estadosPausa) || ($this->pausada === true || $this->pausada === 1);

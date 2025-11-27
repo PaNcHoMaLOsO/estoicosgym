@@ -16,7 +16,7 @@ class PagoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pago::with(['inscripcion.cliente', 'metodoPagoPrincipal', 'estado']);
+        $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
         
         // Filtro por inscripción (desde el link de Ver Pagos en inscripciones)
         if ($request->filled('id_inscripcion')) {
@@ -33,7 +33,7 @@ class PagoController extends Controller
         
         // Filtro por método de pago
         if ($request->filled('metodo_pago')) {
-            $query->where('id_metodo_pago_principal', $request->metodo_pago);
+            $query->where('id_metodo_pago', $request->metodo_pago);
         }
         
         // Filtro por estado
@@ -73,12 +73,16 @@ class PagoController extends Controller
      */
     public function create(Request $request)
     {
-        // Obtener todas las inscripciones activas con sus relaciones
-        $estadoActiva = Estado::where('codigo', 100)->first(); // Activa
+        // Obtener todas las inscripciones con saldo pendiente (sin importar estado)
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
-            ->where('id_estado', $estadoActiva->id) // Solo inscripciones activas
             ->orderBy('id', 'desc')
-            ->get();
+            ->get()
+            ->filter(function($insc) {
+                $total = $insc->precio_final ?? $insc->precio_base;
+                $pagos = $insc->pagos()->sum('monto_abonado');
+                return $total > $pagos; // Solo mostrar si hay saldo pendiente
+            })
+            ->values();
         
         $metodos_pago = MetodoPago::where('activo', true)->get();
         
@@ -104,43 +108,42 @@ class PagoController extends Controller
             'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
         ]);
 
         $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
-        // Validar estado de inscripción
-        $estadoActiva = Estado::where('codigo', 100)->first();
-        if ($inscripcion->id_estado != $estadoActiva->id) {
+        // Validar que hay saldo pendiente
+        $montoPagado = $inscripcion->pagos()->sum('monto_abonado');
+        if ($montoPagado >= $montoTotal) {
             return back()->withErrors([
-                'id_inscripcion' => "La inscripción no está activa"
+                'id_inscripcion' => "Esta inscripción ya está pagada completamente"
             ])->withInput();
         }
 
         $montoAbonado = 0;
+        $montoPendiente = $montoTotal - $montoPagado;
 
         // ABONO PARCIAL
         if ($tipoPago === 'abono') {
             $request->validate([
-                'monto_abonado' => 'required|numeric|min:1000|max:' . $montoTotal,
-                'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
+                'monto_abonado' => 'required|numeric|min:1000|max:' . $montoPendiente,
             ]);
 
             $montoAbonado = $request->input('monto_abonado');
 
-            if ($montoAbonado <= 0 || $montoAbonado > $montoTotal) {
+            if ($montoAbonado <= 0 || $montoAbonado > $montoPendiente) {
                 return back()->withErrors([
-                    'monto_abonado' => "El monto debe ser entre 0 y {$montoTotal}"
+                    'monto_abonado' => "El monto debe ser entre 0 y {$montoPendiente} (saldo pendiente)"
                 ])->withInput();
             }
         }
         // PAGO COMPLETO
         else if ($tipoPago === 'completo') {
-            $request->validate([
-                'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
-            ]);
+            // Validación ya hecha arriba
 
-            $montoAbonado = $montoTotal;
+            $montoAbonado = $montoPendiente;
         }
         // PAGO MIXTO
         else if ($tipoPago === 'mixto') {
@@ -148,32 +151,39 @@ class PagoController extends Controller
             $monto2 = floatval($request->input('monto_metodo2', 0));
             $montoAbonado = $monto1 + $monto2;
 
-            if ($montoAbonado != $montoTotal) {
+            if ($montoAbonado != $montoPendiente) {
                 return back()->withErrors([
-                    'monto_metodo1' => "La suma de los montos debe ser exactamente {$montoTotal}"
+                    'monto_metodo1' => "La suma de los montos debe ser exactamente {$montoPendiente} (saldo pendiente)"
                 ])->withInput();
             }
         }
 
-        $montoPendiente = $montoTotal - $montoAbonado;
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
         // Obtener IDs de estados correctos (por codigo, no id)
         $estadoPagado = Estado::where('codigo', 201)->firstOrFail();
         $estadoParcial = Estado::where('codigo', 202)->firstOrFail();
-        $idEstado = $montoAbonado >= $montoTotal ? $estadoPagado->id : $estadoParcial->id;
+        $nuevoSaldoPendiente = $montoPendiente - $montoAbonado;
+        $idEstado = $nuevoSaldoPendiente <= 0 ? $estadoPagado->id : $estadoParcial->id;
 
         // Crear pago
+        $idCliente = $inscripcion->id_cliente;
+        $montoTotal = $montoAbonado + $nuevoSaldoPendiente;
+        
         $pago = Pago::create([
             'id_inscripcion' => $validated['id_inscripcion'],
+            'id_cliente' => $idCliente,
+            'monto_total' => $montoTotal,
             'monto_abonado' => $montoAbonado,
-            'monto_pendiente' => $montoPendiente,
+            'monto_pendiente' => $nuevoSaldoPendiente,
             'cantidad_cuotas' => $cantidadCuotas,
             'numero_cuota' => 1,
             'monto_cuota' => $montoCuota,
             'fecha_pago' => $validated['fecha_pago'],
-            'id_metodo_pago_principal' => $request->input('id_metodo_pago_principal'),
+            'periodo_inicio' => $inscripcion->fecha_inicio,
+            'periodo_fin' => $inscripcion->fecha_vencimiento,
+            'id_metodo_pago' => $validated['id_metodo_pago'],
             'referencia_pago' => $validated['referencia_pago'] ?? null,
             'observaciones' => $validated['observaciones'] ?? null,
             'id_estado' => $idEstado,
@@ -193,8 +203,8 @@ class PagoController extends Controller
             'inscripcion.membresia',
             'inscripcion.estado',
             'inscripcion.pagos.estado',
-            'inscripcion.pagos.metodoPagoPrincipal',
-            'metodoPagoPrincipal',
+            'inscripcion.pagos.metodoPago',
+            'metodoPago',
             'estado'
         ]);
         return view('admin.pagos.show', compact('pago'));
@@ -209,7 +219,7 @@ class PagoController extends Controller
         $pago->load([
             'inscripcion.cliente',
             'inscripcion.membresia',
-            'metodoPagoPrincipal',
+            'metodoPago',
             'estado'
         ]);
 
@@ -227,7 +237,7 @@ class PagoController extends Controller
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:1|max:999999999',
             'fecha_pago' => 'required|date|before_or_equal:today',
-            'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
             'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
@@ -272,7 +282,7 @@ class PagoController extends Controller
             'cantidad_cuotas' => $cantidadCuotas,
             'monto_cuota' => $montoCuota,
             'fecha_pago' => $validated['fecha_pago'],
-            'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
+            'id_metodo_pago' => $validated['id_metodo_pago'],
             'referencia_pago' => $validated['referencia_pago'],
             'observaciones' => $validated['observaciones'] ?? null,
             'id_estado' => $nuevoIdEstado,

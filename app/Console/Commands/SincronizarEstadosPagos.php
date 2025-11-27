@@ -38,13 +38,13 @@ class SincronizarEstadosPagos extends Command
         // Si fecha_vencimiento_cuota < hoy y monto_pendiente > 0
         $pagosVencidos = Pago::where('fecha_vencimiento_cuota', '<', $hoy)
             ->where('monto_pendiente', '>', 0)
-            ->where('id_estado', '!=', 104) // No es vencido aún
+            ->where('id_estado', '!=', 203) // No es vencido aún
             ->limit($limit)
             ->get();
 
         $countVencidos = 0;
         foreach ($pagosVencidos as $pago) {
-            $pago->id_estado = 104; // Vencido
+            $pago->id_estado = 203; // Vencido
             $pago->save();
             $countVencidos++;
         }
@@ -57,13 +57,13 @@ class SincronizarEstadosPagos extends Command
         // Si monto_abonado = 0 y monto_pendiente > 0
         $pagosPendientes = Pago::where('monto_abonado', 0)
             ->where('monto_pendiente', '>', 0)
-            ->where('id_estado', '!=', 101) // No es pendiente aún
+            ->where('id_estado', '!=', 200) // No es pendiente aún
             ->limit($limit)
             ->get();
 
         $countPendientes = 0;
         foreach ($pagosPendientes as $pago) {
-            $pago->id_estado = 101; // Pendiente
+            $pago->id_estado = 200; // Pendiente
             $pago->save();
             $countPendientes++;
         }
@@ -75,13 +75,13 @@ class SincronizarEstadosPagos extends Command
         // 3. ACTUALIZAR PAGOS PARCIALES
         // Si monto_abonado > 0 y monto_abonado < monto_total
         $pagosParc = Pago::whereRaw('monto_abonado > 0 AND monto_pendiente > 0')
-            ->where('id_estado', '!=', 103) // No es parcial aún
+            ->where('id_estado', '!=', 202) // No es parcial aún
             ->limit($limit)
             ->get();
 
         $countParciales = 0;
         foreach ($pagosParc as $pago) {
-            $pago->id_estado = 103; // Parcial
+            $pago->id_estado = 202; // Parcial
             $pago->save();
             $countParciales++;
         }
@@ -93,13 +93,13 @@ class SincronizarEstadosPagos extends Command
         // 4. ACTUALIZAR PAGOS COMPLETADOS
         // Si monto_pendiente <= 0
         $pagosCompletados = Pago::where('monto_pendiente', '<=', 0)
-            ->where('id_estado', '!=', 102) // No es pagado aún
+            ->where('id_estado', '!=', 201) // No es pagado aún
             ->limit($limit)
             ->get();
 
         $countCompletados = 0;
         foreach ($pagosCompletados as $pago) {
-            $pago->id_estado = 102; // Pagado
+            $pago->id_estado = 201; // Pagado
             $pago->save();
             $countCompletados++;
         }
@@ -110,7 +110,7 @@ class SincronizarEstadosPagos extends Command
 
         // 5. SINCRONIZAR ESTADO DE INSCRIPCIONES
         // Si inscripción no tiene pagos pendientes → está pagada
-        $inscripciones = Inscripcion::where('id_estado', 1) // Activa
+        $inscripciones = Inscripcion::where('id_estado', 100) // Activa
             ->limit($limit)
             ->get();
 

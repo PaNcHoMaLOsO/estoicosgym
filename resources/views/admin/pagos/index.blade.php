@@ -95,37 +95,68 @@
     @endif
 
     <!-- Filtros -->
-    <div class="card card-outline card-primary mb-3 collapsed-card">
+    <div class="card card-outline card-primary mb-3">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-filter"></i> Filtros</h3>
             <div class="card-tools pull-right">
                 <button type="button" class="btn btn-box-tool" data-widget="collapse">
-                    <i class="fa fa-plus"></i>
+                    <i class="fa fa-minus"></i>
                 </button>
             </div>
         </div>
-        <div class="card-body" style="display: none;">
-            <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-inline">
-                <div class="form-group mr-2">
-                    <input type="text" id="cliente" name="cliente" class="form-control form-control-sm" 
-                           placeholder="Buscar cliente..." value="{{ request('cliente') }}">
+        <div class="card-body">
+            <form action="{{ route('admin.pagos.index') }}" method="GET">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Cliente</label>
+                        <input type="text" name="cliente" class="form-control form-control-sm" 
+                               placeholder="Nombre o apellido..." value="{{ request('cliente') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label>Método de Pago</label>
+                        <select name="metodo_pago" class="form-control form-control-sm">
+                            <option value="">Todos</option>
+                            @foreach($metodos_pago as $metodo)
+                                <option value="{{ $metodo->id }}" {{ request('metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                    {{ $metodo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Estado</label>
+                        <select name="estado" class="form-control form-control-sm">
+                            <option value="">Todos</option>
+                            @foreach($estados as $estado)
+                                <option value="{{ $estado->id }}" {{ request('estado') == $estado->id ? 'selected' : '' }}>
+                                    {{ $estado->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Desde</label>
+                        <input type="date" name="fecha_inicio" class="form-control form-control-sm" 
+                               value="{{ request('fecha_inicio') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label>Hasta</label>
+                        <input type="date" name="fecha_fin" class="form-control form-control-sm" 
+                               value="{{ request('fecha_fin') }}">
+                    </div>
+                    <div class="col-md-1 pt-4">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group mr-2">
-                    <select id="metodo_pago" name="metodo_pago" class="form-control form-control-sm">
-                        <option value="">Todos los métodos</option>
-                        @foreach($metodos_pago as $metodo)
-                            <option value="{{ $metodo->id }}" {{ request('metodo_pago') == $metodo->id ? 'selected' : '' }}>
-                                {{ $metodo->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-redo"></i> Limpiar Filtros
+                        </a>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-sm btn-primary">
-                    <i class="fas fa-search"></i> Filtrar
-                </button>
-                <a href="{{ route('admin.pagos.index') }}" class="btn btn-sm btn-secondary ml-2">
-                    <i class="fas fa-redo"></i> Limpiar
-                </a>
             </form>
         </div>
     </div>
@@ -153,10 +184,10 @@
                     <tbody>
                         @forelse($pagos as $pago)
                             @php
-                                $total = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base;
-                                $abonado = $pago->monto_abonado;
-                                $pendiente = $total - $abonado;
-                                $porcentaje = round(($abonado / $total) * 100);
+                                $total = ($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base) ?: 0;
+                                $abonado = $pago->monto_abonado ?: 0;
+                                $pendiente = max(0, $total - $abonado);
+                                $porcentaje = ($total > 0) ? round(($abonado / $total) * 100) : 0;
                                 $progressDeg = ($porcentaje / 100) * 360;
                             @endphp
                             <tr class="pago-row">

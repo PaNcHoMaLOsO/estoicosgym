@@ -18,7 +18,7 @@ class ClienteApiController extends Controller
     {
         $clientes = Cliente::where('activo', true)
             ->with(['inscripciones' => function($q) {
-                $q->where('id_estado', Estado::where('nombre', 'Activa')->first()?->id ?? 1);
+                $q->where('id_estado', Estado::where('nombre', 'Activa')->first()?->id ?? 100);
             }])
             ->get()
             ->map(function($cliente) {
@@ -117,7 +117,7 @@ class ClienteApiController extends Controller
 
         return response()->json([
             'total_inscripciones' => $inscripciones->count(),
-            'inscripciones_activas' => $inscripciones->where('id_estado', Estado::where('nombre', 'Activa')->first()?->id ?? 1)->count(),
+            'inscripciones_activas' => $inscripciones->where('id_estado', Estado::where('nombre', 'Activa')->first()?->id ?? 100)->count(),
             'total_pagado' => $pagos->sum('monto_abonado'),
             'cantidad_pagos' => $pagos->count(),
             'monto_promedio_pago' => $pagos->count() > 0 ? $pagos->sum('monto_abonado') / $pagos->count() : 0,

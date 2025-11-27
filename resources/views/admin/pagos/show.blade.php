@@ -82,7 +82,7 @@
                     <div class="info-row mb-3 pb-3 border-bottom">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted"><i class="fas fa-credit-card"></i> Método</span>
-                            <strong>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</strong>
+                            <strong>{{ $pago->metodoPago?->nombre ?? 'N/A' }}</strong>
                         </div>
                     </div>
 
@@ -236,7 +236,7 @@
                                         </div>
                                         <small class="text-muted d-block">
                                             <i class="fas fa-calendar"></i> {{ $p->fecha_pago->format('d/m/Y') }} 
-                                            <i class="fas fa-credit-card"></i> {{ $p->metodoPagoPrincipal?->nombre ?? 'N/A' }}
+                                            <i class="fas fa-credit-card"></i> {{ $p->metodoPago?->nombre ?? 'N/A' }}
                                         </small>
                                         @if($p->referencia_pago)
                                             <small class="text-info d-block">
@@ -319,11 +319,6 @@
                             <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-warning">
                                 <i class="fas fa-pencil-alt"></i> Editar Pago
                             </a>
-                            @if($pago->monto_pendiente > 0)
-                                <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $pago->inscripcion->id]) }}" class="btn btn-success">
-                                    <i class="fas fa-credit-card"></i> Nuevo Pago
-                                </a>
-                            @endif
                             <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')

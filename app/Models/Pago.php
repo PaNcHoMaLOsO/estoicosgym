@@ -72,7 +72,6 @@ class Pago extends Model
         'fecha_pago',
         'periodo_inicio',
         'periodo_fin',
-        'id_metodo_pago_principal',
         'id_metodo_pago',
         'metodos_pago_json',
         'referencia_pago',
@@ -115,9 +114,9 @@ class Pago extends Model
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');
     }
 
-    public function metodoPagoPrincipal()
+    public function metodoPago()
     {
-        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago_principal');
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago');
     }
 
     public function estado()
@@ -234,7 +233,7 @@ class Pago extends Model
     public function calculateEstadoDinamico()
     {
         if (!$this->inscripcion) {
-            return 101;
+            return 200;
         }
 
         $saldoPendiente = $this->getSaldoPendiente();
@@ -242,21 +241,21 @@ class Pago extends Model
 
         // Si todo está pagado
         if ($saldoPendiente <= 0) {
-            return 102; // PAGADO
+            return 201; // PAGADO
         }
 
         // Si es cuota vencida
         if ($this->esParteDeCuotas() &&
             $this->fecha_vencimiento_cuota &&
             now()->isAfter($this->fecha_vencimiento_cuota)) {
-            return 104; // VENCIDO
+            return 203; // VENCIDO
         }
 
         // Si hay algo abonado (parcial)
         if ($totalAbonado > 0 || $this->monto_abonado > 0) {
-            return 103; // PARCIAL
+            return 202; // PARCIAL
         }
 
-        return 101; // PENDIENTE
+        return 200; // PENDIENTE
     }
 }

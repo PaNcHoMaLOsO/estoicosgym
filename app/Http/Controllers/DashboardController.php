@@ -19,9 +19,9 @@ class DashboardController extends Controller
         
         // Obtener IDs de estados
         $estadoActiva = Estado::where('nombre', 'Activa')->first();
-        $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 1;
+        $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 100;
         $estadoVencida = Estado::where('nombre', 'Vencida')->first();
-        $idEstadoVencida = $estadoVencida ? $estadoVencida->id : 202;
+        $idEstadoVencida = $estadoVencida ? $estadoVencida->id : 102;
         
         // KPIs Principales - Clientes
         $totalClientes = Cliente::where('activo', true)->count();

@@ -117,22 +117,30 @@ class InscripcionController extends Controller
      */
     public function create()
     {
-        // Clientes con membresía VENCIDA
-        $clientesConMembresiaVencida = Inscripcion::where('fecha_vencimiento', '<', now())
+        // Clientes que pueden tener una nueva inscripción:
+        // 1. NO tienen inscripción vigente (fecha_vencimiento <= hoy)
+        // 2. O su última inscripción está completamente pagada (estado_pago = 201 "Pagado")
+        
+        $clientesConInscripcionVigente = Inscripcion::where('fecha_vencimiento', '>', now())
+            ->where(function ($query) {
+                $query->whereNull('estado_pago')
+                      ->orWhere('estado_pago', '<>', 201); // No está pagada
+            })
             ->pluck('id_cliente')->unique();
 
         $clientes = Cliente::where('activo', true)
-            ->whereIn('id', $clientesConMembresiaVencida)
+            ->whereNotIn('id', $clientesConInscripcionVigente)
             ->orderBy('nombres')
             ->get();
 
         $estados = Estado::where('categoria', 'membresia')->get();
+        $estadoActiva = Estado::where('codigo', 100)->first(); // Estado "Activa"
         $membresias = Membresia::all();
         $convenios = Convenio::all();
         $motivos = MotivoDescuento::all();
         $metodosPago = MetodoPago::where('activo', true)->get();
 
-        return view('admin.inscripciones.create', compact('clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago'));
+        return view('admin.inscripciones.create', compact('clientes', 'estados', 'estadoActiva', 'membresias', 'convenios', 'motivos', 'metodosPago'));
     }
 
     /**

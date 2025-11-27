@@ -175,7 +175,7 @@ class DashboardApiController extends Controller
     {
         $estadoActiva = Estado::where('nombre', 'Activa')->first();
         
-        $inscripciones = Inscripcion::where('id_estado', $estadoActiva?->id ?? 1)
+        $inscripciones = Inscripcion::where('id_estado', $estadoActiva?->id ?? 100)
             ->whereBetween('fecha_vencimiento', [now(), now()->addDays(30)])
             ->with(['cliente', 'membresia'])
             ->orderBy('fecha_vencimiento')

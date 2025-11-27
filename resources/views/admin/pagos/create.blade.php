@@ -297,12 +297,14 @@
                             @php
                                 $total = $insc->precio_final ?? $insc->precio_base;
                                 $pagos = $insc->pagos()->sum('monto_abonado');
+                                $pendiente = max(0, $total - $pagos);
                                 $diasRestantes = max(0, now()->diffInDays($insc->fecha_vencimiento, false));
                                 $isSelected = !empty($inscripcion_id_preselect) && $insc->id == $inscripcion_id_preselect;
                             @endphp
                             <option value="{{ $insc->id }}" 
                                     data-precio="{{ $total }}"
                                     data-pagos="{{ $pagos }}"
+                                    data-pendiente="{{ $pendiente }}"
                                     data-cliente="{{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }}"
                                     data-rut="{{ $insc->cliente->rut }}"
                                     data-email="{{ $insc->cliente->email }}"
@@ -311,7 +313,7 @@
                                     data-vencimiento="{{ $insc->fecha_vencimiento->format('d/m/Y') }}"
                                     data-dias="{{ $diasRestantes }}"
                                     {{ $isSelected ? 'selected' : '' }}>
-                                👤 {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} ({{ $insc->membresia->nombre }})
+                                👤 {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} - {{ $insc->membresia->nombre }} - Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}
                             </option>
                         @endforeach
                     </select>
@@ -602,7 +604,7 @@
         <!-- Hidden fields -->
         <input type="hidden" id="es_pago_simple" name="es_pago_simple" value="1">
         <input type="hidden" id="monto_abonado" name="monto_abonado" value="0">
-        <input type="hidden" id="id_metodo_pago_principal" name="id_metodo_pago_principal" value="">
+        <input type="hidden" id="id_metodo_pago" name="id_metodo_pago" value="">
 
         <!-- Botones -->
         <div class="row mt-4 mb-5">

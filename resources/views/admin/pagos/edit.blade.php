@@ -147,27 +147,27 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="id_metodo_pago_principal" class="font-weight-bold">
+                                    <label for="id_metodo_pago" class="font-weight-bold">
                                         <i class="fas fa-credit-card text-warning"></i> Método de Pago
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-control form-control-lg @error('id_metodo_pago_principal') is-invalid @enderror" 
-                                            id="id_metodo_pago_principal" 
-                                            name="id_metodo_pago_principal"
+                                    <select class="form-control form-control-lg @error('id_metodo_pago') is-invalid @enderror" 
+                                            id="id_metodo_pago" 
+                                            name="id_metodo_pago"
                                             style="width: 100%;"
                                             required>
                                         <option value="">-- Seleccionar --</option>
                                         @foreach($metodos_pago as $metodo)
                                             <option value="{{ $metodo->id }}" 
-                                                    {{ old('id_metodo_pago_principal', $pago->id_metodo_pago_principal) == $metodo->id ? 'selected' : '' }}>
+                                                    {{ old('id_metodo_pago', $pago->id_metodo_pago) == $metodo->id ? 'selected' : '' }}>
                                                 {{ $metodo->nombre }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('id_metodo_pago_principal')
+                                    @error('id_metodo_pago')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
-                                    <small class="text-muted d-block mt-1">Anterior: {{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</small>
+                                    <small class="text-muted d-block mt-1">Anterior: {{ $pago->metodoPago?->nombre ?? 'N/A' }}</small>
                                 </div>
                             </div>
                         </div>
@@ -407,7 +407,7 @@
     <script>
         $(document).ready(function() {
             // Inicializar Select2 con tema Bootstrap
-            $('#id_metodo_pago_principal').select2({
+            $('#id_metodo_pago').select2({
                 theme: 'bootstrap-5',
                 width: '100%',
                 language: 'es'

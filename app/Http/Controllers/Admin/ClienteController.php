@@ -23,7 +23,7 @@ class ClienteController extends Controller
         // Mostrar solo clientes activos
         $clientes = Cliente::where('activo', true)
             ->with(['inscripciones' => function ($q) {
-                $q->where('id_estado', 1); // 1 = Activa
+                $q->where('id_estado', 100); // 100 = Activa
             }])
             ->paginate(20);
         return view('admin.clientes.index', compact('clientes'));
@@ -131,7 +131,7 @@ class ClienteController extends Controller
             'precio_base' => $precioActual->precio_normal,
             'descuento_aplicado' => $descuento,
             'precio_final' => $precioFinal,
-            'id_estado' => 1, // Activa
+            'id_estado' => 100, // Activa
         ]);
 
         // Crear pago
@@ -149,7 +149,7 @@ class ClienteController extends Controller
             'periodo_inicio' => $fechaInicio,
             'periodo_fin' => $fechaVencimiento,
             'id_metodo_pago' => $datosPago['id_metodo_pago'],
-            'id_estado' => $datosPago['monto_abonado'] >= $precioFinal ? 102 : 101, // Pagado(102) o Pendiente(101)
+            'id_estado' => $datosPago['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
             'cantidad_cuotas' => $cantidadCuotas,
             'numero_cuota' => 1,
             'monto_cuota' => $montoPorCuota,
@@ -213,13 +213,13 @@ class ClienteController extends Controller
     public function destroy(Cliente $cliente)
     {
         // Validar que no tenga inscripciones activas (id_estado = 1)
-        if ($cliente->inscripciones()->where('id_estado', 1)->exists()) {
+        if ($cliente->inscripciones()->where('id_estado', 100)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
                 ->with('error', 'No se puede desactivar este cliente. Tiene inscripciones activas registradas. Por favor, venza o cancele estas inscripciones primero.');
         }
 
         // Validar que no tenga pagos pendientes (id_estado = 101)
-        if ($cliente->pagos()->where('id_estado', 101)->exists()) {
+        if ($cliente->pagos()->where('id_estado', 200)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
                 ->with('error', 'No se puede desactivar este cliente. Tiene pagos pendientes. Por favor, procese estos pagos primero.');
         }
