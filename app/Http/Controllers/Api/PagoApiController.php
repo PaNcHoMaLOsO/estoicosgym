@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Models\Pago;
 use App\Models\Inscripcion;
+use App\Models\Auditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -113,7 +113,7 @@ class PagoApiController extends Controller
         $pago->save();
 
         // Registrar en auditoría
-        \Log::info("Pago simple creado: ID={$pago->id}, Monto=\${$pago->monto_abonado}");
+        $this->registrarAuditoria('crear', 'pago', $pago->id, 'Pago simple registrado');
 
         return $pago;
     }
@@ -166,7 +166,8 @@ class PagoApiController extends Controller
         }
 
         // Registrar en auditoría
-        \Log::info("Plan de {$cantidadCuotas} cuotas creado, Total: \${$validated['monto_abonado']}");
+        $this->registrarAuditoria('crear', 'pago', implode(',', array_column($pagos, 'id')), 
+            "Plan de {$cantidadCuotas} cuotas creado");
 
         return $pagos;
     }
@@ -174,33 +175,19 @@ class PagoApiController extends Controller
     /**
      * GET /api/inscripciones/{id}/saldo
      * Obtener saldo pendiente de una inscripción
-     * Devuelve datos en formato esperado por el formulario de pagos
      */
     public function getSaldo($id)
     {
         try {
-            $inscripcion = Inscripcion::with(['cliente', 'membresia', 'estado'])->findOrFail($id);
-            $precioFinal = $inscripcion->precio_final ?? $inscripcion->precio_base;
+            $inscripcion = Inscripcion::findOrFail($id);
 
             return response()->json([
-                'total_a_pagar' => $precioFinal,
-                'total_abonado' => $inscripcion->getTotalAbonado(),
-                'saldo_pendiente' => $inscripcion->getSaldoPendiente(),
-                'porcentaje_pagado' => ($precioFinal > 0) 
-                    ? round(($inscripcion->getTotalAbonado() / $precioFinal) * 100, 2) 
-                    : 0,
-                'estado' => $inscripcion->estaPagadaAlDia() ? 'Pagada' : 'Pendiente',
-                
-                // NUEVA: Información adicional de membresía y cliente
-                'membresia_nombre' => $inscripcion->membresia->nombre ?? 'N/A',
-                'cliente_nombre' => $inscripcion->cliente->nombres . ' ' . $inscripcion->cliente->apellido_paterno,
-                'cliente_email' => $inscripcion->cliente->email,
-                'periodo' => $inscripcion->fecha_inicio->format('d/m/Y') . ' - ' . $inscripcion->fecha_vencimiento->format('d/m/Y'),
-                'precio_base' => $inscripcion->precio_base,
-                'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
+                'exito' => true,
+                'datos' => $inscripcion->getDetalleAbonos(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
+                'exito' => false,
                 'error' => 'Inscripción no encontrada',
             ], 404);
         }
@@ -255,9 +242,9 @@ class PagoApiController extends Controller
                 ->orWhere('id', $id)
                 ->firstOrFail();
 
-            // Si es cuota, cargar relación
+            // Si es cuota, incluir cuotas relacionadas
             if ($pago->esParteDeCuotas()) {
-                $pago->load('cuotasRelacionadas');
+                $pago->cuotasRelacionadas = $pago->cuotasRelacionadas();
             }
 
             return response()->json([
@@ -300,7 +287,7 @@ class PagoApiController extends Controller
             }
 
             // Registrar auditoría
-            \Log::info("Pago actualizado: ID={$pago->id}, Monto=\${$pago->monto_abonado}");
+            $this->registrarAuditoria('actualizar', 'pago', $pago->id, 'Pago actualizado');
 
             return response()->json([
                 'exito' => true,
@@ -332,7 +319,7 @@ class PagoApiController extends Controller
             $pago->delete();
 
             // Registrar auditoría
-            \Log::info("Pago eliminado: ID={$id}");
+            $this->registrarAuditoria('eliminar', 'pago', $id, 'Pago eliminado');
 
             return response()->json([
                 'exito' => true,
@@ -343,6 +330,26 @@ class PagoApiController extends Controller
                 'exito' => false,
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Registrar acción en tabla de auditoría
+     */
+    private function registrarAuditoria($accion, $tabla, $registro_id, $descripcion)
+    {
+        try {
+            Auditoria::create([
+                'accion' => $accion,
+                'tabla' => $tabla,
+                'registro_id' => $registro_id,
+                'descripcion' => $descripcion,
+                'usuario' => auth()->user()->id ?? null,
+                'ip' => request()->ip(),
+            ]);
+        } catch (\Exception $e) {
+            // Fallar silenciosamente en auditoría
+            \Log::warning("Error registrando auditoría: {$e->getMessage()}");
         }
     }
 }

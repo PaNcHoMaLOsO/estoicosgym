@@ -102,7 +102,7 @@ class ClienteController extends Controller
         // Validar datos de pago
         $datosPago = $request->validate([
             'monto_abonado' => 'required|numeric|min:0.01',
-            'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
             'fecha_pago' => 'required|date|before_or_equal:today',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
         ]);
@@ -142,10 +142,13 @@ class ClienteController extends Controller
             'uuid' => Str::uuid(),
             'id_inscripcion' => $inscripcion->id,
             'id_cliente' => $cliente->id,
+            'monto_total' => $precioFinal,
             'monto_abonado' => $datosPago['monto_abonado'],
             'monto_pendiente' => max(0, $precioFinal - $datosPago['monto_abonado']),
             'fecha_pago' => Carbon::parse($datosPago['fecha_pago']),
-            'id_metodo_pago_principal' => $datosPago['id_metodo_pago_principal'],
+            'periodo_inicio' => $fechaInicio,
+            'periodo_fin' => $fechaVencimiento,
+            'id_metodo_pago' => $datosPago['id_metodo_pago'],
             'id_estado' => $datosPago['monto_abonado'] >= $precioFinal ? 102 : 101, // Pagado(102) o Pendiente(101)
             'cantidad_cuotas' => $cantidadCuotas,
             'numero_cuota' => 1,
@@ -161,7 +164,7 @@ class ClienteController extends Controller
         $cliente->load(['inscripciones' => function ($q) {
             $q->with('membresia', 'estado')->latest();
         }, 'pagos' => function ($q) {
-            $q->with('estado', 'metodoPagoPrincipal')->latest();
+            $q->with('estado', 'metodoPago')->latest();
         }]);
         
         return view('admin.clientes.show', compact('cliente'));

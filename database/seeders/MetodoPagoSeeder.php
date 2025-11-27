@@ -11,26 +11,26 @@ class MetodoPagoSeeder extends Seeder
     {
         DB::table('metodos_pago')->insert([
             [
-                'codigo' => 'efectivo',
                 'nombre' => 'Efectivo',
+                'descripcion' => 'Pago en efectivo en el gimnasio',
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],
             [
-                'codigo' => 'transferencia',
                 'nombre' => 'Transferencia',
+                'descripcion' => 'Transferencia bancaria',
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],
             [
-                'codigo' => 'tarjeta',
                 'nombre' => 'Tarjeta',
+                'descripcion' => 'Tarjeta de débito o crédito',
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],
             [
-                'codigo' => 'otro',
                 'nombre' => 'Mixto',
+                'descripcion' => 'Combinación de métodos de pago',
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],

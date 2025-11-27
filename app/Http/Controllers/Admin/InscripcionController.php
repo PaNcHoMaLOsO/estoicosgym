@@ -115,7 +115,7 @@ class InscripcionController extends Controller
             'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
             'observaciones' => 'nullable|string|max:500',
             'monto_abonado' => $pagoPendiente ? 'nullable' : 'required|numeric|min:0.01',
-            'id_metodo_pago_principal' => $pagoPendiente ? 'nullable' : 'required|exists:metodos_pago,id',
+            'id_metodo_pago' => $pagoPendiente ? 'nullable' : 'required|exists:metodos_pago,id',
             'fecha_pago' => $pagoPendiente ? 'nullable' : 'required|date',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
             'fecha_vencimiento_cuota' => 'nullable|date',
@@ -178,6 +178,9 @@ class InscripcionController extends Controller
 
             Pago::create([
                 'id_inscripcion' => $inscripcion->id,
+                'id_cliente' => $validated['id_cliente'],
+                'id_membresia' => $validated['id_membresia'],
+                'monto_total' => $precioFinal,
                 'monto_abonado' => $montoAbonado,
                 'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
                 'cantidad_cuotas' => $cantidadCuotas,
@@ -185,7 +188,7 @@ class InscripcionController extends Controller
                 'monto_cuota' => $montoCuota,
                 'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
                 'id_estado' => $idEstadoPago,
-                'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
+                'id_metodo_pago' => $validated['id_metodo_pago'],
                 'fecha_pago' => $validated['fecha_pago'],
             ]);
         }

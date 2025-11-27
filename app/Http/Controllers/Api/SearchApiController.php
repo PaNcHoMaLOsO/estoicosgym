@@ -42,54 +42,35 @@ class SearchApiController extends Controller
     }
 
     /**
-     * Buscar inscripciones con saldo pendiente por cliente o estado
+     * Buscar inscripciones por cliente o estado
      * GET /api/inscripciones/search?q=term
-     * SOLO retorna inscripciones que:
-     * 1. Tienen dinero pendiente de pagar (saldo > 0)
-     * 2. Están en estado ACTIVA (id_estado = 1)
      */
     public function searchInscripciones(Request $request)
     {
         $query = $request->input('q', '');
-        $activa = $request->input('activa', true);
         
         if (strlen($query) < 2) {
             return response()->json([]);
         }
 
-        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'pagos'])
-            ->where('id_estado', 1)  // SOLO inscripciones ACTIVAS
+        $inscripciones = Inscripcion::with(['cliente', 'estado'])
             ->where(function ($q) use ($query) {
                 $q->whereHas('cliente', function ($clienteQuery) use ($query) {
                     $clienteQuery->where('nombres', 'LIKE', "%{$query}%")
                                  ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
                                  ->orWhere('email', 'LIKE', "%{$query}%");
-                })->orWhereHas('membresia', function ($membresia) use ($query) {
-                    $membresia->where('nombre', 'LIKE', "%{$query}%");
                 })->orWhereHas('estado', function ($estadoQuery) use ($query) {
                     $estadoQuery->where('nombre', 'LIKE', "%{$query}%");
                 })->orWhere('id', $query);
             })
-            ->limit(25)
-            ->get(['id', 'id_cliente', 'id_estado', 'id_membresia', 'precio_final', 'precio_base']);
-
-        // FILTRAR SOLO inscripciones con saldo pendiente
-        $inscripciones = $inscripciones->filter(function ($inscripcion) {
-            return $inscripcion->getSaldoPendiente() > 0;
-        })->values();
+            ->limit(20)
+            ->get(['id', 'id_cliente', 'id_estado']);
 
         return response()->json(
             $inscripciones->map(function ($inscripcion) {
-                $saldo = $inscripcion->getSaldoPendiente();
                 return [
                     'id' => $inscripcion->id,
-                    'text' => "#{$inscripcion->id} - {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
-                    'nombre' => "{$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
-                    'cliente_id' => $inscripcion->id_cliente,
-                    'membresia_nombre' => $inscripcion->membresia->nombre ?? 'N/A',
-                    'saldo' => $saldo,
-                    'total_a_pagar' => $inscripcion->precio_final ?? $inscripcion->precio_base,
-                    'total_abonado' => $inscripcion->getTotalAbonado(),
+                    'text' => "#{$inscripcion->id} - {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno} ({$inscripcion->estado->nombre})",
                 ];
             })
         );

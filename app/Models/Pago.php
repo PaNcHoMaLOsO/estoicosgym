@@ -14,11 +14,9 @@ use Illuminate\Support\Str;
  * @property string $monto_pendiente Saldo restante
  * @property int|null $id_motivo_descuento Motivo del descuento (si aplica)
  * @property \Illuminate\Support\Carbon $fecha_pago
- * @property int $id_metodo_pago_principal
- * @property string|null $metodos_pago_json JSON con desglose de pagos mixtos
+ * @property int $id_metodo_pago
  * @property string|null $referencia_pago N° de transferencia, comprobante, referencia
  * @property int $id_estado Pendiente, Pagado, Parcial, Vencido (calculado dinámicamente)
- * @property bool $es_plan_cuotas ¿Es parte de un plan de cuotas?
  * @property int $cantidad_cuotas Total de cuotas en el plan (default: 1)
  * @property int $numero_cuota Número de cuota actual (ej: 1 de 3)
  * @property string|null $monto_cuota Monto de cada cuota individual
@@ -28,21 +26,27 @@ use Illuminate\Support\Str;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Estado $estado
  * @property-read \App\Models\Inscripcion $inscripcion
- * @property-read \App\Models\MetodoPago $metodoPagoPrincipal
+ * @property-read \App\Models\MetodoPago $metodoPago
  * @property-read \App\Models\MotivoDescuento|null $motivoDescuento
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $cuotasRelacionadas
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereDescuentoAplicado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereFechaPago($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdCliente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdEstado($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdInscripcion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdMetodoPagoPrincipal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdMetodoPago($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdMotivoDescuento($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoAbonado($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoPendiente($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoTotal($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereObservaciones($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago wherePeriodoFin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago wherePeriodoInicio($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereReferenciaPago($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereUpdatedAt($value)
  * @mixin \Eloquent
@@ -167,15 +171,7 @@ class Pago extends Model
      */
     public function esPagoMixto()
     {
-        if (!$this->metodos_pago_json) {
-            return false;
-        }
-        
-        $decoded = is_array($this->metodos_pago_json) 
-            ? $this->metodos_pago_json 
-            : json_decode($this->metodos_pago_json, true);
-        
-        return is_array($decoded) && count($decoded) > 1;
+        return $this->metodos_pago_json && count($this->metodos_pago_json) > 1;
     }
 
     /**
@@ -223,10 +219,10 @@ class Pago extends Model
 
     /**
      * Calcular el estado dinámico basado en montos y fechas
-     * 101: PENDIENTE - No hay abono alguno
-     * 102: PAGADO - La inscripción está 100% pagada
-     * 103: PARCIAL - Hay algo abonado pero falta saldo
-     * 104: VENCIDO - Cuota vencida sin pago
+     * 101: PENDIENTE
+     * 102: PAGADO
+     * 103: PARCIAL
+     * 104: VENCIDO
      */
     public function calculateEstadoDinamico()
     {
@@ -234,28 +230,26 @@ class Pago extends Model
             return 101;
         }
 
-        // Usar el saldo TOTAL de la inscripción, no del pago individual
-        $saldoPendienteTotalInscripcion = $this->inscripcion->getSaldoPendiente();
-        $totalAbonidoInscripcion = $this->inscripcion->getTotalAbonado();
-        
-        // Si la inscripción está 100% pagada
-        if ($saldoPendienteTotalInscripcion <= 0) {
+        $saldoPendiente = $this->getSaldoPendiente();
+        $totalAbonado = $this->getTotalAbonado();
+
+        // Si todo está pagado
+        if ($saldoPendiente <= 0) {
             return 102; // PAGADO
         }
 
-        // Si es cuota vencida sin pago (estado pendiente)
+        // Si es cuota vencida
         if ($this->esParteDeCuotas() &&
             $this->fecha_vencimiento_cuota &&
-            now()->isAfter($this->fecha_vencimiento_cuota) &&
-            $this->monto_abonado <= 0) {
+            now()->isAfter($this->fecha_vencimiento_cuota)) {
             return 104; // VENCIDO
         }
 
-        // Si hay algo abonado en la inscripción (parcial)
-        if ($totalAbonidoInscripcion > 0) {
+        // Si hay algo abonado (parcial)
+        if ($totalAbonado > 0 || $this->monto_abonado > 0) {
             return 103; // PARCIAL
         }
 
-        return 101; // PENDIENTE - Sin abonos
+        return 101; // PENDIENTE
     }
 }

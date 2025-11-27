@@ -121,16 +121,16 @@ class DashboardApiController extends Controller
      */
     public function metodosPagoPopulares()
     {
-        $datos = Pago::selectRaw('id_metodo_pago_principal, COUNT(*) as total, SUM(monto_abonado) as monto')
-            ->groupBy('id_metodo_pago_principal')
-            ->with('metodoPagoPrincipal')
+        $datos = Pago::selectRaw('id_metodo_pago, COUNT(*) as total, SUM(monto_abonado) as monto')
+            ->groupBy('id_metodo_pago')
+            ->with('metodoPago')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
 
         return response()->json($datos->map(function($p) {
             return [
-                'metodo' => $p->metodoPagoPrincipal?->nombre ?? 'Desconocido',
+                'metodo' => $p->metodoPago?->nombre ?? 'Desconocido',
                 'cantidad' => $p->total,
                 'monto_total' => $p->monto,
             ];
