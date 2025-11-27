@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Pago;
 use App\Models\Inscripcion;
-use App\Models\Auditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -113,7 +113,7 @@ class PagoApiController extends Controller
         $pago->save();
 
         // Registrar en auditoría
-        $this->registrarAuditoria('crear', 'pago', $pago->id, 'Pago simple registrado');
+        \Log::info("Pago simple creado: ID={$pago->id}, Monto=\${$pago->monto_abonado}");
 
         return $pago;
     }
@@ -166,8 +166,7 @@ class PagoApiController extends Controller
         }
 
         // Registrar en auditoría
-        $this->registrarAuditoria('crear', 'pago', implode(',', array_column($pagos, 'id')), 
-            "Plan de {$cantidadCuotas} cuotas creado");
+        \Log::info("Plan de {$cantidadCuotas} cuotas creado, Total: \${$validated['monto_abonado']}");
 
         return $pagos;
     }
@@ -248,9 +247,9 @@ class PagoApiController extends Controller
                 ->orWhere('id', $id)
                 ->firstOrFail();
 
-            // Si es cuota, incluir cuotas relacionadas
+            // Si es cuota, cargar relación
             if ($pago->esParteDeCuotas()) {
-                $pago->cuotasRelacionadas = $pago->cuotasRelacionadas();
+                $pago->load('cuotasRelacionadas');
             }
 
             return response()->json([
@@ -293,7 +292,7 @@ class PagoApiController extends Controller
             }
 
             // Registrar auditoría
-            $this->registrarAuditoria('actualizar', 'pago', $pago->id, 'Pago actualizado');
+            \Log::info("Pago actualizado: ID={$pago->id}, Monto=\${$pago->monto_abonado}");
 
             return response()->json([
                 'exito' => true,
@@ -325,7 +324,7 @@ class PagoApiController extends Controller
             $pago->delete();
 
             // Registrar auditoría
-            $this->registrarAuditoria('eliminar', 'pago', $id, 'Pago eliminado');
+            \Log::info("Pago eliminado: ID={$id}");
 
             return response()->json([
                 'exito' => true,
@@ -336,26 +335,6 @@ class PagoApiController extends Controller
                 'exito' => false,
                 'error' => $e->getMessage(),
             ], 500);
-        }
-    }
-
-    /**
-     * Registrar acción en tabla de auditoría
-     */
-    private function registrarAuditoria($accion, $tabla, $registro_id, $descripcion)
-    {
-        try {
-            Auditoria::create([
-                'accion' => $accion,
-                'tabla' => $tabla,
-                'registro_id' => $registro_id,
-                'descripcion' => $descripcion,
-                'usuario' => auth()->user()->id ?? null,
-                'ip' => request()->ip(),
-            ]);
-        } catch (\Exception $e) {
-            // Fallar silenciosamente en auditoría
-            \Log::warning("Error registrando auditoría: {$e->getMessage()}");
         }
     }
 }

@@ -96,8 +96,8 @@ class PagoController extends Controller
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date|before_or_equal:today',
             'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
-            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-            'numero_cuota' => 'nullable|integer|min:1',
+            'cantidad_cuotas' => 'required|integer|min:1|max:12',
+            'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
             'referencia_pago' => 'nullable|string|max:100|unique:pagos,referencia_pago',
             'observaciones' => 'nullable|string|max:500',
@@ -189,7 +189,7 @@ class PagoController extends Controller
         $pago->save();
 
         // Registrar en auditoría
-        \Log::info("Pago registrado: ID={$pago->id}, Cuota {$validated['numero_cuota']}/{$validated['cantidad_cuotas']}, Monto=\${$validated['monto_abonado']}, Usuario=" . (auth()->user()?->name ?? 'Sistema'));
+        \Log::info("Pago registrado: ID={$pago->id}, Cuota {$validated['numero_cuota']}/{$validated['cantidad_cuotas']}, Monto=\${$validated['monto_abonado']}, Usuario=" . (\Auth::user()?->name ?? 'Sistema'));
 
         return redirect()->route('admin.pagos.index')
             ->with('success', "Pago registrado exitosamente (Cuota {$validated['numero_cuota']} de {$validated['cantidad_cuotas']})");
@@ -225,8 +225,8 @@ class PagoController extends Controller
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date|before_or_equal:today',
             'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
-            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-            'numero_cuota' => 'nullable|integer|min:1',
+            'cantidad_cuotas' => 'required|integer|min:1|max:12',
+            'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
             'referencia_pago' => 'nullable|string|max:100|unique:pagos,referencia_pago,' . $pago->id,
             'observaciones' => 'nullable|string|max:500',
@@ -305,7 +305,7 @@ class PagoController extends Controller
         $pago->save();
 
         // Registrar en auditoría
-        \Log::info("Pago actualizado: ID={$pago->id}, Cuota {$validated['numero_cuota']}/{$validated['cantidad_cuotas']}, Monto=\${$validated['monto_abonado']}, Usuario=" . (auth()->user()?->name ?? 'Sistema'));
+        \Log::info("Pago actualizado: ID={$pago->id}, Cuota {$validated['numero_cuota']}/{$validated['cantidad_cuotas']}, Monto=\${$validated['monto_abonado']}, Usuario=" . (\Auth::user()?->name ?? 'Sistema'));
 
         return redirect()->route('admin.pagos.show', $pago)
             ->with('success', 'Pago actualizado exitosamente');

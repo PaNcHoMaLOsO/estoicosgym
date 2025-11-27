@@ -167,7 +167,15 @@ class Pago extends Model
      */
     public function esPagoMixto()
     {
-        return $this->metodos_pago_json && count($this->metodos_pago_json) > 1;
+        if (!$this->metodos_pago_json) {
+            return false;
+        }
+        
+        $decoded = is_array($this->metodos_pago_json) 
+            ? $this->metodos_pago_json 
+            : json_decode($this->metodos_pago_json, true);
+        
+        return is_array($decoded) && count($decoded) > 1;
     }
 
     /**
