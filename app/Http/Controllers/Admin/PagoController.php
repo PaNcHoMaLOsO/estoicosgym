@@ -172,8 +172,8 @@ class PagoController extends Controller
             'id_estado' => $montoAbonado >= $montoTotal ? 102 : 103, // 102=Pagado, 103=Parcial
         ]);
 
-        return redirect()->route('admin.pagos.index')
-            ->with('success', "Pago registrado exitosamente ({$tipoPago})");
+        return redirect()->route('admin.pagos.show', $pago)
+            ->with('success', "✅ Pago registrado exitosamente - ${$montoAbonado} de ${$montoTotal} pagados");
     }
 
     /**
