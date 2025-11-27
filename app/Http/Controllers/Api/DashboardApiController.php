@@ -121,16 +121,16 @@ class DashboardApiController extends Controller
      */
     public function metodosPagoPopulares()
     {
-        $datos = Pago::selectRaw('id_metodo_pago, COUNT(*) as total, SUM(monto_abonado) as monto')
-            ->groupBy('id_metodo_pago')
-            ->with('metodoPago')
+        $datos = Pago::selectRaw('id_metodo_pago_principal, COUNT(*) as total, SUM(monto_abonado) as monto')
+            ->groupBy('id_metodo_pago_principal')
+            ->with('metodoPagoPrincipal')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
 
         return response()->json($datos->map(function($p) {
             return [
-                'metodo' => $p->metodoPago?->nombre ?? 'Desconocido',
+                'metodo' => $p->metodoPagoPrincipal?->nombre ?? 'Desconocido',
                 'cantidad' => $p->total,
                 'monto_total' => $p->monto,
             ];
@@ -142,7 +142,7 @@ class DashboardApiController extends Controller
      */
     public function ultimosPagos($limit = 10)
     {
-        $pagos = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado'])
+        $pagos = Pago::with(['inscripcion.cliente', 'metodoPagoPrincipal', 'estado'])
             ->latest()
             ->limit($limit)
             ->get();
@@ -153,7 +153,7 @@ class DashboardApiController extends Controller
                 'cliente' => $p->inscripcion->cliente->nombres . ' ' . $p->inscripcion->cliente->apellido_paterno,
                 'monto' => $p->monto_abonado,
                 'fecha' => \Carbon\Carbon::parse($p->fecha_pago)->format('d/m/Y H:i'),
-                'metodo' => $p->metodoPago?->nombre,
+                'metodo' => $p->metodoPagoPrincipal?->nombre,
                 'estado' => $p->estado?->nombre,
                 'estado_color' => $p->estado?->color,
             ];
