@@ -223,25 +223,48 @@
             </h3>
         </div>
         <div class="card-body">
+            @php
+                $precioFinal = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base;
+                $totalAbonado = $pago->inscripcion->getTotalAbonado();
+                $saldoPendiente = $pago->inscripcion->getSaldoPendiente();
+                $estaPagada = $saldoPendiente <= 0;
+            @endphp
             <div class="row">
                 <div class="col-md-3">
                     <div class="text-center">
                         <h5 class="text-muted">Total a Pagar</h5>
-                        <h3 class="text-primary">${{ number_format($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base, 0, '.', '.') }}</h3>
+                        <h3 class="text-primary">${{ number_format($precioFinal, 0, '.', '.') }}</h3>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <h5 class="text-muted">Total Abonado</h5>
-                        <h3 class="text-success">${{ number_format($pago->inscripcion->getTotalAbonado(), 0, '.', '.') }}</h3>
+                
+                {{-- Solo mostrar "Total Abonado" si NO está completamente pagada --}}
+                @if(!$estaPagada)
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-muted">Total Abonado</h5>
+                            <h3 class="text-success">${{ number_format($totalAbonado, 0, '.', '.') }}</h3>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <h5 class="text-muted">Saldo Pendiente</h5>
-                        <h3 class="text-warning">${{ number_format($pago->inscripcion->getSaldoPendiente(), 0, '.', '.') }}</h3>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-muted">Saldo Pendiente</h5>
+                            <h3 class="text-warning">${{ number_format($saldoPendiente, 0, '.', '.') }}</h3>
+                        </div>
                     </div>
-                </div>
+                @else
+                    {{-- Si está pagada, mostrar estado de completitud --}}
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h5 class="text-muted">Estado de Pago</h5>
+                            <h3>
+                                <span class="badge bg-success" style="font-size: 1.2em;">
+                                    <i class="fas fa-check-circle"></i> 100% Pagada
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+                @endif
+                
                 <div class="col-md-3">
                     <div class="text-center">
                         <h5 class="text-muted">Cantidad Pagos</h5>

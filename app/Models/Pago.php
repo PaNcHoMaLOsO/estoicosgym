@@ -215,10 +215,10 @@ class Pago extends Model
 
     /**
      * Calcular el estado dinámico basado en montos y fechas
-     * 101: PENDIENTE
-     * 102: PAGADO
-     * 103: PARCIAL
-     * 104: VENCIDO
+     * 101: PENDIENTE - No hay abono alguno
+     * 102: PAGADO - La inscripción está 100% pagada
+     * 103: PARCIAL - Hay algo abonado pero falta saldo
+     * 104: VENCIDO - Cuota vencida sin pago
      */
     public function calculateEstadoDinamico()
     {
@@ -226,26 +226,28 @@ class Pago extends Model
             return 101;
         }
 
-        $saldoPendiente = $this->getSaldoPendiente();
-        $totalAbonado = $this->getTotalAbonado();
-
-        // Si todo está pagado
-        if ($saldoPendiente <= 0) {
+        // Usar el saldo TOTAL de la inscripción, no del pago individual
+        $saldoPendienteTotalInscripcion = $this->inscripcion->getSaldoPendiente();
+        $totalAbonidoInscripcion = $this->inscripcion->getTotalAbonado();
+        
+        // Si la inscripción está 100% pagada
+        if ($saldoPendienteTotalInscripcion <= 0) {
             return 102; // PAGADO
         }
 
-        // Si es cuota vencida
+        // Si es cuota vencida sin pago (estado pendiente)
         if ($this->esParteDeCuotas() &&
             $this->fecha_vencimiento_cuota &&
-            now()->isAfter($this->fecha_vencimiento_cuota)) {
+            now()->isAfter($this->fecha_vencimiento_cuota) &&
+            $this->monto_abonado <= 0) {
             return 104; // VENCIDO
         }
 
-        // Si hay algo abonado (parcial)
-        if ($totalAbonado > 0 || $this->monto_abonado > 0) {
+        // Si hay algo abonado en la inscripción (parcial)
+        if ($totalAbonidoInscripcion > 0) {
             return 103; // PARCIAL
         }
 
-        return 101; // PENDIENTE
+        return 101; // PENDIENTE - Sin abonos
     }
 }

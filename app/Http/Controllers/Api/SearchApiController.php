@@ -42,18 +42,20 @@ class SearchApiController extends Controller
     }
 
     /**
-     * Buscar inscripciones por cliente o estado
+     * Buscar inscripciones con saldo pendiente por cliente o estado
      * GET /api/inscripciones/search?q=term
+     * SOLO retorna inscripciones que tienen dinero pendiente de pagar
      */
     public function searchInscripciones(Request $request)
     {
         $query = $request->input('q', '');
+        $activa = $request->input('activa', true);
         
         if (strlen($query) < 2) {
             return response()->json([]);
         }
 
-        $inscripciones = Inscripcion::with(['cliente', 'estado'])
+        $inscripciones = Inscripcion::with(['cliente', 'estado', 'pagos'])
             ->where(function ($q) use ($query) {
                 $q->whereHas('cliente', function ($clienteQuery) use ($query) {
                     $clienteQuery->where('nombres', 'LIKE', "%{$query}%")
@@ -64,13 +66,24 @@ class SearchApiController extends Controller
                 })->orWhere('id', $query);
             })
             ->limit(20)
-            ->get(['id', 'id_cliente', 'id_estado']);
+            ->get(['id', 'id_cliente', 'id_estado', 'precio_final', 'precio_base']);
+
+        // FILTRAR SOLO inscripciones con saldo pendiente
+        $inscripciones = $inscripciones->filter(function ($inscripcion) {
+            return $inscripcion->getSaldoPendiente() > 0;
+        })->values();
 
         return response()->json(
             $inscripciones->map(function ($inscripcion) {
+                $saldo = $inscripcion->getSaldoPendiente();
                 return [
                     'id' => $inscripcion->id,
-                    'text' => "#{$inscripcion->id} - {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno} ({$inscripcion->estado->nombre})",
+                    'text' => "#{$inscripcion->id} - {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
+                    'nombre' => "{$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
+                    'cliente_id' => $inscripcion->id_cliente,
+                    'saldo' => $saldo,
+                    'total_a_pagar' => $inscripcion->precio_final ?? $inscripcion->precio_base,
+                    'total_abonado' => $inscripcion->getTotalAbonado(),
                 ];
             })
         );
