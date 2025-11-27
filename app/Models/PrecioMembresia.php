@@ -4,7 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-
+/**
+ * @property int $id
+ * @property int $id_membresia
+ * @property decimal $precio_normal Precio para cliente sin convenio
+ * @property decimal|null $precio_convenio Precio con descuento para cliente con convenio (NULL = sin descuento)
+ * @property \Illuminate\Support\Carbon $fecha_vigencia_desde Fecha desde la cual este precio es válido
+ * @property \Illuminate\Support\Carbon|null $fecha_vigencia_hasta Fecha hasta la cual es válido (NULL = vigente actualmente)
+ * @property int $activo Si este precio está activo
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HistorialPrecio> $historialPrecios
+ * @property-read int|null $historial_precios_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inscripcion> $inscripciones
+ * @property-read int|null $inscripciones_count
+ * @property-read \App\Models\Membresia $membresia
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereActivo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereFechaVigenciaDesde($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereFechaVigenciaHasta($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereIdMembresia($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia wherePrecioConvenio($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia wherePrecioNormal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PrecioMembresia whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class PrecioMembresia extends Model
 {
     protected $table = 'precios_membresias';

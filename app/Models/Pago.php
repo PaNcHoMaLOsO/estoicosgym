@@ -5,7 +5,52 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-
+/**
+ * @property int $id
+ * @property string $uuid UUID único para identificación externa
+ * @property string|null $grupo_pago UUID para agrupar cuotas del mismo plan
+ * @property int $id_inscripcion
+ * @property string $monto_abonado Lo que se pagó en este registro
+ * @property string $monto_pendiente Saldo restante
+ * @property int|null $id_motivo_descuento Motivo del descuento (si aplica)
+ * @property \Illuminate\Support\Carbon $fecha_pago
+ * @property int $id_metodo_pago
+ * @property string|null $referencia_pago N° de transferencia, comprobante, referencia
+ * @property int $id_estado Pendiente, Pagado, Parcial, Vencido (calculado dinámicamente)
+ * @property int $cantidad_cuotas Total de cuotas en el plan (default: 1)
+ * @property int $numero_cuota Número de cuota actual (ej: 1 de 3)
+ * @property string|null $monto_cuota Monto de cada cuota individual
+ * @property \Illuminate\Support\Carbon|null $fecha_vencimiento_cuota Fecha de vencimiento de esta cuota
+ * @property string|null $observaciones
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Estado $estado
+ * @property-read \App\Models\Inscripcion $inscripcion
+ * @property-read \App\Models\MetodoPago $metodoPago
+ * @property-read \App\Models\MotivoDescuento|null $motivoDescuento
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $cuotasRelacionadas
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereDescuentoAplicado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereFechaPago($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdCliente($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdEstado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdInscripcion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdMetodoPago($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereIdMotivoDescuento($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoAbonado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoPendiente($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereMontoTotal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereObservaciones($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago wherePeriodoFin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago wherePeriodoInicio($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereReferenciaPago($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Pago whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Pago extends Model
 {
     protected $table = 'pagos';

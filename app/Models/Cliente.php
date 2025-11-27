@@ -6,7 +6,51 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-
+/**
+ * @property int $id
+ * @property string|null $run_pasaporte NULL para indocumentados
+ * @property string $nombres
+ * @property string $apellido_paterno
+ * @property string|null $apellido_materno
+ * @property string $celular
+ * @property string|null $email
+ * @property string|null $direccion
+ * @property \Illuminate\Support\Carbon|null $fecha_nacimiento
+ * @property string|null $contacto_emergencia
+ * @property string|null $telefono_emergencia
+ * @property int|null $id_convenio Convenio asociado al cliente
+ * @property string|null $observaciones
+ * @property bool $activo
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Convenio|null $convenio
+ * @property-read mixed $nombre_completo
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inscripcion> $inscripciones
+ * @property-read int|null $inscripciones_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pago> $pagos
+ * @property-read int|null $pagos_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereActivo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereApellidoMaterno($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereApellidoPaterno($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereCelular($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereContactoEmergencia($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereDireccion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereFechaNacimiento($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereIdConvenio($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereNombres($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereObservaciones($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereRunPasaporte($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereTelefonoEmergencia($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cliente whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Cliente extends Model
 {
     use HasFactory;
