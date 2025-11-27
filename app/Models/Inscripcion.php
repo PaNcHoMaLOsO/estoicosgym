@@ -164,23 +164,6 @@ class Inscripcion extends Model
     }
 
     /**
-     * Notificaciones para esta inscripción
-     * IMPLEMENTACIÓN FUTURA: Sistema de notificaciones por email
-     * para alertar cuando la membresía o inscripción está por vencer
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function notificaciones()
-    {
-        // TODO: Implementar modelo Notificacion y su migración
-        // Cuando esté listo descomentar la siguiente línea:
-        // return $this->hasMany(Notificacion::class, 'id_inscripcion');
-        
-        // Por ahora retornar relación vacía
-        return $this->hasMany(Pago::class, 'id_inscripcion')->whereNull('id');
-    }
-
-    /**
      * Pausar la membresía por un período especificado
      * @param int $dias 7, 14 o 30 días
      * @param string $razon Motivo de la pausa

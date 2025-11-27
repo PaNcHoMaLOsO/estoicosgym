@@ -117,22 +117,7 @@ class Cliente extends Model
         return $this->hasMany(Pago::class, 'id_cliente');
     }
 
-    /**
-     * Notificaciones para este cliente
-     * IMPLEMENTACIÓN FUTURA: Sistema de notificaciones por email
-     * para alertar sobre renovaciones, vencimientos y promociones
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function notificaciones()
-    {
-        // TODO: Implementar modelo Notificacion y su migración
-        // Cuando esté listo descomentar la siguiente línea:
-        // return $this->hasMany(Notificacion::class, 'id_cliente');
-        
-        // Por ahora retornar relación vacía
-        return $this->hasMany(Pago::class, 'id_cliente')->whereNull('id');
-    }
+
 
     public function getNombreCompletoAttribute()
     {
