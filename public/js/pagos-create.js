@@ -14,6 +14,11 @@ class PagosCreateManager {
         this.cacheElements();
         this.bindEvents();
         this.initializeSelect2();
+        
+        // Inicializar valores por defecto
+        this.cantidadCuotas.value = this.cantidadCuotas.value || 1;
+        this.tipoPagoSimple.checked = true;  // Por defecto es pago simple
+        this.onTipoPagoChange('simple');
     }
 
     cacheElements() {
@@ -232,7 +237,7 @@ class PagosCreateManager {
         
         if (tipo === 'simple') {
             this.seccionCuotas.classList.add('hidden');
-            this.cantidadCuotas.value = '';
+            this.cantidadCuotas.value = '1';  // Importante: siempre debe tener un valor
             this.montoPorCuota.value = '';
             this.cantidadCuotas.removeAttribute('required');
         } else {
@@ -291,21 +296,42 @@ class PagosCreateManager {
         const idInscripcion = this.idInscripcion.value;
         const montoAbonado = parseFloat(this.montoAbonado.value) || 0;
         const idMetodo = this.idMetodoPago.value;
-        const tipoPagoValido = this.tipoPago !== 'cuotas' || 
-                               (this.cantidadCuotas.value && parseInt(this.cantidadCuotas.value) >= 2);
+        const cantidadCuotas = parseInt(this.cantidadCuotas.value) || 0;
+        
+        // Validación de tipo de pago
+        const tipoPagoValido = this.tipoPago !== 'cuotas' || cantidadCuotas >= 2;
 
         const formValido = idInscripcion && montoAbonado > 0 && idMetodo && tipoPagoValido;
+        
+        console.log('Validación:', {
+            idInscripcion: idInscripcion ? '✓' : '✗',
+            montoAbonado: montoAbonado > 0 ? '✓' : '✗',
+            idMetodo: idMetodo ? '✓' : '✗',
+            tipoPago: this.tipoPago,
+            cantidadCuotas: cantidadCuotas,
+            formValido: formValido
+        });
         
         // Validación de máximo
         if (this.inscripcionSeleccionada && montoAbonado > this.inscripcionSeleccionada.saldo_pendiente) {
             this.btnSubmit.disabled = true;
             this.montoAbonado.classList.add('is-invalid');
+            console.warn('Monto excede saldo pendiente');
             return;
         } else {
             this.montoAbonado.classList.remove('is-invalid');
         }
 
         this.btnSubmit.disabled = !formValido;
+        
+        if (!formValido) {
+            console.warn('Formulario NO válido. Falta completar:', {
+                idInscripcion: !idInscripcion ? 'inscripción' : null,
+                montoAbonado: montoAbonado <= 0 ? 'monto' : null,
+                idMetodo: !idMetodo ? 'método' : null,
+                tipoPago: !tipoPagoValido ? 'cuotas' : null
+            });
+        }
     }
 
     onSubmit(e) {

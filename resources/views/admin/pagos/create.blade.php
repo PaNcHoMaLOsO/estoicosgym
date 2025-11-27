@@ -338,9 +338,9 @@
                                 <div class="form-group form-group-required">
                                     <label for="cantidad_cuotas"><i class="fas fa-calculator"></i> Cantidad de Cuotas</label>
                                     <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
-                                           id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 2) }}" 
-                                           min="2" max="12">
-                                    <span class="help-text"><i class="fas fa-info-circle"></i> Entre 2 y 12 cuotas</span>
+                                           id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 1) }}" 
+                                           min="1" max="12">
+                                    <span class="help-text"><i class="fas fa-info-circle"></i> 1 para pago simple, 2-12 para cuotas</span>
                                     @error('cantidad_cuotas')
                                         <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                                     @enderror
