@@ -4,16 +4,32 @@
 
 @section('css')
 <style>
-    .progress-bar-custom {
-        background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-radius: 4px;
+    /* Circular Progress Bar */
+    .progress-circle {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: conic-gradient(#28a745 0deg, #28a745 var(--progress), #e9ecef var(--progress), #e9ecef 360deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .progress-custom {
-        height: 6px;
-        background-color: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
+    .progress-circle::after {
+        content: '';
+        position: absolute;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: white;
+    }
+    .progress-circle-text {
+        position: relative;
+        z-index: 1;
+        font-weight: 700;
+        font-size: 0.9em;
+        color: #28a745;
     }
     .pago-row {
         transition: all 0.3s ease;
@@ -26,29 +42,31 @@
         font-weight: 600;
         font-size: 0.95em;
     }
-    .porcentaje-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75em;
-        font-weight: 700;
-        margin-top: 4px;
-    }
     .estado-badge {
-        padding: 6px 12px;
-        border-radius: 4px;
+        padding: 8px 14px;
+        border-radius: 6px;
         font-size: 0.85em;
         font-weight: 600;
+        display: inline-block;
     }
     .saldo-pendiente {
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
         color: #856404;
     }
     .saldo-pagado {
-        background-color: #d4edda;
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
         color: #155724;
+    }
+    .table thead th {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8em;
+        letter-spacing: 0.5px;
+        border-bottom: 3px solid #667eea;
+        color: #333;
+    }
+    .btn-group-sm .btn {
+        padding: 4px 8px;
     }
 </style>
 @stop
@@ -59,8 +77,8 @@
             <h1 class="m-0"><i class="fas fa-credit-card"></i> Gestión de Pagos</h1>
         </div>
         <div class="col-sm-6 text-right">
-            <a href="{{ route('admin.pagos.create') }}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Nuevo Pago
+            <a href="{{ route('admin.pagos.create') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-plus-circle"></i> Nuevo Pago
             </a>
         </div>
     </div>
@@ -90,11 +108,11 @@
             <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-inline">
                 <div class="form-group mr-2">
                     <input type="text" id="cliente" name="cliente" class="form-control form-control-sm" 
-                           placeholder="Cliente..." value="{{ request('cliente') }}">
+                           placeholder="Buscar cliente..." value="{{ request('cliente') }}">
                 </div>
                 <div class="form-group mr-2">
                     <select id="metodo_pago" name="metodo_pago" class="form-control form-control-sm">
-                        <option value="">Método...</option>
+                        <option value="">Todos los métodos</option>
                         @foreach($metodos_pago as $metodo)
                             <option value="{{ $metodo->id }}" {{ request('metodo_pago') == $metodo->id ? 'selected' : '' }}>
                                 {{ $metodo->nombre }}
@@ -114,21 +132,22 @@
     
     <!-- Tabla de Pagos -->
     <div class="card card-outline card-primary">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-table"></i> Listado de Pagos</h3>
+        <div class="card-header bg-gradient">
+            <h3 class="card-title"><i class="fas fa-list-alt"></i> Historial de Pagos</h3>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover m-0">
                     <thead class="bg-light">
                         <tr>
-                            <th style="width: 8%">#ID</th>
-                            <th style="width: 20%">Cliente</th>
-                            <th style="width: 12%">Inscripción</th>
-                            <th style="width: 15%">Monto Total</th>
-                            <th style="width: 20%">Progreso de Pago</th>
-                            <th style="width: 15%">Saldo</th>
-                            <th style="width: 10%">Acciones</th>
+                            <th style="width: 5%">ID</th>
+                            <th style="width: 22%">Cliente / Membresía</th>
+                            <th style="width: 10%">Ref.</th>
+                            <th style="width: 12%">Total</th>
+                            <th style="width: 15%">Pagado</th>
+                            <th style="width: 15%">% Progreso</th>
+                            <th style="width: 12%">Estado</th>
+                            <th style="width: 9%">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -138,56 +157,62 @@
                                 $abonado = $pago->monto_abonado;
                                 $pendiente = $total - $abonado;
                                 $porcentaje = round(($abonado / $total) * 100);
+                                $progressDeg = ($porcentaje / 100) * 360;
                             @endphp
                             <tr class="pago-row">
                                 <td class="align-middle"><strong>#{{ $pago->id }}</strong></td>
                                 <td class="align-middle">
-                                    <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}" class="text-decoration-none">
-                                        <strong>{{ substr($pago->inscripcion->cliente->nombres, 0, 15) }}</strong><br>
-                                        <small class="text-muted">{{ substr($pago->inscripcion->cliente->apellido_paterno, 0, 20) }}</small>
-                                    </a>
+                                    <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}" class="text-decoration-none font-weight-bold">
+                                        {{ substr($pago->inscripcion->cliente->nombres, 0, 12) }} {{ substr($pago->inscripcion->cliente->apellido_paterno, 0, 12) }}
+                                    </a><br>
+                                    <small class="text-muted">{{ substr($pago->inscripcion->membresia->nombre, 0, 20) }}</small>
                                 </td>
                                 <td class="align-middle">
-                                    <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="badge badge-info">
+                                    <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="badge badge-primary">
                                         #{{ $pago->inscripcion->id }}
                                     </a>
                                 </td>
                                 <td class="align-middle">
-                                    <span class="monto-cell" style="color: #0066cc; font-size: 1.05em;">
+                                    <span class="monto-cell" style="color: #667eea; font-size: 1.05em;">
                                         ${{ number_format($total, 0, '.', '.') }}
                                     </span>
                                 </td>
                                 <td class="align-middle">
-                                    <div class="progress-custom" title="${{ number_format($abonado, 0, '.', '.') }} de ${{ number_format($total, 0, '.', '.') }}">
-                                        <div class="progress-bar-custom" style="width: {{ $porcentaje }}%"></div>
-                                    </div>
-                                    <small style="color: #28a745; font-weight: 600;">
-                                        <i class="fas fa-check-circle"></i> ${{ number_format($abonado, 0, '.', '.') }} ({{ $porcentaje }}%)
+                                    <span style="color: #28a745; font-weight: 700;">
+                                        ${{ number_format($abonado, 0, '.', '.') }}
+                                    </span><br>
+                                    <small style="color: #999;">
+                                        Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}
                                     </small>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <div class="progress-circle" style="--progress: {{ $progressDeg }}deg;">
+                                        <div class="progress-circle-text">{{ $porcentaje }}%</div>
+                                    </div>
                                 </td>
                                 <td class="align-middle">
                                     @if($pendiente > 0)
                                         <span class="estado-badge saldo-pendiente">
-                                            💰 ${{ number_format($pendiente, 0, '.', '.') }}
+                                            <i class="fas fa-hourglass-half"></i> Pendiente
                                         </span>
                                     @else
                                         <span class="estado-badge saldo-pagado">
-                                            ✅ Pagado
+                                            <i class="fas fa-check-circle"></i> Pagado
                                         </span>
                                     @endif
                                 </td>
                                 <td class="align-middle">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-info" title="Ver detalles">
+                                        <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-outline-info" title="Ver">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-warning" title="Registrar abono">
-                                            <i class="fas fa-plus-circle"></i>
+                                        <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-outline-warning" title="Registrar abono">
+                                            <i class="fas fa-plus"></i>
                                         </a>
                                         <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Eliminar?')" title="Eliminar">
+                                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('¿Eliminar?')" title="Eliminar">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -196,9 +221,9 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                    No hay pagos registrados
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.5;"></i><br>
+                                    <strong>No hay pagos registrados</strong>
                                 </td>
                             </tr>
                         @endforelse
@@ -215,3 +240,4 @@
         </div>
     </div>
 @stop
+
