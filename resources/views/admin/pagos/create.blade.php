@@ -4,7 +4,6 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="{{ asset('js/precio-formatter.js') }}"></script>
 @stop
 
 @section('content_header')
@@ -40,96 +39,81 @@
     <form action="{{ route('admin.pagos.store') }}" method="POST" id="formPago">
         @csrf
 
-        <!-- Información de Inscripción -->
+        <!-- Selección de Inscripción -->
         <div class="card card-primary mb-4">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-user-check"></i> Información de Inscripción
+                    <i class="fas fa-list-check"></i> Seleccionar Inscripción
                 </h3>
             </div>
             <div class="card-body">
-                @if($inscripcion)
-                    <!-- Mostrar inscripción seleccionada -->
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <div class="alert alert-light border border-primary">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <strong>Cliente:</strong> {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <strong>Membresía:</strong> {{ $inscripcion->membresia->nombre }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <strong>Vencimiento:</strong> {{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}
-                                    </div>
-                                </div>
-                            </div>
-                            <input type="hidden" id="id_inscripcion" name="id_inscripcion" value="{{ $inscripcion->id }}" />
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="id_inscripcion"><i class="fas fa-user-check"></i> Inscripción <span class="text-danger">*</span></label>
+                    <select class="form-control @error('id_inscripcion') is-invalid @enderror" 
+                            id="id_inscripcion" name="id_inscripcion" required>
+                        <option value="">-- Seleccionar Inscripción --</option>
+                        @foreach($inscripciones as $insc)
+                            <option value="{{ $insc->id }}" data-precio="{{ $insc->precio_final ?? $insc->precio_base }}">
+                                #{{ $insc->id }} - {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} - {{ $insc->membresia->nombre }} (${{ number_format($insc->precio_final ?? $insc->precio_base, 0, '.', '.') }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('id_inscripcion')
+                        <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
+                    @enderror
+                </div>
 
-                    <!-- Información de precio -->
+                <!-- Información de la inscripción seleccionada -->
+                <div id="infoInscripcion" class="alert alert-light border border-primary d-none">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label"><i class="fas fa-dollar-sign"></i> Precio Base</label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">$</span>
-                                </div>
-                                <input type="text" class="form-control" value="{{ number_format($inscripcion->precio_base, 0, '.', '.') }}" readonly>
-                            </div>
+                        <div class="col-md-6">
+                            <strong>Cliente:</strong> <span id="clienteNombre"></span><br>
+                            <strong>Membresía:</strong> <span id="membresiaNombre"></span>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label"><i class="fas fa-percent"></i> Descuento</label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">$</span>
-                                </div>
-                                <input type="text" class="form-control" value="{{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label"><i class="fas fa-receipt"></i> Total a Pagar</label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">$</span>
-                                </div>
-                                <input type="text" class="form-control" id="monto_total_inscripcion" 
-                                       value="{{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}" readonly>
-                            </div>
+                        <div class="col-md-6">
+                            <strong>Total a Pagar:</strong> <span id="precioTotal" style="font-size: 1.2em; color: #007bff;"></span><br>
+                            <strong>Vencimiento:</strong> <span id="vencimiento"></span>
                         </div>
                     </div>
-                @else
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label"><i class="fas fa-list-check"></i> Inscripción <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_inscripcion') is-invalid @enderror" 
-                                    id="id_inscripcion" name="id_inscripcion" required>
-                                <option value="">-- Seleccionar Inscripción --</option>
-                            </select>
-                            @error('id_inscripcion')
-                                <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                @endif
+                </div>
+            </div>
+        </div>
 
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label"><i class="fas fa-credit-card"></i> Método de Pago <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
-                                id="id_metodo_pago" name="id_metodo_pago" required>
-                            <option value="">-- Seleccionar Método --</option>
-                            @foreach($metodos_pago as $metodo)
-                                <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
-                                    {{ $metodo->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_metodo_pago')
+        <!-- Tipo de Pago -->
+        <div class="card card-warning mb-4">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-grip-horizontal"></i> Tipo de Pago
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input tipoPago" type="radio" id="tipoPagoSimple" 
+                           name="tipoPago" value="simple" checked>
+                    <label class="form-check-label" for="tipoPagoSimple">
+                        <strong>☑️ Pago Simple</strong> - El abono se suma hasta completar el total
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input tipoPago" type="radio" id="tipoPagoCuotas" 
+                           name="tipoPago" value="cuotas">
+                    <label class="form-check-label" for="tipoPagoCuotas">
+                        <strong>☑️ Pago por Cuotas</strong> - Dividir el abono en múltiples cuotas
+                    </label>
+                </div>
+
+                <!-- Campo cantidad de cuotas (oculto inicialmente) -->
+                <div id="camposCuotas" class="mt-3 d-none">
+                    <div class="form-group">
+                        <label for="cantidad_cuotas"><i class="fas fa-divide"></i> Cantidad de Cuotas <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
+                               id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 1) }}" 
+                               min="2" max="12">
+                        @error('cantidad_cuotas')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted">Mínimo 2, máximo 12 cuotas</small>
                     </div>
                 </div>
             </div>
@@ -144,38 +128,35 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-calendar"></i> Fecha de Pago <span class="text-danger">*</span></label>
+                    <div class="col-md-6 mb-3">
+                        <label for="fecha_pago"><i class="fas fa-calendar"></i> Fecha de Pago <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
                                id="fecha_pago" name="fecha_pago" value="{{ old('fecha_pago', now()->format('Y-m-d')) }}" required>
                         @error('fecha_pago')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
-                               id="cantidad_cuotas" name="cantidad_cuotas" value="{{ old('cantidad_cuotas', 1) }}" 
-                               min="1" max="12" required>
-                        @error('cantidad_cuotas')
+
+                    <div class="col-md-6 mb-3">
+                        <label for="id_metodo_pago_principal"><i class="fas fa-credit-card"></i> Método de Pago <span class="text-danger">*</span></label>
+                        <select class="form-control @error('id_metodo_pago_principal') is-invalid @enderror" 
+                                id="id_metodo_pago_principal" name="id_metodo_pago_principal" required>
+                            <option value="">-- Seleccionar --</option>
+                            @foreach($metodos_pago as $metodo)
+                                <option value="{{ $metodo->id }}" {{ old('id_metodo_pago_principal') == $metodo->id ? 'selected' : '' }}>
+                                    {{ $metodo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('id_metodo_pago_principal')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-hashtag"></i> Número Cuota <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('numero_cuota') is-invalid @enderror" 
-                               id="numero_cuota" name="numero_cuota" value="{{ old('numero_cuota', 1) }}" 
-                               min="1" max="12" required>
-                        @error('numero_cuota')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted d-block mt-1">Ej: 1, 2, 3, etc.</small>
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Monto Abonado <span class="text-danger">*</span></label>
+                    <div class="col-md-6 mb-3">
+                        <label for="monto_abonado"><i class="fas fa-money-bill-wave"></i> Monto a Abonar <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
@@ -188,44 +169,21 @@
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-receipt"></i> Monto por Cuota</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">$</span>
-                            </div>
-                            <input type="number" class="form-control" 
-                                   id="monto_cuota" name="monto_cuota" step="0.01" readonly>
-                        </div>
-                        <small class="text-muted d-block mt-1">Se calcula automáticamente</small>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label"><i class="fas fa-calendar-times"></i> Vencimiento Cuota</label>
-                        <input type="date" class="form-control @error('fecha_vencimiento_cuota') is-invalid @enderror" 
-                               id="fecha_vencimiento_cuota" name="fecha_vencimiento_cuota" 
-                               value="{{ old('fecha_vencimiento_cuota') }}">
-                        @error('fecha_vencimiento_cuota')
-                            <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
 
-                <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label"><i class="fas fa-fingerprint"></i> Referencia Pago</label>
+                        <label for="referencia_pago"><i class="fas fa-fingerprint"></i> Referencia/Comprobante</label>
                         <input type="text" class="form-control @error('referencia_pago') is-invalid @enderror" 
                                id="referencia_pago" name="referencia_pago" maxlength="100"
-                               placeholder="TRF-2025-001 o Nº de comprobante"
+                               placeholder="TRF-2025-001 o Nº comprobante"
                                value="{{ old('referencia_pago') }}">
                         @error('referencia_pago')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror
-                        <small class="text-muted d-block mt-1">Ej: N° transferencia, comprobante, referencia</small>
                     </div>
                 </div>
 
                 <div class="form-group mb-0">
-                    <label class="form-label"><i class="fas fa-paperclip"></i> Observaciones (Opcional)</label>
+                    <label for="observaciones"><i class="fas fa-paperclip"></i> Observaciones (Opcional)</label>
                     <textarea class="form-control @error('observaciones') is-invalid @enderror" 
                               id="observaciones" name="observaciones" rows="2"
                               placeholder="Notas o comentarios adicionales...">{{ old('observaciones') }}</textarea>
@@ -236,13 +194,8 @@
             </div>
         </div>
 
-        <!-- Nota Importante -->
-        <div class="alert alert-info" role="alert">
-            <i class="fas fa-info-circle"></i> 
-            <strong>Nota:</strong> Puedes dividir el pago en múltiples cuotas. Ingresa la cantidad total de cuotas y el número de cuota actual. El monto por cuota se calcula automáticamente.
-        </div>
-
-        <hr class="my-4">
+        <!-- Hidden field para pago simple -->
+        <input type="hidden" id="es_pago_simple" name="es_pago_simple" value="1">
 
         <!-- Botones de Acción -->
         <div class="row">
@@ -262,48 +215,50 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const cantidadCuotas = document.getElementById('cantidad_cuotas');
-    const numeroCuota = document.getElementById('numero_cuota');
-    const montoAbonado = document.getElementById('monto_abonado');
-    const montoCuota = document.getElementById('monto_cuota');
-    const montoTotalInscripcion = document.getElementById('monto_total_inscripcion');
+    const selectInscripcion = document.getElementById('id_inscripcion');
+    const tipoPagoRadios = document.querySelectorAll('.tipoPago');
+    const camposCuotas = document.getElementById('camposCuotas');
+    const esPagoSimple = document.getElementById('es_pago_simple');
 
-    // Inicializar formateador de precios
-    PrecioFormatter.iniciarCampo('monto_abonado', false);
-    
-    // Calcular monto de cuota
-    function calcularMontoCuota() {
-        if (!montoAbonado.value || !cantidadCuotas.value) {
-            montoCuota.value = '';
-            return;
+    // Inicializar Select2
+    $('#id_inscripcion').select2({
+        width: '100%',
+        allowClear: true,
+        language: 'es',
+        placeholder: '-- Seleccionar Inscripción --'
+    });
+
+    // Mostrar información cuando se selecciona una inscripción
+    selectInscripcion.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        const precio = option.getAttribute('data-precio');
+
+        if (this.value) {
+            document.getElementById('infoInscripcion').classList.remove('d-none');
+            document.getElementById('precioTotal').textContent = '$' + formatPrecio(precio);
+        } else {
+            document.getElementById('infoInscripcion').classList.add('d-none');
         }
+    });
 
-        const monto = parseFloat(montoAbonado.value);
-        const cuotas = parseInt(cantidadCuotas.value);
-        const montoPorCuota = monto / cuotas;
-        montoCuota.value = montoPorCuota.toFixed(2);
-
-        // Validar que numero_cuota no sea mayor que cantidad_cuotas
-        const numCuota = parseInt(numeroCuota.value) || 1;
-        if (numCuota > cuotas) {
-            numeroCuota.value = cuotas;
-        }
-        numeroCuota.max = cuotas;
-    }
-
-    // Actualizar numeroCuota cuando cambia cantidadCuotas
-    cantidadCuotas.addEventListener('change', calcularMontoCuota);
-    montoAbonado.addEventListener('input', calcularMontoCuota);
-    montoAbonado.addEventListener('change', calcularMontoCuota);
-
-    // Inicializar Select2 si no hay inscripción precargada
-    const idInscripcion = document.getElementById('id_inscripcion');
-    if (!idInscripcion.value) {
-        $('#id_inscripcion').select2({
-            width: '100%',
-            allowClear: true,
-            language: 'es',
+    // Alternar campos de cuotas según tipo de pago
+    tipoPagoRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'cuotas') {
+                camposCuotas.classList.remove('d-none');
+                esPagoSimple.value = '0';
+                document.getElementById('cantidad_cuotas').setAttribute('required', 'required');
+            } else {
+                camposCuotas.classList.add('d-none');
+                esPagoSimple.value = '1';
+                document.getElementById('cantidad_cuotas').removeAttribute('required');
+            }
         });
+    });
+
+    // Función para formatear precio
+    function formatPrecio(precio) {
+        return parseFloat(precio).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 });
 </script>
