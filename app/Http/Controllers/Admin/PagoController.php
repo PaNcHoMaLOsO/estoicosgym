@@ -73,17 +73,15 @@ class PagoController extends Controller
      */
     public function create(Request $request)
     {
-        $inscripcion = null;
+        // Obtener todas las inscripciones activas con sus relaciones
+        $inscripciones = Inscripcion::with(['cliente', 'membresia'])
+            ->where('id_estado', 1) // Solo inscripciones activas
+            ->orderBy('id', 'desc')
+            ->get();
         
-        // Si viene desde inscripción.show
-        if ($request->filled('id_inscripcion')) {
-            $inscripcion = Inscripcion::with('cliente', 'membresia')->find($request->id_inscripcion);
-        } else {
-            $inscripcion = Inscripcion::with('cliente', 'membresia')->latest()->first();
-        }
+        $metodos_pago = MetodoPago::where('activo', true)->get();
         
-        $metodos_pago = MetodoPago::all();
-        return view('admin.pagos.create', compact('inscripcion', 'metodos_pago'));
+        return view('admin.pagos.create', compact('inscripciones', 'metodos_pago'));
     }
 
     /**
