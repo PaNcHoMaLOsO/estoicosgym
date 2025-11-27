@@ -154,24 +154,54 @@
                 @endif
 
                 <!-- Información de Saldo (oculta hasta seleccionar inscripción) -->
-                <div id="saldoInfo" class="mt-4 p-3 bg-light border rounded" style="display: none;">
+                <div id="saldoInfo" class="mt-4 p-4 bg-light border rounded" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <small class="text-muted d-block mb-2"><i class="fas fa-info-circle"></i> <strong>Detalles de la Inscripción:</strong></small>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div><strong>Membresía:</strong> <span id="membresiaNombre" class="text-primary">-</span></div>
+                                    <div class="mt-1"><strong>Período:</strong> <span id="periodoInscripcion" class="text-muted">-</span></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div><strong>Cliente:</strong> <span id="clienteNombre" class="text-primary">-</span></div>
+                                    <div class="mt-1"><strong>Email:</strong> <span id="clienteEmail" class="text-muted">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-3">
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <small class="text-muted d-block">Total a Pagar</small>
-                                <h4 id="totalAPagar" class="text-primary mb-0">$ 0.00</h4>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-white rounded border border-primary">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="fas fa-tag"></i> Total a Pagar
+                                </small>
+                                <h5 id="totalAPagar" class="text-primary mb-0 font-weight-bold">$ 0.00</h5>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <small class="text-muted d-block">Ya Abonado</small>
-                                <h4 id="totalAbonado" class="text-success mb-0">$ 0.00</h4>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-white rounded border border-success">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="fas fa-check-circle"></i> Ya Abonado
+                                </small>
+                                <h5 id="totalAbonado" class="text-success mb-0 font-weight-bold">$ 0.00</h5>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <small class="text-muted d-block">Saldo Pendiente</small>
-                                <h4 id="saldoPendiente" class="text-warning mb-0">$ 0.00</h4>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-white rounded border border-warning">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="fas fa-exclamation-triangle"></i> Saldo Pendiente
+                                </small>
+                                <h5 id="saldoPendiente" class="text-warning mb-0 font-weight-bold">$ 0.00</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-white rounded border border-info">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="fas fa-percent"></i> Porcentaje Pagado
+                                </small>
+                                <h5 id="porcentajePagado" class="text-info mb-0 font-weight-bold">0%</h5>
                             </div>
                         </div>
                     </div>

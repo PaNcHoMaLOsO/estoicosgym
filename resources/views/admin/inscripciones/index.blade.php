@@ -213,7 +213,12 @@
                                 <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-sm btn-warning" title="Editar">
                                     <i class="fas fa-edit fa-fw"></i>
                                 </a>
-                                <a href="{{ route('admin.pagos.index', ['uuid' => $inscripcion->uuid]) }}" class="btn btn-sm btn-success" title="Ver Pagos">
+                                @if($pendiente > 0)
+                                    <a href="{{ route('admin.pagos.create', ['id_inscripcion' => $inscripcion->id]) }}" class="btn btn-sm btn-success" title="Agregar Pago">
+                                        <i class="fas fa-plus-circle fa-fw"></i> Pago
+                                    </a>
+                                @endif
+                                <a href="{{ route('admin.pagos.index', ['uuid' => $inscripcion->uuid]) }}" class="btn btn-sm btn-secondary" title="Ver Pagos">
                                     <i class="fas fa-money-bill-wave fa-fw"></i>
                                 </a>
                                 <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" style="display:inline;">

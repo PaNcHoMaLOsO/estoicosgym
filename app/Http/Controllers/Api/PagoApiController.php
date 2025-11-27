@@ -179,7 +179,7 @@ class PagoApiController extends Controller
     public function getSaldo($id)
     {
         try {
-            $inscripcion = Inscripcion::findOrFail($id);
+            $inscripcion = Inscripcion::with(['cliente', 'membresia', 'estado'])->findOrFail($id);
             $precioFinal = $inscripcion->precio_final ?? $inscripcion->precio_base;
 
             return response()->json([
@@ -190,6 +190,14 @@ class PagoApiController extends Controller
                     ? round(($inscripcion->getTotalAbonado() / $precioFinal) * 100, 2) 
                     : 0,
                 'estado' => $inscripcion->estaPagadaAlDia() ? 'Pagada' : 'Pendiente',
+                
+                // NUEVA: Información adicional de membresía y cliente
+                'membresia_nombre' => $inscripcion->membresia->nombre ?? 'N/A',
+                'cliente_nombre' => $inscripcion->cliente->nombres . ' ' . $inscripcion->cliente->apellido_paterno,
+                'cliente_email' => $inscripcion->cliente->email,
+                'periodo' => $inscripcion->fecha_inicio->format('d/m/Y') . ' - ' . $inscripcion->fecha_vencimiento->format('d/m/Y'),
+                'precio_base' => $inscripcion->precio_base,
+                'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
             ]);
         } catch (\Exception $e) {
             return response()->json([

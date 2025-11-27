@@ -43,6 +43,13 @@ class PagosCreateManager {
         this.totalAPagar = document.getElementById('totalAPagar');
         this.totalAbonado = document.getElementById('totalAbonado');
         this.saldoPendiente = document.getElementById('saldoPendiente');
+        this.porcentajePagado = document.getElementById('porcentajePagado');
+        
+        // Detalles de inscripción
+        this.membresiaNombre = document.getElementById('membresiaNombre');
+        this.periodoInscripcion = document.getElementById('periodoInscripcion');
+        this.clienteNombre = document.getElementById('clienteNombre');
+        this.clienteEmail = document.getElementById('clienteEmail');
     }
 
     bindEvents() {
@@ -140,6 +147,26 @@ class PagosCreateManager {
         this.totalAPagar.textContent = `$ ${this.formatMoney(data.total_a_pagar || 0)}`;
         this.totalAbonado.textContent = `$ ${this.formatMoney(data.total_abonado || 0)}`;
         this.saldoPendiente.textContent = `$ ${this.formatMoney(data.saldo_pendiente || 0)}`;
+        
+        // Calcular porcentaje pagado
+        const totalAPagar = parseFloat(data.total_a_pagar) || 0;
+        const totalAbonado = parseFloat(data.total_abonado) || 0;
+        const porcentaje = totalAPagar > 0 ? ((totalAbonado / totalAPagar) * 100).toFixed(0) : 0;
+        this.porcentajePagado.textContent = `${porcentaje}%`;
+        
+        // Mostrar detalles de inscripción
+        if (data.membresia_nombre) {
+            this.membresiaNombre.textContent = data.membresia_nombre;
+        }
+        if (data.periodo) {
+            this.periodoInscripcion.textContent = data.periodo;
+        }
+        if (data.cliente_nombre) {
+            this.clienteNombre.textContent = data.cliente_nombre;
+        }
+        if (data.cliente_email) {
+            this.clienteEmail.textContent = data.cliente_email;
+        }
         
         this.inscripcionSeleccionada = data;
         
