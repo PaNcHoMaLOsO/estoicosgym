@@ -214,9 +214,7 @@
                                         <td>{{ $inscripcion->id }}</td>
                                         <td>{{ $inscripcion->membresia->nombre ?? 'N/A' }}</td>
                                         <td>
-                                            <span class="badge" style="background-color: {{ $inscripcion->estado->color ?? '#6c757d' }};">
-                                                <i class="fas fa-info-circle fa-fw"></i> {{ $inscripcion->estado->nombre }}
-                                            </span>
+                                            {!! $inscripcion->estado->badge !!}
                                         </td>
                                         <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
                                         <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
@@ -278,9 +276,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge" style="background-color: {{ $pago->estado->color ?? '#6c757d' }};">
-                                                <i class="fas fa-info-circle fa-fw"></i> {{ $pago->estado->nombre }}
-                                            </span>
+                                            {!! $pago->estado->badge !!}
                                         </td>
                                         <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
                                         <td><small>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</small></td>

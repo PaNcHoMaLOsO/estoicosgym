@@ -58,4 +58,20 @@ class Estado extends Model
     {
         return $this->hasMany(Pago::class, 'id_estado');
     }
+
+    /**
+     * Obtener badge HTML seguro del estado
+     * @return string
+     */
+    public function getBadgeAttribute(): string
+    {
+        $color = htmlspecialchars($this->color ?? '#6c757d', ENT_QUOTES, 'UTF-8');
+        $nombre = htmlspecialchars($this->nombre ?? 'Desconocido', ENT_QUOTES, 'UTF-8');
+
+        return sprintf(
+            '<span class="badge" style="background-color: %s;"><i class="fas fa-info-circle fa-fw"></i> %s</span>',
+            $color,
+            $nombre
+        );
+    }
 }

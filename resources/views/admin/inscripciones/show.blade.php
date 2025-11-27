@@ -70,9 +70,7 @@
                         <div class="info-box-content">
                             <span class="info-box-text">Estado</span>
                             <span class="info-box-number">
-                                <span class="badge" style="background-color: {{ $inscripcion->estado->color ?? '#6c757d' }};">
-                                    <i class="fas fa-info-circle fa-fw"></i> {{ $inscripcion->estado->nombre }}
-                                </span>
+                                {!! $inscripcion->estado->badge !!}
                             </span>
                         </div>
                     </div>
@@ -370,9 +368,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge" style="background-color: {{ $pago->estado->color ?? '#6c757d' }};">
-                                            <i class="fas fa-info-circle fa-fw"></i> {{ $pago->estado->nombre }}
-                                        </span>
+                                        {!! $pago->estado->badge !!}
                                     </td>
                                     <td>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</td>
                                     <td>

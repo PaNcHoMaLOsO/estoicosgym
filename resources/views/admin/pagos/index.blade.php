@@ -131,8 +131,8 @@
                                     <span class="badge bg-success">Pagado</span>
                                 @endif
                             </td>
-                            <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                            <td>{{ $pago->metodoPago->nombre }}</td>
+                            <td>{!! $pago->estado->badge !!}</td>
+                            <td>{{ $pago->metodoPagoPrincipal?->nombre }}</td>
                             <td>
                                 <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver">
                                     <i class="fas fa-eye fa-fw"></i>

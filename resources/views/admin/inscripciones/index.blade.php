@@ -127,9 +127,7 @@
                                 <strong>{{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}</strong>
                             </td>
                             <td>
-                                <span class="badge" style="background-color: {{ $inscripcion->estado->color ?? '#6c757d' }};">
-                                    <i class="fas fa-info-circle fa-fw"></i> {{ $inscripcion->estado->nombre }}
-                                </span>
+                                {!! $inscripcion->estado->badge !!}
                             </td>
                             <td>
                                 @php
