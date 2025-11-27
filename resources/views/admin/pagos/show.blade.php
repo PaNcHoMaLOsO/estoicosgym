@@ -1,435 +1,395 @@
 @extends('adminlte::page')
 
-@section('title', 'Detalles Pago - EstóicosGym')
+@section('title', 'Detalles del Pago - EstóicosGym')
 
-@section('css')
-<style>
-    * { font-family: 'Segoe UI', sans-serif; }
-    
-    .content-wrapper {
-        background: #f5f7fa !important;
-    }
-
-    .header-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        margin: 0 -15px 30px -15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    }
-
-    .header-section h2 {
-        margin: 0;
-        font-size: 1.8em;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .header-section p {
-        margin: 8px 0 0 0;
-        opacity: 0.95;
-        font-size: 0.95em;
-    }
-
-    .card-section {
-        background: white;
-        border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        border: 1px solid #f0f0f0;
-    }
-
-    .card-title {
-        font-size: 1.15em;
-        font-weight: 700;
-        color: #333;
-        margin: 0 0 20px 0;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #667eea;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .info-cell {
-        background: linear-gradient(135deg, #f5f9ff 0%, #f0f5fd 100%);
-        border-radius: 10px;
-        padding: 18px;
-        border-left: 4px solid #667eea;
-        transition: all 0.3s ease;
-    }
-
-    .info-cell:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.15);
-    }
-
-    .info-label {
-        font-size: 0.8em;
-        color: #999;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
-
-    .info-value {
-        font-size: 1.25em;
-        font-weight: 700;
-        color: #333;
-    }
-
-    .info-value.success {
-        color: #28a745;
-    }
-
-    .info-value.danger {
-        color: #dc3545;
-    }
-
-    .info-value.warning {
-        color: #ffc107;
-    }
-
-    .badge-status {
-        display: inline-block;
-        padding: 8px 14px;
-        border-radius: 6px;
-        font-size: 0.85em;
-        font-weight: 600;
-    }
-
-    .badge-paid {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    .badge-partial {
-        background: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-    }
-
-    .btn-group-section {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-        margin-top: 25px;
-    }
-
-    .btn-section {
-        padding: 12px 20px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.95em;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        text-decoration: none;
-    }
-
-    .btn-primary-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .btn-primary-section:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-secondary-section {
-        background: #6c757d;
-        color: white;
-    }
-
-    .btn-secondary-section:hover {
-        background: #5a6268;
-        transform: translateY(-3px);
-    }
-
-    .btn-danger-section {
-        background: #dc3545;
-        color: white;
-    }
-
-    .btn-danger-section:hover {
-        background: #c82333;
-        transform: translateY(-3px);
-    }
-
-    .historial-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.95em;
-    }
-
-    .historial-table th {
-        background: linear-gradient(135deg, #f5f9ff 0%, #f0f5fd 100%);
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-        border-bottom: 2px solid #ddd;
-        color: #333;
-    }
-
-    .historial-table td {
-        padding: 14px 15px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .historial-table tr:hover {
-        background: #f9f9f9;
-    }
-
-    .historial-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .link-item {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.3s ease;
-    }
-
-    .link-item:hover {
-        color: #764ba2;
-        gap: 10px;
-    }
-
-    .alert-success {
-        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .two-column-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-    }
-
-    @media (max-width: 1200px) {
-        .two-column-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .header-section {
-            padding: 20px 15px;
-            margin: 0 -15px 20px -15px;
-        }
-
-        .header-section h2 {
-            font-size: 1.3em;
-        }
-
-        .card-section {
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .btn-group-section {
-            grid-template-columns: 1fr;
-        }
-
-        .btn-section {
-            width: 100%;
-        }
-    }
-</style>
-@endsection
+@section('content_header')
+    <div class="row mb-2 align-items-center">
+        <div class="col-sm-7">
+            <h1 class="m-0"><i class="fas fa-receipt text-success"></i> Detalles del Pago</h1>
+            <small class="text-muted">ID: <strong>#{{ $pago->id }}</strong> | Registro: {{ $pago->created_at->format('d/m/Y H:i') }}</small>
+        </div>
+        <div class="col-sm-5 text-right">
+            <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-warning btn-sm">
+                <i class="fas fa-pencil-alt"></i> Editar
+            </a>
+            <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list"></i> Listado
+            </a>
+        </div>
+    </div>
+@stop
 
 @section('content')
-    @if(session('success'))
-        <div class="alert-success">
-            <i class="fas fa-check-circle"></i> 
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
 
-    <div class="header-section">
-        <h2><i class="fas fa-receipt"></i> Detalles del Pago</h2>
-        <p>Información completa del registro de pago - {{ $pago->fecha_pago->format('d/m/Y') }}</p>
+    <!-- CARD PRINCIPAL - MONTO DESTACADO -->
+    <div class="card card-outline shadow-sm mb-4" style="border-top: 5px solid {{ $pago->estado->color ?? '#6c757d' }}; border-radius: 8px;">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-muted mb-1"><i class="fas fa-wallet"></i> Monto Pagado</p>
+                    <h2 class="mb-0 font-weight-bold" style="font-size: 2.5rem; color: #28a745;">
+                        ${{ number_format($pago->monto_abonado, 0, '.', '.') }}
+                    </h2>
+                    <small class="text-muted d-block mt-2">
+                        Inscripción: <strong>{{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}</strong>
+                    </small>
+                </div>
+                <div class="col-md-6 text-right">
+                    <div class="mb-3">
+                        <h5 class="mb-2">Estado</h5>
+                        <span class="badge p-3" style="background-color: {{ $pago->estado->color ?? '#6c757d' }}; font-size: 14px; border-radius: 20px;">
+                            <i class="fas fa-circle-notch"></i> {{ $pago->estado->nombre }}
+                        </span>
+                    </div>
+                    @if($pago->monto_pendiente > 0)
+                        <p class="text-warning font-weight-bold mb-0">
+                            <i class="fas fa-hourglass-half"></i> Pendiente: ${{ number_format($pago->monto_pendiente, 0, '.', '.') }}
+                        </p>
+                    @else
+                        <p class="text-success font-weight-bold mb-0">
+                            <i class="fas fa-check-circle"></i> Completamente Pagado
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="two-column-grid">
-        <!-- COLUMNA IZQUIERDA -->
-        <div>
-            <!-- PAGO -->
-            <div class="card-section">
-                <div class="card-title">
-                    <i class="fas fa-money-bill-wave"></i> Información del Pago
+    <!-- GRID 1: INFORMACIÓN DEL PAGO + PROGRESO -->
+    <div class="row mb-4">
+
+        <!-- DETALLES DEL PAGO -->
+        <div class="col-lg-6">
+            <div class="card card-primary card-outline shadow-sm" style="border-radius: 8px;">
+                <div class="card-header bg-primary text-white" style="border-radius: 8px 8px 0 0;">
+                    <h5 class="card-title m-0"><i class="fas fa-credit-card"></i> Información del Pago</h5>
                 </div>
-                <div class="info-grid">
-                    <div class="info-cell">
-                        <div class="info-label">Monto Pagado</div>
-                        <div class="info-value success">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</div>
+                <div class="card-body">
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="fas fa-dollar-sign"></i> Monto Abonado</span>
+                            <strong class="text-success" style="font-size: 1.2rem;">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong>
+                        </div>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Total Inscripción</div>
-                        <div class="info-value">${{ number_format($pago->monto_total, 0, '.', '.') }}</div>
+
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="fas fa-calendar-alt"></i> Fecha</span>
+                            <strong>{{ $pago->fecha_pago->format('d/m/Y') }}</strong>
+                        </div>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Pendiente</div>
-                        <div class="info-value warning">${{ number_format($pago->monto_pendiente, 0, '.', '.') }}</div>
+
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="fas fa-credit-card"></i> Método</span>
+                            <strong>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</strong>
+                        </div>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Método de Pago</div>
-                        <div class="info-value">{{ $pago->metodoPagoPrincipal?->nombre ?? '-' }}</div>
+
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="fas fa-list-ol"></i> Cuota</span>
+                            <strong>{{ $pago->numero_cuota ?? 1 }}/{{ $pago->cantidad_cuotas ?? 1 }}</strong>
+                        </div>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Cantidad de Cuotas</div>
-                        <div class="info-value">{{ $pago->cantidad_cuotas }}</div>
+
+                    @if($pago->cantidad_cuotas && $pago->cantidad_cuotas > 1)
+                        <div class="info-row mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="fas fa-divide"></i> Por Cuota</span>
+                                <strong>${{ number_format($pago->monto_cuota ?? 0, 0, '.', '.') }}</strong>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($pago->referencia_pago)
+                        <div class="info-row mb-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="fas fa-barcode"></i> Referencia</span>
+                                <strong class="text-info">{{ $pago->referencia_pago }}</strong>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESO DE PAGO -->
+        <div class="col-lg-6">
+            <div class="card card-success card-outline shadow-sm" style="border-radius: 8px;">
+                <div class="card-header bg-success text-white" style="border-radius: 8px 8px 0 0;">
+                    <h5 class="card-title m-0"><i class="fas fa-chart-bar"></i> Progreso de Inscripción</h5>
+                </div>
+                <div class="card-body">
+                    @php
+                        $totalPagos = $pago->inscripcion->pagos->sum('monto_abonado');
+                        $montoTotal = $pago->monto_total ?? 0;
+                        $porcentaje = $montoTotal > 0 ? min(($totalPagos / $montoTotal) * 100, 100) : 0;
+                        $colorBarra = $porcentaje >= 100 ? 'success' : ($porcentaje >= 75 ? 'info' : ($porcentaje >= 50 ? 'warning' : 'danger'));
+                    @endphp
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Avance de Pago</span>
+                            <strong class="text-{{ $colorBarra }}" style="font-size: 1.1rem;">{{ round($porcentaje, 1) }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 30px; border-radius: 20px; background: #f0f0f0;">
+                            <div class="progress-bar bg-{{ $colorBarra }}" 
+                                 style="width: {{ $porcentaje }}%; border-radius: 20px; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                                {{ round($porcentaje, 1) }}%
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Estado</div>
-                        <div style="margin-top: 6px;">
-                            @if($pago->monto_pendiente == 0)
-                                <span class="badge-status badge-paid">✓ Pagado</span>
-                            @else
-                                <span class="badge-status badge-partial">⚠ Parcial</span>
-                            @endif
+
+                    <div class="row text-center mb-3 pb-3 border-bottom">
+                        <div class="col-6">
+                            <p class="text-muted mb-1 small"><i class="fas fa-coins"></i> Pagado</p>
+                            <h5 class="text-success mb-0">${{ number_format($totalPagos, 0, '.', '.') }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted mb-1 small"><i class="fas fa-tag"></i> Total</p>
+                            <h5 class="text-primary mb-0">${{ number_format($montoTotal, 0, '.', '.') }}</h5>
+                        </div>
+                    </div>
+
+                    <div class="row text-center mb-0">
+                        <div class="col-6">
+                            <p class="text-muted mb-1 small"><i class="fas fa-history"></i> Pagos</p>
+                            <h5 class="text-info mb-0">{{ $pago->inscripcion->pagos->count() }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted mb-1 small"><i class="fas fa-hourglass-half"></i> Pendiente</p>
+                            <h5 class="mb-0" style="color: {{ max(0, $montoTotal - $totalPagos) > 0 ? '#ffc107' : '#28a745' }};">
+                                ${{ number_format(max(0, $montoTotal - $totalPagos), 0, '.', '.') }}
+                            </h5>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- CLIENTE -->
-            <div class="card-section">
-                <div class="card-title">
-                    <i class="fas fa-user"></i> Información del Cliente
+    </div>
+
+    <!-- GRID 2: INSCRIPCIÓN + HISTORIAL DE PAGOS -->
+    <div class="row mb-4">
+
+        <!-- DATOS DE INSCRIPCIÓN -->
+        <div class="col-lg-5">
+            <div class="card card-info card-outline shadow-sm" style="border-radius: 8px;">
+                <div class="card-header bg-info text-white" style="border-radius: 8px 8px 0 0;">
+                    <h5 class="card-title m-0"><i class="fas fa-user-tie"></i> Datos de Inscripción</h5>
                 </div>
-                <div class="info-grid">
-                    <div class="info-cell" style="grid-column: span 2;">
-                        <div class="info-label">Nombre Completo</div>
-                        <div class="info-value">{{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}</div>
+                <div class="card-body">
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <p class="text-muted mb-1 small"><i class="fas fa-user"></i> Cliente</p>
+                        <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}" class="text-dark font-weight-bold" target="_blank">
+                            {{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}
+                            <i class="fas fa-external-link-alt fa-xs"></i>
+                        </a>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Membresía</div>
-                        <div class="info-value">{{ $pago->inscripcion->membresia->nombre }}</div>
+
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <p class="text-muted mb-1 small"><i class="fas fa-dumbbell"></i> Membresía</p>
+                        <p class="mb-0 font-weight-bold">{{ $pago->inscripcion->membresia->nombre }}</p>
                     </div>
-                    <div class="info-cell">
-                        <div class="info-label">Email</div>
-                        <div class="info-value" style="font-size: 0.95em; word-break: break-all;">{{ $pago->inscripcion->cliente->email }}</div>
+
+                    <div class="info-row mb-3 pb-3 border-bottom">
+                        <p class="text-muted mb-1 small"><i class="fas fa-calendar-check"></i> Período</p>
+                        <p class="mb-0">
+                            <strong>Inicio:</strong> {{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }}<br>
+                            <strong>Vence:</strong> {{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}
+                        </p>
                     </div>
-                </div>
-                <div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid #eee;">
-                    <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="link-item">
-                        <i class="fas fa-arrow-right"></i> Ver Inscripción Completa
-                    </a>
+
+                    <div class="info-row mb-0">
+                        <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn btn-info btn-sm btn-block">
+                            <i class="fas fa-arrow-right"></i> Ver Inscripción Completa
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA -->
-        <div>
-            <!-- HISTORIAL PAGOS -->
-            @if($pago->inscripcion->pagos->count() > 0)
-            <div class="card-section">
-                <div class="card-title">
-                    <i class="fas fa-history"></i> Historial de Pagos
+        <!-- HISTORIAL DE PAGOS -->
+        <div class="col-lg-7">
+            <div class="card card-warning card-outline shadow-sm" style="border-radius: 8px;">
+                <div class="card-header bg-warning text-white" style="border-radius: 8px 8px 0 0;">
+                    <h5 class="card-title m-0"><i class="fas fa-history"></i> Historial de Pagos</h5>
                 </div>
-                <table class="historial-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Fecha</th>
-                            <th>Monto</th>
-                            <th>Método</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($pago->inscripcion->pagos->sortByDesc('fecha_pago') as $p)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $p->fecha_pago->format('d/m/Y') }}</td>
-                            <td><strong>${{ number_format($p->monto_abonado, 0, '.', '.') }}</strong></td>
-                            <td>{{ $p->metodoPagoPrincipal?->nombre ?? '-' }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @endif
-
-            <!-- RESUMEN FECHAS -->
-            <div class="card-section">
-                <div class="card-title">
-                    <i class="fas fa-calendar"></i> Fechas Importantes
-                </div>
-                <div class="info-grid">
-                    <div class="info-cell">
-                        <div class="info-label">Inicio Membresía</div>
-                        <div class="info-value">{{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }}</div>
-                    </div>
-                    <div class="info-cell">
-                        <div class="info-label">Vencimiento</div>
-                        <div class="info-value">{{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}</div>
-                    </div>
-                    <div class="info-cell">
-                        <div class="info-label">Días Restantes</div>
-                        <div class="info-value">{{ max(0, now()->diffInDays($pago->inscripcion->fecha_vencimiento, false)) }}</div>
-                    </div>
-                    <div class="info-cell">
-                        <div class="info-label">Creado</div>
-                        <div class="info-value" style="font-size: 0.9em;">{{ $pago->created_at->format('d/m/Y H:i') }}</div>
+                <div class="card-body p-0">
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        @php $pagosOrdenados = $pago->inscripcion->pagos->sortByDesc('fecha_pago')->take(10); @endphp
+                        @forelse($pagosOrdenados as $p)
+                            <div class="payment-item p-3" style="border-bottom: 1px solid #f0f0f0; transition: background 0.3s;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <strong class="text-success" style="font-size: 1.1rem;">${{ number_format($p->monto_abonado, 0, '.', '.') }}</strong>
+                                            <span class="badge p-2" style="background-color: {{ $p->estado->color ?? '#6c757d' }}; font-size: 11px; border-radius: 10px;">
+                                                {{ $p->estado->nombre }}
+                                            </span>
+                                            @if($p->id == $pago->id)
+                                                <span class="badge badge-primary p-2" style="font-size: 11px; border-radius: 10px;">
+                                                    <i class="fas fa-arrow-left"></i> ACTUAL
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-calendar"></i> {{ $p->fecha_pago->format('d/m/Y') }} 
+                                            <i class="fas fa-credit-card"></i> {{ $p->metodoPagoPrincipal?->nombre ?? 'N/A' }}
+                                        </small>
+                                        @if($p->referencia_pago)
+                                            <small class="text-info d-block">
+                                                <i class="fas fa-barcode"></i> {{ $p->referencia_pago }}
+                                            </small>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-inbox" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Sin pagos registrados</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- BOTONES ACCIONES -->
-            <div class="card-section">
-                <div class="card-title">
-                    <i class="fas fa-cog"></i> Acciones
+    </div>
+
+    <!-- OBSERVACIONES -->
+    @if($pago->observaciones)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-light card-outline shadow-sm" style="border-radius: 8px;">
+                    <div class="card-header" style="border-radius: 8px 8px 0 0;">
+                        <h5 class="card-title m-0"><i class="fas fa-sticky-note text-warning"></i> Observaciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0" style="line-height: 1.6;">{{ $pago->observaciones }}</p>
+                    </div>
                 </div>
-                <div class="btn-group-section">
-                    <a href="{{ route('admin.pagos.index') }}" class="btn-section btn-secondary-section">
-                        <i class="fas fa-list"></i> Lista
-                    </a>
-                    <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn-section btn-primary-section">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" style="display: contents;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn-section btn-danger-section" 
-                                onclick="return confirm('¿Eliminar este pago? No se puede deshacer.')">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- BOTÓN DE REGISTRAR PAGO SI HAY PENDIENTE -->
+    @if($pago->monto_pendiente > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-success card-outline shadow-sm" style="border-top: 4px solid #28a745; border-radius: 8px;">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h5 class="mb-2"><i class="fas fa-exclamation-circle text-warning"></i> Saldo Pendiente</h5>
+                                <p class="text-muted mb-0">Aún hay saldo pendiente de pagar en esta inscripción. Registra un nuevo pago para continuarcon el proceso.</p>
+                            </div>
+                            <div class="col-md-5 text-right">
+                                <h2 class="text-warning mb-3" style="font-size: 1.8rem;">
+                                    ${{ number_format($pago->monto_pendiente, 0, '.', '.') }}
+                                </h2>
+                                <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $pago->inscripcion->id]) }}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-credit-card"></i> Registrar Nuevo Pago
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- BOTONES DE ACCIÓN (FOOTER) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-light shadow-sm" style="border-radius: 8px;">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <div>
+                            <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver al Listado
+                            </a>
+                            <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn btn-info">
+                                <i class="fas fa-user-circle"></i> Ver Inscripción
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-warning">
+                                <i class="fas fa-pencil-alt"></i> Editar Pago
+                            </a>
+                            @if($pago->monto_pendiente > 0)
+                                <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $pago->inscripcion->id]) }}" class="btn btn-success">
+                                    <i class="fas fa-credit-card"></i> Nuevo Pago
+                                </a>
+                            @endif
+                            <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" style="display: inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger" 
+                                        onclick="return confirm('⚠️ ¿Está seguro de eliminar este pago? Esta acción no se puede deshacer.')">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-@endsection
+@stop
+
+@section('css')
+    <style>
+        .info-row {
+            transition: padding 0.2s ease;
+        }
+
+        .info-row:hover {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .payment-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .card {
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+            transform: translateY(-2px);
+        }
+
+        .progress {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+@stop

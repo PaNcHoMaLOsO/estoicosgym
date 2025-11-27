@@ -81,7 +81,10 @@ class PagoController extends Controller
         
         $metodos_pago = MetodoPago::where('activo', true)->get();
         
-        return view('admin.pagos.create', compact('inscripciones', 'metodos_pago'));
+        // Capturar parámetro de inscripción pre-seleccionada (desde botón "Nuevo Pago" en show)
+        $inscripcion_id_preselect = $request->query('inscripcion_id');
+        
+        return view('admin.pagos.create', compact('inscripciones', 'metodos_pago', 'inscripcion_id_preselect'));
     }
 
     /**
@@ -96,7 +99,7 @@ class PagoController extends Controller
         $validated = $request->validate([
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'tipo_pago' => 'required|in:abono,completo,mixto',
-            'fecha_pago' => 'required|date|max:today',
+            'fecha_pago' => 'required|date|before_or_equal:today',
             'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
@@ -154,12 +157,14 @@ class PagoController extends Controller
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
+        // Obtener IDs de estados correctos (por codigo, no id)
+        $estadoPagado = Estado::where('codigo', 102)->firstOrFail();
+        $estadoParcial = Estado::where('codigo', 103)->firstOrFail();
+        $idEstado = $montoAbonado >= $montoTotal ? $estadoPagado->id : $estadoParcial->id;
+
         // Crear pago
         $pago = Pago::create([
             'id_inscripcion' => $validated['id_inscripcion'],
-            'id_cliente' => $inscripcion->id_cliente,
-            'id_membresia' => $inscripcion->id_membresia,
-            'monto_total' => $montoTotal,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => $montoPendiente,
             'cantidad_cuotas' => $cantidadCuotas,
@@ -167,13 +172,13 @@ class PagoController extends Controller
             'monto_cuota' => $montoCuota,
             'fecha_pago' => $validated['fecha_pago'],
             'id_metodo_pago_principal' => $request->input('id_metodo_pago_principal'),
-            'referencia_pago' => $validated['referencia_pago'],
-            'observaciones' => $validated['observaciones'] . " [Tipo: {$tipoPago}]",
-            'id_estado' => $montoAbonado >= $montoTotal ? 102 : 103, // 102=Pagado, 103=Parcial
+            'referencia_pago' => $validated['referencia_pago'] ?? null,
+            'observaciones' => $validated['observaciones'] ?? null,
+            'id_estado' => $idEstado,
         ]);
 
-        return redirect()->route('admin.pagos.show', $pago)
-            ->with('success', "✅ Pago registrado exitosamente - ${$montoAbonado} de ${$montoTotal} pagados");
+        return redirect()->route('admin.pagos.show', $pago->uuid)
+            ->with('success', "Pago registrado exitosamente ({$tipoPago}). Verifica los detalles abajo.");
     }
 
     /**
@@ -181,7 +186,15 @@ class PagoController extends Controller
      */
     public function show(Pago $pago)
     {
-        $pago->load(['inscripcion', 'metodoPagoPrincipal']);
+        $pago->load([
+            'inscripcion.cliente',
+            'inscripcion.membresia',
+            'inscripcion.estado',
+            'inscripcion.pagos.estado',
+            'inscripcion.pagos.metodoPagoPrincipal',
+            'metodoPagoPrincipal',
+            'estado'
+        ]);
         return view('admin.pagos.show', compact('pago'));
     }
 
@@ -190,64 +203,84 @@ class PagoController extends Controller
      */
     public function edit(Pago $pago)
     {
-        $inscripciones = Inscripcion::with('cliente')->limit(30)->get();
-        $metodos_pago = MetodoPago::all();
-        return view('admin.pagos.edit', compact('pago', 'inscripciones', 'metodos_pago'));
+        // Cargar todas las relaciones necesarias
+        $pago->load([
+            'inscripcion.cliente',
+            'inscripcion.membresia',
+            'metodoPagoPrincipal',
+            'estado'
+        ]);
+
+        $metodos_pago = MetodoPago::where('activo', true)->get();
+        return view('admin.pagos.edit', compact('pago', 'metodos_pago'));
     }
 
     /**
      * Update the specified resource in storage.
+     * Permite editar todos los detalles del pago incluyendo monto, fecha, método y estado
      */
     public function update(Request $request, Pago $pago)
     {
-        $es_pago_simple = $request->has('es_pago_simple');
-        
         $validated = $request->validate([
             'id_inscripcion' => 'required|exists:inscripciones,id',
-            'monto_abonado' => 'required|numeric|min:0.01',
-            'fecha_pago' => 'required|date|max:today',
+            'monto_abonado' => 'required|numeric|min:1|max:999999999',
+            'fecha_pago' => 'required|date|before_or_equal:today',
             'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
             'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
+        // Obtener inscripción y validar
         $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
-        $montoAbonado = $validated['monto_abonado'];
+        $montoAbonado = floatval($validated['monto_abonado']);
 
-        // Validaciones básicas
+        // Validación de monto
         if ($montoAbonado > $montoTotal) {
             return back()->withErrors([
-                'monto_abonado' => "El monto no puede exceder {$montoTotal}"
+                'monto_abonado' => "El monto no puede exceder \${$montoTotal} (precio de membresía)"
             ])->withInput();
         }
 
-        // Calcular monto pendiente
+        if ($montoAbonado <= 0) {
+            return back()->withErrors([
+                'monto_abonado' => "El monto debe ser mayor a 0"
+            ])->withInput();
+        }
+
+        // Calcular montos
         $montoPendiente = $montoTotal - $montoAbonado;
-        
-        // Determinar cantidad de cuotas
-        $cantidadCuotas = $es_pago_simple ? 1 : ($validated['cantidad_cuotas'] ?? 1);
+        $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
-        // Actualizar pago
+        // Determinar estado automáticamente según monto
+        $estadoPagado = Estado::where('codigo', 102)->firstOrFail(); // Pagado
+        $estadoParcial = Estado::where('codigo', 103)->firstOrFail(); // Parcial
+        $nuevoIdEstado = $montoAbonado >= $montoTotal ? $estadoPagado->id : $estadoParcial->id;
+
+        // Actualizar pago con todos los campos
         $pago->update([
             'id_inscripcion' => $validated['id_inscripcion'],
+            'id_cliente' => $inscripcion->id_cliente,
+            'id_membresia' => $inscripcion->id_membresia,
             'monto_total' => $montoTotal,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => $montoPendiente,
             'cantidad_cuotas' => $cantidadCuotas,
-            'numero_cuota' => 1,
             'monto_cuota' => $montoCuota,
             'fecha_pago' => $validated['fecha_pago'],
             'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
             'referencia_pago' => $validated['referencia_pago'],
-            'observaciones' => $validated['observaciones'],
-            'id_estado' => $montoAbonado >= $montoTotal ? 102 : 103,
+            'observaciones' => $validated['observaciones'] ?? null,
+            'id_estado' => $nuevoIdEstado,
         ]);
 
+        // Recargar relaciones para mostrar datos actualizados
+        $pago->refresh();
+
         return redirect()->route('admin.pagos.show', $pago)
-            ->with('success', 'Pago actualizado exitosamente');
+            ->with('success', 'Pago actualizado exitosamente. El estado se asignó automáticamente: ' . $pago->estado->nombre);
     }
 
     /**

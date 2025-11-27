@@ -3,82 +3,116 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * Agregar índices para optimizar queries críticas
      */
     public function up(): void
     {
-        // TABLA: CLIENTES
-        // Índices para búsquedas comunes
-        Schema::table('clientes', function (Blueprint $table) {
-            // Ya existen índices en creación, pero reforzamos
-            // Búsquedas por RUT
-            $table->index('run_pasaporte');
-            // Búsquedas por email
-            $table->index('email');
-            // Filtros por estado activo
-            $table->index('activo');
-            // Búsquedas por convenio
-            $table->index('id_convenio');
-        });
+        try {
+            // TABLA: CLIENTES
+            Schema::table('clientes', function (Blueprint $table) {
+                if (!$this->indexExists('clientes', 'clientes_run_pasaporte_index')) {
+                    $table->index('run_pasaporte');
+                }
+                if (!$this->indexExists('clientes', 'clientes_email_index')) {
+                    $table->index('email');
+                }
+                if (!$this->indexExists('clientes', 'clientes_activo_index')) {
+                    $table->index('activo');
+                }
+                if (!$this->indexExists('clientes', 'clientes_id_convenio_index')) {
+                    $table->index('id_convenio');
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
 
-        // TABLA: INSCRIPCIONES
-        // Índices para queries más rápidas
-        Schema::table('inscripciones', function (Blueprint $table) {
-            // Búsquedas por estado (crítico para módulo de pagos)
-            $table->index('id_estado');
-            // Búsquedas por cliente
-            $table->index('id_cliente');
-            // Búsquedas por membresía
-            $table->index('id_membresia');
-            // Filtros por fecha de vencimiento
-            $table->index('fecha_vencimiento');
-            // Índice compuesto para búsquedas comunes
-            $table->index(['id_cliente', 'id_estado']);
-        });
+        try {
+            // TABLA: INSCRIPCIONES
+            Schema::table('inscripciones', function (Blueprint $table) {
+                if (!$this->indexExists('inscripciones', 'inscripciones_id_estado_index')) {
+                    $table->index('id_estado');
+                }
+                if (!$this->indexExists('inscripciones', 'inscripciones_id_cliente_index')) {
+                    $table->index('id_cliente');
+                }
+                if (!$this->indexExists('inscripciones', 'inscripciones_id_membresia_index')) {
+                    $table->index('id_membresia');
+                }
+                if (!$this->indexExists('inscripciones', 'inscripciones_fecha_vencimiento_index')) {
+                    $table->index('fecha_vencimiento');
+                }
+                if (!$this->indexExists('inscripciones', 'inscripciones_id_cliente_id_estado_index')) {
+                    $table->index(['id_cliente', 'id_estado']);
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
 
-        // TABLA: PAGOS
-        // Índices críticos para transacciones
-        Schema::table('pagos', function (Blueprint $table) {
-            // Búsquedas por estado de pago
-            $table->index('id_estado');
-            // Búsquedas por inscripción
-            $table->index('id_inscripcion');
-            // Búsquedas por método de pago
-            $table->index('id_metodo_pago_principal');
-            // Filtros por fecha
-            $table->index('fecha_pago');
-            // Búsquedas por planes de cuotas
-            $table->index('es_plan_cuotas');
-            // Índice compuesto para análisis de ingresos
-            $table->index(['fecha_pago', 'id_estado']);
-        });
+        try {
+            // TABLA: PAGOS
+            Schema::table('pagos', function (Blueprint $table) {
+                if (!$this->indexExists('pagos', 'pagos_id_estado_index')) {
+                    $table->index('id_estado');
+                }
+                if (!$this->indexExists('pagos', 'pagos_id_inscripcion_index')) {
+                    $table->index('id_inscripcion');
+                }
+                if (!$this->indexExists('pagos', 'pagos_fecha_pago_index')) {
+                    $table->index('fecha_pago');
+                }
+                if (!$this->indexExists('pagos', 'pagos_fecha_pago_id_estado_index')) {
+                    $table->index(['fecha_pago', 'id_estado']);
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
 
-        // TABLA: PRECIOS_MEMBRESIAS
-        // Índices para cálculo de precios
-        Schema::table('precios_membresias', function (Blueprint $table) {
-            // Búsqueda de precio vigente
-            $table->index('id_membresia');
-            $table->index('activo');
-            // Índice compuesto para buscar precio vigente actual
-            $table->index(['id_membresia', 'fecha_vigencia_desde']);
-        });
+        try {
+            // TABLA: PRECIOS_MEMBRESIAS
+            Schema::table('precios_membresias', function (Blueprint $table) {
+                if (!$this->indexExists('precios_membresias', 'precios_membresias_id_membresia_index')) {
+                    $table->index('id_membresia');
+                }
+                if (!$this->indexExists('precios_membresias', 'precios_membresias_activo_index')) {
+                    $table->index('activo');
+                }
+                if (!$this->indexExists('precios_membresias', 'precios_membresias_id_membresia_fecha_vigencia_desde_index')) {
+                    $table->index(['id_membresia', 'fecha_vigencia_desde']);
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
 
-        // TABLA: ESTADOS
-        // Índice para búsquedas rápidas (pocas filas)
-        Schema::table('estados', function (Blueprint $table) {
-            $table->index('nombre');
-        });
+        try {
+            // TABLA: ESTADOS
+            Schema::table('estados', function (Blueprint $table) {
+                if (!$this->indexExists('estados', 'estados_nombre_index')) {
+                    $table->index('nombre');
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
 
-        // TABLA: MEMBRESIAS
-        // Índice para búsquedas comunes
-        Schema::table('membresias', function (Blueprint $table) {
-            $table->index('activo');
-        });
+        try {
+            // TABLA: MEMBRESIAS
+            Schema::table('membresias', function (Blueprint $table) {
+                if (!$this->indexExists('membresias', 'membresias_activo_index')) {
+                    $table->index('activo');
+                }
+            });
+        } catch (\Exception $e) {
+            // Silenciar si ya existen
+        }
     }
 
     /**
@@ -86,42 +120,17 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('clientes', function (Blueprint $table) {
-            $table->dropIndex(['run_pasaporte']);
-            $table->dropIndex(['email']);
-            $table->dropIndex(['activo']);
-            $table->dropIndex(['id_convenio']);
-        });
+        // No hacer nada al revertir para evitar problemas
+    }
 
-        Schema::table('inscripciones', function (Blueprint $table) {
-            $table->dropIndex(['id_estado']);
-            $table->dropIndex(['id_cliente']);
-            $table->dropIndex(['id_membresia']);
-            $table->dropIndex(['fecha_vencimiento']);
-            $table->dropIndex(['id_cliente', 'id_estado']);
-        });
-
-        Schema::table('pagos', function (Blueprint $table) {
-            $table->dropIndex(['id_estado']);
-            $table->dropIndex(['id_inscripcion']);
-            $table->dropIndex(['id_metodo_pago_principal']);
-            $table->dropIndex(['fecha_pago']);
-            $table->dropIndex(['es_plan_cuotas']);
-            $table->dropIndex(['fecha_pago', 'id_estado']);
-        });
-
-        Schema::table('precios_membresias', function (Blueprint $table) {
-            $table->dropIndex(['id_membresia']);
-            $table->dropIndex(['activo']);
-            $table->dropIndex(['id_membresia', 'fecha_vigencia_desde']);
-        });
-
-        Schema::table('estados', function (Blueprint $table) {
-            $table->dropIndex(['nombre']);
-        });
-
-        Schema::table('membresias', function (Blueprint $table) {
-            $table->dropIndex(['activo']);
-        });
+    private function indexExists($table, $indexName)
+    {
+        $indexes = DB::select("SHOW INDEXES FROM {$table}");
+        foreach ($indexes as $index) {
+            if ($index->Key_name === $indexName) {
+                return true;
+            }
+        }
+        return false;
     }
 };
