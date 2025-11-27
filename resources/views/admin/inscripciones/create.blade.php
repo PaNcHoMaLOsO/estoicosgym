@@ -624,42 +624,6 @@
                         </div>
                     </div>
 
-                    <!-- Cuotas para abono parcial -->
-                    <div id="cuotasSection" class="conditional-field" style="margin-top: 30px; padding-top: 25px; border-top: 2px solid #e9ecef;">
-                        <h5 class="mb-4"><i class="fas fa-receipt"></i> Información de Cuotas</h5>
-                        <div class="row">
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label"><i class="fas fa-divide"></i> Cantidad Cuotas</label>
-                                <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
-                                       id="cantidad_cuotas" name="cantidad_cuotas" min="2" max="12" value="1">
-                                <small class="text-muted d-block mt-2">Mínimo 2, máximo 12</small>
-                                @error('cantidad_cuotas')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label"><i class="fas fa-receipt"></i> Monto por Cuota</label>
-                                <div class="input-group" style="height: 44px;">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">$</span>
-                                    </div>
-                                    <input type="number" class="form-control" id="monto_cuota" readonly>
-                                </div>
-                                <small class="text-muted d-block mt-2">Calculado automáticamente</small>
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label"><i class="fas fa-calendar-times"></i> Vencimiento Cuota</label>
-                                <input type="date" class="form-control @error('fecha_vencimiento_cuota') is-invalid @enderror" 
-                                       id="fecha_vencimiento_cuota" name="fecha_vencimiento_cuota">
-                                @error('fecha_vencimiento_cuota')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="resumen-pago alert alert-info mt-4" id="resumen-abono" style="display: none;">
                         <strong><i class="fas fa-info-circle"></i> Resumen:</strong> 
                         Abonado: $<span id="nuevo-abonado">0</span> | Pendiente: $<span id="nuevo-pendiente">0</span>
@@ -796,8 +760,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const idMembresia = document.getElementById('id_membresia');
     const fechaInicio = document.getElementById('fecha_inicio');
     const descuentoAdicional = document.getElementById('descuento_adicional');
-    const cantidadCuotas = document.getElementById('cantidad_cuotas');
-    const cuotasSection = document.getElementById('cuotasSection');
     const priceSummary = document.getElementById('priceSummary');
     const idConvenio = document.getElementById('id_convenio');
     const idMotivoDescuento = document.getElementById('id_motivo_descuento');
@@ -806,7 +768,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const precioBaseEl = document.getElementById('precioBase');
     const precioDescuentoEl = document.getElementById('precioDescuento');
     const precioTotalEl = document.getElementById('precioTotal');
-    const montoCuotaEl = document.getElementById('monto_cuota');
     const fechaVencimientoEl = document.getElementById('fecha_vencimiento');
 
     // Radio buttons tipo de pago
@@ -862,14 +823,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .select2-container-custom .select2-selection--single .select2-selection__rendered {
             padding: 0 12px !important;
             line-height: 42px !important;
-            font-size: 1.1rem !important;
+            font-size: 1.15rem !important;
             color: #333 !important;
             font-weight: 600 !important;
         }
         
         .select2-membresia .select2-selection--single .select2-selection__rendered {
-            font-size: 1.2rem !important;
+            font-size: 1.15rem !important;
             font-weight: 700 !important;
+        }
+        
+        .select2-container-custom .select2-selection--single {
+            min-height: 44px !important;
+            height: 44px !important;
         }
         
         .select2-container-custom .select2-selection--single .select2-selection__placeholder {
@@ -1233,37 +1199,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== ACTUALIZAR MONTOS DE CUOTAS =====
-    function actualizarMontosCuotas() {
-        if (!cuotasSection || cuotasSection.classList.contains('d-none')) return;
-        
-        const cantidad = parseInt(cantidadCuotas.value) || 1;
-        const montoPorCuota = precioTotalInscripcion / cantidad;
-        
-        montoCuotaEl.value = PrecioFormatter.formatear(montoPorCuota);
-        
-        // Mostrar resumen
-        const resumenAbono = document.getElementById('resumen-abono');
-        if (resumenAbono) {
-            const montoAbonado = parseFloat(document.getElementById('monto_abonado').value) || 0;
-            const pendiente = precioTotalInscripcion - montoAbonado;
-            
-            document.getElementById('nuevo-abonado').textContent = PrecioFormatter.formatear(montoAbonado);
-            document.getElementById('nuevo-pendiente').textContent = PrecioFormatter.formatear(Math.max(0, pendiente));
-            resumenAbono.style.display = 'block';
-        }
-    }
-
+    // ===== ACTUALIZAR MONTOS DE CUOTAS ===== (ELIMINADO - YA NO HAY CUOTAS)
+    // Los abonos se acumulan directamente sin necesidad de cuotas
+    
     // ===== VALIDAR PAGO COMPLETO =====
     function validarPagoCompleto() {
         const montoAbonado = parseFloat(document.getElementById('monto_abonado')?.value) || 0;
-        const pendiente = precioTotalInscripcion - montoAbonado;
-        
-        if (pendiente > 0) {
-            cuotasSection?.classList.add('visible');
-        } else {
-            cuotasSection?.classList.remove('visible');
-        }
+        // Ya no controlamos cuotas - los abonos simplemente se acumulan
     }
 
     // ===== EVENT LISTENERS =====
@@ -1282,9 +1224,6 @@ document.addEventListener('DOMContentLoaded', function() {
     descuentoAdicional.addEventListener('change', cargarPrecioMembresia);
     descuentoAdicional.addEventListener('input', cargarPrecioMembresia);
     idConvenio.addEventListener('change', cargarPrecioMembresia);
-    
-    cantidadCuotas.addEventListener('change', actualizarMontosCuotas);
-    cantidadCuotas.addEventListener('input', actualizarMontosCuotas);
 
     document.getElementById('monto_abonado')?.addEventListener('change', validarPagoCompleto);
     document.getElementById('monto_abonado')?.addEventListener('input', validarPagoCompleto);

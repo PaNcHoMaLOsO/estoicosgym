@@ -157,8 +157,6 @@ class InscripcionController extends Controller
             'monto_abonado' => $pagoPendiente ? 'nullable' : 'required|numeric|min:0.01',
             'id_metodo_pago' => $pagoPendiente ? 'nullable' : 'required|exists:metodos_pago,id',
             'fecha_pago' => $pagoPendiente ? 'nullable' : 'required|date',
-            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-            'fecha_vencimiento_cuota' => 'nullable|date',
         ]);
 
         // Obtener datos de membresía y calcular precios
@@ -264,25 +262,21 @@ class InscripcionController extends Controller
      */
     protected function crearPagoInicial(Inscripcion $inscripcion, array $validated, float $precioFinal)
     {
-        $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
+        // Ya NO hay cuotas - Los abonos se irán acumulando en la tabla pagos
         $montoAbonado = $validated['monto_abonado'];
-        $montoCuota = $precioFinal / $cantidadCuotas;
         $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
 
         Pago::create([
             'id_inscripcion' => $inscripcion->id,
             'id_cliente' => $validated['id_cliente'],
-            'id_membresia' => $validated['id_membresia'],
             'monto_total' => $precioFinal,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
-            'cantidad_cuotas' => $cantidadCuotas,
-            'numero_cuota' => 1,
-            'monto_cuota' => $montoCuota,
-            'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
             'id_estado' => $idEstadoPago,
             'id_metodo_pago' => $validated['id_metodo_pago'],
             'fecha_pago' => $validated['fecha_pago'],
+            'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
+            'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
         ]);
     }
 
