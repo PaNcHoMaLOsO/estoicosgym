@@ -16,7 +16,7 @@ class PagoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
+        $query = Pago::with(['inscripcion.cliente', 'metodoPagoPrincipal', 'estado']);
         
         // Filtro por inscripción (desde el link de Ver Pagos en inscripciones)
         if ($request->filled('id_inscripcion')) {
@@ -33,7 +33,7 @@ class PagoController extends Controller
         
         // Filtro por método de pago
         if ($request->filled('metodo_pago')) {
-            $query->where('id_metodo_pago', $request->metodo_pago);
+            $query->where('id_metodo_pago_principal', $request->metodo_pago);
         }
         
         // Filtro por estado
@@ -54,7 +54,7 @@ class PagoController extends Controller
         $direccion = $request->get('direccion', 'desc');
         
         // Validar que el campo sea válido
-        $camposValidos = ['id', 'id_inscripcion', 'id_cliente', 'monto_total', 'monto_abonado', 'fecha_pago', 'id_metodo_pago', 'id_estado', 'created_at'];
+        $camposValidos = ['id', 'id_inscripcion', 'monto_abonado', 'fecha_pago', 'id_metodo_pago_principal', 'id_estado', 'created_at'];
         if (!in_array($ordenar, $camposValidos)) {
             $ordenar = 'fecha_pago';
         }
@@ -96,7 +96,7 @@ class PagoController extends Controller
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date|max:today',
-            'id_metodo_pago' => 'required|exists:metodos_pago,id',
+            'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
@@ -133,7 +133,7 @@ class PagoController extends Controller
         // 4. Validar que no se duplique referencia_pago
         if ($validated['referencia_pago']) {
             $existente = Pago::where('referencia_pago', $validated['referencia_pago'])
-                ->where('id_metodo_pago', $validated['id_metodo_pago'])
+                ->where('id_metodo_pago_principal', $validated['id_metodo_pago_principal'])
                 ->exists();
             
             if ($existente) {
@@ -167,7 +167,7 @@ class PagoController extends Controller
             'monto_pendiente' => $montoPendiente,
             'id_motivo_descuento' => $inscripcion->id_motivo_descuento,
             'fecha_pago' => $validated['fecha_pago'],
-            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
             'referencia_pago' => $validated['referencia_pago'],
             'cantidad_cuotas' => $validated['cantidad_cuotas'],
             'numero_cuota' => $validated['numero_cuota'],
@@ -193,7 +193,7 @@ class PagoController extends Controller
      */
     public function show(Pago $pago)
     {
-        $pago->load(['inscripcion', 'metodoPago']);
+        $pago->load(['inscripcion', 'metodoPagoPrincipal']);
         return view('admin.pagos.show', compact('pago'));
     }
 
@@ -217,7 +217,7 @@ class PagoController extends Controller
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date|max:today',
-            'id_metodo_pago' => 'required|exists:metodos_pago,id',
+            'id_metodo_pago_principal' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'required|integer|min:1|max:12',
             'numero_cuota' => 'required|integer|min:1',
             'fecha_vencimiento_cuota' => 'nullable|date',
@@ -254,7 +254,7 @@ class PagoController extends Controller
         // 4. Validar que referencia_pago sea única (excepto para este pago)
         if ($validated['referencia_pago'] && $validated['referencia_pago'] !== $pago->referencia_pago) {
             $existente = Pago::where('referencia_pago', $validated['referencia_pago'])
-                ->where('id_metodo_pago', $validated['id_metodo_pago'])
+                ->where('id_metodo_pago_principal', $validated['id_metodo_pago_principal'])
                 ->where('id', '!=', $pago->id)
                 ->exists();
             
@@ -284,7 +284,7 @@ class PagoController extends Controller
             'monto_pendiente' => $montoPendiente,
             'id_motivo_descuento' => $inscripcion->id_motivo_descuento,
             'fecha_pago' => $validated['fecha_pago'],
-            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'id_metodo_pago_principal' => $validated['id_metodo_pago_principal'],
             'referencia_pago' => $validated['referencia_pago'],
             'cantidad_cuotas' => $validated['cantidad_cuotas'],
             'numero_cuota' => $validated['numero_cuota'],
