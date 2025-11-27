@@ -279,28 +279,29 @@
         @csrf
 
         <!-- 1. BÚSQUEDA DE CLIENTE -->
-        <div class="form-card card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-search"></i> 1. Buscar Cliente
+        <div class="form-card card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title m-0">
+                    <i class="fas fa-search"></i> 1. Seleccionar Cliente
                 </h3>
             </div>
             <div class="card-body">
                 <div class="form-group">
-                    <label for="id_inscripcion">
-                        <i class="fas fa-user-check"></i> Seleccionar Cliente y Membresía <span class="text-danger">*</span>
+                    <label for="id_inscripcion" class="font-weight-bold">
+                        Cliente y Membresía <span class="text-danger">*</span>
                     </label>
-                    <select class="form-control select2 @error('id_inscripcion') is-invalid @enderror" 
+                    <select class="form-control form-control-lg select2 @error('id_inscripcion') is-invalid @enderror" 
                             id="id_inscripcion" name="id_inscripcion" required>
                         <option value="">-- Buscar por nombre, RUT o email --</option>
                         @foreach($inscripciones as $insc)
                             @php
                                 $total = $insc->precio_final ?? $insc->precio_base;
+                                $pagos = $insc->pagos()->sum('monto_abonado');
                                 $diasRestantes = max(0, now()->diffInDays($insc->fecha_vencimiento, false));
                             @endphp
                             <option value="{{ $insc->id }}" 
                                     data-precio="{{ $total }}"
-                                    data-abonado="0"
+                                    data-pagos="{{ $pagos }}"
                                     data-cliente="{{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }}"
                                     data-rut="{{ $insc->cliente->rut }}"
                                     data-email="{{ $insc->cliente->email }}"
@@ -308,58 +309,75 @@
                                     data-inicio="{{ $insc->fecha_inicio->format('d/m/Y') }}"
                                     data-vencimiento="{{ $insc->fecha_vencimiento->format('d/m/Y') }}"
                                     data-dias="{{ $diasRestantes }}">
-                                📋 {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} - {{ $insc->membresia->nombre }}
+                                👤 {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} ({{ $insc->membresia->nombre }})
                             </option>
                         @endforeach
                     </select>
                     @error('id_inscripcion')
-                        <small class="text-danger">{{ $message }}</small>
+                        <small class="text-danger d-block mt-2"><i class="fas fa-exclamation-circle"></i> {{ $message }}</small>
                     @enderror
                 </div>
             </div>
         </div>
 
-        <!-- 2. INFORMACIÓN DEL CLIENTE (dinámica) -->
-        <div id="clienteHeader" class="cliente-header d-none">
-            <div class="content">
-                <div class="cliente-nombre">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="clienteNombre"></span>
-                </div>
+        <!-- 2. INFORMACIÓN DEL CLIENTE E HISTORIAL -->
+        <div id="clienteInfoSection" class="d-none mb-4">
+            <!-- Cliente Header -->
+            <div id="clienteHeader" class="cliente-header">
+                <div class="content">
+                    <div class="cliente-nombre">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="clienteNombre"></span>
+                    </div>
 
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <div class="stat-label">Membresía</div>
-                        <div class="stat-value"><span id="membresiaNombre"></span></div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Membresía</div>
+                            <div class="stat-value">$<span id="montoTotal"></span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ya Pagado</div>
+                            <div class="stat-value" style="color: #4ade80;">$<span id="montoAbonado">0</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Pendiente</div>
+                            <div class="stat-value" style="color: #fbbf24;">$<span id="montoPendiente"></span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Membresía</div>
+                            <div class="stat-value"><span id="membresiaNombre"></span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Vencimiento</div>
+                            <div class="stat-value"><span id="fechaVencimiento"></span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Días Restantes</div>
+                            <div class="stat-value"><span id="diasRestantes"></span></div>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Total a Pagar</div>
-                        <div class="stat-value">$<span id="montoTotal"></span></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Abonado</div>
-                        <div class="stat-value" style="color: #4ade80;">$<span id="montoAbonado">0</span></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Pendiente</div>
-                        <div class="stat-value" style="color: #fbbf24;">$<span id="montoPendiente"></span></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Días Restantes</div>
-                        <div class="stat-value"><span id="diasRestantes"></span></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Vencimiento</div>
-                        <div class="stat-value"><span id="fechaVencimiento"></span></div>
+                </div>
+            </div>
+
+            <!-- Historial de Pagos -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h3 class="card-title m-0">
+                        <i class="fas fa-history"></i> Historial de Pagos Recientes
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    <div id="historialPagos">
+                        <p class="text-muted p-3 mb-0"><i class="fas fa-info-circle"></i> Sin pagos registrados</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- 3. TIPO DE PAGO -->
-        <div class="form-card card d-none" id="tipoPagoSection">
-            <div class="card-header">
-                <h3 class="card-title">
+        <div class="form-card card d-none mb-4" id="tipoPagoSection">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="card-title m-0">
                     <i class="fas fa-hand-holding-usd"></i> 2. Tipo de Pago
                 </h3>
             </div>
@@ -368,10 +386,10 @@
                     <label class="tipo-pago-card active" id="card-abono">
                         <input type="radio" name="tipo_pago" value="abono" checked>
                         <div class="tipo-pago-label">
-                            <i class="fas fa-plus-circle" style="font-size: 1.5em;"></i>
+                            <i class="fas fa-plus-circle" style="font-size: 1.5em; color: #fbbf24;"></i>
                             <div>
                                 <div style="font-weight: 700;">Abono Parcial</div>
-                                <small>Suma al saldo anterior</small>
+                                <small>Pagar una cantidad menor</small>
                             </div>
                         </div>
                     </label>
@@ -379,10 +397,10 @@
                     <label class="tipo-pago-card" id="card-completo">
                         <input type="radio" name="tipo_pago" value="completo">
                         <div class="tipo-pago-label">
-                            <i class="fas fa-check-double" style="font-size: 1.5em;"></i>
+                            <i class="fas fa-check-circle" style="font-size: 1.5em; color: #10b981;"></i>
                             <div>
                                 <div style="font-weight: 700;">Pago Completo</div>
-                                <small>Monto exacto restante</small>
+                                <small>Pagar todo lo pendiente</small>
                             </div>
                         </div>
                     </label>
@@ -390,10 +408,10 @@
                     <label class="tipo-pago-card" id="card-mixto">
                         <input type="radio" name="tipo_pago" value="mixto">
                         <div class="tipo-pago-label">
-                            <i class="fas fa-random" style="font-size: 1.5em;"></i>
+                            <i class="fas fa-random" style="font-size: 1.5em; color: #8b5cf6;"></i>
                             <div>
                                 <div style="font-weight: 700;">Pago Mixto</div>
-                                <small>Múltiples métodos</small>
+                                <small>Múltiples métodos de pago</small>
                             </div>
                         </div>
                     </label>
@@ -402,9 +420,9 @@
         </div>
 
         <!-- 4. DATOS DEL PAGO -->
-        <div class="form-card card d-none" id="datosPagoSection">
-            <div class="card-header">
-                <h3 class="card-title">
+        <div class="form-card card d-none mb-4" id="datosPagoSection">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title m-0">
                     <i class="fas fa-dollar-sign"></i> 3. Registrar Pago
                 </h3>
             </div>
@@ -417,26 +435,26 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="monto_abonado_abono">
-                                    <i class="fas fa-money-bill-wave"></i> Monto a Abonar <span class="text-danger">*</span>
+                                <label for="monto_abonado_abono" class="font-weight-bold">
+                                    Monto a Abonar <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">$</span>
                                     </div>
                                     <input type="number" class="form-control monto-input" 
                                            id="monto_abonado_abono" name="monto_abonado" 
-                                           step="1000" min="1000" placeholder="Ej: 10000" required>
+                                           step="1000" min="1000" placeholder="Ej: 50000" required>
                                 </div>
-                                <small id="max-abono" class="text-muted"></small>
+                                <small id="max-abono" class="text-muted d-block mt-2"></small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_metodo_pago_abono">
-                                    <i class="fas fa-credit-card"></i> Método de Pago <span class="text-danger">*</span>
+                                <label for="id_metodo_pago_abono" class="font-weight-bold">
+                                    Método de Pago <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-control" id="id_metodo_pago_abono" name="id_metodo_pago_principal" required>
+                                <select class="form-control form-control-lg" id="id_metodo_pago_abono" required>
                                     <option value="">-- Seleccionar --</option>
                                     @foreach($metodos_pago as $metodo)
                                         <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
@@ -445,37 +463,37 @@
                             </div>
                         </div>
                     </div>
-                    <div class="resumen-pago" id="resumen-abono">
-                        Nuevo abonado: $<span id="nuevo-abonado">0</span> | Pendiente: $<span id="nuevo-pendiente">0</span>
+                    <div class="resumen-pago alert alert-info" id="resumen-abono">
+                        <strong>Resumen:</strong> Abonado: $<span id="nuevo-abonado">0</span> | Pendiente: $<span id="nuevo-pendiente">0</span>
                     </div>
                 </div>
 
                 <!-- SECCIÓN PAGO COMPLETO -->
                 <div id="seccion-completo" class="pago-section d-none">
                     <div class="section-header">
-                        <i class="fas fa-check-double"></i> Pago Completo
+                        <i class="fas fa-check-circle"></i> Pago Completo
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>
-                                    <i class="fas fa-money-bill-wave"></i> Monto a Pagar (Automático)
+                                <label class="font-weight-bold">
+                                    Monto a Pagar (Calculado Automáticamente)
                                 </label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">$</span>
                                     </div>
-                                    <input type="text" class="form-control" id="monto_completo" disabled>
+                                    <input type="text" class="form-control bg-light" id="monto_completo" disabled>
                                 </div>
-                                <small class="text-muted">Este es el saldo pendiente exacto</small>
+                                <small class="text-muted d-block mt-2">✓ Se pagará automáticamente el saldo exacto pendiente</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_metodo_pago_completo">
-                                    <i class="fas fa-credit-card"></i> Método de Pago <span class="text-danger">*</span>
+                                <label for="id_metodo_pago_completo" class="font-weight-bold">
+                                    Método de Pago <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-control" id="id_metodo_pago_completo" required>
+                                <select class="form-control form-control-lg" id="id_metodo_pago_completo" required>
                                     <option value="">-- Seleccionar --</option>
                                     @foreach($metodos_pago as $metodo)
                                         <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
@@ -485,93 +503,96 @@
                             </div>
                         </div>
                     </div>
-                    <div class="resumen-pago">
-                        ✓ Estado: <strong>PAGADO COMPLETAMENTE</strong>
+                    <div class="resumen-pago alert alert-success" id="resumen-completo">
+                        <strong>✓ Resultado:</strong> El cliente quedará PAGADO COMPLETAMENTE
                     </div>
                 </div>
 
                 <!-- SECCIÓN PAGO MIXTO -->
                 <div id="seccion-mixto" class="pago-section d-none">
                     <div class="section-header">
-                        <i class="fas fa-random"></i> Pago Mixto
+                        <i class="fas fa-random"></i> Pago Mixto - Múltiples Métodos
                     </div>
+                    <p class="text-muted mb-3"><i class="fas fa-info-circle"></i> Divide el pago entre diferentes métodos. La suma debe ser exacta.</p>
+                    
                     <div class="metodo-pago-row">
                         <div class="metodo-box">
-                            <h5><i class="fas fa-money-check-alt"></i> Transferencia / Débito / Crédito</h5>
+                            <h5><i class="fas fa-credit-card"></i> Método 1 (Transf/Débito/Crédito)</h5>
                             <div class="form-group">
-                                <label>Monto $</label>
-                                <input type="number" class="form-control monto-mixto" id="monto_metodo1" 
+                                <label class="font-weight-bold">Monto $</label>
+                                <input type="number" class="form-control form-control-lg monto-mixto" id="monto_metodo1" 
                                        step="1000" min="0" placeholder="0">
+                                <small class="text-muted d-block mt-2">Seleccionar método de pago:</small>
+                                <select class="form-control mt-2" id="metodo_pago_1">
+                                    <option value="">-- Seleccionar --</option>
+                                    @foreach($metodos_pago as $metodo)
+                                        @if(strtolower($metodo->nombre) !== 'efectivo')
+                                            <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="metodo-box">
                             <h5><i class="fas fa-coins"></i> Efectivo</h5>
                             <div class="form-group">
-                                <label>Monto $</label>
-                                <input type="number" class="form-control monto-mixto" id="monto_metodo2" 
+                                <label class="font-weight-bold">Monto $</label>
+                                <input type="number" class="form-control form-control-lg monto-mixto" id="monto_metodo2" 
                                        step="1000" min="0" placeholder="0">
+                                <small class="text-muted d-block mt-2">✓ Método: Efectivo</small>
                             </div>
                         </div>
                     </div>
-                    <div class="resumen-pago">
-                        Total: $<span id="total-mixto">0</span> / $<span id="target-mixto">0</span>
+                    <div class="resumen-pago alert alert-warning" id="resumen-mixto">
+                        <strong>Suma:</strong> $<span id="total-mixto">0</span> / $<span id="target-mixto">0</span>
                         <span id="estado-mixto" class="ml-3" style="color: #dc3545;">❌ Monto incompleto</span>
                     </div>
                 </div>
 
-                <!-- CAMPOS COMUNES -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
+                <!-- CAMPOS COMUNES A TODOS LOS PAGOS -->
+                <div class="row mt-4 pt-3 border-top">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="referencia_pago">
-                                <i class="fas fa-fingerprint"></i> Referencia/Comprobante (Opcional)
+                            <label for="fecha_pago" class="font-weight-bold">
+                                Fecha del Pago <span class="text-danger">*</span>
                             </label>
-                            <input type="text" class="form-control" id="referencia_pago" 
-                                   name="referencia_pago" maxlength="100" placeholder="TRF-2025-001">
+                            <input type="date" class="form-control form-control-lg" id="fecha_pago" name="fecha_pago" 
+                                   value="{{ now()->format('Y-m-d') }}" required>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="fecha_pago">
-                                <i class="fas fa-calendar-alt"></i> Fecha de Pago
+                            <label for="referencia_pago" class="font-weight-bold">
+                                Referencia/Comprobante (Opcional)
                             </label>
-                            <input type="date" class="form-control" id="fecha_pago" name="fecha_pago" 
-                                   value="{{ now()->format('Y-m-d') }}" required>
-                            <small class="text-muted">Se registra automáticamente hoy si no cambias</small>
+                            <input type="text" class="form-control form-control-lg" id="referencia_pago" 
+                                   name="referencia_pago" maxlength="100" placeholder="TRF-2025-001 o Boleta">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="cantidad_cuotas" class="font-weight-bold">
+                                Cuotas (Opcional)
+                            </label>
+                            <select class="form-control form-control-lg" id="cantidad_cuotas" name="cantidad_cuotas">
+                                <option value="1" selected>Sin cuotas (1)</option>
+                                <option value="2">2 cuotas</option>
+                                <option value="3">3 cuotas</option>
+                                <option value="4">4 cuotas</option>
+                                <option value="6">6 cuotas</option>
+                                <option value="12">12 cuotas</option>
+                            </select>
+                            <small class="text-muted d-block mt-2">* Se divide el monto abonado en cuotas</small>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="observaciones">
-                        <i class="fas fa-sticky-note"></i> Observaciones (Opcional)
+                <div class="form-group mt-3">
+                    <label for="observaciones" class="font-weight-bold">
+                        Observaciones (Opcional)
                     </label>
                     <textarea class="form-control" id="observaciones" name="observaciones" 
-                              rows="2" placeholder="Notas adicionales..."></textarea>
-                </div>
-
-                <!-- CUOTAS (CHECKBOX OPCIONAL) -->
-                <div class="cuotas-section d-none" id="cuotasSection">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="mostrarCuotas" name="mostrar_cuotas">
-                        <label class="custom-control-label" for="mostrarCuotas">
-                            <i class="fas fa-calculator"></i> Dividir en cuotas
-                        </label>
-                    </div>
-                    <div id="cuotasForm" class="d-none mt-3">
-                        <div class="form-group">
-                            <label for="cantidad_cuotas">
-                                <i class="fas fa-list-ol"></i> Cantidad de Cuotas
-                            </label>
-                            <select class="form-control" id="cantidad_cuotas" name="cantidad_cuotas">
-                                <option value="1" selected>1 cuota</option>
-                                @for ($i = 2; $i <= 12; $i++)
-                                    <option value="{{ $i }}">{{ $i }} cuotas</option>
-                                @endfor
-                            </select>
-                            <small id="monto-cuota" class="text-muted d-block mt-2"></small>
-                        </div>
-                    </div>
+                              rows="3" placeholder="Ej: Cliente reconfirmó... Pago atrasado..."></textarea>
                 </div>
             </div>
         </div>
@@ -584,10 +605,10 @@
         <!-- Botones -->
         <div class="row mt-4 mb-5">
             <div class="col-12">
-                <a href="{{ route('admin.pagos.index') }}" class="btn btn-cancelar">
+                <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary btn-lg">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-registrar ml-2" id="btnSubmit" disabled>
+                <button type="submit" class="btn btn-success btn-lg ml-2" id="btnSubmit" disabled>
                     <i class="fas fa-check"></i> Registrar Pago
                 </button>
             </div>
@@ -600,50 +621,125 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectInscripcion = document.getElementById('id_inscripcion');
-    const clienteHeader = document.getElementById('clienteHeader');
+    const clienteInfoSection = document.getElementById('clienteInfoSection');
     const tipoPagoSection = document.getElementById('tipoPagoSection');
     const datosPagoSection = document.getElementById('datosPagoSection');
     const formPago = document.getElementById('formPago');
     const btnSubmit = document.getElementById('btnSubmit');
 
+    // Función para RESETEAR todos los campos
+    function resetearFormulario() {
+        // Limpiar inputs de monto
+        document.getElementById('monto_abonado_abono').value = '';
+        document.getElementById('monto_metodo1').value = '';
+        document.getElementById('monto_metodo2').value = '';
+        
+        // Resetear selects de métodos de pago
+        document.getElementById('id_metodo_pago_abono').value = '';
+        document.getElementById('id_metodo_pago_completo').value = '';
+        document.getElementById('metodo_pago_1').value = '';
+        
+        // Resetear otros campos
+        document.getElementById('referencia_pago').value = '';
+        document.getElementById('observaciones').value = '';
+        document.getElementById('cantidad_cuotas').value = '1';
+        document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
+        
+        // Resetear tipo de pago a abono
+        document.querySelector('input[name="tipo_pago"][value="abono"]').checked = true;
+        
+        // Resetear vistas
+        document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
+        document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('seccion-abono').classList.remove('d-none');
+        document.getElementById('card-abono').classList.add('active');
+        
+        // Limpiar resumen
+        document.getElementById('nuevo-abonado').textContent = '0';
+        document.getElementById('nuevo-pendiente').textContent = '0';
+        document.getElementById('total-mixto').textContent = '0';
+        document.getElementById('estado-mixto').innerHTML = '❌ Monto incompleto';
+        
+        btnSubmit.disabled = true;
+    }
+
+    // Función para cargar historial de pagos
+    function cargarHistorial(inscripcionId) {
+        fetch(`/admin/pagos/historial/${inscripcionId}`)
+            .then(response => response.json())
+            .then(data => {
+                const historialDiv = document.getElementById('historialPagos');
+                
+                if (!data.pagos || data.pagos.length === 0) {
+                    historialDiv.innerHTML = '<p class="text-muted p-3 mb-0"><i class="fas fa-info-circle"></i> Sin pagos registrados</p>';
+                    return;
+                }
+                
+                let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0">';
+                html += '<thead class="bg-light"><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Estado</th></tr></thead><tbody>';
+                
+                data.pagos.forEach(pago => {
+                    const fecha = new Date(pago.fecha_pago).toLocaleDateString('es-CO');
+                    const estado = pago.id_estado === 102 ? '<span class="badge badge-success">Pagado</span>' : '<span class="badge badge-warning">Parcial</span>';
+                    html += `<tr>
+                        <td>${fecha}</td>
+                        <td>$${pago.monto_abonado.toLocaleString('es-CO')}</td>
+                        <td>${pago.metodoPagoPrincipal?.nombre || 'N/A'}</td>
+                        <td>${estado}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                historialDiv.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error cargando historial:', error);
+                document.getElementById('historialPagos').innerHTML = '<p class="text-danger p-3 mb-0"><i class="fas fa-exclamation"></i> Error al cargar historial</p>';
+            });
+    }
+
     // Función para mostrar el cliente seleccionado
     function mostrarCliente() {
         const value = selectInscripcion.value;
+        
         if (value) {
             const option = document.querySelector(`option[value="${value}"]`);
             const precio = parseFloat(option.getAttribute('data-precio'));
+            const pagos = parseFloat(option.getAttribute('data-pagos')) || 0;
             const cliente = option.getAttribute('data-cliente');
             const membresia = option.getAttribute('data-membresia');
             const vencimiento = option.getAttribute('data-vencimiento');
             const dias = parseInt(option.getAttribute('data-dias'));
+            const pendiente = precio - pagos;
 
+            // Llenar información
             document.getElementById('clienteNombre').textContent = cliente;
             document.getElementById('membresiaNombre').textContent = membresia;
             document.getElementById('montoTotal').textContent = precio.toLocaleString('es-CO');
-            document.getElementById('montoPendiente').textContent = precio.toLocaleString('es-CO');
+            document.getElementById('montoAbonado').textContent = pagos.toLocaleString('es-CO');
+            document.getElementById('montoPendiente').textContent = pendiente.toLocaleString('es-CO');
             document.getElementById('fechaVencimiento').textContent = vencimiento;
-            document.getElementById('diasRestantes').textContent = dias > 0 ? dias + ' días' : 'Vencido';
+            document.getElementById('diasRestantes').textContent = dias > 0 ? dias + ' días' : '🔴 Vencido';
 
-            document.getElementById('monto_completo').value = '$' + precio.toLocaleString('es-CO');
-            document.getElementById('monto_abonado_completo').value = precio;
-            document.getElementById('target-mixto').textContent = precio.toLocaleString('es-CO');
+            // Actualizar campos de pago
+            document.getElementById('monto_completo').value = '$' + pendiente.toLocaleString('es-CO');
+            document.getElementById('monto_abonado_completo').value = pendiente;
+            document.getElementById('target-mixto').textContent = pendiente.toLocaleString('es-CO');
 
-            clienteHeader.classList.remove('d-none');
+            // Mostrar secciones
+            clienteInfoSection.classList.remove('d-none');
             tipoPagoSection.classList.remove('d-none');
             datosPagoSection.classList.remove('d-none');
-            document.getElementById('cuotasSection').classList.remove('d-none');
-            
-            // Establecer tipo de pago por defecto (abono)
-            document.querySelector('input[name="tipo_pago"][value="abono"]').checked = true;
-            document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
-            document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
-            document.getElementById('seccion-abono').classList.remove('d-none');
-            document.getElementById('card-abono').classList.add('active');
+
+            // RESETEAR FORMULARIO
+            resetearFormulario();
+
+            // Cargar historial
+            cargarHistorial(value);
         } else {
-            clienteHeader.classList.add('d-none');
+            clienteInfoSection.classList.add('d-none');
             tipoPagoSection.classList.add('d-none');
             datosPagoSection.classList.add('d-none');
-            document.getElementById('cuotasSection').classList.add('d-none');
             btnSubmit.disabled = true;
         }
     }
@@ -667,18 +763,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Evento Select2 change
+    // Eventos Select2
     $('#id_inscripcion').on('select2:select', mostrarCliente);
     $('#id_inscripcion').on('select2:clear', function() {
-        clienteHeader.classList.add('d-none');
+        clienteInfoSection.classList.add('d-none');
         tipoPagoSection.classList.add('d-none');
         datosPagoSection.classList.add('d-none');
-        document.getElementById('cuotasSection').classList.add('d-none');
         btnSubmit.disabled = true;
     });
-
-    // Cambio de cliente (fallback)
-    selectInscripcion.addEventListener('change', mostrarCliente);
 
     // Cambio de tipo de pago
     document.querySelectorAll('input[name="tipo_pago"]').forEach(radio => {
@@ -702,14 +794,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Validación Abono
     document.getElementById('monto_abonado_abono').addEventListener('input', function() {
-        const total = parseFloat(document.getElementById('montoTotal').textContent.replace(/\./g, ''));
+        const total = parseFloat(document.getElementById('montoPendiente').textContent.replace(/\./g, '').replace(/,/g, ''));
         const monto = parseFloat(this.value) || 0;
-        const pendiente = total - monto;
+        const nuevoAbonado = parseFloat(document.getElementById('montoAbonado').textContent.replace(/\./g, '').replace(/,/g, '')) + monto;
+        const nuevoPendiente = total - monto;
         
-        document.getElementById('nuevo-abonado').textContent = monto.toLocaleString('es-CO');
-        document.getElementById('nuevo-pendiente').textContent = Math.max(0, pendiente).toLocaleString('es-CO');
+        document.getElementById('nuevo-abonado').textContent = nuevoAbonado.toLocaleString('es-CO');
+        document.getElementById('nuevo-pendiente').textContent = Math.max(0, nuevoPendiente).toLocaleString('es-CO');
         
-        // Validar que sea positivo y no exceda el pendiente
         if (monto > 0 && monto <= total) {
             this.classList.remove('is-invalid');
             this.classList.add('is-valid');
@@ -725,14 +817,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
         const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
         const total = monto1 + monto2;
-        const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, ''));
+        const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, '').replace(/,/g, ''));
         
         document.getElementById('total-mixto').textContent = total.toLocaleString('es-CO');
         const estado = document.getElementById('estado-mixto');
         
         if (total === target) {
             estado.innerHTML = '✓ Monto correcto';
-            estado.style.color = '#22c55e';
+            estado.style.color = '#10b981';
             document.getElementById('monto_metodo1').classList.add('is-valid');
             document.getElementById('monto_metodo2').classList.add('is-valid');
         } else if (total > target) {
@@ -742,7 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('monto_metodo2').classList.remove('is-valid');
         } else {
             estado.innerHTML = '❌ Monto incompleto';
-            estado.style.color = '#dc3545';
+            estado.style.color = '#fbbf24';
             document.getElementById('monto_metodo1').classList.remove('is-valid');
             document.getElementById('monto_metodo2').classList.remove('is-valid');
         }
@@ -753,14 +845,10 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('input', validarMixto);
     });
 
-    // Cambio de método de pago (para habilitar botón)
+    // Eventos de cambio en métodos de pago
     document.getElementById('id_metodo_pago_abono').addEventListener('change', updateSubmitButton);
     document.getElementById('id_metodo_pago_completo').addEventListener('change', updateSubmitButton);
-
-    // Cuotas
-    document.getElementById('mostrarCuotas').addEventListener('change', function() {
-        document.getElementById('cuotasForm').classList.toggle('d-none');
-    });
+    document.getElementById('metodo_pago_1').addEventListener('change', updateSubmitButton);
 
     function updateSubmitButton() {
         const tipoPago = document.querySelector('input[name="tipo_pago"]:checked');
@@ -771,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (tipoPago.value === 'abono') {
             const monto = parseFloat(document.getElementById('monto_abonado_abono').value) || 0;
-            const total = parseFloat(document.getElementById('montoTotal').textContent.replace(/\./g, ''));
+            const total = parseFloat(document.getElementById('montoPendiente').textContent.replace(/\./g, '').replace(/,/g, ''));
             const metodo = document.getElementById('id_metodo_pago_abono').value;
             
             btnSubmit.disabled = !monto || monto <= 0 || monto > total || !metodo;
@@ -781,8 +869,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (tipoPago.value === 'mixto') {
             const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
             const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
-            const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, ''));
-            btnSubmit.disabled = (monto1 + monto2) !== target;
+            const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, '').replace(/,/g, ''));
+            const metodo1 = document.getElementById('metodo_pago_1').value;
+            btnSubmit.disabled = (monto1 + monto2) !== target || !metodo1;
         }
     }
 
@@ -791,23 +880,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipoPago = document.querySelector('input[name="tipo_pago"]:checked').value;
         
         if (tipoPago === 'abono') {
-            const monto = document.getElementById('monto_abonado_abono').value;
-            const metodo = document.getElementById('id_metodo_pago_abono').value;
-            
-            document.getElementById('monto_abonado').value = monto;
-            document.getElementById('id_metodo_pago_principal').value = metodo;
+            document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_abono').value;
+            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_abono').value;
         } else if (tipoPago === 'completo') {
-            const metodo = document.getElementById('id_metodo_pago_completo').value;
-            const monto = document.getElementById('monto_abonado_completo').value;
-            
-            document.getElementById('monto_abonado').value = monto;
-            document.getElementById('id_metodo_pago_principal').value = metodo;
+            document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_completo').value;
+            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_completo').value;
         } else if (tipoPago === 'mixto') {
             const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
             const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
             
             document.getElementById('monto_abonado').value = monto1 + monto2;
-            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_abono').value;
+            document.getElementById('id_metodo_pago_principal').value = document.getElementById('metodo_pago_1').value;
         }
     });
 });

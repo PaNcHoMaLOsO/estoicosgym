@@ -260,4 +260,18 @@ class PagoController extends Controller
         return redirect()->route('admin.pagos.index')
             ->with('success', 'Pago eliminado exitosamente');
     }
+
+    /**
+     * Obtener historial de pagos de una inscripción (API)
+     */
+    public function historial($id)
+    {
+        $pagos = Pago::where('id_inscripcion', $id)
+            ->with('metodoPagoPrincipal')
+            ->orderBy('fecha_pago', 'desc')
+            ->limit(5)
+            ->get();
+
+        return response()->json(['pagos' => $pagos]);
+    }
 }

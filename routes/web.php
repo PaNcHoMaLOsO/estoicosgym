@@ -50,6 +50,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class);
+    Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');
 
     // ===== CONFIGURACIÓN (Sección inferior) =====
     
