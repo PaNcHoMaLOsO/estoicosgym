@@ -65,7 +65,9 @@
                         <div class="info-box-content">
                             <span class="info-box-text">Estado</span>
                             <span class="info-box-number">
-                                {!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}
+                                <span class="badge" style="background-color: {{ $pago->estado->color ?? '#6c757d' }};">
+                                    <i class="fas fa-info-circle fa-fw"></i> {{ $pago->estado->nombre }}
+                                </span>
                             </span>
                         </div>
                     </div>
@@ -78,7 +80,7 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Método de Pago</span>
-                            <span class="info-box-number">{{ $pago->metodoPago->nombre }}</span>
+                            <span class="info-box-number">{{ $pago->metodoPagoPrincipal?->nombre }}</span>
                         </div>
                     </div>
                 </div>
@@ -133,7 +135,9 @@
                         <div class="info-box-content">
                             <span class="info-box-text">Estado Inscripción</span>
                             <span class="info-box-number">
-                                {!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->inscripcion->estado) !!}
+                                <span class="badge" style="background-color: {{ $pago->inscripcion->estado->color ?? '#6c757d' }};">
+                                    <i class="fas fa-info-circle fa-fw"></i> {{ $pago->inscripcion->estado->nombre }}
+                                </span>
                             </span>
                         </div>
                     </div>

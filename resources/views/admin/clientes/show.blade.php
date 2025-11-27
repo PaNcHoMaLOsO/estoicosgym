@@ -213,7 +213,11 @@
                                     <tr>
                                         <td>{{ $inscripcion->id }}</td>
                                         <td>{{ $inscripcion->membresia->nombre ?? 'N/A' }}</td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}</td>
+                                        <td>
+                                            <span class="badge" style="background-color: {{ $inscripcion->estado->color ?? '#6c757d' }};">
+                                                <i class="fas fa-info-circle fa-fw"></i> {{ $inscripcion->estado->nombre }}
+                                            </span>
+                                        </td>
                                         <td><small>{{ $inscripcion->fecha_inicio->format('d/m/Y') }}</small></td>
                                         <td><small>{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</small></td>
                                         <td><span class="badge badge-info">{{ $inscripcion->pagos->count() }}</span></td>
@@ -273,9 +277,13 @@
                                                 <span class="text-muted">N/A</span>
                                             @endif
                                         </td>
-                                        <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
+                                        <td>
+                                            <span class="badge" style="background-color: {{ $pago->estado->color ?? '#6c757d' }};">
+                                                <i class="fas fa-info-circle fa-fw"></i> {{ $pago->estado->nombre }}
+                                            </span>
+                                        </td>
                                         <td><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></td>
-                                        <td><small>{{ $pago->metodoPago->nombre ?? 'N/A' }}</small></td>
+                                        <td><small>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</small></td>
                                         <td><small>{{ $pago->fecha_pago->format('d/m/Y') }}</small></td>
                                         <td>
                                             <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-xs btn-success" title="Ver detalles">

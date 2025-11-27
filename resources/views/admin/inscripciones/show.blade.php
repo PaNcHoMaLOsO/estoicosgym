@@ -70,7 +70,9 @@
                         <div class="info-box-content">
                             <span class="info-box-text">Estado</span>
                             <span class="info-box-number">
-                                {!! \App\Helpers\EstadoHelper::badgeWithIcon($inscripcion->estado) !!}
+                                <span class="badge" style="background-color: {{ $inscripcion->estado->color ?? '#6c757d' }};">
+                                    <i class="fas fa-info-circle fa-fw"></i> {{ $inscripcion->estado->nombre }}
+                                </span>
                             </span>
                         </div>
                     </div>
@@ -367,8 +369,12 @@
                                             <small class="text-muted">-</small>
                                         @endif
                                     </td>
-                                    <td>{!! \App\Helpers\EstadoHelper::badgeWithIcon($pago->estado) !!}</td>
-                                    <td>{{ $pago->metodoPago->nombre ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge" style="background-color: {{ $pago->estado->color ?? '#6c757d' }};">
+                                            <i class="fas fa-info-circle fa-fw"></i> {{ $pago->estado->nombre }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $pago->metodoPagoPrincipal?->nombre ?? 'N/A' }}</td>
                                     <td>
                                         <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info" title="Ver detalle">
                                             <i class="fas fa-eye"></i>

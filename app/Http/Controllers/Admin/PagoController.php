@@ -16,7 +16,7 @@ class PagoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
+        $query = Pago::with(['inscripcion.cliente', 'metodoPagoPrincipal', 'estado']);
         
         // Filtro por inscripción (desde el link de Ver Pagos en inscripciones)
         if ($request->filled('id_inscripcion')) {
@@ -33,7 +33,7 @@ class PagoController extends Controller
         
         // Filtro por método de pago
         if ($request->filled('metodo_pago')) {
-            $query->where('id_metodo_pago', $request->metodo_pago);
+            $query->where('id_metodo_pago_principal', $request->metodo_pago);
         }
         
         // Filtro por estado
@@ -193,7 +193,7 @@ class PagoController extends Controller
      */
     public function show(Pago $pago)
     {
-        $pago->load(['inscripcion', 'metodoPago']);
+        $pago->load(['inscripcion', 'metodoPagoPrincipal']);
         return view('admin.pagos.show', compact('pago'));
     }
 
