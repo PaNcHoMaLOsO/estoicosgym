@@ -165,9 +165,11 @@ class Inscripcion extends Model
 
     /**
      * Pausar la membresía por un período especificado
-     * @param int $dias 7, 14 o 30 días
+     * 
+     * @param int $dias Período de pausa: 7, 14 o 30 días
      * @param string $razon Motivo de la pausa
-     * @return bool
+     * @return bool True si se pausó exitosamente
+     * @throws \Exception Si se alcanza máximo de pausas o días inválidos
      */
     public function pausar($dias = 7, $razon = '')
     {
@@ -206,7 +208,10 @@ class Inscripcion extends Model
 
     /**
      * Reanudar la membresía si la pausa ha finalizado o manualmente
-     * @return bool
+     * Extiende automáticamente la fecha de vencimiento por los días pausados
+     * 
+     * @return bool True si se reanudó exitosamente
+     * @throws \Exception Si la membresía no está pausada
      */
     public function reanudar()
     {
@@ -232,7 +237,9 @@ class Inscripcion extends Model
 
     /**
      * Verificar si la pausa ha expirado automáticamente
-     * @return bool
+     * Si es así, intenta reanudar automáticamente
+     * 
+     * @return bool True si se reanudó automáticamente, False si no estaba pausada o no expiró
      */
     public function verificarPausaExpirada()
     {
@@ -244,8 +251,9 @@ class Inscripcion extends Model
     }
 
     /**
-     * Obtener información de la pausa actual
-     * @return array|null
+     * Obtener información detallada de la pausa actual
+     * 
+     * @return array|null Array con información de pausa o null si no está pausada
      */
     public function obtenerInfoPausa()
     {
@@ -266,19 +274,24 @@ class Inscripcion extends Model
     }
 
     /**
-     * Puede pausarse esta membresía?
-     * @return bool
+     * Verificar si puede pausarse esta membresía
+     * Condiciones: No estar pausada, no exceder pausas máximas
+     * 
+     * @return bool True si puede pausarse
      */
     public function puedePausarse()
     {
         return !$this->pausada 
             && $this->pausas_realizadas < $this->max_pausas_permitidas
-            && !$this->estaPausada(); // Solo si no está pausada
+            && !$this->estaPausada();
     }
 
     /**
-     * Obtener el estado actual de pago
-     * @return array
+     * Obtener el estado actual de pago de la inscripción
+     * Calcula montos totales, abonados, pendientes y porcentaje pagado
+     * 
+     * @return array Estado de pago con claves: monto_total, total_abonado, pendiente, 
+     *              porcentaje_pagado, pagos_completados, pagos_otros_estados, total_pagos, estado
      */
     public function obtenerEstadoPago()
     {
@@ -314,10 +327,10 @@ class Inscripcion extends Model
     /**
      * Verificar si está efectivamente pausada
      * Retorna true si:
-     * 1. El campo pausada es true O
-     * 2. El estado es uno de pausa (2, 3, 4)
-     * Y la pausa NO ha expirado
-     * @return bool
+     * 1. El campo pausada es true O el estado es uno de pausa (2, 3, 4)
+     * 2. Y la pausa NO ha expirado
+     * 
+     * @return bool True si está pausada actualmente
      */
     public function estaPausada()
     {
@@ -337,74 +350,5 @@ class Inscripcion extends Model
         }
 
         return true;
-    }
-
-    /**
-     * Obtener el saldo pendiente total de la inscripción
-     * (suma de todos los pagos - monto total)
-     * Optimizado: Usa query única con sum()
-     * @return float
-     */
-    public function getSaldoPendiente()
-    {
-        $montoTotal = $this->precio_final ?? $this->precio_base;
-        $totalAbonado = $this->pagos()
-            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
-            ->sum('monto_abonado');
-        
-        return max(0, $montoTotal - $totalAbonado);
-    }
-
-    /**
-     * Obtener total abonado hasta ahora
-     * @return float
-     */
-    public function getTotalAbonado()
-    {
-        return $this->pagos()
-            ->whereIn('id_estado', [102, 103])
-            ->sum('monto_abonado');
-    }
-
-    /**
-     * ¿Está pagada al día esta inscripción?
-     * @return bool
-     */
-    public function estaPagadaAlDia()
-    {
-        return $this->getSaldoPendiente() <= 0;
-    }
-
-    /**
-     * Obtener el último pago realizado
-     * @return \App\Models\Pago|null
-     */
-    public function getUltimoPago()
-    {
-        return $this->pagos()
-            ->whereIn('id_estado', [102, 103])
-            ->latest('fecha_pago')
-            ->first();
-    }
-
-    /**
-     * Obtener detalle completo de abonos
-     * @return array
-     */
-    public function getDetalleAbonos()
-    {
-        $precioFinal = $this->precio_final ?? $this->precio_base;
-        $totalAbonado = $this->getTotalAbonado();
-        $saldoPendiente = $this->getSaldoPendiente();
-
-        return [
-            'precio_final' => $precioFinal,
-            'total_abonado' => $totalAbonado,
-            'saldo_pendiente' => $saldoPendiente,
-            'porcentaje_pagado' => ($precioFinal > 0) 
-                ? round(($totalAbonado / $precioFinal) * 100, 2) 
-                : 0,
-            'estado' => $this->estaPagadaAlDia() ? 'Pagada' : 'Pendiente',
-        ];
     }
 }

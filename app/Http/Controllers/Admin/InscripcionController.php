@@ -16,6 +16,13 @@ use Illuminate\Http\Request;
 
 class InscripcionController extends Controller
 {
+    // Campos permitidos para ordenamiento
+    protected $camposValidos = [
+        'id', 'id_cliente', 'id_membresia', 'id_estado', 
+        'fecha_inicio', 'fecha_vencimiento', 'precio_base', 
+        'precio_final', 'created_at'
+    ];
+
     /**
      * Display a listing of the resource.
      *
@@ -27,12 +34,37 @@ class InscripcionController extends Controller
         /** @var \Illuminate\Database\Eloquent\Builder $query */
         $query = Inscripcion::with(['cliente', 'estado', 'membresia']);
         
-        // Filtro por cliente
+        // Aplicar filtros
+        $this->aplicarFiltros($query, $request);
+        
+        // Aplicar ordenamiento
+        $this->aplicarOrdenamiento($query, $request);
+        
+        $inscripciones = $query->paginate(20);
+        
+        // Datos para los selects de filtro
+        $estados = Estado::where('categoria', 'membresia')->get();
+        $membresias = Membresia::all();
+        
+        return view('admin.inscripciones.index', compact('inscripciones', 'estados', 'membresias'));
+    }
+
+    /**
+     * Aplicar filtros a la query
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Http\Request $request
+     * @return void
+     */
+    protected function aplicarFiltros($query, Request $request)
+    {
+        // Filtro por cliente (nombres, apellido, email)
         if ($request->filled('cliente')) {
             $query->whereHas('cliente', function($q) use ($request) {
-                $q->where('nombres', 'like', '%' . $request->cliente . '%')
-                  ->orWhere('apellido_paterno', 'like', '%' . $request->cliente . '%')
-                  ->orWhere('email', 'like', '%' . $request->cliente . '%');
+                $busqueda = '%' . $request->cliente . '%';
+                $q->where('nombres', 'like', $busqueda)
+                  ->orWhere('apellido_paterno', 'like', $busqueda)
+                  ->orWhere('email', 'like', $busqueda);
             });
         }
         
@@ -53,26 +85,31 @@ class InscripcionController extends Controller
                 $request->fecha_fin
             ]);
         }
-        
-        // Ordenamiento - solo campos de la tabla inscripciones
+    }
+
+    /**
+     * Aplicar ordenamiento a la query
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Http\Request $request
+     * @return void
+     */
+    protected function aplicarOrdenamiento($query, Request $request)
+    {
         $ordenar = $request->get('ordenar', 'fecha_inicio');
         $direccion = $request->get('direccion', 'desc');
         
         // Validar que el campo sea válido
-        $camposValidos = ['id', 'id_cliente', 'id_membresia', 'id_estado', 'fecha_inicio', 'fecha_vencimiento', 'precio_base', 'precio_final', 'created_at'];
-        if (!in_array($ordenar, $camposValidos)) {
+        if (!in_array($ordenar, $this->camposValidos)) {
             $ordenar = 'fecha_inicio';
         }
         
+        // Validar dirección
+        if (!in_array($direccion, ['asc', 'desc'])) {
+            $direccion = 'desc';
+        }
+        
         $query->orderBy($ordenar, $direccion);
-        
-        $inscripciones = $query->paginate(20);
-        
-        // Datos para los selects de filtro
-        $estados = Estado::where('categoria', 'membresia')->get();
-        $membresias = Membresia::all();
-        
-        return view('admin.inscripciones.index', compact('inscripciones', 'estados', 'membresias'));
     }
 
     /**
@@ -100,6 +137,9 @@ class InscripcionController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -121,76 +161,29 @@ class InscripcionController extends Controller
             'fecha_vencimiento_cuota' => 'nullable|date',
         ]);
 
-        // Obtener membresía y precio base
+        // Obtener datos de membresía y calcular precios
         $membresia = Membresia::findOrFail($validated['id_membresia']);
-        
-        // Obtener precio vigente de membresía
-        $precioMembresia = $membresia->precios()
-            ->where('activo', true)
-            ->where('fecha_vigencia_desde', '<=', now())
-            ->orderBy('fecha_vigencia_desde', 'desc')
-            ->first();
-        
-        $precioBase = $precioMembresia->precio_normal ?? 0;
-        
-        // Calcular descuento automático del convenio (membresía mensual + convenio)
-        // Solo aplica precio_convenio si membresía es Mensual (id=4) y cliente tiene convenio
-        $descuentoConvenio = 0;
-        if ($validated['id_convenio'] && $membresia->id === 4 && $precioMembresia->precio_convenio) { // id=4 es membresía mensual
-            // El descuento es la diferencia entre precio normal y precio con convenio
-            $descuentoConvenio = $precioBase - $precioMembresia->precio_convenio;
-        }
-        
-        // El descuento total es: descuento automático del convenio + descuento adicional del usuario
-        $descuentoAdicional = $validated['descuento_aplicado'] ?? 0;
-        $descuentoTotal = $descuentoConvenio + $descuentoAdicional;
+        $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
+        $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
         $precioFinal = $precioBase - $descuentoTotal;
 
-        // Calcular fecha de vencimiento usando duracion_dias
+        // Calcular fecha de vencimiento
         $fechaInicio = Carbon::parse($validated['fecha_inicio']);
-        
-        // Usar duracion_dias si está disponible, sino calcular desde duracion_meses
-        if ($membresia->duracion_dias && $membresia->duracion_dias > 0) {
-            // Para Pase Diario y otros: usar duracion_dias directamente
-            $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias)->subDay();
-        } else {
-            // Para membresías por meses: sumar meses y restar 1 día
-            $duracionMeses = $membresia->duracion_meses ?? 1;
-            $fechaVencimiento = $fechaInicio->clone()->addMonths($duracionMeses)->subDay();
-        }
+        $fechaVencimiento = $this->calcularFechaVencimiento($fechaInicio, $membresia);
 
-        // Crear inscripción
+        // Crear inscripción con datos validados y calculados
         $validated['precio_base'] = $precioBase;
         $validated['precio_final'] = $precioFinal;
-        $validated['descuento_aplicado'] = $descuentoTotal; // Guardar el total (convenio + adicional)
+        $validated['descuento_aplicado'] = $descuentoTotal;
         $validated['fecha_inscripcion'] = now()->format('Y-m-d');
         $validated['fecha_vencimiento'] = $fechaVencimiento->format('Y-m-d');
         $validated['id_precio_acordado'] = 1;
 
         $inscripcion = Inscripcion::create($validated);
 
-        // Solo crear pago si no es pendiente
+        // Crear pago inicial si no es pendiente
         if (!$pagoPendiente) {
-            $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
-            $montoAbonado = $validated['monto_abonado'];
-            $montoCuota = $precioFinal / $cantidadCuotas;
-            $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
-
-            Pago::create([
-                'id_inscripcion' => $inscripcion->id,
-                'id_cliente' => $validated['id_cliente'],
-                'id_membresia' => $validated['id_membresia'],
-                'monto_total' => $precioFinal,
-                'monto_abonado' => $montoAbonado,
-                'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
-                'cantidad_cuotas' => $cantidadCuotas,
-                'numero_cuota' => 1,
-                'monto_cuota' => $montoCuota,
-                'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
-                'id_estado' => $idEstadoPago,
-                'id_metodo_pago' => $validated['id_metodo_pago'],
-                'fecha_pago' => $validated['fecha_pago'],
-            ]);
+            $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
         }
 
         return redirect()->route('admin.inscripciones.show', $inscripcion)
@@ -198,7 +191,106 @@ class InscripcionController extends Controller
     }
 
     /**
+     * Obtener el precio vigente de la membresía
+     *
+     * @param \App\Models\Membresia $membresia
+     * @param array $validated
+     * @return float
+     */
+    protected function obtenerPrecioMembresia(Membresia $membresia, array $validated)
+    {
+        $precioMembresia = $membresia->precios()
+            ->where('activo', true)
+            ->where('fecha_vigencia_desde', '<=', now())
+            ->orderBy('fecha_vigencia_desde', 'desc')
+            ->first();
+        
+        return $precioMembresia->precio_normal ?? 0;
+    }
+
+    /**
+     * Calcular el descuento total (convenio + adicional)
+     *
+     * @param \App\Models\Membresia $membresia
+     * @param array $validated
+     * @param float $precioBase
+     * @return float
+     */
+    protected function calcularDescuentoTotal(Membresia $membresia, array $validated, float $precioBase)
+    {
+        $descuentoConvenio = 0;
+        
+        // Descuento automático del convenio (solo para mensual con convenio)
+        if ($validated['id_convenio'] && $membresia->id === 4) {
+            $precioMembresia = $membresia->precios()
+                ->where('activo', true)
+                ->where('fecha_vigencia_desde', '<=', now())
+                ->orderBy('fecha_vigencia_desde', 'desc')
+                ->first();
+            
+            if ($precioMembresia && $precioMembresia->precio_convenio) {
+                $descuentoConvenio = $precioBase - $precioMembresia->precio_convenio;
+            }
+        }
+        
+        $descuentoAdicional = $validated['descuento_aplicado'] ?? 0;
+        return $descuentoConvenio + $descuentoAdicional;
+    }
+
+    /**
+     * Calcular la fecha de vencimiento según duración de membresía
+     *
+     * @param \Carbon\Carbon $fechaInicio
+     * @param \App\Models\Membresia $membresia
+     * @return \Carbon\Carbon
+     */
+    protected function calcularFechaVencimiento(Carbon $fechaInicio, Membresia $membresia)
+    {
+        if ($membresia->duracion_dias && $membresia->duracion_dias > 0) {
+            return $fechaInicio->clone()->addDays($membresia->duracion_dias)->subDay();
+        }
+        
+        $duracionMeses = $membresia->duracion_meses ?? 1;
+        return $fechaInicio->clone()->addMonths($duracionMeses)->subDay();
+    }
+
+    /**
+     * Crear pago inicial para la inscripción
+     *
+     * @param \App\Models\Inscripcion $inscripcion
+     * @param array $validated
+     * @param float $precioFinal
+     * @return void
+     */
+    protected function crearPagoInicial(Inscripcion $inscripcion, array $validated, float $precioFinal)
+    {
+        $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
+        $montoAbonado = $validated['monto_abonado'];
+        $montoCuota = $precioFinal / $cantidadCuotas;
+        $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+
+        Pago::create([
+            'id_inscripcion' => $inscripcion->id,
+            'id_cliente' => $validated['id_cliente'],
+            'id_membresia' => $validated['id_membresia'],
+            'monto_total' => $precioFinal,
+            'monto_abonado' => $montoAbonado,
+            'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
+            'cantidad_cuotas' => $cantidadCuotas,
+            'numero_cuota' => 1,
+            'monto_cuota' => $montoCuota,
+            'fecha_vencimiento_cuota' => $validated['fecha_vencimiento_cuota'],
+            'id_estado' => $idEstadoPago,
+            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'fecha_pago' => $validated['fecha_pago'],
+        ]);
+    }
+
+    /**
      * Display the specified resource.
+     * 
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\View\View
      */
     public function show(Inscripcion $inscripcion)
     {
@@ -209,6 +301,9 @@ class InscripcionController extends Controller
 
     /**
      * Show the form for editing the specified resource.
+     * 
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\View\View
      */
     public function edit(Inscripcion $inscripcion)
     {
@@ -223,6 +318,10 @@ class InscripcionController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, Inscripcion $inscripcion)
     {
@@ -239,7 +338,7 @@ class InscripcionController extends Controller
             'observaciones' => 'nullable|string|max:500',
         ]);
 
-        // Calcular precio_final
+        // Calcular precio_final: precio_base - descuento
         $validated['precio_final'] = $validated['precio_base'] - ($validated['descuento_aplicado'] ?? 0);
 
         $inscripcion->update($validated);
@@ -250,6 +349,9 @@ class InscripcionController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * 
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Inscripcion $inscripcion)
     {
