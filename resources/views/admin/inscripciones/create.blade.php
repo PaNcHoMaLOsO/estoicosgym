@@ -862,9 +862,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .select2-container-custom .select2-selection--single .select2-selection__rendered {
             padding: 0 12px !important;
             line-height: 42px !important;
-            font-size: 1rem !important;
+            font-size: 1.1rem !important;
             color: #333 !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
+        }
+        
+        .select2-membresia .select2-selection--single .select2-selection__rendered {
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
         }
         
         .select2-container-custom .select2-selection--single .select2-selection__placeholder {
@@ -904,11 +909,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .select2-dropdown-custom .select2-results__option {
-            padding: 12px 16px !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
+            padding: 14px 18px !important;
+            font-size: 1.1rem !important;
+            line-height: 1.6 !important;
             color: #333 !important;
             transition: background-color 0.2s ease !important;
+            font-weight: 500 !important;
         }
         
         .select2-dropdown-custom .select2-results__option:hover {
@@ -1015,13 +1021,19 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
     
+    // ===== FORZAR FECHA HOY AL CARGAR =====
+    // Asegurar que siempre sea hoy
+    fechaInicio.value = new Date().toISOString().split('T')[0];
+
     // ===== INICIALIZAR SELECT2 PARA OTROS SELECTS =====
     // Membresía
     $('#id_membresia').select2({
         width: '100%',
         language: 'es',
-        containerCssClass: 'select2-container-custom',
-        dropdownCssClass: 'select2-dropdown-custom'
+        placeholder: '-- Seleccionar Membresía --',
+        containerCssClass: 'select2-container-custom select2-membresia',
+        dropdownCssClass: 'select2-dropdown-custom',
+        minimumResultsForSearch: -1
     });
     
     // Convenios
@@ -1255,7 +1267,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===== EVENT LISTENERS =====
-    idMembresia.addEventListener('change', cargarPrecioMembresia);
+    idMembresia.addEventListener('change', function() {
+        cargarPrecioMembresia();
+        calcularVencimiento();
+    });
+    
+    // También escuchar cambios de Select2
+    $('#id_membresia').on('change', function() {
+        cargarPrecioMembresia();
+        calcularVencimiento();
+    });
+    
     fechaInicio.addEventListener('change', calcularVencimiento);
     descuentoAdicional.addEventListener('change', cargarPrecioMembresia);
     descuentoAdicional.addEventListener('input', cargarPrecioMembresia);
