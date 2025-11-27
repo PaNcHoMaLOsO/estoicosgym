@@ -98,8 +98,8 @@ class EstadoSeeder extends Seeder
                 'activo' => true,
             ],
             
-            // ===== RANGO 300-399: ESTADOS DE CONVENIOS =====
-            // Códigos: 300=Activo, 301=Suspendido, 302=Vencido, 303=Cancelado, 304=Inactivo
+            // ===== RANGO 300-302: ESTADOS DE CONVENIOS (3 ESPECÍFICOS) =====
+            // Códigos: 300=Activo, 301=Suspendido, 302=Cancelado
             
             [
                 'codigo' => 300,
@@ -119,31 +119,15 @@ class EstadoSeeder extends Seeder
             ],
             [
                 'codigo' => 302,
-                'nombre' => 'Vencido',
-                'descripcion' => 'Convenio expirado',
-                'categoria' => 'convenio',
-                'color' => 'danger',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 303,
                 'nombre' => 'Cancelado',
                 'descripcion' => 'Convenio cancelado',
                 'categoria' => 'convenio',
                 'color' => 'secondary',
                 'activo' => true,
             ],
-            [
-                'codigo' => 304,
-                'nombre' => 'Inactivo',
-                'descripcion' => 'Convenio inactivo',
-                'categoria' => 'convenio',
-                'color' => 'secondary',
-                'activo' => true,
-            ],
             
-            // ===== RANGO 400-499: ESTADOS DE CLIENTES =====
-            // Códigos: 400=Activo, 401=Suspendido por Deuda, 402=Pagos Vencidos, 403=Cancelado, 404=Inactivo
+            // ===== RANGO 400-402: ESTADOS DE CLIENTES (3 ESPECÍFICOS) =====
+            // Códigos: 400=Activo, 401=Suspendido, 402=Cancelado
             
             [
                 'codigo' => 400,
@@ -155,34 +139,63 @@ class EstadoSeeder extends Seeder
             ],
             [
                 'codigo' => 401,
-                'nombre' => 'Suspendido por Deuda',
-                'descripcion' => 'Cliente suspendido por deuda',
-                'categoria' => 'cliente',
-                'color' => 'danger',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 402,
-                'nombre' => 'Pagos Vencidos',
-                'descripcion' => 'Cliente con pagos vencidos',
+                'nombre' => 'Suspendido',
+                'descripcion' => 'Cliente suspendido',
                 'categoria' => 'cliente',
                 'color' => 'warning',
                 'activo' => true,
             ],
             [
-                'codigo' => 403,
+                'codigo' => 402,
                 'nombre' => 'Cancelado',
                 'descripcion' => 'Cliente cancelado',
                 'categoria' => 'cliente',
                 'color' => 'secondary',
                 'activo' => true,
             ],
+            
+            // ===== RANGO 500-504: ESTADOS GENÉRICOS REUTILIZABLES =====
+            // Para cualquier módulo futuro que necesite estados básicos
+            // Códigos: 500=Activo, 501=Suspendido, 502=Cancelado, 503=Inactivo, 504=Vencido
+            
             [
-                'codigo' => 404,
-                'nombre' => 'Inactivo',
-                'descripcion' => 'Cliente inactivo',
-                'categoria' => 'cliente',
+                'codigo' => 500,
+                'nombre' => 'Activo',
+                'descripcion' => 'Recurso activo',
+                'categoria' => 'generico',
+                'color' => 'success',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 501,
+                'nombre' => 'Suspendido',
+                'descripcion' => 'Recurso suspendido',
+                'categoria' => 'generico',
+                'color' => 'warning',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 502,
+                'nombre' => 'Cancelado',
+                'descripcion' => 'Recurso cancelado',
+                'categoria' => 'generico',
                 'color' => 'secondary',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 503,
+                'nombre' => 'Inactivo',
+                'descripcion' => 'Recurso inactivo',
+                'categoria' => 'generico',
+                'color' => 'secondary',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 504,
+                'nombre' => 'Vencido',
+                'descripcion' => 'Recurso vencido',
+                'categoria' => 'generico',
+                'color' => 'danger',
                 'activo' => true,
             ],
         ]);

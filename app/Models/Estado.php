@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
- * @property int $codigo Rango: 100-199 membresías, 200-299 pagos, 300-399 convenios, 400-499 clientes
+ * @property int $codigo Rango: 100-199 membresías, 200-299 pagos, 300-302 convenios, 400-402 clientes, 500-504 genéricos
  * @property string $nombre
  * @property string|null $descripcion
  * @property string $categoria
