@@ -75,12 +75,11 @@ class PagoController extends Controller
     {
         $inscripcion = null;
         
-        // Si viene desde inscripción.show
+        // Si viene desde inscripción.show, cargar esa inscripción específica
         if ($request->filled('id_inscripcion')) {
             $inscripcion = Inscripcion::with('cliente', 'membresia')->find($request->id_inscripcion);
-        } else {
-            $inscripcion = Inscripcion::with('cliente', 'membresia')->latest()->first();
         }
+        // Si no viene con id_inscripcion, la vista mostrará el select2 para buscar
         
         $metodos_pago = MetodoPago::all();
         return view('admin.pagos.create', compact('inscripcion', 'metodos_pago'));
