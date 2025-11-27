@@ -620,6 +620,9 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Script iniciado - DOMContentLoaded');
+    
+    // Obtener elementos del DOM
     const selectInscripcion = document.getElementById('id_inscripcion');
     const clienteInfoSection = document.getElementById('clienteInfoSection');
     const tipoPagoSection = document.getElementById('tipoPagoSection');
@@ -627,51 +630,102 @@ document.addEventListener('DOMContentLoaded', function() {
     const formPago = document.getElementById('formPago');
     const btnSubmit = document.getElementById('btnSubmit');
 
+    // Validación inicial
+    console.log('✓ selectInscripcion:', selectInscripcion?.id);
+    console.log('✓ clienteInfoSection:', clienteInfoSection?.id);
+    console.log('✓ tipoPagoSection:', tipoPagoSection?.id);
+    console.log('✓ datosPagoSection:', datosPagoSection?.id);
+    console.log('✓ formPago:', formPago?.id);
+    console.log('✓ btnSubmit:', btnSubmit?.id);
+
     // Función para RESETEAR todos los campos
     function resetearFormulario() {
-        // Limpiar inputs de monto
-        document.getElementById('monto_abonado_abono').value = '';
-        document.getElementById('monto_metodo1').value = '';
-        document.getElementById('monto_metodo2').value = '';
-        
-        // Resetear selects de métodos de pago
-        document.getElementById('id_metodo_pago_abono').value = '';
-        document.getElementById('id_metodo_pago_completo').value = '';
-        document.getElementById('metodo_pago_1').value = '';
-        
-        // Resetear otros campos
-        document.getElementById('referencia_pago').value = '';
-        document.getElementById('observaciones').value = '';
-        document.getElementById('cantidad_cuotas').value = '1';
-        document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
-        
-        // Resetear tipo de pago a abono
-        document.querySelector('input[name="tipo_pago"][value="abono"]').checked = true;
-        
-        // Resetear vistas
-        document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
-        document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
-        document.getElementById('seccion-abono').classList.remove('d-none');
-        document.getElementById('card-abono').classList.add('active');
-        
-        // Limpiar resumen
-        document.getElementById('nuevo-abonado').textContent = '0';
-        document.getElementById('nuevo-pendiente').textContent = '0';
-        document.getElementById('total-mixto').textContent = '0';
-        document.getElementById('estado-mixto').innerHTML = '❌ Monto incompleto';
-        
-        btnSubmit.disabled = true;
+        console.log('🔄 Reseteando formulario...');
+        try {
+            const elementos = [
+                'monto_abonado_abono', 'monto_metodo1', 'monto_metodo2',
+                'id_metodo_pago_abono', 'id_metodo_pago_completo', 'metodo_pago_1',
+                'referencia_pago', 'observaciones', 'cantidad_cuotas', 'fecha_pago'
+            ];
+            
+            elementos.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.type === 'hidden' || el.type === 'text' || el.type === 'date') {
+                        el.value = '';
+                    } else if (el.tagName === 'SELECT') {
+                        el.value = id === 'cantidad_cuotas' ? '1' : '';
+                    }
+                    console.log(`  ✓ Limpiado: ${id}`);
+                } else {
+                    console.warn(`  ⚠️ Elemento no encontrado: ${id}`);
+                }
+            });
+            
+            // Fecha actual
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const fechaPagoEl = document.getElementById('fecha_pago');
+            if (fechaPagoEl) {
+                fechaPagoEl.value = fechaHoy;
+                console.log(`  ✓ Fecha establecida: ${fechaHoy}`);
+            }
+            
+            // Resetear tipo de pago a abono
+            const radioAbono = document.querySelector('input[name="tipo_pago"][value="abono"]');
+            if (radioAbono) {
+                radioAbono.checked = true;
+                console.log('  ✓ Tipo pago: abono');
+            }
+            
+            // Resetear vistas
+            document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
+            document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
+            
+            const seccionAbono = document.getElementById('seccion-abono');
+            const cardAbono = document.getElementById('card-abono');
+            if (seccionAbono) seccionAbono.classList.remove('d-none');
+            if (cardAbono) cardAbono.classList.add('active');
+            console.log('  ✓ Secciones reseteadas');
+            
+            // Limpiar resumen
+            const elementos_resumen = ['nuevo-abonado', 'nuevo-pendiente', 'total-mixto', 'estado-mixto'];
+            elementos_resumen.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id === 'estado-mixto') {
+                        el.innerHTML = '❌ Monto incompleto';
+                    } else {
+                        el.textContent = '0';
+                    }
+                }
+            });
+            
+            console.log('✓ Formulario reseteado exitosamente - updateSubmitButton será llamado');
+            // NO deshabilitamos el botón aquí - será actualizado después por mostrarCliente
+        } catch(error) {
+            console.error('❌ Error al resetear formulario:', error);
+            btnSubmit.disabled = true;
+        }
     }
 
     // Función para cargar historial de pagos
     function cargarHistorial(inscripcionId) {
-        fetch(`/admin/pagos/historial/${inscripcionId}`)
-            .then(response => response.json())
+        console.log(`📋 Cargando historial para inscripción: ${inscripcionId}`);
+        const url = `/admin/pagos/historial/${inscripcionId}`;
+        console.log(`  URL: ${url}`);
+        
+        fetch(url)
+            .then(response => {
+                console.log(`  Response status: ${response.status}`);
+                return response.json();
+            })
             .then(data => {
+                console.log('✓ Historial cargado:', data);
                 const historialDiv = document.getElementById('historialPagos');
                 
                 if (!data.pagos || data.pagos.length === 0) {
                     historialDiv.innerHTML = '<p class="text-muted p-3 mb-0"><i class="fas fa-info-circle"></i> Sin pagos registrados</p>';
+                    console.log('  Info: No hay pagos registrados');
                     return;
                 }
                 
@@ -691,52 +745,109 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 html += '</tbody></table></div>';
                 historialDiv.innerHTML = html;
+                console.log(`✓ Historial renderizado: ${data.pagos.length} pagos`);
             })
             .catch(error => {
-                console.error('Error cargando historial:', error);
+                console.error('❌ Error cargando historial:', error);
                 document.getElementById('historialPagos').innerHTML = '<p class="text-danger p-3 mb-0"><i class="fas fa-exclamation"></i> Error al cargar historial</p>';
             });
     }
 
     // Función para mostrar el cliente seleccionado
     function mostrarCliente() {
+        console.log('👤 mostrarCliente() invocado');
         const value = selectInscripcion.value;
+        console.log(`  Valor seleccionado: ${value}`);
         
         if (value) {
             const option = document.querySelector(`option[value="${value}"]`);
-            const precio = parseFloat(option.getAttribute('data-precio'));
-            const pagos = parseFloat(option.getAttribute('data-pagos')) || 0;
-            const cliente = option.getAttribute('data-cliente');
-            const membresia = option.getAttribute('data-membresia');
-            const vencimiento = option.getAttribute('data-vencimiento');
-            const dias = parseInt(option.getAttribute('data-dias'));
-            const pendiente = precio - pagos;
+            console.log('  Option encontrado:', option);
+            
+            if (!option) {
+                console.error('❌ No se encontró el option element');
+                return;
+            }
+            
+            try {
+                const precio = parseFloat(option.getAttribute('data-precio')) || 0;
+                const pagos = parseFloat(option.getAttribute('data-pagos')) || 0;
+                const cliente = option.getAttribute('data-cliente') || '';
+                const membresia = option.getAttribute('data-membresia') || '';
+                const vencimiento = option.getAttribute('data-vencimiento') || '';
+                const dias = parseInt(option.getAttribute('data-dias')) || 0;
+                const pendiente = precio - pagos;
 
-            // Llenar información
-            document.getElementById('clienteNombre').textContent = cliente;
-            document.getElementById('membresiaNombre').textContent = membresia;
-            document.getElementById('montoTotal').textContent = precio.toLocaleString('es-CO');
-            document.getElementById('montoAbonado').textContent = pagos.toLocaleString('es-CO');
-            document.getElementById('montoPendiente').textContent = pendiente.toLocaleString('es-CO');
-            document.getElementById('fechaVencimiento').textContent = vencimiento;
-            document.getElementById('diasRestantes').textContent = dias > 0 ? dias + ' días' : '🔴 Vencido';
+                console.log(`  Datos obtenidos:`, {precio, pagos, cliente, membresia, vencimiento, dias, pendiente});
 
-            // Actualizar campos de pago
-            document.getElementById('monto_completo').value = '$' + pendiente.toLocaleString('es-CO');
-            document.getElementById('monto_abonado_completo').value = pendiente;
-            document.getElementById('target-mixto').textContent = pendiente.toLocaleString('es-CO');
+                // Llenar información - con validación de elementos
+                const elementos_cliente = {
+                    'clienteNombre': cliente,
+                    'membresiaNombre': membresia,
+                    'montoTotal': precio.toLocaleString('es-CO'),
+                    'montoAbonado': pagos.toLocaleString('es-CO'),
+                    'montoPendiente': pendiente.toLocaleString('es-CO'),
+                    'fechaVencimiento': vencimiento,
+                    'diasRestantes': dias > 0 ? dias + ' días' : '🔴 Vencido'
+                };
 
-            // Mostrar secciones
-            clienteInfoSection.classList.remove('d-none');
-            tipoPagoSection.classList.remove('d-none');
-            datosPagoSection.classList.remove('d-none');
+                for (const [id, value] of Object.entries(elementos_cliente)) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.textContent = value;
+                        console.log(`  ✓ ${id}: ${value}`);
+                    } else {
+                        console.warn(`  ⚠️ Elemento no encontrado: ${id}`);
+                    }
+                }
 
-            // RESETEAR FORMULARIO
-            resetearFormulario();
+                // Actualizar campos de pago
+                const elMontoCompleto = document.getElementById('monto_completo');
+                const elMontoAbonComplet = document.getElementById('monto_abonado_completo');
+                const elTargetMixto = document.getElementById('target-mixto');
 
-            // Cargar historial
-            cargarHistorial(value);
+                if (elMontoCompleto) {
+                    elMontoCompleto.value = '$' + pendiente.toLocaleString('es-CO');
+                    console.log(`  ✓ monto_completo: $${pendiente.toLocaleString('es-CO')}`);
+                } else {
+                    console.warn('  ⚠️ monto_completo no encontrado');
+                }
+
+                if (elMontoAbonComplet) {
+                    elMontoAbonComplet.value = pendiente;
+                    console.log(`  ✓ monto_abonado_completo: ${pendiente}`);
+                } else {
+                    console.warn('  ⚠️ monto_abonado_completo no encontrado');
+                }
+
+                if (elTargetMixto) {
+                    elTargetMixto.textContent = pendiente.toLocaleString('es-CO');
+                    console.log(`  ✓ target-mixto: ${pendiente.toLocaleString('es-CO')}`);
+                } else {
+                    console.warn('  ⚠️ target-mixto no encontrado');
+                }
+
+                // Mostrar secciones
+                console.log('  Mostrando secciones...');
+                clienteInfoSection.classList.remove('d-none');
+                tipoPagoSection.classList.remove('d-none');
+                datosPagoSection.classList.remove('d-none');
+                console.log('  ✓ Secciones visibles');
+
+                // RESETEAR FORMULARIO
+                resetearFormulario();
+
+                // Cargar historial
+                cargarHistorial(value);
+                
+                // ACTUALIZAR ESTADO DEL BOTÓN (importante después de resetear)
+                updateSubmitButton();
+                
+                console.log('✓ mostrarCliente() completado exitosamente');
+            } catch(error) {
+                console.error('❌ Error en mostrarCliente():', error);
+            }
         } else {
+            console.log('  Sin cliente seleccionado - ocultando secciones');
             clienteInfoSection.classList.add('d-none');
             tipoPagoSection.classList.add('d-none');
             datosPagoSection.classList.add('d-none');
@@ -745,6 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Select2 Initialization
+    console.log('⚙️ Inicializando Select2...');
     $('#id_inscripcion').select2({
         width: '100%',
         language: 'es',
@@ -762,29 +874,48 @@ document.addEventListener('DOMContentLoaded', function() {
             return null;
         }
     });
+    console.log('✓ Select2 inicializado');
 
     // Eventos Select2
-    $('#id_inscripcion').on('select2:select', mostrarCliente);
+    console.log('📌 Agregando event listeners...');
+    $('#id_inscripcion').on('select2:select', function(e) {
+        console.log('📌 Evento select2:select disparado:', e.params.data);
+        mostrarCliente();
+    });
+    
     $('#id_inscripcion').on('select2:clear', function() {
+        console.log('📌 Evento select2:clear disparado');
         clienteInfoSection.classList.add('d-none');
         tipoPagoSection.classList.add('d-none');
         datosPagoSection.classList.add('d-none');
         btnSubmit.disabled = true;
     });
+    console.log('✓ Event listeners agregados');
 
     // Cambio de tipo de pago
     document.querySelectorAll('input[name="tipo_pago"]').forEach(radio => {
         radio.addEventListener('change', function() {
+            console.log(`🔘 Tipo de pago cambiado a: ${this.value}`);
             document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
             document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
             
             if (this.value === 'abono') {
+                console.log('  → Mostrando sección ABONO');
                 document.getElementById('seccion-abono').classList.remove('d-none');
                 document.getElementById('card-abono').classList.add('active');
             } else if (this.value === 'completo') {
+                console.log('  → Mostrando sección COMPLETO');
                 document.getElementById('seccion-completo').classList.remove('d-none');
                 document.getElementById('card-completo').classList.add('active');
+                // Calcular monto completo (pendiente total)
+                const elMontoPendiente = document.getElementById('montoPendiente');
+                if (elMontoPendiente) {
+                    const montoPendiente = parseFloat(elMontoPendiente.textContent.replace(/\./g, '').replace(/,/g, '')) || 0;
+                    document.getElementById('monto_abonado_completo').value = montoPendiente;
+                    console.log(`  Monto completo establecido: ${montoPendiente}`);
+                }
             } else if (this.value === 'mixto') {
+                console.log('  → Mostrando sección MIXTO');
                 document.getElementById('seccion-mixto').classList.remove('d-none');
                 document.getElementById('card-mixto').classList.add('active');
             }
@@ -851,48 +982,104 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('metodo_pago_1').addEventListener('change', updateSubmitButton);
 
     function updateSubmitButton() {
-        const tipoPago = document.querySelector('input[name="tipo_pago"]:checked');
-        if (!tipoPago) {
-            btnSubmit.disabled = true;
-            return;
-        }
+        try {
+            const tipoPago = document.querySelector('input[name="tipo_pago"]:checked');
+            if (!tipoPago) {
+                console.log('⚠️ updateSubmitButton: Sin tipo de pago seleccionado');
+                btnSubmit.disabled = true;
+                return;
+            }
 
-        if (tipoPago.value === 'abono') {
-            const monto = parseFloat(document.getElementById('monto_abonado_abono').value) || 0;
-            const total = parseFloat(document.getElementById('montoPendiente').textContent.replace(/\./g, '').replace(/,/g, ''));
-            const metodo = document.getElementById('id_metodo_pago_abono').value;
+            console.log(`🔘 updateSubmitButton: Tipo = ${tipoPago.value}`);
+
+            if (tipoPago.value === 'abono') {
+                const elMonto = document.getElementById('monto_abonado_abono');
+                const elTotal = document.getElementById('montoPendiente');
+                const elMetodo = document.getElementById('id_metodo_pago_abono');
+                
+                if (!elMonto || !elTotal || !elMetodo) {
+                    console.warn('⚠️ Elementos faltantes en abono:', {elMonto, elTotal, elMetodo});
+                    btnSubmit.disabled = true;
+                    return;
+                }
+                
+                const monto = parseFloat(elMonto.value) || 0;
+                const total = parseFloat(elTotal.textContent.replace(/\./g, '').replace(/,/g, '')) || 0;
+                const metodo = elMetodo.value;
+                
+                const isValid = monto > 0 && monto <= total && metodo;
+                console.log(`  Abono: monto=${monto}, total=${total}, metodo=${metodo}, valid=${isValid}`);
+                btnSubmit.disabled = !isValid;
+                
+            } else if (tipoPago.value === 'completo') {
+                const elMetodo = document.getElementById('id_metodo_pago_completo');
+                if (!elMetodo) {
+                    console.warn('⚠️ Elemento faltante: id_metodo_pago_completo');
+                    btnSubmit.disabled = true;
+                    return;
+                }
+                const metodo = elMetodo.value;
+                console.log(`  Completo: metodo=${metodo}, valid=${!!metodo}`);
+                btnSubmit.disabled = !metodo;
+                
+            } else if (tipoPago.value === 'mixto') {
+                const el1 = document.getElementById('monto_metodo1');
+                const el2 = document.getElementById('monto_metodo2');
+                const elTarget = document.getElementById('target-mixto');
+                const elMetodo = document.getElementById('metodo_pago_1');
+                
+                if (!el1 || !el2 || !elTarget || !elMetodo) {
+                    console.warn('⚠️ Elementos faltantes en mixto:', {el1, el2, elTarget, elMetodo});
+                    btnSubmit.disabled = true;
+                    return;
+                }
+                
+                const monto1 = parseFloat(el1.value) || 0;
+                const monto2 = parseFloat(el2.value) || 0;
+                const target = parseFloat(elTarget.textContent.replace(/\./g, '').replace(/,/g, '')) || 0;
+                const metodo = elMetodo.value;
+                
+                const isValid = (monto1 + monto2) === target && metodo;
+                console.log(`  Mixto: monto1=${monto1}, monto2=${monto2}, target=${target}, metodo=${metodo}, valid=${isValid}`);
+                btnSubmit.disabled = !isValid;
+            }
             
-            btnSubmit.disabled = !monto || monto <= 0 || monto > total || !metodo;
-        } else if (tipoPago.value === 'completo') {
-            const metodo = document.getElementById('id_metodo_pago_completo').value;
-            btnSubmit.disabled = !metodo;
-        } else if (tipoPago.value === 'mixto') {
-            const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
-            const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
-            const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, '').replace(/,/g, ''));
-            const metodo1 = document.getElementById('metodo_pago_1').value;
-            btnSubmit.disabled = (monto1 + monto2) !== target || !metodo1;
+            console.log(`  Resultado: botón ${btnSubmit.disabled ? 'DESHABILITADO' : 'HABILITADO'}`);
+        } catch(error) {
+            console.error('❌ Error en updateSubmitButton():', error);
+            btnSubmit.disabled = true;
         }
     }
 
     // Validación al enviar
     formPago.addEventListener('submit', function(e) {
-        const tipoPago = document.querySelector('input[name="tipo_pago"]:checked').value;
-        
-        if (tipoPago === 'abono') {
-            document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_abono').value;
-            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_abono').value;
-        } else if (tipoPago === 'completo') {
-            document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_completo').value;
-            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_completo').value;
-        } else if (tipoPago === 'mixto') {
-            const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
-            const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
+        console.log('📤 Formulario siendo enviado');
+        try {
+            const tipoPago = document.querySelector('input[name="tipo_pago"]:checked').value;
+            console.log(`  Tipo de pago: ${tipoPago}`);
             
-            document.getElementById('monto_abonado').value = monto1 + monto2;
-            document.getElementById('id_metodo_pago_principal').value = document.getElementById('metodo_pago_1').value;
+            if (tipoPago === 'abono') {
+                document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_abono').value;
+                document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_abono').value;
+            } else if (tipoPago === 'completo') {
+                document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_completo').value;
+                document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_completo').value;
+            } else if (tipoPago === 'mixto') {
+                const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
+                const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
+                
+                document.getElementById('monto_abonado').value = monto1 + monto2;
+                document.getElementById('id_metodo_pago_principal').value = document.getElementById('metodo_pago_1').value;
+            }
+            
+            console.log('✓ Valores de formulario populados');
+        } catch(error) {
+            console.error('❌ Error al enviar formulario:', error);
+            e.preventDefault();
         }
     });
+    
+    console.log('🎉 Script completamente inicializado');
 });
 </script>
 @endsection
