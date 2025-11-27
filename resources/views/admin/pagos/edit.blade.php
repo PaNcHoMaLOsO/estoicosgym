@@ -4,200 +4,236 @@
 
 @section('css')
 <style>
-    body { background: #f5f5f5; }
-    .page-container { background: white; }
+    * { font-family: 'Segoe UI', sans-serif; }
     
-    .page-header {
+    .page-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .header-compact {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 40px;
-        margin: -20px -15px 30px -15px;
-        border-radius: 0 0 12px 12px;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     }
-    
-    .page-header h1 {
+
+    .header-compact h2 {
         margin: 0;
-        font-size: 2.2em;
+        font-size: 1.6em;
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
-    
-    .form-section {
+
+    .header-compact p {
+        margin: 8px 0 0 0;
+        opacity: 0.95;
+        font-size: 0.95em;
+    }
+
+    .card-compact {
         background: white;
-        border: 1px solid #e0e0e0;
         border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        border: 1px solid #f0f0f0;
     }
-    
-    .section-title {
+
+    .card-title {
         font-size: 1.1em;
         font-weight: 700;
         color: #333;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 3px solid #667eea;
+        margin: 0 0 15px 0;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #667eea;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
-    
-    .pago-info {
-        background: #f0f9ff;
-        border-left: 4px solid #667eea;
-        padding: 15px;
-        border-radius: 6px;
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
         margin-bottom: 20px;
     }
-    
-    .pago-info h5 {
-        margin-top: 0;
-        color: #333;
-    }
-    
-    .info-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 15px;
-    }
-    
-    .info-item {
-        background: white;
+
+    .info-cell {
+        background: #f9f9f9;
+        border-radius: 8px;
         padding: 12px;
-        border-radius: 6px;
         border-left: 3px solid #667eea;
     }
-    
+
     .info-label {
-        font-size: 0.8em;
+        font-size: 0.75em;
         color: #999;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        font-weight: 600;
     }
-    
+
     .info-value {
-        font-size: 1.2em;
+        font-size: 1.05em;
         font-weight: 700;
         color: #333;
     }
-    
-    .btn-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 30px;
+
+    .form-group {
+        margin-bottom: 15px;
     }
-    
-    .btn-actions a,
-    .btn-actions button {
-        flex: 1;
-        padding: 14px;
-        border-radius: 8px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        font-size: 1em;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-actions button[type="submit"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .btn-actions button[type="submit"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    }
-    
-    .btn-actions a {
-        background: #6c757d;
-        color: white;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .btn-actions a:hover {
-        background: #5a6268;
-    }
-    
+
     .form-group label {
         font-weight: 600;
-        margin-bottom: 8px;
         color: #333;
+        margin-bottom: 6px;
+        font-size: 0.9em;
     }
-    
+
     .form-control {
-        border-radius: 6px;
         border: 1px solid #ddd;
+        border-radius: 8px;
         padding: 10px 12px;
+        font-size: 0.95em;
+        transition: all 0.3s ease;
     }
-    
+
     .form-control:focus {
         border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
     }
-    
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .form-group-full {
+        grid-column: 1 / -1;
+    }
+
+    .btn-group-compact {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .btn-compact {
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95em;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+
+    .btn-compact-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-compact-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-compact-secondary {
+        background: #6c757d;
+        color: white;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-compact-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.85em;
+        margin-top: 4px;
+        display: block;
+    }
+
     @media (max-width: 768px) {
-        .page-header { padding: 20px; }
-        .page-header h1 { font-size: 1.5em; }
-        .info-row { grid-template-columns: 1fr; }
-        .btn-actions { flex-direction: column; }
+        .page-wrapper { padding: 0 15px; }
+        .header-compact { padding: 15px; }
+        .header-compact h2 { font-size: 1.3em; }
+        .info-grid { grid-template-columns: 1fr; }
+        .form-row { grid-template-columns: 1fr; }
+        .btn-group-compact { flex-direction: column; }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="page-container">
-    <div class="page-header">
-        <h1><i class="fas fa-edit"></i> Editar Pago</h1>
-        <p class="text-white mt-2">Modifica los detalles del pago registrado</p>
+<div class="page-wrapper">
+    <div class="header-compact">
+        <h2><i class="fas fa-edit"></i> Editar Pago</h2>
+        <p>Modifica los detalles del pago registrado</p>
     </div>
 
-    <div class="container-fluid">
-        <!-- Información del Pago -->
-        <div class="form-section">
-            <div class="section-title">
-                <i class="fas fa-info-circle"></i> Información Actual del Pago
+    <!-- INFO ACTUAL -->
+    <div class="card-compact">
+        <div class="card-title">
+            <i class="fas fa-info-circle"></i> Pago Actual
+        </div>
+        <div class="info-grid">
+            <div class="info-cell">
+                <div class="info-label">Cliente</div>
+                <div class="info-value">{{ $pago->inscripcion->cliente->nombres }}</div>
             </div>
-            
-            <div class="pago-info">
-                <h5>{{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}</h5>
-                <div class="info-row">
-                    <div class="info-item">
-                        <div class="info-label">Membresía</div>
-                        <div class="info-value">{{ $pago->inscripcion->membresia->nombre }}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Total Inscripción</div>
-                        <div class="info-value">${{ number_format($pago->monto_total, 0, '.', '.') }}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Monto Pagado</div>
-                        <div class="info-value">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Fecha Pago</div>
-                        <div class="info-value">{{ $pago->fecha_pago->format('d/m/Y') }}</div>
-                    </div>
-                </div>
+            <div class="info-cell">
+                <div class="info-label">Membresía</div>
+                <div class="info-value">{{ $pago->inscripcion->membresia->nombre }}</div>
+            </div>
+            <div class="info-cell">
+                <div class="info-label">Monto Pagado</div>
+                <div class="info-value">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</div>
+            </div>
+            <div class="info-cell">
+                <div class="info-label">Fecha</div>
+                <div class="info-value">{{ $pago->fecha_pago->format('d/m/Y') }}</div>
             </div>
         </div>
+    </div>
 
-        <!-- Formulario de Edición -->
-        <form action="{{ route('admin.pagos.update', $pago) }}" method="POST">
-            @csrf
-            @method('PUT')
+    <!-- FORM -->
+    <form action="{{ route('admin.pagos.update', $pago) }}" method="POST">
+        @csrf
+        @method('PUT')
 
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-pencil-alt"></i> Editar Datos del Pago
-                </div>
+        <div class="card-compact">
+            <div class="card-title">
+                <i class="fas fa-pencil-alt"></i> Editar Datos
+            </div>
 
+            <div class="form-row">
                 <div class="form-group">
                     <label for="id_inscripcion">Inscripción <span class="text-danger">*</span></label>
                     <select class="form-control @error('id_inscripcion') is-invalid @enderror" 
@@ -205,93 +241,91 @@
                         @foreach($inscripciones as $insc)
                             <option value="{{ $insc->id }}" 
                                     {{ $pago->id_inscripcion == $insc->id ? 'selected' : '' }}>
-                                {{ $insc->cliente->nombres }} {{ $insc->cliente->apellido_paterno }} - {{ $insc->membresia->nombre }}
+                                {{ $insc->cliente->nombres }} - {{ $insc->membresia->nombre }}
                             </option>
                         @endforeach
                     </select>
                     @error('id_inscripcion')
-                        <span class="invalid-feedback d-block">{{ $message }}</span>
+                        <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="monto_abonado">Monto Pagado ($) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
-                               id="monto_abonado" name="monto_abonado" 
-                               value="{{ old('monto_abonado', $pago->monto_abonado) }}"
-                               step="1000" min="0" required>
-                        @error('monto_abonado')
-                            <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label for="id_metodo_pago_principal">Método de Pago <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_metodo_pago_principal') is-invalid @enderror" 
-                                id="id_metodo_pago_principal" name="id_metodo_pago_principal" required>
-                            <option value="">-- Seleccionar --</option>
-                            @foreach($metodos_pago as $metodo)
-                                <option value="{{ $metodo->id }}" 
-                                        {{ $pago->id_metodo_pago_principal == $metodo->id ? 'selected' : '' }}>
-                                    {{ $metodo->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_metodo_pago_principal')
-                            <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
-                    </div>
+                <div class="form-group">
+                    <label for="monto_abonado">Monto ($) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
+                           id="monto_abonado" name="monto_abonado" 
+                           value="{{ old('monto_abonado', $pago->monto_abonado) }}"
+                           step="1000" min="0" required>
+                    @error('monto_abonado')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
+            </div>
 
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="fecha_pago">Fecha de Pago <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
-                               id="fecha_pago" name="fecha_pago" 
-                               value="{{ old('fecha_pago', $pago->fecha_pago->format('Y-m-d')) }}" required>
-                        @error('fecha_pago')
-                            <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label for="cantidad_cuotas">Cantidad de Cuotas</label>
-                        <select class="form-control" id="cantidad_cuotas" name="cantidad_cuotas">
-                            @for($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}" {{ $pago->cantidad_cuotas == $i ? 'selected' : '' }}>
-                                    {{ $i }} {{ $i == 1 ? 'cuota' : 'cuotas' }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fecha_pago">Fecha <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
+                           id="fecha_pago" name="fecha_pago" 
+                           value="{{ old('fecha_pago', $pago->fecha_pago->format('Y-m-d')) }}" required>
+                    @error('fecha_pago')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="referencia_pago">Referencia (Comprobante, etc)</label>
+                    <label for="id_metodo_pago_principal">Método <span class="text-danger">*</span></label>
+                    <select class="form-control @error('id_metodo_pago_principal') is-invalid @enderror" 
+                            id="id_metodo_pago_principal" name="id_metodo_pago_principal" required>
+                        @foreach($metodos_pago as $metodo)
+                            <option value="{{ $metodo->id }}" 
+                                    {{ $pago->id_metodo_pago_principal == $metodo->id ? 'selected' : '' }}>
+                                {{ $metodo->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('id_metodo_pago_principal')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cantidad_cuotas">Cuotas</label>
+                    <select class="form-control" id="cantidad_cuotas" name="cantidad_cuotas">
+                        @for($i = 1; $i <= 12; $i++)
+                            <option value="{{ $i }}" {{ $pago->cantidad_cuotas == $i ? 'selected' : '' }}>
+                                {{ $i }} {{ $i == 1 ? 'cuota' : 'cuotas' }}
+                            </option>
+                        @endfor
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="referencia_pago">Referencia</label>
                     <input type="text" class="form-control" id="referencia_pago" name="referencia_pago"
                            value="{{ old('referencia_pago', $pago->referencia_pago) }}"
-                           placeholder="Ej: Transferencia #123456">
-                </div>
-
-                <div class="form-group">
-                    <label for="observaciones">Observaciones</label>
-                    <textarea class="form-control" id="observaciones" name="observaciones" 
-                              rows="3" placeholder="Notas adicionales...">{{ old('observaciones', $pago->observaciones) }}</textarea>
+                           placeholder="Ej: Transf #12345">
                 </div>
             </div>
 
-            <!-- Botones -->
-            <div class="btn-actions">
-                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-cancel">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i> Guardar Cambios
-                </button>
+            <div class="form-group form-group-full">
+                <label for="observaciones">Observaciones</label>
+                <textarea class="form-control" id="observaciones" name="observaciones" 
+                          rows="2" placeholder="Notas...">{{ old('observaciones', $pago->observaciones) }}</textarea>
             </div>
-        </form>
-    </div>
+        </div>
+
+        <div class="btn-group-compact">
+            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-compact btn-compact-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn-compact btn-compact-primary">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+        </div>
+    </form>
 </div>
 
 @endsection
