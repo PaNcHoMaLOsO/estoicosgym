@@ -10,87 +10,55 @@ class EstadoSeeder extends Seeder
     public function run(): void
     {
         DB::table('estados')->insert([
-            // ===== RANGO 01-99: ESTADOS DE MEMBRESÍAS =====
+            // ===== RANGO 100-199: ESTADOS DE MEMBRESÍAS =====
+            // Códigos: 100=Activa, 101=Pausada, 102=Vencida, 103=Cancelada, 104=Suspendida
             
-            // Membresías - Estados Base (01-19)
             [
-                'codigo' => 1,
+                'codigo' => 100,
                 'nombre' => 'Activa',
-                'descripcion' => 'Membresía vigente y activa - Usuario puede acceder',
+                'descripcion' => 'Membresía vigente y activa',
                 'categoria' => 'membresia',
                 'color' => 'success',
                 'activo' => true,
             ],
             [
-                'codigo' => 2,
-                'nombre' => 'Pausada - 7 días',
-                'descripcion' => 'Membresía pausada por 7 días - Sin acceso temporal',
+                'codigo' => 101,
+                'nombre' => 'Pausada',
+                'descripcion' => 'Membresía pausada temporalmente',
                 'categoria' => 'membresia',
                 'color' => 'warning',
                 'activo' => true,
             ],
             [
-                'codigo' => 3,
-                'nombre' => 'Pausada - 14 días',
-                'descripcion' => 'Membresía pausada por 14 días - Sin acceso temporal',
-                'categoria' => 'membresia',
-                'color' => 'warning',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 4,
-                'nombre' => 'Pausada - 30 días',
-                'descripcion' => 'Membresía pausada por 30 días (1 mes) - Sin acceso temporal',
-                'categoria' => 'membresia',
-                'color' => 'warning',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 5,
+                'codigo' => 102,
                 'nombre' => 'Vencida',
-                'descripcion' => 'Membresía expirada - Requiere renovación',
+                'descripcion' => 'Membresía expirada',
                 'categoria' => 'membresia',
                 'color' => 'danger',
                 'activo' => true,
             ],
             [
-                'codigo' => 6,
+                'codigo' => 103,
                 'nombre' => 'Cancelada',
-                'descripcion' => 'Membresía cancelada por el cliente - Sin acceso',
+                'descripcion' => 'Membresía cancelada',
                 'categoria' => 'membresia',
                 'color' => 'secondary',
                 'activo' => true,
             ],
             [
-                'codigo' => 7,
-                'nombre' => 'Suspendida - Deuda',
-                'descripcion' => 'Membresía suspendida por deuda de pago',
+                'codigo' => 104,
+                'nombre' => 'Suspendida',
+                'descripcion' => 'Membresía suspendida por deuda',
                 'categoria' => 'membresia',
                 'color' => 'danger',
                 'activo' => true,
             ],
-            [
-                'codigo' => 8,
-                'nombre' => 'Pendiente de Activación',
-                'descripcion' => 'Membresía creada pero sin activar - Pago pendiente',
-                'categoria' => 'membresia',
-                'color' => 'info',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 9,
-                'nombre' => 'En Revisión',
-                'descripcion' => 'Membresía en revisión por soporte',
-                'categoria' => 'membresia',
-                'color' => 'primary',
-                'activo' => true,
-            ],
             
-            // ===== RANGO 100-199: ESTADOS DE PAGOS =====
+            // ===== RANGO 200-299: ESTADOS DE PAGOS =====
+            // Códigos: 200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado
             
-            // Pagos - Estados (101-119)
             [
-                'codigo' => 101,
+                'codigo' => 200,
                 'nombre' => 'Pendiente',
                 'descripcion' => 'Pago pendiente de realizar',
                 'categoria' => 'pago',
@@ -98,66 +66,42 @@ class EstadoSeeder extends Seeder
                 'activo' => true,
             ],
             [
-                'codigo' => 102,
+                'codigo' => 201,
                 'nombre' => 'Pagado',
-                'descripcion' => 'Pago completado exitosamente',
+                'descripcion' => 'Pago completado',
                 'categoria' => 'pago',
                 'color' => 'success',
                 'activo' => true,
             ],
             [
-                'codigo' => 103,
+                'codigo' => 202,
                 'nombre' => 'Parcial',
-                'descripcion' => 'Abono realizado, resta saldo pendiente',
+                'descripcion' => 'Pago parcial, saldo pendiente',
                 'categoria' => 'pago',
                 'color' => 'info',
                 'activo' => true,
             ],
             [
-                'codigo' => 104,
+                'codigo' => 203,
                 'nombre' => 'Vencido',
-                'descripcion' => 'Pago no realizado después de fecha límite',
+                'descripcion' => 'Pago vencido sin realizar',
                 'categoria' => 'pago',
                 'color' => 'danger',
                 'activo' => true,
             ],
             [
-                'codigo' => 105,
-                'nombre' => 'En Disputa',
-                'descripcion' => 'Pago en revisión por disputa del cliente',
-                'categoria' => 'pago',
-                'color' => 'primary',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 106,
-                'nombre' => 'Reembolso',
-                'descripcion' => 'Pago siendo reembolsado al cliente',
-                'categoria' => 'pago',
-                'color' => 'info',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 107,
-                'nombre' => 'Reembolsado',
-                'descripcion' => 'Pago completamente reembolsado',
-                'categoria' => 'pago',
-                'color' => 'secondary',
-                'activo' => true,
-            ],
-            [
-                'codigo' => 108,
+                'codigo' => 204,
                 'nombre' => 'Cancelado',
-                'descripcion' => 'Pago cancelado por el cliente',
+                'descripcion' => 'Pago cancelado',
                 'categoria' => 'pago',
                 'color' => 'secondary',
                 'activo' => true,
             ],
             
-            // ===== RANGO 200-299: ESTADOS DE CONVENIOS (futuro) =====
+            // ===== RANGO 300-399: ESTADOS DE CONVENIOS (FUTURO) =====
             // Reservado para estados de convenios
             
-            // ===== RANGO 300-399: ESTADOS DE CLIENTES (futuro) =====
+            // ===== RANGO 400-499: ESTADOS DE CLIENTES (FUTURO) =====
             // Reservado para estados de clientes
         ]);
     }

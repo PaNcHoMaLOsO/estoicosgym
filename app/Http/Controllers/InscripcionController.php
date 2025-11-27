@@ -164,7 +164,8 @@ class InscripcionController extends Controller
 
     public function destroy(Inscripcion $inscripcion)
     {
-        $inscripcion->update(['id_estado' => 204]); // Cancelada
+        $estadoCancelada = Estado::where('codigo', 103)->first(); // Cancelada
+        $inscripcion->update(['id_estado' => $estadoCancelada->id]);
 
         return redirect()->route('admin.inscripciones.index')->with('success', 'Inscripción cancelada exitosamente.');
     }

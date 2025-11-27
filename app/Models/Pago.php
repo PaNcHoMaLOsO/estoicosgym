@@ -204,7 +204,7 @@ class Pago extends Model
         }
 
         $totalAbonado = $this->inscripcion->pagos()
-            ->whereIn('id_estado', [102, 103]) // Pagado o Parcial
+            ->whereIn('id_estado', [201, 202]) // Pagado o Parcial
             ->sum('monto_abonado');
 
         return max(0, $this->inscripcion->precio_final - $totalAbonado);
@@ -220,16 +220,16 @@ class Pago extends Model
         }
 
         return $this->inscripcion->pagos()
-            ->whereIn('id_estado', [102, 103])
+            ->whereIn('id_estado', [201, 202])
             ->sum('monto_abonado');
     }
 
     /**
      * Calcular el estado dinámico basado en montos y fechas
-     * 101: PENDIENTE
-     * 102: PAGADO
-     * 103: PARCIAL
-     * 104: VENCIDO
+     * 200: PENDIENTE
+     * 201: PAGADO
+     * 202: PARCIAL
+     * 203: VENCIDO
      */
     public function calculateEstadoDinamico()
     {

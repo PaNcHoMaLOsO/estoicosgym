@@ -36,7 +36,8 @@ class DashboardController extends Controller
             ->whereMonth('fecha_pago', $hoy->month)
             ->sum('monto_abonado');
         $ingresosTotales = Pago::sum('monto_abonado');
-        $pagosPendientes = Pago::where('id_estado', '!=', 102)->sum('monto_abonado');
+        $estadoPagado = Estado::where('codigo', 201)->first();
+        $pagosPendientes = Pago::where('id_estado', '!=', $estadoPagado->id)->sum('monto_abonado');
         
         // Últimos pagos con relaciones eager loaded
         $ultimosPagos = Pago::with(['inscripcion' => function($q) {
