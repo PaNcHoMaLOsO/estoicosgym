@@ -144,9 +144,14 @@
                         <label for="id_inscripcion"><i class="fas fa-search"></i> Buscar Inscripción</label>
                         <select class="form-control select2-inscripcion @error('id_inscripcion') is-invalid @enderror" 
                                 id="id_inscripcion" name="id_inscripcion" required style="width: 100%;">
-                            <option value="">-- Seleccionar una Inscripción --</option>
+                            <option value="">-- Busca cliente o email (mín. 2 caracteres) --</option>
                         </select>
-                        <span class="help-text"><i class="fas fa-info-circle"></i> Ingresa al menos 2 caracteres del cliente o membresía</span>
+                        <span class="help-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Busca por: <strong>nombre cliente</strong>, <strong>apellido</strong>, <strong>email</strong> o <strong>ID inscripción</strong>
+                            <br>
+                            ⚠️ Solo aparecen inscripciones con saldo pendiente
+                        </span>
                         @error('id_inscripcion')
                             <div class="invalid-feedback" style="display: block;">{{ $message }}</div>
                         @enderror

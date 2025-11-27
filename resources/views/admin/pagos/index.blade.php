@@ -133,11 +133,6 @@
     <div class="card card-outline card-success">
         <div class="card-header bg-success">
             <h3 class="card-title"><i class="fas fa-table"></i> Listado de Pagos</h3>
-            <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                </button>
-            </div>
         </div>
         <div class="card-body table-responsive p-0">
             @forelse($pagos as $pago)

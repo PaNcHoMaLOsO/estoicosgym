@@ -55,18 +55,20 @@ class SearchApiController extends Controller
             return response()->json([]);
         }
 
-        $inscripciones = Inscripcion::with(['cliente', 'estado', 'pagos'])
+        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'pagos'])
             ->where(function ($q) use ($query) {
                 $q->whereHas('cliente', function ($clienteQuery) use ($query) {
                     $clienteQuery->where('nombres', 'LIKE', "%{$query}%")
                                  ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
                                  ->orWhere('email', 'LIKE', "%{$query}%");
+                })->orWhereHas('membresia', function ($membresia) use ($query) {
+                    $membresia->where('nombre', 'LIKE', "%{$query}%");
                 })->orWhereHas('estado', function ($estadoQuery) use ($query) {
                     $estadoQuery->where('nombre', 'LIKE', "%{$query}%");
                 })->orWhere('id', $query);
             })
-            ->limit(20)
-            ->get(['id', 'id_cliente', 'id_estado', 'precio_final', 'precio_base']);
+            ->limit(25)
+            ->get(['id', 'id_cliente', 'id_estado', 'id_membresia', 'precio_final', 'precio_base']);
 
         // FILTRAR SOLO inscripciones con saldo pendiente
         $inscripciones = $inscripciones->filter(function ($inscripcion) {
@@ -81,6 +83,7 @@ class SearchApiController extends Controller
                     'text' => "#{$inscripcion->id} - {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
                     'nombre' => "{$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
                     'cliente_id' => $inscripcion->id_cliente,
+                    'membresia_nombre' => $inscripcion->membresia->nombre ?? 'N/A',
                     'saldo' => $saldo,
                     'total_a_pagar' => $inscripcion->precio_final ?? $inscripcion->precio_base,
                     'total_abonado' => $inscripcion->getTotalAbonado(),

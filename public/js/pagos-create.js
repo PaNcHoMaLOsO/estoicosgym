@@ -53,13 +53,11 @@ class PagosCreateManager {
     }
 
     bindEvents() {
-        // Cambio de inscripción
-        if (this.idInscripcion.value === '') {
-            $('#id_inscripcion').on('change', () => this.onInscripcionChange());
-        } else {
-            // Si ya hay inscripción, mostrar el siguiente paso
+        // Cambio de inscripción - usando select2:select event que es más confiable
+        $('#id_inscripcion').on('select2:select', (e) => {
+            console.log('Select2 change event triggered');
             this.onInscripcionChange();
-        }
+        });
 
         // Cambio de tipo de pago
         this.tipoPagoSimple.addEventListener('change', () => this.onTipoPagoChange('simple'));
@@ -78,48 +76,92 @@ class PagosCreateManager {
     }
 
     initializeSelect2() {
-        // Select2 para inscripción si no hay pre-seleccionada
-        if (!this.idInscripcion.value) {
-            $('#id_inscripcion').select2({
-                theme: 'bootstrap-5',
-                language: 'es',
-                allowClear: true,
-                placeholder: '-- Seleccionar una Inscripción --',
-                ajax: {
-                    url: '/api/inscripciones/search',
-                    dataType: 'json',
-                    delay: 250,
-                    data: (params) => ({
-                        q: params.term || '',
-                        activa: true
-                    }),
-                    processResults: (data) => ({
-                        results: data
-                    })
-                },
-                minimumInputLength: 2,
-                templateResult: this.formatInscripcionResult.bind(this),
-                templateSelection: this.formatInscripcionSelection.bind(this)
-            });
+        // Select2 para inscripción
+        const $select = $('#id_inscripcion');
+        
+        // Si ya hay valor (pre-cargado desde inscripción.show), cargar los datos
+        if (this.idInscripcion.value) {
+            console.log('Inscripción pre-cargada:', this.idInscripcion.value);
+            // Disparar el evento change para cargar información
+            setTimeout(() => this.onInscripcionChange(), 500);
+            return; // No inicializar select2 si ya tiene valor
         }
+
+        // Inicializar Select2 con búsqueda AJAX
+        $select.select2({
+            theme: 'bootstrap-5',
+            language: 'es',
+            allowClear: true,
+            placeholder: '📝 Escribe nombre o email (mín 2 caracteres)',
+            ajax: {
+                url: '/api/inscripciones/search',
+                dataType: 'json',
+                delay: 300,
+                data: (params) => {
+                    const searchTerm = params.term || '';
+                    console.log('Buscando:', searchTerm);
+                    return {
+                        q: searchTerm,
+                        activa: true
+                    };
+                },
+                processResults: (data) => {
+                    console.log('Resultados recibidos:', data.length, 'inscripciones');
+                    return {
+                        results: data
+                    };
+                },
+                error: () => {
+                    console.error('Error en la búsqueda AJAX');
+                }
+            },
+            minimumInputLength: 2,
+            templateResult: this.formatInscripcionResult.bind(this),
+            templateSelection: this.formatInscripcionSelection.bind(this),
+            escapeMarkup: (markup) => markup  // No escapar HTML en templates
+        });
+
+        // Debug: Log cuando se abre el dropdown
+        $select.on('select2:opening', () => {
+            console.log('Select2 opening');
+        });
+
+        // Debug: Log cuando se cierra
+        $select.on('select2:closing', () => {
+            console.log('Select2 closing');
+        });
     }
 
     formatInscripcionResult(data) {
         if (data.loading) return data.text;
-        return `<div class="d-flex justify-content-between">
-                    <span><strong>${data.text}</strong></span>
-                    <small class="text-muted">Saldo: $${this.formatMoney(data.saldo)}</small>
+        
+        // Mostrar información clara en el dropdown
+        const saldoFormatted = this.formatMoney(data.saldo || 0);
+        const totalFormatted = this.formatMoney(data.total_a_pagar || 0);
+        
+        return `<div style="padding: 8px 0;">
+                    <div style="font-weight: bold; color: #333;">
+                        #${data.id} - ${data.nombre}
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                        Total: $${totalFormatted} | Saldo: <span style="color: #d9534f; font-weight: bold;">$${saldoFormatted}</span>
+                    </div>
                 </div>`;
     }
 
     formatInscripcionSelection(data) {
-        return data.text || data.nombre;
+        // Mostrar en el campo seleccionado
+        if (!data.id) return data.text;
+        return `#${data.id} - ${data.nombre}`;
     }
 
     onInscripcionChange() {
         const idInscripcion = this.idInscripcion.value;
         
+        console.log('onInscripcionChange disparado. ID:', idInscripcion);
+        
         if (!idInscripcion) {
+            console.warn('No hay inscripción seleccionada');
             this.cardMetodo.style.display = 'none';
             this.cardDetalles.style.display = 'none';
             this.saldoInfo.style.display = 'none';
@@ -127,10 +169,20 @@ class PagosCreateManager {
             return;
         }
 
+        // Mostrar spinner de carga
+        console.log('Fetching saldo para inscripción:', idInscripcion);
+        
         // Fetch de información de saldo
         fetch(`/api/inscripciones/${idInscripcion}/saldo`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Datos de saldo recibidos:', data);
                 this.actualizarSaldoInfo(data);
                 this.cardMetodo.style.display = 'block';
                 this.cardDetalles.style.display = 'block';
@@ -139,7 +191,7 @@ class PagosCreateManager {
             })
             .catch(error => {
                 console.error('Error fetching saldo:', error);
-                alert('Error al cargar la información de saldo');
+                alert('❌ Error al cargar la información de saldo.\n\nDet: ' + error.message);
             });
     }
 
