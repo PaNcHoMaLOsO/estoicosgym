@@ -122,27 +122,28 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-hover table-striped table-sm mb-0">
+                <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light">
                         <tr>
                             <th style="width: 40px;">#</th>
-                            <th>
+                            <th style="width: 180px;">
                                 <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'id_cliente', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
                                    class="text-decoration-none text-dark">
                                     Cliente <i class="fas fa-sort fa-xs"></i>
                                 </a>
                             </th>
-                            <th style="width: 140px;">
+                            <th style="width: 110px;">
                                 <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
                                    class="text-decoration-none text-dark">
                                     Plazo <i class="fas fa-sort fa-xs"></i>
                                 </a>
                             </th>
-                            <th style="width: 110px;">Monto Final</th>
-                            <th style="width: 140px;">Estado Pago</th>
-                            <th style="width: 110px;">Convenio</th>
-                            <th style="width: 100px;" class="text-center">Estado</th>
-                            <th style="width: 120px;" class="text-center">Acciones</th>
+                            <th style="width: 100px;">Precios</th>
+                            <th style="width: 110px;">Est. Pago</th>
+                            <th style="width: 85px;" class="text-center">Convenio</th>
+                            <th style="width: 75px;" class="text-center">Estado</th>
+                            <th style="width: 70px;" class="text-center">Pausa</th>
+                            <th style="width: 140px;" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -150,10 +151,12 @@
                             <tr>
                                 <td class="text-muted"><small>{{ $inscripcion->id }}</small></td>
                                 <td>
-                                    <strong class="text-dark">{{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}</strong>
+                                    <strong class="text-dark" style="font-size: 0.93rem;">
+                                        {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
+                                    </strong>
                                     <br>
-                                    <small class="text-muted">
-                                        <i class="fas fa-dumbbell fa-fw"></i> {{ $inscripcion->membresia->nombre }}
+                                    <small class="text-muted" style="font-size: 0.8rem;">
+                                        {{ $inscripcion->membresia->nombre }}
                                     </small>
                                 </td>
                                 <td>
@@ -163,30 +166,49 @@
                                     <div class="d-flex flex-column">
                                         @if($diasRestantes > 30)
                                             <span class="badge bg-success mb-1">
-                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }} días
+                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }}d
                                             </span>
                                         @elseif($diasRestantes > 7)
                                             <span class="badge bg-info mb-1">
-                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }} días
+                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }}d
                                             </span>
                                         @elseif($diasRestantes > 0)
                                             <span class="badge bg-warning mb-1">
-                                                <i class="fas fa-clock fa-fw"></i> {{ $diasRestantes }} días
+                                                <i class="fas fa-clock fa-fw"></i> {{ $diasRestantes }}d
                                             </span>
                                         @else
                                             <span class="badge bg-danger mb-1">
                                                 <i class="fas fa-exclamation-triangle fa-fw"></i> Vencida
                                             </span>
                                         @endif
-                                        <small class="text-muted" style="font-size: 0.75rem;">
-                                            Hasta: {{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}
+                                        <small class="text-muted" style="font-size: 0.73rem;">
+                                            {{ $inscripcion->fecha_vencimiento->format('d/m/y') }}
                                         </small>
                                     </div>
                                 </td>
                                 <td>
-                                    <strong class="text-primary">
-                                        ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}
-                                    </strong>
+                                    <div class="d-flex flex-column gap-1">
+                                        <div style="font-size: 0.85rem;">
+                                            <small class="text-muted">Base:</small>
+                                            <strong class="text-secondary">
+                                                ${{ number_format($inscripcion->precio_base, 0, '.', '.') }}
+                                            </strong>
+                                        </div>
+                                        @if($inscripcion->descuento_aplicado > 0)
+                                            <div style="font-size: 0.85rem;">
+                                                <small class="text-muted">Desc:</small>
+                                                <span class="badge bg-danger" style="font-size: 0.75rem;">
+                                                    -${{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                        <div style="font-size: 0.87rem; border-top: 1px solid #e9ecef; padding-top: 0.4rem;">
+                                            <small class="text-muted">Final:</small>
+                                            <strong class="text-primary">
+                                                ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}
+                                            </strong>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     @php
@@ -240,6 +262,9 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
+                                    {!! $inscripcion->estado->badge !!}
+                                </td>
+                                <td class="text-center">
                                     @php
                                         $estaPausada = $inscripcion->estaPausada();
                                     @endphp
@@ -247,34 +272,38 @@
                                     @if($estaPausada)
                                         <span class="badge bg-warning" title="Pausada - {{ $inscripcion->razon_pausa }}">
                                             <i class="fas fa-pause-circle fa-fw"></i> 
-                                            Pausada
-                                            <br>
-                                            <small>{{ $inscripcion->dias_pausa }}d restantes</small>
+                                            {{ $inscripcion->dias_pausa }}d
                                         </span>
                                     @else
-                                        {!! $inscripcion->estado->badge !!}
+                                        <span class="badge bg-secondary" title="No pausada">
+                                            <i class="fas fa-check fa-fw"></i> Activa
+                                        </span>
                                     @endif
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" 
-                                           class="btn btn-info btn-sm" title="Ver Inscripción">
+                                           class="btn btn-info btn-sm" title="Ver">
                                             <i class="fas fa-eye fa-fw"></i>
                                         </a>
                                         <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" 
                                            class="btn btn-warning btn-sm" title="Editar">
                                             <i class="fas fa-edit fa-fw"></i>
                                         </a>
+                                        <a href="{{ route('admin.pagos.create', ['inscripcion_id_preselect' => $inscripcion->id]) }}" 
+                                           class="btn btn-primary btn-sm" title="Nuevo Pago">
+                                            <i class="fas fa-plus fa-fw"></i>
+                                        </a>
                                         <a href="{{ route('admin.pagos.index', ['uuid' => $inscripcion->uuid]) }}" 
                                            class="btn btn-success btn-sm" title="Ver Pagos">
-                                            <i class="fas fa-money-bill-wave fa-fw"></i>
+                                            <i class="fas fa-list fa-fw"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2"></i><br>
                                     <strong>No hay inscripciones registradas</strong>
                                 </td>
@@ -305,100 +334,280 @@
             text-decoration: underline !important;
         }
         
-        .btn-group-sm .btn {
-            margin: 0 2px;
+        /* Table base styling */
+        .table {
+            margin-bottom: 0;
+            table-layout: fixed;
         }
         
         .table th {
             white-space: nowrap;
             vertical-align: middle;
-            font-weight: 600;
+            font-weight: 700;
             background-color: #f8f9fa;
             border-top: 2px solid #dee2e6;
+            padding: 0.9rem 0.7rem;
+            letter-spacing: 0.3px;
+            font-size: 0.9rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
         
         .table td {
             vertical-align: middle;
+            padding: 0.85rem 0.7rem;
+            word-wrap: break-word;
         }
         
+        /* Row styling */
         .table tbody tr {
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #e9ecef;
         }
         
         .table tbody tr:hover {
             background-color: #f0f5ff;
         }
         
+        /* Badge styling */
         .badge {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
+            padding: 0.4rem 0.65rem;
+            font-size: 0.82rem;
+            font-weight: 500;
             white-space: nowrap;
+            display: inline-block;
+            margin-bottom: 0.25rem;
         }
         
+        .badge small {
+            display: block;
+            margin-top: 0.3rem;
+            font-weight: 400;
+            font-size: 0.75rem;
+        }
+        
+        /* Progress bar */
         .progress {
-            border-radius: 3px;
+            height: 4px;
+            margin-top: 0.4rem;
             background-color: #e9ecef;
         }
         
         .progress-bar {
-            transition: width 0.3s ease;
+            border-radius: 2px;
         }
         
-        /* Estado column styling */
-        td:has(.badge.bg-success) {
-            font-weight: 500;
+        /* Column 1: ID */
+        th:nth-child(1), td:nth-child(1) {
+            width: 40px;
+            text-align: center;
         }
         
-        /* Plazo column - compact layout */
-        .plazo-cell {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+        /* Column 2: Cliente */
+        th:nth-child(2), td:nth-child(2) {
+            width: 180px;
         }
         
-        .plazo-cell .badge {
-            padding: 0.35rem 0.5rem;
-            font-size: 0.8rem;
-        }
-        
-        /* Cliente column - enhanced */
-        .cliente-cell strong {
+        td:nth-child(2) strong {
             display: block;
+            font-size: 0.93rem;
             margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
-        /* Pago status with progress */
-        .pago-status {
+        td:nth-child(2) small {
+            font-size: 0.8rem;
+            color: #6c757d;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Column 3: Plazo */
+        th:nth-child(3), td:nth-child(3) {
+            width: 110px;
+        }
+        
+        td:nth-child(3) .badge {
+            font-size: 0.78rem;
+            padding: 0.35rem 0.6rem;
+        }
+        
+        td:nth-child(3) small {
+            font-size: 0.73rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        /* Column 4: Precios */
+        th:nth-child(4), td:nth-child(4) {
+            width: 100px;
+        }
+        
+        td:nth-child(4) {
+            font-size: 0.85rem;
+            padding: 0.7rem 0.6rem;
+        }
+        
+        td:nth-child(4) > div {
             display: flex;
             flex-direction: column;
-            gap: 0.35rem;
+            gap: 0.3rem;
         }
         
-        .pago-status .badge {
-            padding: 0.35rem 0.5rem;
+        td:nth-child(4) .badge {
+            font-size: 0.73rem;
+            padding: 0.3rem 0.5rem;
+            display: inline-block;
+            width: fit-content;
+        }
+        
+        td:nth-child(4) small {
             font-size: 0.8rem;
+            color: #6c757d;
         }
         
-        /* Hover effects */
+        td:nth-child(4) strong {
+            font-size: 0.88rem;
+        }
+        
+        /* Column 5: Estado Pago */
+        th:nth-child(5), td:nth-child(5) {
+            width: 110px;
+        }
+        
+        td:nth-child(5) .badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.65rem;
+        }
+        
+        td:nth-child(5) small {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        /* Column 6: Convenio */
+        th:nth-child(6), td:nth-child(6) {
+            width: 85px;
+            text-align: center;
+        }
+        
+        td:nth-child(6) .badge {
+            font-size: 0.78rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        td:nth-child(6) small {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.2rem;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Column 7: Estado */
+        th:nth-child(7), td:nth-child(7) {
+            width: 75px;
+            text-align: center;
+        }
+        
+        td:nth-child(7) .badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.65rem;
+        }
+        
+        /* Column 8: Pausa */
+        th:nth-child(8), td:nth-child(8) {
+            width: 70px;
+            text-align: center;
+        }
+        
+        td:nth-child(8) .badge {
+            font-size: 0.78rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        /* Column 9: Acciones */
+        th:nth-child(9), td:nth-child(9) {
+            width: 140px;
+            text-align: center;
+        }
+        
         .btn-group-sm {
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            gap: 2px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         
-        tr:hover .btn-group-sm {
+        .btn-group-sm .btn {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+            flex: 0 0 auto;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        
+        tr:hover .btn-group-sm .btn {
             opacity: 1;
         }
         
+        .btn-group-sm .btn i {
+            font-size: 0.9rem;
+        }
+        
+        /* Empty state */
+        tbody tr:only-child td {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+        
         /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .table {
+                font-size: 0.9rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.75rem 0.6rem;
+            }
+            
+            th:nth-child(2), td:nth-child(2) { width: 160px; }
+            th:nth-child(3), td:nth-child(3) { width: 100px; }
+            th:nth-child(9), td:nth-child(9) { width: 130px; }
+        }
+        
         @media (max-width: 768px) {
-            .table-sm td {
-                padding: 0.5rem 0.3rem;
+            .table {
+                font-size: 0.85rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.6rem 0.5rem;
             }
             
             .badge {
-                padding: 0.3rem 0.5rem;
+                padding: 0.35rem 0.5rem;
                 font-size: 0.75rem;
             }
+            
+            .btn-group-sm .btn {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            
+            td:nth-child(2) strong { font-size: 0.88rem; }
+            th:nth-child(2), td:nth-child(2) { width: 140px; }
+            
+            td:nth-child(4) .badge { font-size: 0.7rem; }
         }
     </style>
 @endpush
