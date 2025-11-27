@@ -30,42 +30,6 @@ return new class extends Migration
                 $table->string('codigo', 20)->unique()->after('id')->comment('efectivo, tarjeta, transferencia, otro');
             }
         });
-        
-        // Insertar 4 métodos de pago simplificados
-        DB::table('metodos_pago')->insert([
-            [
-                'codigo' => 'efectivo',
-                'nombre' => 'Efectivo',
-                'requiere_comprobante' => false,
-                'activo' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'codigo' => 'tarjeta',
-                'nombre' => 'Débito/Crédito',
-                'requiere_comprobante' => true,
-                'activo' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'codigo' => 'transferencia',
-                'nombre' => 'Transferencia',
-                'requiere_comprobante' => true,
-                'activo' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'codigo' => 'otro',
-                'nombre' => 'Otro',
-                'requiere_comprobante' => false,
-                'activo' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
     }
 
     public function down(): void
