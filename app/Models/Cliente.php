@@ -132,4 +132,9 @@ class Cliente extends Model
     {
         return $query->where('activo', true);
     }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class, 'id_estado', 'codigo');
+    }
 }

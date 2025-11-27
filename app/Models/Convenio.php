@@ -72,4 +72,9 @@ class Convenio extends Model
     {
         return $this->hasMany(Cliente::class, 'id_convenio');
     }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class, 'id_estado', 'codigo');
+    }
 }

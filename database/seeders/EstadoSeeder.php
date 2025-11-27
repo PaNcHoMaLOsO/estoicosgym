@@ -98,11 +98,93 @@ class EstadoSeeder extends Seeder
                 'activo' => true,
             ],
             
-            // ===== RANGO 300-399: ESTADOS DE CONVENIOS (FUTURO) =====
-            // Reservado para estados de convenios
+            // ===== RANGO 300-399: ESTADOS DE CONVENIOS =====
+            // Códigos: 300=Activo, 301=Suspendido, 302=Vencido, 303=Cancelado, 304=Inactivo
             
-            // ===== RANGO 400-499: ESTADOS DE CLIENTES (FUTURO) =====
-            // Reservado para estados de clientes
+            [
+                'codigo' => 300,
+                'nombre' => 'Activo',
+                'descripcion' => 'Convenio activo y vigente',
+                'categoria' => 'convenio',
+                'color' => 'success',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 301,
+                'nombre' => 'Suspendido',
+                'descripcion' => 'Convenio temporalmente suspendido',
+                'categoria' => 'convenio',
+                'color' => 'warning',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 302,
+                'nombre' => 'Vencido',
+                'descripcion' => 'Convenio expirado',
+                'categoria' => 'convenio',
+                'color' => 'danger',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 303,
+                'nombre' => 'Cancelado',
+                'descripcion' => 'Convenio cancelado',
+                'categoria' => 'convenio',
+                'color' => 'secondary',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 304,
+                'nombre' => 'Inactivo',
+                'descripcion' => 'Convenio inactivo',
+                'categoria' => 'convenio',
+                'color' => 'secondary',
+                'activo' => true,
+            ],
+            
+            // ===== RANGO 400-499: ESTADOS DE CLIENTES =====
+            // Códigos: 400=Activo, 401=Suspendido por Deuda, 402=Pagos Vencidos, 403=Cancelado, 404=Inactivo
+            
+            [
+                'codigo' => 400,
+                'nombre' => 'Activo',
+                'descripcion' => 'Cliente activo',
+                'categoria' => 'cliente',
+                'color' => 'success',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 401,
+                'nombre' => 'Suspendido por Deuda',
+                'descripcion' => 'Cliente suspendido por deuda',
+                'categoria' => 'cliente',
+                'color' => 'danger',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 402,
+                'nombre' => 'Pagos Vencidos',
+                'descripcion' => 'Cliente con pagos vencidos',
+                'categoria' => 'cliente',
+                'color' => 'warning',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 403,
+                'nombre' => 'Cancelado',
+                'descripcion' => 'Cliente cancelado',
+                'categoria' => 'cliente',
+                'color' => 'secondary',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 404,
+                'nombre' => 'Inactivo',
+                'descripcion' => 'Cliente inactivo',
+                'categoria' => 'cliente',
+                'color' => 'secondary',
+                'activo' => true,
+            ],
         ]);
     }
 }
