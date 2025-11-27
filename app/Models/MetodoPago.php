@@ -43,6 +43,6 @@ class MetodoPago extends Model
 
     public function pagos()
     {
-        return $this->hasMany(Pago::class, 'id_metodo_pago_principal');
+        return $this->hasMany(Pago::class, 'id_metodo_pago');
     }
 }
