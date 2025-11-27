@@ -578,6 +578,8 @@
 
         <!-- Hidden fields -->
         <input type="hidden" id="es_pago_simple" name="es_pago_simple" value="1">
+        <input type="hidden" id="monto_abonado" name="monto_abonado" value="0">
+        <input type="hidden" id="id_metodo_pago_principal" name="id_metodo_pago_principal" value="">
 
         <!-- Botones -->
         <div class="row mt-4 mb-5">
@@ -604,29 +606,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const formPago = document.getElementById('formPago');
     const btnSubmit = document.getElementById('btnSubmit');
 
-    // Select2
-    $('#id_inscripcion').select2({
-        width: '100%',
-        language: 'es',
-        placeholder: '🔍 Buscar por nombre, RUT o email',
-        allowClear: true,
-        matcher: function(params, data) {
-            if (!params.term) { return data; }
-            const term = params.term.toLowerCase();
-            const text = data.text.toLowerCase();
-            const rut = $(data.element).attr('data-rut') ? $(data.element).attr('data-rut').toLowerCase() : '';
-            const email = $(data.element).attr('data-email') ? $(data.element).attr('data-email').toLowerCase() : '';
-            if (text.includes(term) || rut.includes(term) || email.includes(term)) {
-                return data;
-            }
-            return null;
-        }
-    });
-
-    // Cambio de cliente
-    selectInscripcion.addEventListener('change', function() {
-        if (this.value) {
-            const option = this.options[this.selectedIndex];
+    // Función para mostrar el cliente seleccionado
+    function mostrarCliente() {
+        const value = selectInscripcion.value;
+        if (value) {
+            const option = document.querySelector(`option[value="${value}"]`);
             const precio = parseFloat(option.getAttribute('data-precio'));
             const cliente = option.getAttribute('data-cliente');
             const membresia = option.getAttribute('data-membresia');
@@ -647,8 +631,14 @@ document.addEventListener('DOMContentLoaded', function() {
             clienteHeader.classList.remove('d-none');
             tipoPagoSection.classList.remove('d-none');
             datosPagoSection.classList.remove('d-none');
-
             document.getElementById('cuotasSection').classList.remove('d-none');
+            
+            // Establecer tipo de pago por defecto (abono)
+            document.querySelector('input[name="tipo_pago"][value="abono"]').checked = true;
+            document.querySelectorAll('.pago-section').forEach(s => s.classList.add('d-none'));
+            document.querySelectorAll('.tipo-pago-card').forEach(c => c.classList.remove('active'));
+            document.getElementById('seccion-abono').classList.remove('d-none');
+            document.getElementById('card-abono').classList.add('active');
         } else {
             clienteHeader.classList.add('d-none');
             tipoPagoSection.classList.add('d-none');
@@ -656,7 +646,39 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('cuotasSection').classList.add('d-none');
             btnSubmit.disabled = true;
         }
+    }
+
+    // Select2 Initialization
+    $('#id_inscripcion').select2({
+        width: '100%',
+        language: 'es',
+        placeholder: '🔍 Buscar por nombre, RUT o email',
+        allowClear: true,
+        matcher: function(params, data) {
+            if (!params.term) { return data; }
+            const term = params.term.toLowerCase();
+            const text = data.text.toLowerCase();
+            const rut = $(data.element).attr('data-rut') ? $(data.element).attr('data-rut').toLowerCase() : '';
+            const email = $(data.element).attr('data-email') ? $(data.element).attr('data-email').toLowerCase() : '';
+            if (text.includes(term) || rut.includes(term) || email.includes(term)) {
+                return data;
+            }
+            return null;
+        }
     });
+
+    // Evento Select2 change
+    $('#id_inscripcion').on('select2:select', mostrarCliente);
+    $('#id_inscripcion').on('select2:clear', function() {
+        clienteHeader.classList.add('d-none');
+        tipoPagoSection.classList.add('d-none');
+        datosPagoSection.classList.add('d-none');
+        document.getElementById('cuotasSection').classList.add('d-none');
+        btnSubmit.disabled = true;
+    });
+
+    // Cambio de cliente (fallback)
+    selectInscripcion.addEventListener('change', mostrarCliente);
 
     // Cambio de tipo de pago
     document.querySelectorAll('input[name="tipo_pago"]').forEach(radio => {
@@ -667,15 +689,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === 'abono') {
                 document.getElementById('seccion-abono').classList.remove('d-none');
                 document.getElementById('card-abono').classList.add('active');
-                document.getElementById('id_metodo_pago_abono').name = 'id_metodo_pago_principal';
             } else if (this.value === 'completo') {
                 document.getElementById('seccion-completo').classList.remove('d-none');
                 document.getElementById('card-completo').classList.add('active');
-                document.getElementById('id_metodo_pago_completo').name = 'id_metodo_pago_principal';
             } else if (this.value === 'mixto') {
                 document.getElementById('seccion-mixto').classList.remove('d-none');
                 document.getElementById('card-mixto').classList.add('active');
             }
+            updateSubmitButton();
         });
     });
 
@@ -684,35 +705,57 @@ document.addEventListener('DOMContentLoaded', function() {
         const total = parseFloat(document.getElementById('montoTotal').textContent.replace(/\./g, ''));
         const monto = parseFloat(this.value) || 0;
         const pendiente = total - monto;
-        document.getElementById('nuevo-abonado').textContent = (0 + monto).toLocaleString('es-CO');
+        
+        document.getElementById('nuevo-abonado').textContent = monto.toLocaleString('es-CO');
         document.getElementById('nuevo-pendiente').textContent = Math.max(0, pendiente).toLocaleString('es-CO');
+        
+        // Validar que sea positivo y no exceda el pendiente
+        if (monto > 0 && monto <= total) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
         updateSubmitButton();
     });
 
     // Validación Pago Mixto
+    const validarMixto = function() {
+        const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
+        const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
+        const total = monto1 + monto2;
+        const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, ''));
+        
+        document.getElementById('total-mixto').textContent = total.toLocaleString('es-CO');
+        const estado = document.getElementById('estado-mixto');
+        
+        if (total === target) {
+            estado.innerHTML = '✓ Monto correcto';
+            estado.style.color = '#22c55e';
+            document.getElementById('monto_metodo1').classList.add('is-valid');
+            document.getElementById('monto_metodo2').classList.add('is-valid');
+        } else if (total > target) {
+            estado.innerHTML = '❌ Monto excede';
+            estado.style.color = '#dc3545';
+            document.getElementById('monto_metodo1').classList.remove('is-valid');
+            document.getElementById('monto_metodo2').classList.remove('is-valid');
+        } else {
+            estado.innerHTML = '❌ Monto incompleto';
+            estado.style.color = '#dc3545';
+            document.getElementById('monto_metodo1').classList.remove('is-valid');
+            document.getElementById('monto_metodo2').classList.remove('is-valid');
+        }
+        updateSubmitButton();
+    };
+
     document.querySelectorAll('.monto-mixto').forEach(input => {
-        input.addEventListener('input', function() {
-            const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
-            const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
-            const total = monto1 + monto2;
-            const target = parseFloat(document.getElementById('target-mixto').textContent.replace(/\./g, ''));
-            
-            document.getElementById('total-mixto').textContent = total.toLocaleString('es-CO');
-            const estado = document.getElementById('estado-mixto');
-            
-            if (total === target) {
-                estado.innerHTML = '✓ Monto correcto';
-                estado.style.color = '#22c55e';
-            } else if (total > target) {
-                estado.innerHTML = '❌ Monto excede';
-                estado.style.color = '#dc3545';
-            } else {
-                estado.innerHTML = '❌ Monto incompleto';
-                estado.style.color = '#dc3545';
-            }
-            updateSubmitButton();
-        });
+        input.addEventListener('input', validarMixto);
     });
+
+    // Cambio de método de pago (para habilitar botón)
+    document.getElementById('id_metodo_pago_abono').addEventListener('change', updateSubmitButton);
+    document.getElementById('id_metodo_pago_completo').addEventListener('change', updateSubmitButton);
 
     // Cuotas
     document.getElementById('mostrarCuotas').addEventListener('change', function() {
@@ -728,8 +771,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (tipoPago.value === 'abono') {
             const monto = parseFloat(document.getElementById('monto_abonado_abono').value) || 0;
+            const total = parseFloat(document.getElementById('montoTotal').textContent.replace(/\./g, ''));
             const metodo = document.getElementById('id_metodo_pago_abono').value;
-            btnSubmit.disabled = !monto || !metodo;
+            
+            btnSubmit.disabled = !monto || monto <= 0 || monto > total || !metodo;
         } else if (tipoPago.value === 'completo') {
             const metodo = document.getElementById('id_metodo_pago_completo').value;
             btnSubmit.disabled = !metodo;
@@ -743,13 +788,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Validación al enviar
     formPago.addEventListener('submit', function(e) {
-        const tipoPago = document.querySelector('input[name="tipo_pago"]:checked');
+        const tipoPago = document.querySelector('input[name="tipo_pago"]:checked').value;
         
-        if (tipoPago.value === 'abono') {
-            document.getElementById('monto_abonado').value = document.getElementById('monto_abonado_abono').value;
+        if (tipoPago === 'abono') {
+            const monto = document.getElementById('monto_abonado_abono').value;
+            const metodo = document.getElementById('id_metodo_pago_abono').value;
+            
+            document.getElementById('monto_abonado').value = monto;
+            document.getElementById('id_metodo_pago_principal').value = metodo;
+        } else if (tipoPago === 'completo') {
+            const metodo = document.getElementById('id_metodo_pago_completo').value;
+            const monto = document.getElementById('monto_abonado_completo').value;
+            
+            document.getElementById('monto_abonado').value = monto;
+            document.getElementById('id_metodo_pago_principal').value = metodo;
+        } else if (tipoPago === 'mixto') {
+            const monto1 = parseFloat(document.getElementById('monto_metodo1').value) || 0;
+            const monto2 = parseFloat(document.getElementById('monto_metodo2').value) || 0;
+            
+            document.getElementById('monto_abonado').value = monto1 + monto2;
             document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_abono').value;
-        } else if (tipoPago.value === 'completo') {
-            document.getElementById('id_metodo_pago_principal').value = document.getElementById('id_metodo_pago_completo').value;
         }
     });
 });
