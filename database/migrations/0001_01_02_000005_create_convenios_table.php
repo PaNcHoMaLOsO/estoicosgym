@@ -19,10 +19,13 @@ return new class extends Migration
             $table->string('contacto_nombre', 100)->nullable();
             $table->string('contacto_telefono', 20)->nullable();
             $table->string('contacto_email', 100)->nullable();
+            $table->unsignedInteger('id_estado')->nullable()->comment('Rango 300-302: estados del convenio');
             $table->boolean('activo')->default(true);
             $table->timestamps();
 
+            $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('set null');
             $table->index('tipo');
+            $table->index('id_estado');
             $table->index('activo');
         });
     }

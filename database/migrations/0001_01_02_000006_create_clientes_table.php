@@ -22,14 +22,17 @@ return new class extends Migration
             $table->string('contacto_emergencia', 100)->nullable();
             $table->string('telefono_emergencia', 20)->nullable();
             $table->unsignedInteger('id_convenio')->nullable()->comment('Convenio asociado al cliente');
+            $table->unsignedInteger('id_estado')->nullable()->comment('Rango 400-402: estados del cliente');
             $table->text('observaciones')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
 
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');
+            $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('set null');
             $table->index('run_pasaporte');
             $table->index(['nombres', 'apellido_paterno']);
             $table->index('id_convenio');
+            $table->index('id_estado');
             $table->index('activo');
         });
     }
