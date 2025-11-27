@@ -114,7 +114,16 @@ class Cliente extends Model
 
     public function pagos()
     {
-        return $this->hasMany(Pago::class, 'id_cliente');
+        // Los pagos se relacionan a través de inscripciones
+        // Cada inscripción tiene muchos pagos
+        return $this->hasManyThrough(
+            Pago::class,
+            Inscripcion::class,
+            'id_cliente',      // FK en inscripciones que apunta a clientes
+            'id_inscripcion',  // FK en pagos que apunta a inscripciones
+            'id',              // Local key en clientes
+            'id'               // Local key en inscripciones
+        );
     }
 
     /**
@@ -127,9 +136,6 @@ class Cliente extends Model
     public function notificaciones()
     {
         // TODO: Implementar modelo Notificacion y su migración
-        // Cuando esté listo descomentar la siguiente línea:
-        // return $this->hasMany(Notificacion::class, 'id_cliente');
-        
         // Por ahora retornar relación vacía
         return $this->hasMany(Pago::class, 'id_cliente')->whereNull('id');
     }
