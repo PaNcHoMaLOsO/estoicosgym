@@ -26,16 +26,16 @@
     @endif
 
     <!-- Filtros -->
-    <div class="card card-outline card-info mb-3">
+    <div class="card card-outline card-info mb-3 collapsed-card">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
             <div class="card-tools pull-right">
                 <button type="button" class="btn btn-box-tool" data-widget="collapse">
-                    <i class="fa fa-minus"></i>
+                    <i class="fa fa-plus"></i>
                 </button>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body" style="display: none;">
             <form action="{{ route('admin.pagos.index') }}" method="GET" class="form-horizontal">
                 <div class="row">
                     <div class="col-md-3">
@@ -88,22 +88,27 @@
             <table class="table table-hover table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Inscripción</th>
-                        <th>Monto Total</th>
-                        <th>Fecha Pago</th>
-                        <th>Monto Abonado</th>
-                        <th>Saldo Pendiente</th>
+                        <th style="width: 10%">ID</th>
+                        <th style="width: 25%">Cliente</th>
+                        <th style="width: 15%">Inscripción</th>
+                        <th style="width: 15%">Monto Total</th>
+                        <th style="width: 20%">Abonado</th>
+                        <th style="width: 15%">Saldo Pendiente</th>
                         <th>Estado</th>
-                        <th>Método Pago</th>
-                        <th>Acciones</th>
+                        <th>Método</th>
+                        <th style="width: 12%">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($pagos as $pago)
+                        @php
+                            $total = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base;
+                            $abonado = $pago->monto_abonado;
+                            $pendiente = $total - $abonado;
+                            $porcentaje = round(($abonado / $total) * 100);
+                        @endphp
                         <tr>
-                            <td>{{ $pago->id }}</td>
+                            <td><strong>#{{ $pago->id }}</strong></td>
                             <td>
                                 <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}">
                                     {{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}
@@ -115,20 +120,23 @@
                                 </a>
                             </td>
                             <td>
-                                <strong>${{ number_format($pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base, 0, '.', '.') }}</strong>
-                            </td>
-                            <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
-                            <td>
-                                <span class="text-success"><strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong></span>
+                                <span style="font-size: 1.1em;">${{ number_format($total, 0, '.', '.') }}</span>
                             </td>
                             <td>
-                                @php
-                                    $pendiente = $pago->inscripcion->getSaldoPendiente();
-                                @endphp
+                                <div>
+                                    <strong style="color: #28a745;">
+                                        ${{ number_format($abonado, 0, '.', '.') }}
+                                    </strong>
+                                </div>
+                                <small style="color: #28a745; font-size: 0.85em;">
+                                    <i class="fas fa-check-circle"></i> {{ $porcentaje }}%
+                                </small>
+                            </td>
+                            <td>
                                 @if($pendiente > 0)
-                                    <span class="badge bg-danger">Pendiente: ${{ number_format($pendiente, 0, '.', '.') }}</span>
+                                    <span class="text-danger"><strong>${{ number_format($pendiente, 0, '.', '.') }}</strong></span>
                                 @else
-                                    <span class="badge bg-success">Pagado</span>
+                                    <span class="text-success"><strong>Completo</strong></span>
                                 @endif
                             </td>
                             <td>{!! $pago->estado->badge !!}</td>
@@ -152,7 +160,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center text-muted">
+                            <td colspan="9" class="text-center text-muted">
                                 <i class="fas fa-inbox"></i> No hay pagos registrados
                             </td>
                         </tr>
