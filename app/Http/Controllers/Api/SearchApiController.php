@@ -44,7 +44,9 @@ class SearchApiController extends Controller
     /**
      * Buscar inscripciones con saldo pendiente por cliente o estado
      * GET /api/inscripciones/search?q=term
-     * SOLO retorna inscripciones que tienen dinero pendiente de pagar
+     * SOLO retorna inscripciones que:
+     * 1. Tienen dinero pendiente de pagar (saldo > 0)
+     * 2. Están en estado ACTIVA (id_estado = 1)
      */
     public function searchInscripciones(Request $request)
     {
@@ -56,6 +58,7 @@ class SearchApiController extends Controller
         }
 
         $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'pagos'])
+            ->where('id_estado', 1)  // SOLO inscripciones ACTIVAS
             ->where(function ($q) use ($query) {
                 $q->whereHas('cliente', function ($clienteQuery) use ($query) {
                     $clienteQuery->where('nombres', 'LIKE', "%{$query}%")
