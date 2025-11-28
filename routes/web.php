@@ -88,6 +88,9 @@ Route::prefix('api')->group(function () {
     Route::get('/clientes/{id}', [ClienteApiController::class, 'show']);
     Route::get('/clientes/{id}/stats', [ClienteApiController::class, 'stats']);
     
+    // Precio de membresía
+    Route::get('/precio-membresia/{membresia_id}', [ClienteController::class, 'getPrecioMembresia']);
+    
     // Membresias
     Route::get('/membresias', [MembresiaApiController::class, 'index']);
     Route::get('/membresias/search', [MembresiaApiController::class, 'search']);

@@ -4,27 +4,86 @@
 
 @section('css')
     <style>
+        /* ===== HERO HEADER ===== */
+        .edit-hero {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
+        }
+
+        .edit-hero h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* ===== SECTION HEADER ===== */
         .section-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
-            margin: 1.5rem 0 1rem 0;
+            margin: 2rem 0 1rem 0;
             display: flex;
             align-items: center;
             gap: 0.75rem;
             font-weight: 600;
+            font-size: 1.05rem;
         }
 
         .section-header i {
-            font-size: 1.1em;
+            font-size: 1.2em;
         }
 
+        /* ===== FORM ===== */
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-text.text-muted {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        /* ===== ALERTS ===== */
         .error-alert {
             background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
             border-left: 5px solid #dc3545;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
             animation: slideDown 0.3s ease;
+        }
+
+        .error-alert h5 {
+            color: #c62828;
+            margin: 0 0 0.75rem 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-alert ul {
+            margin-bottom: 0;
+            padding-left: 1.5rem;
+            color: #c62828;
+            line-height: 1.8;
+        }
+
+        .error-alert li {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
         }
 
         @keyframes slideDown {
@@ -38,50 +97,155 @@
             }
         }
 
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        /* ===== SPINNER ANIMATION ===== */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
+        .fa-spinner {
+            animation: spin 1s linear infinite !important;
+        }
+
+        /* ===== STATE BADGE ===== */
+        .state-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .state-active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .state-inactive {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        /* ===== AUDIT INFO ===== */
+        .audit-info {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+            border: 2px solid #667eea;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .audit-info dt {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+
+        .audit-info dd {
+            margin-left: 0;
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+
+        .audit-info dd:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ===== BUTTONS ===== */
         .btn-lg-custom {
             padding: 0.75rem 2rem;
             font-weight: 600;
         }
 
-        .audit-info {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #667eea;
-            font-size: 0.9rem;
-            margin-top: 1rem;
+        .btn-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #dee2e6;
         }
 
-        .audit-info dt {
-            font-weight: 600;
-            color: #495057;
+        .btn-actions-left, .btn-actions-right {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
-        .audit-info dd {
-            margin-left: 1rem;
-            color: #6c757d;
+        .btn {
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
         }
 
-        .state-badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .state-active {
-            background: #d4edda;
-            color: #155724;
+        /* ===== CARD ===== */
+        .card {
+            border: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+            overflow: hidden;
         }
 
-        .state-inactive {
-            background: #e2e3e5;
-            color: #383d41;
+        .card-header {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            border-bottom: 2px solid #ff8c00;
+            color: white;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header .card-tools {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .edit-hero h2 {
+                font-size: 1.25rem;
+            }
+
+            .btn-actions {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .btn-actions-left, .btn-actions-right {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .btn-lg-custom {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .section-header {
+                margin: 1.5rem 0 0.75rem 0;
+                font-size: 0.95rem;
+            }
         }
     </style>
 @endsection
@@ -106,77 +270,64 @@
 
 @section('content')
     @if ($errors->any())
-        <div class="alert error-alert alert-dismissible fade show" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            <div class="d-flex align-items-start">
-                <div class="mr-3" style="font-size: 1.8rem; flex-shrink: 0; color: #d32f2f;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div style="flex: 1;">
-                    <h5 class="alert-heading" style="color: #c62828; margin: 0 0 0.75rem 0; font-weight: 700;">
-                        ⚠️ Errores en el Formulario
-                    </h5>
-                    <ul class="mb-0 pl-4" style="font-size: 0.95rem; color: #c62828; line-height: 1.8;">
-                        @foreach ($errors->all() as $error)
-                            <li class="mb-2"><strong>{{ $error }}</strong></li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
+        <div class="error-alert">
+            <h5><i class="fas fa-exclamation-triangle"></i> Errores en el Formulario</h5>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
-    <div class="card card-warning">
-        <div class="card-header bg-warning">
-            <h3 class="card-title">
+    <!-- HERO CON ESTADO -->
+    <div class="edit-hero">
+        <h2>{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</h2>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.95;">RUT: {{ $cliente->run_pasaporte }}</p>
+        <div style="margin-top: 1rem;">
+            <span class="state-badge {{ $cliente->activo ? 'state-active' : 'state-inactive' }}">
+                {{ $cliente->activo ? '✓ Activo' : '✗ Inactivo' }}
+            </span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title" style="flex-grow: 1;">
                 <i class="fas fa-user-edit"></i> Editar Datos del Cliente
             </h3>
             <div class="card-tools">
-                <span class="badge badge-light">
-                    ID: {{ $cliente->id }} | UUID: {{ substr($cliente->uuid, 0, 8) }}...
-                </span>
+                <span class="badge badge-light">ID: {{ $cliente->id }}</span>
             </div>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST">
+            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST" id="editClienteForm" onsubmit="return handleEditFormSubmit(event)">
                 @csrf
                 @method('PUT')
+                <!-- Token anti-CSRF para prevenir doble envío -->
+                <input type="hidden" id="form_submit_token" name="form_submit_token" value="{{ uniqid() }}">
 
-                <!-- Estado del Cliente -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="state-badge {{ $cliente->activo ? 'state-active' : 'state-inactive' }}">
-                            <i class="fas {{ $cliente->activo ? 'fa-check-circle' : 'fa-ban' }}"></i>
-                            Estado: {{ $cliente->activo ? 'ACTIVO' : 'INACTIVO' }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sección Identificación -->
+                <!-- IDENTIFICACIÓN -->
                 <div class="section-header">
                     <i class="fas fa-id-card"></i> Identificación
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="run_pasaporte" class="form-label">RUT/Pasaporte <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
                                id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
                                value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}" required>
-                        <small class="form-text text-muted d-block mt-1">Formato: XX.XXX.XXX-X</small>
+                        <small class="form-text text-muted">Formato: XX.XXX.XXX-X</small>
                         @error('run_pasaporte')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
 
-                <!-- Sección Datos Personales -->
+                <!-- DATOS PERSONALES -->
                 <div class="section-header">
                     <i class="fas fa-user"></i> Datos Personales
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
@@ -195,7 +346,6 @@
                         @enderror
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="apellido_materno" class="form-label">Apellido Materno</label>
@@ -215,11 +365,10 @@
                     </div>
                 </div>
 
-                <!-- Sección Contacto -->
+                <!-- CONTACTO -->
                 <div class="section-header">
                     <i class="fas fa-phone"></i> Contacto
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
@@ -239,11 +388,10 @@
                     </div>
                 </div>
 
-                <!-- Sección Contacto de Emergencia -->
+                <!-- CONTACTO DE EMERGENCIA -->
                 <div class="section-header">
                     <i class="fas fa-heart-pulse"></i> Contacto de Emergencia
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="contacto_emergencia" class="form-label">Nombre del Contacto</label>
@@ -265,11 +413,10 @@
                     </div>
                 </div>
 
-                <!-- Sección Domicilio -->
+                <!-- DOMICILIO -->
                 <div class="section-header">
                     <i class="fas fa-map-marker-alt"></i> Domicilio
                 </div>
-
                 <div class="row">
                     <div class="col-12 mb-3">
                         <label for="direccion" class="form-label">Dirección</label>
@@ -281,11 +428,10 @@
                     </div>
                 </div>
 
-                <!-- Sección Convenio -->
+                <!-- CONVENIO -->
                 <div class="section-header">
                     <i class="fas fa-handshake"></i> Convenio Principal
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="id_convenio" class="form-label">Convenio (Opcional)</label>
@@ -304,11 +450,10 @@
                     </div>
                 </div>
 
-                <!-- Sección Observaciones -->
+                <!-- OBSERVACIONES -->
                 <div class="section-header">
                     <i class="fas fa-sticky-note"></i> Observaciones
                 </div>
-
                 <div class="row">
                     <div class="col-12 mb-3">
                         <label for="observaciones" class="form-label">Notas Adicionales</label>
@@ -320,36 +465,112 @@
                     </div>
                 </div>
 
-                <!-- Sección Auditoría -->
+                <!-- INFORMACIÓN DE AUDITORÍA -->
                 <div class="audit-info">
                     <div class="row">
-                        <div class="col-md-6">
-                            <dt>Registrado:</dt>
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <dt><i class="fas fa-calendar"></i> Registrado:</dt>
                             <dd>{{ $cliente->created_at->format('d/m/Y H:i:s') }}</dd>
                         </div>
                         <div class="col-md-6">
-                            <dt>Última Actualización:</dt>
+                            <dt><i class="fas fa-history"></i> Última Actualización:</dt>
                             <dd>{{ $cliente->updated_at->format('d/m/Y H:i:s') }}</dd>
                         </div>
                     </div>
                 </div>
 
-                <hr class="my-4">
-
-                <!-- Botones de Acción -->
-                <div class="form-group d-flex gap-2 justify-content-between flex-wrap">
-                    <div>
+                <!-- BOTONES DE ACCIÓN -->
+                <div class="btn-actions">
+                    <div class="btn-actions-left">
                         <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary btn-lg-custom">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
                     </div>
-                    <div>
-                        <button type="submit" class="btn btn-warning btn-lg-custom">
-                            <i class="fas fa-save"></i> Guardar Cambios
+                    <div class="btn-actions-right">
+                        <button type="submit" class="btn btn-warning btn-lg-custom" id="btn-guardar-cambios">
+                            <i class="fas fa-save"></i> <span id="btn-text">Guardar Cambios</span>
+                            <span id="btn-spinner" style="display:none; margin-left: 0.5rem;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
                         </button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <script>
+        let isSubmitting = false;
+
+        function handleEditFormSubmit(event) {
+            event.preventDefault();
+            
+            // Prevenir doble envío
+            if (isSubmitting) {
+                console.warn('Formulario ya se está enviando...');
+                return false;
+            }
+            
+            // Deshabilitar botón y mostrar spinner
+            const btnGuardar = document.getElementById('btn-guardar-cambios');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const formToken = document.getElementById('form_submit_token');
+            
+            // Marcar como enviando
+            isSubmitting = true;
+            
+            // UI feedback
+            btnGuardar.disabled = true;
+            btnText.textContent = 'Procesando...';
+            btnSpinner.style.display = 'inline';
+            
+            // Generar nuevo token para evitar reenvíos
+            formToken.value = '{{ uniqid() }}-' + Date.now();
+            
+            // Enviar formulario después de un pequeño delay
+            setTimeout(() => {
+                document.getElementById('editClienteForm').submit();
+            }, 100);
+            
+            // Timeout de seguridad
+            setTimeout(() => {
+                if (isSubmitting) {
+                    isSubmitting = false;
+                    btnGuardar.disabled = false;
+                    btnText.textContent = 'Guardar Cambios';
+                    btnSpinner.style.display = 'none';
+                }
+            }, 5000);
+            
+            return false;
+        }
+
+        // Validación básica de RUT
+        document.getElementById('run_pasaporte').addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && !value.match(/^\d{1,2}\.\d{3}\.\d{3}-[0-9K]$/)) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Validación de email
+        document.getElementById('email').addEventListener('blur', function() {
+            const value = this.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (value && !emailRegex.test(value)) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Scroll suave a errores
+        const errorAlert = document.querySelector('.error-alert');
+        if (errorAlert) {
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
 @stop

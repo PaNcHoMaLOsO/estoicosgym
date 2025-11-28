@@ -7,14 +7,41 @@ use App\Models\Convenio;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
+use App\Models\Pago;
 use App\Models\PrecioMembresia;
 use App\Rules\RutValido;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class ClienteController extends Controller
 {
+    /**
+     * Validar que no sea un doble envío usando cache en sesión
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        
+        if (!$token) {
+            return false;
+        }
+        
+        // Crear clave única en cache con tiempo de vida de 10 segundos
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        // Si el token existe en cache, es un doble envío
+        if (Cache::has($cacheKey)) {
+            return false;
+        }
+        
+        // Guardar token en cache
+        Cache::put($cacheKey, true, 10);
+        
+        return true;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -43,13 +70,16 @@ class ClienteController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * Soporta dos flujos:
-     * 1. save_cliente: Solo registro del cliente
-     * 2. save_completo: Registro + Inscripción + Pago en una transacción
+     * Flujo ÚNICO: Cliente -> Convenio -> Membresía -> Pago
      */
     public function store(Request $request)
     {
-        // Validar datos básicos del cliente
+        // Validar que no sea doble envío
+        if (!$this->validateFormToken($request, 'cliente_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
+        // PASO 1: Validar datos básicos del cliente
         $validated = $request->validate([
             'run_pasaporte' => ['required', 'unique:clientes', new RutValido()],
             'nombres' => 'required|string|max:255',
@@ -61,9 +91,16 @@ class ClienteController extends Controller
             'fecha_nacimiento' => 'nullable|date|before:today',
             'contacto_emergencia' => 'nullable|string|max:100',
             'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
-            'id_convenio' => 'nullable|exists:convenios,id',
             'observaciones' => 'nullable|string|max:500',
-            'action' => 'required|in:save_cliente,save_completo',
+            // PASO 2: Convenio (opcional)
+            'id_convenio' => 'nullable|exists:convenios,id',
+            // PASO 3: Membresía
+            'id_membresia' => 'required|exists:membresias,id',
+            'fecha_inicio' => 'required|date|after_or_equal:today',
+            // PASO 4: Pago
+            'monto_abonado' => 'required|numeric|min:0.01',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id',
+            'fecha_pago' => 'required|date|before_or_equal:today',
         ]);
 
         // Crear cliente
@@ -72,59 +109,33 @@ class ClienteController extends Controller
             'activo' => true,
         ]);
 
-        // Flujo 1: Solo guardar cliente
-        if ($request->input('action') === 'save_cliente') {
-            return redirect()->route('admin.clientes.show', $cliente)
-                ->with('success', 'Cliente registrado exitosamente. Puedes crear su inscripción más tarde.');
-        }
-
-        // Flujo 2: Registro + Inscripción + Pago
-        $this->validarYCrearInscripcionConPago($request, $cliente);
-
-        return redirect()->route('admin.clientes.show', $cliente)
-            ->with('success', 'Cliente registrado con inscripción y pago exitosamente');
-    }
-
-    /**
-     * Validar y crear inscripción con pago
-     */
-    private function validarYCrearInscripcionConPago(Request $request, Cliente $cliente)
-    {
-        // Validar datos de inscripción
-        $datosInscripcion = $request->validate([
-            'id_membresia' => 'required|exists:membresias,id',
-            'fecha_inicio' => 'required|date|after_or_equal:today',
-            'id_convenio_inscripcion' => 'nullable|exists:convenios,id',
-            'descuento_aplicado' => 'nullable|numeric|min:0',
-            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-        ]);
-
-        // Validar datos de pago
-        $datosPago = $request->validate([
-            'monto_abonado' => 'required|numeric|min:0.01',
-            'id_metodo_pago' => 'required|exists:metodos_pago,id',
-            'fecha_pago' => 'required|date|before_or_equal:today',
-            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-        ]);
-
-        $membresia = Membresia::findOrFail($datosInscripcion['id_membresia']);
+        // Obtener membresía y precio
+        $membresia = Membresia::findOrFail($validated['id_membresia']);
         $precioActual = PrecioMembresia::where('id_membresia', $membresia->id)
             ->whereNull('fecha_vigencia_hasta')
             ->firstOrFail();
 
-        $fechaInicio = Carbon::parse($datosInscripcion['fecha_inicio']);
-        $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias);
-        $descuento = $datosInscripcion['descuento_aplicado'] ?? 0;
-        $precioFinal = $precioActual->precio_normal - $descuento;
+        // Calcular precio final con descuento si aplica
+        $precioFinal = $precioActual->precio_normal;
+        $descuento = 0;
+
+        // Si tiene convenio Y existe precio_convenio para esta membresía, aplicar descuento
+        if ($cliente->id_convenio && $precioActual->precio_convenio) {
+            $precioFinal = $precioActual->precio_convenio;
+            $descuento = $precioActual->precio_normal - $precioActual->precio_convenio;
+        }
 
         // Crear inscripción
+        $fechaInicio = Carbon::parse($validated['fecha_inicio']);
+        $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias);
+
         $inscripcion = Inscripcion::create([
             'uuid' => Str::uuid(),
             'id_cliente' => $cliente->id,
             'id_membresia' => $membresia->id,
             'id_precio_acordado' => $precioActual->id,
-            'id_convenio' => $datosInscripcion['id_convenio_inscripcion'],
-            'id_motivo_descuento' => $datosInscripcion['id_motivo_descuento'],
+            'id_convenio' => $cliente->id_convenio,
+            'id_motivo_descuento' => null,
             'fecha_inscripcion' => Carbon::now(),
             'fecha_inicio' => $fechaInicio,
             'fecha_vencimiento' => $fechaVencimiento,
@@ -135,25 +146,25 @@ class ClienteController extends Controller
         ]);
 
         // Crear pago
-        $cantidadCuotas = $datosPago['cantidad_cuotas'] ?? 1;
-        $montoPorCuota = $precioFinal / $cantidadCuotas;
-
         Pago::create([
             'uuid' => Str::uuid(),
             'id_inscripcion' => $inscripcion->id,
             'id_cliente' => $cliente->id,
             'monto_total' => $precioFinal,
-            'monto_abonado' => $datosPago['monto_abonado'],
-            'monto_pendiente' => max(0, $precioFinal - $datosPago['monto_abonado']),
-            'fecha_pago' => Carbon::parse($datosPago['fecha_pago']),
+            'monto_abonado' => $validated['monto_abonado'],
+            'monto_pendiente' => max(0, $precioFinal - $validated['monto_abonado']),
+            'fecha_pago' => Carbon::parse($validated['fecha_pago']),
             'periodo_inicio' => $fechaInicio,
             'periodo_fin' => $fechaVencimiento,
-            'id_metodo_pago' => $datosPago['id_metodo_pago'],
-            'id_estado' => $datosPago['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
-            'cantidad_cuotas' => $cantidadCuotas,
+            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'id_estado' => $validated['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
+            'cantidad_cuotas' => 1,
             'numero_cuota' => 1,
-            'monto_cuota' => $montoPorCuota,
+            'monto_cuota' => $precioFinal,
         ]);
+
+        return redirect()->route('admin.clientes.show', $cliente)
+            ->with('success', 'Cliente registrado exitosamente con membresía y pago.');
     }
 
     /**
@@ -184,6 +195,11 @@ class ClienteController extends Controller
      */
     public function update(Request $request, Cliente $cliente)
     {
+        // Validar que no sea doble envío
+        if (!$this->validateFormToken($request, 'cliente_update_' . $cliente->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'run_pasaporte' => ['required', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
             'nombres' => 'required|string|max:255',
@@ -258,5 +274,41 @@ class ClienteController extends Controller
 
         return redirect()->route('admin.clientes.show', $cliente)
             ->with('success', 'Cliente reactivado exitosamente. Ahora aparecerá en el listado de clientes activos.');
+    }
+
+    /**
+     * API: Obtener precio de membresía (normal o con descuento por convenio)
+     */
+    public function getPrecioMembresia($membresia_id)
+    {
+        $convenio_id = request('convenio');
+        
+        // Obtener el precio actual de la membresía
+        $precioActual = PrecioMembresia::where('id_membresia', $membresia_id)
+            ->whereNull('fecha_vigencia_hasta')
+            ->orWhere('fecha_vigencia_hasta', '>=', now())
+            ->first();
+        
+        if (!$precioActual) {
+            return response()->json(['error' => 'Precio no encontrado'], 404);
+        }
+        
+        $precioNormal = $precioActual->precio_normal;
+        $precioFinal = $precioNormal;
+        $descuento = 0;
+        
+        // Si hay convenio y existe precio_convenio, aplicar descuento
+        if ($convenio_id && $precioActual->precio_convenio) {
+            $precioFinal = $precioActual->precio_convenio;
+            $descuento = $precioNormal - $precioFinal;
+        }
+        
+        return response()->json([
+            'precio_normal' => $precioNormal,
+            'precio_convenio' => $precioActual->precio_convenio,
+            'precio_final' => $precioFinal,
+            'descuento' => $descuento,
+            'tiene_descuento' => $descuento > 0
+        ]);
     }
 }

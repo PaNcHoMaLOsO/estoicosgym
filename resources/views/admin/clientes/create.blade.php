@@ -76,18 +76,6 @@
             margin-bottom: 1.5rem;
             color: white;
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from { 
-                opacity: 0; 
-                transform: translateY(-20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
         }
 
         .validation-alert.show {
@@ -113,96 +101,6 @@
             font-size: 0.95rem;
         }
 
-        .validation-alert li:last-child {
-            margin-bottom: 0;
-        }
-
-        /* ===== BUTTONS LAYOUT ===== */
-        .buttons-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-radius: 0.75rem;
-            border: 1px solid #dee2e6;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .buttons-group {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-action {
-            padding: 0.6rem 1.5rem;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            border: 0;
-            cursor: pointer;
-            font-size: 0.95rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            white-space: nowrap;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .btn-action:active {
-            transform: translateY(0);
-        }
-
-        .btn-success-lg {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .btn-success-lg:hover {
-            color: white;
-            filter: brightness(1.1);
-        }
-
-        .btn-primary-lg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary-lg:hover {
-            color: white;
-            filter: brightness(1.1);
-        }
-
-        .btn-secondary-outline {
-            background: white;
-            color: #6c757d;
-            border: 2px solid #dee2e6;
-        }
-
-        .btn-secondary-outline:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
-            color: #495057;
-        }
-
-        .btn-danger-outline {
-            background: white;
-            color: #dc3545;
-            border: 2px solid #dc3545;
-        }
-
-        .btn-danger-outline:hover {
-            background: #fff5f7;
-            color: #c82333;
-        }
-
         /* ===== FORM SECTIONS ===== */
         .form-section-title {
             font-size: 1.1rem;
@@ -221,42 +119,91 @@
             font-size: 1.2em;
         }
 
-        .form-group label {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-
         .form-control:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
 
-        .form-control {
-            border: 1px solid #dee2e6;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:hover {
-            border-color: #adb5bd;
-        }
-
-        /* ===== CARD LAYOUT ===== */
-        .card {
-            border: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        /* ===== PRECIO BOX ===== */
+        .precio-box {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+            border: 2px solid #667eea;
             border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
         }
 
-        .card-header {
-            border-bottom: 2px solid #667eea;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 0.75rem 0.75rem 0 0;
+        .precio-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
         }
 
-        .card-body {
-            padding: 2rem;
+        .precio-item:last-child {
+            margin-bottom: 0;
+            border-top: 2px solid #667eea;
+            padding-top: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .precio-label {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .precio-valor {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .precio-normal-tachado {
+            text-decoration: line-through;
+            color: #adb5bd;
+            margin-right: 0.5rem;
+        }
+
+        .descuento-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        /* ===== SPINNER ANIMATION ===== */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite !important;
+        }
+
+        /* ===== BUTTONS LAYOUT ===== */
+        .buttons-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #dee2e6;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .buttons-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         /* ===== RESPONSIVE ===== */
@@ -279,12 +226,6 @@
 
             .buttons-group {
                 width: 100%;
-                justify-content: stretch;
-            }
-
-            .btn-action {
-                flex: 1;
-                justify-content: center;
             }
         }
     </style>
@@ -306,38 +247,17 @@
 @stop
 
 @section('content')
-    <div id="errorAlert" class="validation-alert">
-        <h5>
-            <i class="fas fa-exclamation-triangle"></i> Errores encontrados
-        </h5>
-        <ul id="errorList"></ul>
-    </div>
-
     @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-lg" role="alert" style="border-left: 5px solid #dc3545; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-radius: 0.5rem; padding: 1.5rem;">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="color: #c62828;">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Errores en el Formulario</h4>
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
-            <div class="d-flex align-items-start">
-                <div class="mr-3" style="font-size: 1.8rem; flex-shrink: 0; color: #d32f2f;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div style="flex: 1;">
-                    <h5 class="alert-heading" style="color: #c62828; margin-top: 0; margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;">
-                        ⚠️ Errores en el Formulario
-                    </h5>
-                    <small class="d-block mb-3 text-dark" style="opacity: 0.8; font-size: 0.9rem;">
-                        Por favor, corrige los siguientes errores antes de continuar:
-                    </small>
-                    <ul class="mb-0 pl-4" style="font-size: 0.95rem; color: #c62828; line-height: 1.8;">
-                        @foreach ($errors->all() as $error)
-                            <li class="mb-2">
-                                <strong>{{ $error }}</strong>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
         </div>
     @endif
 
@@ -352,7 +272,7 @@
             <!-- Indicador de pasos -->
             <div class="steps-nav">
                 <button type="button" class="step-btn active" onclick="goToStep(1)" id="step1-btn">
-                    <i class="fas fa-user"></i>Paso 1: Datos del Cliente
+                    <i class="fas fa-user"></i>Paso 1: Datos
                 </button>
                 <button type="button" class="step-btn" onclick="goToStep(2)" id="step2-btn" disabled>
                     <i class="fas fa-dumbbell"></i>Paso 2: Membresía
@@ -362,14 +282,14 @@
                 </button>
             </div>
 
-            <form action="{{ route('admin.clientes.store') }}" method="POST" id="clienteForm">
+            <form action="{{ route('admin.clientes.store') }}" method="POST" id="clienteForm" onsubmit="return handleFormSubmit(event)">
                 @csrf
-                <input type="hidden" id="action" name="action" value="save_cliente">
+                <!-- Token anti-CSRF para prevenir doble envío -->
+                <input type="hidden" id="form_submit_token" name="form_submit_token" value="{{ uniqid() }}">
 
                 <!-- ============ PASO 1: DATOS DEL CLIENTE ============ -->
                 <div class="step-indicator active" id="step-1">
                     
-                    <!-- Identificación -->
                     <div class="form-section-title">
                         <i class="fas fa-id-card"></i> Identificación
                     </div>
@@ -379,17 +299,15 @@
                             <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
                                    id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
                                    value="{{ old('run_pasaporte') }}" required>
-                            <small class="form-text text-muted">Formato: XX.XXX.XXX-X</small>
                             @error('run_pasaporte')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
-                    <!-- Datos Personales -->
-                    <h4 class="text-primary mb-3 mt-4">
+                    <div class="form-section-title">
                         <i class="fas fa-user"></i> Datos Personales
-                    </h4>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
@@ -428,15 +346,14 @@
                         </div>
                     </div>
 
-                    <!-- Contacto -->
-                    <h4 class="text-primary mb-3 mt-4">
+                    <div class="form-section-title">
                         <i class="fas fa-phone"></i> Contacto
-                    </h4>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
                             <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                   id="email" name="email" placeholder="correo@ejemplo.com" value="{{ old('email') }}" required>
+                                   id="email" name="email" value="{{ old('email') }}" required>
                             @error('email')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -444,61 +361,19 @@
                         <div class="col-md-6 mb-3">
                             <label for="celular" class="form-label">Celular <span class="text-danger">*</span></label>
                             <input type="tel" class="form-control @error('celular') is-invalid @enderror" 
-                                   id="celular" name="celular" placeholder="+56912345678" value="{{ old('celular') }}" required>
+                                   id="celular" name="celular" value="{{ old('celular') }}" required>
                             @error('celular')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
-                    <!-- Contacto de Emergencia -->
-                    <h4 class="text-primary mb-3 mt-4">
-                        <i class="fas fa-exclamation-triangle"></i> Contacto de Emergencia
-                    </h4>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="contacto_emergencia" class="form-label">Nombre del Contacto</label>
-                            <input type="text" class="form-control @error('contacto_emergencia') is-invalid @enderror" 
-                                   id="contacto_emergencia" name="contacto_emergencia" placeholder="Ej: Juan García" 
-                                   value="{{ old('contacto_emergencia') }}">
-                            @error('contacto_emergencia')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="telefono_emergencia" class="form-label">Teléfono del Contacto</label>
-                            <input type="tel" class="form-control @error('telefono_emergencia') is-invalid @enderror" 
-                                   id="telefono_emergencia" name="telefono_emergencia" placeholder="+56912345678" 
-                                   value="{{ old('telefono_emergencia') }}">
-                            @error('telefono_emergencia')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="form-section-title">
+                        <i class="fas fa-handshake"></i> Convenio (Opcional)
                     </div>
-
-                    <!-- Dirección -->
-                    <h4 class="text-primary mb-3 mt-4">
-                        <i class="fas fa-map-marker-alt"></i> Domicilio
-                    </h4>
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label for="direccion" class="form-label">Dirección</label>
-                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
-                                   id="direccion" name="direccion" placeholder="Calle, número, apartado..." 
-                                   value="{{ old('direccion') }}">
-                            @error('direccion')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <!-- Convenio -->
-                    <h4 class="text-primary mb-3 mt-4">
-                        <i class="fas fa-handshake"></i> Convenio
-                    </h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="id_convenio" class="form-label">Convenio (Opcional)</label>
+                            <label for="id_convenio" class="form-label">¿Cliente tiene descuento?</label>
                             <select class="form-control @error('id_convenio') is-invalid @enderror" 
                                     id="id_convenio" name="id_convenio">
                                 <option value="">-- Sin Convenio --</option>
@@ -508,23 +383,8 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <small class="text-muted">Si el cliente tiene un convenio, selecciona aquí para aplicar descuentos automáticos en su membresía</small>
                             @error('id_convenio')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <!-- Observaciones -->
-                    <h4 class="text-primary mb-3 mt-4">
-                        <i class="fas fa-sticky-note"></i> Observaciones
-                    </h4>
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label for="observaciones" class="form-label">Notas Adicionales</label>
-                            <textarea class="form-control @error('observaciones') is-invalid @enderror" 
-                                      id="observaciones" name="observaciones" rows="2" 
-                                      placeholder="Información adicional...">{{ old('observaciones') }}</textarea>
-                            @error('observaciones')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -535,9 +395,9 @@
                 <!-- ============ PASO 2: MEMBRESÍA ============ -->
                 <div class="step-indicator" id="step-2">
                     
-                    <h4 class="text-primary mb-3">
+                    <div class="form-section-title">
                         <i class="fas fa-dumbbell"></i> Seleccionar Membresía
-                    </h4>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -546,9 +406,8 @@
                                     id="id_membresia" name="id_membresia" onchange="actualizarPrecio()">
                                 <option value="">-- Seleccionar Membresía --</option>
                                 @foreach($membresias as $membresia)
-                                    <option value="{{ $membresia->id }}" data-precio="{{ $membresia->precio }}" 
-                                            {{ old('id_membresia') == $membresia->id ? 'selected' : '' }}>
-                                        {{ $membresia->nombre }} ({{ $membresia->duracion_dias }} días - ${{ number_format($membresia->precio, 0, ',', '.') }})
+                                    <option value="{{ $membresia->id }}" {{ old('id_membresia') == $membresia->id ? 'selected' : '' }}>
+                                        {{ $membresia->nombre }} ({{ $membresia->duracion_dias }} días)
                                     </option>
                                 @endforeach
                             </select>
@@ -566,39 +425,24 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="id_convenio_inscripcion" class="form-label">Convenio para esta Inscripción (Opcional)</label>
-                            <select class="form-control @error('id_convenio_inscripcion') is-invalid @enderror" 
-                                    id="id_convenio_inscripcion" name="id_convenio_inscripcion" onchange="actualizarPrecio()">
-                                <option value="">-- Sin Convenio Adicional --</option>
-                                @foreach($convenios as $convenio)
-                                    <option value="{{ $convenio->id }}" data-descuento="{{ $convenio->descuento_porcentaje }}"
-                                            {{ old('id_convenio_inscripcion') == $convenio->id ? 'selected' : '' }}>
-                                        {{ $convenio->nombre }} ({{ $convenio->descuento_porcentaje }}% desc.)
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('id_convenio_inscripcion')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                    <!-- Resumen de Precio con Descuento -->
+                    <div class="precio-box" id="precioBox" style="display:none;">
+                        <h5 style="margin-top: 0; margin-bottom: 1rem; color: #2c3e50;">
+                            <i class="fas fa-tag"></i> Resumen de Precios
+                        </h5>
+                        <div class="precio-item">
+                            <span class="precio-label">Precio Normal:</span>
+                            <span id="precio-normal" class="precio-valor">$0</span>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="descuento_aplicado" class="form-label">Descuento Manual ($)</label>
-                            <input type="number" class="form-control @error('descuento_aplicado') is-invalid @enderror" 
-                                   id="descuento_aplicado" name="descuento_aplicado" min="0" step="0.01" 
-                                   value="{{ old('descuento_aplicado', 0) }}" onchange="actualizarPrecio()">
-                            @error('descuento_aplicado')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                        <div class="precio-item" id="descuentoItem" style="display:none;">
+                            <span class="precio-label">Descuento:</span>
+                            <span id="precio-descuento" class="precio-descuento">-$0</span>
                         </div>
-                    </div>
-
-                    <div class="alert alert-light border mt-3">
-                        <h5>Resumen de Precio:</h5>
-                        <p class="mb-1">Precio Base: <strong id="precio-base">$0</strong></p>
-                        <p class="mb-1">Descuento: <strong id="precio-descuento">-$0</strong></p>
-                        <p class="mb-0">Precio Final: <strong id="precio-final" class="text-success" style="font-size: 1.1em;">$0</strong></p>
+                        <div class="precio-item">
+                            <span class="precio-label">Precio Final:</span>
+                            <span id="precio-final" style="color: #11998e; font-weight: 700; font-size: 1.2em;">$0</span>
+                            <span id="badge-descuento" class="descuento-badge" style="display:none;"><i class="fas fa-gift"></i> Descuento Aplicado</span>
+                        </div>
                     </div>
 
                 </div>
@@ -606,16 +450,16 @@
                 <!-- ============ PASO 3: PAGO ============ -->
                 <div class="step-indicator" id="step-3">
                     
-                    <h4 class="text-primary mb-3">
+                    <div class="form-section-title">
                         <i class="fas fa-credit-card"></i> Información de Pago
-                    </h4>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="monto_abonado" class="form-label">Monto Abonado <span class="text-danger">*</span></label>
                             <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
-                                   id="monto_abonado" name="monto_abonado" min="0.01" step="0.01" 
-                                   value="{{ old('monto_abonado', 0) }}">
+                                   id="monto_abonado" name="monto_abonado" min="0.01" step="0.01" value="{{ old('monto_abonado', 0) }}">
+                            <small class="text-muted" id="monto_sugerido"></small>
                             @error('monto_abonado')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -646,16 +490,6 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="cantidad_cuotas" class="form-label">Cantidad de Cuotas</label>
-                            <input type="number" class="form-control @error('cantidad_cuotas') is-invalid @enderror" 
-                                   id="cantidad_cuotas" name="cantidad_cuotas" min="1" max="12" 
-                                   value="{{ old('cantidad_cuotas', 1) }}">
-                            <small class="text-muted">Dejar en 1 para pago completo</small>
-                            @error('cantidad_cuotas')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
                     </div>
 
                 </div>
@@ -663,37 +497,24 @@
                 <hr class="my-4">
 
                 <!-- Navegación entre pasos -->
-                <!-- Paso 1: Botones Guardar o Continuar -->
-                <div id="buttons-step-1" class="buttons-container" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; padding: 1.75rem; border-radius: 0.75rem; margin-top: 2rem; justify-content: space-between; align-items: center;">
-                    <div style="flex: 1; min-width: 150px;">
-                        <a href="{{ route('admin.clientes.index') }}" class="btn-action btn-outline-secondary" style="width: 100%; justify-content: center; padding: 0.75rem 1.5rem; border: 2px solid #6c757d; color: #6c757d; background: white;">
+                <div class="buttons-container">
+                    <div>
+                        <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
                     </div>
-                    <div class="buttons-group" style="gap: 1rem; flex: 2; justify-content: flex-end;">
-                        <button type="button" class="btn-action btn-success-lg" onclick="guardarSoloCliente()" title="Guardar cliente sin membresía" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: 0; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">
-                            <i class="fas fa-save"></i> Guardar y Salir
+                    <div class="buttons-group">
+                        <button type="button" id="btn-anterior" class="btn btn-outline-secondary" onclick="previousStep()" style="display:none;">
+                            <i class="fas fa-arrow-left"></i> Anterior
                         </button>
-                        <button type="button" class="btn-action btn-primary-lg" onclick="nextStep()" title="Ir al siguiente paso" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: 0; box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);">
-                            Continuar <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Pasos 2 y 3: Botones de navegación -->
-                <div id="buttons-other-steps" class="buttons-container" style="display:none; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; padding: 1.75rem; border-radius: 0.75rem; margin-top: 2rem; justify-content: space-between; align-items: center;">
-                    <button type="button" class="btn-action btn-secondary-outline" onclick="previousStep()" title="Volver al paso anterior" style="padding: 0.75rem 1.5rem; border: 2px solid #6c757d; color: #6c757d; background: white; min-width: 140px; justify-content: center;">
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                    <div class="buttons-group" style="gap: 1rem; flex: 2; justify-content: flex-end;">
-                        <a href="{{ route('admin.clientes.index') }}" class="btn-action btn-outline-secondary" style="padding: 0.75rem 1.5rem; border: 2px solid #6c757d; color: #6c757d; background: white;">
-                            <i class="fas fa-times"></i> Cancelar
-                        </a>
-                        <button type="button" id="btn-siguiente-final" class="btn-action btn-primary-lg" onclick="nextStep()" title="Ir al siguiente paso" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: 0; box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);">
+                        <button type="button" id="btn-siguiente" class="btn btn-primary" onclick="nextStep()">
                             Siguiente <i class="fas fa-arrow-right"></i>
                         </button>
-                        <button type="submit" id="btn-guardar-final" class="btn-action btn-success-lg" style="display:none; padding: 0.75rem 2rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: 0; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);" onclick="setActionAndSubmit('save_completo')" title="Crear cliente, membresía y pago">
-                            <i class="fas fa-check-circle"></i> Guardar Todo
+                        <button type="submit" id="btn-guardar" class="btn btn-success" style="display:none;">
+                            <i class="fas fa-check-circle"></i> <span id="btn-text">Guardar Cliente</span>
+                            <span id="btn-spinner" style="display:none; margin-left: 0.5rem;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -702,9 +523,62 @@
         </div>
     </div>
 
+    <div id="errorAlert" class="validation-alert"></div>
+
     <script>
         let currentStep = 1;
         const totalSteps = 3;
+        let isSubmitting = false;
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            // Prevenir doble envío
+            if (isSubmitting) {
+                console.warn('Formulario ya se está enviando...');
+                return false;
+            }
+            
+            // Validar paso actual
+            if (!validateStep(currentStep)) {
+                return false;
+            }
+            
+            // Deshabilitar botón y mostrar spinner
+            const btnGuardar = document.getElementById('btn-guardar');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const formToken = document.getElementById('form_submit_token');
+            
+            // Marcar como enviando
+            isSubmitting = true;
+            
+            // UI feedback
+            btnGuardar.disabled = true;
+            btnText.textContent = 'Procesando...';
+            btnSpinner.style.display = 'inline';
+            
+            // Generar nuevo token para evitar reenvíos
+            formToken.value = '{{ uniqid() }}-' + Date.now();
+            
+            // Enviar formulario después de un pequeño delay para asegurar que los cambios de UI se vean
+            setTimeout(() => {
+                document.getElementById('clienteForm').submit();
+            }, 100);
+            
+            // Timeout de seguridad - rehabilitar después de 5 segundos
+            setTimeout(() => {
+                if (isSubmitting) {
+                    isSubmitting = false;
+                    btnGuardar.disabled = false;
+                    btnText.textContent = 'Guardar Cliente';
+                    btnSpinner.style.display = 'none';
+                    showValidationAlert(['Error de conexión. Intente nuevamente.']);
+                }
+            }, 5000);
+            
+            return false; // El formulario se envía manualmente
+        }
 
         function goToStep(step) {
             if (step < 1 || step > totalSteps) return;
@@ -725,27 +599,22 @@
             updateStepIndicators();
             
             // Actualizar botones
-            const buttons1 = document.getElementById('buttons-step-1');
-            const buttonsOther = document.getElementById('buttons-other-steps');
+            const btnAnterior = document.getElementById('btn-anterior');
+            const btnSiguiente = document.getElementById('btn-siguiente');
+            const btnGuardar = document.getElementById('btn-guardar');
             
             if (step === 1) {
-                buttons1.style.display = 'flex';
-                buttonsOther.style.display = 'none';
+                btnAnterior.style.display = 'none';
+                btnSiguiente.style.display = 'block';
+                btnGuardar.style.display = 'none';
+            } else if (step === totalSteps) {
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'none';
+                btnGuardar.style.display = 'block';
             } else {
-                buttons1.style.display = 'none';
-                buttonsOther.style.display = 'flex';
-                
-                // Mostrar/ocultar botón Guardar en paso 3
-                const btnSiguiente = document.getElementById('btn-siguiente-final');
-                const btnGuardar = document.getElementById('btn-guardar-final');
-                
-                if (step === totalSteps) {
-                    btnSiguiente.style.display = 'none';
-                    btnGuardar.style.display = 'block';
-                } else {
-                    btnSiguiente.style.display = 'block';
-                    btnGuardar.style.display = 'none';
-                }
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'block';
+                btnGuardar.style.display = 'none';
             }
         }
 
@@ -768,14 +637,17 @@
                 
                 if (i < currentStep) {
                     btn.classList.add('completed');
+                    btn.disabled = false;
                 } else if (i === currentStep) {
                     btn.classList.add('active');
+                    btn.disabled = false;
+                } else {
+                    btn.disabled = true;
                 }
             }
         }
 
         function validateStep(step) {
-            let inputs = [];
             const fieldLabels = {
                 'run_pasaporte': 'RUT/Pasaporte',
                 'nombres': 'Nombres',
@@ -789,10 +661,10 @@
                 'fecha_pago': 'Fecha de Pago'
             };
             
+            let inputs = [];
+            
             if (step === 1) {
-                inputs = [
-                    'run_pasaporte', 'nombres', 'apellido_paterno', 'email', 'celular'
-                ];
+                inputs = ['run_pasaporte', 'nombres', 'apellido_paterno', 'email', 'celular'];
             } else if (step === 2) {
                 inputs = ['id_membresia', 'fecha_inicio'];
             } else if (step === 3) {
@@ -816,15 +688,14 @@
 
         function showValidationAlert(fields) {
             const alert = document.getElementById('errorAlert');
-            const list = document.getElementById('errorList');
             
-            list.innerHTML = '';
+            let html = '<h5><i class="fas fa-exclamation-circle"></i> Campos Requeridos</h5><ul>';
             fields.forEach(field => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${field}</strong> es requerido`;
-                list.appendChild(li);
+                html += `<li><strong>${field}</strong> es requerido</li>`;
             });
+            html += '</ul>';
             
+            alert.innerHTML = html;
             alert.classList.add('show');
             
             // Auto-hide después de 5 segundos
@@ -837,53 +708,52 @@
         }
 
         function actualizarPrecio() {
-            const membresia = document.getElementById('id_membresia');
-            const convenio = document.getElementById('id_convenio_inscripcion');
-            const descuentoManual = parseFloat(document.getElementById('descuento_aplicado').value) || 0;
+            const membresiaSelect = document.getElementById('id_membresia');
+            const convenioSelect = document.getElementById('id_convenio');
             
-            if (!membresia.value) {
-                document.getElementById('precio-base').textContent = '$0';
-                document.getElementById('precio-descuento').textContent = '-$0';
-                document.getElementById('precio-final').textContent = '$0';
+            if (!membresiaSelect.value) {
+                document.getElementById('precioBox').style.display = 'none';
                 return;
             }
             
-            const option = membresia.options[membresia.selectedIndex];
-            let precioBase = parseFloat(option.dataset.precio) || 0;
+            // Obtener el precio de la membresía seleccionada
+            const membresia_id = membresiaSelect.value;
             
-            let descuento = descuentoManual;
-            
-            if (convenio.value) {
-                const convenioOption = convenio.options[convenio.selectedIndex];
-                const porcentaje = parseFloat(convenioOption.dataset.descuento) || 0;
-                descuento += (precioBase * porcentaje / 100);
-            }
-            
-            const precioFinal = precioBase - descuento;
-            
-            document.getElementById('precio-base').textContent = '$' + precioBase.toLocaleString('es-CL', {maximumFractionDigits: 0});
-            document.getElementById('precio-descuento').textContent = '-$' + descuento.toLocaleString('es-CL', {maximumFractionDigits: 0});
-            document.getElementById('precio-final').textContent = '$' + precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0});
-            
-            // Actualizar monto_abonado sugerido
-            document.getElementById('monto_abonado').placeholder = '$' + precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0});
-        }
-
-        function guardarSoloCliente() {
-            if (!validateStep(1)) return;
-            document.getElementById('action').value = 'save_cliente';
-            document.getElementById('clienteForm').submit();
-        }
-
-        function setActionAndSubmit(action) {
-            if (!validateStep(3)) return;
-            document.getElementById('action').value = action;
-            document.getElementById('clienteForm').submit();
+            // Hacer AJAX para obtener el precio actual
+            fetch(`/admin/api/precio-membresia/${membresia_id}${convenioSelect.value ? '?convenio=' + convenioSelect.value : ''}`)
+                .then(response => response.json())
+                .then(data => {
+                    let precioNormal = data.precio_normal || 0;
+                    let precioFinal = data.precio_final || precioNormal;
+                    let descuento = precioNormal - precioFinal;
+                    
+                    document.getElementById('precio-normal').textContent = '$' + precioNormal.toLocaleString('es-CL', {maximumFractionDigits: 0});
+                    document.getElementById('precio-final').textContent = '$' + precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0});
+                    
+                    if (descuento > 0) {
+                        document.getElementById('descuentoItem').style.display = 'flex';
+                        document.getElementById('precio-descuento').textContent = '-$' + descuento.toLocaleString('es-CL', {maximumFractionDigits: 0});
+                        document.getElementById('badge-descuento').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('descuentoItem').style.display = 'none';
+                        document.getElementById('badge-descuento').style.display = 'none';
+                    }
+                    
+                    // Actualizar sugerencia de monto
+                    document.getElementById('monto_sugerido').textContent = `Sugerido: $${precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+                    document.getElementById('monto_abonado').placeholder = `$${precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+                    
+                    document.getElementById('precioBox').style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
         }
 
         // Inicializar
         window.addEventListener('load', function() {
             goToStep(1);
+            
+            // Actualizar precio cuando cambie convenio
+            document.getElementById('id_convenio').addEventListener('change', actualizarPrecio);
         });
     </script>
 @stop
