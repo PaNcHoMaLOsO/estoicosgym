@@ -16,6 +16,11 @@
 @stop
 
 @section('content')
+<style>
+    .small-box { box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important; border-radius: 6px !important; }
+    .small-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; }
+    .card { border-radius: 6px !important; box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; }
+</style>
 <div class="container-fluid">
     <!-- KPIs Principales -->
     <div class="row mb-4">
