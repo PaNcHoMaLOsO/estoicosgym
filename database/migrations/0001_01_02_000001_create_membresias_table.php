@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('membresias', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
             $table->string('nombre', 50)->unique();
             $table->unsignedInteger('duracion_meses')->comment('Meses de duración (0 para pase diario)');

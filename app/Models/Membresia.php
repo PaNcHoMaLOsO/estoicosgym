@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -33,6 +34,8 @@ use Illuminate\Support\Str;
  */
 class Membresia extends Model
 {
+    use HasFactory;
+    
     protected $table = 'membresias';
     protected $primaryKey = 'id';
     public $incrementing = true;

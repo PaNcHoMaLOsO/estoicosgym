@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('convenios', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
             $table->string('nombre', 100)->unique()->comment('Ej: INACAP, Cruz Verde, Falabella');
             $table->enum('tipo', ['institucion_educativa', 'empresa', 'organizacion', 'otro']);

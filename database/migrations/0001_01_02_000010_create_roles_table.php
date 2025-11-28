@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->string('nombre', 50)->unique();
             $table->text('descripcion')->nullable();
             $table->json('permisos')->nullable()->comment('Array de permisos: ["crear_cliente", "editar_precio", etc.]');

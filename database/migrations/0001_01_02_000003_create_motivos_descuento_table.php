@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('motivos_descuento', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->string('nombre', 100)->unique();
             $table->text('descripcion')->nullable();
             $table->boolean('activo')->default(true);

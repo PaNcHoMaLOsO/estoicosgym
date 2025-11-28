@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('precios_membresias', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->unsignedInteger('id_membresia');
             $table->decimal('precio_normal', 10, 2);
             $table->decimal('precio_convenio', 10, 2)->nullable()->comment('NULL si no aplica convenio');

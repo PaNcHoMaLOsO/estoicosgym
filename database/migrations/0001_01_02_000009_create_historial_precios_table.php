@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('historial_precios', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->unsignedInteger('id_precio_membresia');
             $table->decimal('precio_anterior', 10, 2)->comment('Precio anterior');
             $table->decimal('precio_nuevo', 10, 2)->comment('Precio nuevo');

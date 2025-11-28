@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('metodos_pago', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->string('nombre', 50)->unique();
             $table->text('descripcion')->nullable();
             $table->boolean('requiere_comprobante')->default(false)->comment('Para futuro: pago online');

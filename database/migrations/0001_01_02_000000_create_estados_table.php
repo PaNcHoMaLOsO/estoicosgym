@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('estados', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->unsignedInteger('codigo')->unique()->comment('Rango: 100-199 membresías, 200-299 pagos, 300-302 convenios, 400-402 clientes, 500-504 genéricos');
             $table->string('nombre', 50);
             $table->text('descripcion')->nullable();

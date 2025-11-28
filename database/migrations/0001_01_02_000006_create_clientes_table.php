@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('clientes', function (Blueprint $table) {
-            $table->unsignedInteger('id')->autoIncrement()->primary();
+            $table->id();
             $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
             $table->string('run_pasaporte', 20)->nullable()->unique()->comment('NULL para indocumentados');
             $table->string('nombres', 100);
