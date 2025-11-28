@@ -63,24 +63,11 @@ class Pago extends Model
         'uuid',
         'id_inscripcion',
         'id_cliente',
-        'id_membresia',
         'monto_total',
         'monto_abonado',
         'monto_pendiente',
-        'descuento_aplicado',
-        'id_motivo_descuento',
         'fecha_pago',
-        'periodo_inicio',
-        'periodo_fin',
         'id_metodo_pago',
-        'metodos_pago_json',
-        'referencia_pago',
-        'es_plan_cuotas',
-        'numero_cuota',
-        'cantidad_cuotas',
-        'monto_cuota',
-        'fecha_vencimiento_cuota',
-        'grupo_pago',
         'id_estado',
         'tipo_pago',
         'observaciones',
@@ -88,10 +75,9 @@ class Pago extends Model
 
     protected $casts = [
         'fecha_pago' => 'date',
-        'periodo_inicio' => 'date',
-        'periodo_fin' => 'date',
-        'fecha_vencimiento_cuota' => 'date',
-        'monto_cuota' => 'decimal:2',
+        'monto_total' => 'decimal:2',
+        'monto_abonado' => 'decimal:2',
+        'monto_pendiente' => 'decimal:2',
     ];
 
     protected static function boot()

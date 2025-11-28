@@ -220,14 +220,9 @@ class ClienteController extends Controller
                 'monto_abonado' => $montoAbonado,
                 'monto_pendiente' => $montoPendiente,
                 'fecha_pago' => Carbon::parse($validatedPago['fecha_pago']),
-                'periodo_inicio' => $fechaInicio,
-                'periodo_fin' => $fechaVencimiento,
                 'id_metodo_pago' => $validatedPago['id_metodo_pago'],
                 'id_estado' => $estadoPago,
                 'tipo_pago' => $tipoPago,
-                'cantidad_cuotas' => 1,
-                'numero_cuota' => 1,
-                'monto_cuota' => $precioFinal,
             ]);
 
             // Determinar estado final
