@@ -9,123 +9,102 @@ use App\Models\Estado;
 use App\Models\MetodoPago;
 use App\Models\Membresia;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     public function index(): View
     {
-        $hoy = Carbon::now();
-        
-        // Obtener IDs de estados
-        $estadoActiva = Estado::where('nombre', 'Activa')->first();
-        $idEstadoActiva = $estadoActiva ? $estadoActiva->id : 100;
-        $estadoVencida = Estado::where('nombre', 'Vencida')->first();
-        $idEstadoVencida = $estadoVencida ? $estadoVencida->id : 102;
-        
-        // KPIs Principales - Clientes
+        // ==== KPIs PRINCIPALES ====
+        // Total Clientes
         $totalClientes = Cliente::where('activo', true)->count();
-        $clientesInactivos = Cliente::where('activo', false)->count();
         
-        // KPIs Principales - Inscripciones
-        $totalInscripciones = Inscripcion::where('id_estado', $idEstadoActiva)->count();
-        $inscripcionesVencidas = Inscripcion::where('id_estado', $idEstadoVencida)->count();
+        // Inscripciones Activas (estado_id = 100 = Activa)
+        $inscripcionesActivas = Inscripcion::where('id_estado', 100)->count();
         
-        // KPIs Principales - Ingresos
-        $pagosDelMes = Pago::whereYear('fecha_pago', $hoy->year)
-            ->whereMonth('fecha_pago', $hoy->month)
+        // Ingresos del Mes (pagos completados)
+        $ingresosMes = Pago::whereYear('fecha_pago', now()->year)
+            ->whereMonth('fecha_pago', now()->month)
             ->sum('monto_abonado');
-        $ingresosTotales = Pago::sum('monto_abonado');
-        $estadoPagado = Estado::where('codigo', 201)->first();
-        $pagosPendientes = Pago::where('id_estado', '!=', $estadoPagado->id)->sum('monto_abonado');
         
-        // Últimos pagos con relaciones eager loaded
-        $ultimosPagos = Pago::with(['inscripcion' => function($q) {
-            $q->with('cliente');
-        }, 'metodoPago', 'estado'])
-            ->orderBy('fecha_pago', 'desc')
-            ->limit(8)
-            ->get();
+        // Por Vencer en próximos 7 días
+        $porVencer7Dias = Inscripcion::where('id_estado', 100)
+            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(7)])
+            ->count();
         
-        // Inscripciones recientes
-        $inscripcionesRecientes = Inscripcion::with('cliente', 'membresia', 'estado')
-            ->orderBy('created_at', 'desc')
-            ->limit(6)
-            ->get();
+        // ==== GRÁFICO DONA: Distribución de Membresías (SOLO inscripciones activas) ====
+        $membresiasDistribucion = Inscripcion::where('id_estado', 100)
+            ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
+            ->select('membresias.nombre', DB::raw('count(*) as total'))
+            ->groupBy('membresias.id', 'membresias.nombre')
+            ->pluck('total', 'nombre');
         
-        // Inscripciones próximas a vencer (30 días)
-        $proximasAVencer = Inscripcion::where('id_estado', $idEstadoActiva)
-            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(30)])
-            ->with(['cliente', 'membresia'])
-            ->orderBy('fecha_vencimiento', 'asc')
-            ->limit(8)
-            ->get();
+        // Preparar datos para Chart.js - Dona
+        $etiquetasMembresias = $membresiasDistribucion->keys()->toArray();
+        $datosMembresias = $membresiasDistribucion->values()->toArray();
         
-        // Membresías más vendidas
-        $membresiasVendidas = Membresia::withCount('inscripciones')
-            ->orderBy('inscripciones_count', 'desc')
-            ->limit(5)
-            ->get();
-        
-        // Métodos de pago más usados
-        $metodosPago = MetodoPago::withCount('pagos')
-            ->orderBy('pagos_count', 'desc')
-            ->limit(5)
-            ->get();
-        
-        // Inscripciones por estado - SOLO INSCRIPCIONES
-        $inscripcionesPorEstado = Inscripcion::selectRaw("CASE 
-            WHEN id_estado = 100 THEN 'Activa'
-            WHEN id_estado = 101 THEN 'Pausada'
-            WHEN id_estado = 102 THEN 'Vencida'
-            WHEN id_estado = 103 THEN 'Cancelada'
-            WHEN id_estado = 104 THEN 'Suspendida'
-            ELSE 'Otro'
-        END as estado, COUNT(*) as total")
-            ->groupBy('id_estado')
-            ->pluck('total', 'estado');
-        
-        // Datos para gráficos - Ingresos por mes (últimos 6 meses)
-        $ingresosPorMes = Pago::selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as año, SUM(monto_abonado) as total')
-            ->where('fecha_pago', '>=', now()->subMonths(5))
+        // ==== GRÁFICO BARRAS: Ingresos Últimos 6 Meses ====
+        $ingresos6Meses = Pago::where('fecha_pago', '>=', now()->subMonths(5))
+            ->selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as anio, SUM(monto_abonado) as total')
             ->groupByRaw('YEAR(fecha_pago), MONTH(fecha_pago)')
-            ->orderBy('año', 'asc')
-            ->orderBy('mes', 'asc')
+            ->orderBy('anio')
+            ->orderBy('mes')
             ->get();
         
-        // Generar etiquetas y datos para gráfico de ingresos
+        // Preparar datos para Chart.js - Barras
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        $etiquetasMeses = $ingresosPorMes->map(function($d) use ($meses) {
-            return ($d->mes && $d->mes >= 1 && $d->mes <= 12 ? $meses[$d->mes - 1] : 'Desconocido') . ' ' . $d->año;
+        $etiquetasIngresos = $ingresos6Meses->map(function($d) use ($meses) {
+            $mesNombre = $d->mes && $d->mes >= 1 && $d->mes <= 12 ? $meses[$d->mes - 1] : 'Desconocido';
+            return $mesNombre . ' ' . $d->anio;
         })->toArray();
-        $datosIngresos = $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray();
+        $datosIngresosBarras = $ingresos6Meses->map(fn($d) => (float)$d->total)->toArray();
         
-        // Colores para estados de INSCRIPCIONES
-        $coloresInscripciones = [
-            'Activa' => '#28a745',
-            'Pausada' => '#ffc107',
-            'Vencida' => '#dc3545',
-            'Cancelada' => '#6c757d',
-            'Suspendida' => '#fd7e14',
-        ];
+        // ==== TABLA: Clientes por Vencer (próximos 7 días) ====
+        $clientesPorVencer = Inscripcion::with(['cliente', 'membresia'])
+            ->where('id_estado', 100)
+            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(7)])
+            ->orderBy('fecha_vencimiento')
+            ->limit(10)
+            ->get();
+        
+        // ==== TABLA: Top Membresías ====
+        $topMembresias = Inscripcion::where('id_estado', 100)
+            ->select('id_membresia', DB::raw('count(*) as total'))
+            ->groupBy('id_membresia')
+            ->with('membresia')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+        
+        $maxMembresias = $topMembresias->max('total') ?? 1;
+        
+        // ==== TABLA: Últimos Pagos ====
+        $ultimosPagos = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado'])
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+        
+        // ==== TABLA: Inscripciones Recientes ====
+        $inscripcionesRecientes = Inscripcion::with(['cliente', 'membresia', 'estado'])
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
         
         return view('dashboard.index', compact(
             'totalClientes',
-            'clientesInactivos',
-            'totalInscripciones',
-            'inscripcionesVencidas',
-            'pagosDelMes',
-            'ingresosTotales',
-            'pagosPendientes',
+            'inscripcionesActivas',
+            'ingresosMes',
+            'porVencer7Dias',
+            'etiquetasMembresias',
+            'datosMembresias',
+            'etiquetasIngresos',
+            'datosIngresosBarras',
+            'clientesPorVencer',
+            'topMembresias',
+            'maxMembresias',
             'ultimosPagos',
-            'inscripcionesRecientes',
-            'proximasAVencer',
-            'membresiasVendidas',
-            'metodosPago',
-            'etiquetasMeses',
-            'datosIngresos',
-            'inscripcionesPorEstado',
-            'coloresInscripciones'
+            'inscripcionesRecientes'
         ));
     }
 }
