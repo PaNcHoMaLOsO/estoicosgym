@@ -569,14 +569,35 @@
                         <button type="button" id="btn-siguiente" class="btn btn-primary" onclick="nextStep()">
                             Siguiente <i class="fas fa-arrow-right"></i>
                         </button>
-                        <button type="submit" id="btn-guardar" class="btn btn-success" style="display:none;">
-                            <i class="fas fa-check-circle"></i> <span id="btn-text">Guardar Cliente</span>
-                            <span id="btn-spinner" style="display:none; margin-left: 0.5rem;">
+
+                        <!-- PASO 1: Solo guardar cliente -->
+                        <button type="submit" id="btn-guardar-solo-cliente" class="btn btn-info" style="display:none;" title="Guardar solo este cliente sin membresía">
+                            <i class="fas fa-user-check"></i> Guardar Cliente
+                            <span id="btn-spinner-cliente" style="display:none; margin-left: 0.5rem;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+
+                        <!-- PASO 2: Guardar cliente + membresía (sin pago) -->
+                        <button type="submit" id="btn-guardar-con-membresia" class="btn btn-success" style="display:none;" title="Guardar cliente con membresía (sin pago)">
+                            <i class="fas fa-layer-group"></i> Guardar con Membresía
+                            <span id="btn-spinner-membresia" style="display:none; margin-left: 0.5rem;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+
+                        <!-- PASO 3: Guardar cliente + membresía + pago (completo) -->
+                        <button type="submit" id="btn-guardar-completo" class="btn btn-success" style="display:none;" title="Guardar cliente con membresía y pago">
+                            <i class="fas fa-check-circle"></i> <span id="btn-text">Guardar Todo</span>
+                            <span id="btn-spinner-completo" style="display:none; margin-left: 0.5rem;">
                                 <i class="fas fa-spinner fa-spin"></i>
                             </span>
                         </button>
                     </div>
                 </div>
+
+                <!-- Campo oculto para indicar qué tipo de guardado es -->
+                <input type="hidden" id="flujo_cliente" name="flujo_cliente" value="completo">
 
             </form>
         </div>
@@ -657,23 +678,39 @@
             // Actualizar indicadores
             updateStepIndicators();
             
-            // Actualizar botones
+            // Actualizar botones según el paso
             const btnAnterior = document.getElementById('btn-anterior');
             const btnSiguiente = document.getElementById('btn-siguiente');
-            const btnGuardar = document.getElementById('btn-guardar');
+            const btnGuardarSoloCliente = document.getElementById('btn-guardar-solo-cliente');
+            const btnGuardarConMembresia = document.getElementById('btn-guardar-con-membresia');
+            const btnGuardarCompleto = document.getElementById('btn-guardar-completo');
+            const flujoInput = document.getElementById('flujo_cliente');
+            
+            // Ocultar todos los botones de guardado
+            btnGuardarSoloCliente.style.display = 'none';
+            btnGuardarConMembresia.style.display = 'none';
+            btnGuardarCompleto.style.display = 'none';
+            btnSiguiente.style.display = 'none';
+            btnAnterior.style.display = 'none';
             
             if (step === 1) {
+                // PASO 1: Mostrar opción de guardar solo cliente
                 btnAnterior.style.display = 'none';
                 btnSiguiente.style.display = 'block';
-                btnGuardar.style.display = 'none';
-            } else if (step === totalSteps) {
-                btnAnterior.style.display = 'block';
-                btnSiguiente.style.display = 'none';
-                btnGuardar.style.display = 'block';
-            } else {
+                btnGuardarSoloCliente.style.display = 'block';
+                flujoInput.value = 'solo_cliente';
+            } else if (step === 2) {
+                // PASO 2: Mostrar opción de guardar cliente + membresía
                 btnAnterior.style.display = 'block';
                 btnSiguiente.style.display = 'block';
-                btnGuardar.style.display = 'none';
+                btnGuardarConMembresia.style.display = 'block';
+                flujoInput.value = 'con_membresia';
+            } else if (step === totalSteps) {
+                // PASO 3: Mostrar opción de guardar todo completo
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'none';
+                btnGuardarCompleto.style.display = 'block';
+                flujoInput.value = 'completo';
             }
         }
 

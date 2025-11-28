@@ -79,8 +79,11 @@ class ClienteController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        // PASO 1: Validar datos básicos del cliente
-        $validated = $request->validate([
+        // Determinar qué tipo de flujo es
+        $flujoCliente = $request->input('flujo_cliente', 'completo');
+
+        // PASO 1: Validar datos básicos del cliente (siempre requerido)
+        $validatedCliente = $request->validate([
             'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte', new RutValido()],
             'nombres' => 'required|string|max:255',
             'apellido_paterno' => 'required|string|max:255',
@@ -92,27 +95,36 @@ class ClienteController extends Controller
             'contacto_emergencia' => 'nullable|string|max:100',
             'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
             'observaciones' => 'nullable|string|max:500',
-            // PASO 2: Convenio (opcional)
-            'id_convenio' => 'nullable|exists:convenios,id',
-            // PASO 3: Membresía
-            'id_membresia' => 'required|exists:membresias,id',
-            'fecha_inicio' => 'required|date|after_or_equal:today',
-            // PASO 4: Pago
-            'monto_abonado' => 'required|numeric|min:0.01',
-            'id_metodo_pago' => 'required|exists:metodos_pago,id',
-            'fecha_pago' => 'required|date|before_or_equal:today',
         ]);
 
-        // Crear cliente
+        // Crear cliente (PASO 1 - Siempre se crea)
         $cliente = Cliente::create([
-            ...$validated,
+            ...$validatedCliente,
             'activo' => true,
         ]);
 
+        // ========== CASO 1: SOLO CLIENTE ==========
+        if ($flujoCliente === 'solo_cliente') {
+            return redirect()->route('admin.clientes.show', $cliente)
+                ->with('success', 'Cliente registrado exitosamente. Estado: REGISTRADO (sin membresía)');
+        }
+
+        // ========== CASO 2 y 3: REQUIEREN MEMBRESÍA ==========
+        // Validar datos de membresía e inscripción
+        $validatedMembresia = $request->validate([
+            'id_convenio' => 'nullable|exists:convenios,id',
+            'id_membresia' => 'required|exists:membresias,id',
+            'fecha_inicio' => 'required|date|after_or_equal:today',
+        ]);
+
         // Obtener membresía y precio
-        $membresia = Membresia::findOrFail($validated['id_membresia']);
+        $membresia = Membresia::findOrFail($validatedMembresia['id_membresia']);
         $precioActual = PrecioMembresia::where('id_membresia', $membresia->id)
-            ->whereNull('fecha_vigencia_hasta')
+            ->where(function ($query) {
+                $query->whereNull('fecha_vigencia_hasta')
+                      ->orWhere('fecha_vigencia_hasta', '>=', now());
+            })
+            ->orderBy('fecha_vigencia_hasta', 'desc')
             ->firstOrFail();
 
         // Calcular precio final con descuento si aplica
@@ -120,13 +132,13 @@ class ClienteController extends Controller
         $descuento = 0;
 
         // Si tiene convenio Y existe precio_convenio para esta membresía, aplicar descuento
-        if ($cliente->id_convenio && $precioActual->precio_convenio) {
+        if ($validatedMembresia['id_convenio'] && $precioActual->precio_convenio) {
             $precioFinal = $precioActual->precio_convenio;
             $descuento = $precioActual->precio_normal - $precioActual->precio_convenio;
         }
 
         // Crear inscripción
-        $fechaInicio = Carbon::parse($validated['fecha_inicio']);
+        $fechaInicio = Carbon::parse($validatedMembresia['fecha_inicio']);
         $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias);
 
         $inscripcion = Inscripcion::create([
@@ -134,7 +146,7 @@ class ClienteController extends Controller
             'id_cliente' => $cliente->id,
             'id_membresia' => $membresia->id,
             'id_precio_acordado' => $precioActual->id,
-            'id_convenio' => $cliente->id_convenio,
+            'id_convenio' => $validatedMembresia['id_convenio'],
             'id_motivo_descuento' => null,
             'fecha_inscripcion' => Carbon::now(),
             'fecha_inicio' => $fechaInicio,
@@ -145,26 +157,48 @@ class ClienteController extends Controller
             'id_estado' => 100, // Activa
         ]);
 
-        // Crear pago
-        Pago::create([
-            'uuid' => Str::uuid(),
-            'id_inscripcion' => $inscripcion->id,
-            'id_cliente' => $cliente->id,
-            'monto_total' => $precioFinal,
-            'monto_abonado' => $validated['monto_abonado'],
-            'monto_pendiente' => max(0, $precioFinal - $validated['monto_abonado']),
-            'fecha_pago' => Carbon::parse($validated['fecha_pago']),
-            'periodo_inicio' => $fechaInicio,
-            'periodo_fin' => $fechaVencimiento,
-            'id_metodo_pago' => $validated['id_metodo_pago'],
-            'id_estado' => $validated['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
-            'cantidad_cuotas' => 1,
-            'numero_cuota' => 1,
-            'monto_cuota' => $precioFinal,
-        ]);
+        // ========== CASO 2: CLIENTE + MEMBRESÍA (SIN PAGO) ==========
+        if ($flujoCliente === 'con_membresia') {
+            return redirect()->route('admin.clientes.show', $cliente)
+                ->with('success', 'Cliente + Membresía registrados. Estado: INSCRITO (pago pendiente)');
+        }
 
+        // ========== CASO 3: CLIENTE + MEMBRESÍA + PAGO (COMPLETO) ==========
+        if ($flujoCliente === 'completo') {
+            $validatedPago = $request->validate([
+                'monto_abonado' => 'required|numeric|min:0.01',
+                'id_metodo_pago' => 'required|exists:metodos_pago,id',
+                'fecha_pago' => 'required|date|before_or_equal:today',
+            ]);
+
+            // Crear pago
+            Pago::create([
+                'uuid' => Str::uuid(),
+                'id_inscripcion' => $inscripcion->id,
+                'id_cliente' => $cliente->id,
+                'monto_total' => $precioFinal,
+                'monto_abonado' => $validatedPago['monto_abonado'],
+                'monto_pendiente' => max(0, $precioFinal - $validatedPago['monto_abonado']),
+                'fecha_pago' => Carbon::parse($validatedPago['fecha_pago']),
+                'periodo_inicio' => $fechaInicio,
+                'periodo_fin' => $fechaVencimiento,
+                'id_metodo_pago' => $validatedPago['id_metodo_pago'],
+                'id_estado' => $validatedPago['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
+                'cantidad_cuotas' => 1,
+                'numero_cuota' => 1,
+                'monto_cuota' => $precioFinal,
+            ]);
+
+            // Determinar estado final
+            $estadoPago = $validatedPago['monto_abonado'] >= $precioFinal ? 'PAGADO COMPLETAMENTE' : 'ABONO REGISTRADO (pendiente)';
+
+            return redirect()->route('admin.clientes.show', $cliente)
+                ->with('success', "Cliente + Membresía + Pago registrados. Estado: $estadoPago");
+        }
+
+        // Fallback (no debería llegar aquí)
         return redirect()->route('admin.clientes.show', $cliente)
-            ->with('success', 'Cliente registrado exitosamente con membresía y pago.');
+            ->with('success', 'Cliente registrado exitosamente.');
     }
 
     /**
