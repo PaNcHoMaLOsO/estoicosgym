@@ -337,7 +337,12 @@ class ClienteController extends Controller
     {
         $convenio_id = request('convenio');
         
-        // Obtener el precio actual de la membresía
+        // Obtener la membresía y su precio actual
+        $membresia = Membresia::find($membresia_id);
+        if (!$membresia) {
+            return response()->json(['error' => 'Membresía no encontrada'], 404);
+        }
+        
         $precioActual = PrecioMembresia::where('id_membresia', $membresia_id)
             ->where(function ($query) {
                 $query->whereNull('fecha_vigencia_hasta')
@@ -350,22 +355,19 @@ class ClienteController extends Controller
             return response()->json(['error' => 'Precio no encontrado'], 404);
         }
         
-        $precioNormal = $precioActual->precio_normal;
-        $precioFinal = $precioNormal;
-        $descuento = 0;
+        $precioBase = (int) $precioActual->precio_normal;
+        $precioFinal = $precioBase;
         
-        // Si hay convenio y existe precio_convenio, aplicar descuento
+        // Si hay convenio, aplicar descuento
         if ($convenio_id && $precioActual->precio_convenio) {
-            $precioFinal = $precioActual->precio_convenio;
-            $descuento = $precioNormal - $precioFinal;
+            $precioFinal = (int) $precioActual->precio_convenio;
         }
         
         return response()->json([
-            'precio_normal' => $precioNormal,
-            'precio_convenio' => $precioActual->precio_convenio,
+            'precio_base' => $precioBase,
             'precio_final' => $precioFinal,
-            'descuento' => $descuento,
-            'tiene_descuento' => $descuento > 0
+            'duracion_dias' => (int) $membresia->duracion_dias,
+            'nombre' => $membresia->nombre
         ]);
     }
 }
