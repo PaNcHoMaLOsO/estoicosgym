@@ -134,10 +134,50 @@ class DashboardController extends Controller
             ->count();
         $tasaConversion = $inscripcionesActivas > 0 ? ($totalInscripcionesEsteMes / $inscripcionesActivas) * 100 : 0;
 
+        // ========== NUEVAS MÉTRICAS CRÍTICAS ==========
+        
+        // 1. Ingresos mes anterior
+        $ingresosMesAnterior = Pago::whereYear('fecha_pago', now()->subMonth()->year)
+            ->whereMonth('fecha_pago', now()->subMonth()->month)
+            ->sum('monto_abonado');
+        $variacionIngresos = $ingresosMesAnterior > 0 ? (($ingresosMes - $ingresosMesAnterior) / $ingresosMesAnterior) * 100 : 0;
+        
+        // 2. Clientes nuevos mes anterior
+        $clientesNuevosAnterior = Inscripcion::whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->count();
+        $variacionClientes = $clientesNuevosAnterior > 0 ? (($totalInscripcionesEsteMes - $clientesNuevosAnterior) / $clientesNuevosAnterior) * 100 : 0;
+        
+        // 3. Ticket promedio (monto promedio por pago)
+        $ticketPromedio = Pago::avg('monto_abonado') ?? 0;
+        
+        // 4. Tasa de cobranza (pagos completados vs pendientes)
+        $totalPagos = Pago::count();
+        $pagosPendientes = Estado::where('nombre', 'Pendiente')->first();
+        $countPagosPendientes = $pagosPendientes ? Pago::where('id_estado', $pagosPendientes->id)->count() : 0;
+        $tasaCobranza = $totalPagos > 0 ? (($totalPagos - $countPagosPendientes) / $totalPagos) * 100 : 0;
+        
+        // 5. Membresía con más ingresos (no solo cantidad, sino dinero real)
+        $membresiasIngresos = Pago::with(['inscripcion.membresia'])
+            ->join('inscripciones', 'pagos.id_inscripcion', '=', 'inscripciones.id')
+            ->select('inscripciones.id_membresia', 'membresias.nombre', DB::raw('SUM(pagos.monto_abonado) as totalIngresos'))
+            ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
+            ->groupBy('inscripciones.id_membresia', 'membresias.nombre')
+            ->orderByDesc('totalIngresos')
+            ->take(3)
+            ->get();
+        
+        // 6. Pagos vencidos (estado = Vencido, no membresías vencidas)
+        $estadoVencidoPago = Estado::where('nombre', 'Vencido')->first();
+        $pagosVencidos = $estadoVencidoPago ? Pago::where('id_estado', $estadoVencidoPago->id)->count() : 0;
+        $montoPagosVencidos = $estadoVencidoPago ? Pago::where('id_estado', $estadoVencidoPago->id)->sum('monto_abonado') : 0;
+
         return view('dashboard.index', compact(
             'totalClientes',
             'inscripcionesActivas',
             'ingresosMes',
+            'ingresosMesAnterior',
+            'variacionIngresos',
             'porVencer7Dias',
             'etiquetasMembresias',
             'datosMembresias',
@@ -156,7 +196,14 @@ class DashboardController extends Controller
             'inscripcionesCanceladas',
             'inscripcionesSuspendidas',
             'totalInscripcionesEsteMes',
-            'tasaConversion'
+            'clientesNuevosAnterior',
+            'variacionClientes',
+            'tasaConversion',
+            'ticketPromedio',
+            'tasaCobranza',
+            'membresiasIngresos',
+            'pagosVencidos',
+            'montoPagosVencidos'
         ));
     }
 }
