@@ -685,8 +685,11 @@
         function goToStep(step) {
             if (step < 1 || step > totalSteps) return;
             
-            // Validar paso actual antes de avanzar
-            if (step > currentStep && !validateStep(currentStep)) return;
+            // Validar paso actual SOLO si estamos avanzando (no si retrocedemos o clickeamos en botón completado)
+            if (step > currentStep && !validateStep(currentStep)) {
+                // Si no valida y estamos avanzando, mostrar error
+                return;
+            }
             
             // Ocultar todos los pasos
             document.querySelectorAll('.step-indicator').forEach(el => {
@@ -755,12 +758,14 @@
                 
                 if (i < currentStep) {
                     btn.classList.add('completed');
-                    btn.disabled = false;
+                    btn.disabled = false;  // Habilitar pasos anteriores (ya completados)
                 } else if (i === currentStep) {
                     btn.classList.add('active');
-                    btn.disabled = false;
+                    btn.disabled = false;  // Habilitar paso actual
+                } else if (i === currentStep + 1) {
+                    btn.disabled = false;  // Habilitar siguiente paso (para poder ver membresía antes de guardar)
                 } else {
-                    btn.disabled = true;
+                    btn.disabled = true;   // Deshabilitar pasos futuros
                 }
             }
         }
