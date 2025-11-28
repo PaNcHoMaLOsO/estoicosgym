@@ -112,8 +112,8 @@
                         <i class="fas fa-pie-chart"></i> Inscripciones por Estado
                     </h3>
                 </div>
-                <div class="card-body">
-                    <canvas id="chartEstados" height="140"></canvas>
+                <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 300px; padding: 20px;">
+                    <canvas id="chartEstados"></canvas>
                 </div>
             </div>
         </div>
@@ -358,9 +358,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         // Datos de INSCRIPCIONES por estado
-        const ETIQUETAS_INSCRIPCIONES = @json($etiquetasInscripciones);
-        const DATOS_INSCRIPCIONES = @json($datosInscripciones);
-        const COLORES_INSCRIPCIONES = @json($coloresInscripcionesDispuestos);
+        const inscripcionesPorEstado = @json($inscripcionesPorEstado);
 
         // Datos de INGRESOS por mes
         const ETIQUETAS_MESES = @json($etiquetasMeses);
@@ -383,7 +381,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: true,
@@ -403,35 +401,48 @@
             }
         });
 
-        // Gráfico de INSCRIPCIONES por Estado (Dona)
-        const ctxInscripciones = document.getElementById('chartEstados').getContext('2d');
-        new Chart(ctxInscripciones, {
-            type: 'doughnut',
-            data: {
-                labels: ETIQUETAS_INSCRIPCIONES,
-                datasets: [{
-                    data: DATOS_INSCRIPCIONES,
-                    backgroundColor: COLORES_INSCRIPCIONES,
-                    borderColor: '#fff',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 12
+        // Gráfico de INSCRIPCIONES por Estado (Dona) - SOLO INSCRIPCIONES
+        setTimeout(function() {
+            const ctxInscripciones = document.getElementById('chartEstados');
+            if (ctxInscripciones) {
+                const ctx = ctxInscripciones.getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Activa', 'Pausada', 'Vencida', 'Cancelada', 'Suspendida'],
+                        datasets: [{
+                            data: [
+                                inscripcionesPorEstado['Activa'] ?? 0,
+                                inscripcionesPorEstado['Pausada'] ?? 0,
+                                inscripcionesPorEstado['Vencida'] ?? 0,
+                                inscripcionesPorEstado['Cancelada'] ?? 0,
+                                inscripcionesPorEstado['Suspendida'] ?? 0
+                            ],
+                            backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d', '#fd7e14'],
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 11,
+                                        weight: '500'
+                                    },
+                                    usePointStyle: true
+                                }
                             }
                         }
                     }
-                }
+                });
             }
-        });
+        }, 100);
     </script>
 @endpush
 
