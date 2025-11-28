@@ -384,7 +384,7 @@
                                     <form action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn-action btn-delete" onclick="return confirm('¿Estás seguro de que deseas eliminar este cliente?')" title="Eliminar">
+                                        <button type="submit" class="btn-action btn-delete" title="Eliminar">
                                             <i class="fas fa-trash"></i> Eliminar
                                         </button>
                                     </form>
@@ -444,5 +444,47 @@
         document.getElementById('filterStatus').addEventListener('change', function() {
             document.getElementById('searchInput').dispatchEvent(new Event('keyup'));
         });
-    </script>
+
+        // Confirmación de eliminación con SweetAlert2
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-delete')) {
+                e.preventDefault();
+                
+                const form = e.target.closest('form');
+                const clienteNombre = e.target.closest('tr').querySelector('strong')?.textContent || 'este cliente';
+                
+                Swal.fire({
+                    title: '¿Eliminar Cliente?',
+                    html: `<div style="text-align: left; font-size: 0.95em; color: #555;">
+                        <p style="margin: 15px 0;"><i class="fas fa-exclamation-triangle" style="color: #ff6b6b; margin-right: 8px;"></i>Vas a eliminar: <strong>${clienteNombre}</strong></p>
+                        <p style="margin: 10px 0; font-size: 0.9em; color: #999;">Esta acción es irreversible. Perderás todos sus datos.</p>
+                    </div>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Eliminar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'swal2-popup-custom'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Mostrar loading
+                        Swal.fire({
+                            title: 'Eliminando...',
+                            html: '<i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #667eea;"></i>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                // Enviar el formulario
+                                form.submit();
+                            }
+                        });
+                    }
+                });
+            }
+        });
 @stop

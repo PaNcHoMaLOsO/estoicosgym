@@ -364,56 +364,55 @@
         @endif
     </div>
 
-    <!-- MODAL REACTIVAR -->
-    <div class="modal fade" id="reactivarClienteModal" tabindex="-1" role="dialog" aria-labelledby="reactivarClienteLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0">
-                <div class="modal-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border: 0;">
-                    <h5 class="modal-title" id="reactivarClienteLabel">
-                        <i class="fas fa-undo"></i> Reactivar Cliente
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div style="background: linear-gradient(135deg, #f0fff4 0%, #e8f8f0 100%); border: 2px solid #11998e; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
-                        <h6 style="color: #155724; font-weight: 700; margin: 0;">
-                            <i class="fas fa-question-circle"></i> ¿Reactivar Cliente?
-                        </h6>
-                    </div>
-                    <p>Estás a punto de <strong>reactivar a <span id="nombreCliente"></span></strong>.</p>
-                    <hr>
-                    <h6 style="font-weight: 700; margin-bottom: 1rem;">¿Qué sucede al reactivar?</h6>
-                    <ul style="color: #495057; margin-bottom: 1rem;">
-                        <li><i class="fas fa-check text-success"></i> El cliente volverá al estado <strong>ACTIVO</strong></li>
-                        <li><i class="fas fa-check text-success"></i> Aparecerá en el <strong>listado principal</strong></li>
-                        <li><i class="fas fa-check text-success"></i> Todo su <strong>historial se preserva</strong></li>
-                        <li><i class="fas fa-check text-success"></i> Podrá crear <strong>nuevas inscripciones</strong></li>
-                    </ul>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <form id="formReactivar" method="POST" style="display:inline;">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="btn" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border: 0;">
-                            <i class="fas fa-undo"></i> Sí, Reactivar
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- FORM REACTIVAR (OCULTO - USADO POR SWEETALERT2) -->
+    <form id="formReactivar" method="POST" style="display:none;">
+        @csrf
+        @method('PATCH')
+    </form>
 
     <script>
         function confirmarReactivacion(clienteId, nombre) {
-            document.getElementById('nombreCliente').textContent = nombre;
-            const actionUrl = "{{ route('admin.clientes.reactivate', ':id') }}".replace(':id', clienteId);
-            document.getElementById('formReactivar').action = actionUrl;
-            $('#reactivarClienteModal').modal('show');
+            Swal.fire({
+                title: '¿Reactivar Cliente?',
+                html: `
+                    <div style="text-align: left;">
+                        <p style="margin-bottom: 1rem;">Estás a punto de <strong>reactivar a ${nombre}</strong>.</p>
+                        <div style="background: linear-gradient(135deg, #f0fff4 0%, #e8f8f0 100%); border: 2px solid #11998e; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                            <h6 style="color: #155724; font-weight: 700; margin: 0 0 0.5rem 0;">¿Qué sucede al reactivar?</h6>
+                            <ul style="color: #495057; margin: 0; padding-left: 1.5rem;">
+                                <li><i class="fas fa-check text-success"></i> El cliente volverá al estado <strong>ACTIVO</strong></li>
+                                <li><i class="fas fa-check text-success"></i> Aparecerá en el <strong>listado principal</strong></li>
+                                <li><i class="fas fa-check text-success"></i> Todo su <strong>historial se preserva</strong></li>
+                                <li><i class="fas fa-check text-success"></i> Podrá crear <strong>nuevas inscripciones</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-undo"></i> Sí, Reactivar',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                confirmButtonColor: '#11998e',
+                cancelButtonColor: '#6c757d',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const actionUrl = "{{ route('admin.clientes.reactivate', ':id') }}".replace(':id', clienteId);
+                    document.getElementById('formReactivar').action = actionUrl;
+                    
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Procesando...',
+                        html: '<div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div>',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            document.getElementById('formReactivar').submit();
+                        }
+                    });
+                }
+            });
         }
     </script>
 @stop

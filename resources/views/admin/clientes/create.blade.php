@@ -66,39 +66,11 @@
             font-size: 1.2em;
         }
 
-        /* ===== VALIDATION ALERTS ===== */
-        .validation-alert {
-            display: none;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
-            border: 0;
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-            color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-        }
-
-        .validation-alert.show {
-            display: block;
-        }
-
-        .validation-alert h5 {
-            margin-top: 0;
-            margin-bottom: 0.75rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .validation-alert ul {
-            margin-bottom: 0;
-            padding-left: 1.5rem;
-        }
-
-        .validation-alert li {
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
+        /* ===== SWEETALERT2 CUSTOM STYLES ===== */
+        .swal2-popup-custom {
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
         }
 
         /* ===== FORM SECTIONS ===== */
@@ -603,8 +575,6 @@
         </div>
     </div>
 
-    <div id="errorAlert" class="validation-alert"></div>
-
     <script>
         let currentStep = 1;
         const totalSteps = 3;
@@ -623,41 +593,91 @@
             if (!validateStep(currentStep)) {
                 return false;
             }
+
+            // Determinar el tipo de operación según el botón clickeado
+            const flujoInput = document.getElementById('flujo_cliente');
+            let titulo = '';
+            let mensaje = '';
+            let icono = 'question';
             
-            // Deshabilitar botón y mostrar spinner
-            const btnGuardar = document.getElementById('btn-guardar');
-            const btnText = document.getElementById('btn-text');
-            const btnSpinner = document.getElementById('btn-spinner');
+            if (flujoInput.value === 'solo_cliente') {
+                titulo = '¿Guardar Cliente?';
+                mensaje = 'Se registrará solo el cliente sin membresía ni pago.';
+                icono = 'info';
+            } else if (flujoInput.value === 'con_membresia') {
+                titulo = '¿Guardar Cliente + Membresía?';
+                mensaje = 'Se registrará el cliente con membresía. El pago quedará pendiente.';
+                icono = 'info';
+            } else if (flujoInput.value === 'completo') {
+                titulo = '¿Guardar Todo?';
+                mensaje = 'Se registrará el cliente, membresía y pago. Esta acción no se puede deshacer.';
+                icono = 'warning';
+            }
+            
+            // Mostrar confirmación con SweetAlert2
+            Swal.fire({
+                title: titulo,
+                html: `<div style="text-align: left; font-size: 0.95em; color: #555; margin: 15px 0;">
+                    <i class="fas fa-info-circle" style="color: #667eea; margin-right: 8px;"></i>
+                    ${mensaje}
+                </div>`,
+                icon: icono,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, Guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'swal2-popup-custom'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Proceder con el envío
+                    procederConGuardado();
+                }
+            });
+            
+            return false;
+        }
+
+        function procederConGuardado() {
+            const isSubmitting = true;
             const formToken = document.getElementById('form_submit_token');
             
-            // Marcar como enviando
-            isSubmitting = true;
+            // Obtener el botón activo según el flujo
+            const flujoInput = document.getElementById('flujo_cliente');
+            let btn, btnText, btnSpinner;
+            
+            if (flujoInput.value === 'solo_cliente') {
+                btn = document.getElementById('btn-guardar-solo-cliente');
+            } else if (flujoInput.value === 'con_membresia') {
+                btn = document.getElementById('btn-guardar-con-membresia');
+            } else {
+                btn = document.getElementById('btn-guardar-completo');
+            }
+            
+            if (!btn) return;
             
             // UI feedback
-            btnGuardar.disabled = true;
-            btnText.textContent = 'Procesando...';
-            btnSpinner.style.display = 'inline';
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
             
             // Generar nuevo token para evitar reenvíos
             formToken.value = '{{ uniqid() }}-' + Date.now();
             
-            // Enviar formulario después de un pequeño delay para asegurar que los cambios de UI se vean
+            // Enviar formulario después de un pequeño delay
             setTimeout(() => {
                 document.getElementById('clienteForm').submit();
             }, 100);
             
             // Timeout de seguridad - rehabilitar después de 5 segundos
             setTimeout(() => {
-                if (isSubmitting) {
-                    isSubmitting = false;
-                    btnGuardar.disabled = false;
-                    btnText.textContent = 'Guardar Cliente';
-                    btnSpinner.style.display = 'none';
-                    showValidationAlert(['Error de conexión. Intente nuevamente.']);
-                }
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                showValidationAlert(['Error de conexión. Intente nuevamente.']);
             }, 5000);
-            
-            return false; // El formulario se envía manualmente
         }
 
         function goToStep(step) {
@@ -783,24 +803,23 @@
         }
 
         function showValidationAlert(fields) {
-            const alert = document.getElementById('errorAlert');
-            
-            let html = '<h5><i class="fas fa-exclamation-circle"></i> Campos Requeridos</h5><ul>';
+            let html = '<div style="text-align: left;">';
             fields.forEach(field => {
-                html += `<li><strong>${field}</strong> es requerido</li>`;
+                html += `<div style="margin: 8px 0; font-size: 0.95em;"><i class="fas fa-circle-xmark" style="color: #dc3545; margin-right: 8px;"></i><strong>${field}</strong> es requerido</div>`;
             });
-            html += '</ul>';
+            html += '</div>';
             
-            alert.innerHTML = html;
-            alert.classList.add('show');
-            
-            // Auto-hide después de 5 segundos
-            setTimeout(() => {
-                alert.classList.remove('show');
-            }, 5000);
-            
-            // Scroll al alert
-            alert.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            Swal.fire({
+                title: 'Campos Requeridos',
+                html: html,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#667eea',
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'swal2-popup-custom'
+                }
+            });
         }
 
         function actualizarPrecio() {
