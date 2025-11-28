@@ -123,12 +123,18 @@ class DashboardController extends Controller
         // Datos para gráfico de INSCRIPCIONES por estado
         $etiquetasInscripciones = $inscripcionesPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
         $datosInscripciones = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
-        $coloresInscripcionesDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresInscripciones[$d->estado->color ?? 'secondary'])->toArray();
+        $coloresInscripcionesDispuestos = $inscripcionesPorEstado->map(function($d) use ($coloresInscripciones) {
+            $color = $d->estado->color ?? 'secondary';
+            return $coloresInscripciones[$color] ?? $coloresInscripciones['secondary'];
+        })->toArray();
         
         // Datos para gráfico de PAGOS por estado
         $etiquetasPagos = $pagosPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
         $datosPagos = $pagosPorEstado->map(fn($d) => (int)$d->total)->toArray();
-        $coloresPagosDispuestos = $pagosPorEstado->map(fn($d) => $coloresPagos[$d->estado->color ?? 'secondary'])->toArray();
+        $coloresPagosDispuestos = $pagosPorEstado->map(function($d) use ($coloresPagos) {
+            $color = $d->estado->color ?? 'secondary';
+            return $coloresPagos[$color] ?? $coloresPagos['secondary'];
+        })->toArray();
         
         return view('dashboard.index', compact(
             'totalClientes',
