@@ -409,7 +409,9 @@
             </nav>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
         // Búsqueda en tiempo real
         document.getElementById('searchInput').addEventListener('keyup', function(e) {
@@ -487,4 +489,5 @@
                 });
             }
         });
-@stop
+    </script>
+@endpush

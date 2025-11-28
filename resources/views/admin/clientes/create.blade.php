@@ -574,7 +574,9 @@
             </form>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
         let currentStep = 1;
         const totalSteps = 3;
@@ -968,4 +970,4 @@
             });
         }
     </script>
-@stop
+@endpush

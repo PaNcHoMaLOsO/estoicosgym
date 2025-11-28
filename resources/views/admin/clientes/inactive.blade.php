@@ -370,6 +370,9 @@
         @method('PATCH')
     </form>
 
+@endsection
+
+@push('scripts')
     <script>
         function confirmarReactivacion(clienteId, nombre) {
             Swal.fire({
@@ -415,4 +418,4 @@
             });
         }
     </script>
-@stop
+@endpush
