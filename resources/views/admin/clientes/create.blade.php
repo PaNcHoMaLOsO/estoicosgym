@@ -369,6 +369,63 @@
                         </div>
                     </div>
 
+                    <!-- CONTACTO DE EMERGENCIA -->
+                    <div class="form-section-title">
+                        <i class="fas fa-heart-pulse"></i> Contacto de Emergencia
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="contacto_emergencia" class="form-label">Nombre del Contacto</label>
+                            <input type="text" class="form-control @error('contacto_emergencia') is-invalid @enderror" 
+                                   id="contacto_emergencia" name="contacto_emergencia" placeholder="Ej: Juan García" 
+                                   value="{{ old('contacto_emergencia') }}">
+                            @error('contacto_emergencia')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono_emergencia" class="form-label">Teléfono del Contacto</label>
+                            <input type="tel" class="form-control @error('telefono_emergencia') is-invalid @enderror" 
+                                   id="telefono_emergencia" name="telefono_emergencia" placeholder="+56912345678" 
+                                   value="{{ old('telefono_emergencia') }}">
+                            @error('telefono_emergencia')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- DOMICILIO -->
+                    <div class="form-section-title">
+                        <i class="fas fa-map-marker-alt"></i> Domicilio
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
+                                   id="direccion" name="direccion" placeholder="Calle, número, apartado..." 
+                                   value="{{ old('direccion') }}">
+                            @error('direccion')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- OBSERVACIONES -->
+                    <div class="form-section-title">
+                        <i class="fas fa-sticky-note"></i> Observaciones
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="observaciones" class="form-label">Notas Adicionales</label>
+                            <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                                      id="observaciones" name="observaciones" rows="3" 
+                                      placeholder="Información adicional del cliente...">{{ old('observaciones') }}</textarea>
+                            @error('observaciones')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- ============ PASO 2: MEMBRESÍA E INSCRIPCIÓN ============ -->
@@ -760,9 +817,53 @@
             // Validar RUT en tiempo real
             const rutInput = document.getElementById('run_pasaporte');
             rutInput.addEventListener('blur', validarRutAjax);
+            rutInput.addEventListener('input', formatearRutEnTiempoReal);
         });
 
-        // Validar RUT con API (en tiempo real mientras escribe)
+        // Formatear RUT automáticamente mientras se escribe (sin validar todavía)
+        function formatearRutEnTiempoReal() {
+            const rutInput = document.getElementById('run_pasaporte');
+            let rut = rutInput.value.trim();
+
+            if (!rut) {
+                rutInput.classList.remove('is-invalid', 'is-valid');
+                return;
+            }
+
+            // Solo caracteres válidos: números, K, puntos, guion, espacios
+            rut = rut.toUpperCase().replace(/[^0-9K.\-\s]/g, '');
+
+            // Si solo tiene números o K, formatear automáticamente
+            if (/^[\d\s\.\-K]+$/.test(rut)) {
+                // Limpiar espacios
+                let rutLimpio = rut.replace(/\s/g, '').replace(/\./g, '').replace(/\-/g, '');
+                
+                if (rutLimpio.length > 0) {
+                    // Si tiene 7-9 caracteres, formatear a XX.XXX.XXX-X
+                    if (rutLimpio.length >= 7 && rutLimpio.length <= 9) {
+                        // Obtener el dígito verificador (último carácter)
+                        let dv = rutLimpio.substring(rutLimpio.length - 1);
+                        let numero = rutLimpio.substring(0, rutLimpio.length - 1);
+                        
+                        // Formatear con puntos
+                        if (numero.length <= 1) {
+                            rutInput.value = numero + '-' + dv;
+                        } else if (numero.length <= 4) {
+                            let p1 = numero.substring(0, numero.length - 3);
+                            let p2 = numero.substring(numero.length - 3);
+                            rutInput.value = p1 + '.' + p2 + '-' + dv;
+                        } else {
+                            let p1 = numero.substring(0, numero.length - 6);
+                            let p2 = numero.substring(numero.length - 6, numero.length - 3);
+                            let p3 = numero.substring(numero.length - 3);
+                            rutInput.value = p1 + '.' + p2 + '.' + p3 + '-' + dv;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Validar RUT con API (en tiempo real al perder foco)
         function validarRutAjax() {
             const rutInput = document.getElementById('run_pasaporte');
             const rut = rutInput.value.trim();
@@ -785,8 +886,14 @@
                 if (data.valid) {
                     rutInput.classList.remove('is-invalid');
                     rutInput.classList.add('is-valid');
-                    // Formatear el RUT automáticamente
+                    // Formatear el RUT con el formato correcto del servidor
                     rutInput.value = data.rut_formateado;
+                    
+                    // Limpiar mensaje de error si existe
+                    let feedback = rutInput.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.remove();
+                    }
                 } else {
                     rutInput.classList.remove('is-valid');
                     rutInput.classList.add('is-invalid');
