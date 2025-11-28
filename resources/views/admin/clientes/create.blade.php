@@ -585,6 +585,16 @@
         function handleFormSubmit(event) {
             event.preventDefault();
             
+            // ⚠️ SUBMIT DIRECTO - SIN VALIDACIONES NI CONFIRMACIÓN (TESTING)
+            console.log('handleFormSubmit - flujo:', document.getElementById('flujo_cliente').value);
+            document.getElementById('clienteForm').submit();
+            return false;
+        }
+
+        /* FUNCIÓN ORIGINAL COMENTADA:
+        function handleFormSubmitOriginal(event) {
+            event.preventDefault();
+            
             // Prevenir doble envío
             if (isSubmitting) {
                 console.warn('Formulario ya se está enviando...');
@@ -642,6 +652,7 @@
             
             return false;
         }
+        */
 
         function procederConGuardado() {
             const isSubmitting = true;
@@ -683,14 +694,14 @@
         }
 
         function goToStep(step) {
-            if (step < 1 || step > totalSteps) return;
+            console.log('goToStep(' + step + ') - Cambiar a paso ' + step);
             
-            // Validar paso actual SOLO si estamos avanzando (no si retrocedemos o clickeamos en botón completado)
-            if (step > currentStep && !validateStep(currentStep)) {
-                // Si no valida y estamos avanzando, mostrar error
+            if (step < 1 || step > totalSteps) {
+                console.warn('Paso inválido:', step);
                 return;
             }
             
+            // ⚠️ TESTING - NO VALIDAR, SOLO CAMBIAR DE PASO
             // Ocultar todos los pasos
             document.querySelectorAll('.step-indicator').forEach(el => {
                 el.classList.remove('active');
@@ -724,18 +735,21 @@
                 btnSiguiente.style.display = 'block';
                 btnGuardarSoloCliente.style.display = 'block';
                 flujoInput.value = 'solo_cliente';
+                console.log('Paso 1 - Botones: [Siguiente] [Guardar Cliente]');
             } else if (step === 2) {
                 // PASO 2: Mostrar opción de guardar cliente + membresía
                 btnAnterior.style.display = 'block';
                 btnSiguiente.style.display = 'block';
                 btnGuardarConMembresia.style.display = 'block';
                 flujoInput.value = 'con_membresia';
+                console.log('Paso 2 - Botones: [Anterior] [Siguiente] [Guardar con Membresía]');
             } else if (step === totalSteps) {
                 // PASO 3: Mostrar opción de guardar todo completo
                 btnAnterior.style.display = 'block';
                 btnSiguiente.style.display = 'none';
                 btnGuardarCompleto.style.display = 'block';
                 flujoInput.value = 'completo';
+                console.log('Paso 3 - Botones: [Anterior] [Guardar Todo]');
             }
         }
 
@@ -771,6 +785,14 @@
         }
 
         function validateStep(step) {
+            // ⚠️ VALIDACIONES DESHABILITADAS - SOLO PARA TESTING DEL FLUJO
+            console.log('validateStep(' + step + ') - DESHABILITADO - retorna TRUE');
+            return true;
+        }
+
+        // FUNCIÓN ORIGINAL COMENTADA (para referencia):
+        /*
+        function validateStepOriginal(step) {
             const fieldLabels = {
                 'run_pasaporte': 'RUT/Pasaporte',
                 'nombres': 'Nombres',
@@ -811,6 +833,7 @@
             }
             return true;
         }
+        */
 
         function showValidationAlert(fields) {
             let html = '<div style="text-align: left;">';
