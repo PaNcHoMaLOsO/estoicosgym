@@ -100,20 +100,33 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        // ========== MÉTODOS DE PAGO MÁS USADOS ==========
-        $metodosPagoMasUsados = MetodoPago::withCount('pagos')
-            ->orderByDesc('pagos_count')
-            ->limit(5)
-            ->get();
+        // ========== MÉTODOS DE PAGO (PAGADOS) ==========
+        $estadoPagado = Estado::where('nombre', 'Pagado')->first();
+        $metodosPagoPopulares = $estadoPagado
+            ? Pago::where('id_estado', $estadoPagado->id)
+                ->select('id_metodo_pago', DB::raw('count(*) as total'))
+                ->groupBy('id_metodo_pago')
+                ->with('metodoPago')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+            : collect([]);
+
+        $etiquetasMetodosPago = $metodosPagoPopulares->pluck('metodoPago.nombre')->toArray();
+        $datosMetodosPago = $metodosPagoPopulares->pluck('total')->map(fn($v) => (int)$v)->toArray();
 
         // ========== RESUMEN DE ESTADOS DE INSCRIPCIONES ==========
-        $estadosPausada = Estado::where('nombre', 'Pausada')->first();
+        $estadoActiva = Estado::where('nombre', 'Activa')->first();
+        $estadoPausada = Estado::where('nombre', 'Pausada')->first();
         $estadoVencida = Estado::where('nombre', 'Vencida')->first();
         $estadoCancelada = Estado::where('nombre', 'Cancelada')->first();
+        $estadoSuspendida = Estado::where('nombre', 'Suspendida')->first();
         
-        $inscripcionesPausadas = $estadosPausada ? Inscripcion::where('id_estado', $estadosPausada->id)->count() : 0;
+        $inscripcionesActivas = $estadoActiva ? Inscripcion::where('id_estado', $estadoActiva->id)->count() : 0;
+        $inscripcionesPausadas = $estadoPausada ? Inscripcion::where('id_estado', $estadoPausada->id)->count() : 0;
         $inscripcionesVencidas = $estadoVencida ? Inscripcion::where('id_estado', $estadoVencida->id)->count() : 0;
         $inscripcionesCanceladas = $estadoCancelada ? Inscripcion::where('id_estado', $estadoCancelada->id)->count() : 0;
+        $inscripcionesSuspendidas = $estadoSuspendida ? Inscripcion::where('id_estado', $estadoSuspendida->id)->count() : 0;
 
         // ========== TASA DE CONVERSIÓN MENSUAL ==========
         $totalInscripcionesEsteMes = Inscripcion::whereMonth('created_at', now()->month)
@@ -135,10 +148,13 @@ class DashboardController extends Controller
             'maxMembresias',
             'ultimosPagos',
             'inscripcionesRecientes',
-            'metodosPagoMasUsados',
+            'etiquetasMetodosPago',
+            'datosMetodosPago',
+            'inscripcionesActivas',
             'inscripcionesPausadas',
             'inscripcionesVencidas',
             'inscripcionesCanceladas',
+            'inscripcionesSuspendidas',
             'totalInscripcionesEsteMes',
             'tasaConversion'
         ));
