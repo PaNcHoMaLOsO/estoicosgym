@@ -990,5 +990,3 @@
         });
     </script>
 @endsection
-
-@stop
