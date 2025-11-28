@@ -43,6 +43,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
     Route::patch('clientes/{cliente}/desactivar', [ClienteController::class, 'deactivate'])->name('clientes.deactivate');
     
+    // RUTA SIMPLE DE DEBUG
+    Route::get('clientes/create-simple', function() {
+        $convenios = \App\Models\Convenio::where('activo', true)->get();
+        $membresias = \App\Models\Membresia::where('activo', true)->get();
+        $metodos_pago = \App\Models\MetodoPago::all();
+        return view('admin.clientes.create_simple', compact('convenios', 'membresias', 'metodos_pago'));
+    })->name('clientes.create-simple');
+    
     // CRUD Clientes
     Route::resource('clientes', ClienteController::class);
 

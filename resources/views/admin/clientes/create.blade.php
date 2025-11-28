@@ -3,6 +3,144 @@
 @section('title', 'Crear Cliente - EstóicosGym')
 
 @section('css')
+    <script>
+        // ✅ FUNCIONES DEFINIDAS AQUÍ PARA ASEGURAR QUE EXISTEN ANTES DE QUE EL HTML LAS LLAME
+        let currentStep = 1;
+        const totalSteps = 3;
+        let isSubmitting = false;
+
+        console.log('========== FUNCIONES JAVASCRIPT INICIALIZADAS ==========');
+        console.log('currentStep:', currentStep);
+        console.log('totalSteps:', totalSteps);
+        console.log('Funciones disponibles: nextStep, previousStep, goToStep, validateStep');
+        console.log('=======================================================');
+
+        function nextStep() {
+            console.log('🔵 nextStep() LLAMADO - currentStep:', currentStep, 'totalSteps:', totalSteps);
+            if (currentStep < totalSteps) {
+                console.log('🔵 Avanzando a paso:', currentStep + 1);
+                goToStep(currentStep + 1);
+            } else {
+                console.log('🔴 YA ESTÁS EN EL ÚLTIMO PASO (paso', currentStep, ')');
+            }
+        }
+
+        function previousStep() {
+            console.log('🔵 previousStep() LLAMADO - currentStep:', currentStep);
+            if (currentStep > 1) {
+                console.log('🔵 Retrocediendo a paso:', currentStep - 1);
+                goToStep(currentStep - 1);
+            } else {
+                console.log('🔴 YA ESTÁS EN EL PRIMER PASO');
+            }
+        }
+
+        function goToStep(step) {
+            console.log('🟡 goToStep(' + step + ') - Cambiar a paso ' + step);
+            
+            if (step < 1 || step > totalSteps) {
+                console.error('🔴 Paso INVÁLIDO:', step, '(debe ser 1-' + totalSteps + ')');
+                return;
+            }
+            
+            // Ocultar todos los pasos
+            console.log('🟡 Ocultando todos los pasos...');
+            document.querySelectorAll('.step-indicator').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Mostrar paso actual
+            const stepElement = document.getElementById(`step-${step}`);
+            if (!stepElement) {
+                console.error('🔴 NO ENCONTRÉ elemento #step-' + step);
+                return;
+            }
+            
+            console.log('🟡 Mostrando paso:', step);
+            stepElement.classList.add('active');
+            currentStep = step;
+            
+            // Actualizar indicadores
+            updateStepIndicators();
+            
+            // Actualizar botones según el paso
+            const btnAnterior = document.getElementById('btn-anterior');
+            const btnSiguiente = document.getElementById('btn-siguiente');
+            const btnGuardarSoloCliente = document.getElementById('btn-guardar-solo-cliente');
+            const btnGuardarConMembresia = document.getElementById('btn-guardar-con-membresia');
+            const btnGuardarCompleto = document.getElementById('btn-guardar-completo');
+            const flujoInput = document.getElementById('flujo_cliente');
+            
+            console.log('🟡 Elementos de botones encontrados:', {
+                btnAnterior: !!btnAnterior,
+                btnSiguiente: !!btnSiguiente,
+                btnGuardarSoloCliente: !!btnGuardarSoloCliente,
+                btnGuardarConMembresia: !!btnGuardarConMembresia,
+                btnGuardarCompleto: !!btnGuardarCompleto
+            });
+            
+            // Ocultar todos los botones de guardado
+            btnGuardarSoloCliente.style.display = 'none';
+            btnGuardarConMembresia.style.display = 'none';
+            btnGuardarCompleto.style.display = 'none';
+            btnSiguiente.style.display = 'none';
+            btnAnterior.style.display = 'none';
+            
+            if (step === 1) {
+                // PASO 1: Mostrar opción de guardar solo cliente
+                btnAnterior.style.display = 'none';
+                btnSiguiente.style.display = 'block';
+                btnGuardarSoloCliente.style.display = 'block';
+                flujoInput.value = 'solo_cliente';
+                console.log('✅ PASO 1 - Botones mostrados: [Siguiente] [Guardar Cliente]');
+            } else if (step === 2) {
+                // PASO 2: Mostrar opción de guardar cliente + membresía
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'block';
+                btnGuardarConMembresia.style.display = 'block';
+                flujoInput.value = 'con_membresia';
+                console.log('✅ PASO 2 - Botones mostrados: [Anterior] [Siguiente] [Guardar con Membresía]');
+            } else if (step === totalSteps) {
+                // PASO 3: Mostrar opción de guardar todo completo
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'none';
+                btnGuardarCompleto.style.display = 'block';
+                flujoInput.value = 'completo';
+                console.log('✅ PASO 3 - Botones mostrados: [Anterior] [Guardar Todo]');
+            }
+        }
+
+        function updateStepIndicators() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const btn = document.getElementById(`step${i}-btn`);
+                btn.classList.remove('active', 'completed');
+                
+                if (i < currentStep) {
+                    btn.classList.add('completed');
+                    btn.disabled = false;
+                } else if (i === currentStep) {
+                    btn.classList.add('active');
+                    btn.disabled = false;
+                } else if (i === currentStep + 1) {
+                    btn.disabled = false;
+                } else {
+                    btn.disabled = true;
+                }
+            }
+        }
+
+        function validateStep(step) {
+            console.log('validateStep(' + step + ') - DESHABILITADO - retorna TRUE');
+            return true;
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            console.log('handleFormSubmit - flujo:', document.getElementById('flujo_cliente').value);
+            document.getElementById('clienteForm').submit();
+            return false;
+        }
+    </script>
     <style>
         /* ===== STEP NAVIGATION ===== */
         .step-indicator { display: none; }
@@ -578,283 +716,7 @@
 
 @push('scripts')
     <script>
-        let currentStep = 1;
-        const totalSteps = 3;
-        let isSubmitting = false;
-
-        function handleFormSubmit(event) {
-            event.preventDefault();
-            
-            // ⚠️ SUBMIT DIRECTO - SIN VALIDACIONES NI CONFIRMACIÓN (TESTING)
-            console.log('handleFormSubmit - flujo:', document.getElementById('flujo_cliente').value);
-            document.getElementById('clienteForm').submit();
-            return false;
-        }
-
-        /* FUNCIÓN ORIGINAL COMENTADA:
-        function handleFormSubmitOriginal(event) {
-            event.preventDefault();
-            
-            // Prevenir doble envío
-            if (isSubmitting) {
-                console.warn('Formulario ya se está enviando...');
-                return false;
-            }
-            
-            // Validar paso actual
-            if (!validateStep(currentStep)) {
-                return false;
-            }
-
-            // Determinar el tipo de operación según el botón clickeado
-            const flujoInput = document.getElementById('flujo_cliente');
-            let titulo = '';
-            let mensaje = '';
-            let icono = 'question';
-            
-            if (flujoInput.value === 'solo_cliente') {
-                titulo = '¿Guardar Cliente?';
-                mensaje = 'Se registrará solo el cliente sin membresía ni pago.';
-                icono = 'info';
-            } else if (flujoInput.value === 'con_membresia') {
-                titulo = '¿Guardar Cliente + Membresía?';
-                mensaje = 'Se registrará el cliente con membresía. El pago quedará pendiente.';
-                icono = 'info';
-            } else if (flujoInput.value === 'completo') {
-                titulo = '¿Guardar Todo?';
-                mensaje = 'Se registrará el cliente, membresía y pago. Esta acción no se puede deshacer.';
-                icono = 'warning';
-            }
-            
-            // Mostrar confirmación con SweetAlert2
-            Swal.fire({
-                title: titulo,
-                html: `<div style="text-align: left; font-size: 0.95em; color: #555; margin: 15px 0;">
-                    <i class="fas fa-info-circle" style="color: #667eea; margin-right: 8px;"></i>
-                    ${mensaje}
-                </div>`,
-                icon: icono,
-                showCancelButton: true,
-                confirmButtonText: 'Sí, Guardar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                allowOutsideClick: false,
-                customClass: {
-                    popup: 'swal2-popup-custom'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Proceder con el envío
-                    procederConGuardado();
-                }
-            });
-            
-            return false;
-        }
-        */
-
-        function procederConGuardado() {
-            const isSubmitting = true;
-            const formToken = document.getElementById('form_submit_token');
-            
-            // Obtener el botón activo según el flujo
-            const flujoInput = document.getElementById('flujo_cliente');
-            let btn, btnText, btnSpinner;
-            
-            if (flujoInput.value === 'solo_cliente') {
-                btn = document.getElementById('btn-guardar-solo-cliente');
-            } else if (flujoInput.value === 'con_membresia') {
-                btn = document.getElementById('btn-guardar-con-membresia');
-            } else {
-                btn = document.getElementById('btn-guardar-completo');
-            }
-            
-            if (!btn) return;
-            
-            // UI feedback
-            btn.disabled = true;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-            
-            // Generar nuevo token para evitar reenvíos
-            formToken.value = '{{ uniqid() }}-' + Date.now();
-            
-            // Enviar formulario después de un pequeño delay
-            setTimeout(() => {
-                document.getElementById('clienteForm').submit();
-            }, 100);
-            
-            // Timeout de seguridad - rehabilitar después de 5 segundos
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                showValidationAlert(['Error de conexión. Intente nuevamente.']);
-            }, 5000);
-        }
-
-        function goToStep(step) {
-            console.log('goToStep(' + step + ') - Cambiar a paso ' + step);
-            
-            if (step < 1 || step > totalSteps) {
-                console.warn('Paso inválido:', step);
-                return;
-            }
-            
-            // ⚠️ TESTING - NO VALIDAR, SOLO CAMBIAR DE PASO
-            // Ocultar todos los pasos
-            document.querySelectorAll('.step-indicator').forEach(el => {
-                el.classList.remove('active');
-            });
-            
-            // Mostrar paso actual
-            document.getElementById(`step-${step}`).classList.add('active');
-            currentStep = step;
-            
-            // Actualizar indicadores
-            updateStepIndicators();
-            
-            // Actualizar botones según el paso
-            const btnAnterior = document.getElementById('btn-anterior');
-            const btnSiguiente = document.getElementById('btn-siguiente');
-            const btnGuardarSoloCliente = document.getElementById('btn-guardar-solo-cliente');
-            const btnGuardarConMembresia = document.getElementById('btn-guardar-con-membresia');
-            const btnGuardarCompleto = document.getElementById('btn-guardar-completo');
-            const flujoInput = document.getElementById('flujo_cliente');
-            
-            // Ocultar todos los botones de guardado
-            btnGuardarSoloCliente.style.display = 'none';
-            btnGuardarConMembresia.style.display = 'none';
-            btnGuardarCompleto.style.display = 'none';
-            btnSiguiente.style.display = 'none';
-            btnAnterior.style.display = 'none';
-            
-            if (step === 1) {
-                // PASO 1: Mostrar opción de guardar solo cliente
-                btnAnterior.style.display = 'none';
-                btnSiguiente.style.display = 'block';
-                btnGuardarSoloCliente.style.display = 'block';
-                flujoInput.value = 'solo_cliente';
-                console.log('Paso 1 - Botones: [Siguiente] [Guardar Cliente]');
-            } else if (step === 2) {
-                // PASO 2: Mostrar opción de guardar cliente + membresía
-                btnAnterior.style.display = 'block';
-                btnSiguiente.style.display = 'block';
-                btnGuardarConMembresia.style.display = 'block';
-                flujoInput.value = 'con_membresia';
-                console.log('Paso 2 - Botones: [Anterior] [Siguiente] [Guardar con Membresía]');
-            } else if (step === totalSteps) {
-                // PASO 3: Mostrar opción de guardar todo completo
-                btnAnterior.style.display = 'block';
-                btnSiguiente.style.display = 'none';
-                btnGuardarCompleto.style.display = 'block';
-                flujoInput.value = 'completo';
-                console.log('Paso 3 - Botones: [Anterior] [Guardar Todo]');
-            }
-        }
-
-        function nextStep() {
-            if (currentStep < totalSteps) {
-                goToStep(currentStep + 1);
-            }
-        }
-
-        function previousStep() {
-            if (currentStep > 1) {
-                goToStep(currentStep - 1);
-            }
-        }
-
-        function updateStepIndicators() {
-            for (let i = 1; i <= totalSteps; i++) {
-                const btn = document.getElementById(`step${i}-btn`);
-                btn.classList.remove('active', 'completed');
-                
-                if (i < currentStep) {
-                    btn.classList.add('completed');
-                    btn.disabled = false;  // Habilitar pasos anteriores (ya completados)
-                } else if (i === currentStep) {
-                    btn.classList.add('active');
-                    btn.disabled = false;  // Habilitar paso actual
-                } else if (i === currentStep + 1) {
-                    btn.disabled = false;  // Habilitar siguiente paso (para poder ver membresía antes de guardar)
-                } else {
-                    btn.disabled = true;   // Deshabilitar pasos futuros
-                }
-            }
-        }
-
-        function validateStep(step) {
-            // ⚠️ VALIDACIONES DESHABILITADAS - SOLO PARA TESTING DEL FLUJO
-            console.log('validateStep(' + step + ') - DESHABILITADO - retorna TRUE');
-            return true;
-        }
-
-        // FUNCIÓN ORIGINAL COMENTADA (para referencia):
-        /*
-        function validateStepOriginal(step) {
-            const fieldLabels = {
-                'run_pasaporte': 'RUT/Pasaporte',
-                'nombres': 'Nombres',
-                'apellido_paterno': 'Apellido Paterno',
-                'email': 'Email',
-                'celular': 'Celular',
-                'id_membresia': 'Membresía',
-                'fecha_inicio': 'Fecha de Inicio',
-                'monto_abonado': 'Monto Abonado',
-                'id_metodo_pago': 'Método de Pago',
-                'fecha_pago': 'Fecha de Pago'
-            };
-            
-            let inputs = [];
-            
-            if (step === 1) {
-                // Paso 1: Solo datos obligatorios (run_pasaporte es opcional)
-                inputs = ['nombres', 'apellido_paterno', 'email', 'celular'];
-            } else if (step === 2) {
-                // Paso 2: Datos de paso 1 + membresía
-                inputs = ['nombres', 'apellido_paterno', 'email', 'celular', 'id_membresia', 'fecha_inicio'];
-            } else if (step === 3) {
-                // Paso 3: Todos los datos
-                inputs = ['nombres', 'apellido_paterno', 'email', 'celular', 'id_membresia', 'fecha_inicio', 'monto_abonado', 'id_metodo_pago', 'fecha_pago'];
-            }
-            
-            let emptyFields = [];
-            for (let input of inputs) {
-                const el = document.getElementById(input);
-                if (!el || !el.value) {
-                    emptyFields.push(fieldLabels[input] || input);
-                }
-            }
-            
-            if (emptyFields.length > 0) {
-                showValidationAlert(emptyFields);
-                return false;
-            }
-            return true;
-        }
-        */
-
-        function showValidationAlert(fields) {
-            let html = '<div style="text-align: left;">';
-            fields.forEach(field => {
-                html += `<div style="margin: 8px 0; font-size: 0.95em;"><i class="fas fa-circle-xmark" style="color: #dc3545; margin-right: 8px;"></i><strong>${field}</strong> es requerido</div>`;
-            });
-            html += '</div>';
-            
-            Swal.fire({
-                title: 'Campos Requeridos',
-                html: html,
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#667eea',
-                allowOutsideClick: false,
-                customClass: {
-                    popup: 'swal2-popup-custom'
-                }
-            });
-        }
-
+        // Actualizar precio cuando cambia membresía o convenio
         function actualizarPrecio() {
             const membresiaSelect = document.getElementById('id_membresia');
             const convenioSelect = document.getElementById('id_convenio');
@@ -864,10 +726,7 @@
                 return;
             }
             
-            // Obtener el precio de la membresía seleccionada
             const membresia_id = membresiaSelect.value;
-            
-            // Hacer AJAX para obtener el precio actual
             fetch(`/admin/api/precio-membresia/${membresia_id}${convenioSelect.value ? '?convenio=' + convenioSelect.value : ''}`)
                 .then(response => response.json())
                 .then(data => {
@@ -887,7 +746,6 @@
                         document.getElementById('badge-descuento').style.display = 'none';
                     }
                     
-                    // Actualizar sugerencia de monto
                     document.getElementById('monto_sugerido').textContent = `Sugerido: $${precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
                     document.getElementById('monto_abonado').placeholder = `$${precioFinal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
                     
@@ -896,20 +754,7 @@
                 .catch(error => console.error('Error:', error));
         }
 
-        // Inicializar
-        window.addEventListener('load', function() {
-            goToStep(1);
-            
-            // Actualizar precio cuando cambie convenio
-            document.getElementById('id_convenio').addEventListener('change', actualizarPrecio);
-            
-            // Validar RUT en tiempo real
-            const rutInput = document.getElementById('run_pasaporte');
-            rutInput.addEventListener('blur', validarRutAjax);
-            rutInput.addEventListener('input', formatearRutEnTiempoReal);
-        });
-
-        // Formatear RUT automáticamente mientras se escribe (sin validar todavía)
+        // Formatear RUT automáticamente
         function formatearRutEnTiempoReal() {
             const rutInput = document.getElementById('run_pasaporte');
             let rut = rutInput.value.trim();
@@ -919,40 +764,32 @@
                 return;
             }
 
-            // Solo caracteres válidos: números, K, puntos, guion, espacios
             rut = rut.toUpperCase().replace(/[^0-9K.\-\s]/g, '');
 
-            // Si solo tiene números o K, formatear automáticamente
             if (/^[\d\s\.\-K]+$/.test(rut)) {
-                // Limpiar espacios
                 let rutLimpio = rut.replace(/\s/g, '').replace(/\./g, '').replace(/\-/g, '');
                 
-                if (rutLimpio.length > 0) {
-                    // Si tiene 7-9 caracteres, formatear a XX.XXX.XXX-X
-                    if (rutLimpio.length >= 7 && rutLimpio.length <= 9) {
-                        // Obtener el dígito verificador (último carácter)
-                        let dv = rutLimpio.substring(rutLimpio.length - 1);
-                        let numero = rutLimpio.substring(0, rutLimpio.length - 1);
-                        
-                        // Formatear con puntos
-                        if (numero.length <= 1) {
-                            rutInput.value = numero + '-' + dv;
-                        } else if (numero.length <= 4) {
-                            let p1 = numero.substring(0, numero.length - 3);
-                            let p2 = numero.substring(numero.length - 3);
-                            rutInput.value = p1 + '.' + p2 + '-' + dv;
-                        } else {
-                            let p1 = numero.substring(0, numero.length - 6);
-                            let p2 = numero.substring(numero.length - 6, numero.length - 3);
-                            let p3 = numero.substring(numero.length - 3);
-                            rutInput.value = p1 + '.' + p2 + '.' + p3 + '-' + dv;
-                        }
+                if (rutLimpio.length > 0 && rutLimpio.length >= 7 && rutLimpio.length <= 9) {
+                    let dv = rutLimpio.substring(rutLimpio.length - 1);
+                    let numero = rutLimpio.substring(0, rutLimpio.length - 1);
+                    
+                    if (numero.length <= 1) {
+                        rutInput.value = numero + '-' + dv;
+                    } else if (numero.length <= 4) {
+                        let p1 = numero.substring(0, numero.length - 3);
+                        let p2 = numero.substring(numero.length - 3);
+                        rutInput.value = p1 + '.' + p2 + '-' + dv;
+                    } else {
+                        let p1 = numero.substring(0, numero.length - 6);
+                        let p2 = numero.substring(numero.length - 6, numero.length - 3);
+                        let p3 = numero.substring(numero.length - 3);
+                        rutInput.value = p1 + '.' + p2 + '.' + p3 + '-' + dv;
                     }
                 }
             }
         }
 
-        // Validar RUT con API (en tiempo real al perder foco)
+        // Validar RUT con API
         function validarRutAjax() {
             const rutInput = document.getElementById('run_pasaporte');
             const rut = rutInput.value.trim();
@@ -975,10 +812,7 @@
                 if (data.valid) {
                     rutInput.classList.remove('is-invalid');
                     rutInput.classList.add('is-valid');
-                    // Formatear el RUT con el formato correcto del servidor
                     rutInput.value = data.rut_formateado;
-                    
-                    // Limpiar mensaje de error si existe
                     let feedback = rutInput.nextElementSibling;
                     if (feedback && feedback.classList.contains('invalid-feedback')) {
                         feedback.remove();
@@ -986,7 +820,6 @@
                 } else {
                     rutInput.classList.remove('is-valid');
                     rutInput.classList.add('is-invalid');
-                    // Mostrar mensaje de error
                     let feedback = rutInput.nextElementSibling;
                     if (!feedback || !feedback.classList.contains('invalid-feedback')) {
                         feedback = document.createElement('div');
@@ -996,9 +829,27 @@
                     feedback.textContent = data.message;
                 }
             })
-            .catch(error => {
-                console.error('Error validando RUT:', error);
-            });
+            .catch(error => console.error('Error validando RUT:', error));
         }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🟢 DOMContentLoaded - Inicializando formulario');
+            
+            goToStep(1);
+            
+            const convenioSelect = document.getElementById('id_convenio');
+            if (convenioSelect) {
+                convenioSelect.addEventListener('change', actualizarPrecio);
+            }
+            
+            const rutInput = document.getElementById('run_pasaporte');
+            if (rutInput) {
+                rutInput.addEventListener('blur', validarRutAjax);
+                rutInput.addEventListener('input', formatearRutEnTiempoReal);
+            }
+            
+            console.log('✅ Formulario inicializado correctamente');
+        });
     </script>
 @endpush
