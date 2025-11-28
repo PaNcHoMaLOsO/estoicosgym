@@ -352,8 +352,9 @@
         </div>
     </div>
 </div>
+@endsection
 
-@section('js')
+@push('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         const ETIQUETAS_MESES = @json($etiquetasMeses);
@@ -429,7 +430,7 @@
             }
         });
     </script>
-@endsection
+@endpush
 
 @push('css')
 <style>
