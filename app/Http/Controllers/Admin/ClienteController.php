@@ -81,7 +81,7 @@ class ClienteController extends Controller
 
         // PASO 1: Validar datos básicos del cliente
         $validated = $request->validate([
-            'run_pasaporte' => ['required', 'unique:clientes', new RutValido()],
+            'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte', new RutValido()],
             'nombres' => 'required|string|max:255',
             'apellido_paterno' => 'required|string|max:255',
             'apellido_materno' => 'nullable|string|max:255',
@@ -201,7 +201,7 @@ class ClienteController extends Controller
         }
 
         $validated = $request->validate([
-            'run_pasaporte' => ['required', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
+            'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
             'nombres' => 'required|string|max:255',
             'apellido_paterno' => 'required|string|max:255',
             'apellido_materno' => 'nullable|string|max:255',

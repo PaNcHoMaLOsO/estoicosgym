@@ -313,11 +313,11 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="run_pasaporte" class="form-label">RUT/Pasaporte <span class="text-danger">*</span></label>
+                        <label for="run_pasaporte" class="form-label">RUT/Pasaporte</label>
                         <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
-                               id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
-                               value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}" required>
-                        <small class="form-text text-muted">Formato: XX.XXX.XXX-X</small>
+                               id="run_pasaporte" name="run_pasaporte" placeholder="Ej: 7.882.382-4 o 78823824" 
+                               value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}">
+                        <small class="form-text text-muted">Opcional - Formato: XX.XXX.XXX-X</small>
                         @error('run_pasaporte')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
@@ -546,15 +546,50 @@
             return false;
         }
 
-        // Validación básica de RUT
-        document.getElementById('run_pasaporte').addEventListener('blur', function() {
-            const value = this.value.trim();
-            if (value && !value.match(/^\d{1,2}\.\d{3}\.\d{3}-[0-9K]$/)) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
+        // Validar RUT con API en tiempo real
+        document.getElementById('run_pasaporte').addEventListener('blur', validarRutAjaxEdit);
+
+        function validarRutAjaxEdit() {
+            const rutInput = document.getElementById('run_pasaporte');
+            const rut = rutInput.value.trim();
+
+            if (!rut) {
+                rutInput.classList.remove('is-invalid', 'is-valid');
+                return;
             }
-        });
+
+            fetch('/admin/api/clientes/validar-rut', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                },
+                body: JSON.stringify({ rut: rut })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    rutInput.classList.remove('is-invalid');
+                    rutInput.classList.add('is-valid');
+                    // Formatear el RUT automáticamente
+                    rutInput.value = data.rut_formateado;
+                } else {
+                    rutInput.classList.remove('is-valid');
+                    rutInput.classList.add('is-invalid');
+                    // Mostrar mensaje de error
+                    let feedback = rutInput.nextElementSibling;
+                    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                        feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback d-block';
+                        rutInput.parentNode.insertBefore(feedback, rutInput.nextSibling);
+                    }
+                    feedback.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error validando RUT:', error);
+            });
+        }
 
         // Validación de email
         document.getElementById('email').addEventListener('blur', function() {

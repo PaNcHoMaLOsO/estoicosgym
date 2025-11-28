@@ -87,6 +87,7 @@ Route::prefix('api')->group(function () {
     Route::get('/clientes', [ClienteApiController::class, 'index']);
     Route::get('/clientes/{id}', [ClienteApiController::class, 'show']);
     Route::get('/clientes/{id}/stats', [ClienteApiController::class, 'stats']);
+    Route::post('/clientes/validar-rut', [ClienteApiController::class, 'validarRut']);
     
     // Precio de membresía
     Route::get('/precio-membresia/{membresia_id}', [ClienteController::class, 'getPrecioMembresia']);

@@ -11,10 +11,17 @@ class RutValido implements Rule
      */
     public function passes($attribute, $value)
     {
-        // Limpiar el RUT
-        $rut = preg_replace('/[^0-9K]/', '', strtoupper($value));
+        // Si está vacío, es válido (porque es optional)
+        if (empty($value)) {
+            return true;
+        }
 
-        if (strlen($rut) < 8) {
+        // Limpiar el RUT - eliminar espacios, puntos y guiones, convertir a mayúsculas
+        $rut = preg_replace('/[\s\.\-]/', '', strtoupper($value));
+        $rut = preg_replace('/[^0-9K]/', '', $rut);
+
+        // Debe tener mínimo 8 caracteres (7 dígitos + 1 verificador)
+        if (strlen($rut) < 8 || strlen($rut) > 9) {
             return false;
         }
 
@@ -22,7 +29,7 @@ class RutValido implements Rule
         $dvExpected = substr($rut, -1);
         $rutNumber = substr($rut, 0, -1);
 
-        // Calcular dígito verificador
+        // Calcular dígito verificador usando algoritmo módulo 11
         $sum = 0;
         $multiplier = 2;
 
@@ -53,6 +60,6 @@ class RutValido implements Rule
      */
     public function message()
     {
-        return 'El RUT/Pasaporte ingresado no es válido.';
+        return 'El RUT ingresado no es válido. Formato correcto: 7.882.382-4 o 78823824';
     }
 }

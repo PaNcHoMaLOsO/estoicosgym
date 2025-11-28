@@ -123,4 +123,86 @@ class ClienteApiController extends Controller
             'monto_promedio_pago' => $pagos->count() > 0 ? $pagos->sum('monto_abonado') / $pagos->count() : 0,
         ]);
     }
+
+    /**
+     * Validar RUT en tiempo real (AJAX)
+     */
+    public function validarRut(Request $request)
+    {
+        $rut = $request->input('rut');
+
+        if (empty($rut)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'El RUT no puede estar vacío'
+            ]);
+        }
+
+        // Limpiar el RUT - eliminar espacios, puntos y guiones, convertir a mayúsculas
+        $rutLimpio = preg_replace('/[\s\.\-]/', '', strtoupper($rut));
+        $rutLimpio = preg_replace('/[^0-9K]/', '', $rutLimpio);
+
+        // Validar longitud
+        if (strlen($rutLimpio) < 8 || strlen($rutLimpio) > 9) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'El RUT debe tener 8-9 caracteres'
+            ]);
+        }
+
+        // Separar el dígito verificador
+        $dvExpected = substr($rutLimpio, -1);
+        $rutNumber = substr($rutLimpio, 0, -1);
+
+        // Calcular dígito verificador usando algoritmo módulo 11
+        $sum = 0;
+        $multiplier = 2;
+
+        for ($i = strlen($rutNumber) - 1; $i >= 0; $i--) {
+            $sum += intval($rutNumber[$i]) * $multiplier;
+            $multiplier++;
+
+            if ($multiplier > 7) {
+                $multiplier = 2;
+            }
+        }
+
+        $dv = 11 - ($sum % 11);
+
+        if ($dv == 11) {
+            $dvCalculated = '0';
+        } elseif ($dv == 10) {
+            $dvCalculated = 'K';
+        } else {
+            $dvCalculated = strval($dv);
+        }
+
+        if ($dvExpected !== $dvCalculated) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'El RUT no es válido. Verifica el dígito verificador.'
+            ]);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'RUT válido',
+            'rut_formateado' => $this->formatearRut($rutLimpio)
+        ]);
+    }
+
+    /**
+     * Formatear RUT a XX.XXX.XXX-X
+     */
+    private function formatearRut($rut)
+    {
+        $rut = str_pad($rut, 9, '0', STR_PAD_LEFT);
+        
+        $primera = substr($rut, 0, 2);
+        $segunda = substr($rut, 2, 3);
+        $tercera = substr($rut, 5, 3);
+        $cuarta = substr($rut, 8, 1);
+
+        return "{$primera}.{$segunda}.{$tercera}-{$cuarta}";
+    }
 }

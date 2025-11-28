@@ -295,10 +295,11 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="run_pasaporte" class="form-label">RUT/Pasaporte <span class="text-danger">*</span></label>
+                            <label for="run_pasaporte" class="form-label">RUT/Pasaporte</label>
                             <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
-                                   id="run_pasaporte" name="run_pasaporte" placeholder="XX.XXX.XXX-X" 
-                                   value="{{ old('run_pasaporte') }}" required>
+                                   id="run_pasaporte" name="run_pasaporte" placeholder="Ej: 7.882.382-4 o 78823824" 
+                                   value="{{ old('run_pasaporte') }}">
+                            <small class="text-muted">Opcional - Formato: XX.XXX.XXX-X</small>
                             @error('run_pasaporte')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -368,31 +369,9 @@
                         </div>
                     </div>
 
-                    <div class="form-section-title">
-                        <i class="fas fa-handshake"></i> Convenio (Opcional)
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="id_convenio" class="form-label">¿Cliente tiene descuento?</label>
-                            <select class="form-control @error('id_convenio') is-invalid @enderror" 
-                                    id="id_convenio" name="id_convenio">
-                                <option value="">-- Sin Convenio --</option>
-                                @foreach($convenios as $convenio)
-                                    <option value="{{ $convenio->id }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
-                                        {{ $convenio->nombre }} ({{ $convenio->descuento_porcentaje }}% desc.)
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted">Si el cliente tiene un convenio, selecciona aquí para aplicar descuentos automáticos en su membresía</small>
-                            @error('id_convenio')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
                 </div>
 
-                <!-- ============ PASO 2: MEMBRESÍA ============ -->
+                <!-- ============ PASO 2: MEMBRESÍA E INSCRIPCIÓN ============ -->
                 <div class="step-indicator" id="step-2">
                     
                     <div class="form-section-title">
@@ -420,6 +399,29 @@
                             <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                    id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}">
                             @error('fecha_inicio')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- Convenio (Descuento) -->
+                    <div class="form-section-title">
+                        <i class="fas fa-handshake"></i> Convenio / Descuento
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_convenio" class="form-label">¿Cliente tiene descuento?</label>
+                            <select class="form-control @error('id_convenio') is-invalid @enderror" 
+                                    id="id_convenio" name="id_convenio" onchange="actualizarPrecio()">
+                                <option value="">-- Sin Convenio --</option>
+                                @foreach($convenios as $convenio)
+                                    <option value="{{ $convenio->id }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
+                                        {{ $convenio->nombre }} ({{ $convenio->descuento_porcentaje }}% desc.)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Aplica descuento automático al precio de la membresía</small>
+                            @error('id_convenio')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -754,6 +756,53 @@
             
             // Actualizar precio cuando cambie convenio
             document.getElementById('id_convenio').addEventListener('change', actualizarPrecio);
+            
+            // Validar RUT en tiempo real
+            const rutInput = document.getElementById('run_pasaporte');
+            rutInput.addEventListener('blur', validarRutAjax);
         });
+
+        // Validar RUT con API (en tiempo real mientras escribe)
+        function validarRutAjax() {
+            const rutInput = document.getElementById('run_pasaporte');
+            const rut = rutInput.value.trim();
+
+            if (!rut) {
+                rutInput.classList.remove('is-invalid', 'is-valid');
+                return;
+            }
+
+            fetch('/admin/api/clientes/validar-rut', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                },
+                body: JSON.stringify({ rut: rut })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    rutInput.classList.remove('is-invalid');
+                    rutInput.classList.add('is-valid');
+                    // Formatear el RUT automáticamente
+                    rutInput.value = data.rut_formateado;
+                } else {
+                    rutInput.classList.remove('is-valid');
+                    rutInput.classList.add('is-invalid');
+                    // Mostrar mensaje de error
+                    let feedback = rutInput.nextElementSibling;
+                    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                        feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback d-block';
+                        rutInput.parentNode.insertBefore(feedback, rutInput.nextSibling);
+                    }
+                    feedback.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error validando RUT:', error);
+            });
+        }
     </script>
 @stop
