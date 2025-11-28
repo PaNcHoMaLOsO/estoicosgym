@@ -252,6 +252,107 @@
             if (clienteNombreEl) {
                 clienteNombreEl.textContent = (nombres + ' ' + apellido).trim() || 'Ingrese datos en Paso 1';
             }
+
+            // Actualizar también en el resumen del PASO 3
+            actualizarResumenPaso3();
+        }
+
+        function actualizarResumenPaso3() {
+            // Datos PASO 1
+            const nombres = document.getElementById('nombres').value || '-';
+            const apellido = document.getElementById('apellido_paterno').value || '';
+            const nombreCompleto = (nombres + ' ' + apellido).trim() || '-';
+            
+            // Datos PASO 2
+            const membresiaSelect = document.getElementById('id_membresia');
+            const membresiaText = membresiaSelect ? membresiaSelect.options[membresiaSelect.selectedIndex]?.text : '-';
+            const convenioSelect = document.getElementById('id_convenio');
+            const convenioText = convenioSelect?.value ? convenioSelect.options[convenioSelect.selectedIndex]?.text : 'No';
+            const motivoSelect = document.getElementById('id_motivo_descuento');
+            const motivoText = motivoSelect?.value ? motivoSelect.options[motivoSelect.selectedIndex]?.text : '-';
+            const descuentoManual = document.getElementById('descuento_manual')?.value || '0';
+            
+            // Obtener precio final
+            const precioTotalEl = document.getElementById('precio-total');
+            const precioFinal = precioTotalEl?.textContent || '$0';
+            
+            // Actualizar elementos del resumen
+            const resumenCliente = document.getElementById('resumen-cliente');
+            const resumenMembresia = document.getElementById('resumen-membresia');
+            const resumenConvenio = document.getElementById('resumen-convenio');
+            const resumenMotivo = document.getElementById('resumen-motivo');
+            const resumenDescManual = document.getElementById('resumen-desc-manual');
+            const resumenPrecioFinal = document.getElementById('resumen-precio-final');
+            
+            if (resumenCliente) resumenCliente.textContent = nombreCompleto;
+            if (resumenMembresia) resumenMembresia.textContent = membresiaText;
+            if (resumenConvenio) resumenConvenio.textContent = convenioText;
+            if (resumenMotivo) resumenMotivo.textContent = motivoText;
+            if (resumenDescManual) resumenDescManual.textContent = '-$' + parseInt(descuentoManual).toLocaleString('es-CL');
+            if (resumenPrecioFinal) resumenPrecioFinal.textContent = precioFinal;
+        }
+
+        function actualizarTipoPago() {
+            const tipoPago = document.getElementById('tipo_pago').value;
+            const seccionMonto = document.getElementById('seccion-monto');
+            const infoAdicional = document.getElementById('info-adicional');
+            const alertTipoPago = document.getElementById('alert-tipo-pago');
+            const labelMonto = document.getElementById('label-monto');
+            const hintMonto = document.getElementById('hint-monto');
+            const montoAbonado = document.getElementById('monto_abonado');
+            const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
+            const precioFinal = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
+            
+            seccionMonto.style.display = 'none';
+            infoAdicional.style.display = 'none';
+            montoAbonado.value = '';
+            montoAbonado.required = false;
+            
+            if (tipoPago === 'completo') {
+                // Pago completo: mostrar monto como lectura y establecer el precio final
+                seccionMonto.style.display = 'block';
+                montoAbonado.value = precioFinal;
+                montoAbonado.readonly = true;
+                montoAbonado.required = true;
+                labelMonto.textContent = 'Monto Total (Pago Completo)';
+                hintMonto.textContent = 'El monto se establece automáticamente al precio final';
+                
+                infoAdicional.style.display = 'block';
+                alertTipoPago.className = 'alert alert-success';
+                alertTipoPago.innerHTML = '<i class="fas fa-check-circle"></i> <strong>Pago Completo:</strong> Se pagará el monto total de $' + precioFinal.toLocaleString('es-CL') + ' de una sola vez.';
+                
+            } else if (tipoPago === 'parcial') {
+                // Pago parcial: permitir edición de monto
+                seccionMonto.style.display = 'block';
+                montoAbonado.readonly = false;
+                montoAbonado.required = true;
+                montoAbonado.min = '1';
+                labelMonto.textContent = 'Monto a Abonar';
+                hintMonto.textContent = 'Ingrese el monto que desea abonar. Quedarán pendientes: $' + precioFinal.toLocaleString('es-CL');
+                
+                infoAdicional.style.display = 'block';
+                alertTipoPago.className = 'alert alert-info';
+                alertTipoPago.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Pago Parcial:</strong> El cliente puede abonar una parte. El saldo restante quedará pendiente de pago.';
+                
+            } else if (tipoPago === 'pendiente') {
+                // Pago pendiente: sin mostrar campos de monto
+                infoAdicional.style.display = 'block';
+                alertTipoPago.className = 'alert alert-warning';
+                alertTipoPago.innerHTML = '<i class="fas fa-clock"></i> <strong>Pago Pendiente:</strong> No se registrará pago. La inscripción se crea sin abonar. Total a pagar: $' + precioFinal.toLocaleString('es-CL');
+                
+            } else if (tipoPago === 'mixto') {
+                // Pago mixto: permitir edición de monto
+                seccionMonto.style.display = 'block';
+                montoAbonado.readonly = false;
+                montoAbonado.required = true;
+                montoAbonado.min = '0';
+                labelMonto.textContent = 'Monto Abonado (Parte 1)';
+                hintMonto.textContent = 'Ingrese el monto de la primera parte del pago. Puede usar múltiples métodos o cuotas.';
+                
+                infoAdicional.style.display = 'block';
+                alertTipoPago.className = 'alert alert-warning';
+                alertTipoPago.innerHTML = '<i class="fas fa-shuffle"></i> <strong>Pago Mixto:</strong> Se pueden combinar múltiples pagos o métodos. Total a cubrir: $' + precioFinal.toLocaleString('es-CL');
+            }
         }
 
         function handleFormSubmit(event) {
@@ -269,17 +370,49 @@
             const nombresInput = document.getElementById('nombres');
             const apellidoInput = document.getElementById('apellido_paterno');
             const descuentoManualInput = document.getElementById('descuento_manual');
+            const motivoDescuentoSelect = document.getElementById('id_motivo_descuento');
             
-            if (convenioSelect) convenioSelect.addEventListener('change', actualizarPrecio);
-            if (membresiaSelect) membresiaSelect.addEventListener('change', actualizarPrecio);
-            if (fechaInicio) fechaInicio.addEventListener('change', actualizarPrecio);
+            if (convenioSelect) {
+                convenioSelect.addEventListener('change', function() {
+                    actualizarPrecio();
+                    actualizarResumenPaso3();
+                });
+            }
+            if (membresiaSelect) {
+                membresiaSelect.addEventListener('change', function() {
+                    actualizarPrecio();
+                    actualizarResumenPaso3();
+                });
+            }
+            if (fechaInicio) {
+                fechaInicio.addEventListener('change', function() {
+                    actualizarPrecio();
+                    actualizarResumenPaso3();
+                });
+            }
             
-            if (nombresInput) nombresInput.addEventListener('change', actualizarNombreCliente);
-            if (apellidoInput) apellidoInput.addEventListener('change', actualizarNombreCliente);
+            if (nombresInput) {
+                nombresInput.addEventListener('change', actualizarNombreCliente);
+                nombresInput.addEventListener('input', actualizarNombreCliente);
+            }
+            if (apellidoInput) {
+                apellidoInput.addEventListener('change', actualizarNombreCliente);
+                apellidoInput.addEventListener('input', actualizarNombreCliente);
+            }
             
             if (descuentoManualInput) {
-                descuentoManualInput.addEventListener('change', actualizarPrecioFinal);
-                descuentoManualInput.addEventListener('input', actualizarPrecioFinal);
+                descuentoManualInput.addEventListener('change', function() {
+                    actualizarPrecioFinal();
+                    actualizarResumenPaso3();
+                });
+                descuentoManualInput.addEventListener('input', function() {
+                    actualizarPrecioFinal();
+                    actualizarResumenPaso3();
+                });
+            }
+
+            if (motivoDescuentoSelect) {
+                motivoDescuentoSelect.addEventListener('change', actualizarResumenPaso3);
             }
         });
     </script>
@@ -602,38 +735,54 @@
                 <!-- PASO 3: PAGO -->
                 <div class="step-indicator" id="step-3">
                     
+                    <!-- RESUMEN DE PASOS ANTERIORES -->
+                    <div class="card card-info mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="fas fa-info-circle"></i> Resumen del Registro</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Cliente:</strong> <span id="resumen-cliente">-</span></p>
+                                    <p><strong>Membresía:</strong> <span id="resumen-membresia">-</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Convenio:</strong> <span id="resumen-convenio">No</span></p>
+                                    <p><strong>Descuento Motivo:</strong> <span id="resumen-motivo">-</span></p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <p><strong>Descuento Manual:</strong> <span id="resumen-desc-manual">$0</span></p>
+                                    <p style="font-size: 1.1em; color: #667eea;">
+                                        <strong>Precio Final a Pagar:</strong> 
+                                        <span id="resumen-precio-final" style="font-size: 1.2em;">$0</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- INFORMACIÓN DE PAGO -->
                     <div class="form-section-title">
                         <i class="fas fa-credit-card"></i> Información de Pago
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="monto_abonado" class="form-label">Monto Abonado <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
-                                   id="monto_abonado" name="monto_abonado" min="500" step="1" 
-                                   value="{{ old('monto_abonado', 500) }}" placeholder="500">
-                            @error('monto_abonado')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="id_metodo_pago" class="form-label">Método de Pago <span class="text-danger">*</span></label>
-                            <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
-                                    id="id_metodo_pago" name="id_metodo_pago">
-                                <option value="">-- Seleccionar --</option>
-                                @foreach($metodos_pago as $metodo)
-                                    <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
-                                        {{ $metodo->nombre }}
-                                    </option>
-                                @endforeach
+                            <label for="tipo_pago" class="form-label">Tipo de Pago <span class="text-danger">*</span></label>
+                            <select class="form-control @error('tipo_pago') is-invalid @enderror" 
+                                    id="tipo_pago" name="tipo_pago" onchange="actualizarTipoPago()">
+                                <option value="">-- Seleccionar Tipo --</option>
+                                <option value="completo">Pago Completo (Todo de una)</option>
+                                <option value="parcial">Pago Parcial / Abono</option>
+                                <option value="pendiente">Pago Pendiente (Sin pagar)</option>
+                                <option value="mixto">Pago Mixto (Combinado)</option>
                             </select>
-                            @error('id_metodo_pago')
+                            @error('tipo_pago')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fecha_pago" class="form-label">Fecha de Pago <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
@@ -642,6 +791,42 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+
+                    <!-- SECCIÓN DE MONTO (se muestra según tipo de pago) -->
+                    <div id="seccion-monto" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="monto_abonado" class="form-label" id="label-monto">Monto a Abonar <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
+                                       id="monto_abonado" name="monto_abonado" min="0" step="1" 
+                                       value="{{ old('monto_abonado', '') }}" placeholder="Ingrese monto">
+                                <small class="text-muted" id="hint-monto"></small>
+                                @error('monto_abonado')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_metodo_pago" class="form-label">Método de Pago <span class="text-danger">*</span></label>
+                                <select class="form-control @error('id_metodo_pago') is-invalid @enderror" 
+                                        id="id_metodo_pago" name="id_metodo_pago">
+                                    <option value="">-- Seleccionar --</option>
+                                    @foreach($metodos_pago as $metodo)
+                                        <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                            {{ $metodo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_metodo_pago')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- INFORMACIÓN ADICIONAL SEGÚN TIPO DE PAGO -->
+                    <div id="info-adicional" style="display:none;">
+                        <div class="alert alert-warning" id="alert-tipo-pago"></div>
                     </div>
 
                 </div>
