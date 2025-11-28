@@ -46,7 +46,7 @@ return new class extends Migration
             $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
             $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
             $table->foreign('id_metodo_pago')->references('id')->on('metodos_pago')->onDelete('restrict');
-            $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
+            $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
 
             $table->index('id_cliente');
             $table->index('id_inscripcion');
