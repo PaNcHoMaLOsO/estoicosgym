@@ -20,10 +20,10 @@
 
 @section('content')
 <div class="container-fluid">
-    <!-- FILA 1: KPI CARDS - ELEGANTE -->
+    <!-- FILA 1: KPI CARDS - PROFESIONAL (4 COLUMNAS) -->
     <div class="row mb-4">
         <!-- Total Clientes -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-3 col-md-6 mb-4">
             <div class="kpi-card kpi-primary">
                 <div class="kpi-icon">
                     <i class="fas fa-users"></i>
@@ -31,41 +31,41 @@
                 <div class="kpi-content">
                     <h2 class="kpi-number">{{ $totalClientes }}</h2>
                     <p class="kpi-label">Total Clientes</p>
-                    <small class="kpi-desc">Clientes activos en el sistema</small>
+                    <small class="kpi-desc">Registrados</small>
                 </div>
             </div>
         </div>
 
         <!-- Inscripciones Activas -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-3 col-md-6 mb-4">
             <div class="kpi-card kpi-success">
                 <div class="kpi-icon">
                     <i class="fas fa-dumbbell"></i>
                 </div>
                 <div class="kpi-content">
                     <h2 class="kpi-number">{{ $inscripcionesActivas }}</h2>
-                    <p class="kpi-label">Activas Ahora</p>
-                    <small class="kpi-desc">Membresías en vigencia</small>
+                    <p class="kpi-label">Membresías Activas</p>
+                    <small class="kpi-desc">En vigencia</small>
                 </div>
             </div>
         </div>
 
         <!-- Ingresos del Mes -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-3 col-md-6 mb-4">
             <div class="kpi-card kpi-warning">
                 <div class="kpi-icon">
                     <i class="fas fa-dollar-sign"></i>
                 </div>
                 <div class="kpi-content">
                     <h2 class="kpi-number">${{ number_format($ingresosMes, 0, '.', '.') }}</h2>
-                    <p class="kpi-label">Este Mes</p>
-                    <small class="kpi-desc">{{ now()->format('F Y') }}</small>
+                    <p class="kpi-label">Ingresos Este Mes</p>
+                    <small class="kpi-desc">Total generado</small>
                 </div>
             </div>
         </div>
 
         <!-- Por Vencer (7 días) -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-3 col-md-6 mb-4">
             <div class="kpi-card kpi-danger">
                 <div class="kpi-icon">
                     <i class="fas fa-exclamation-circle"></i>
@@ -78,6 +78,39 @@
             </div>
         </div>
     </div>
+
+    <!-- FILA 1B: KPI SECUNDARIOS (OPCIONAL) -->
+    @if(false)
+    <div class="row mb-4">
+        <!-- Inscripciones Nuevas Este Mes -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card kpi-info">
+                <div class="kpi-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="kpi-content">
+                    <h2 class="kpi-number">{{ $totalInscripcionesEsteMes }}</h2>
+                    <p class="kpi-label">Nuevas</p>
+                    <small class="kpi-desc">Este mes</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de Inscripciones: Pausadas + Vencidas + Canceladas -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card kpi-secondary">
+                <div class="kpi-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="kpi-content">
+                    <h2 class="kpi-number">{{ $inscripcionesPausadas + $inscripcionesVencidas + $inscripcionesCanceladas }}</h2>
+                    <p class="kpi-label">Inactivas</p>
+                    <small class="kpi-desc">Pausadas, Vencidas...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- FILA 2: GRÁFICOS - ELEGANTE -->
     <div class="row mb-4">
@@ -180,43 +213,38 @@
             <div class="card card-info card-outline elegant-card">
                 <div class="card-header with-border elegant-header">
                     <h3 class="card-title">
-                        <i class="fas fa-star"></i> Top Membresías
+                        <i class="fas fa-star"></i> Membresías - Distribución de Inscritos
                     </h3>
                     <div class="card-tools pull-right">
-                        <span class="badge badge-info">{{ $topMembresias->count() }}</span>
+                        <span class="badge badge-info">Total: {{ $topMembresias->sum('total') }}</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     @if($topMembresias->count() > 0)
-                        <table class="table table-sm elegant-table">
-                            <thead class="elegant-thead">
-                                <tr>
-                                    <th style="width: 50%;">Membresía</th>
-                                    <th style="width: 15%; text-align: center;">Inscritos</th>
-                                    <th style="width: 35%;">Progreso</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($topMembresias as $item)
-                                    <tr class="elegant-row">
-                                        <td><strong>{{ $item->membresia?->nombre }}</strong></td>
-                                        <td style="text-align: center;">
-                                            <span class="badge badge-primary" style="font-size: 12px;">{{ $item->total }}</span>
-                                        </td>
-                                        <td>
-                                            <div class="progress progress-sm elegant-progress">
-                                                @php
-                                                    $percentage = $maxMembresias > 0 ? ($item->total / $maxMembresias) * 100 : 0;
-                                                @endphp
-                                                <div class="progress-bar bg-success" style="width: {{ round($percentage) }}%; transition: width 0.6s ease;"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            @foreach($topMembresias as $item)
+                                @php
+                                    $totalInscritos = $topMembresias->sum('total');
+                                    $porcentajeDelTotal = $totalInscritos > 0 ? ($item->total / $totalInscritos) * 100 : 0;
+                                @endphp
+                                <div>
+                                    <!-- Encabezado: Nombre y números -->
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong style="font-size: 1.1rem; color: #2c3e50;">{{ $item->membresia?->nombre }}</strong>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <span style="background: #e3f2fd; padding: 6px 12px; border-radius: 6px; font-weight: 600; color: #1976d2; font-size: 0.95rem; text-align: center;">{{ $item->total }}<br><small style="font-size: 0.8rem; font-weight: normal;">inscritos</small></span>
+                                            <span style="font-weight: 700; color: #28a745; font-size: 1.3rem; min-width: 50px; text-align: right;">{{ round($porcentajeDelTotal) }}%</span>
+                                        </div>
+                                    </div>
+                                    <!-- Barra de progreso -->
+                                    <div class="progress elegant-progress" style="height: 10px; background-color: #f0f0f0;">
+                                        <div class="progress-bar bg-info" style="width: {{ round($porcentajeDelTotal) }}%; background: linear-gradient(90deg, #17a2b8, #20c997); transition: width 0.6s ease;"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
-                        <div class="alert alert-info m-3 mb-0">
+                        <div class="alert alert-info m-0">
                             <i class="fas fa-info-circle"></i> Sin datos de membresías
                         </div>
                     @endif
@@ -351,6 +379,105 @@
             </div>
         </div>
     </div>
+
+    <!-- FILA 5: MÉTODOS DE PAGO + ESTADÍSTICAS -->
+    <div class="row">
+        <!-- Métodos de Pago Más Usados -->
+        <div class="col-md-6">
+            <div class="card card-secondary card-outline elegant-card">
+                <div class="card-header with-border elegant-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-credit-card"></i> Métodos de Pago Populares
+                    </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-secondary">{{ $metodosPagoMasUsados->count() }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if($metodosPagoMasUsados->count() > 0)
+                        <table class="table table-sm elegant-table">
+                            <thead class="elegant-thead">
+                                <tr>
+                                    <th style="width: 60%;">Método</th>
+                                    <th style="width: 20%; text-align: center;">Transacciones</th>
+                                    <th style="width: 20%;">Popularidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $maxPagos = $metodosPagoMasUsados->max('pagos_count') ?? 1;
+                                @endphp
+                                @foreach($metodosPagoMasUsados as $metodo)
+                                    <tr class="elegant-row">
+                                        <td><strong>{{ $metodo->nombre }}</strong></td>
+                                        <td style="text-align: center;">
+                                            <span class="badge badge-info">{{ $metodo->pagos_count }}</span>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $porcentajePago = $maxPagos > 0 ? ($metodo->pagos_count / $maxPagos) * 100 : 0;
+                                            @endphp
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="progress elegant-progress" style="flex: 1; margin: 0;">
+                                                    <div class="progress-bar bg-info" style="width: {{ round($porcentajePago) }}%; transition: width 0.6s ease;"></div>
+                                                </div>
+                                                <span style="font-weight: 600; font-size: 0.9rem; min-width: 35px; text-align: right; color: #17a2b8;">{{ round($porcentajePago) }}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-info-circle"></i> Sin datos de métodos de pago
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de Estados de Inscripciones -->
+        <div class="col-md-6">
+            <div class="card card-danger card-outline elegant-card">
+                <div class="card-header with-border elegant-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-pie-chart"></i> Resumen de Inscripciones
+                    </h3>
+                    <div class="card-tools pull-right">
+                        <span class="badge badge-danger">{{ $inscripcionesActivas + $inscripcionesPausadas + $inscripcionesVencidas + $inscripcionesCanceladas }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <!-- Activas -->
+                        <div style="text-align: center; padding: 15px; background: rgba(40, 167, 69, 0.1); border-radius: 8px; border-left: 4px solid #28a745;">
+                            <h4 style="color: #28a745; font-weight: 700; margin: 0 0 8px 0;">{{ $inscripcionesActivas }}</h4>
+                            <small style="color: #666;">Activas</small>
+                        </div>
+
+                        <!-- Pausadas -->
+                        <div style="text-align: center; padding: 15px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 4px solid #ffc107;">
+                            <h4 style="color: #ffc107; font-weight: 700; margin: 0 0 8px 0;">{{ $inscripcionesPausadas }}</h4>
+                            <small style="color: #666;">Pausadas</small>
+                        </div>
+
+                        <!-- Vencidas -->
+                        <div style="text-align: center; padding: 15px; background: rgba(220, 53, 69, 0.1); border-radius: 8px; border-left: 4px solid #dc3545;">
+                            <h4 style="color: #dc3545; font-weight: 700; margin: 0 0 8px 0;">{{ $inscripcionesVencidas }}</h4>
+                            <small style="color: #666;">Vencidas</small>
+                        </div>
+
+                        <!-- Canceladas -->
+                        <div style="text-align: center; padding: 15px; background: rgba(108, 117, 125, 0.1); border-radius: 8px; border-left: 4px solid #6c757d;">
+                            <h4 style="color: #6c757d; font-weight: 700; margin: 0 0 8px 0;">{{ $inscripcionesCanceladas }}</h4>
+                            <small style="color: #666;">Canceladas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -378,7 +505,7 @@
                             data: datosMembresias,
                             backgroundColor: coloresMembresias.slice(0, etiquetasMembresias.length),
                             borderColor: '#fff',
-                            borderWidth: 3
+                            borderWidth: 2
                         }]
                     },
                     options: {
@@ -388,20 +515,16 @@
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    padding: 20,
-                                    font: { 
-                                        size: 12, 
-                                        weight: '600'
-                                    },
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
+                                    padding: 15,
+                                    font: { size: 11, weight: '600' },
+                                    usePointStyle: true
                                 }
                             }
                         }
                     }
                 });
             }
-        }, 100);
+        }, 50);
 
         // ===== GRÁFICO BARRAS: Ingresos =====
         setTimeout(function() {
@@ -414,58 +537,40 @@
                         datasets: [{
                             label: 'Ingresos ($)',
                             data: datosIngresos,
-                            backgroundColor: 'rgba(0, 123, 255, 0.8)',
-                            borderColor: '#004085',
-                            borderWidth: 1,
-                            borderRadius: 8,
-                            hoverBackgroundColor: 'rgba(0, 123, 255, 1)'
+                            backgroundColor: '#28a745',
+                            borderColor: '#1e7e34',
+                            borderWidth: 1
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    font: { size: 12, weight: '600' }
-                                }
-                            }
+                            legend: { display: false }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return '$' + (value / 1000).toFixed(0) + 'K';
-                                    },
-                                    font: { size: 11 }
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: { size: 11 }
-                                }
+                                ticks: { font: { size: 10 } }
                             }
                         }
                     }
                 });
             }
-        }, 100);
+        }, 50);
     </script>
 @endpush
 
 @push('css')
     <style>
-        /* ========== KPI CARDS ELEGANTES ========== */
+        /* ========== KPI CARDS PROFESIONAL ========== */
         .kpi-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
             overflow: hidden;
             position: relative;
         }
@@ -475,46 +580,76 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-            transform: translateX(-100%);
-            transition: transform 0.6s;
-        }
-
-        .kpi-card:hover::before {
-            transform: translateX(100%);
+            width: 5px;
+            height: 100%;
+            background: currentColor;
+            opacity: 0.8;
         }
 
         .kpi-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            border-color: currentColor;
         }
 
         .kpi-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            color: #667eea;
+            border-top-color: #667eea;
+        }
+
+        .kpi-primary::before {
+            background: #667eea;
         }
 
         .kpi-success {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            color: #28a745;
+            border-top-color: #28a745;
+        }
+
+        .kpi-success::before {
+            background: #28a745;
         }
 
         .kpi-warning {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
+            color: #4facfe;
+            border-top-color: #4facfe;
+        }
+
+        .kpi-warning::before {
+            background: #4facfe;
         }
 
         .kpi-danger {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white;
+            color: #dc3545;
+            border-top-color: #dc3545;
+        }
+
+        .kpi-danger::before {
+            background: #dc3545;
+        }
+
+        .kpi-info {
+            color: #17a2b8;
+            border-top-color: #17a2b8;
+        }
+
+        .kpi-info::before {
+            background: #17a2b8;
+        }
+
+        .kpi-secondary {
+            color: #6c757d;
+            border-top-color: #6c757d;
+        }
+
+        .kpi-secondary::before {
+            background: #6c757d;
         }
 
         .kpi-icon {
-            font-size: 48px;
-            opacity: 0.3;
-            margin-bottom: 15px;
+            font-size: 40px;
+            opacity: 0.15;
+            margin-bottom: 10px;
             float: right;
         }
 
@@ -523,24 +658,24 @@
         }
 
         .kpi-number {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
             margin: 0;
             line-height: 1;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .kpi-label {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             margin: 0;
-            margin-bottom: 4px;
-            opacity: 0.95;
+            margin-bottom: 3px;
+            color: #2c3e50;
         }
 
         .kpi-desc {
-            font-size: 0.85rem;
-            opacity: 0.8;
+            font-size: 0.8rem;
+            color: #7f8c8d;
             display: block;
         }
 
@@ -646,11 +781,11 @@
             letter-spacing: 0.3px;
         }
 
-        /* ========== ANIMACIONES ========== */
+        /* ========== ANIMACIONES MINIMALISTAS ========== */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
@@ -659,13 +794,13 @@
         }
 
         .kpi-card, .elegant-card {
-            animation: fadeInUp 0.5s ease-out forwards;
+            animation: fadeInUp 0.3s ease-out forwards;
         }
 
-        .kpi-card:nth-child(1) { animation-delay: 0.1s; }
-        .kpi-card:nth-child(2) { animation-delay: 0.2s; }
-        .kpi-card:nth-child(3) { animation-delay: 0.3s; }
-        .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+        .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.2s; }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
@@ -674,7 +809,7 @@
             }
 
             .kpi-label {
-                font-size: 0.95rem;
+                font-size: 0.9rem;
             }
 
             .elegant-table {

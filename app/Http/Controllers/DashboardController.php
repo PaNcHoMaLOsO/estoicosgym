@@ -100,6 +100,27 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        // ========== MÉTODOS DE PAGO MÁS USADOS ==========
+        $metodosPagoMasUsados = MetodoPago::withCount('pagos')
+            ->orderByDesc('pagos_count')
+            ->limit(5)
+            ->get();
+
+        // ========== RESUMEN DE ESTADOS DE INSCRIPCIONES ==========
+        $estadosPausada = Estado::where('nombre', 'Pausada')->first();
+        $estadoVencida = Estado::where('nombre', 'Vencida')->first();
+        $estadoCancelada = Estado::where('nombre', 'Cancelada')->first();
+        
+        $inscripcionesPausadas = $estadosPausada ? Inscripcion::where('id_estado', $estadosPausada->id)->count() : 0;
+        $inscripcionesVencidas = $estadoVencida ? Inscripcion::where('id_estado', $estadoVencida->id)->count() : 0;
+        $inscripcionesCanceladas = $estadoCancelada ? Inscripcion::where('id_estado', $estadoCancelada->id)->count() : 0;
+
+        // ========== TASA DE CONVERSIÓN MENSUAL ==========
+        $totalInscripcionesEsteMes = Inscripcion::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $tasaConversion = $inscripcionesActivas > 0 ? ($totalInscripcionesEsteMes / $inscripcionesActivas) * 100 : 0;
+
         return view('dashboard.index', compact(
             'totalClientes',
             'inscripcionesActivas',
@@ -113,7 +134,13 @@ class DashboardController extends Controller
             'topMembresias',
             'maxMembresias',
             'ultimosPagos',
-            'inscripcionesRecientes'
+            'inscripcionesRecientes',
+            'metodosPagoMasUsados',
+            'inscripcionesPausadas',
+            'inscripcionesVencidas',
+            'inscripcionesCanceladas',
+            'totalInscripcionesEsteMes',
+            'tasaConversion'
         ));
     }
 }
