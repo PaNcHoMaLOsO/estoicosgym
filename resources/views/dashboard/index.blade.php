@@ -434,16 +434,249 @@
 
 @push('css')
 <style>
-    .small-box { 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important; 
-        border-radius: 6px !important; 
+    /* ===== DASHBOARD ELEGANTE Y COHERENTE ===== */
+    
+    /* KPI CARDS - Premium Design */
+    .small-box {
+        border: none !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: hidden;
+        padding: 0 !important;
     }
-    .small-box:hover { 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; 
+
+    .small-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
     }
-    .card { 
-        border-radius: 6px !important; 
-        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; 
+
+    .small-box:hover {
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-4px) !important;
+    }
+
+    .small-box .inner {
+        padding: 25px !important;
+    }
+
+    .small-box .inner h3 {
+        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -1px;
+        margin: 0 0 10px 0 !important;
+        line-height: 1;
+    }
+
+    .small-box .inner p {
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        margin: 0 0 8px 0 !important;
+        opacity: 0.95;
+    }
+
+    .small-box .inner small {
+        font-size: 0.9rem !important;
+        opacity: 0.8;
+        font-weight: 500;
+    }
+
+    .small-box .icon {
+        font-size: 4rem !important;
+        opacity: 0.12 !important;
+        right: 15px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+    }
+
+    .small-box-footer {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+        padding: 12px 20px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .small-box-footer:hover {
+        background: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* CARDS - Premium Design */
+    .card {
+        border: none !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.01) 100%) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        padding: 18px 20px !important;
+        border-radius: 12px 12px 0 0 !important;
+    }
+
+    .card-header.with-border {
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .card-title {
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        letter-spacing: 0.3px;
+        margin: 0 !important;
+        color: #333 !important;
+    }
+
+    .card-body {
+        padding: 22px !important;
+    }
+
+    .card-footer {
+        background: linear-gradient(135deg, rgba(0,0,0,0.01) 0%, rgba(0,0,0,0.02) 100%) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+        padding: 14px 20px !important;
+    }
+
+    /* TABLAS - Premium Design */
+    .table {
+        font-size: 0.95rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .table thead th {
+        background: linear-gradient(135deg, #f5f5f5 0%, #f0f0f0 100%) !important;
+        border-bottom: 2px solid #e0e0e0 !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #444 !important;
+        padding: 14px 12px !important;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+    .table tbody tr:hover {
+        background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.01)) !important;
+    }
+
+    .table td {
+        vertical-align: middle;
+        padding: 13px 12px !important;
+    }
+
+    .table a {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .table a:hover {
+        color: #0056b3;
+        text-decoration: underline;
+    }
+
+    /* BADGES - Premium Design */
+    .badge {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        border-radius: 20px !important;
+        display: inline-block;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+
+    /* PROGRESS BARS */
+    .progress {
+        height: 6px !important;
+        border-radius: 3px !important;
+        background: #e9ecef !important;
+    }
+
+    .progress-bar {
+        border-radius: 3px !important;
+        transition: width 0.6s ease !important;
+    }
+
+    /* BOTONES */
+    .btn {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+
+    .btn:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: translateY(-2px);
+    }
+
+    /* CONTAINER FLUID */
+    .container-fluid {
+        padding: 20px !important;
+    }
+
+    /* SPACING */
+    .row {
+        margin-bottom: 24px !important;
+    }
+
+    /* HEADER STYLING */
+    .content-header h1 {
+        font-weight: 800 !important;
+        letter-spacing: -0.5px;
+        color: #2c3e50 !important;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        .small-box .inner h3 {
+            font-size: 1.8rem !important;
+        }
+
+        .small-box .icon {
+            font-size: 2.5rem !important;
+        }
+
+        .card-body {
+            padding: 15px !important;
+        }
+
+        .table {
+            font-size: 0.85rem !important;
+        }
+
+        .table thead th,
+        .table td {
+            padding: 8px 6px !important;
+        }
+    }
+
+    /* DARK MODE - Si es necesario */
+    @media (prefers-color-scheme: dark) {
+        .card-header {
+            background: rgba(255,255,255,0.05) !important;
+        }
+
+        .table thead th {
+            background: rgba(0,0,0,0.3) !important;
+        }
     }
 </style>
 @endpush
