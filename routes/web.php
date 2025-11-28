@@ -41,6 +41,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Rutas personalizadas de clientes (deben ir antes del resource)
     Route::get('clientes-desactivados/ver', [ClienteController::class, 'showInactive'])->name('clientes.inactive');
     Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
+    Route::patch('clientes/{cliente}/desactivar', [ClienteController::class, 'deactivate'])->name('clientes.deactivate');
     
     // CRUD Clientes
     Route::resource('clientes', ClienteController::class);

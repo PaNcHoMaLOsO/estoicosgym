@@ -266,7 +266,7 @@
             </a>
         </div>
     </div>
-@stop
+@endsection
 
 @section('content')
     @if ($errors->any())
@@ -479,8 +479,50 @@
                     </div>
                 </div>
 
+                <!-- ESTADO DEL CLIENTE -->
+                <div class="section-header">
+                    <i class="fas fa-toggle-on"></i> Estado del Cliente
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="alert alert-info" role="alert">
+                            <strong>Estado Actual:</strong>
+                            @if($cliente->activo)
+                                <span class="badge badge-success" style="font-size: 0.95rem;">
+                                    <i class="fas fa-check-circle"></i> ACTIVO
+                                </span>
+                            @else
+                                <span class="badge badge-danger" style="font-size: 0.95rem;">
+                                    <i class="fas fa-times-circle"></i> INACTIVO
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO OCULTO PARA DESACTIVACIÓN -->
+                <form id="formDesactivar" method="POST" style="display:none;">
+                    @csrf
+                    @method('PATCH')
+                </form>
+
+                <!-- BOTONES DE ESTADO -->
+                <div class="row">
+                    <div class="col-md-6">
+                        @if($cliente->activo)
+                            <button type="button" class="btn btn-danger btn-block" onclick="confirmarDesactivacion({{ $cliente->id }}, '{{ $cliente->nombres }}')">
+                                <i class="fas fa-ban"></i> Desactivar Cliente
+                            </button>
+                        @else
+                            <a href="{{ route('admin.clientes.reactivate', $cliente->id) }}" class="btn btn-success btn-block" onclick="return confirm('¿Reactivar este cliente?')">
+                                <i class="fas fa-check"></i> Reactivar Cliente
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- BOTONES DE ACCIÓN -->
-                <div class="btn-actions">
+                <div class="btn-actions" style="margin-top: 2rem;">
                     <div class="btn-actions-left">
                         <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary btn-lg-custom">
                             <i class="fas fa-times"></i> Cancelar
@@ -498,7 +540,9 @@
             </form>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
         let isSubmitting = false;
 
@@ -607,5 +651,53 @@
         if (errorAlert) {
             errorAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
+        // Desactivación manual del cliente
+        function confirmarDesactivacion(clienteId, nombre) {
+            Swal.fire({
+                title: '¿Desactivar Cliente?',
+                html: `
+                    <div style="text-align: left;">
+                        <p style="margin-bottom: 1rem;">Estás a punto de <strong>desactivar a ${nombre}</strong>.</p>
+                        <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffe5b4 100%); border: 2px solid #ff9800; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                            <p style="margin: 0; color: #856404;">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Nota:</strong> El cliente será desactivado pero sus datos se conservarán. Podrá reactivarlo más adelante.
+                            </p>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-ban"></i> Desactivar',
+                cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancelar',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                willOpen: () => {
+                    document.querySelector('.swal2-confirm').classList.add('btn-lg');
+                    document.querySelector('.swal2-cancel').classList.add('btn-lg');
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Enviar formulario de desactivación
+                    const form = document.getElementById('formDesactivar');
+                    form.action = '/admin/clientes/' + clienteId + '/desactivar';
+                    
+                    Swal.fire({
+                        title: 'Desactivando...',
+                        html: 'Por favor espera...',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                            form.submit();
+                        }
+                    });
+                }
+            });
+        }
     </script>
-@stop
+@endpush

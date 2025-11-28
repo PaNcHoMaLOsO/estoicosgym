@@ -311,6 +311,24 @@ class ClienteController extends Controller
     }
 
     /**
+     * Desactivar cliente manualmente (desde formulario de edición)
+     */
+    public function deactivate(Cliente $cliente)
+    {
+        // Verificar que esté activo
+        if (!$cliente->activo) {
+            return redirect()->route('admin.clientes.edit', $cliente)
+                ->with('error', 'Este cliente ya está desactivado.');
+        }
+
+        // Desactivar
+        $cliente->update(['activo' => false]);
+
+        return redirect()->route('admin.clientes.edit', $cliente)
+            ->with('success', 'Cliente desactivado exitosamente. Podrá reactivarlo cuando lo necesite.');
+    }
+
+    /**
      * API: Obtener precio de membresía (normal o con descuento por convenio)
      */
     public function getPrecioMembresia($membresia_id)

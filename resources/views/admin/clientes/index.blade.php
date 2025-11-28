@@ -236,7 +236,7 @@
             }
         }
     </style>
-@stop
+@endsection
 
 @section('content_header')
     <div class="row mb-4">
