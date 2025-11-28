@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('historial_precios', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('id_precio_membresia');
+            $table->unsignedBigInteger('id_precio_membresia');
             $table->decimal('precio_anterior', 10, 2)->comment('Precio anterior');
             $table->decimal('precio_nuevo', 10, 2)->comment('Precio nuevo');
             $table->string('razon_cambio', 255)->nullable()->comment('Razón del cambio');

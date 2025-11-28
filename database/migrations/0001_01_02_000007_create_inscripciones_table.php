@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('inscripciones', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
-            $table->unsignedInteger('id_cliente');
-            $table->unsignedInteger('id_membresia');
-            $table->unsignedInteger('id_convenio')->nullable()->comment('Convenio aplicado al momento de la inscripción');
-            $table->unsignedInteger('id_precio_acordado')->comment('Precio vigente al momento de la inscripción');
+            $table->unsignedBigInteger('id_cliente');
+            $table->unsignedBigInteger('id_membresia');
+            $table->unsignedBigInteger('id_convenio')->nullable()->comment('Convenio aplicado al momento de la inscripción');
+            $table->unsignedBigInteger('id_precio_acordado')->comment('Precio vigente al momento de la inscripción');
 
             $table->date('fecha_inscripcion')->comment('Fecha en que se registra');
             $table->date('fecha_inicio')->comment('Fecha en que inicia la membresía (puede ser futura)');
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('precio_base', 10, 2)->comment('Precio oficial de la membresía');
             $table->decimal('descuento_aplicado', 10, 2)->default(0)->comment('Descuento en pesos');
             $table->decimal('precio_final', 10, 2)->comment('precio_base - descuento_aplicado');
-            $table->unsignedInteger('id_motivo_descuento')->nullable()->comment('Justificación del descuento');
+            $table->unsignedBigInteger('id_motivo_descuento')->nullable()->comment('Justificación del descuento');
 
             $table->unsignedInteger('id_estado')->comment('Activa, Vencida, Pausada, Cancelada, Pendiente');
 
@@ -45,7 +45,7 @@ return new class extends Migration
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');
             $table->foreign('id_precio_acordado')->references('id')->on('precios_membresias')->onDelete('restrict');
             $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
-            $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
+            $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
             $table->index('id_cliente');
             $table->index('id_estado');

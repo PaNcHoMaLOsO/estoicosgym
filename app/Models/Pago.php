@@ -82,6 +82,7 @@ class Pago extends Model
         'fecha_vencimiento_cuota',
         'grupo_pago',
         'id_estado',
+        'tipo_pago',
         'observaciones',
     ];
 

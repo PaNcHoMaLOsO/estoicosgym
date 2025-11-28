@@ -94,7 +94,7 @@ class EnhancedTestDataSeeder extends Seeder
                     'id_membresia' => $membresia->id,
                     'id_convenio' => $faker->boolean(70) ? $faker->randomElement($convenios->pluck('id')->toArray()) : null,
                     'id_precio_acordado' => $precioMembresia->id,
-                    'id_estado' => $estado->id,
+                    'id_estado' => $estado->codigo,
                     'id_motivo_descuento' => $tieneDescuento && $faker->boolean(50) ? $faker->randomElement($motivos_descuento->pluck('id')->toArray()) : null,
                     'fecha_inscripcion' => $fechaInicio,
                     'fecha_inicio' => $fechaInicio,
@@ -121,7 +121,7 @@ class EnhancedTestDataSeeder extends Seeder
 
                         $fechaPago = $faker->dateTimeBetween($fechaInicio, $now);
                         $periodoInicio = Carbon::instance($fechaPago)->startOfDay();
-                        $estadoPago = $estados->where('nombre', 'Pagado')->first()->id;
+                        $estadoPago = $estados->where('nombre', 'Pagado')->first()->codigo;
 
                         Pago::create([
                             'id_inscripcion' => $inscripcion->id,
@@ -193,7 +193,7 @@ class EnhancedTestDataSeeder extends Seeder
                 'id_membresia' => $membresia->id,
                 'id_convenio' => $convenios->where('nombre', 'Club de Empresarios')->first()->id,
                 'id_precio_acordado' => $precioMembresia->id,
-                'id_estado' => $estados->where('nombre', 'Activa')->first()->id,
+                'id_estado' => $estados->where('nombre', 'Activa')->first()->codigo,
                 'fecha_inscripcion' => now()->subMonths($i),
                 'fecha_inicio' => now()->subMonths($i),
                 'fecha_vencimiento' => now()->addMonths(12 - $i),

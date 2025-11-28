@@ -357,7 +357,89 @@
 
         function handleFormSubmit(event) {
             event.preventDefault();
-            document.getElementById('clienteForm').submit();
+            
+            // Validar que no haya errores de validación
+            const form = document.getElementById('clienteForm');
+            const paso = currentStep;
+            const flujoInput = document.getElementById('flujo_cliente');
+            const flujo = flujoInput.value;
+            
+            // Función para validar campos requeridos en un paso
+            function validarPaso(pasoNum) {
+                const paso1 = document.getElementById('step-1');
+                const paso2 = document.getElementById('step-2');
+                const paso3 = document.getElementById('step-3');
+                
+                const errores = [];
+                
+                if (pasoNum === 1) {
+                    const nombres = document.getElementById('nombres').value.trim();
+                    const apellido_paterno = document.getElementById('apellido_paterno').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const celular = document.getElementById('celular').value.trim();
+                    
+                    if (!nombres) errores.push('Nombres es requerido');
+                    if (!apellido_paterno) errores.push('Apellido Paterno es requerido');
+                    if (!email) errores.push('Email es requerido');
+                    if (!celular) errores.push('Celular es requerido');
+                } else if (pasoNum === 2) {
+                    const id_membresia = document.getElementById('id_membresia').value;
+                    const fecha_inicio = document.getElementById('fecha_inicio').value;
+                    
+                    if (!id_membresia) errores.push('Selecciona una Membresía');
+                    if (!fecha_inicio) errores.push('Selecciona una Fecha de Inicio');
+                } else if (pasoNum === 3) {
+                    const tipo_pago = document.getElementById('tipo_pago').value;
+                    const fecha_pago = document.getElementById('fecha_pago').value;
+                    
+                    if (!tipo_pago) errores.push('Selecciona un tipo de pago');
+                    if (!fecha_pago) errores.push('Selecciona una Fecha de Pago');
+                    
+                    // Validar monto según tipo de pago
+                    if (tipo_pago === 'completo' || tipo_pago === 'parcial' || tipo_pago === 'mixto') {
+                        const id_metodo_pago = document.getElementById('id_metodo_pago').value;
+                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago');
+                    }
+                    
+                    if (tipo_pago === 'parcial') {
+                        const monto_abonado = parseInt(document.getElementById('monto_abonado').value) || 0;
+                        const precio_final = parseInt(document.getElementById('resumen-precio-final').textContent.replace('$', '').replace(/\./g, '')) || 0;
+                        
+                        if (monto_abonado <= 0) errores.push('En pago parcial el monto debe ser mayor a $0');
+                        if (monto_abonado >= precio_final) errores.push('En pago parcial el monto debe ser menor al precio final');
+                    }
+                }
+                
+                return errores;
+            }
+            
+            // Validar el paso actual
+            const errores = validarPaso(paso);
+            
+            if (errores.length > 0) {
+                // Mostrar alertas de error
+                const alertContainer = document.getElementById('formAlerts');
+                let alertHTML = '<div class="alert alert-danger alert-dismissible fade show" role="alert">';
+                alertHTML += '<h5><i class="fas fa-exclamation-triangle"></i> Errores en el formulario:</h5>';
+                alertHTML += '<ul class="mb-0">';
+                errores.forEach(error => {
+                    alertHTML += '<li>' + error + '</li>';
+                });
+                alertHTML += '</ul>';
+                alertHTML += '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+                alertHTML += '</div>';
+                
+                // Insertar alerta al inicio del form
+                const formStart = form.querySelector('.steps-nav');
+                if (formStart) {
+                    formStart.insertAdjacentHTML('beforebegin', alertHTML);
+                    formStart.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                return false;
+            }
+            
+            // Si todo está OK, enviar el formulario
+            form.submit();
             return false;
         }
 

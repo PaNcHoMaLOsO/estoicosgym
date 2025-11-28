@@ -11,24 +11,27 @@ return new class extends Migration
         Schema::create('pagos', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique()->comment('UUID único para identificación externa');
-            $table->unsignedInteger('id_inscripcion');
-            $table->unsignedInteger('id_cliente')->comment('Redundante pero útil para queries');
+            $table->unsignedBigInteger('id_inscripcion');
+            $table->unsignedBigInteger('id_cliente')->comment('Redundante pero útil para queries');
 
             $table->decimal('monto_total', 10, 2)->comment('Total a pagar');
             $table->decimal('monto_abonado', 10, 2)->comment('Lo que se pagó en este registro');
             $table->decimal('monto_pendiente', 10, 2)->comment('Saldo restante');
 
             $table->decimal('descuento_aplicado', 10, 2)->default(0);
-            $table->unsignedInteger('id_motivo_descuento')->nullable();
+            $table->unsignedBigInteger('id_motivo_descuento')->nullable();
 
             $table->date('fecha_pago');
             $table->date('periodo_inicio')->comment('Inicio del período cubierto');
             $table->date('periodo_fin')->comment('Fin del período cubierto');
 
-            $table->unsignedInteger('id_metodo_pago');
+            $table->unsignedBigInteger('id_metodo_pago');
             $table->string('referencia_pago', 100)->nullable()->comment('Futuro: Nº de transferencia, comprobante');
 
             $table->unsignedInteger('id_estado')->comment('Pendiente, Pagado, Parcial, Vencido');
+
+            // Tipo de pago (completo, parcial, pendiente, mixto)
+            $table->enum('tipo_pago', ['completo', 'parcial', 'pendiente', 'mixto'])->default('completo')->comment('Tipo de pago realizado');
 
             // Campos para manejo de cuotas
             $table->unsignedTinyInteger('cantidad_cuotas')->default(1)->comment('Total de cuotas en que se pagará');
@@ -43,7 +46,7 @@ return new class extends Migration
             $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
             $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
             $table->foreign('id_metodo_pago')->references('id')->on('metodos_pago')->onDelete('restrict');
-            $table->foreign('id_estado')->references('id')->on('estados')->onDelete('restrict');
+            $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
             $table->index('id_cliente');
             $table->index('id_inscripcion');

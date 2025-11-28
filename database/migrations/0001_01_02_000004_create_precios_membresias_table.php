@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('precios_membresias', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('id_membresia');
+            $table->unsignedBigInteger('id_membresia');
             $table->decimal('precio_normal', 10, 2);
             $table->decimal('precio_convenio', 10, 2)->nullable()->comment('NULL si no aplica convenio');
             $table->date('fecha_vigencia_desde');

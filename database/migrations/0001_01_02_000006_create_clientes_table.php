@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('fecha_nacimiento')->nullable();
             $table->string('contacto_emergencia', 100)->nullable();
             $table->string('telefono_emergencia', 20)->nullable();
-            $table->unsignedInteger('id_convenio')->nullable()->comment('Convenio asociado al cliente');
+            $table->unsignedBigInteger('id_convenio')->nullable()->comment('Convenio asociado al cliente');
             $table->unsignedInteger('id_estado')->nullable()->comment('Rango 400-402: estados del cliente');
             $table->text('observaciones')->nullable();
             $table->boolean('activo')->default(true);

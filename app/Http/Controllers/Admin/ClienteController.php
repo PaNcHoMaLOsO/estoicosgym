@@ -117,6 +117,9 @@ class ClienteController extends Controller
             'id_convenio' => 'nullable|exists:convenios,id',
             'id_membresia' => 'required|exists:membresias,id',
             'fecha_inicio' => 'required|date|after_or_equal:today',
+            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
+            'descuento_manual' => 'nullable|numeric|min:0',
+            'observaciones_inscripcion' => 'nullable|string|max:500',
         ]);
 
         // Obtener membresía y precio
@@ -129,15 +132,20 @@ class ClienteController extends Controller
             ->orderBy('fecha_vigencia_hasta', 'desc')
             ->firstOrFail();
 
-        // Calcular precio final con descuento si aplica
-        $precioFinal = $precioActual->precio_normal;
-        $descuento = 0;
+        // Calcular precio final con descuentos
+        $precioFinal = (int) $precioActual->precio_normal;
+        $descuentoConvenio = 0;
+        $descuentoManual = (int) ($validatedMembresia['descuento_manual'] ?? 0);
 
         // Si tiene convenio Y existe precio_convenio para esta membresía, aplicar descuento
         if ($validatedMembresia['id_convenio'] && $precioActual->precio_convenio) {
-            $precioFinal = $precioActual->precio_convenio;
-            $descuento = $precioActual->precio_normal - $precioActual->precio_convenio;
+            $precioFinal = (int) $precioActual->precio_convenio;
+            $descuentoConvenio = (int) $precioActual->precio_normal - (int) $precioActual->precio_convenio;
         }
+
+        // Aplicar descuento manual
+        $precioFinal = max(0, $precioFinal - $descuentoManual);
+        $descuentoTotal = $descuentoConvenio + $descuentoManual;
 
         // Crear inscripción
         $fechaInicio = Carbon::parse($validatedMembresia['fecha_inicio']);
@@ -149,12 +157,13 @@ class ClienteController extends Controller
             'id_membresia' => $membresia->id,
             'id_precio_acordado' => $precioActual->id,
             'id_convenio' => $validatedMembresia['id_convenio'],
-            'id_motivo_descuento' => null,
+            'id_motivo_descuento' => $validatedMembresia['id_motivo_descuento'] ?? null,
+            'observaciones_inscripcion' => $validatedMembresia['observaciones_inscripcion'] ?? null,
             'fecha_inscripcion' => Carbon::now(),
             'fecha_inicio' => $fechaInicio,
             'fecha_vencimiento' => $fechaVencimiento,
-            'precio_base' => $precioActual->precio_normal,
-            'descuento_aplicado' => $descuento,
+            'precio_base' => (int) $precioActual->precio_normal,
+            'descuento_aplicado' => $descuentoTotal,
             'precio_final' => $precioFinal,
             'id_estado' => 100, // Activa
         ]);
@@ -168,10 +177,39 @@ class ClienteController extends Controller
         // ========== CASO 3: CLIENTE + MEMBRESÍA + PAGO (COMPLETO) ==========
         if ($flujoCliente === 'completo') {
             $validatedPago = $request->validate([
-                'monto_abonado' => 'required|numeric|min:0.01',
-                'id_metodo_pago' => 'required|exists:metodos_pago,id',
+                'tipo_pago' => 'required|in:completo,parcial,pendiente,mixto',
+                'monto_abonado' => 'nullable|numeric|min:0',
+                'id_metodo_pago' => 'nullable|exists:metodos_pago,id',
                 'fecha_pago' => 'required|date|before_or_equal:today',
             ]);
+
+            // Validaciones según tipo de pago
+            $tipoPago = $validatedPago['tipo_pago'];
+            $montoAbonado = (int) ($validatedPago['monto_abonado'] ?? 0);
+
+            // Validar según tipo de pago
+            if ($tipoPago === 'completo') {
+                $montoAbonado = $precioFinal;
+                $request->validate(['id_metodo_pago' => 'required']);
+                $estadoPago = 201; // Pagado
+            } elseif ($tipoPago === 'parcial') {
+                if ($montoAbonado <= 0 || $montoAbonado > $precioFinal) {
+                    return back()->with('error', 'En pago parcial el monto debe ser mayor a $0 y menor al precio final.');
+                }
+                $request->validate(['id_metodo_pago' => 'required']);
+                $estadoPago = 202; // Parcial
+            } elseif ($tipoPago === 'pendiente') {
+                $montoAbonado = 0;
+                $estadoPago = 200; // Pendiente
+            } elseif ($tipoPago === 'mixto') {
+                if ($montoAbonado < 0 || $montoAbonado > $precioFinal) {
+                    return back()->with('error', 'En pago mixto el monto debe estar entre $0 y el precio final.');
+                }
+                $request->validate(['id_metodo_pago' => 'required']);
+                $estadoPago = $montoAbonado == 0 ? 200 : 202; // Pendiente o Parcial
+            }
+
+            $montoPendiente = max(0, $precioFinal - $montoAbonado);
 
             // Crear pago
             Pago::create([
@@ -179,23 +217,29 @@ class ClienteController extends Controller
                 'id_inscripcion' => $inscripcion->id,
                 'id_cliente' => $cliente->id,
                 'monto_total' => $precioFinal,
-                'monto_abonado' => $validatedPago['monto_abonado'],
-                'monto_pendiente' => max(0, $precioFinal - $validatedPago['monto_abonado']),
+                'monto_abonado' => $montoAbonado,
+                'monto_pendiente' => $montoPendiente,
                 'fecha_pago' => Carbon::parse($validatedPago['fecha_pago']),
                 'periodo_inicio' => $fechaInicio,
                 'periodo_fin' => $fechaVencimiento,
                 'id_metodo_pago' => $validatedPago['id_metodo_pago'],
-                'id_estado' => $validatedPago['monto_abonado'] >= $precioFinal ? 201 : 200, // Pagado(201) o Pendiente(200)
+                'id_estado' => $estadoPago,
+                'tipo_pago' => $tipoPago,
                 'cantidad_cuotas' => 1,
                 'numero_cuota' => 1,
                 'monto_cuota' => $precioFinal,
             ]);
 
             // Determinar estado final
-            $estadoPago = $validatedPago['monto_abonado'] >= $precioFinal ? 'PAGADO COMPLETAMENTE' : 'ABONO REGISTRADO (pendiente)';
+            $estadoPagoTexto = match($tipoPago) {
+                'completo' => 'PAGADO COMPLETAMENTE',
+                'parcial' => 'ABONO REGISTRADO (pendiente saldo)',
+                'pendiente' => 'PAGO PENDIENTE (sin pagar)',
+                'mixto' => $montoAbonado > 0 ? 'ABONO REGISTRADO (mixto)' : 'PAGO PENDIENTE (mixto)',
+            };
 
             return redirect()->route('admin.clientes.show', $cliente)
-                ->with('success', "Cliente + Membresía + Pago registrados. Estado: $estadoPago");
+                ->with('success', "Cliente + Membresía + Pago registrados. Estado: $estadoPagoTexto");
         }
 
         // Fallback (no debería llegar aquí)
