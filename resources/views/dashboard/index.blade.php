@@ -108,8 +108,8 @@
                         <i class="fas fa-chart-bar"></i> Ingresos Últimos 6 Meses
                     </h3>
                 </div>
-                <div class="card-body">
-                    <canvas id="chartIngresos" height="70"></canvas>
+                <div class="card-body" style="position: relative; height: 300px;">
+                    <canvas id="chartIngresos"></canvas>
                 </div>
             </div>
         </div>
@@ -357,83 +357,92 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         // Datos para Chart.js
-        const etiquetasMembresias = @json($etiquetasMembresias);
-        const datosMembresias = @json($datosMembresias);
-        const etiquetasIngresos = @json($etiquetasIngresos);
-        const datosIngresos = @json($datosIngresosBarras);
+        const etiquetasMembresias = @json($etiquetasMembresias) || [];
+        const datosMembresias = @json($datosMembresias) || [];
+        const etiquetasIngresos = @json($etiquetasIngresos) || [];
+        const datosIngresos = @json($datosIngresosBarras) || [];
 
         // Colores para Dona
         const coloresMembresias = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'];
 
         // ===== GRÁFICO DONA: Distribución Membresías =====
-        const ctxMembresias = document.getElementById('chartMembresias');
-        if (ctxMembresias) {
-            new Chart(ctxMembresias.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: etiquetasMembresias,
-                    datasets: [{
-                        data: datosMembresias,
-                        backgroundColor: coloresMembresias.slice(0, etiquetasMembresias.length),
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                font: { size: 11, weight: '500' },
-                                usePointStyle: true
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ===== GRÁFICO BARRAS: Ingresos =====
-        const ctxIngresos = document.getElementById('chartIngresos');
-        if (ctxIngresos) {
-            new Chart(ctxIngresos.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: etiquetasIngresos,
-                    datasets: [{
-                        label: 'Ingresos ($)',
-                        data: datosIngresos,
-                        backgroundColor: '#007bff',
-                        borderColor: '#004085',
-                        borderWidth: 1,
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
+        setTimeout(function() {
+            const ctxMembresias = document.getElementById('chartMembresias');
+            if (ctxMembresias && etiquetasMembresias.length > 0) {
+                new Chart(ctxMembresias.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: etiquetasMembresias,
+                        datasets: [{
+                            data: datosMembresias,
+                            backgroundColor: coloresMembresias.slice(0, etiquetasMembresias.length),
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + (value / 1000).toFixed(0) + 'K';
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 11, weight: '500' },
+                                    usePointStyle: true
                                 }
                             }
                         }
                     }
-                }
-            });
-        }
+                });
+            } else if (ctxMembresias) {
+                ctxMembresias.parentElement.innerHTML = '<div class="alert alert-info">Sin datos de membresías</div>';
+            }
+        }, 100);
+
+        // ===== GRÁFICO BARRAS: Ingresos =====
+        setTimeout(function() {
+            const ctxIngresos = document.getElementById('chartIngresos');
+            if (ctxIngresos && etiquetasIngresos.length > 0) {
+                new Chart(ctxIngresos.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: etiquetasIngresos,
+                        datasets: [{
+                            label: 'Ingresos ($)',
+                            data: datosIngresos,
+                            backgroundColor: '#007bff',
+                            borderColor: '#004085',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: undefined,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + (value / 1000).toFixed(0) + 'K';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else if (ctxIngresos) {
+                ctxIngresos.parentElement.innerHTML = '<div class="alert alert-info">Sin datos de ingresos</div>';
+            }
+        }, 100);
     </script>
 @endpush
 

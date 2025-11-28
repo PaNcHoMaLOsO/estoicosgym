@@ -16,35 +16,41 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        // ==== KPIs PRINCIPALES ====
+        // ========== OBTENER ESTADOS POR NOMBRE (ROBUSTO) ==========
+        $estadoActiva = Estado::where('nombre', 'Activa')->first();
+        $idEstadoActiva = $estadoActiva?->id;
+
+        // ========== KPIs PRINCIPALES ==========
         // Total Clientes
         $totalClientes = Cliente::where('activo', true)->count();
         
-        // Inscripciones Activas (estado_id = 100 = Activa)
-        $inscripcionesActivas = Inscripcion::where('id_estado', 100)->count();
+        // Inscripciones Activas
+        $inscripcionesActivas = $idEstadoActiva ? Inscripcion::where('id_estado', $idEstadoActiva)->count() : 0;
         
-        // Ingresos del Mes (pagos completados)
+        // Ingresos del Mes (suma de pagos completados de este mes)
         $ingresosMes = Pago::whereYear('fecha_pago', now()->year)
             ->whereMonth('fecha_pago', now()->month)
             ->sum('monto_abonado');
         
         // Por Vencer en próximos 7 días
-        $porVencer7Dias = Inscripcion::where('id_estado', 100)
+        $porVencer7Dias = $idEstadoActiva ? Inscripcion::where('id_estado', $idEstadoActiva)
             ->whereBetween('fecha_vencimiento', [now(), now()->addDays(7)])
-            ->count();
+            ->count() : 0;
+
+        // ========== GRÁFICO DONA: Distribución de Membresías ==========
+        // SOLO inscripciones activas
+        $membresiasDistribucion = $idEstadoActiva 
+            ? Inscripcion::where('id_estado', $idEstadoActiva)
+                ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
+                ->select('membresias.nombre', DB::raw('count(*) as total'))
+                ->groupBy('membresias.id', 'membresias.nombre')
+                ->pluck('total', 'nombre')
+            : collect([]);
         
-        // ==== GRÁFICO DONA: Distribución de Membresías (SOLO inscripciones activas) ====
-        $membresiasDistribucion = Inscripcion::where('id_estado', 100)
-            ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
-            ->select('membresias.nombre', DB::raw('count(*) as total'))
-            ->groupBy('membresias.id', 'membresias.nombre')
-            ->pluck('total', 'nombre');
-        
-        // Preparar datos para Chart.js - Dona
         $etiquetasMembresias = $membresiasDistribucion->keys()->toArray();
-        $datosMembresias = $membresiasDistribucion->values()->toArray();
-        
-        // ==== GRÁFICO BARRAS: Ingresos Últimos 6 Meses ====
+        $datosMembresias = $membresiasDistribucion->values()->map(fn($v) => (int)$v)->toArray();
+
+        // ========== GRÁFICO BARRAS: Ingresos Últimos 6 Meses ==========
         $ingresos6Meses = Pago::where('fecha_pago', '>=', now()->subMonths(5))
             ->selectRaw('MONTH(fecha_pago) as mes, YEAR(fecha_pago) as anio, SUM(monto_abonado) as total')
             ->groupByRaw('YEAR(fecha_pago), MONTH(fecha_pago)')
@@ -52,45 +58,48 @@ class DashboardController extends Controller
             ->orderBy('mes')
             ->get();
         
-        // Preparar datos para Chart.js - Barras
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         $etiquetasIngresos = $ingresos6Meses->map(function($d) use ($meses) {
-            $mesNombre = $d->mes && $d->mes >= 1 && $d->mes <= 12 ? $meses[$d->mes - 1] : 'Desconocido';
+            $mesNombre = ($d->mes >= 1 && $d->mes <= 12) ? $meses[$d->mes - 1] : 'Desconocido';
             return $mesNombre . ' ' . $d->anio;
         })->toArray();
         $datosIngresosBarras = $ingresos6Meses->map(fn($d) => (float)$d->total)->toArray();
-        
-        // ==== TABLA: Clientes por Vencer (próximos 7 días) ====
-        $clientesPorVencer = Inscripcion::with(['cliente', 'membresia'])
-            ->where('id_estado', 100)
-            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(7)])
-            ->orderBy('fecha_vencimiento')
-            ->limit(10)
-            ->get();
-        
-        // ==== TABLA: Top Membresías ====
-        $topMembresias = Inscripcion::where('id_estado', 100)
-            ->select('id_membresia', DB::raw('count(*) as total'))
-            ->groupBy('id_membresia')
-            ->with('membresia')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
+
+        // ========== TABLA: Clientes por Vencer (próximos 7 días) ==========
+        $clientesPorVencer = $idEstadoActiva 
+            ? Inscripcion::with(['cliente', 'membresia', 'estado'])
+                ->where('id_estado', $idEstadoActiva)
+                ->whereBetween('fecha_vencimiento', [now(), now()->addDays(7)])
+                ->orderBy('fecha_vencimiento')
+                ->limit(10)
+                ->get()
+            : collect([]);
+
+        // ========== TABLA: Top Membresías ==========
+        $topMembresias = $idEstadoActiva 
+            ? Inscripcion::where('id_estado', $idEstadoActiva)
+                ->select('id_membresia', DB::raw('count(*) as total'))
+                ->groupBy('id_membresia')
+                ->with('membresia')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+            : collect([]);
         
         $maxMembresias = $topMembresias->max('total') ?? 1;
-        
-        // ==== TABLA: Últimos Pagos ====
+
+        // ========== TABLA: Últimos Pagos ==========
         $ultimosPagos = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado'])
-            ->orderByDesc('created_at')
+            ->orderByDesc('fecha_pago')
             ->limit(8)
             ->get();
-        
-        // ==== TABLA: Inscripciones Recientes ====
+
+        // ========== TABLA: Inscripciones Recientes ==========
         $inscripcionesRecientes = Inscripcion::with(['cliente', 'membresia', 'estado'])
             ->orderByDesc('created_at')
             ->limit(8)
             ->get();
-        
+
         return view('dashboard.index', compact(
             'totalClientes',
             'inscripcionesActivas',
