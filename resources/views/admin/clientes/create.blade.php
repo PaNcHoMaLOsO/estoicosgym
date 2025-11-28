@@ -391,22 +391,35 @@
                 } else if (pasoNum === 3) {
                     const tipo_pago = document.getElementById('tipo_pago').value;
                     const fecha_pago = document.getElementById('fecha_pago').value;
+                    const id_metodo_pago = document.getElementById('id_metodo_pago').value;
+                    const monto_abonado = parseInt(document.getElementById('monto_abonado').value) || 0;
+                    const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
+                    const precio_final = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
                     
                     if (!tipo_pago) errores.push('Selecciona un tipo de pago');
                     if (!fecha_pago) errores.push('Selecciona una Fecha de Pago');
                     
-                    // Validar monto según tipo de pago
-                    if (tipo_pago === 'completo' || tipo_pago === 'parcial' || tipo_pago === 'mixto') {
-                        const id_metodo_pago = document.getElementById('id_metodo_pago').value;
-                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago');
+                    // Validar fecha pago no sea futura
+                    const fechaPagoDate = new Date(fecha_pago);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    if (fechaPagoDate > hoy) {
+                        errores.push('La fecha de pago no puede ser futura');
                     }
                     
-                    if (tipo_pago === 'parcial') {
-                        const monto_abonado = parseInt(document.getElementById('monto_abonado').value) || 0;
-                        const precio_final = parseInt(document.getElementById('resumen-precio-final').textContent.replace('$', '').replace(/\./g, '')) || 0;
-                        
+                    // Validar monto según tipo de pago
+                    if (tipo_pago === 'completo') {
+                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago completo');
+                    } else if (tipo_pago === 'parcial') {
+                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago parcial');
                         if (monto_abonado <= 0) errores.push('En pago parcial el monto debe ser mayor a $0');
                         if (monto_abonado >= precio_final) errores.push('En pago parcial el monto debe ser menor al precio final');
+                    } else if (tipo_pago === 'pendiente') {
+                        // Sin validación de monto para pendiente
+                    } else if (tipo_pago === 'mixto') {
+                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago mixto');
+                        if (monto_abonado < 0) errores.push('El monto no puede ser negativo');
+                        if (monto_abonado > precio_final) errores.push('El monto no puede ser mayor al precio final');
                     }
                 }
                 
@@ -538,6 +551,8 @@
         </div>
 
         <div class="card-body">
+            <div id="formAlerts"></div>
+            
             <div class="steps-nav">
                 <button type="button" class="step-btn active" onclick="goToStep(1)" id="step1-btn">
                     <i class="fas fa-user"></i> Paso 1: Datos
