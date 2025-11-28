@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Convenio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ConvenioController extends Controller
 {
@@ -30,6 +32,8 @@ class ConvenioController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->validateFormToken($request, 'convenio_create')) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        
         $validated = $request->validate([
             'nombre' => 'required|string|max:100|unique:convenios',
             'tipo' => 'required|in:institucion_educativa,empresa,organizacion,otro',
@@ -68,6 +72,8 @@ class ConvenioController extends Controller
      */
     public function update(Request $request, Convenio $convenio)
     {
+        if (!$this->validateFormToken($request, 'convenio_update_' . $convenio->id)) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        
         $validated = $request->validate([
             'nombre' => 'required|string|max:100|unique:convenios,nombre,' . $convenio->id,
             'tipo' => 'required|in:institucion_educativa,empresa,organizacion,otro',
@@ -93,5 +99,21 @@ class ConvenioController extends Controller
 
         return redirect()->route('admin.convenios.index')
             ->with('success', 'Convenio eliminado exitosamente');
+    }
+
+    /**
+     * Validar token de formulario para prevenir doble envío.
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        if (!$token) return false;
+        
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        if (Cache::has($cacheKey)) return false;
+        Cache::put($cacheKey, true, 10);
+        return true;
     }
 }

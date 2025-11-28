@@ -8,9 +8,34 @@ use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Estado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class PagoController extends Controller
 {
+    /**
+     * Validar token de formulario para prevenir envío duplicado
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        
+        if (!$token) {
+            return false;
+        }
+        
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        if (Cache::has($cacheKey)) {
+            return false;
+        }
+        
+        Cache::put($cacheKey, true, 10);
+        
+        return true;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -98,6 +123,10 @@ class PagoController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->validateFormToken($request, 'pago_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $tipoPago = $request->input('tipo_pago', 'abono');
         
         // Validaciones base
@@ -233,6 +262,10 @@ class PagoController extends Controller
      */
     public function update(Request $request, Pago $pago)
     {
+        if (!$this->validateFormToken($request, 'pago_update_' . $pago->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'monto_abonado' => 'required|numeric|min:1|max:999999999',

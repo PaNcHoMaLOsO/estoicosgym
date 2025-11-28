@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MetodoPago;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class MetodoPagoController extends Controller
 {
@@ -30,6 +32,8 @@ class MetodoPagoController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->validateFormToken($request, 'metodo_pago_create')) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:metodos_pago',
             'descripcion' => 'nullable|string|max:500',
@@ -64,6 +68,8 @@ class MetodoPagoController extends Controller
      */
     public function update(Request $request, MetodoPago $metodoPago)
     {
+        if (!$this->validateFormToken($request, 'metodo_pago_update_' . $metodoPago->id)) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:metodos_pago,nombre,' . $metodoPago->id,
             'descripcion' => 'nullable|string|max:500',
@@ -86,5 +92,21 @@ class MetodoPagoController extends Controller
 
         return redirect()->route('admin.metodos-pago.index')
             ->with('success', 'Método de Pago eliminado exitosamente');
+    }
+
+    /**
+     * Validar token de formulario para prevenir doble envío.
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        if (!$token) return false;
+        
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        if (Cache::has($cacheKey)) return false;
+        Cache::put($cacheKey, true, 10);
+        return true;
     }
 }

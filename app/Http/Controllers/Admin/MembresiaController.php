@@ -8,9 +8,36 @@ use App\Models\PrecioMembresia;
 use App\Models\HistorialPrecio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class MembresiaController extends Controller
 {
+    /**
+     * Validar que no sea doble envío usando cache en sesión
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        
+        if (!$token) {
+            return false;
+        }
+        
+        // Crear clave única en cache con tiempo de vida de 10 segundos
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        // Si el token existe en cache, es un doble envío
+        if (Cache::has($cacheKey)) {
+            return false;
+        }
+        
+        // Guardar token en cache
+        Cache::put($cacheKey, true, 10);
+        
+        return true;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -33,6 +60,11 @@ class MembresiaController extends Controller
      */
     public function store(Request $request)
     {
+        // Validar que no sea doble envío
+        if (!$this->validateFormToken($request, 'membresia_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias',
             'duracion_meses' => 'required|integer|min:0|max:12',
@@ -118,6 +150,11 @@ class MembresiaController extends Controller
      */
     public function update(Request $request, Membresia $membresia)
     {
+        // Validar que no sea doble envío
+        if (!$this->validateFormToken($request, 'membresia_update_' . $membresia->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:membresias,nombre,' . $membresia->id,
             'duracion_meses' => 'required|integer|min:0|max:12',
@@ -158,7 +195,7 @@ class MembresiaController extends Controller
             // Registrar el cambio en auditoría
             $cambioDetalles = implode(', ', $cambiosCriticos);
             $usuario = Auth::user()?->name ?? 'Sistema';
-            \Log::warning("Cambios críticos en membresía {$membresia->nombre}: {$cambioDetalles}. Inscripciones activas: {$inscripcionesActivas}. Usuario: {$usuario}");
+            Log::warning("Cambios críticos en membresía {$membresia->nombre}: {$cambioDetalles}. Inscripciones activas: {$inscripcionesActivas}. Usuario: {$usuario}");
         }
 
         $precioAnterior = $precioActual->precio_normal ?? 0;
@@ -229,7 +266,7 @@ class MembresiaController extends Controller
             // Desactivar la membresía
             $membresia->update(['activo' => false]);
             
-            \Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
+            Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
             
             return redirect()->route('admin.membresias.index')
                 ->with('success', "Membresía '{$nombreMembresia}' desactivada exitosamente. " .
@@ -240,7 +277,7 @@ class MembresiaController extends Controller
         if ($forceDelete) {
             $inscripcionesTotales = $membresia->inscripciones()->count();
             
-            \Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
+            Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
             
             $membresia->delete();
             
@@ -251,7 +288,7 @@ class MembresiaController extends Controller
         // Si no hay inscripciones activas, eliminar directamente
         $inscripcionesTotales = $membresia->inscripciones()->count();
         
-        \Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
+        Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
         
         $membresia->delete();
         

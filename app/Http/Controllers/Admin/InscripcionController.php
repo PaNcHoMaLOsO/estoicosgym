@@ -13,6 +13,8 @@ use App\Models\MetodoPago;
 use App\Models\Pago;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class InscripcionController extends Controller
 {
@@ -22,6 +24,33 @@ class InscripcionController extends Controller
         'fecha_inicio', 'fecha_vencimiento', 'precio_base', 
         'precio_final', 'created_at'
     ];
+
+    /**
+     * Validar token de formulario para prevenir envíos duplicados
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string $action
+     * @return bool
+     */
+    private function validateFormToken(Request $request, string $action): bool
+    {
+        $token = $request->input('form_submit_token');
+        
+        if (!$token) {
+            return false;
+        }
+        
+        $userId = optional(auth('web')->user())->id ?? session()->getId();
+        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
+        
+        if (Cache::has($cacheKey)) {
+            return false;
+        }
+        
+        Cache::put($cacheKey, true, 10);
+        
+        return true;
+    }
 
     /**
      * Display a listing of the resource.
@@ -143,6 +172,10 @@ class InscripcionController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->validateFormToken($request, 'inscripcion_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $pagoPendiente = $request->has('pago_pendiente');
 
         $validated = $request->validate([
@@ -319,6 +352,10 @@ class InscripcionController extends Controller
      */
     public function update(Request $request, Inscripcion $inscripcion)
     {
+        if (!$this->validateFormToken($request, 'inscripcion_update_' . $inscripcion->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'id_cliente' => 'required|exists:clientes,id',
             'id_membresia' => 'required|exists:membresias,id',
