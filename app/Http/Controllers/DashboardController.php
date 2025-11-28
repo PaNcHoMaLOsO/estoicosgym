@@ -73,8 +73,15 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
-        // Inscripciones por estado - Gráfico de estados
+        // Inscripciones por estado - Gráfico de INSCRIPCIONES SOLO
         $inscripcionesPorEstado = Inscripcion::selectRaw('id_estado, count(*) as total')
+            ->groupBy('id_estado')
+            ->with('estado')
+            ->get()
+            ->filter(fn($item) => $item->estado !== null);
+        
+        // Pagos por estado - Gráfico de PAGOS SOLO
+        $pagosPorEstado = Pago::selectRaw('id_estado, count(*) as total')
             ->groupBy('id_estado')
             ->with('estado')
             ->get()
@@ -95,20 +102,33 @@ class DashboardController extends Controller
         })->toArray();
         $datosIngresos = $ingresosPorMes->map(fn($d) => (float)$d->total)->toArray();
         
-        // Colores para estados
-        $coloresEstados = [
+        // Colores para estados de INSCRIPCIONES
+        $coloresInscripciones = [
             'primary' => '#007bff',    // Activa
             'success' => '#28a745',    // Completada
             'warning' => '#ffc107',    // Pausada
-            'danger' => '#dc3545',     // Cancelada/Vencida
-            'info' => '#17a2b8',       // Pendiente
+            'danger' => '#dc3545',     // Cancelada/Vencida/Suspendida
             'secondary' => '#6c757d',  // Otros
         ];
         
-        // Datos para gráfico de estados
-        $etiquetasEstados = $inscripcionesPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
-        $datosEstados = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
-        $coloresDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresEstados[$d->estado->color ?? 'secondary'])->toArray();
+        // Colores para estados de PAGOS
+        $coloresPagos = [
+            'primary' => '#007bff',    // Pendiente
+            'success' => '#28a745',    // Pagado
+            'warning' => '#ffc107',    // Parcial/Vencido
+            'danger' => '#dc3545',     // Cancelado
+            'secondary' => '#6c757d',  // Otros
+        ];
+        
+        // Datos para gráfico de INSCRIPCIONES por estado
+        $etiquetasInscripciones = $inscripcionesPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
+        $datosInscripciones = $inscripcionesPorEstado->map(fn($d) => (int)$d->total)->toArray();
+        $coloresInscripcionesDispuestos = $inscripcionesPorEstado->map(fn($d) => $coloresInscripciones[$d->estado->color ?? 'secondary'])->toArray();
+        
+        // Datos para gráfico de PAGOS por estado
+        $etiquetasPagos = $pagosPorEstado->map(fn($d) => $d->estado->nombre)->toArray();
+        $datosPagos = $pagosPorEstado->map(fn($d) => (int)$d->total)->toArray();
+        $coloresPagosDispuestos = $pagosPorEstado->map(fn($d) => $coloresPagos[$d->estado->color ?? 'secondary'])->toArray();
         
         return view('dashboard.index', compact(
             'totalClientes',
@@ -123,12 +143,14 @@ class DashboardController extends Controller
             'proximasAVencer',
             'membresiasVendidas',
             'metodosPago',
-            'inscripcionesPorEstado',
             'etiquetasMeses',
             'datosIngresos',
-            'etiquetasEstados',
-            'datosEstados',
-            'coloresDispuestos'
+            'etiquetasInscripciones',
+            'datosInscripciones',
+            'coloresInscripcionesDispuestos',
+            'etiquetasPagos',
+            'datosPagos',
+            'coloresPagosDispuestos'
         ));
     }
 }

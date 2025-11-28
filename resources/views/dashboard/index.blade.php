@@ -357,13 +357,16 @@
 @push('js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
+        // Datos de INSCRIPCIONES por estado
+        const ETIQUETAS_INSCRIPCIONES = @json($etiquetasInscripciones);
+        const DATOS_INSCRIPCIONES = @json($datosInscripciones);
+        const COLORES_INSCRIPCIONES = @json($coloresInscripcionesDispuestos);
+
+        // Datos de INGRESOS por mes
         const ETIQUETAS_MESES = @json($etiquetasMeses);
         const DATOS_INGRESOS = @json($datosIngresos);
-        const ETIQUETAS_ESTADOS = @json($etiquetasEstados);
-        const DATOS_ESTADOS = @json($datosEstados);
-        const COLORES_DISPUESTOS = @json($coloresDispuestos);
 
-        // Gráfico de Ingresos por Mes
+        // Gráfico de Ingresos por Mes (Barras)
         const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
         new Chart(ctxIngresos, {
             type: 'bar',
@@ -400,15 +403,15 @@
             }
         });
 
-        // Gráfico de Estados (Doughnut)
-        const ctxEstados = document.getElementById('chartEstados').getContext('2d');
-        new Chart(ctxEstados, {
+        // Gráfico de INSCRIPCIONES por Estado (Dona)
+        const ctxInscripciones = document.getElementById('chartEstados').getContext('2d');
+        new Chart(ctxInscripciones, {
             type: 'doughnut',
             data: {
-                labels: ETIQUETAS_ESTADOS,
+                labels: ETIQUETAS_INSCRIPCIONES,
                 datasets: [{
-                    data: DATOS_ESTADOS,
-                    backgroundColor: COLORES_DISPUESTOS,
+                    data: DATOS_INSCRIPCIONES,
+                    backgroundColor: COLORES_INSCRIPCIONES,
                     borderColor: '#fff',
                     borderWidth: 2
                 }]
