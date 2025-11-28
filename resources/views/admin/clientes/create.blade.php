@@ -175,7 +175,7 @@
             
             console.log('Fetching precio para membresia:', membresia_id, 'convenio:', convenio_id);
             
-            fetch(`/admin/api/precio-membresia/${membresia_id}${convenio_id ? '?convenio=' + convenio_id : ''}`)
+            fetch(`/api/precio-membresia/${membresia_id}${convenio_id ? '?convenio=' + convenio_id : ''}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Respuesta API:', data);
