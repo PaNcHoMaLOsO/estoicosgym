@@ -285,8 +285,11 @@ class ClienteController extends Controller
         
         // Obtener el precio actual de la membresía
         $precioActual = PrecioMembresia::where('id_membresia', $membresia_id)
-            ->whereNull('fecha_vigencia_hasta')
-            ->orWhere('fecha_vigencia_hasta', '>=', now())
+            ->where(function ($query) {
+                $query->whereNull('fecha_vigencia_hasta')
+                      ->orWhere('fecha_vigencia_hasta', '>=', now());
+            })
+            ->orderBy('fecha_vigencia_hasta', 'desc')
             ->first();
         
         if (!$precioActual) {
