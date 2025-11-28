@@ -8,14 +8,67 @@
 
 | RF | Estado | Avance | Notas |
 |---|--------|--------|-------|
-| **RF-02: Gestión de Clientes** | 🟢 IMPLEMENTADO | 90% | Falta auditoría completa |
+| **RF-02: Gestión de Clientes** | 🟢 IMPLEMENTADO | 95% | Desactivación automática ✅, Falta auditoría |
 | **RF-03: Gestión de Membresías** | 🟢 IMPLEMENTADO | 85% | Sin cambio automático de estados |
 | **RF-04: Registro de Pagos** | 🟢 IMPLEMENTADO | 80% | Sin reportes avanzados |
 | **RF-07: Notificaciones** | 🟡 PARCIAL | 20% | Solo config SMTP, sin jobs |
 
-**Avance Global Estimado: 68.75%**
+**Avance Global Estimado: 70%** (↑ de 68.75%)
 
 ---
+
+## 🆕 MEJORA: DESACTIVACIÓN DE CLIENTES (28-11-2025)
+
+### ✅ Cambios Implementados
+
+Se agregó sistema de desactivación de clientes **automática y manual**:
+
+#### 1. **Desactivación Automática**
+- ✅ Nuevo comando: `clientes:desactivar-vencidos`
+- ✅ Se ejecuta diariamente a las **03:00 AM**
+- ✅ Busca clientes con membresías vencidas (estado 102 = VENCIDA)
+- ✅ Los desactiva automáticamente (activo = false)
+- ✅ Logging de operaciones en storage/logs
+
+**Cron Job Configurado:**
+```php
+Schedule::command('clientes:desactivar-vencidos')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->name('desactivar-clientes-vencidos');
+```
+
+#### 2. **Desactivación Manual (desde edición)**
+- ✅ Nueva sección en `edit.blade.php`: "Estado del Cliente"
+- ✅ Botón "Desactivar Cliente" (si está activo)
+- ✅ Confirmación con SweetAlert2
+- ✅ Ruta POST: `/admin/clientes/{id}/desactivar`
+- ✅ Método en controller: `ClienteController@deactivate()`
+
+**Flujo de desactivación manual:**
+```
+1. Admin clickea botón "Desactivar Cliente"
+2. Aparece modal SweetAlert2 con confirmación
+3. Admin confirma
+4. Se ejecuta PATCH /admin/clientes/{id}/desactivar
+5. Cliente se desactiva y redirecciona a edit
+```
+
+#### 3. **Archivos Modificados**
+- ✅ `app/Console/Commands/DesactivarClientesPorVencimiento.php` (NUEVO)
+- ✅ `routes/console.php` - Agregar scheduler
+- ✅ `routes/web.php` - Agregar ruta desactivar
+- ✅ `app/Http/Controllers/Admin/ClienteController.php` - Método deactivate()
+- ✅ `resources/views/admin/clientes/edit.blade.php` - Sección estado + botón
+
+#### 4. **Commits**
+```
+0916f7e feat: Agregar desactivación automática y manual de clientes
+```
+
+---
+
+## 🆕 MEJORA: DESACTIVACIÓN DE CLIENTES (28-11-2025)
 
 # RF-02: GESTIÓN DE CLIENTES (CRUD)
 
@@ -182,22 +235,24 @@ Implementar auditoría con paquete `spatie/laravel-activitylog` o tabla dedicada
 ---
 
 ## CONCLUSIÓN RF-02
-**✅ IMPLEMENTACIÓN: 90%**
+**✅ IMPLEMENTACIÓN: 95%** (↑ de 90%)
 
 **Fortalezas:**
-- CRUD completo y funcional
-- Validación RUT con dígito verificador
-- Restricción de duplicados (RUT, Email)
-- Baja lógica implementada
-- Desactivación/Reactivación de clientes
-- UI mejorada con SweetAlert2 (nuevo)
+- ✅ CRUD completo y funcional
+- ✅ Validación RUT con dígito verificador
+- ✅ Restricción de duplicados (RUT, Email)
+- ✅ Baja lógica implementada
+- ✅ Desactivación/Reactivación de clientes
+- ✅ **Desactivación automática cuando vence membresía (NUEVO)**
+- ✅ **Desactivación manual desde edición (NUEVO)**
+- ✅ UI mejorada con SweetAlert2
 
 **Faltante:**
-- Auditoría de cambios (5% crítico)
+- Auditoría de cambios (3% crítico)
 - Reportes de clientes
 - Importación masiva
 
-**RF-02 Avance: 90%**
+**RF-02 Avance: 95%**
 
 ---
 
@@ -1053,6 +1108,8 @@ tests/
 | 11 | Filtros por período y estado | RF-04 |
 | 12 | SweetAlert2 en interfaces | Mejora |
 | 13 | Protección doble envío | Mejora |
+| 14 | **Desactivación automática de clientes** | **RF-02 (NUEVO)** |
+| 15 | **Desactivación manual en formulario edit** | **RF-02 (NUEVO)** |
 
 ---
 

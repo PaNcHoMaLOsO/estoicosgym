@@ -782,11 +782,14 @@
             let inputs = [];
             
             if (step === 1) {
-                inputs = ['run_pasaporte', 'nombres', 'apellido_paterno', 'email', 'celular'];
+                // Paso 1: Solo datos obligatorios (run_pasaporte es opcional)
+                inputs = ['nombres', 'apellido_paterno', 'email', 'celular'];
             } else if (step === 2) {
-                inputs = ['id_membresia', 'fecha_inicio'];
+                // Paso 2: Datos de paso 1 + membresía
+                inputs = ['nombres', 'apellido_paterno', 'email', 'celular', 'id_membresia', 'fecha_inicio'];
             } else if (step === 3) {
-                inputs = ['monto_abonado', 'id_metodo_pago', 'fecha_pago'];
+                // Paso 3: Todos los datos
+                inputs = ['nombres', 'apellido_paterno', 'email', 'celular', 'id_membresia', 'fecha_inicio', 'monto_abonado', 'id_metodo_pago', 'fecha_pago'];
             }
             
             let emptyFields = [];
