@@ -341,14 +341,14 @@ class ClienteController extends Controller
         // Verificar que esté desactivado
         if ($cliente->activo) {
             return redirect()->route('admin.clientes.show', $cliente)
-                ->with('error', 'Este cliente ya está activo.');
+                ->with('info', 'Este cliente ya está activo.');
         }
 
         // Reactivar
         $cliente->update(['activo' => true]);
 
         return redirect()->route('admin.clientes.show', $cliente)
-            ->with('success', 'Cliente reactivado exitosamente. Ahora aparecerá en el listado de clientes activos.');
+            ->with('success', "¡Cliente '{$cliente->nombres} {$cliente->apellido_paterno}' reactivado exitosamente!");
     }
 
     /**
@@ -358,15 +358,27 @@ class ClienteController extends Controller
     {
         // Verificar que esté activo
         if (!$cliente->activo) {
-            return redirect()->route('admin.clientes.edit', $cliente)
+            return redirect()->route('admin.clientes.index')
                 ->with('error', 'Este cliente ya está desactivado.');
+        }
+
+        // Validar que no tenga inscripciones activas
+        if ($cliente->inscripciones()->where('id_estado', 100)->exists()) {
+            return redirect()->route('admin.clientes.edit', $cliente)
+                ->with('error', 'No se puede desactivar. El cliente tiene inscripciones activas.');
+        }
+
+        // Validar que no tenga pagos pendientes
+        if ($cliente->pagos()->where('id_estado', 200)->exists()) {
+            return redirect()->route('admin.clientes.edit', $cliente)
+                ->with('error', 'No se puede desactivar. El cliente tiene pagos pendientes.');
         }
 
         // Desactivar
         $cliente->update(['activo' => false]);
 
-        return redirect()->route('admin.clientes.edit', $cliente)
-            ->with('success', 'Cliente desactivado exitosamente. Podrá reactivarlo cuando lo necesite.');
+        return redirect()->route('admin.clientes.index')
+            ->with('success', "Cliente '{$cliente->nombres} {$cliente->apellido_paterno}' desactivado exitosamente.");
     }
 
     /**

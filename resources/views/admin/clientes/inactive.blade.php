@@ -334,7 +334,7 @@
                                         <button type="button" 
                                                 class="btn-action btn-restore" 
                                                 title="Reactivar cliente"
-                                                onclick="confirmarReactivacion('{{ $cliente->uuid }}', '{{ $cliente->nombres }}')">
+                                                onclick="confirmarReactivacion('{{ $cliente->uuid }}', '{{ addslashes($cliente->nombres) }} {{ addslashes($cliente->apellido_paterno) }}')">
                                             <i class="fas fa-undo"></i> Reactivar
                                         </button>
                                     </div>
@@ -372,9 +372,23 @@
 
 @endsection
 
-@push('scripts')
+@push('js')
+    {{-- Cargar SweetAlert2 por si no está en el layout --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmarReactivacion(clienteId, nombre) {
+            console.log('confirmarReactivacion llamado:', clienteId, nombre);
+            
+            if (typeof Swal === 'undefined') {
+                console.error('SweetAlert2 no está disponible');
+                if (confirm('¿Deseas reactivar a ' + nombre + '?')) {
+                    const actionUrl = "{{ url('admin/clientes') }}/" + clienteId + "/reactivar";
+                    document.getElementById('formReactivar').action = actionUrl;
+                    document.getElementById('formReactivar').submit();
+                }
+                return;
+            }
+            
             Swal.fire({
                 title: '¿Reactivar Cliente?',
                 html: `
@@ -401,7 +415,9 @@
                 allowEscapeKey: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const actionUrl = "{{ route('admin.clientes.reactivate', ':id') }}".replace(':id', clienteId);
+                    // Construir URL correctamente
+                    const actionUrl = "{{ url('admin/clientes') }}/" + clienteId + "/reactivar";
+                    console.log('URL de reactivación:', actionUrl);
                     document.getElementById('formReactivar').action = actionUrl;
                     
                     // Mostrar loading
@@ -410,6 +426,7 @@
                         html: '<div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div>',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
+                        showConfirmButton: false,
                         didOpen: () => {
                             document.getElementById('formReactivar').submit();
                         }
