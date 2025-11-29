@@ -78,6 +78,115 @@
             gap: 0.5rem;
             flex-wrap: wrap;
         }
+
+        /* ============= SweetAlert2 Custom Styles ============= */
+        
+        /* Error Alert Styles */
+        .swal-error-popup {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.15) !important;
+        }
+
+        .swal-error-title {
+            color: #dc3545 !important;
+            font-size: 1.4em !important;
+            font-weight: 700 !important;
+            margin-bottom: 16px !important;
+        }
+
+        .swal-error-content {
+            text-align: left !important;
+            padding: 12px 0 !important;
+        }
+
+        /* Confirmation Alert Styles */
+        .swal-confirm-popup {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+            animation: slideInUp 0.3s ease-out !important;
+        }
+
+        .swal-confirm-title {
+            color: #2c3e50 !important;
+            font-size: 1.3em !important;
+            font-weight: 700 !important;
+            margin-bottom: 16px !important;
+        }
+
+        .swal-confirm-content {
+            text-align: left !important;
+            padding: 12px 0 !important;
+            font-size: 0.95em !important;
+        }
+
+        /* Warning Alert Styles */
+        .swal-warning-popup {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.15) !important;
+        }
+
+        .swal-warning-title {
+            color: #ff6b6b !important;
+            font-size: 1.3em !important;
+            font-weight: 700 !important;
+            margin-bottom: 16px !important;
+        }
+
+        .swal-warning-content {
+            text-align: left !important;
+            padding: 12px 0 !important;
+        }
+
+        /* Button Styles */
+        .swal2-confirm {
+            border-radius: 6px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .swal2-cancel {
+            border-radius: 6px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+            font-size: 0.95em !important;
+            background-color: #6c757d !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .swal2-confirm:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .swal2-cancel:hover {
+            background-color: #5a6268 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Loading Animation */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Spinner Style */
+        .swal2-popup .fa-spinner {
+            animation: spin 1s linear infinite !important;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 
     <script>
@@ -149,12 +258,22 @@
          * Mostrar alerta de error con SweetAlert2
          */
         function mostrarErrorValidacion(errores) {
-            const listaErrores = errores.map(e => `<li>${e}</li>`).join('');
+            const listaErrores = errores.map(e => 
+                `<div style="text-align: left; padding: 8px; margin: 4px 0; background-color: #fff5f5; border-left: 4px solid #dc3545; border-radius: 4px;">
+                    <i class="fas fa-exclamation-circle" style="color: #dc3545; margin-right: 8px;"></i>${e}
+                </div>`
+            ).join('');
             Swal.fire({
                 icon: 'error',
-                title: 'Campos incompletos',
-                html: `<ul style="text-align: left; display: inline-block;">${listaErrores}</ul>`,
-                confirmButtonText: 'Entendido'
+                title: '<i class="fas fa-triangle-exclamation" style="color: #dc3545;"></i> Campos incompletos',
+                html: `<div style="text-align: left; margin-top: 16px;">${listaErrores}</div>`,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc3545',
+                customClass: {
+                    popup: 'swal-error-popup',
+                    title: 'swal-error-title',
+                    htmlContainer: 'swal-error-content'
+                }
             });
         }
 
@@ -556,59 +675,84 @@
 
             // Preparar mensaje de confirmación según flujo
             let titulo = '';
+            let icono = 'info';
             let mensaje = '';
+            let colorbtn = '#28a745';
 
             if (flujo === 'solo_cliente') {
-                titulo = '¿Guardar solo cliente?';
+                titulo = 'Guardar cliente';
+                icono = 'info';
                 const nombre = document.getElementById('nombres')?.value || '';
                 const apellido = document.getElementById('apellido_paterno')?.value || '';
-                mensaje = `<p><strong>Se guardará:</strong></p>
-                          <ul style="text-align: left;">
-                            <li>Cliente: ${nombre} ${apellido}</li>
-                          </ul>`;
+                const email = document.getElementById('email')?.value || '';
+                mensaje = `<div style="text-align: left; line-height: 1.8;">
+                          <p style="color: #495057; margin-bottom: 12px;"><i class="fas fa-user" style="color: #17a2b8; margin-right: 8px;"></i> <strong>Datos del cliente:</strong></p>
+                          <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="padding: 6px 0; padding-left: 24px;"><strong>Nombre:</strong> ${nombre} ${apellido}</li>
+                            <li style="padding: 6px 0; padding-left: 24px;"><strong>Email:</strong> ${email}</li>
+                          </ul>
+                          </div>`;
+                colorbtn = '#17a2b8';
             } else if (flujo === 'con_membresia') {
-                titulo = '¿Guardar cliente con membresía?';
+                titulo = 'Guardar cliente con membresía';
+                icono = 'info';
                 const nombre = document.getElementById('nombres')?.value || '';
                 const membresiaEl = document.getElementById('id_membresia');
                 const membresia = membresiaEl?.options[membresiaEl?.selectedIndex]?.text || '';
-                mensaje = `<p><strong>Se guardará:</strong></p>
-                          <ul style="text-align: left;">
-                            <li>Cliente: ${nombre}</li>
-                            <li>Membresía: ${membresia}</li>
-                          </ul>`;
+                const fechaInicio = document.getElementById('fecha_inicio')?.value || '';
+                mensaje = `<div style="text-align: left; line-height: 1.8;">
+                          <p style="color: #495057; margin-bottom: 12px;"><i class="fas fa-id-card" style="color: #007bff; margin-right: 8px;"></i> <strong>Información del registro:</strong></p>
+                          <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="padding: 6px 0; padding-left: 24px;"><strong>Cliente:</strong> ${nombre}</li>
+                            <li style="padding: 6px 0; padding-left: 24px;"><strong>Membresía:</strong> ${membresia}</li>
+                            <li style="padding: 6px 0; padding-left: 24px;"><strong>Fecha Inicio:</strong> ${fechaInicio}</li>
+                          </ul>
+                          </div>`;
+                colorbtn = '#007bff';
             } else if (flujo === 'completo') {
-                titulo = '¿Confirmar registro completo?';
+                titulo = 'Confirmar registro completo';
+                icono = 'question';
                 const nombre = document.getElementById('nombres')?.value || '';
                 const membresiaEl = document.getElementById('id_membresia');
                 const membresia = membresiaEl?.options[membresiaEl?.selectedIndex]?.text || '';
                 const tipoEl = document.getElementById('tipo_pago');
                 const tipo = tipoEl?.options[tipoEl?.selectedIndex]?.text || '';
                 const precio = document.getElementById('resumen-precio-final')?.textContent || '$0';
-                mensaje = `<p><strong>Se guardará:</strong></p>
-                          <ul style="text-align: left;">
-                            <li>Cliente: ${nombre}</li>
-                            <li>Membresía: ${membresia}</li>
-                            <li>Tipo de Pago: ${tipo}</li>
-                            <li>Monto: ${precio}</li>
-                          </ul>`;
+                const metodo = document.getElementById('id_metodo_pago')?.options[document.getElementById('id_metodo_pago')?.selectedIndex]?.text || '';
+                mensaje = `<div style="text-align: left; line-height: 1.8;">
+                          <p style="color: #495057; margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: #28a745; margin-right: 8px;"></i> <strong>Se guardará el siguiente registro:</strong></p>
+                          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 8px;">
+                            <div style="padding: 6px 0;"><i class="fas fa-user" style="color: #6c757d; margin-right: 8px; width: 20px;"></i><strong>Cliente:</strong> ${nombre}</div>
+                            <div style="padding: 6px 0;"><i class="fas fa-dumbbell" style="color: #6c757d; margin-right: 8px; width: 20px;"></i><strong>Membresía:</strong> ${membresia}</div>
+                            <div style="padding: 6px 0;"><i class="fas fa-credit-card" style="color: #6c757d; margin-right: 8px; width: 20px;"></i><strong>Tipo Pago:</strong> ${tipo}</div>
+                            <div style="padding: 6px 0;"><i class="fas fa-piggy-bank" style="color: #6c757d; margin-right: 8px; width: 20px;"></i><strong>Método:</strong> ${metodo}</div>
+                            <div style="padding: 6px 0; border-top: 2px solid #dee2e6; margin-top: 8px; padding-top: 8px;"><i class="fas fa-money-bill" style="color: #28a745; margin-right: 8px; width: 20px;"></i><strong>Monto Total:</strong> <span style="color: #28a745; font-size: 1.1em;">${precio}</span></div>
+                          </div>
+                          </div>`;
+                colorbtn = '#28a745';
             }
 
             // Mostrar confirmación
             Swal.fire({
-                icon: 'question',
-                title: titulo,
+                icon: icono,
+                title: `<i class="fas fa-save" style="margin-right: 8px;"></i> ${titulo}`,
                 html: mensaje,
                 showCancelButton: true,
-                confirmButtonText: 'Sí, guardar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d'
+                confirmButtonText: '<i class="fas fa-check" style="margin-right: 8px;"></i> Sí, guardar',
+                cancelButtonText: '<i class="fas fa-times" style="margin-right: 8px;"></i> Cancelar',
+                confirmButtonColor: colorbtn,
+                cancelButtonColor: '#6c757d',
+                customClass: {
+                    popup: 'swal-confirm-popup',
+                    title: 'swal-confirm-title',
+                    htmlContainer: 'swal-confirm-content'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     // Mostrar loading
                     Swal.fire({
-                        title: 'Guardando...',
-                        html: '<i class="fas fa-spinner fa-spin"></i> Por favor espere',
+                        title: '<i class="fas fa-hourglass-start"></i> Guardando...',
+                        html: '<i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #28a745;"></i><br/><p style="margin-top: 12px; color: #495057;">Por favor espere mientras procesamos su solicitud</p>',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
                         didOpen: () => {
@@ -666,13 +810,24 @@
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',
-                            title: '¿Salir sin guardar?',
-                            text: 'Los datos ingresados se perderán',
+                            title: '<i class="fas fa-exclamation-triangle" style="color: #ff6b6b;"></i> ¿Salir sin guardar?',
+                            html: `<div style="text-align: left; line-height: 1.8; margin-top: 12px;">
+                                    <p style="color: #495057;">Tiene cambios sin guardar que se perderán:</p>
+                                    <ul style="list-style: none; padding: 0; margin: 12px 0;">
+                                        <li style="padding: 6px 0; padding-left: 24px;"><i class="fas fa-times-circle" style="color: #dc3545; margin-right: 8px;"></i>Los datos ingresados no se guardarán</li>
+                                        <li style="padding: 6px 0; padding-left: 24px;"><i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>Puede volver al formulario y guardar</li>
+                                    </ul>
+                                  </div>`,
                             showCancelButton: true,
-                            confirmButtonText: 'Sí, salir',
-                            cancelButtonText: 'Seguir editando',
+                            confirmButtonText: '<i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i> Sí, salir',
+                            cancelButtonText: '<i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Volver',
                             confirmButtonColor: '#dc3545',
-                            cancelButtonColor: '#6c757d'
+                            cancelButtonColor: '#6c757d',
+                            customClass: {
+                                popup: 'swal-warning-popup',
+                                title: 'swal-warning-title',
+                                htmlContainer: 'swal-warning-content'
+                            }
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location.href = e.target.href;
