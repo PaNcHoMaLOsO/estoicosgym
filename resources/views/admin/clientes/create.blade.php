@@ -83,44 +83,131 @@
     <script>
         let currentStep = 1;
         const totalSteps = 3;
+        let hayDatosNoGuardados = false;
 
-        function goToStep(step) {
+        /**
+         * Validar un paso específico del formulario
+         * Retorna {valido: bool, errores: array}
+         */
+        function validarPasoCompleto(paso) {
+            const errores = [];
+
+            if (paso === 1) {
+                const nombres = document.getElementById('nombres')?.value?.trim();
+                const apellido = document.getElementById('apellido_paterno')?.value?.trim();
+                const email = document.getElementById('email')?.value?.trim();
+                const celular = document.getElementById('celular')?.value?.trim();
+
+                if (!nombres) errores.push('Nombres es requerido');
+                if (!apellido) errores.push('Apellido Paterno es requerido');
+                if (!email) errores.push('Email es requerido');
+                else if (!email.includes('@')) errores.push('Email debe ser válido');
+                if (!celular) errores.push('Celular es requerido');
+            } else if (paso === 2) {
+                const membresia = document.getElementById('id_membresia')?.value;
+                const fechaInicio = document.getElementById('fecha_inicio')?.value;
+
+                if (!membresia) errores.push('Membresía es requerida');
+                if (!fechaInicio) errores.push('Fecha de Inicio es requerida');
+            } else if (paso === 3) {
+                const tipoPago = document.getElementById('tipo_pago')?.value;
+                const fechaPago = document.getElementById('fecha_pago')?.value;
+                const metodo = document.getElementById('id_metodo_pago')?.value;
+                const montoAbonado = parseInt(document.getElementById('monto_abonado')?.value || '0');
+                const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
+                const precioFinal = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
+
+                if (!tipoPago) errores.push('Tipo de Pago es requerido');
+                if (!fechaPago) errores.push('Fecha de Pago es requerida');
+
+                if (fechaPago) {
+                    const fechaPagoDate = new Date(fechaPago);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    if (fechaPagoDate > hoy) {
+                        errores.push('Fecha de Pago no puede ser futura');
+                    }
+                }
+
+                if (tipoPago === 'completo' || tipoPago === 'parcial' || tipoPago === 'mixto') {
+                    if (!metodo) errores.push('Método de Pago es requerido para este tipo de pago');
+                }
+
+                if (tipoPago === 'parcial') {
+                    if (montoAbonado <= 0) errores.push('En pago parcial el monto debe ser mayor a $0');
+                    if (montoAbonado >= precioFinal) errores.push('En pago parcial el monto debe ser menor al precio final');
+                } else if (tipoPago === 'mixto') {
+                    if (montoAbonado < 0) errores.push('El monto no puede ser negativo');
+                    if (montoAbonado > precioFinal) errores.push('El monto no puede ser mayor al precio final');
+                }
+            }
+
+            return { valido: errores.length === 0, errores };
+        }
+
+        /**
+         * Mostrar alerta de error con SweetAlert2
+         */
+        function mostrarErrorValidacion(errores) {
+            const listaErrores = errores.map(e => `<li>${e}</li>`).join('');
+            Swal.fire({
+                icon: 'error',
+                title: 'Campos incompletos',
+                html: `<ul style="text-align: left; display: inline-block;">${listaErrores}</ul>`,
+                confirmButtonText: 'Entendido'
+            });
+        }
+
+        /**
+         * Ir a un paso específico con validación
+         */
+        function goToStep(step, skipValidation = false) {
             if (step < 1 || step > totalSteps) return;
-            
+
+            // Si intentamos avanzar (no retroceder), validar el paso actual
+            if (!skipValidation && step > currentStep) {
+                const validacion = validarPasoCompleto(currentStep);
+                if (!validacion.valido) {
+                    mostrarErrorValidacion(validacion.errores);
+                    return;
+                }
+            }
+
             document.querySelectorAll('.step-indicator').forEach(el => {
                 el.classList.remove('active');
             });
-            
+
             const stepElement = document.getElementById(`step-${step}`);
             if (stepElement) {
                 stepElement.classList.add('active');
                 currentStep = step;
                 updateButtons();
                 updateStepButtons();
-                
+
                 // Actualizar datos según el paso
                 if (step === 2) {
-                    // PASO 2: Actualizar nombre del cliente en el header
                     actualizarNombreCliente();
                 } else if (step === 3) {
-                    // PASO 3: Actualizar el resumen completo
                     actualizarPrecio();
                     setTimeout(() => {
                         actualizarResumenPaso3();
                     }, 100);
                 }
+
+                // Scroll al inicio del paso
+                stepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
         function nextStep() {
             if (currentStep < totalSteps) {
-                goToStep(currentStep + 1);
+                goToStep(currentStep + 1, false);
             }
         }
 
         function previousStep() {
             if (currentStep > 1) {
-                goToStep(currentStep - 1);
+                goToStep(currentStep - 1, true);
             }
         }
 
@@ -455,108 +542,97 @@
 
         function handleFormSubmit(event) {
             event.preventDefault();
-            
-            // Validar que no haya errores de validación
+
             const form = document.getElementById('clienteForm');
-            const paso = currentStep;
             const flujoInput = document.getElementById('flujo_cliente');
             const flujo = flujoInput.value;
-            
-            // Función para validar campos requeridos en un paso
-            function validarPaso(pasoNum) {
-                const paso1 = document.getElementById('step-1');
-                const paso2 = document.getElementById('step-2');
-                const paso3 = document.getElementById('step-3');
-                
-                const errores = [];
-                
-                if (pasoNum === 1) {
-                    const nombres = document.getElementById('nombres').value.trim();
-                    const apellido_paterno = document.getElementById('apellido_paterno').value.trim();
-                    const email = document.getElementById('email').value.trim();
-                    const celular = document.getElementById('celular').value.trim();
-                    
-                    if (!nombres) errores.push('Nombres es requerido');
-                    if (!apellido_paterno) errores.push('Apellido Paterno es requerido');
-                    if (!email) errores.push('Email es requerido');
-                    if (!celular) errores.push('Celular es requerido');
-                } else if (pasoNum === 2) {
-                    const id_membresia = document.getElementById('id_membresia').value;
-                    const fecha_inicio = document.getElementById('fecha_inicio').value;
-                    
-                    if (!id_membresia) errores.push('Selecciona una Membresía');
-                    if (!fecha_inicio) errores.push('Selecciona una Fecha de Inicio');
-                } else if (pasoNum === 3) {
-                    const tipo_pago = document.getElementById('tipo_pago').value;
-                    const fecha_pago = document.getElementById('fecha_pago').value;
-                    const id_metodo_pago = document.getElementById('id_metodo_pago').value;
-                    const monto_abonado = parseInt(document.getElementById('monto_abonado').value) || 0;
-                    const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
-                    const precio_final = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
-                    
-                    if (!tipo_pago) errores.push('Selecciona un tipo de pago');
-                    if (!fecha_pago) errores.push('Selecciona una Fecha de Pago');
-                    
-                    // Validar fecha pago no sea futura
-                    const fechaPagoDate = new Date(fecha_pago);
-                    const hoy = new Date();
-                    hoy.setHours(0, 0, 0, 0);
-                    if (fechaPagoDate > hoy) {
-                        errores.push('La fecha de pago no puede ser futura');
-                    }
-                    
-                    // Validar monto según tipo de pago
-                    if (tipo_pago === 'completo') {
-                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago completo');
-                    } else if (tipo_pago === 'parcial') {
-                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago parcial');
-                        if (monto_abonado <= 0) errores.push('En pago parcial el monto debe ser mayor a $0');
-                        if (monto_abonado >= precio_final) errores.push('En pago parcial el monto debe ser menor al precio final');
-                    } else if (tipo_pago === 'pendiente') {
-                        // Sin validación de monto para pendiente
-                    } else if (tipo_pago === 'mixto') {
-                        if (!id_metodo_pago) errores.push('Selecciona un Método de Pago para pago mixto');
-                        if (monto_abonado < 0) errores.push('El monto no puede ser negativo');
-                        if (monto_abonado > precio_final) errores.push('El monto no puede ser mayor al precio final');
-                    }
-                }
-                
-                return errores;
-            }
-            
-            // Validar el paso actual
-            const errores = validarPaso(paso);
-            
-            if (errores.length > 0) {
-                // Mostrar alertas de error
-                const alertContainer = document.getElementById('formAlerts');
-                let alertHTML = '<div class="alert alert-danger alert-dismissible fade show" role="alert">';
-                alertHTML += '<h5><i class="fas fa-exclamation-triangle"></i> Errores en el formulario:</h5>';
-                alertHTML += '<ul class="mb-0">';
-                errores.forEach(error => {
-                    alertHTML += '<li>' + error + '</li>';
-                });
-                alertHTML += '</ul>';
-                alertHTML += '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
-                alertHTML += '</div>';
-                
-                // Insertar alerta al inicio del form
-                const formStart = form.querySelector('.steps-nav');
-                if (formStart) {
-                    formStart.insertAdjacentHTML('beforebegin', alertHTML);
-                    formStart.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+
+            // Validar el paso actual antes de guardar
+            const validacion = validarPasoCompleto(currentStep);
+            if (!validacion.valido) {
+                mostrarErrorValidacion(validacion.errores);
                 return false;
             }
-            
-            // Si todo está OK, enviar el formulario
-            form.submit();
+
+            // Preparar mensaje de confirmación según flujo
+            let titulo = '';
+            let mensaje = '';
+
+            if (flujo === 'solo_cliente') {
+                titulo = '¿Guardar solo cliente?';
+                const nombre = document.getElementById('nombres')?.value || '';
+                const apellido = document.getElementById('apellido_paterno')?.value || '';
+                mensaje = `<p><strong>Se guardará:</strong></p>
+                          <ul style="text-align: left;">
+                            <li>Cliente: ${nombre} ${apellido}</li>
+                          </ul>`;
+            } else if (flujo === 'con_membresia') {
+                titulo = '¿Guardar cliente con membresía?';
+                const nombre = document.getElementById('nombres')?.value || '';
+                const membresiaEl = document.getElementById('id_membresia');
+                const membresia = membresiaEl?.options[membresiaEl?.selectedIndex]?.text || '';
+                mensaje = `<p><strong>Se guardará:</strong></p>
+                          <ul style="text-align: left;">
+                            <li>Cliente: ${nombre}</li>
+                            <li>Membresía: ${membresia}</li>
+                          </ul>`;
+            } else if (flujo === 'completo') {
+                titulo = '¿Confirmar registro completo?';
+                const nombre = document.getElementById('nombres')?.value || '';
+                const membresiaEl = document.getElementById('id_membresia');
+                const membresia = membresiaEl?.options[membresiaEl?.selectedIndex]?.text || '';
+                const tipoEl = document.getElementById('tipo_pago');
+                const tipo = tipoEl?.options[tipoEl?.selectedIndex]?.text || '';
+                const precio = document.getElementById('resumen-precio-final')?.textContent || '$0';
+                mensaje = `<p><strong>Se guardará:</strong></p>
+                          <ul style="text-align: left;">
+                            <li>Cliente: ${nombre}</li>
+                            <li>Membresía: ${membresia}</li>
+                            <li>Tipo de Pago: ${tipo}</li>
+                            <li>Monto: ${precio}</li>
+                          </ul>`;
+            }
+
+            // Mostrar confirmación
+            Swal.fire({
+                icon: 'question',
+                title: titulo,
+                html: mensaje,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Guardando...',
+                        html: '<i class="fas fa-spinner fa-spin"></i> Por favor espere',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Deshabilitar botones
+                    document.querySelectorAll('button[type="submit"]').forEach(btn => {
+                        btn.disabled = true;
+                    });
+
+                    // Enviar formulario
+                    form.submit();
+                }
+            });
+
             return false;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             goToStep(1);
             
+            const form = document.getElementById('clienteForm');
             const convenioSelect = document.getElementById('id_convenio');
             const membresiaSelect = document.getElementById('id_membresia');
             const fechaInicio = document.getElementById('fecha_inicio');
@@ -565,12 +641,54 @@
             const descuentoManualInput = document.getElementById('descuento_manual');
             const motivoDescuentoSelect = document.getElementById('id_motivo_descuento');
             
+            // Detectar cambios en cualquier input
+            form.addEventListener('change', function() {
+                hayDatosNoGuardados = true;
+            });
+            form.addEventListener('input', function() {
+                hayDatosNoGuardados = true;
+            });
+
+            // Advertencia si intenta salir sin guardar
+            window.addEventListener('beforeunload', function(e) {
+                if (hayDatosNoGuardados) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            });
+
+            // Botón Cancelar
+            const btnCancelar = document.querySelector('a[href*="clientes"]');
+            if (btnCancelar) {
+                btnCancelar.addEventListener('click', function(e) {
+                    if (hayDatosNoGuardados) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '¿Salir sin guardar?',
+                            text: 'Los datos ingresados se perderán',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, salir',
+                            cancelButtonText: 'Seguir editando',
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = e.target.href;
+                            }
+                        });
+                    }
+                });
+            }
+            
             if (convenioSelect) {
                 convenioSelect.addEventListener('change', function() {
                     actualizarPrecio();
                     if (currentStep === 3) {
                         actualizarResumenPaso3();
                     }
+                    hayDatosNoGuardados = true;
                 });
             }
             if (membresiaSelect) {
@@ -579,6 +697,7 @@
                     if (currentStep === 3) {
                         actualizarResumenPaso3();
                     }
+                    hayDatosNoGuardados = true;
                 });
             }
             if (fechaInicio) {
@@ -587,6 +706,7 @@
                     if (currentStep === 3) {
                         actualizarResumenPaso3();
                     }
+                    hayDatosNoGuardados = true;
                 });
             }
             
@@ -621,6 +741,11 @@
                     }
                 });
             }
+
+            // Resetear flag cuando se guarda exitosamente
+            form.addEventListener('submit', function() {
+                hayDatosNoGuardados = false;
+            });
         });
     </script>
 @endsection
