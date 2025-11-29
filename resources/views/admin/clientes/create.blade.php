@@ -599,6 +599,7 @@
         function actualizarTipoPago() {
             const tipoPago = document.getElementById('tipo_pago').value;
             const seccionMonto = document.getElementById('seccion-monto');
+            const seccionMixto = document.getElementById('seccion-mixto');
             const infoAdicional = document.getElementById('info-adicional');
             const alertTipoPago = document.getElementById('alert-tipo-pago');
             const labelMonto = document.getElementById('label-monto');
@@ -608,6 +609,7 @@
             const precioFinal = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
             
             seccionMonto.style.display = 'none';
+            seccionMixto.style.display = 'none';
             infoAdicional.style.display = 'none';
             montoAbonado.value = '';
             montoAbonado.required = false;
@@ -645,17 +647,92 @@
                 alertTipoPago.innerHTML = '<i class="fas fa-clock"></i> <strong>Pago Pendiente:</strong> No se registrará pago. La inscripción se crea sin abonar. Total a pagar: $' + precioFinal.toLocaleString('es-CL');
                 
             } else if (tipoPago === 'mixto') {
-                // Pago mixto: permitir edición de monto
-                seccionMonto.style.display = 'block';
-                montoAbonado.readonly = false;
-                montoAbonado.required = true;
-                montoAbonado.min = '0';
-                labelMonto.textContent = 'Monto Abonado (Parte 1)';
-                hintMonto.textContent = 'Ingrese el monto de la primera parte del pago. Puede usar múltiples métodos o cuotas.';
+                // Pago mixto: mostrar sección especial para múltiples pagos
+                seccionMixto.style.display = 'block';
+                calcularTotalMixto();
                 
                 infoAdicional.style.display = 'block';
                 alertTipoPago.className = 'alert alert-warning';
-                alertTipoPago.innerHTML = '<i class="fas fa-shuffle"></i> <strong>Pago Mixto:</strong> Se pueden combinar múltiples pagos o métodos. Total a cubrir: $' + precioFinal.toLocaleString('es-CL');
+                alertTipoPago.innerHTML = '<i class="fas fa-shuffle"></i> <strong>Pago Mixto:</strong> Se pueden combinar múltiples pagos o métodos de pago. Total a cubrir: $' + precioFinal.toLocaleString('es-CL');
+            }
+        }
+
+        function agregarLineaPago() {
+            const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
+            const precioFinal = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
+            
+            const tablaMixto = document.getElementById('tabla-pagos-mixto').querySelector('tbody');
+            const numLinea = tablaMixto.children.length + 1;
+            
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td style="text-align: center;">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarLineaPago(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm monto-mixto" 
+                           min="0" max="${precioFinal}" step="1" 
+                           onchange="calcularTotalMixto()" onkeyup="calcularTotalMixto()">
+                </td>
+                <td>
+                    <select class="form-control form-control-sm" onchange="calcularTotalMixto()">
+                        <option value="">-- Seleccionar --</option>
+                        @foreach($metodos_pago as $metodo)
+                            <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td style="text-align: right;">
+                    <span class="monto-display">$0</span>
+                </td>
+            `;
+            tablaMixto.appendChild(fila);
+        }
+
+        function eliminarLineaPago(btn) {
+            btn.closest('tr').remove();
+            calcularTotalMixto();
+        }
+
+        function calcularTotalMixto() {
+            const precioFinalText = document.getElementById('resumen-precio-final')?.textContent || '$0';
+            const precioFinal = parseInt(precioFinalText.replace('$', '').replace(/\./g, '')) || 0;
+            
+            const filasTabla = document.querySelectorAll('#tabla-pagos-mixto tbody tr');
+            let totalMixto = 0;
+            
+            filasTabla.forEach(fila => {
+                const inputMonto = fila.querySelector('.monto-mixto');
+                const monto = parseInt(inputMonto?.value || '0') || 0;
+                const displayMonto = fila.querySelector('.monto-display');
+                if (displayMonto) displayMonto.textContent = '$' + monto.toLocaleString('es-CL');
+                totalMixto += monto;
+            });
+            
+            const resumenMixto = document.getElementById('resumen-total-mixto');
+            const alertaMixto = document.getElementById('alerta-total-mixto');
+            
+            if (resumenMixto) {
+                resumenMixto.textContent = '$' + totalMixto.toLocaleString('es-CL');
+                
+                // Cambiar color de alerta según cuánto se haya pagado
+                if (totalMixto === 0) {
+                    alertaMixto.className = 'alert alert-light border border-secondary';
+                    alertaMixto.innerHTML = '<i class="fas fa-info-circle" style="color: #6c757d;"></i> <strong>Total abonado:</strong> $0';
+                } else if (totalMixto < precioFinal) {
+                    const saldo = precioFinal - totalMixto;
+                    alertaMixto.className = 'alert alert-info';
+                    alertaMixto.innerHTML = `<i class="fas fa-money-bill"></i> <strong>Total abonado:</strong> $${totalMixto.toLocaleString('es-CL')} | <strong>Saldo pendiente:</strong> $${saldo.toLocaleString('es-CL')}`;
+                } else if (totalMixto === precioFinal) {
+                    alertaMixto.className = 'alert alert-success';
+                    alertaMixto.innerHTML = '<i class="fas fa-check-circle"></i> <strong>Total cubierto:</strong> $' + totalMixto.toLocaleString('es-CL') + ' ✓';
+                } else {
+                    const exceso = totalMixto - precioFinal;
+                    alertaMixto.className = 'alert alert-warning';
+                    alertaMixto.innerHTML = `<i class="fas fa-exclamation-circle"></i> <strong>⚠️ Exceso de pago:</strong> $${exceso.toLocaleString('es-CL')} mayor al precio final`;
+                }
             }
         }
 
@@ -1312,6 +1389,78 @@
                                 @error('id_metodo_pago')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE PAGO MIXTO (múltiples cuotas/métodos) -->
+                    <div id="seccion-mixto" style="display:none;">
+                        <div class="card card-warning">
+                            <div class="card-header bg-warning">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-shuffle"></i> Detalles de Pago Mixto
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">
+                                    Agregue múltiples líneas de pago con diferentes métodos y/o cuotas. 
+                                    El sistema validará que el total cubra o no exceda el precio final.
+                                </p>
+
+                                <table class="table table-sm table-hover" id="tabla-pagos-mixto">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40px; text-align: center;">Acción</th>
+                                            <th style="width: 150px;">Monto</th>
+                                            <th>Método de Pago</th>
+                                            <th style="width: 100px; text-align: right;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Las filas se agregan dinámicamente -->
+                                    </tbody>
+                                </table>
+
+                                <div class="mt-3 mb-3 text-center">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="agregarLineaPago()">
+                                        <i class="fas fa-plus-circle"></i> Agregar Línea de Pago
+                                    </button>
+                                </div>
+
+                                <div class="alert alert-light border border-secondary" id="alerta-total-mixto">
+                                    <i class="fas fa-info-circle" style="color: #6c757d;"></i> <strong>Total abonado:</strong> $0
+                                </div>
+
+                                <!-- Campo oculto para guardar el total -->
+                                <div class="d-none">
+                                    <input type="hidden" id="total-mixto" name="total_mixto" value="0">
+                                    <input type="hidden" id="detalle-pagos-mixto" name="detalle_pagos_mixto" value="">
+                                </div>
+
+                                <p class="alert alert-info small mb-0 mt-3">
+                                    <i class="fas fa-lightbulb"></i> 
+                                    <strong>Ejemplo:</strong> Puede abonar $100.000 por Transferencia y $50.000 por Efectivo
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Resumen de total en Pago Mixto -->
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-light border">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Precio Final:</strong> 
+                                                <span id="resumen-precio-final-mixto" style="font-size: 1.1em; color: #667eea;">$0</span>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Total Abonado:</strong> 
+                                                <span id="resumen-total-mixto" style="font-size: 1.1em; color: #28a745;">$0</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
