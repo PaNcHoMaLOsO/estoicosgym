@@ -58,7 +58,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
 
     // CRUD Pagos
-    Route::resource('pagos', PagoController::class);
+    Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
     Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');
 
     // ===== CONFIGURACIÓN (Sección inferior) =====

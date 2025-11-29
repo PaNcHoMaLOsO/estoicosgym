@@ -147,18 +147,21 @@ class InscripcionController extends Controller
     public function create()
     {
         // Clientes que pueden tener una nueva inscripción:
-        // - Mostrar TODOS los clientes activos
-        // (El filtrado de inscripciones vigentes sin pagar se hace en el frontend/JS)
+        // - Clientes activos
+        // - Se carga con inscripciones para filtrar en la vista
         
         $clientes = Cliente::where('activo', true)
+            ->with(['inscripciones' => function($q) {
+                $q->orderBy('fecha_vencimiento', 'desc');
+            }])
             ->orderBy('nombres')
             ->get();
 
         $estados = Estado::where('categoria', 'membresia')->get();
         $estadoActiva = Estado::where('codigo', 100)->first(); // Estado "Activa"
-        $membresias = Membresia::all();
-        $convenios = Convenio::all();
-        $motivos = MotivoDescuento::all();
+        $membresias = Membresia::with('precios')->where('activo', true)->get();
+        $convenios = Convenio::where('activo', true)->get();
+        $motivos = MotivoDescuento::where('activo', true)->get();
         $metodosPago = MetodoPago::where('activo', true)->get();
 
         return view('admin.inscripciones.create', compact('clientes', 'estados', 'estadoActiva', 'membresias', 'convenios', 'motivos', 'metodosPago'));
@@ -176,27 +179,42 @@ class InscripcionController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        $pagoPendiente = $request->has('pago_pendiente');
+        // Verificar tipo de pago
+        $tipoPago = $request->input('tipo_pago', 'completo');
+        $pagoPendiente = $tipoPago === 'pendiente';
+        $pagoMixto = $tipoPago === 'mixto';
 
-        $validated = $request->validate([
+        // Validación base
+        $rules = [
             'id_cliente' => 'required|exists:clientes,id',
             'id_membresia' => 'required|exists:membresias,id',
             'id_convenio' => 'nullable|exists:convenios,id',
-            'id_estado' => 'required|exists:estados,id',
+            'id_estado' => 'required|exists:estados,codigo',
             'fecha_inicio' => 'required|date',
             'descuento_aplicado' => 'nullable|numeric|min:0',
             'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
             'observaciones' => 'nullable|string|max:500',
-            'monto_abonado' => $pagoPendiente ? 'nullable' : 'required|numeric|min:0.01',
-            'id_metodo_pago' => $pagoPendiente ? 'nullable' : 'required|exists:metodos_pago,id',
-            'fecha_pago' => $pagoPendiente ? 'nullable' : 'required|date',
-        ]);
+            'tipo_pago' => 'required|in:completo,abono,mixto,pendiente',
+        ];
+
+        // Agregar reglas según tipo de pago
+        if ($pagoMixto) {
+            $rules['detalle_pagos_mixto'] = 'required|string';
+            $rules['total_mixto'] = 'required|numeric|min:1';
+            $rules['fecha_pago'] = 'required|date';
+        } elseif (!$pagoPendiente) {
+            $rules['monto_abonado'] = 'required|numeric|min:1';
+            $rules['id_metodo_pago'] = 'required|exists:metodos_pago,id';
+            $rules['fecha_pago'] = 'required|date';
+        }
+
+        $validated = $request->validate($rules);
 
         // Obtener datos de membresía y calcular precios
         $membresia = Membresia::findOrFail($validated['id_membresia']);
         $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
         $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
-        $precioFinal = $precioBase - $descuentoTotal;
+        $precioFinal = max(0, $precioBase - $descuentoTotal);
 
         // Calcular fecha de vencimiento
         $fechaInicio = Carbon::parse($validated['fecha_inicio']);
@@ -212,8 +230,13 @@ class InscripcionController extends Controller
 
         $inscripcion = Inscripcion::create($validated);
 
-        // Crear pago inicial si no es pendiente
-        if (!$pagoPendiente) {
+        // Crear pago(s) según tipo de pago
+        $tipoPago = $validated['tipo_pago'] ?? 'completo';
+        
+        if ($tipoPago === 'mixto') {
+            // Pago mixto: crear dos pagos con diferentes métodos
+            $this->crearPagoMixto($inscripcion, $validated, $precioFinal);
+        } elseif (!$pagoPendiente && isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
             $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
         }
 
@@ -251,8 +274,8 @@ class InscripcionController extends Controller
     {
         $descuentoConvenio = 0;
         
-        // Descuento automático del convenio (solo para mensual con convenio)
-        if ($validated['id_convenio'] && $membresia->id === 4) {
+        // Descuento automático del convenio (si tiene precio_convenio definido)
+        if (!empty($validated['id_convenio'])) {
             $precioMembresia = $membresia->precios()
                 ->where('activo', true)
                 ->where('fecha_vigencia_desde', '<=', now())
@@ -264,8 +287,8 @@ class InscripcionController extends Controller
             }
         }
         
-        $descuentoAdicional = $validated['descuento_aplicado'] ?? 0;
-        return $descuentoConvenio + $descuentoAdicional;
+        $descuentoAdicional = (float) ($validated['descuento_aplicado'] ?? 0);
+        return max(0, $descuentoConvenio + $descuentoAdicional);
     }
 
     /**
@@ -314,6 +337,56 @@ class InscripcionController extends Controller
     }
 
     /**
+     * Crear pagos mixtos (múltiples métodos de pago)
+     *
+     * @param \App\Models\Inscripcion $inscripcion
+     * @param array $validated
+     * @param float $precioFinal
+     * @return void
+     */
+    protected function crearPagoMixto(Inscripcion $inscripcion, array $validated, float $precioFinal)
+    {
+        // El detalle viene como JSON desde el formulario
+        $detallePagos = json_decode($validated['detalle_pagos_mixto'] ?? '[]', true);
+        
+        if (empty($detallePagos)) {
+            return;
+        }
+
+        $montoTotalAbonado = 0;
+        foreach ($detallePagos as $detalle) {
+            $montoTotalAbonado += (float) ($detalle['monto'] ?? 0);
+        }
+        
+        $idEstadoPago = $montoTotalAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+        $montoPendienteRestante = $precioFinal;
+
+        foreach ($detallePagos as $index => $detalle) {
+            $monto = (float) ($detalle['monto'] ?? 0);
+            $idMetodo = $detalle['id_metodo_pago'] ?? null;
+            $metodoNombre = $detalle['metodo_nombre'] ?? 'Método ' . ($index + 1);
+            
+            if ($monto > 0 && $idMetodo) {
+                $montoPendienteRestante -= $monto;
+                
+                Pago::create([
+                    'id_inscripcion' => $inscripcion->id,
+                    'id_cliente' => $validated['id_cliente'],
+                    'monto_total' => $precioFinal,
+                    'monto_abonado' => $monto,
+                    'monto_pendiente' => max(0, $montoPendienteRestante),
+                    'id_estado' => $idEstadoPago,
+                    'id_metodo_pago' => $idMetodo,
+                    'fecha_pago' => $validated['fecha_pago'],
+                    'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
+                    'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
+                    'observacion' => 'Pago mixto - ' . $metodoNombre,
+                ]);
+            }
+        }
+    }
+
+    /**
      * Display the specified resource.
      * 
      * @param \App\Models\Inscripcion $inscripcion
@@ -321,7 +394,15 @@ class InscripcionController extends Controller
      */
     public function show(Inscripcion $inscripcion)
     {
-        $inscripcion->load(['cliente', 'estado', 'pagos']);
+        $inscripcion->load([
+            'cliente',
+            'estado',
+            'membresia',
+            'convenio',
+            'motivoDescuento',
+            'pagos.metodoPago',
+            'pagos.estado'
+        ]);
         $estadoPago = $inscripcion->obtenerEstadoPago();
         return view('admin.inscripciones.show', compact('inscripcion', 'estadoPago'));
     }

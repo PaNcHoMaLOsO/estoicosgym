@@ -120,7 +120,6 @@
         $pendiente = max(0, $total - $pagos);
         $porcentaje = ($total > 0) ? round(($pagos / $total) * 100) : 0;
         $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
-        $infoPausa = $inscripcion->obtenerInfoPausa();
     @endphp
 
     <!-- ENCABEZADO HERO CON INFORMACIÓN GENERAL -->
@@ -141,8 +140,8 @@
                                     <strong>{{ $inscripcion->created_at->format('d/m/Y H:i') }}</strong>
                                 </div>
                                 <div class="col-md-6 mb-2">
-                                    <small style="opacity: 0.8;">Día de Pago</small><br/>
-                                    <strong>{{ $inscripcion->dia_pago ?? 'Sin definir' }}</strong>
+                                    <small style="opacity: 0.8;">Fecha Inscripción</small><br/>
+                                    <strong>{{ $inscripcion->fecha_inscripcion ? $inscripcion->fecha_inscripcion->format('d/m/Y') : 'Sin definir' }}</strong>
                                 </div>
                                 <div class="col-md-6 mb-2">
                                     <small style="opacity: 0.8;">Última Actualización</small><br/>
@@ -154,14 +153,9 @@
                             <div class="mb-3">
                                 <small style="opacity: 0.8;">ESTADO GENERAL</small><br/>
                                 <span class="badge p-3 mt-2" style="background-color: rgba(255,255,255,0.3); color: white; font-size: 16px; border: 2px solid white;">
-                                    {{ $inscripcion->estado->nombre }}
+                                    {{ $inscripcion->estado?->nombre ?? 'Sin estado' }}
                                 </span>
                             </div>
-                            @if($infoPausa)
-                                <div class="alert alert-warning" style="background: rgba(255,193,7,0.2); border: 1px solid rgba(255,193,7,0.5); color: #fff;">
-                                    <i class="fas fa-pause-circle"></i> <strong>EN PAUSA</strong>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 </div>
@@ -185,7 +179,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="text-muted mb-1"><i class="fas fa-layer-group" style="color: #667eea;"></i> <strong>Membresía</strong></p>
-                            <h5 class="mb-0" style="color: #333;">{{ $inscripcion->membresia->nombre }}</h5>
+                            <h5 class="mb-0" style="color: #333;">{{ $inscripcion->membresia?->nombre ?? 'Sin membresía' }}</h5>
                         </div>
                         <div class="col-md-6">
                             <p class="text-muted mb-1"><i class="fas fa-calendar-check" style="color: #28a745;"></i> <strong>Período</strong></p>
@@ -201,7 +195,7 @@
                 <div class="card-body p-4 text-center">
                     <h6 class="mb-3" style="opacity: 0.9;"><i class="fas fa-circle-notch"></i> ESTADO</h6>
                     <span class="badge p-3" style="background-color: rgba(255,255,255,0.3); color: white; font-size: 16px; border: 2px solid white;">
-                        {{ $inscripcion->estado->nombre }}
+                        {{ $inscripcion->estado?->nombre ?? 'Sin estado' }}
                     </span>
                     <p class="mt-3 mb-0">
                         <small>
@@ -274,53 +268,13 @@
                         </div>
                         <div class="col-md-4">
                             <p class="text-muted mb-1 small"><i class="fas fa-handshake"></i> Convenio</p>
-                            <h5 class="mb-0">{{ $inscripcion->convenio->nombre ?? 'N/A' }}</h5>
+                            <h5 class="mb-0">{{ $inscripcion->convenio?->nombre ?? 'N/A' }}</h5>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- INFORMACIÓN DE PAUSA (si existe) -->
-    @if($infoPausa)
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white;">
-                    <div class="card-body p-4">
-                        <h5 class="mb-3"><i class="fas fa-pause-circle"></i> Información de Pausa</h5>
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <small style="opacity: 0.8;">Duración</small><br/>
-                                <strong style="font-size: 1.1em;">{{ $infoPausa['dias'] }} días</strong>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <small style="opacity: 0.8;">Fecha Inicio</small><br/>
-                                <strong>{{ $infoPausa['inicio'] }}</strong>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <small style="opacity: 0.8;">Fecha Fin</small><br/>
-                                <strong>{{ $infoPausa['fin'] }}</strong>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <small style="opacity: 0.8;">Días Restantes</small><br/>
-                                <strong style="font-size: 1.1em;">{{ $infoPausa['dias_restantes'] }} días</strong>
-                            </div>
-                            <div class="col-md-6 mb-0">
-                                <small style="opacity: 0.8;">Motivo</small><br/>
-                                <p class="mb-0"><strong>{{ $infoPausa['razon'] ?? 'Sin especificar' }}</strong></p>
-                            </div>
-                            <div class="col-md-6 mb-0">
-                                <small style="opacity: 0.8;">Pausas Disponibles</small><br/>
-                                <strong>{{ $infoPausa['pausas_usadas'] }}/{{ $infoPausa['pausas_usadas'] + $infoPausa['pausas_disponibles'] }}</strong>
-                                <small>({{ $infoPausa['pausas_disponibles'] }} restantes)</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 
     <!-- ROW 4: DESCUENTOS Y OBSERVACIONES -->
     <div class="row mb-4">
@@ -331,7 +285,7 @@
                         <h6 class="mb-3"><i class="fas fa-percent"></i> Descuento</h6>
                         <h4 class="text-danger mb-2">-${{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}</h4>
                         @if($inscripcion->motivoDescuento)
-                            <small class="text-muted">Motivo: <strong>{{ $inscripcion->motivoDescuento->nombre }}</strong></small>
+                            <small class="text-muted">Motivo: <strong>{{ $inscripcion->motivoDescuento?->nombre ?? 'N/A' }}</strong></small>
                         @endif
                     </div>
                 </div>
@@ -350,16 +304,101 @@
         @endif
     </div>
 
+    <!-- HISTORIAL DE PAGOS -->
+    <div class="row mt-5 mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="section-title mb-0"><i class="fas fa-credit-card"></i> Historial de Pagos</h3>
+                @if($pendiente > 0)
+                    <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]) }}" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Nuevo Pago
+                    </a>
+                @endif
+            </div>
+
+            @if($inscripcion->pagos->count() > 0)
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                    <tr>
+                                        <th class="border-0">Fecha</th>
+                                        <th class="border-0">Monto</th>
+                                        <th class="border-0">Método</th>
+                                        <th class="border-0">Estado</th>
+                                        <th class="border-0 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($inscripcion->pagos->sortByDesc('fecha_pago') as $pagoItem)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $pagoItem->fecha_pago->format('d/m/Y') }}</strong>
+                                                <br><small class="text-muted">{{ $pagoItem->fecha_pago->diffForHumans() }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="text-success font-weight-bold" style="font-size: 1.1em;">
+                                                    ${{ number_format($pagoItem->monto_abonado, 0, '.', '.') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">
+                                                    {{ $pagoItem->metodoPago->nombre ?? 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge p-2" style="background-color: {{ $pagoItem->estado->color ?? '#6c757d' }}; color: white;">
+                                                    {{ $pagoItem->estado->nombre ?? 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{{ route('admin.pagos.show', $pagoItem) }}" class="btn btn-sm btn-info" title="Ver Detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('admin.pagos.edit', $pagoItem) }}" class="btn btn-sm btn-warning" title="Editar">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de pagos -->
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Total Pagado:</strong> ${{ number_format($pagos, 0, '.', '.') }} de ${{ number_format($total, 0, '.', '.') }}
+                    @if($pendiente > 0)
+                        | <strong class="text-warning">Pendiente:</strong> ${{ number_format($pendiente, 0, '.', '.') }}
+                    @else
+                        | <strong class="text-success"><i class="fas fa-check-circle"></i> Completamente Pagado</strong>
+                    @endif
+                </div>
+            @else
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> No hay pagos registrados para esta inscripción.
+                    <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]) }}" class="btn btn-success btn-sm ml-3">
+                        <i class="fas fa-plus-circle"></i> Registrar Primer Pago
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
     <!-- HISTORIAL DE MEMBRESÍAS -->
     <div class="row mt-5 mb-4">
         <div class="col-md-12">
             <h3 class="section-title mb-4"><i class="fas fa-history"></i> Historial de Membresías</h3>
             
             @php
-                $historicoMembresias = $inscripcion->cliente->inscripciones()
+                $historicoMembresias = $inscripcion->cliente ? $inscripcion->cliente->inscripciones()
                     ->with('membresia')
                     ->orderByDesc('fecha_inicio')
-                    ->get();
+                    ->get() : collect([]);
             @endphp
 
             @if($historicoMembresias->count() > 0)
@@ -369,7 +408,7 @@
                             <div class="membership-item {{ $index % 2 == 0 ? '' : 'alternate' }}">
                                 <div>
                                     <div style="font-weight: 700; font-size: 1.1em;">
-                                        <i class="fas fa-dumbbell"></i> {{ $insc->membresia->nombre }}
+                                        <i class="fas fa-dumbbell"></i> {{ $insc->membresia?->nombre ?? 'Sin membresía' }}
                                     </div>
                                     <small style="opacity: 0.9;">
                                         {{ $insc->fecha_inicio->format('d/m/Y') }} 

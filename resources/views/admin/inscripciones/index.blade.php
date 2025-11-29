@@ -1,613 +1,658 @@
 @extends('adminlte::page')
 
-@section('title', 'Inscripciones')
+@section('title', 'Inscripciones - EstóicosGym')
 
-@section('content')
-    <div class="container-fluid">
-        <!-- Header Section -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <h1 class="m-0 text-dark">
-                    <i class="fas fa-users fa-fw text-primary"></i> Inscripciones
-                </h1>
-                <small class="text-muted">Total: <strong>{{ $inscripciones->total() }}</strong> registros</small>
-            </div>
-            <div class="col-md-6 text-right">
-                <a href="{{ route('admin.inscripciones.create') }}" class="btn btn-success btn-lg" title="Nueva Inscripción">
-                    <i class="fas fa-plus fa-fw"></i> Nueva Inscripción
-                </a>
-            </div>
+@section('css')
+    <style>
+        /* ===== CARDS ESTADÍSTICAS ===== */
+        .stat-card {
+            border: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.success::before {
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .stat-card.warning::before {
+            background: linear-gradient(90deg, #f5af19 0%, #f12711 100%);
+        }
+
+        .stat-card.danger::before {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-card.success .stat-number {
+            color: #11998e;
+        }
+
+        .stat-card.warning .stat-number {
+            color: #f5af19;
+        }
+
+        .stat-card.danger .stat-number {
+            color: #ff6b6b;
+        }
+
+        .stat-label {
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== BUSCADOR ===== */
+        .search-box {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .search-box input,
+        .search-box select {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus,
+        .search-box select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        /* ===== TABLA ===== */
+        .table-responsive {
+            border-radius: 0 0 0.75rem 0.75rem;
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+            border-bottom: 2px solid #667eea;
+        }
+
+        .table thead th {
+            color: #2c3e50;
+            font-weight: 700;
+            padding: 1rem 0.75rem;
+            border: 0;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            box-shadow: inset 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .table tbody td {
+            padding: 0.85rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .membership-badge {
+            font-size: 0.8rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* ===== STATUS BADGES ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .status-partial {
+            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+            color: white;
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+        }
+
+        .status-paused {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        /* ===== PLAZO BADGES ===== */
+        .plazo-badge {
+            display: inline-block;
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .plazo-ok {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .plazo-warning {
+            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+            color: white;
+        }
+
+        .plazo-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+        }
+
+        /* ===== PRECIOS ===== */
+        .precio-base {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .precio-final {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .precio-descuento {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-mini {
+            height: 4px;
+            border-radius: 2px;
+            background-color: #e9ecef;
+            margin-top: 0.3rem;
+        }
+
+        /* ===== ACCIONES ===== */
+        .action-buttons {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-action {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 0.4rem;
+            border: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            white-space: nowrap;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            color: white;
+        }
+
+        .btn-pay {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-history {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+
+        /* ===== CARD HEADER ===== */
+        .card-header {
+            border-bottom: 2px solid #667eea;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 0.75rem 0.75rem 0 0 !important;
+        }
+
+        .card {
+            border: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+        }
+
+        /* ===== FILTROS AVANZADOS ===== */
+        .filters-card {
+            border: 2px solid #dee2e6;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filters-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0.65rem 0.65rem 0 0 !important;
+            border-bottom: 0;
+        }
+
+        .filters-card .card-header .card-title {
+            color: white;
+        }
+
+        .filters-card .card-header .btn-tool {
+            color: white;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .table thead th,
+            .table tbody td {
+                padding: 0.65rem 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .stat-number {
+                font-size: 1.8em;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+
+            .btn-action {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+@endsection
+
+@section('content_header')
+    <div class="row mb-4">
+        <div class="col-sm-8">
+            <h1 class="m-0">
+                <i class="fas fa-clipboard-list text-primary"></i> Gestión de Inscripciones
+            </h1>
         </div>
-
-        <!-- Filters Card - Collapsible -->
-        <div class="card card-primary card-outline collapsed-card">
-            <div class="card-header bg-primary">
-                <h3 class="card-title">
-                    <i class="fas fa-sliders-h fa-fw"></i> Filtros Avanzados
-                </h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Expandir/Contraer">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="card-body" style="display: none;">
-                <form action="{{ route('admin.inscripciones.index') }}" method="GET" class="mb-0">
-                    <div class="row">
-                        <!-- Filtro Cliente -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="cliente" class="form-label">
-                                    <i class="fas fa-search fa-fw text-muted"></i> Cliente
-                                </label>
-                                <input type="text" class="form-control form-control-sm" id="cliente" name="cliente" 
-                                       value="{{ request('cliente') }}" placeholder="Nombre, apellido o email...">
-                            </div>
-                        </div>
-
-                        <!-- Filtro Estado -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="estado" class="form-label">
-                                    <i class="fas fa-info-circle fa-fw text-muted"></i> Estado
-                                </label>
-                                <select class="form-control form-control-sm" id="estado" name="estado">
-                                    <option value="">-- Todos --</option>
-                                    @foreach($estados as $estado)
-                                        <option value="{{ $estado->id }}" {{ request('estado') == $estado->id ? 'selected' : '' }}>
-                                            {{ $estado->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Filtro Membresía -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="membresia" class="form-label">
-                                    <i class="fas fa-dumbbell fa-fw text-muted"></i> Membresía
-                                </label>
-                                <select class="form-control form-control-sm" id="membresia" name="membresia">
-                                    <option value="">-- Todas --</option>
-                                    @foreach($membresias as $membresia)
-                                        <option value="{{ $membresia->id }}" {{ request('membresia') == $membresia->id ? 'selected' : '' }}>
-                                            {{ $membresia->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Filtro Rango de Fechas -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="fecha_inicio" class="form-label">
-                                    <i class="fas fa-calendar fa-fw text-muted"></i> Rango de Fechas
-                                </label>
-                                <div class="input-group input-group-sm mb-2">
-                                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                                           value="{{ request('fecha_inicio') }}" title="Desde">
-                                    <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
-                                           value="{{ request('fecha_fin') }}" title="Hasta">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="fas fa-search fa-fw"></i> Aplicar Filtros
-                            </button>
-                            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-redo fa-fw"></i> Limpiar
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Data Table Card -->
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-list-check fa-fw"></i> Listado de Inscripciones
-                </h3>
-                <div class="card-tools">
-                    <span class="badge badge-primary">{{ $inscripciones->count() }}/{{ $inscripciones->total() }}</span>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="thead-light">
-                        <tr>
-                            <th style="width: 40px;">#</th>
-                            <th style="width: 180px;">
-                                <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'id_cliente', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
-                                   class="text-decoration-none text-dark">
-                                    Cliente <i class="fas fa-sort fa-xs"></i>
-                                </a>
-                            </th>
-                            <th style="width: 110px;">
-                                <a href="{{ route('admin.inscripciones.index', array_merge(request()->query(), ['ordenar' => 'fecha_vencimiento', 'direccion' => request('direccion') == 'asc' ? 'desc' : 'asc'])) }}" 
-                                   class="text-decoration-none text-dark">
-                                    Plazo <i class="fas fa-sort fa-xs"></i>
-                                </a>
-                            </th>
-                            <th style="width: 100px;">Precios</th>
-                            <th style="width: 110px;">Est. Pago</th>
-                            <th style="width: 85px;" class="text-center">Convenio</th>
-                            <th style="width: 75px;" class="text-center">Estado</th>
-                            <th style="width: 70px;" class="text-center">Pausa</th>
-                            <th style="width: 140px;" class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($inscripciones as $inscripcion)
-                            <tr>
-                                <td class="text-muted"><small>{{ $inscripcion->id }}</small></td>
-                                <td>
-                                    <strong class="text-dark" style="font-size: 0.93rem;">
-                                        {{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}
-                                    </strong>
-                                    <br>
-                                    <small class="text-muted" style="font-size: 0.8rem;">
-                                        {{ $inscripcion->membresia->nombre }}
-                                    </small>
-                                </td>
-                                <td>
-                                    @php
-                                        $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
-                                    @endphp
-                                    <div class="d-flex flex-column">
-                                        @if($diasRestantes > 30)
-                                            <span class="badge bg-success mb-1">
-                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }}d
-                                            </span>
-                                        @elseif($diasRestantes > 7)
-                                            <span class="badge bg-info mb-1">
-                                                <i class="fas fa-calendar-alt fa-fw"></i> {{ $diasRestantes }}d
-                                            </span>
-                                        @elseif($diasRestantes > 0)
-                                            <span class="badge bg-warning mb-1">
-                                                <i class="fas fa-clock fa-fw"></i> {{ $diasRestantes }}d
-                                            </span>
-                                        @else
-                                            <span class="badge bg-danger mb-1">
-                                                <i class="fas fa-exclamation-triangle fa-fw"></i> Vencida
-                                            </span>
-                                        @endif
-                                        <small class="text-muted" style="font-size: 0.73rem;">
-                                            {{ $inscripcion->fecha_vencimiento->format('d/m/y') }}
-                                        </small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex flex-column gap-1">
-                                        <div style="font-size: 0.85rem;">
-                                            <small class="text-muted">Base:</small>
-                                            <strong class="text-secondary">
-                                                ${{ number_format($inscripcion->precio_base, 0, '.', '.') }}
-                                            </strong>
-                                        </div>
-                                        @if($inscripcion->descuento_aplicado > 0)
-                                            <div style="font-size: 0.85rem;">
-                                                <small class="text-muted">Desc:</small>
-                                                <span class="badge bg-danger" style="font-size: 0.75rem;">
-                                                    -${{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                        <div style="font-size: 0.87rem; border-top: 1px solid #e9ecef; padding-top: 0.4rem;">
-                                            <small class="text-muted">Final:</small>
-                                            <strong class="text-primary">
-                                                ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base, 0, '.', '.') }}
-                                            </strong>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    @php
-                                        $estadoPago = $inscripcion->obtenerEstadoPago();
-                                        $estado = $estadoPago['estado'];
-                                        $totalAbonado = $estadoPago['total_abonado'];
-                                        $pendiente = $estadoPago['pendiente'];
-                                        $porcentaje = $estadoPago['porcentaje_pagado'];
-                                    @endphp
-                                    
-                                    <div class="d-flex flex-column">
-                                        @if($estado === 'pagado')
-                                            <span class="badge bg-success mb-1">
-                                                <i class="fas fa-check-circle fa-fw"></i> Pagado
-                                            </span>
-                                        @elseif($estado === 'parcial')
-                                            <span class="badge bg-warning mb-1">
-                                                <i class="fas fa-hourglass-half fa-fw"></i> Parcial
-                                            </span>
-                                            <small class="text-muted" style="font-size: 0.75rem;">
-                                                ${{ number_format($totalAbonado, 0, '.', '.') }} de ${{ number_format($totalAbonado + $pendiente, 0, '.', '.') }}
-                                            </small>
-                                        @else
-                                            <span class="badge bg-danger mb-1">
-                                                <i class="fas fa-exclamation-circle fa-fw"></i> Pendiente
-                                            </span>
-                                        @endif
-                                        
-                                        <!-- Progress bar -->
-                                        <div class="progress mt-1" style="height: 4px;">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: {{ min($porcentaje, 100) }}%; background-color: {{ $porcentaje >= 100 ? '#28a745' : ($porcentaje >= 50 ? '#ffc107' : '#dc3545') }};" 
-                                                 aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="100">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if($inscripcion->id_convenio)
-                                        <span class="badge bg-primary" title="Convenio aplicado">
-                                            <i class="fas fa-handshake fa-fw"></i> Sí
-                                        </span>
-                                        @if($inscripcion->convenio)
-                                            <br>
-                                            <small class="text-muted">{{ $inscripcion->convenio->nombre }}</small>
-                                        @endif
-                                    @else
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-minus fa-fw"></i> No
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    {!! $inscripcion->estado->badge !!}
-                                </td>
-                                <td class="text-center">
-                                    @php
-                                        $estaPausada = $inscripcion->estaPausada();
-                                    @endphp
-                                    
-                                    @if($estaPausada)
-                                        <span class="badge bg-warning" title="Pausada - {{ $inscripcion->razon_pausa }}">
-                                            <i class="fas fa-pause-circle fa-fw"></i> 
-                                            {{ $inscripcion->dias_pausa }}d
-                                        </span>
-                                    @else
-                                        <span class="badge bg-secondary" title="No pausada">
-                                            <i class="fas fa-check fa-fw"></i> Activa
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" 
-                                           class="btn btn-info btn-sm" title="Ver">
-                                            <i class="fas fa-eye fa-fw"></i>
-                                        </a>
-                                        <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" 
-                                           class="btn btn-warning btn-sm" title="Editar">
-                                            <i class="fas fa-edit fa-fw"></i>
-                                        </a>
-                                        <a href="{{ route('admin.pagos.create', ['inscripcion_id_preselect' => $inscripcion->id]) }}" 
-                                           class="btn btn-primary btn-sm" title="Nuevo Pago">
-                                            <i class="fas fa-plus fa-fw"></i>
-                                        </a>
-                                        <a href="{{ route('admin.pagos.index', ['uuid' => $inscripcion->uuid]) }}" 
-                                           class="btn btn-success btn-sm" title="Ver Pagos">
-                                            <i class="fas fa-list fa-fw"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                    <strong>No hay inscripciones registradas</strong>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="card-footer">
-                <nav aria-label="Page navigation">
-                    <div class="d-flex justify-content-center">
-                        {{ $inscripciones->links('pagination::bootstrap-4') }}
-                    </div>
-                </nav>
-            </div>
+        <div class="col-sm-4 text-right">
+            <a href="{{ route('admin.inscripciones.create') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-plus"></i> Nueva Inscripción
+            </a>
         </div>
     </div>
 @stop
 
-@push('css')
-    <style>
-        .text-decoration-none {
-            text-decoration: none !important;
-        }
+@section('content')
+    @if ($message = Session::get('success'))
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-lg" role="alert" style="border-left: 5px solid #28a745;">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h5 class="alert-heading mb-2">
+                <i class="fas fa-check-circle"></i> ¡Éxito!
+            </h5>
+            {{ $message }}
+        </div>
+    @endif
+
+    @php
+        // Calcular estadísticas
+        $totalInscripciones = $inscripciones->total();
+        $activas = $inscripciones->filter(fn($i) => $i->estado?->nombre === 'Activa')->count();
+        $vencidas = $inscripciones->filter(fn($i) => $i->fecha_vencimiento < now())->count();
+        $pausadas = $inscripciones->filter(fn($i) => $i->estaPausada())->count();
+    @endphp
+
+    <!-- ESTADÍSTICAS RÁPIDAS -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ $totalInscripciones }}</div>
+                    <div class="stat-label">Total Inscripciones</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card success">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ $activas }}</div>
+                    <div class="stat-label">Activas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card danger">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ $vencidas }}</div>
+                    <div class="stat-label">Vencidas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card warning">
+                <div class="card-body text-center">
+                    <div class="stat-number">{{ $pausadas }}</div>
+                    <div class="stat-label">Pausadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUSCADOR -->
+    <div class="search-box">
+        <div class="row">
+            <div class="col-md-8">
+                <input type="text" class="form-control form-control-lg" id="searchInput" placeholder="🔍 Buscar por nombre de cliente...">
+            </div>
+            <div class="col-md-4">
+                <select class="form-control form-control-lg" id="filterEstado">
+                    <option value="">-- Todos los Estados --</option>
+                    @foreach($estados as $estado)
+                        <option value="{{ strtolower($estado->nombre) }}">{{ $estado->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE INSCRIPCIONES -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-list"></i> Listado de Inscripciones
+            </h3>
+            <div class="card-tools">
+                <span class="badge badge-light" id="resultCount">{{ $inscripciones->count() }} de {{ $inscripciones->total() }}</span>
+            </div>
+        </div>
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">ID</th>
+                        <th style="width: 18%;">Cliente / Membresía</th>
+                        <th style="width: 10%;">Plazo</th>
+                        <th style="width: 12%;">Precios</th>
+                        <th style="width: 12%;">Estado Pago</th>
+                        <th style="width: 8%;">Convenio</th>
+                        <th style="width: 8%;">Estado</th>
+                        <th style="width: 7%;">Pausa</th>
+                        <th style="width: 20%; text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($inscripciones as $inscripcion)
+                        <tr>
+                            <td>
+                                <span class="badge badge-secondary">#{{ $inscripcion->id }}</span>
+                            </td>
+                            <td>
+                                <div class="client-name">
+                                    {{ $inscripcion->cliente?->nombres ?? 'Sin cliente' }} {{ $inscripcion->cliente?->apellido_paterno ?? '' }}
+                                </div>
+                                <div class="membership-badge">
+                                    <i class="fas fa-dumbbell"></i> {{ $inscripcion->membresia?->nombre ?? 'Sin membresía' }}
+                                </div>
+                            </td>
+                            <td>
+                                @php
+                                    $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
+                                @endphp
+                                @if($diasRestantes > 30)
+                                    <span class="plazo-badge plazo-ok">
+                                        <i class="fas fa-calendar-check"></i> {{ $diasRestantes }}d
+                                    </span>
+                                @elseif($diasRestantes > 7)
+                                    <span class="plazo-badge plazo-warning">
+                                        <i class="fas fa-clock"></i> {{ $diasRestantes }}d
+                                    </span>
+                                @elseif($diasRestantes > 0)
+                                    <span class="plazo-badge plazo-warning">
+                                        <i class="fas fa-exclamation"></i> {{ $diasRestantes }}d
+                                    </span>
+                                @else
+                                    <span class="plazo-badge plazo-danger">
+                                        <i class="fas fa-times-circle"></i> Vencida
+                                    </span>
+                                @endif
+                                <div class="text-muted" style="font-size: 0.75rem;">
+                                    {{ $inscripcion->fecha_vencimiento?->format('d/m/Y') ?? 'N/A' }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="precio-base">
+                                    Base: ${{ number_format($inscripcion->precio_base ?? 0, 0, '.', '.') }}
+                                </div>
+                                @if($inscripcion->descuento_aplicado > 0)
+                                    <div class="precio-descuento">
+                                        <i class="fas fa-tag"></i> -${{ number_format($inscripcion->descuento_aplicado, 0, '.', '.') }}
+                                    </div>
+                                @endif
+                                <div class="precio-final">
+                                    ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base ?? 0, 0, '.', '.') }}
+                                </div>
+                            </td>
+                            <td>
+                                @php
+                                    $estadoPago = $inscripcion->obtenerEstadoPago();
+                                    $estado = $estadoPago['estado'];
+                                    $totalAbonado = $estadoPago['total_abonado'];
+                                    $pendiente = $estadoPago['pendiente'];
+                                    $porcentaje = $estadoPago['porcentaje_pagado'];
+                                @endphp
+                                
+                                @if($estado === 'pagado')
+                                    <span class="status-badge status-active">
+                                        <i class="fas fa-check-circle"></i> Pagado
+                                    </span>
+                                @elseif($estado === 'parcial')
+                                    <span class="status-badge status-partial">
+                                        <i class="fas fa-hourglass-half"></i> Parcial
+                                    </span>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        ${{ number_format($totalAbonado, 0, '.', '.') }} / ${{ number_format($totalAbonado + $pendiente, 0, '.', '.') }}
+                                    </div>
+                                @else
+                                    <span class="status-badge status-pending">
+                                        <i class="fas fa-exclamation-circle"></i> Pendiente
+                                    </span>
+                                @endif
+                                
+                                <div class="progress progress-mini">
+                                    <div class="progress-bar" style="width: {{ min($porcentaje, 100) }}%; 
+                                         background: {{ $porcentaje >= 100 ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' : ($porcentaje >= 50 ? 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%)') }};">
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                @if($inscripcion->id_convenio)
+                                    <span class="badge badge-primary">
+                                        <i class="fas fa-handshake"></i> Sí
+                                    </span>
+                                    @if($inscripcion->convenio)
+                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                            {{ Str::limit($inscripcion->convenio->nombre, 12) }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="badge badge-secondary">
+                                        <i class="fas fa-minus"></i> No
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                {!! $inscripcion->estado?->badge ?? '<span class="badge bg-secondary">N/A</span>' !!}
+                            </td>
+                            <td class="text-center">
+                                @if($inscripcion->estaPausada())
+                                    <span class="status-badge status-paused" title="Pausada - {{ $inscripcion->razon_pausa }}">
+                                        <i class="fas fa-pause"></i> {{ $inscripcion->dias_pausa }}d
+                                    </span>
+                                @else
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-play"></i> Activa
+                                    </span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" 
+                                       class="btn-action btn-view" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" 
+                                       class="btn-action btn-edit" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]) }}" 
+                                       class="btn-action btn-pay" title="Nuevo Pago">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </a>
+                                    <a href="{{ route('admin.pagos.index', ['id_inscripcion' => $inscripcion->id]) }}" 
+                                       class="btn-action btn-history" title="Ver Pagos">
+                                        <i class="fas fa-history"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-5">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <h5>No hay inscripciones registradas</h5>
+                                <p>Crea una nueva inscripción para comenzar</p>
+                                <a href="{{ route('admin.inscripciones.create') }}" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> Nueva Inscripción
+                                </a>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         
-        .text-decoration-none:hover {
-            text-decoration: underline !important;
-        }
-        
-        /* Table base styling */
-        .table {
-            margin-bottom: 0;
-            table-layout: fixed;
-        }
-        
-        .table th {
-            white-space: nowrap;
-            vertical-align: middle;
-            font-weight: 700;
-            background-color: #f8f9fa;
-            border-top: 2px solid #dee2e6;
-            padding: 0.9rem 0.7rem;
-            letter-spacing: 0.3px;
-            font-size: 0.9rem;
-            text-overflow: ellipsis;
-            overflow: hidden;
-        }
-        
-        .table td {
-            vertical-align: middle;
-            padding: 0.85rem 0.7rem;
-            word-wrap: break-word;
-        }
-        
-        /* Row styling */
-        .table tbody tr {
-            transition: background-color 0.2s ease;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .table tbody tr:hover {
-            background-color: #f0f5ff;
-        }
-        
-        /* Badge styling */
-        .badge {
-            padding: 0.4rem 0.65rem;
-            font-size: 0.82rem;
-            font-weight: 500;
-            white-space: nowrap;
-            display: inline-block;
-            margin-bottom: 0.25rem;
-        }
-        
-        .badge small {
-            display: block;
-            margin-top: 0.3rem;
-            font-weight: 400;
-            font-size: 0.75rem;
-        }
-        
-        /* Progress bar */
-        .progress {
-            height: 4px;
-            margin-top: 0.4rem;
-            background-color: #e9ecef;
-        }
-        
-        .progress-bar {
-            border-radius: 2px;
-        }
-        
-        /* Column 1: ID */
-        th:nth-child(1), td:nth-child(1) {
-            width: 40px;
-            text-align: center;
-        }
-        
-        /* Column 2: Cliente */
-        th:nth-child(2), td:nth-child(2) {
-            width: 180px;
-        }
-        
-        td:nth-child(2) strong {
-            display: block;
-            font-size: 0.93rem;
-            margin-bottom: 0.25rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        td:nth-child(2) small {
-            font-size: 0.8rem;
-            color: #6c757d;
-            display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        /* Column 3: Plazo */
-        th:nth-child(3), td:nth-child(3) {
-            width: 110px;
-        }
-        
-        td:nth-child(3) .badge {
-            font-size: 0.78rem;
-            padding: 0.35rem 0.6rem;
-        }
-        
-        td:nth-child(3) small {
-            font-size: 0.73rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
-            display: block;
-        }
-        
-        /* Column 4: Precios */
-        th:nth-child(4), td:nth-child(4) {
-            width: 100px;
-        }
-        
-        td:nth-child(4) {
-            font-size: 0.85rem;
-            padding: 0.7rem 0.6rem;
-        }
-        
-        td:nth-child(4) > div {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
-        
-        td:nth-child(4) .badge {
-            font-size: 0.73rem;
-            padding: 0.3rem 0.5rem;
-            display: inline-block;
-            width: fit-content;
-        }
-        
-        td:nth-child(4) small {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        
-        td:nth-child(4) strong {
-            font-size: 0.88rem;
-        }
-        
-        /* Column 5: Estado Pago */
-        th:nth-child(5), td:nth-child(5) {
-            width: 110px;
-        }
-        
-        td:nth-child(5) .badge {
-            font-size: 0.8rem;
-            padding: 0.4rem 0.65rem;
-        }
-        
-        td:nth-child(5) small {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
-            display: block;
-        }
-        
-        /* Column 6: Convenio */
-        th:nth-child(6), td:nth-child(6) {
-            width: 85px;
-            text-align: center;
-        }
-        
-        td:nth-child(6) .badge {
-            font-size: 0.78rem;
-            padding: 0.4rem 0.6rem;
-        }
-        
-        td:nth-child(6) small {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 0.2rem;
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        /* Column 7: Estado */
-        th:nth-child(7), td:nth-child(7) {
-            width: 75px;
-            text-align: center;
-        }
-        
-        td:nth-child(7) .badge {
-            font-size: 0.8rem;
-            padding: 0.4rem 0.65rem;
-        }
-        
-        /* Column 8: Pausa */
-        th:nth-child(8), td:nth-child(8) {
-            width: 70px;
-            text-align: center;
-        }
-        
-        td:nth-child(8) .badge {
-            font-size: 0.78rem;
-            padding: 0.4rem 0.6rem;
-        }
-        
-        /* Column 9: Acciones */
-        th:nth-child(9), td:nth-child(9) {
-            width: 140px;
-            text-align: center;
-        }
-        
-        .btn-group-sm {
-            gap: 2px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .btn-group-sm .btn {
-            padding: 0.35rem 0.5rem;
-            font-size: 0.85rem;
-            flex: 0 0 auto;
-            opacity: 0.8;
-            transition: opacity 0.2s ease;
-        }
-        
-        tr:hover .btn-group-sm .btn {
-            opacity: 1;
-        }
-        
-        .btn-group-sm .btn i {
-            font-size: 0.9rem;
-        }
-        
-        /* Empty state */
-        tbody tr:only-child td {
-            padding: 3rem 1rem;
-            text-align: center;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 1200px) {
-            .table {
-                font-size: 0.9rem;
+        @if($inscripciones->hasPages())
+            <div class="card-footer">
+                <div class="d-flex justify-content-center">
+                    {{ $inscripciones->appends(request()->query())->links('pagination::bootstrap-4') }}
+                </div>
+            </div>
+        @endif
+    </div>
+@stop
+
+@section('js')
+    <script>
+        $(document).ready(function() {
+            // Filtro en tiempo real
+            function filterTable() {
+                var searchText = $('#searchInput').val().toLowerCase();
+                var filterEstado = $('#filterEstado').val().toLowerCase();
+                var visibleCount = 0;
+
+                $('tbody tr').each(function() {
+                    var row = $(this);
+                    var clientName = row.find('.client-name').text().toLowerCase();
+                    var membership = row.find('.membership-badge').text().toLowerCase();
+                    var estadoBadge = row.find('td:nth-child(7)').text().toLowerCase().trim();
+                    
+                    var matchesSearch = clientName.includes(searchText) || membership.includes(searchText);
+                    var matchesEstado = filterEstado === '' || estadoBadge.includes(filterEstado);
+
+                    if (matchesSearch && matchesEstado) {
+                        row.show();
+                        visibleCount++;
+                    } else {
+                        row.hide();
+                    }
+                });
+
+                $('#resultCount').text(visibleCount + ' de {{ $inscripciones->total() }}');
             }
-            
-            .table th, .table td {
-                padding: 0.75rem 0.6rem;
-            }
-            
-            th:nth-child(2), td:nth-child(2) { width: 160px; }
-            th:nth-child(3), td:nth-child(3) { width: 100px; }
-            th:nth-child(9), td:nth-child(9) { width: 130px; }
-        }
-        
-        @media (max-width: 768px) {
-            .table {
-                font-size: 0.85rem;
-            }
-            
-            .table th, .table td {
-                padding: 0.6rem 0.5rem;
-            }
-            
-            .badge {
-                padding: 0.35rem 0.5rem;
-                font-size: 0.75rem;
-            }
-            
-            .btn-group-sm .btn {
-                padding: 0.3rem 0.4rem;
-                font-size: 0.75rem;
-            }
-            
-            td:nth-child(2) strong { font-size: 0.88rem; }
-            th:nth-child(2), td:nth-child(2) { width: 140px; }
-            
-            td:nth-child(4) .badge { font-size: 0.7rem; }
-        }
-    </style>
-@endpush
+
+            $('#searchInput').on('keyup', filterTable);
+            $('#filterEstado').on('change', filterTable);
+
+            // Confirmación de eliminación
+            $('.btn-delete').on('click', function(e) {
+                if (!confirm('¿Estás seguro de que deseas eliminar esta inscripción?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+@stop
