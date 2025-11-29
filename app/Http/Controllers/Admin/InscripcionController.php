@@ -14,6 +14,7 @@ use App\Models\Pago;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class InscripcionController extends Controller
@@ -401,7 +402,10 @@ class InscripcionController extends Controller
             'convenio',
             'motivoDescuento',
             'pagos.metodoPago',
-            'pagos.estado'
+            'pagos.estado',
+            // Relaciones de cambio de plan
+            'inscripcionAnterior.membresia',
+            'inscripcionesPosteriores.membresia',
         ]);
         $estadoPago = $inscripcion->obtenerEstadoPago();
         return view('admin.inscripciones.show', compact('inscripcion', 'estadoPago'));
@@ -415,13 +419,14 @@ class InscripcionController extends Controller
      */
     public function edit(Inscripcion $inscripcion)
     {
-        $inscripcion->load(['cliente', 'estado', 'membresia', 'convenio', 'motivoDescuento']);
+        $inscripcion->load(['cliente', 'estado', 'membresia', 'convenio', 'motivoDescuento', 'pagos']);
         $clientes = Cliente::active()->get();
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
         $convenios = Convenio::all();
         $motivos = MotivoDescuento::all();
-        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos'));
+        $metodosPago = MetodoPago::where('activo', true)->get();
+        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago'));
     }
 
     /**
@@ -471,5 +476,326 @@ class InscripcionController extends Controller
 
         return redirect()->route('admin.inscripciones.index')
             ->with('success', 'Inscripción eliminada exitosamente');
+    }
+
+    /**
+     * Pausar una membresía
+     * POST /admin/inscripciones/{inscripcion}/pausar
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function pausar(Request $request, Inscripcion $inscripcion)
+    {
+        $indefinida = $request->boolean('indefinida', false);
+        
+        $rules = [
+            'razon' => 'nullable|string|max:500',
+            'indefinida' => 'nullable|boolean',
+        ];
+        
+        // Si no es indefinida, días es requerido
+        if (!$indefinida) {
+            $rules['dias'] = 'required|in:7,14,30';
+        } else {
+            // Para pausa indefinida, la razón es obligatoria
+            $rules['razon'] = 'required|string|min:5|max:500';
+        }
+
+        try {
+            $validated = $request->validate($rules);
+            
+            $inscripcion->load(['cliente', 'estado']);
+
+            // Verificar que pueda pausarse
+            if (!$inscripcion->puedeRealizarPausa()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta membresía no puede ser pausada. Verifique el estado y las pausas disponibles.',
+                ], 422);
+            }
+
+            $dias = $indefinida ? null : (int) $validated['dias'];
+            $inscripcion->pausar($dias, $validated['razon'] ?? '', $indefinida);
+
+            return response()->json([
+                'success' => true,
+                'message' => $indefinida 
+                    ? 'Membresía pausada indefinidamente' 
+                    : "Membresía pausada por {$dias} días",
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . collect($e->errors())->flatten()->first(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al pausar inscripción: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la pausa: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reanudar una membresía pausada
+     * POST /admin/inscripciones/{inscripcion}/reanudar
+     * 
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reanudar(Inscripcion $inscripcion)
+    {
+        try {
+            $inscripcion->load(['cliente', 'estado']);
+
+            if (!$inscripcion->pausada) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta membresía no está pausada',
+                ], 422);
+            }
+
+            // Calcular días que estuvo pausada
+            $diasEnPausa = $inscripcion->fecha_pausa_inicio 
+                ? $inscripcion->fecha_pausa_inicio->diffInDays(now()) 
+                : 0;
+
+            $inscripcion->reanudar();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Membresía reanudada. Se agregaron {$diasEnPausa} días al vencimiento.",
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al reanudar inscripción: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al reanudar: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ============================================
+    // CAMBIO DE PLAN (UPGRADE/DOWNGRADE)
+    // ============================================
+
+    /**
+     * Obtener información de precios para cambio de plan
+     * GET /admin/inscripciones/{inscripcion}/info-cambio-plan
+     * 
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function infoCambioPlan(Inscripcion $inscripcion)
+    {
+        try {
+            $inscripcion->load(['membresia', 'pagos']);
+            
+            // Obtener todas las membresías disponibles (excepto la actual)
+            $membresias = Membresia::with(['precios' => function($q) {
+                    $q->where('activo', true)
+                      ->where('fecha_vigencia_desde', '<=', now())
+                      ->orderBy('fecha_vigencia_desde', 'desc');
+                }])
+                ->where('activo', true)
+                ->where('id', '!=', $inscripcion->id_membresia)
+                ->get()
+                ->map(function($membresia) {
+                    $precioVigente = $membresia->precios->first();
+                    return [
+                        'id' => $membresia->id,
+                        'nombre' => $membresia->nombre,
+                        'descripcion' => $membresia->descripcion,
+                        'duracion_dias' => $membresia->duracion_dias,
+                        'duracion_meses' => $membresia->duracion_meses,
+                        'precio' => $precioVigente ? (float) $precioVigente->precio_normal : 0,
+                    ];
+                });
+
+            // Calcular el crédito disponible (lo que ya pagó)
+            $creditoDisponible = $inscripcion->monto_pagado;
+
+            return response()->json([
+                'success' => true,
+                'inscripcion' => [
+                    'id' => $inscripcion->id,
+                    'uuid' => $inscripcion->uuid,
+                    'membresia_actual' => $inscripcion->membresia->nombre,
+                    'precio_actual' => (float) $inscripcion->precio_final,
+                    'monto_pagado' => $creditoDisponible,
+                    'monto_pendiente' => (float) $inscripcion->monto_pendiente,
+                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
+                ],
+                'membresias_disponibles' => $membresias,
+                'credito_disponible' => $creditoDisponible,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener info de cambio de plan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener información: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Ejecutar cambio de plan (upgrade o downgrade)
+     * POST /admin/inscripciones/{inscripcion}/cambiar-plan
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Inscripcion $inscripcion
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cambiarPlan(Request $request, Inscripcion $inscripcion)
+    {
+        try {
+            $validated = $request->validate([
+                'id_membresia_nueva' => 'required|exists:membresias,id|different:id_membresia_actual',
+                'motivo_cambio' => 'nullable|string|max:500',
+                'id_metodo_pago' => 'required_if:diferencia_positiva,true|exists:metodos_pago,id',
+                'monto_abonado' => 'nullable|numeric|min:0',
+            ]);
+
+            $inscripcion->load(['cliente', 'membresia', 'pagos']);
+
+            // Verificar que puede cambiar de plan
+            if (!$inscripcion->puedeCambiarPlan()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta inscripción no puede cambiar de plan. Verifique que esté activa y no pausada.',
+                ], 422);
+            }
+
+            // Obtener la nueva membresía y su precio
+            $nuevaMembresia = Membresia::with(['precios' => function($q) {
+                $q->where('activo', true)
+                  ->where('fecha_vigencia_desde', '<=', now())
+                  ->orderBy('fecha_vigencia_desde', 'desc');
+            }])->findOrFail($validated['id_membresia_nueva']);
+
+            $precioNuevo = $nuevaMembresia->precios->first();
+            if (!$precioNuevo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La membresía seleccionada no tiene un precio vigente.',
+                ], 422);
+            }
+
+            $precioNuevoPlan = (float) $precioNuevo->precio_normal;
+            $creditoDisponible = (float) $inscripcion->monto_pagado;
+            $diferencia = $precioNuevoPlan - $creditoDisponible;
+            $tipoCambio = $precioNuevoPlan > $inscripcion->precio_final ? 'upgrade' : 'downgrade';
+
+            // Calcular nueva fecha de vencimiento
+            $fechaInicio = now();
+            if ($nuevaMembresia->duracion_dias && $nuevaMembresia->duracion_dias > 0) {
+                $fechaVencimiento = $fechaInicio->clone()->addDays($nuevaMembresia->duracion_dias)->subDay();
+            } else {
+                $duracionMeses = $nuevaMembresia->duracion_meses ?? 1;
+                $fechaVencimiento = $fechaInicio->clone()->addMonths($duracionMeses)->subDay();
+            }
+
+            // Usar transacción para mantener integridad
+            DB::beginTransaction();
+
+            try {
+                // 1. Marcar inscripción anterior como "Cambiada" (estado 105)
+                $inscripcion->update([
+                    'id_estado' => 105, // Estado: Cambiada a otro plan
+                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') 
+                        . "[" . now()->format('d/m/Y H:i') . "] Cambio de plan a: {$nuevaMembresia->nombre}",
+                ]);
+
+                // 2. Crear nueva inscripción con los datos del cambio
+                $nuevaInscripcion = Inscripcion::create([
+                    'id_cliente' => $inscripcion->id_cliente,
+                    'id_membresia' => $nuevaMembresia->id,
+                    'id_convenio' => $inscripcion->id_convenio, // Mantener convenio si tenía
+                    'id_precio_acordado' => $precioNuevo->id,
+                    'fecha_inscripcion' => now()->format('Y-m-d'),
+                    'fecha_inicio' => $fechaInicio->format('Y-m-d'),
+                    'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
+                    'precio_base' => $precioNuevoPlan,
+                    'descuento_aplicado' => 0,
+                    'precio_final' => $precioNuevoPlan,
+                    'id_estado' => 100, // Activa
+                    'observaciones' => "Cambio de plan desde: {$inscripcion->membresia->nombre}",
+                    // Campos de tracking de cambio
+                    'id_inscripcion_anterior' => $inscripcion->id,
+                    'es_cambio_plan' => true,
+                    'tipo_cambio' => $tipoCambio,
+                    'credito_plan_anterior' => $creditoDisponible,
+                    'precio_nuevo_plan' => $precioNuevoPlan,
+                    'diferencia_a_pagar' => max(0, $diferencia),
+                    'fecha_cambio_plan' => now(),
+                    'motivo_cambio_plan' => $validated['motivo_cambio'] ?? null,
+                ]);
+
+                // 3. Si hay diferencia a favor del gym (upgrade), crear pago
+                if ($diferencia > 0 && isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
+                    $montoAbonado = min($validated['monto_abonado'], $diferencia);
+                    $estadoPago = $montoAbonado >= $diferencia ? 102 : 103; // 102=Pagado, 103=Parcial
+
+                    Pago::create([
+                        'id_inscripcion' => $nuevaInscripcion->id,
+                        'id_cliente' => $inscripcion->id_cliente,
+                        'monto_total' => $diferencia,
+                        'monto_abonado' => $montoAbonado,
+                        'monto_pendiente' => max(0, $diferencia - $montoAbonado),
+                        'id_estado' => $estadoPago,
+                        'id_metodo_pago' => $validated['id_metodo_pago'],
+                        'fecha_pago' => now()->format('Y-m-d'),
+                        'periodo_inicio' => $fechaInicio->format('Y-m-d'),
+                        'periodo_fin' => $fechaVencimiento->format('Y-m-d'),
+                    ]);
+                }
+
+                // 4. Si hay crédito a favor del cliente (downgrade), generar nota
+                $mensajeCredito = '';
+                if ($diferencia < 0) {
+                    $creditoAFavor = abs($diferencia);
+                    $mensajeCredito = " Crédito a favor del cliente: $" . number_format($creditoAFavor, 0, ',', '.');
+                    
+                    // Agregar nota en observaciones
+                    $nuevaInscripcion->update([
+                        'observaciones' => $nuevaInscripcion->observaciones . $mensajeCredito,
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Plan cambiado exitosamente de {$inscripcion->membresia->nombre} a {$nuevaMembresia->nombre}." . $mensajeCredito,
+                    'nueva_inscripcion' => [
+                        'uuid' => $nuevaInscripcion->uuid,
+                        'membresia' => $nuevaMembresia->nombre,
+                        'fecha_vencimiento' => $fechaVencimiento->format('d/m/Y'),
+                        'tipo_cambio' => $tipoCambio,
+                        'diferencia' => $diferencia,
+                    ],
+                    'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . collect($e->errors())->flatten()->first(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar plan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el cambio de plan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

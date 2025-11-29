@@ -157,7 +157,7 @@ class PagoController extends Controller
         // ABONO PARCIAL
         if ($tipoPago === 'abono') {
             $request->validate([
-                'monto_abonado' => 'required|numeric|min:1000|max:' . $montoPendiente,
+                'monto_abonado' => 'required|integer|min:1000|max:' . intval($montoPendiente),
             ]);
 
             $montoAbonado = $request->input('monto_abonado');
@@ -176,13 +176,13 @@ class PagoController extends Controller
         }
         // PAGO MIXTO
         else if ($tipoPago === 'mixto') {
-            $monto1 = floatval($request->input('monto_metodo1', 0));
-            $monto2 = floatval($request->input('monto_metodo2', 0));
+            $monto1 = intval($request->input('monto_metodo1', 0));
+            $monto2 = intval($request->input('monto_metodo2', 0));
             $montoAbonado = $monto1 + $monto2;
 
-            if ($montoAbonado != $montoPendiente) {
+            if ($montoAbonado != intval($montoPendiente)) {
                 return back()->withErrors([
-                    'monto_metodo1' => "La suma de los montos debe ser exactamente {$montoPendiente} (saldo pendiente)"
+                    'monto_metodo1' => "La suma de los montos debe ser exactamente " . number_format($montoPendiente, 0, ',', '.') . " (saldo pendiente)"
                 ])->withInput();
             }
         }
@@ -268,7 +268,7 @@ class PagoController extends Controller
 
         $validated = $request->validate([
             'id_inscripcion' => 'required|exists:inscripciones,id',
-            'monto_abonado' => 'required|numeric|min:1|max:999999999',
+            'monto_abonado' => 'required|integer|min:1|max:999999999',
             'fecha_pago' => 'required|date|before_or_equal:today',
             'id_metodo_pago' => 'required|exists:metodos_pago,id',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
@@ -279,12 +279,12 @@ class PagoController extends Controller
         // Obtener inscripción y validar
         $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
-        $montoAbonado = floatval($validated['monto_abonado']);
+        $montoAbonado = intval($validated['monto_abonado']);
 
         // Validación de monto
         if ($montoAbonado > $montoTotal) {
             return back()->withErrors([
-                'monto_abonado' => "El monto no puede exceder \${$montoTotal} (precio de membresía)"
+                'monto_abonado' => "El monto no puede exceder $" . number_format($montoTotal, 0, ',', '.') . " (precio de membresía)"
             ])->withInput();
         }
 

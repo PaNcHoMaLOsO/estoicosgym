@@ -60,12 +60,39 @@ class Estado extends Model
     }
 
     /**
+     * Mapear nombre de color a código hexadecimal
+     * @param string $color
+     * @return string
+     */
+    protected function mapColorToHex(string $color): string
+    {
+        $colorMap = [
+            'primary' => '#007bff',
+            'secondary' => '#6c757d',
+            'success' => '#28a745',
+            'danger' => '#dc3545',
+            'warning' => '#ffc107',
+            'info' => '#17a2b8',
+            'light' => '#f8f9fa',
+            'dark' => '#343a40',
+        ];
+
+        // Si ya es un código hex, devolverlo
+        if (str_starts_with($color, '#')) {
+            return $color;
+        }
+
+        return $colorMap[strtolower($color)] ?? '#6c757d';
+    }
+
+    /**
      * Obtener badge HTML seguro del estado
      * @return string
      */
     public function getBadgeAttribute(): string
     {
-        $color = htmlspecialchars($this->color ?? '#6c757d', ENT_QUOTES, 'UTF-8');
+        $color = $this->mapColorToHex($this->color ?? 'secondary');
+        $color = htmlspecialchars($color, ENT_QUOTES, 'UTF-8');
         $nombre = htmlspecialchars($this->nombre ?? 'Desconocido', ENT_QUOTES, 'UTF-8');
 
         return sprintf(

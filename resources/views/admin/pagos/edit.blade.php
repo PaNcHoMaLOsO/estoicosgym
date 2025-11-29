@@ -2,516 +2,608 @@
 
 @section('title', 'Editar Pago - EstóicosGym')
 
-@section('content_header')
-    <div class="row mb-2 align-items-center">
-        <div class="col-sm-6">
-            <h1 class="m-0"><i class="fas fa-pencil-alt text-primary"></i> Editar Pago</h1>
-            <small class="text-muted">ID: <strong>#{{ $pago->id }}</strong> | Última actualización: {{ $pago->updated_at->format('d/m/Y H:i') }}</small>
-        </div>
-        <div class="col-sm-6 text-right">
-            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-info btn-sm">
-                <i class="fas fa-arrow-left"></i> Ver Detalles
-            </a>
-            <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-list"></i> Listado
-            </a>
-        </div>
-    </div>
+@section('css')
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --accent-light: #ff6b6b;
+        --success: #00bf8e;
+        --success-dark: #00a67d;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --gray-100: #f8f9fa;
+        --gray-200: #e9ecef;
+        --gray-600: #6c757d;
+        --gray-800: #343a40;
+    }
+
+    /* HERO HEADER */
+    .hero-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        box-shadow: 0 15px 40px rgba(26, 26, 46, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-header::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        right: -80px;
+        width: 250px;
+        height: 250px;
+        background: var(--warning);
+        border-radius: 50%;
+        opacity: 0.1;
+    }
+    .hero-header-content { position: relative; z-index: 1; }
+    .hero-title { 
+        font-size: 1.8em; 
+        font-weight: 800; 
+        margin-bottom: 5px;
+        letter-spacing: -0.5px;
+    }
+    .hero-subtitle { 
+        font-size: 1em; 
+        opacity: 0.9;
+        font-weight: 400;
+    }
+    .btn-back {
+        background: transparent;
+        color: white;
+        border: 2px solid rgba(255,255,255,0.5);
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: white;
+        color: white;
+    }
+
+    /* FORM CARD */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        margin-bottom: 25px;
+        border: none;
+        overflow: hidden;
+    }
+    .form-card-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 18px 25px;
+        font-weight: 700;
+        font-size: 1.05em;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .form-card-header i { color: var(--warning); }
+    .form-card-body {
+        padding: 25px;
+    }
+
+    /* FORM ELEMENTS */
+    .form-label {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+    .form-control, .form-select {
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.95em;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--info);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+    }
+    .form-control.is-invalid, .form-select.is-invalid {
+        border-color: var(--accent);
+    }
+    .form-control:disabled, .form-select:disabled {
+        background-color: var(--gray-100);
+    }
+    .invalid-feedback {
+        color: var(--accent);
+        font-weight: 500;
+    }
+
+    /* INFO BOX */
+    .info-box {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.08) 0%, rgba(0, 191, 142, 0.05) 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid var(--info);
+        margin-bottom: 20px;
+    }
+    .info-box-title {
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .info-box-title i { color: var(--info); }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed var(--gray-200);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--gray-600); font-weight: 500; }
+    .info-value { font-weight: 700; color: var(--gray-800); }
+    .info-value.success { color: var(--success); }
+    .info-value.danger { color: var(--accent); }
+
+    /* PRECIO BOX */
+    .precio-box {
+        background: linear-gradient(135deg, rgba(0, 191, 142, 0.05) 0%, rgba(67, 97, 238, 0.05) 100%);
+        border: 2px solid var(--success);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+    .precio-box-title {
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .precio-box-title i { color: var(--success); }
+    .precio-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--gray-200);
+    }
+    .precio-row:last-child {
+        border-bottom: none;
+        padding-top: 15px;
+        margin-top: 10px;
+        border-top: 2px solid var(--success);
+    }
+    .precio-label {
+        color: var(--gray-600);
+        font-weight: 500;
+    }
+    .precio-valor {
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+    .precio-total {
+        font-size: 1.5em;
+        color: var(--success);
+    }
+
+    /* BUTTONS */
+    .btn-custom {
+        border-radius: 10px;
+        padding: 12px 28px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-custom-warning {
+        background: var(--warning);
+        color: white;
+        border: none;
+    }
+    .btn-custom-warning:hover {
+        background: #d99500;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(240, 165, 0, 0.3);
+    }
+    .btn-custom-outline {
+        background: transparent;
+        border: 2px solid var(--gray-200);
+        color: var(--gray-600);
+    }
+    .btn-custom-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    .btn-custom-danger {
+        background: var(--accent);
+        color: white;
+        border: none;
+    }
+    .btn-custom-danger:hover {
+        background: #d73a55;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3);
+    }
+
+    /* ACTIONS BAR */
+    .actions-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    /* ALERT */
+    .alert-custom {
+        border-radius: 12px;
+        padding: 16px 20px;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .alert-custom.danger {
+        background: rgba(233, 69, 96, 0.12);
+        color: var(--accent);
+    }
+    .alert-custom.success {
+        background: rgba(0, 191, 142, 0.12);
+        color: var(--success);
+    }
+    .alert-custom.warning {
+        background: rgba(240, 165, 0, 0.12);
+        color: var(--warning);
+    }
+
+    /* CLIENT PREVIEW */
+    .client-preview {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: var(--gray-100);
+        border-radius: 12px;
+    }
+    .client-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1em;
+    }
+    .client-info h5 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+    .client-info p {
+        margin: 0;
+        color: var(--gray-600);
+        font-size: 0.9em;
+    }
+</style>
 @stop
 
 @section('content')
-    @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5><i class="fas fa-exclamation-circle"></i> Errores de Validación</h5>
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+<div class="container-fluid py-4">
+    
+    {{-- HERO HEADER --}}
+    <div class="hero-header">
+        <div class="hero-header-content">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="hero-title">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Pago #{{ substr($pago->uuid, 0, 8) }}
+                    </h1>
+                    <p class="hero-subtitle mb-0">
+                        Modifica los detalles del pago registrado
+                    </p>
+                </div>
+                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-back">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Detalle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {{-- ALERTAS --}}
+    @if ($errors->any())
+        <div class="alert-custom danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Error:</strong>
+                @foreach ($errors->all() as $error)
+                    {{ $error }}<br>
                 @endforeach
-            </ul>
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
         </div>
     @endif
 
-    <form action="{{ route('admin.pagos.update', $pago) }}" method="POST" id="formEditarPago" autocomplete="off">
+    @if(session('error'))
+        <div class="alert-custom danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="alert-custom success">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <form action="{{ route('admin.pagos.update', $pago) }}" method="POST" id="formEditPago">
         @csrf
         @method('PUT')
+        <input type="hidden" name="form_submit_token" value="{{ uniqid() }}">
         <input type="hidden" name="id_inscripcion" value="{{ $pago->id_inscripcion }}">
 
         <div class="row">
-            <!-- COLUMNA IZQUIERDA - FORMULARIO PRINCIPAL -->
-            <div class="col-md-8">
-
-                <!-- CARD: INFORMACIÓN DE INSCRIPCIÓN -->
-                <div class="card card-info card-outline mb-3">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-user-circle"></i> Datos de Inscripción</h3>
+            {{-- LEFT COLUMN --}}
+            <div class="col-lg-8">
+                
+                {{-- INFORMACIÓN DE LA INSCRIPCIÓN --}}
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <i class="fas fa-file-contract"></i>
+                        Inscripción Asociada
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-0">
-                                    <label class="text-muted small"><i class="fas fa-user"></i> Cliente</label>
-                                    <p class="m-0">
-                                        <strong>
-                                            <a href="{{ route('admin.clientes.show', $pago->inscripcion->cliente) }}" target="_blank" class="text-dark">
-                                                {{ $pago->inscripcion->cliente->nombres }} {{ $pago->inscripcion->cliente->apellido_paterno }}
-                                                <i class="fas fa-external-link-alt fa-xs"></i>
-                                            </a>
-                                        </strong>
-                                    </p>
+                    <div class="form-card-body">
+                        @if($pago->inscripcion && $pago->inscripcion->cliente)
+                            @php
+                                $cliente = $pago->inscripcion->cliente;
+                                $user = $cliente->user ?? null;
+                                $iniciales = '';
+                                if ($user && $user->name) {
+                                    $palabras = explode(' ', $user->name);
+                                    foreach($palabras as $palabra) {
+                                        $iniciales .= strtoupper(substr($palabra, 0, 1));
+                                    }
+                                    $iniciales = substr($iniciales, 0, 2);
+                                }
+                            @endphp
+                            <div class="client-preview mb-3">
+                                <div class="client-avatar">{{ $iniciales ?: 'CL' }}</div>
+                                <div class="client-info">
+                                    <h5>{{ $user->name ?? 'Cliente' }}</h5>
+                                    <p>{{ $pago->inscripcion->membresia->nombre ?? 'Sin membresía' }}</p>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-0">
-                                    <label class="text-muted small"><i class="fas fa-dumbbell"></i> Membresía</label>
-                                    <p class="m-0">
-                                        <strong>{{ $pago->inscripcion->membresia->nombre }}</strong>
-                                    </p>
-                                </div>
+                        @endif
+
+                        <div class="info-box">
+                            <div class="info-box-title">
+                                <i class="fas fa-info-circle"></i>
+                                Información de la Inscripción
                             </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-6">
-                                <label class="text-muted small"><i class="fas fa-calendar-alt"></i> Período Membresía</label>
-                                <p class="m-0 small">
-                                    <strong>Inicio:</strong> {{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }} <br>
-                                    <strong>Vence:</strong> {{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}
-                                </p>
+                            @php
+                                $montoTotal = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base ?? 0;
+                                $totalPagado = $pago->inscripcion->pagos()->sum('monto_abonado') ?? 0;
+                                $saldoPendiente = $montoTotal - $totalPagado;
+                            @endphp
+                            <div class="info-row">
+                                <span class="info-label">Monto Total Inscripción:</span>
+                                <span class="info-value">${{ number_format($montoTotal, 0, ',', '.') }}</span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small"><i class="fas fa-coins"></i> Valor Membresía</label>
-                                <p class="m-0">
-                                    <strong class="text-primary">${{ number_format($pago->monto_total, 0, '.', '.') }}</strong>
-                                </p>
+                            <div class="info-row">
+                                <span class="info-label">Total Pagado (todos los pagos):</span>
+                                <span class="info-value success">${{ number_format($totalPagado, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Saldo Pendiente:</span>
+                                <span class="info-value {{ $saldoPendiente > 0 ? 'danger' : 'success' }}">
+                                    ${{ number_format($saldoPendiente, 0, ',', '.') }}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- CARD: INFORMACIÓN DE PAGO -->
-                <div class="card card-success card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-money-bill-wave"></i> Detalles del Pago</h3>
+                {{-- DETALLES DEL PAGO --}}
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Detalles del Pago
                     </div>
-                    <div class="card-body">
-
-                        <!-- MONTO ABONADO -->
-                        <div class="form-group">
-                            <label for="monto_abonado" class="font-weight-bold">
-                                <i class="fas fa-dollar-sign text-success"></i> Monto Abonado
-                                <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group input-group-lg">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-success text-white"><i class="fas fa-peso-sign"></i></span>
-                                </div>
-                                <input type="number" 
-                                       class="form-control form-control-lg font-weight-bold @error('monto_abonado') is-invalid @enderror" 
-                                       id="monto_abonado" 
-                                       name="monto_abonado"
-                                       value="{{ old('monto_abonado', $pago->monto_abonado) }}"
-                                       step="1000"
-                                       min="1"
-                                       max="999999999"
-                                       required
-                                       onchange="actualizarEstado(); recalcularMontoCuota();">
-                                @error('monto_abonado')
-                                    <span class="invalid-feedback">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                Anterior: <strong>${{ number_format($pago->monto_abonado, 0, '.', '.') }}</strong> | 
-                                Máximo: <strong>${{ number_format($pago->monto_total, 0, '.', '.') }}</strong>
-                            </small>
-                        </div>
-
-                        <!-- FILA: FECHA Y MÉTODO -->
+                    <div class="form-card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="fecha_pago" class="font-weight-bold">
-                                        <i class="fas fa-calendar text-info"></i> Fecha del Pago
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="date" 
-                                           class="form-control form-control-lg @error('fecha_pago') is-invalid @enderror" 
-                                           id="fecha_pago" 
-                                           name="fecha_pago"
-                                           value="{{ old('fecha_pago', $pago->fecha_pago->format('Y-m-d')) }}"
+                            <div class="col-md-6 mb-3">
+                                <label for="monto_abonado" class="form-label">
+                                    Monto Abonado <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="1" min="0" 
+                                           class="form-control @error('monto_abonado') is-invalid @enderror" 
+                                           name="monto_abonado" id="monto_abonado"
+                                           value="{{ old('monto_abonado', intval($pago->monto_abonado)) }}"
                                            required>
-                                    @error('fecha_pago')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                    <small class="text-muted d-block mt-1">Anterior: {{ $pago->fecha_pago->format('d/m/Y') }}</small>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="id_metodo_pago" class="font-weight-bold">
-                                        <i class="fas fa-credit-card text-warning"></i> Método de Pago
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-control form-control-lg @error('id_metodo_pago') is-invalid @enderror" 
-                                            id="id_metodo_pago" 
-                                            name="id_metodo_pago"
-                                            style="width: 100%;"
-                                            required>
-                                        <option value="">-- Seleccionar --</option>
-                                        @foreach($metodos_pago as $metodo)
-                                            <option value="{{ $metodo->id }}" 
-                                                    {{ old('id_metodo_pago', $pago->id_metodo_pago) == $metodo->id ? 'selected' : '' }}>
-                                                {{ $metodo->nombre }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('id_metodo_pago')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                    <small class="text-muted d-block mt-1">Anterior: {{ $pago->metodoPago?->nombre ?? 'N/A' }}</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- FILA: CUOTAS Y MONTO POR CUOTA -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="cantidad_cuotas" class="font-weight-bold">
-                                        <i class="fas fa-list-ol text-danger"></i> Cantidad de Cuotas
-                                    </label>
-                                    <input type="number" 
-                                           class="form-control form-control-lg @error('cantidad_cuotas') is-invalid @enderror" 
-                                           id="cantidad_cuotas" 
-                                           name="cantidad_cuotas"
-                                           value="{{ old('cantidad_cuotas', $pago->cantidad_cuotas ?? 1) }}"
-                                           min="1"
-                                           max="12"
-                                           onchange="recalcularMontoCuota();">
-                                    @error('cantidad_cuotas')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                    <small class="text-muted d-block mt-1">Anterior: {{ $pago->cantidad_cuotas ?? 1 }}</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="monto_cuota_display" class="font-weight-bold">
-                                        <i class="fas fa-divide text-secondary"></i> Monto por Cuota
-                                    </label>
-                                    <input type="text" 
-                                           class="form-control form-control-lg bg-light" 
-                                           id="monto_cuota_display"
-                                           placeholder="$0"
-                                           readonly>
-                                    <small class="text-muted d-block mt-1">Calculado automáticamente</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- REFERENCIA DE PAGO -->
-                        <div class="form-group">
-                            <label for="referencia_pago" class="font-weight-bold">
-                                <i class="fas fa-barcode text-primary"></i> Referencia/Comprobante
-                            </label>
-                            <div class="input-group input-group-lg">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-paperclip"></i></span>
-                                </div>
-                                <input type="text" 
-                                       class="form-control @error('referencia_pago') is-invalid @enderror" 
-                                       id="referencia_pago" 
-                                       name="referencia_pago"
-                                       value="{{ old('referencia_pago', $pago->referencia_pago) }}"
-                                       maxlength="100"
-                                       placeholder="TRF-2025-001, BOL-001, CHEQUE123...">
-                                @error('referencia_pago')
-                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @error('monto_abonado')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <small class="text-muted d-block mt-1">
-                                {{ $pago->referencia_pago ? 'Anterior: ' . $pago->referencia_pago : 'Sin referencia registrada' }}
-                            </small>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_metodo_pago" class="form-label">
+                                    Método de Pago <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select @error('id_metodo_pago') is-invalid @enderror" 
+                                        name="id_metodo_pago" id="id_metodo_pago" required>
+                                    <option value="">Seleccione método...</option>
+                                    @foreach($metodos_pago as $metodo)
+                                        <option value="{{ $metodo->id }}" 
+                                                {{ old('id_metodo_pago', $pago->id_metodo_pago) == $metodo->id ? 'selected' : '' }}>
+                                            {{ $metodo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_metodo_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha_pago" class="form-label">
+                                    Fecha de Pago <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
+                                       name="fecha_pago" id="fecha_pago"
+                                       value="{{ old('fecha_pago', $pago->fecha_pago ? $pago->fecha_pago->format('Y-m-d') : '') }}" 
+                                       max="{{ date('Y-m-d') }}" required>
+                                @error('fecha_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="referencia_pago" class="form-label">
+                                    Referencia / Comprobante
+                                </label>
+                                <input type="text" class="form-control @error('referencia_pago') is-invalid @enderror" 
+                                       name="referencia_pago" id="referencia_pago"
+                                       value="{{ old('referencia_pago', $pago->referencia_pago) }}"
+                                       placeholder="Ej: N° Transferencia, Recibo...">
+                                @error('referencia_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-12">
+                                <label for="observaciones" class="form-label">
+                                    Observaciones
+                                </label>
+                                <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                                          name="observaciones" id="observaciones" rows="3"
+                                          placeholder="Notas adicionales sobre el pago...">{{ old('observaciones', $pago->observaciones) }}</textarea>
+                                @error('observaciones')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-
-                        <!-- OBSERVACIONES -->
-                        <div class="form-group">
-                            <label for="observaciones" class="font-weight-bold">
-                                <i class="fas fa-sticky-note text-warning"></i> Observaciones
-                            </label>
-                            <textarea class="form-control form-control-lg @error('observaciones') is-invalid @enderror" 
-                                      id="observaciones" 
-                                      name="observaciones"
-                                      rows="4"
-                                      maxlength="500"
-                                      placeholder="Notas adicionales sobre este pago..."
-                                      onchange="actualizarContador(); actualizarEstado();">{{ old('observaciones', $pago->observaciones) }}</textarea>
-                            <small class="text-muted d-block mt-1">
-                                <span id="charCount">{{ strlen($pago->observaciones ?? '') }}</span>/500 caracteres
-                            </small>
-                            @error('observaciones')
-                                <span class="invalid-feedback d-block">{{ $message }}</span>
-                            @enderror
-                        </div>
-
                     </div>
                 </div>
-
             </div>
 
-            <!-- COLUMNA DERECHA - PANEL INFORMATIVO -->
-            <div class="col-md-4">
+            {{-- RIGHT COLUMN - RESUMEN --}}
+            <div class="col-lg-4">
+                <div class="form-card" style="position: sticky; top: 20px;">
+                    <div class="form-card-header">
+                        <i class="fas fa-calculator"></i>
+                        Resumen del Pago
+                    </div>
+                    <div class="form-card-body">
+                        <div class="precio-box">
+                            <div class="precio-box-title">
+                                <i class="fas fa-receipt"></i>
+                                Detalle de Montos
+                            </div>
+                            <div class="precio-row">
+                                <span class="precio-label">UUID:</span>
+                                <span class="precio-valor" style="font-family: monospace; font-size: 0.85em;">
+                                    {{ substr($pago->uuid, 0, 8) }}...
+                                </span>
+                            </div>
+                            <div class="precio-row">
+                                <span class="precio-label">Monto Original:</span>
+                                <span class="precio-valor">${{ number_format($pago->monto_total, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="precio-row">
+                                <span class="precio-label">Abonado Actual:</span>
+                                <span class="precio-valor" style="color: var(--info);">
+                                    ${{ number_format($pago->monto_abonado, 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="precio-row">
+                                <span class="precio-label">Pendiente:</span>
+                                <span class="precio-valor" style="color: {{ $pago->monto_pendiente > 0 ? 'var(--accent)' : 'var(--success)' }};">
+                                    ${{ number_format($pago->monto_pendiente, 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="precio-row">
+                                <span class="precio-label">Estado:</span>
+                                <span class="precio-valor">{{ $pago->estado->nombre ?? 'Sin estado' }}</span>
+                            </div>
+                        </div>
 
-                <!-- CARD: ESTADO DEL PAGO -->
-                <div class="card card-info card-outline mb-3">
-                    <div class="card-header py-2 bg-info">
-                        <h5 class="card-title m-0"><i class="fas fa-traffic-light"></i> Estado del Pago</h5>
-                    </div>
-                    <div class="card-body text-center">
-                        <div class="mb-3">
-                            <span class="badge badge-lg p-3" style="background-color: {{ $pago->estado->color ?? '#6c757d' }}; font-size: 16px;">
-                                {{ $pago->estado->nombre }}
-                            </span>
+                        <div class="alert-custom warning mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <small>Los cambios en el monto afectarán el saldo de la inscripción asociada.</small>
                         </div>
-                        <hr>
-                        <div class="mb-2">
-                            <small class="text-muted">Monto Actual</small>
-                            <h4 class="text-success mb-0">${{ number_format($pago->monto_abonado, 0, '.', '.') }}</h4>
-                        </div>
-                        <small class="text-muted d-block">
-                            <em>Se asignará automáticamente al guardar</em>
-                        </small>
-                    </div>
-                </div>
 
-                <!-- CARD: RESUMEN FINANCIERO -->
-                <div class="card card-warning card-outline mb-3">
-                    <div class="card-header py-2 bg-warning">
-                        <h5 class="card-title m-0"><i class="fas fa-chart-pie"></i> Resumen Financiero</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small class="text-muted">Precio Total</small>
-                                <strong class="text-primary">${{ number_format($pago->monto_total ?? 0, 0, '.', '.') }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <small class="text-muted">Monto a Pagar</small>
-                                <strong class="text-success" id="monto_a_pagar_display">${{ number_format($pago->monto_abonado ?? 0, 0, '.', '.') }}</strong>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                @php
-                                    $porcentaje = ($pago->monto_total ?? 0) > 0 ? (($pago->monto_abonado ?? 0) / $pago->monto_total) * 100 : 0;
-                                @endphp
-                                <div class="progress-bar bg-success" id="progress_bar" style="width: {{ min($porcentaje, 100) }}%"></div>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                @php
-                                    $porcentajeMostrar = ($pago->monto_total ?? 0) > 0 ? round((($pago->monto_abonado ?? 0) / $pago->monto_total) * 100, 1) : 0;
-                                @endphp
-                                {{ $porcentajeMostrar }}% de avance
-                            </small>
-                        </div>
-                        <hr>
-                        <div class="mb-0">
-                            <div class="d-flex justify-content-between">
-                                <small class="text-muted">Saldo Pendiente</small>
-                                @php
-                                    $saldoPendiente = max(0, ($pago->monto_total ?? 0) - ($pago->monto_abonado ?? 0));
-                                @endphp
-                                <strong class="{{ $saldoPendiente > 0 ? 'text-warning' : 'text-success' }}" id="saldo_pendiente_display">
-                                    ${{ number_format($saldoPendiente, 0, '.', '.') }}
-                                </strong>
-                            </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-custom btn-custom-warning w-100">
+                                <i class="fas fa-save"></i>
+                                Guardar Cambios
+                            </button>
                         </div>
                     </div>
                 </div>
-
-                <!-- CARD: HISTORIAL -->
-                <div class="card card-secondary card-outline mb-3">
-                    <div class="card-header py-2 bg-secondary">
-                        <h5 class="card-title m-0"><i class="fas fa-history"></i> Registro</h5>
-                    </div>
-                    <div class="card-body small">
-                        <div class="mb-2">
-                            <strong>Creado:</strong><br>
-                            <small class="text-muted">{{ $pago->created_at->format('d/m/Y H:i') }}</small>
-                        </div>
-                        <div class="mb-0">
-                            <strong>Última Edición:</strong><br>
-                            <small class="text-muted">{{ $pago->updated_at->format('d/m/Y H:i') }}</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CARD: ACCIONES RÁPIDAS -->
-                <div class="card card-light card-outline">
-                    <div class="card-header py-2">
-                        <h5 class="card-title m-0"><i class="fas fa-rocket"></i> Acciones</h5>
-                    </div>
-                    <div class="card-body p-2">
-                        <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-sm btn-info btn-block mb-2">
-                            <i class="fas fa-eye"></i> Ver Detalles
-                        </a>
-                        <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn btn-sm btn-primary btn-block mb-2">
-                            <i class="fas fa-clipboard-list"></i> Ver Inscripción
-                        </a>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- BOTONES DE ACCIÓN (FOOTER) -->
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">
-                    <i class="fas fa-save"></i> Guardar Cambios
-                </button>
-                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-secondary btn-lg">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
             </div>
         </div>
 
     </form>
 
-@stop
+    {{-- ACTIONS BAR --}}
+    <div class="actions-bar mt-4">
+        <div>
+            <a href="{{ route('admin.pagos.index') }}" class="btn btn-custom btn-custom-outline">
+                <i class="fas fa-list"></i>
+                Ver Todos los Pagos
+            </a>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-custom btn-custom-outline">
+                <i class="fas fa-eye"></i>
+                Ver Detalle
+            </a>
+            <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="d-inline" 
+                  onsubmit="return confirm('¿Estás seguro de eliminar este pago? Esta acción no se puede deshacer.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-custom btn-custom-danger">
+                    <i class="fas fa-trash"></i>
+                    Eliminar Pago
+                </button>
+            </form>
+        </div>
+    </div>
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    <style>
-        .form-control-lg, .input-group-lg > .form-control {
-            font-size: 1rem;
-        }
-        .badge-lg {
-            display: inline-block;
-            min-width: 180px;
-        }
-        .card-header {
-            border-bottom: 2px solid rgba(0,0,0,.125);
-        }
-        .input-group-text {
-            font-weight: bold;
-        }
-        #monto_cuota_display {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #28a745;
-        }
-    </style>
+</div>
 @stop
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Inicializar Select2 con tema Bootstrap
-            $('#id_metodo_pago').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                language: 'es'
-            });
-
-            // Establecer máximo en fecha (no puede ser futura)
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fecha_pago').setAttribute('max', hoy);
-
-            // Calcular monto por cuota al cargar
-            recalcularMontoCuota();
-            actualizarContador();
-        });
-
-        // Función para recalcular monto por cuota
-        function recalcularMontoCuota() {
-            const monto = parseFloat($('#monto_abonado').val()) || 0;
-            const cuotas = parseInt($('#cantidad_cuotas').val()) || 1;
-            const montoPorCuota = cuotas > 0 ? monto / cuotas : 0;
-            
-            $('#monto_cuota_display').val('$' + montoPorCuota.toLocaleString('es-CL', { maximumFractionDigits: 0 }));
+<script>
+$(document).ready(function() {
+    // Validación antes de enviar
+    $('#formEditPago').on('submit', function(e) {
+        const monto = parseFloat($('#monto_abonado').val()) || 0;
+        if (monto <= 0) {
+            e.preventDefault();
+            alert('El monto debe ser mayor a 0');
+            return false;
         }
-
-        // Función para actualizar estado proyectado
-        function actualizarEstado() {
-            const monto = parseFloat($('#monto_abonado').val()) || 0;
-            const montoTotal = parseFloat('{{ $pago->monto_total }}');
-            
-            let estado = '';
-            if (monto >= montoTotal) {
-                estado = 'PAGADO ✓';
-            } else if (monto > 0) {
-                estado = 'PARCIAL ⏳';
-            } else {
-                estado = 'PENDIENTE ⏹';
-            }
-            
-            console.log('Estado proyectado: ' + estado);
-        }
-
-        // Función para actualizar contador de caracteres
-        function actualizarContador() {
-            const texto = $('#observaciones').val();
-            $('#charCount').text(texto.length);
-        }
-
-        // Actualizar dinámicamente los montos mostrados
-        $('#monto_abonado').on('input', function() {
-            const monto = parseFloat($(this).val()) || 0;
-            const montoTotal = parseFloat('{{ $pago->monto_total }}');
-            const pendiente = Math.max(0, montoTotal - monto);
-            const porcentaje = montoTotal > 0 ? (monto / montoTotal) * 100 : 0;
-            
-            $('#monto_a_pagar_display').text('$' + monto.toLocaleString('es-CL', { maximumFractionDigits: 0 }));
-            $('#saldo_pendiente_display').text('$' + pendiente.toLocaleString('es-CL', { maximumFractionDigits: 0 }));
-            $('#progress_bar').css('width', Math.min(porcentaje, 100) + '%');
-            
-            // Cambiar color del saldo según corresponda
-            if (pendiente > 0) {
-                $('#saldo_pendiente_display').removeClass('text-success').addClass('text-warning');
-            } else {
-                $('#saldo_pendiente_display').removeClass('text-warning').addClass('text-success');
-            }
-            
-            recalcularMontoCuota();
-            actualizarEstado();
-        });
-
-        // Actualizar caracteres en tiempo real
-        $('#observaciones').on('input', function() {
-            actualizarContador();
-        });
-
-        // Validación antes de enviar
-        $('#formEditarPago').on('submit', function(e) {
-            const monto = parseFloat($('#monto_abonado').val()) || 0;
-            const montoTotal = parseFloat('{{ $pago->monto_total ?? 0 }}') || 0;
-            const fecha = new Date($('#fecha_pago').val());
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-
-            if (montoTotal === 0) {
-                e.preventDefault();
-                alert('⚠️ Error: La membresía no tiene un precio asignado');
-                return false;
-            }
-
-            if (monto > montoTotal) {
-                e.preventDefault();
-                alert('⚠️ El monto no puede exceder el precio de la membresía ($' + montoTotal.toLocaleString('es-CL') + ')');
-                return false;
-            }
-
-            if (monto <= 0) {
-                e.preventDefault();
-                alert('⚠️ El monto debe ser mayor a $0');
-                return false;
-            }
-
-            if (fecha > hoy) {
-                e.preventDefault();
-                alert('⚠️ La fecha de pago no puede ser futura');
-                return false;
-            }
-        });
-    </script>
+    });
+});
+</script>
 @stop

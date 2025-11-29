@@ -4,6 +4,21 @@
 
 @section('css')
 <style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --accent-light: #ff6b6b;
+        --success: #00bf8e;
+        --success-dark: #00a67d;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --gray-100: #f8f9fa;
+        --gray-200: #e9ecef;
+        --gray-600: #6c757d;
+        --gray-800: #343a40;
+    }
+
     /* ===== WIZARD STEPS ===== */
     .step-indicator { display: none; }
     .step-indicator.active { display: block; animation: fadeIn 0.3s; }
@@ -14,9 +29,9 @@
         gap: 1rem; 
         margin-bottom: 2rem; 
         flex-wrap: wrap;
-        padding: 1rem;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 0.75rem;
+        padding: 1.25rem;
+        background: var(--gray-100);
+        border-radius: 16px;
     }
     
     .step-btn {
@@ -24,30 +39,32 @@
         min-width: 150px;
         padding: 1rem;
         text-align: center;
-        border-radius: 0.75rem;
+        border-radius: 12px;
         background: white;
-        border: 2px solid #dee2e6;
+        border: 2px solid var(--gray-200);
         cursor: pointer;
         font-weight: 600;
         font-size: 0.9rem;
         transition: all 0.3s ease;
+        color: var(--gray-600);
     }
     
     .step-btn:hover:not(:disabled) {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: var(--accent);
     }
     
     .step-btn.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary);
         color: white;
-        border-color: #667eea;
+        border-color: var(--primary);
     }
 
     .step-btn.completed {
-        background: linear-gradient(135deg, #28a745 0%, #38ef7d 100%);
+        background: var(--success);
         color: white;
-        border-color: #28a745;
+        border-color: var(--success);
     }
 
     .step-btn:disabled {
@@ -59,50 +76,59 @@
     .form-section-title {
         font-size: 1.1rem;
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--primary);
         margin: 1.5rem 0 1rem 0;
         padding-bottom: 0.5rem;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 3px solid var(--accent);
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
+    .form-section-title i {
+        color: var(--accent);
+    }
+
     .precio-box {
-        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
-        border: 2px solid #667eea;
-        border-radius: 0.75rem;
+        background: white;
+        border: 2px solid var(--primary);
+        border-radius: 16px;
         padding: 1.5rem;
         margin-top: 1rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    }
+
+    .precio-box h5 {
+        color: var(--primary);
     }
 
     .precio-row {
         display: flex;
         justify-content: space-between;
         padding: 0.5rem 0;
-        border-bottom: 1px dashed #dee2e6;
+        border-bottom: 1px dashed var(--gray-200);
     }
 
     .precio-row:last-child {
         border-bottom: none;
         padding-top: 1rem;
         margin-top: 0.5rem;
-        border-top: 2px solid #667eea;
+        border-top: 2px solid var(--primary);
     }
 
     .precio-label {
-        color: #6c757d;
+        color: var(--gray-600);
         font-weight: 500;
     }
 
     .precio-valor {
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--gray-800);
     }
 
     .precio-total {
         font-size: 1.5rem;
-        color: #28a745;
+        color: var(--success);
     }
 
     /* ===== BUTTONS ===== */
@@ -114,9 +140,8 @@
         margin-top: 2rem;
         flex-wrap: wrap;
         padding: 1.5rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 0.75rem;
-        border: 1px solid #dee2e6;
+        background: var(--gray-100);
+        border-radius: 16px;
     }
 
     .buttons-group {
@@ -129,7 +154,7 @@
     .btn {
         transition: all 0.3s ease;
         font-weight: 600;
-        border-radius: 0.5rem;
+        border-radius: 10px;
     }
 
     .btn-lg {
@@ -143,47 +168,115 @@
     }
 
     .btn-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        background: var(--info);
         border: none;
         color: white;
     }
 
+    .btn-info:hover {
+        background: #3451d4;
+        color: white;
+    }
+
     .btn-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        background: var(--warning);
         border: none;
-        color: #212529;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #d99200;
+        color: white;
     }
 
     .btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        background: var(--success);
         border: none;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: var(--success-dark);
+        color: white;
     }
 
     .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary);
         border: none;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-light);
+        color: white;
     }
 
     /* ===== CARD ===== */
     .card-primary .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary);
+    }
+
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 25px 30px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3);
+    }
+
+    .page-header h1 {
+        color: white;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .page-header h1 i {
+        color: var(--accent);
+    }
+
+    .btn-back {
+        background: transparent;
+        color: white;
+        border: 2px solid rgba(255,255,255,0.5);
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+
+    .btn-back:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border-color: white;
     }
 
     /* ===== FORM CONTROLS ===== */
+    .form-control {
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+    }
+
     .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.15);
     }
 
     .form-control.is-invalid {
-        border-color: #dc3545 !important;
-        background-color: #fff5f5 !important;
+        border-color: var(--accent) !important;
+        background-color: rgba(233, 69, 96, 0.05) !important;
     }
 
     /* ===== CLIENTE CARD ===== */
     .cliente-card {
-        border: 2px solid #dee2e6;
-        border-radius: 0.75rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
         padding: 1rem;
         margin-bottom: 0.75rem;
         cursor: pointer;
@@ -192,24 +285,24 @@
     }
 
     .cliente-card:hover {
-        border-color: #667eea;
-        background: #f8f9ff;
+        border-color: var(--accent);
+        background: rgba(233, 69, 96, 0.03);
         transform: translateX(5px);
     }
 
     .cliente-card.selected {
-        border-color: #28a745;
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border-color: var(--success);
+        background: rgba(0, 191, 142, 0.08);
     }
 
     .cliente-card .cliente-nombre {
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--gray-800);
         font-size: 1.1rem;
     }
 
     .cliente-card .cliente-rut {
-        color: #667eea;
+        color: var(--accent);
         font-weight: 600;
         font-size: 0.9rem;
     }
@@ -220,20 +313,20 @@
 
     .cliente-card .estado-badge {
         display: inline-block;
-        padding: 0.25rem 0.5rem;
-        border-radius: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
         font-size: 0.75rem;
         font-weight: 600;
     }
 
     .estado-sin-membresia {
-        background: #ffc107;
-        color: #212529;
+        background: rgba(240, 165, 0, 0.15);
+        color: var(--warning);
     }
 
     .estado-vencida {
-        background: #dc3545;
-        color: white;
+        background: rgba(233, 69, 96, 0.15);
+        color: var(--accent);
     }
 
     /* ===== SEARCH BOX ===== */
@@ -242,24 +335,24 @@
     }
 
     .search-clientes input {
-        border: 2px solid #dee2e6;
-        border-radius: 0.75rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
         padding: 0.75rem 1rem;
         font-size: 1rem;
     }
 
     .search-clientes input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.15);
     }
 
     .clientes-list {
         max-height: 400px;
         overflow-y: auto;
-        border: 1px solid #dee2e6;
-        border-radius: 0.75rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
         padding: 1rem;
-        background: #f8f9fa;
+        background: var(--gray-100);
     }
 
     /* ===== TIPO PAGO ===== */
@@ -271,8 +364,8 @@
     }
 
     .tipo-pago-card {
-        border: 2px solid #dee2e6;
-        border-radius: 0.75rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
         padding: 1.25rem;
         text-align: center;
         cursor: pointer;
@@ -281,38 +374,51 @@
     }
 
     .tipo-pago-card:hover {
-        border-color: #667eea;
+        border-color: var(--accent);
         transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
 
     .tipo-pago-card.selected {
-        border-color: #28a745;
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border-color: var(--success);
+        background: rgba(0, 191, 142, 0.08);
     }
 
     .tipo-pago-card i {
         font-size: 2rem;
         margin-bottom: 0.5rem;
+        color: var(--accent);
     }
 
     .tipo-pago-card .tipo-nombre {
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--gray-800);
     }
 
     .tipo-pago-card .tipo-desc {
         font-size: 0.85rem;
-        color: #6c757d;
+        color: var(--gray-600);
     }
 
     /* ===== RESUMEN INSCRIPCIÓN ===== */
     .resumen-inscripcion .info-card {
         padding: 1.5rem;
-        border-radius: 1rem;
+        border-radius: 16px;
         text-align: center;
         height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    .resumen-inscripcion .info-card.bg-primary {
+        background: var(--primary) !important;
+    }
+
+    .resumen-inscripcion .info-card.bg-info {
+        background: var(--info) !important;
+    }
+
+    .resumen-inscripcion .info-card.bg-success {
+        background: var(--success) !important;
     }
 
     .resumen-inscripcion .info-label {
@@ -329,35 +435,78 @@
     }
 
     /* ===== PAGO MIXTO TABLA ===== */
+    #tabla-pagos-mixto {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #tabla-pagos-mixto thead {
+        background: var(--primary);
+    }
+
+    #tabla-pagos-mixto thead th {
+        color: white;
+        border: none;
+    }
+
     #tabla-pagos-mixto .monto-mixto,
     #tabla-pagos-mixto .metodo-mixto {
         min-width: 120px;
     }
 
     .resumen-mixto {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 0.75rem;
+        background: var(--gray-100);
+        border-radius: 12px;
         padding: 1rem;
     }
 
     #mixto-diferencia-box {
-        background: #fff3cd;
+        background: rgba(240, 165, 0, 0.15);
     }
 
     #mixto-diferencia-box.ok {
-        background: #d4edda;
+        background: rgba(0, 191, 142, 0.15);
     }
 
     #mixto-diferencia-box.ok #mixto-diferencia {
-        color: #28a745 !important;
+        color: var(--success) !important;
     }
 
     #mixto-diferencia-box.error {
-        background: #f8d7da;
+        background: rgba(233, 69, 96, 0.15);
     }
 
     #mixto-diferencia-box.error #mixto-diferencia {
-        color: #dc3545 !important;
+        color: var(--accent) !important;
+    }
+
+    /* ===== ALERT CUSTOM ===== */
+    .alert-info {
+        background: rgba(67, 97, 238, 0.1);
+        border: none;
+        color: var(--info);
+        border-radius: 12px;
+    }
+
+    .alert-success {
+        background: rgba(0, 191, 142, 0.1);
+        border: none;
+        color: var(--success-dark);
+        border-radius: 12px;
+    }
+
+    .alert-warning {
+        background: rgba(240, 165, 0, 0.1);
+        border: none;
+        color: #c78800;
+        border-radius: 12px;
+    }
+
+    .alert-danger {
+        background: rgba(233, 69, 96, 0.1);
+        border: none;
+        color: var(--accent);
+        border-radius: 12px;
     }
 
     /* ===== RESPONSIVE ===== */
@@ -371,14 +520,16 @@
 @endsection
 
 @section('content_header')
-<div class="row mb-4">
-    <div class="col-sm-8">
-        <h1 class="m-0"><i class="fas fa-clipboard-list text-primary"></i> Nueva Inscripción</h1>
-    </div>
-    <div class="col-sm-4 text-right">
-        <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-sm-8">
+            <h1><i class="fas fa-clipboard-list"></i> Nueva Inscripción</h1>
+        </div>
+        <div class="col-sm-4 text-right">
+            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
     </div>
 </div>
 @stop

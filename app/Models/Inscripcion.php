@@ -60,15 +60,47 @@ class Inscripcion extends Model
         'id_motivo_descuento',
         'id_estado',
         'observaciones',
+        // Campos de sistema de pausas
+        'pausada',
+        'dias_pausa',
+        'fecha_pausa_inicio',
+        'fecha_pausa_fin',
+        'razon_pausa',
+        'pausa_indefinida',
+        'pausas_realizadas',
+        'max_pausas_permitidas',
+        'dias_compensacion',
+        // Campos de cambio de plan (upgrade/downgrade)
+        'id_inscripcion_anterior',
+        'es_cambio_plan',
+        'tipo_cambio',
+        'credito_plan_anterior',
+        'precio_nuevo_plan',
+        'diferencia_a_pagar',
+        'fecha_cambio_plan',
+        'motivo_cambio_plan',
     ];
 
     protected $casts = [
         'fecha_inscripcion' => 'datetime',
         'fecha_inicio' => 'datetime',
         'fecha_vencimiento' => 'datetime',
+        'fecha_pausa_inicio' => 'date',
+        'fecha_pausa_fin' => 'date',
+        'fecha_cambio_plan' => 'datetime',
         'precio_base' => 'decimal:2',
         'descuento_aplicado' => 'decimal:2',
         'precio_final' => 'decimal:2',
+        'credito_plan_anterior' => 'decimal:2',
+        'precio_nuevo_plan' => 'decimal:2',
+        'diferencia_a_pagar' => 'decimal:2',
+        'pausada' => 'boolean',
+        'pausa_indefinida' => 'boolean',
+        'es_cambio_plan' => 'boolean',
+        'dias_pausa' => 'integer',
+        'pausas_realizadas' => 'integer',
+        'max_pausas_permitidas' => 'integer',
+        'dias_compensacion' => 'integer',
     ];
 
     protected static function boot()
@@ -168,5 +200,192 @@ class Inscripcion extends Model
     public function getEstaActivaAttribute()
     {
         return $this->id_estado == 100 && !$this->esta_vencida;
+    }
+
+    /**
+     * Verificar si la inscripción está pausada
+     */
+    public function estaPausada()
+    {
+        return $this->pausada === true || $this->id_estado == 102;
+    }
+
+    /**
+     * Verificar si puede realizar más pausas
+     */
+    public function puedeRealizarPausa()
+    {
+        return $this->pausas_realizadas < $this->max_pausas_permitidas 
+            && !$this->pausada 
+            && $this->id_estado == 100;
+    }
+
+    /**
+     * Obtener pausas disponibles
+     */
+    public function getPausasDisponiblesAttribute()
+    {
+        return max(0, $this->max_pausas_permitidas - $this->pausas_realizadas);
+    }
+
+    /**
+     * Pausar la membresía
+     * 
+     * @param int|null $dias Días de pausa (null para indefinida)
+     * @param string $razon Razón de la pausa
+     * @param bool $indefinida Si es pausa indefinida
+     * @return bool
+     */
+    public function pausar($dias = null, $razon = '', $indefinida = false)
+    {
+        if (!$this->puedeRealizarPausa()) {
+            return false;
+        }
+
+        $this->pausada = true;
+        $this->dias_pausa = $indefinida ? null : $dias;
+        $this->fecha_pausa_inicio = now();
+        $this->fecha_pausa_fin = $indefinida ? null : now()->addDays($dias);
+        $this->razon_pausa = $razon;
+        $this->pausa_indefinida = $indefinida;
+        $this->pausas_realizadas = $this->pausas_realizadas + 1;
+        $this->id_estado = 102; // Estado Pausada
+
+        return $this->save();
+    }
+
+    /**
+     * Reanudar la membresía pausada
+     * Extiende la fecha de vencimiento por los días que estuvo pausada
+     * 
+     * @return bool
+     */
+    public function reanudar()
+    {
+        if (!$this->pausada) {
+            return false;
+        }
+
+        // Calcular días transcurridos en pausa
+        $diasEnPausa = $this->fecha_pausa_inicio 
+            ? $this->fecha_pausa_inicio->diffInDays(now()) 
+            : 0;
+
+        // Extender fecha de vencimiento
+        if ($diasEnPausa > 0 && $this->fecha_vencimiento) {
+            $this->fecha_vencimiento = $this->fecha_vencimiento->addDays($diasEnPausa);
+            $this->dias_compensacion = $this->dias_compensacion + $diasEnPausa;
+        }
+
+        $this->pausada = false;
+        $this->dias_pausa = null;
+        $this->fecha_pausa_inicio = null;
+        $this->fecha_pausa_fin = null;
+        $this->razon_pausa = null;
+        $this->pausa_indefinida = false;
+        $this->id_estado = 100; // Estado Activa
+
+        return $this->save();
+    }
+
+    /**
+     * Obtener descripción del estado de pausa
+     */
+    public function getEstadoPausaDescripcionAttribute()
+    {
+        if (!$this->pausada) {
+            return null;
+        }
+
+        if ($this->pausa_indefinida) {
+            return 'Pausada hasta nuevo aviso';
+        }
+
+        return $this->fecha_pausa_fin 
+            ? 'Pausada hasta ' . $this->fecha_pausa_fin->format('d/m/Y')
+            : 'Pausada';
+    }
+
+    // ============================================
+    // MÉTODOS DE CAMBIO DE PLAN (UPGRADE/DOWNGRADE)
+    // ============================================
+
+    /**
+     * Relación con la inscripción anterior (si es upgrade/downgrade)
+     */
+    public function inscripcionAnterior()
+    {
+        return $this->belongsTo(Inscripcion::class, 'id_inscripcion_anterior');
+    }
+
+    /**
+     * Relación con inscripciones que la reemplazaron
+     */
+    public function inscripcionesPosteriores()
+    {
+        return $this->hasMany(Inscripcion::class, 'id_inscripcion_anterior');
+    }
+
+    /**
+     * Verificar si esta inscripción puede cambiar de plan
+     * Solo inscripciones activas pueden cambiar
+     */
+    public function puedeCambiarPlan()
+    {
+        return $this->id_estado == 100 && !$this->pausada;
+    }
+
+    /**
+     * Obtener el monto total pagado de esta inscripción
+     */
+    public function getMontoPagadoAttribute()
+    {
+        return $this->pagos()->sum('monto_abonado');
+    }
+
+    /**
+     * Obtener el monto pendiente de esta inscripción
+     */
+    public function getMontoPendienteAttribute()
+    {
+        return max(0, $this->precio_final - $this->monto_pagado);
+    }
+
+    /**
+     * Verificar si la inscripción está completamente pagada
+     */
+    public function getEstaPagadaAttribute()
+    {
+        return $this->monto_pagado >= $this->precio_final;
+    }
+
+    /**
+     * Calcular el crédito disponible para cambio de plan
+     * Es el monto que ya pagó el cliente
+     */
+    public function getCreditoDisponibleAttribute()
+    {
+        return $this->monto_pagado;
+    }
+
+    /**
+     * Obtener días restantes de la membresía actual
+     */
+    public function getDiasConsumidosAttribute()
+    {
+        if (!$this->fecha_inicio) return 0;
+        return max(0, $this->fecha_inicio->diffInDays(now()));
+    }
+
+    /**
+     * Verificar si es un upgrade o downgrade
+     */
+    public function getTipoCambioDescripcionAttribute()
+    {
+        if (!$this->es_cambio_plan) {
+            return null;
+        }
+
+        return $this->tipo_cambio === 'upgrade' ? 'Mejora de Plan' : 'Cambio a Plan Menor';
     }
 }

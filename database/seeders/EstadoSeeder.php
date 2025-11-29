@@ -53,6 +53,14 @@ class EstadoSeeder extends Seeder
                 'color' => 'danger',
                 'activo' => true,
             ],
+            [
+                'codigo' => 105,
+                'nombre' => 'Cambiada',
+                'descripcion' => 'Membresía cambiada a otro plan (upgrade/downgrade)',
+                'categoria' => 'membresia',
+                'color' => 'info',
+                'activo' => true,
+            ],
             
             // ===== RANGO 200-299: ESTADOS DE PAGOS =====
             // Códigos: 200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado

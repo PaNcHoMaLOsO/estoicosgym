@@ -4,97 +4,87 @@
 
 @section('css')
     <style>
+        :root {
+            --primary: #1a1a2e;
+            --primary-light: #16213e;
+            --accent: #e94560;
+            --accent-light: #ff6b6b;
+            --success: #00bf8e;
+            --success-dark: #00a67d;
+            --warning: #f0a500;
+            --info: #4361ee;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-800: #343a40;
+        }
+
         /* ===== CARDS ESTADÍSTICAS ===== */
         .stat-card {
             border: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 0.75rem;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+            border-radius: 16px;
+            background: white;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            border-left: 5px solid var(--info);
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.1);
         }
 
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .stat-card.success::before {
-            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
-        }
-
-        .stat-card.warning::before {
-            background: linear-gradient(90deg, #f5af19 0%, #f12711 100%);
-        }
-
-        .stat-card.danger::before {
-            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
-        }
+        .stat-card.success { border-left-color: var(--success); }
+        .stat-card.warning { border-left-color: var(--warning); }
+        .stat-card.danger { border-left-color: var(--accent); }
 
         .stat-number {
             font-size: 2.5em;
-            font-weight: 700;
-            color: #667eea;
+            font-weight: 800;
+            color: var(--info);
         }
 
-        .stat-card.success .stat-number {
-            color: #11998e;
-        }
-
-        .stat-card.warning .stat-number {
-            color: #f5af19;
-        }
-
-        .stat-card.danger .stat-number {
-            color: #ff6b6b;
-        }
+        .stat-card.success .stat-number { color: var(--success); }
+        .stat-card.warning .stat-number { color: var(--warning); }
+        .stat-card.danger .stat-number { color: var(--accent); }
 
         .stat-label {
-            color: #495057;
+            color: var(--gray-600);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         /* ===== BUSCADOR ===== */
         .search-box {
             background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 0.75rem;
-            padding: 1rem;
+            border: none;
+            border-radius: 16px;
+            padding: 1.25rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
         }
 
         .search-box input,
         .search-box select {
-            border: 1px solid #dee2e6;
-            border-radius: 0.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
             padding: 0.75rem 1rem;
             transition: all 0.3s ease;
         }
 
         .search-box input:focus,
         .search-box select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.15);
         }
 
         /* ===== TABLA ===== */
         .table-responsive {
-            border-radius: 0 0 0.75rem 0.75rem;
+            border-radius: 0 0 16px 16px;
             overflow: hidden;
         }
 
@@ -103,29 +93,27 @@
         }
 
         .table thead {
-            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
-            border-bottom: 2px solid #667eea;
+            background: var(--primary);
         }
 
         .table thead th {
-            color: #2c3e50;
-            font-weight: 700;
+            color: white;
+            font-weight: 600;
             padding: 1rem 0.75rem;
             border: 0;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
 
         .table tbody tr {
             transition: all 0.2s ease;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid var(--gray-200);
         }
 
         .table tbody tr:hover {
-            background-color: #f8f9fa;
-            box-shadow: inset 0 0 5px rgba(102, 126, 234, 0.1);
+            background-color: var(--gray-100);
         }
 
         .table tbody td {
@@ -134,14 +122,14 @@
         }
 
         .client-name {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 700;
+            color: var(--gray-800);
             font-size: 0.95rem;
         }
 
         .membership-badge {
             font-size: 0.8rem;
-            color: #667eea;
+            color: var(--accent);
             font-weight: 600;
         }
 
@@ -149,70 +137,74 @@
         .status-badge {
             display: inline-block;
             padding: 0.4rem 0.8rem;
-            border-radius: 2rem;
+            border-radius: 50px;
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
         }
 
         .status-active {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
+            background: rgba(0, 191, 142, 0.15);
+            color: var(--success);
+            border: 2px solid var(--success);
         }
 
         .status-partial {
-            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
-            color: white;
+            background: rgba(240, 165, 0, 0.15);
+            color: var(--warning);
+            border: 2px solid var(--warning);
         }
 
         .status-pending {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
-            color: white;
+            background: rgba(233, 69, 96, 0.15);
+            color: var(--accent);
+            border: 2px solid var(--accent);
         }
 
         .status-paused {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: white;
+            background: rgba(108, 117, 125, 0.15);
+            color: var(--gray-600);
+            border: 2px solid var(--gray-600);
         }
 
         /* ===== PLAZO BADGES ===== */
         .plazo-badge {
             display: inline-block;
             padding: 0.35rem 0.6rem;
-            border-radius: 0.5rem;
+            border-radius: 8px;
             font-size: 0.75rem;
             font-weight: 700;
         }
 
         .plazo-ok {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
+            background: rgba(0, 191, 142, 0.15);
+            color: var(--success);
         }
 
         .plazo-warning {
-            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
-            color: white;
+            background: rgba(240, 165, 0, 0.15);
+            color: var(--warning);
         }
 
         .plazo-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
-            color: white;
+            background: rgba(233, 69, 96, 0.15);
+            color: var(--accent);
         }
 
         /* ===== PRECIOS ===== */
         .precio-base {
-            color: #6c757d;
+            color: var(--gray-600);
             font-size: 0.85rem;
         }
 
         .precio-final {
-            color: #667eea;
+            color: var(--success);
             font-weight: 700;
             font-size: 0.95rem;
         }
 
         .precio-descuento {
-            color: #ff6b6b;
+            color: var(--accent);
             font-size: 0.8rem;
         }
 
@@ -220,7 +212,7 @@
         .progress-mini {
             height: 4px;
             border-radius: 2px;
-            background-color: #e9ecef;
+            background-color: var(--gray-200);
             margin-top: 0.3rem;
         }
 
@@ -233,9 +225,9 @@
         }
 
         .btn-action {
-            padding: 0.35rem 0.6rem;
+            padding: 0.4rem 0.65rem;
             font-size: 0.8rem;
-            border-radius: 0.4rem;
+            border-radius: 8px;
             border: 0;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -247,62 +239,82 @@
 
         .btn-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .btn-view {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
         }
 
         .btn-edit {
-            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            background: var(--warning);
             color: white;
         }
 
         .btn-pay {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: var(--success);
             color: white;
         }
 
         .btn-history {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: var(--info);
             color: white;
         }
 
         /* ===== CARD HEADER ===== */
         .card-header {
-            border-bottom: 2px solid #667eea;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 0.75rem 0.75rem 0 0 !important;
+            background: var(--primary);
+            color: white;
+            border-radius: 16px 16px 0 0 !important;
+            border-bottom: none;
+        }
+
+        .card-header .card-title {
+            color: white;
         }
 
         .card {
             border: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 0.75rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+            border-radius: 16px;
         }
 
-        /* ===== FILTROS AVANZADOS ===== */
-        .filters-card {
-            border: 2px solid #dee2e6;
-            border-radius: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .filters-card .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* ===== HERO HEADER ===== */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
-            border-radius: 0.65rem 0.65rem 0 0 !important;
-            border-bottom: 0;
+            padding: 25px 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3);
         }
 
-        .filters-card .card-header .card-title {
+        .page-header h1 {
             color: white;
+            margin: 0;
+            font-weight: 700;
         }
 
-        .filters-card .card-header .btn-tool {
+        .page-header h1 i {
+            color: var(--accent);
+        }
+
+        .btn-new-inscription {
+            background: var(--success);
             color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-new-inscription:hover {
+            background: var(--success-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 191, 142, 0.3);
         }
 
         /* ===== RESPONSIVE ===== */
@@ -341,16 +353,18 @@
 @endsection
 
 @section('content_header')
-    <div class="row mb-4">
-        <div class="col-sm-8">
-            <h1 class="m-0">
-                <i class="fas fa-clipboard-list text-primary"></i> Gestión de Inscripciones
-            </h1>
-        </div>
-        <div class="col-sm-4 text-right">
-            <a href="{{ route('admin.inscripciones.create') }}" class="btn btn-success btn-lg">
-                <i class="fas fa-plus"></i> Nueva Inscripción
-            </a>
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-sm-8">
+                <h1>
+                    <i class="fas fa-clipboard-list"></i> Gestión de Inscripciones
+                </h1>
+            </div>
+            <div class="col-sm-4 text-right">
+                <a href="{{ route('admin.inscripciones.create') }}" class="btn btn-new-inscription">
+                    <i class="fas fa-plus"></i> Nueva Inscripción
+                </a>
+            </div>
         </div>
     </div>
 @stop

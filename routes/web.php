@@ -56,6 +56,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // CRUD Inscripciones
     Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
+    
+    // Pausar y Reanudar inscripciones
+    Route::post('inscripciones/{inscripcion}/pausar', [InscripcionController::class, 'pausar'])->name('inscripciones.pausar');
+    Route::post('inscripciones/{inscripcion}/reanudar', [InscripcionController::class, 'reanudar'])->name('inscripciones.reanudar');
+    
+    // Cambio de Plan (Upgrade/Downgrade)
+    Route::get('inscripciones/{inscripcion}/info-cambio-plan', [InscripcionController::class, 'infoCambioPlan'])->name('inscripciones.info-cambio-plan');
+    Route::post('inscripciones/{inscripcion}/cambiar-plan', [InscripcionController::class, 'cambiarPlan'])->name('inscripciones.cambiar-plan');
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
