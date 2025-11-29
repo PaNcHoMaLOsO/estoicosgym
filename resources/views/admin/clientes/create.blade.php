@@ -173,15 +173,28 @@
             const membresia_id = membresiaSelect.value;
             const convenio_id = convenioSelect ? convenioSelect.value : '';
             
-            console.log('Fetching precio para membresia:', membresia_id, 'convenio:', convenio_id);
+            console.log('🔍 Fetching precio para membresia:', membresia_id, 'convenio:', convenio_id);
             
-            fetch(`/api/precio-membresia/${membresia_id}${convenio_id ? '?convenio=' + convenio_id : ''}`)
-                .then(response => response.json())
+            // Construir URL correctamente
+            let url = `/api/precio-membresia/${membresia_id}`;
+            if (convenio_id) {
+                url += `?convenio=${convenio_id}`;
+            }
+            
+            console.log('🔗 URL:', url);
+            
+            fetch(url)
+                .then(response => {
+                    console.log('📡 Response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    console.log('Respuesta API:', data);
+                    console.log('✅ Respuesta API:', data);
                     
                     if (!data || data.error) {
-                        console.error('Error en API:', data?.error);
+                        console.error('❌ Error en API:', data?.error);
+                        const precioBox = document.getElementById('precioBox');
+                        if (precioBox) precioBox.style.display = 'none';
                         return;
                     }
                     
@@ -189,14 +202,27 @@
                     const precioConConvenio = parseInt(data.precio_final) || precioBase;
                     const duracionDias = parseInt(data.duracion_dias) || 30;
                     
+                    console.log('💰 Precios:', { precioBase, precioConConvenio, duracionDias });
+                    
                     const precioBoxEl = document.getElementById('precioBox');
-                    if (precioBoxEl) precioBoxEl.style.display = 'block';
+                    if (precioBoxEl) {
+                        precioBoxEl.style.display = 'block';
+                        console.log('📦 Mostrando precio-box');
+                    } else {
+                        console.error('❌ Elemento precioBox NO encontrado');
+                    }
                     
                     const normalEl = document.getElementById('precio-normal');
                     const convenioEl = document.getElementById('precio-convenio');
                     
-                    if (normalEl) normalEl.textContent = '$' + precioBase.toLocaleString('es-CL');
-                    if (convenioEl) convenioEl.textContent = '$' + precioConConvenio.toLocaleString('es-CL');
+                    if (normalEl) {
+                        normalEl.textContent = '$' + precioBase.toLocaleString('es-CL');
+                        console.log('✅ Precio normal actualizado');
+                    }
+                    if (convenioEl) {
+                        convenioEl.textContent = '$' + precioConConvenio.toLocaleString('es-CL');
+                        console.log('✅ Precio convenio actualizado');
+                    }
                     
                     if (fechaInicio && fechaInicio.value) {
                         const inicio = new Date(fechaInicio.value);
@@ -207,13 +233,18 @@
                         const terminoFormato = termino.toLocaleDateString('es-CL', options);
                         
                         const fechaTerminoEl = document.getElementById('fecha-termino');
-                        if (fechaTerminoEl) fechaTerminoEl.textContent = terminoFormato;
+                        if (fechaTerminoEl) {
+                            fechaTerminoEl.textContent = terminoFormato;
+                            console.log('✅ Fecha término actualizada:', terminoFormato);
+                        }
                     }
                     
                     actualizarPrecioFinal(precioConConvenio);
                 })
                 .catch(error => {
-                    console.error('Error en fetch:', error);
+                    console.error('❌ Error en fetch:', error);
+                    const precioBox = document.getElementById('precioBox');
+                    if (precioBox) precioBox.style.display = 'none';
                 });
         }
 
@@ -221,8 +252,12 @@
             const descuentoManualInput = document.getElementById('descuento_manual');
             const precioTotalEl = document.getElementById('precio-total');
             const descManualDisplay = document.getElementById('desc-manual-display');
+            const precioFinalOculto = document.getElementById('precio-final-oculto');
             
-            if (!precioTotalEl || !descuentoManualInput) return;
+            if (!precioTotalEl || !descuentoManualInput) {
+                console.error('❌ Elementos precio-total o descuento_manual no encontrados');
+                return;
+            }
             
             if (precioConConvenio === null) {
                 const convenioEl = document.getElementById('precio-convenio');
@@ -230,6 +265,7 @@
                     const text = convenioEl.textContent.replace('$', '').replace(/\./g, '').trim();
                     precioConConvenio = parseInt(text) || 0;
                 } else {
+                    console.error('❌ Elemento precio-convenio no encontrado');
                     return;
                 }
             }
@@ -237,11 +273,19 @@
             const descuentoManual = parseInt(descuentoManualInput.value) || 0;
             const precioTotal = Math.max(0, precioConConvenio - descuentoManual);
             
+            console.log('💵 Calculando precio final:', { precioConConvenio, descuentoManual, precioTotal });
+            
             if (descManualDisplay) {
                 descManualDisplay.textContent = descuentoManual > 0 ? '-$' + descuentoManual.toLocaleString('es-CL') : '-$0';
             }
             
             precioTotalEl.textContent = '$' + precioTotal.toLocaleString('es-CL');
+            
+            // Guardar precio final en campo oculto para validaciones
+            if (precioFinalOculto) {
+                precioFinalOculto.value = precioTotal;
+                console.log('✅ Precio final guardado en campo oculto:', precioTotal);
+            }
         }
 
         function actualizarNombreCliente() {
@@ -807,6 +851,9 @@
                     </div>
 
                     <div class="precio-box" id="precioBox" style="display:none;">
+                        <!-- Campo oculto para guardar precio final -->
+                        <input type="hidden" id="precio-final-oculto" value="0">
+                        
                         <h5><i class="fas fa-tag"></i> Resumen de Precios</h5>
                         <hr>
                         <div class="row">
