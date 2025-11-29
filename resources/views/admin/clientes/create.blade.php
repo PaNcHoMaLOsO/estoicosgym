@@ -97,6 +97,18 @@
                 currentStep = step;
                 updateButtons();
                 updateStepButtons();
+                
+                // Actualizar datos según el paso
+                if (step === 2) {
+                    // PASO 2: Actualizar nombre del cliente en el header
+                    actualizarNombreCliente();
+                } else if (step === 3) {
+                    // PASO 3: Actualizar el resumen completo
+                    actualizarPrecio();
+                    setTimeout(() => {
+                        actualizarResumenPaso3();
+                    }, 100);
+                }
             }
         }
 
@@ -289,38 +301,59 @@
         }
 
         function actualizarNombreCliente() {
-            const nombres = document.getElementById('nombres').value || '';
-            const apellido = document.getElementById('apellido_paterno').value || '';
+            const nombres = document.getElementById('nombres')?.value || '';
+            const apellido = document.getElementById('apellido_paterno')?.value || '';
             const clienteNombreEl = document.getElementById('cliente-nombre');
             
             if (clienteNombreEl) {
-                clienteNombreEl.textContent = (nombres + ' ' + apellido).trim() || 'Ingrese datos en Paso 1';
+                const nombreCompleto = (nombres + ' ' + apellido).trim() || 'Ingrese datos en Paso 1';
+                clienteNombreEl.textContent = nombreCompleto;
+                console.log('✅ Nombre cliente actualizado:', nombreCompleto);
             }
-
-            // Actualizar también en el resumen del PASO 3
-            actualizarResumenPaso3();
+            
+            // Actualizar también en el resumen del PASO 3 (solo si estamos en PASO 3)
+            if (currentStep === 3) {
+                actualizarResumenPaso3();
+            }
         }
 
         function actualizarResumenPaso3() {
+            console.log('🔄 Actualizando resumen PASO 3...');
+            
             // Datos PASO 1
-            const nombres = document.getElementById('nombres').value || '-';
-            const apellido = document.getElementById('apellido_paterno').value || '';
+            const nombres = document.getElementById('nombres')?.value || '';
+            const apellido = document.getElementById('apellido_paterno')?.value || '';
             const nombreCompleto = (nombres + ' ' + apellido).trim() || '-';
             
             // Datos PASO 2
             const membresiaSelect = document.getElementById('id_membresia');
-            const membresiaText = membresiaSelect ? membresiaSelect.options[membresiaSelect.selectedIndex]?.text : '-';
+            const membresiaText = membresiaSelect?.options[membresiaSelect?.selectedIndex]?.text || '- Seleccionar -';
+            
             const convenioSelect = document.getElementById('id_convenio');
-            const convenioText = convenioSelect?.value ? convenioSelect.options[convenioSelect.selectedIndex]?.text : 'No';
+            const convenioValue = convenioSelect?.value;
+            const convenioText = convenioValue ? convenioSelect.options[convenioSelect.selectedIndex]?.text : 'No';
+            
             const motivoSelect = document.getElementById('id_motivo_descuento');
-            const motivoText = motivoSelect?.value ? motivoSelect.options[motivoSelect.selectedIndex]?.text : '-';
-            const descuentoManual = document.getElementById('descuento_manual')?.value || '0';
+            const motivoValue = motivoSelect?.value;
+            const motivoText = motivoValue ? motivoSelect.options[motivoSelect.selectedIndex]?.text : '-';
             
-            // Obtener precio final
+            const descuentoManualInput = document.getElementById('descuento_manual');
+            const descuentoManual = parseInt(descuentoManualInput?.value || '0') || 0;
+            
+            // Obtener precio final (leer del elemento visible o del campo oculto)
             const precioTotalEl = document.getElementById('precio-total');
-            const precioFinal = precioTotalEl?.textContent || '$0';
+            let precioFinal = '$0';
             
-            // Actualizar elementos del resumen
+            if (precioTotalEl?.textContent) {
+                precioFinal = precioTotalEl.textContent;
+            } else {
+                const precioFinalOculto = document.getElementById('precio-final-oculto');
+                if (precioFinalOculto?.value) {
+                    precioFinal = '$' + parseInt(precioFinalOculto.value).toLocaleString('es-CL');
+                }
+            }
+            
+            // Actualizar elementos del resumen en PASO 3
             const resumenCliente = document.getElementById('resumen-cliente');
             const resumenMembresia = document.getElementById('resumen-membresia');
             const resumenConvenio = document.getElementById('resumen-convenio');
@@ -328,12 +361,33 @@
             const resumenDescManual = document.getElementById('resumen-desc-manual');
             const resumenPrecioFinal = document.getElementById('resumen-precio-final');
             
-            if (resumenCliente) resumenCliente.textContent = nombreCompleto;
-            if (resumenMembresia) resumenMembresia.textContent = membresiaText;
-            if (resumenConvenio) resumenConvenio.textContent = convenioText;
-            if (resumenMotivo) resumenMotivo.textContent = motivoText;
-            if (resumenDescManual) resumenDescManual.textContent = '-$' + parseInt(descuentoManual).toLocaleString('es-CL');
-            if (resumenPrecioFinal) resumenPrecioFinal.textContent = precioFinal;
+            if (resumenCliente) {
+                resumenCliente.textContent = nombreCompleto;
+                console.log('✅ Cliente:', nombreCompleto);
+            }
+            if (resumenMembresia) {
+                resumenMembresia.textContent = membresiaText;
+                console.log('✅ Membresía:', membresiaText);
+            }
+            if (resumenConvenio) {
+                resumenConvenio.textContent = convenioText;
+                console.log('✅ Convenio:', convenioText);
+            }
+            if (resumenMotivo) {
+                resumenMotivo.textContent = motivoText;
+                console.log('✅ Motivo Descuento:', motivoText);
+            }
+            if (resumenDescManual) {
+                const descManualFormato = descuentoManual > 0 ? '-$' + descuentoManual.toLocaleString('es-CL') : '-$0';
+                resumenDescManual.textContent = descManualFormato;
+                console.log('✅ Descuento Manual:', descManualFormato);
+            }
+            if (resumenPrecioFinal) {
+                resumenPrecioFinal.textContent = precioFinal;
+                console.log('✅ Precio Final:', precioFinal);
+            }
+            
+            console.log('✅ Resumen PASO 3 actualizado');
         }
 
         function actualizarTipoPago() {
@@ -514,19 +568,25 @@
             if (convenioSelect) {
                 convenioSelect.addEventListener('change', function() {
                     actualizarPrecio();
-                    actualizarResumenPaso3();
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
                 });
             }
             if (membresiaSelect) {
                 membresiaSelect.addEventListener('change', function() {
                     actualizarPrecio();
-                    actualizarResumenPaso3();
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
                 });
             }
             if (fechaInicio) {
                 fechaInicio.addEventListener('change', function() {
                     actualizarPrecio();
-                    actualizarResumenPaso3();
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
                 });
             }
             
@@ -542,16 +602,24 @@
             if (descuentoManualInput) {
                 descuentoManualInput.addEventListener('change', function() {
                     actualizarPrecioFinal();
-                    actualizarResumenPaso3();
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
                 });
                 descuentoManualInput.addEventListener('input', function() {
                     actualizarPrecioFinal();
-                    actualizarResumenPaso3();
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
                 });
             }
 
             if (motivoDescuentoSelect) {
-                motivoDescuentoSelect.addEventListener('change', actualizarResumenPaso3);
+                motivoDescuentoSelect.addEventListener('change', function() {
+                    if (currentStep === 3) {
+                        actualizarResumenPaso3();
+                    }
+                });
             }
         });
     </script>
