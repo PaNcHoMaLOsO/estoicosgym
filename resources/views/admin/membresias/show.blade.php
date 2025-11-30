@@ -535,7 +535,7 @@
                         <div class="col-md-6">
                             <div class="info-box-custom">
                                 <div class="info-box-icon-custom bg-info">
-                                    <i class="fas fa-calendar-days"></i>
+                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
                                 <div class="info-box-content-custom">
                                     <span class="info-box-text-custom">Duración</span>

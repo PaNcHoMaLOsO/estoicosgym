@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MembresiaController;
 use App\Http\Controllers\Admin\ConvenioController;
 use App\Http\Controllers\Admin\MetodoPagoController;
 use App\Http\Controllers\Admin\MotivoDescuentoController;
+use App\Http\Controllers\Admin\NotificacionController;
 use App\Http\Controllers\Api\InscripcionApiController;
 use App\Http\Controllers\Api\SearchApiController;
 use App\Http\Controllers\Api\MembresiaApiController;
@@ -86,6 +87,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // CRUD Motivos de Descuento
     Route::resource('motivos-descuento', MotivoDescuentoController::class);
+
+    // ===== NOTIFICACIONES =====
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/', [NotificacionController::class, 'index'])->name('index');
+        Route::get('/{notificacion}', [NotificacionController::class, 'show'])->name('show');
+        Route::post('/{notificacion}/reenviar', [NotificacionController::class, 'reenviar'])->name('reenviar');
+        Route::post('/{notificacion}/cancelar', [NotificacionController::class, 'cancelar'])->name('cancelar');
+        Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
+        Route::get('/{notificacion}/logs', [NotificacionController::class, 'logs'])->name('logs');
+        
+        // Plantillas
+        Route::get('/config/plantillas', [NotificacionController::class, 'plantillas'])->name('plantillas');
+        Route::get('/config/plantillas/{tipoNotificacion}/editar', [NotificacionController::class, 'editarPlantilla'])->name('plantillas.editar');
+        Route::put('/config/plantillas/{tipoNotificacion}', [NotificacionController::class, 'actualizarPlantilla'])->name('plantillas.actualizar');
+    });
 });
 
 // API Routes - Grupo con prefijo 'api'

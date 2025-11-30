@@ -341,6 +341,23 @@ return [
             'url' => 'admin/pagos',
             'icon' => 'fas fa-fw fa-dollar-sign',
         ],
+        [
+            'text' => 'Notificaciones',
+            'icon' => 'fas fa-fw fa-bell',
+            'icon_color' => 'info',
+            'submenu' => [
+                [
+                    'text' => 'Gestión de Envíos',
+                    'url' => 'admin/notificaciones',
+                    'icon' => 'fas fa-fw fa-paper-plane',
+                ],
+                [
+                    'text' => 'Plantillas',
+                    'url' => 'admin/notificaciones/plantillas',
+                    'icon' => 'fas fa-fw fa-palette',
+                ],
+            ],
+        ],
         ['header' => 'CONFIGURACIÓN'],
         [
             'text' => 'Convenios',

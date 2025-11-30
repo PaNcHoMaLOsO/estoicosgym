@@ -569,6 +569,27 @@
         transform: translateY(-2px);
     }
 
+    .btn-restore {
+        background: linear-gradient(135deg, var(--warning) 0%, #d99200 100%);
+        border: none;
+        color: white;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 5px 20px rgba(240, 165, 0, 0.3);
+    }
+
+    .btn-restore:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(240, 165, 0, 0.4);
+        color: white;
+    }
+
     .btn-save {
         background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
         border: none;
@@ -1211,6 +1232,9 @@
                             <a href="{{ route('admin.membresias.show', $membresia) }}" class="btn-cancel">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
+                            <button type="button" class="btn-restore" id="btnRestaurar">
+                                <i class="fas fa-undo"></i> Restaurar
+                            </button>
                             <button type="submit" class="btn-save" id="btnGuardar">
                                 <i class="fas fa-save"></i> Guardar Cambios
                             </button>
@@ -1226,6 +1250,17 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ========== Valores originales para restaurar ==========
+    const valoresOriginales = {
+        nombre: @json($membresia->nombre),
+        duracion_meses: {{ $membresia->duracion_meses }},
+        duracion_dias: {{ $membresia->duracion_dias }},
+        descripcion: @json($membresia->descripcion ?? ''),
+        precio_normal: {{ $precioActual->precio_normal ?? 0 }},
+        precio_convenio: {{ $precioActual->precio_convenio ?? 0 }},
+        activo: {{ $membresia->activo ? 'true' : 'false' }}
+    };
+
     // ========== Referencias a elementos ==========
     const form = document.getElementById('formMembresia');
     const duracionMeses = document.getElementById('duracion_meses');
@@ -1240,10 +1275,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const precioPreviewValor = document.getElementById('precioPreviewValor');
     const precioPreviewDescuento = document.getElementById('precioPreviewDescuento');
     const btnGuardar = document.getElementById('btnGuardar');
+    const btnRestaurar = document.getElementById('btnRestaurar');
     const switchActivo = document.getElementById('activo');
     const switchContainer = document.getElementById('switchContainer');
     const switchText = document.getElementById('switchText');
     const switchDesc = document.getElementById('switchDesc');
+
+    // ========== Botón Restaurar ==========
+    btnRestaurar.addEventListener('click', function() {
+        Swal.fire({
+            title: '¿Restaurar valores originales?',
+            text: 'Se descartarán todos los cambios realizados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f0a500',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-undo"></i> Sí, restaurar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Restaurar todos los campos
+                document.getElementById('nombre').value = valoresOriginales.nombre;
+                duracionMeses.value = valoresOriginales.duracion_meses;
+                duracionDias.value = valoresOriginales.duracion_dias;
+                duracionDiasCalculado.value = valoresOriginales.duracion_dias;
+                document.getElementById('descripcion').value = valoresOriginales.descripcion;
+                precioNormalHidden.value = valoresOriginales.precio_normal;
+                precioNormalDisplay.value = formatearNumero(valoresOriginales.precio_normal);
+                precioConvenioHidden.value = valoresOriginales.precio_convenio;
+                precioConvenioDisplay.value = valoresOriginales.precio_convenio > 0 ? formatearNumero(valoresOriginales.precio_convenio) : '';
+                document.getElementById('razon_cambio').value = '';
+                
+                // Restaurar switch
+                switchActivo.checked = valoresOriginales.activo;
+                if (valoresOriginales.activo) {
+                    switchContainer.classList.add('active');
+                    switchText.textContent = 'Membresía Activa';
+                    switchDesc.textContent = 'Los clientes pueden contratarla';
+                } else {
+                    switchContainer.classList.remove('active');
+                    switchText.textContent = 'Membresía Inactiva';
+                    switchDesc.textContent = 'No disponible para nuevos clientes';
+                }
+                
+                // Actualizar días y ocultar preview
+                actualizarDias();
+                precioPreview.style.display = 'none';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Valores restaurados',
+                    text: 'Se han restaurado los valores originales',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        });
+    });
 
     // ========== Switch Toggle ==========
     if (switchActivo) {
