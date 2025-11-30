@@ -79,6 +79,12 @@ class Inscripcion extends Model
         'diferencia_a_pagar',
         'fecha_cambio_plan',
         'motivo_cambio_plan',
+        // Campos de traspaso de membresía
+        'es_traspaso',
+        'id_inscripcion_origen',
+        'id_cliente_original',
+        'fecha_traspaso',
+        'motivo_traspaso',
     ];
 
     protected $casts = [
@@ -88,6 +94,7 @@ class Inscripcion extends Model
         'fecha_pausa_inicio' => 'date',
         'fecha_pausa_fin' => 'date',
         'fecha_cambio_plan' => 'datetime',
+        'fecha_traspaso' => 'datetime',
         'precio_base' => 'decimal:2',
         'descuento_aplicado' => 'decimal:2',
         'precio_final' => 'decimal:2',
@@ -97,6 +104,7 @@ class Inscripcion extends Model
         'pausada' => 'boolean',
         'pausa_indefinida' => 'boolean',
         'es_cambio_plan' => 'boolean',
+        'es_traspaso' => 'boolean',
         'dias_pausa' => 'integer',
         'pausas_realizadas' => 'integer',
         'max_pausas_permitidas' => 'integer',
@@ -387,5 +395,54 @@ class Inscripcion extends Model
         }
 
         return $this->tipo_cambio === 'upgrade' ? 'Mejora de Plan' : 'Cambio a Plan Menor';
+    }
+
+    // ============================================
+    // MÉTODOS DE TRASPASO DE MEMBRESÍA
+    // ============================================
+
+    /**
+     * Relación con la inscripción origen (de donde viene el traspaso)
+     */
+    public function inscripcionOrigen()
+    {
+        return $this->belongsTo(Inscripcion::class, 'id_inscripcion_origen');
+    }
+
+    /**
+     * Relación con el cliente original que cedió la membresía
+     */
+    public function clienteOriginal()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente_original');
+    }
+
+    /**
+     * Inscripciones que fueron traspasadas desde esta
+     */
+    public function inscripcionesTraspasadas()
+    {
+        return $this->hasMany(Inscripcion::class, 'id_inscripcion_origen');
+    }
+
+    /**
+     * Verificar si esta inscripción puede ser traspasada
+     * Solo inscripciones activas o pausadas pueden traspasarse
+     */
+    public function puedeTraspasarse()
+    {
+        return in_array($this->id_estado, [100, 101]) && $this->dias_restantes > 0;
+    }
+
+    /**
+     * Verificar si un cliente puede recibir un traspaso
+     * No debe tener membresía activa
+     */
+    public static function clientePuedeRecibirTraspaso($clienteId)
+    {
+        return !self::where('id_cliente', $clienteId)
+            ->whereIn('id_estado', [100, 101]) // Activa o Pausada
+            ->where('fecha_vencimiento', '>=', now())
+            ->exists();
     }
 }

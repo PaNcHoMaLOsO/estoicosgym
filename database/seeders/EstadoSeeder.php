@@ -61,6 +61,14 @@ class EstadoSeeder extends Seeder
                 'color' => 'info',
                 'activo' => true,
             ],
+            [
+                'codigo' => 106,
+                'nombre' => 'Traspasada',
+                'descripcion' => 'Membresía traspasada a otro cliente',
+                'categoria' => 'membresia',
+                'color' => 'purple',
+                'activo' => true,
+            ],
             
             // ===== RANGO 200-299: ESTADOS DE PAGOS =====
             // Códigos: 200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado

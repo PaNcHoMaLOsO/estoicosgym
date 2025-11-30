@@ -940,8 +940,12 @@
             <span>Edición Simple</span>
         </button>
         <button type="button" class="mode-tab" data-mode="cambio">
+            <i class="fas fa-arrow-circle-up"></i>
+            <span>Mejorar Plan</span>
+        </button>
+        <button type="button" class="mode-tab" data-mode="traspaso">
             <i class="fas fa-exchange-alt"></i>
-            <span>Cambiar Plan</span>
+            <span>Traspasar</span>
         </button>
     </div>
     @endif
@@ -988,7 +992,7 @@
 
                         <div class="alert-modern info mb-4">
                             <i class="fas fa-info-circle"></i>
-                            <small><strong>Nota:</strong> Para cambiar de membresía (upgrade/downgrade), usa la pestaña "Cambiar Plan".</small>
+                            <small><strong>Nota:</strong> Para mejorar a un plan de mayor valor, usa la pestaña "Mejorar Plan".</small>
                         </div>
 
                         <div class="row">
@@ -1406,7 +1410,7 @@
     </div><!-- Fin modo-edicion -->
 
     <!-- ========================================== -->
-    <!-- MODO 2: CAMBIO DE PLAN                    -->
+    <!-- MODO 2: MEJORA DE PLAN (UPGRADE)          -->
     <!-- ========================================== -->
     @if($inscripcion->id_estado == 100 && !$inscripcion->pausada)
     <div class="mode-content" id="modo-cambio">
@@ -1415,19 +1419,19 @@
             <div class="col-lg-8">
                 <div class="modern-card">
                     <div class="modern-card-header success">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Seleccionar Nuevo Plan</span>
+                        <i class="fas fa-arrow-circle-up"></i>
+                        <span>Mejorar Plan</span>
                     </div>
                     <div class="modern-card-body">
                         <div class="alert-modern info mb-4">
                             <i class="fas fa-info-circle"></i>
                             <div>
-                                <strong>¿Cómo funciona el cambio de plan?</strong>
-                                <p class="mb-0">El monto que ya pagaste ($<span id="creditoDisponible">{{ number_format($inscripcion->monto_pagado, 0, ',', '.') }}</span>) se usará como crédito para el nuevo plan. Solo pagarás la diferencia.</p>
+                                <strong>¿Cómo funciona la mejora de plan?</strong>
+                                <p class="mb-0">Puedes mejorar a un plan de mayor valor. Como administrador, decides si aplicas el crédito ($<span id="creditoDisponible">{{ number_format($inscripcion->monto_pagado, 0, ',', '.') }}</span>) del plan anterior o si el cliente paga la totalidad del nuevo plan.</p>
                             </div>
                         </div>
 
-                        <h6 class="mb-3 fw-bold"><i class="fas fa-list me-2"></i>Planes Disponibles</h6>
+                        <h6 class="mb-3 fw-bold"><i class="fas fa-list me-2"></i>Planes de Mayor Valor</h6>
                         
                         <div class="row g-3" id="planesDisponibles">
                             <!-- Los planes se cargarán dinámicamente -->
@@ -1440,7 +1444,7 @@
                         <!-- Motivo del cambio -->
                         <div class="mt-4" id="motivoCambioContainer" style="display: none;">
                             <label class="form-label">
-                                <i class="fas fa-comment-alt"></i> Motivo del cambio (opcional)
+                                <i class="fas fa-comment-alt"></i> Motivo de la mejora (opcional)
                             </label>
                             <textarea class="form-control" id="motivoCambio" rows="2" 
                                       placeholder="Ej: El cliente desea más tiempo de acceso..."></textarea>
@@ -1454,7 +1458,7 @@
                 <div class="modern-card sticky-top" style="top: 20px;">
                     <div class="modern-card-header warning">
                         <i class="fas fa-calculator"></i>
-                        <span>Resumen del Cambio</span>
+                        <span>Resumen de la Mejora</span>
                     </div>
                     <div class="modern-card-body">
                         <div class="cambio-resumen" id="resumenCambio">
@@ -1464,13 +1468,27 @@
                             </div>
                         </div>
 
-                        <!-- Pago de Diferencia (solo si upgrade) -->
+                        <!-- Opciones de Pago para Upgrade -->
                         <div id="seccionPagoDiferencia" style="display: none;" class="mt-4">
-                            <h6 class="fw-bold mb-3"><i class="fas fa-credit-card me-2"></i>Pago de Diferencia</h6>
+                            <!-- Checkbox para aplicar crédito -->
+                            <div class="mb-3">
+                                <div class="form-check" style="padding: 12px; background: rgba(0, 191, 142, 0.1); border-radius: 8px; border: 1px solid rgba(0, 191, 142, 0.3);">
+                                    <input class="form-check-input" type="checkbox" id="aplicarCredito" checked>
+                                    <label class="form-check-label fw-bold" for="aplicarCredito" style="color: var(--success);">
+                                        <i class="fas fa-hand-holding-usd me-1"></i>
+                                        Aplicar crédito del plan anterior
+                                    </label>
+                                    <div class="text-muted" style="font-size: 0.8em; margin-left: 24px;">
+                                        Crédito: $<span id="montoCredito">{{ number_format($inscripcion->monto_pagado, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3"><i class="fas fa-credit-card me-2"></i>Pago</h6>
                             
                             <div class="mb-3">
-                                <label class="form-label">Método de Pago</label>
-                                <select class="form-control" id="metodoPagoCambio">
+                                <label class="form-label">Método de Pago <span class="text-danger">*</span></label>
+                                <select class="form-control" id="metodoPagoCambio" required>
                                     <option value="">-- Seleccionar --</option>
                                     @foreach($metodosPago ?? [] as $metodo)
                                         <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
@@ -1479,30 +1497,167 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Monto a Abonar</label>
+                                <label class="form-label">Monto a Pagar</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control" id="montoAbonoCambio" 
                                            min="0" step="1" placeholder="0">
                                 </div>
-                                <small class="text-muted">Diferencia a pagar: $<span id="diferenciaPagar">0</span></small>
+                                <small class="text-muted">Total a pagar: $<span id="diferenciaPagar">0</span></small>
                             </div>
                         </div>
 
                         <!-- Botón Confirmar Cambio -->
                         <button type="button" class="btn-modern success w-100 mt-3" id="btnConfirmarCambio" disabled>
-                            <i class="fas fa-exchange-alt me-2"></i> Confirmar Cambio de Plan
+                            <i class="fas fa-arrow-circle-up me-2"></i> Confirmar Mejora de Plan
                         </button>
                         
                         <p class="text-muted text-center mt-2" style="font-size: 0.8em;">
                             <i class="fas fa-info-circle me-1"></i>
-                            El plan actual quedará marcado como "Cambiado"
+                            El plan actual quedará marcado como "Mejorado"
                         </p>
                     </div>
                 </div>
             </div>
         </div>
     </div><!-- Fin modo-cambio -->
+
+    <!-- ========================================== -->
+    <!-- MODO 3: TRASPASO DE MEMBRESÍA             -->
+    <!-- ========================================== -->
+    <div class="mode-content" id="modo-traspaso">
+        <div class="row">
+            <!-- Columna Principal: Búsqueda de Cliente -->
+            <div class="col-lg-8">
+                <div class="modern-card">
+                    <div class="modern-card-header" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white;">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Traspasar Membresía</span>
+                    </div>
+                    <div class="modern-card-body">
+                        <div class="alert-modern warning mb-4">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <strong>⚠️ Acción Irreversible</strong>
+                                <p class="mb-0">El traspaso transferirá la membresía y los días restantes a otro cliente. Esta acción no se puede deshacer.</p>
+                            </div>
+                        </div>
+
+                        <div class="alert-modern info mb-4">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>¿Cómo funciona el traspaso?</strong>
+                                <ul class="mb-0 ps-3" style="font-size: 0.9em;">
+                                    <li>El cliente actual perderá acceso inmediatamente</li>
+                                    <li>El nuevo cliente recibirá los <strong>{{ $inscripcion->dias_restantes }} días</strong> restantes</li>
+                                    <li>Solo se puede traspasar a clientes sin membresía activa</li>
+                                    <li>Se mantendrá registro del traspaso para auditoría</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3 fw-bold"><i class="fas fa-search me-2"></i>Buscar Cliente Destino</h6>
+                        
+                        <div class="position-relative mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
+                                <input type="text" class="form-control form-control-lg" 
+                                       id="buscarClienteTraspaso" 
+                                       placeholder="Buscar por nombre, RUT, email o teléfono..."
+                                       autocomplete="off">
+                            </div>
+                            <div id="resultadosBusquedaTraspaso" class="dropdown-menu w-100" style="display: none; max-height: 300px; overflow-y: auto;">
+                            </div>
+                        </div>
+
+                        <!-- Cliente Seleccionado -->
+                        <div id="clienteSeleccionadoContainer" style="display: none;">
+                            <h6 class="mb-3 fw-bold"><i class="fas fa-user-check me-2"></i>Cliente Seleccionado</h6>
+                            <div class="card" style="border: 2px solid var(--success); border-radius: 12px;">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="stat-icon success" style="width: 60px; height: 60px; font-size: 1.5em;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1" id="clienteDestinoNombre"></h5>
+                                            <p class="text-muted mb-0" id="clienteDestinoRut"></p>
+                                            <small class="text-muted" id="clienteDestinoEmail"></small>
+                                        </div>
+                                        <span class="badge" id="clienteDestinoBadge" style="font-size: 0.85em;"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="limpiarClienteTraspaso()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="clienteDestinoId" value="">
+                        </div>
+
+                        <!-- Motivo del traspaso -->
+                        <div class="mt-4" id="motivoTraspasoContainer" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-comment-alt"></i> Motivo del traspaso <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="motivoTraspaso" rows="3" 
+                                      placeholder="Ej: El cliente no puede continuar asistiendo y cede la membresía a un familiar..."
+                                      required></textarea>
+                            <small class="text-muted">Este registro quedará guardado para auditoría.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Resumen del Traspaso -->
+            <div class="col-lg-4">
+                <div class="modern-card sticky-top" style="top: 20px;">
+                    <div class="modern-card-header" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white;">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Resumen del Traspaso</span>
+                    </div>
+                    <div class="modern-card-body">
+                        <div class="cambio-resumen">
+                            <div class="cambio-resumen-row">
+                                <span class="cambio-resumen-label">De Cliente</span>
+                                <span class="cambio-resumen-value">{{ $inscripcion->cliente->nombre }} {{ $inscripcion->cliente->apellido }}</span>
+                            </div>
+                            <div class="cambio-resumen-row">
+                                <span class="cambio-resumen-label">Membresía</span>
+                                <span class="cambio-resumen-value" style="color: var(--info);">{{ $inscripcion->membresia->nombre }}</span>
+                            </div>
+                            <div class="cambio-resumen-row">
+                                <span class="cambio-resumen-label">Días Restantes</span>
+                                <span class="cambio-resumen-value" style="color: var(--success); font-weight: bold;">
+                                    {{ $inscripcion->dias_restantes }} días
+                                </span>
+                            </div>
+                            <div class="cambio-resumen-row">
+                                <span class="cambio-resumen-label">Vencimiento</span>
+                                <span class="cambio-resumen-value">{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</span>
+                            </div>
+                            <div class="cambio-resumen-row" id="resumenClienteDestino" style="display: none; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px;">
+                                <span class="cambio-resumen-label fw-bold">
+                                    <i class="fas fa-arrow-right me-1"></i> A Cliente
+                                </span>
+                                <span class="cambio-resumen-value" id="resumenNombreDestino" style="color: #9b59b6;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Botón Confirmar Traspaso -->
+                        <button type="button" class="btn-modern w-100 mt-3" id="btnConfirmarTraspaso" disabled
+                                style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                            <i class="fas fa-exchange-alt me-2"></i> Confirmar Traspaso
+                        </button>
+                        
+                        <p class="text-muted text-center mt-2" style="font-size: 0.8em;">
+                            <i class="fas fa-history me-1"></i>
+                            Se guardará registro completo del traspaso
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- Fin modo-traspaso -->
     @endif
 
     <!-- Modal Confirmar Pausa -->
@@ -1745,7 +1900,7 @@ function renderizarPlanes() {
             <div class="col-12">
                 <div class="alert-modern warning">
                     <i class="fas fa-info-circle"></i>
-                    <span>No hay otros planes disponibles para cambiar.</span>
+                    <span>No hay planes de mayor valor disponibles para mejorar.</span>
                 </div>
             </div>
         `;
@@ -1753,14 +1908,8 @@ function renderizarPlanes() {
     }
     
     let html = '';
-    const precioActual = datosInscripcion.precio_actual;
     
     planesDisponibles.forEach(plan => {
-        const diferencia = plan.precio - datosInscripcion.monto_pagado;
-        const esUpgrade = plan.precio > precioActual;
-        const badgeClass = esUpgrade ? 'upgrade' : 'downgrade';
-        const badgeText = esUpgrade ? 'UPGRADE' : 'MENOR';
-        
         const duracionTexto = plan.duracion_dias 
             ? `${plan.duracion_dias} días` 
             : `${plan.duracion_meses} ${plan.duracion_meses === 1 ? 'mes' : 'meses'}`;
@@ -1768,7 +1917,7 @@ function renderizarPlanes() {
         html += `
             <div class="col-md-6">
                 <div class="plan-card" data-plan-id="${plan.id}" onclick="seleccionarPlan(${plan.id})">
-                    <span class="plan-card-badge ${badgeClass}">${badgeText}</span>
+                    <span class="plan-card-badge upgrade">UPGRADE</span>
                     <div class="plan-card-header">
                         <div>
                             <div class="plan-card-name">${plan.nombre}</div>
@@ -1815,49 +1964,57 @@ function actualizarResumenCambio() {
     
     const precioNuevo = planSeleccionado.precio;
     const creditoDisponible = datosInscripcion.monto_pagado;
-    const diferencia = precioNuevo - creditoDisponible;
-    const esUpgrade = diferencia > 0;
+    const aplicarCredito = document.getElementById('aplicarCredito')?.checked ?? true;
+    const creditoAplicado = aplicarCredito ? creditoDisponible : 0;
+    const totalAPagar = precioNuevo - creditoAplicado;
     
-    resumenDiv.innerHTML = `
+    let resumenHTML = `
         <div class="cambio-resumen-row">
             <span class="cambio-resumen-label">Plan Actual</span>
             <span class="cambio-resumen-value">${datosInscripcion.membresia_actual}</span>
         </div>
         <div class="cambio-resumen-row">
             <span class="cambio-resumen-label">Nuevo Plan</span>
-            <span class="cambio-resumen-value" style="color: var(--info);">${planSeleccionado.nombre}</span>
+            <span class="cambio-resumen-value" style="color: var(--success);">${planSeleccionado.nombre}</span>
         </div>
         <div class="cambio-resumen-row">
             <span class="cambio-resumen-label">Precio Nuevo Plan</span>
             <span class="cambio-resumen-value">$${formatNumber(precioNuevo)}</span>
-        </div>
+        </div>`;
+    
+    if (aplicarCredito && creditoDisponible > 0) {
+        resumenHTML += `
         <div class="cambio-resumen-row">
             <span class="cambio-resumen-label">
                 <i class="fas fa-minus-circle text-success me-1"></i>
-                Tu Crédito
+                Crédito Aplicado
             </span>
             <span class="cambio-resumen-value credito">-$${formatNumber(creditoDisponible)}</span>
-        </div>
-        <div class="cambio-resumen-row">
-            <span class="cambio-resumen-label fw-bold">
-                ${esUpgrade ? 'Diferencia a Pagar' : 'Crédito a Favor'}
-            </span>
-            <span class="cambio-resumen-value diferencia ${esUpgrade ? 'positiva' : 'negativa'}">
-                ${esUpgrade ? '' : '+'}$${formatNumber(Math.abs(diferencia))}
-            </span>
+        </div>`;
+    }
+    
+    resumenHTML += `
+        <div class="cambio-resumen-row" style="border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px;">
+            <span class="cambio-resumen-label fw-bold">Total a Pagar</span>
+            <span class="cambio-resumen-value diferencia positiva">$${formatNumber(totalAPagar)}</span>
         </div>
     `;
     
-    // Mostrar/ocultar sección de pago
-    if (esUpgrade) {
-        seccionPago.style.display = 'block';
-        document.getElementById('diferenciaPagar').textContent = formatNumber(diferencia);
-        document.getElementById('montoAbonoCambio').max = diferencia;
-        document.getElementById('montoAbonoCambio').value = diferencia;
-    } else {
-        seccionPago.style.display = 'none';
-    }
+    resumenDiv.innerHTML = resumenHTML;
+    
+    // Siempre mostrar sección de pago (es upgrade obligatorio)
+    seccionPago.style.display = 'block';
+    document.getElementById('diferenciaPagar').textContent = formatNumber(totalAPagar);
+    document.getElementById('montoAbonoCambio').max = totalAPagar;
+    document.getElementById('montoAbonoCambio').value = totalAPagar;
 }
+
+// Listener para el checkbox de aplicar crédito
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'aplicarCredito') {
+        actualizarResumenCambio();
+    }
+});
 
 // Confirmar cambio de plan
 document.addEventListener('click', function(e) {
@@ -1872,20 +2029,17 @@ function ejecutarCambioPlan() {
         return;
     }
     
-    const diferencia = planSeleccionado.precio - datosInscripcion.monto_pagado;
-    const esUpgrade = diferencia > 0;
-    
-    // Validar método de pago si es upgrade
-    if (esUpgrade) {
-        const metodoPago = document.getElementById('metodoPagoCambio').value;
-        if (!metodoPago) {
-            Toast.warning('Atención', 'Selecciona un método de pago para la diferencia');
-            return;
-        }
+    const metodoPago = document.getElementById('metodoPagoCambio').value;
+    if (!metodoPago) {
+        Toast.warning('Atención', 'Selecciona un método de pago');
+        return;
     }
     
+    const aplicarCredito = document.getElementById('aplicarCredito')?.checked ?? true;
+    const creditoTexto = aplicarCredito ? ' (con crédito aplicado)' : ' (sin aplicar crédito anterior)';
+    
     // Confirmar
-    if (!confirm(`¿Confirmar cambio de plan a "${planSeleccionado.nombre}"?`)) {
+    if (!confirm(`¿Confirmar mejora de plan a "${planSeleccionado.nombre}"${creditoTexto}?`)) {
         return;
     }
     
@@ -1894,13 +2048,10 @@ function ejecutarCambioPlan() {
     const body = {
         id_membresia_nueva: planSeleccionado.id,
         motivo_cambio: document.getElementById('motivoCambio')?.value || '',
+        id_metodo_pago: metodoPago,
+        monto_abonado: parseFloat(document.getElementById('montoAbonoCambio').value) || 0,
+        aplicar_credito: aplicarCredito,
     };
-    
-    if (esUpgrade) {
-        body.id_metodo_pago = document.getElementById('metodoPagoCambio').value;
-        body.monto_abonado = parseFloat(document.getElementById('montoAbonoCambio').value) || 0;
-        body.diferencia_positiva = true;
-    }
     
     fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/cambiar-plan`, {
         method: 'POST',
@@ -1915,12 +2066,12 @@ function ejecutarCambioPlan() {
     .then(data => {
         mostrarLoading(false);
         if (data.success) {
-            Toast.success('¡Plan Cambiado!', data.message);
+            Toast.success('¡Plan Mejorado!', data.message);
             setTimeout(() => {
                 window.location.href = data.redirect_url || '/admin/inscripciones';
             }, 1500);
         } else {
-            Toast.error('Error', data.message || 'No se pudo cambiar el plan');
+            Toast.error('Error', data.message || 'No se pudo mejorar el plan');
         }
     })
     .catch(error => {
@@ -2220,5 +2371,203 @@ document.addEventListener('DOMContentLoaded', function() {
         PrecioFormatter.iniciarCampo('descuento_aplicado', false);
     }
 });
+
+// ============================================
+// FUNCIONALIDAD DE TRASPASO DE MEMBRESÍA
+// ============================================
+
+let clienteDestinoSeleccionado = null;
+let timeoutBusqueda = null;
+
+// Buscar clientes para traspaso
+const inputBusqueda = document.getElementById('buscarClienteTraspaso');
+const resultadosContainer = document.getElementById('resultadosBusquedaTraspaso');
+
+if (inputBusqueda) {
+    inputBusqueda.addEventListener('input', function() {
+        clearTimeout(timeoutBusqueda);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            resultadosContainer.style.display = 'none';
+            return;
+        }
+        
+        timeoutBusqueda = setTimeout(() => {
+            buscarClientesTraspaso(query);
+        }, 300);
+    });
+    
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!inputBusqueda.contains(e.target) && !resultadosContainer.contains(e.target)) {
+            resultadosContainer.style.display = 'none';
+        }
+    });
+}
+
+function buscarClientesTraspaso(query) {
+    fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/buscar-clientes-traspaso?q=${encodeURIComponent(query)}`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.clientes.length > 0) {
+            renderizarResultadosTraspaso(data.clientes);
+        } else {
+            resultadosContainer.innerHTML = `
+                <div class="dropdown-item text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No se encontraron clientes disponibles
+                </div>
+            `;
+            resultadosContainer.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error buscando clientes:', error);
+        resultadosContainer.innerHTML = `
+            <div class="dropdown-item text-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al buscar clientes
+            </div>
+        `;
+        resultadosContainer.style.display = 'block';
+    });
+}
+
+function renderizarResultadosTraspaso(clientes) {
+    let html = '';
+    
+    clientes.forEach(cliente => {
+        const badgeColor = cliente.estado === 'nuevo' ? 'success' : 'secondary';
+        const badgeText = cliente.estado === 'nuevo' ? 'Nuevo' : 'Sin membresía activa';
+        
+        html += `
+            <a href="#" class="dropdown-item py-2" onclick="seleccionarClienteTraspaso(${JSON.stringify(cliente).replace(/"/g, '&quot;')})">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-user-circle fa-2x text-muted"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <strong>${cliente.nombre_completo}</strong>
+                        <br>
+                        <small class="text-muted">
+                            RUT: ${cliente.rut || 'N/A'} | ${cliente.email || cliente.telefono || 'Sin contacto'}
+                        </small>
+                        ${cliente.ultima_membresia ? `<br><small class="text-muted">Última: ${cliente.ultima_membresia}</small>` : ''}
+                    </div>
+                    <span class="badge bg-${badgeColor}">${badgeText}</span>
+                </div>
+            </a>
+        `;
+    });
+    
+    resultadosContainer.innerHTML = html;
+    resultadosContainer.style.display = 'block';
+}
+
+function seleccionarClienteTraspaso(cliente) {
+    clienteDestinoSeleccionado = cliente;
+    
+    // Mostrar cliente seleccionado
+    document.getElementById('clienteDestinoNombre').textContent = cliente.nombre_completo;
+    document.getElementById('clienteDestinoRut').textContent = 'RUT: ' + (cliente.rut || 'N/A');
+    document.getElementById('clienteDestinoEmail').textContent = cliente.email || cliente.telefono || '';
+    document.getElementById('clienteDestinoId').value = cliente.id;
+    
+    const badge = document.getElementById('clienteDestinoBadge');
+    if (cliente.estado === 'nuevo') {
+        badge.className = 'badge bg-success';
+        badge.textContent = 'Cliente Nuevo';
+    } else {
+        badge.className = 'badge bg-secondary';
+        badge.textContent = 'Sin membresía activa';
+    }
+    
+    // Actualizar resumen
+    document.getElementById('resumenNombreDestino').textContent = cliente.nombre_completo;
+    document.getElementById('resumenClienteDestino').style.display = 'flex';
+    
+    // Mostrar contenedores
+    document.getElementById('clienteSeleccionadoContainer').style.display = 'block';
+    document.getElementById('motivoTraspasoContainer').style.display = 'block';
+    document.getElementById('btnConfirmarTraspaso').disabled = false;
+    
+    // Ocultar resultados y limpiar búsqueda
+    resultadosContainer.style.display = 'none';
+    document.getElementById('buscarClienteTraspaso').value = '';
+}
+
+function limpiarClienteTraspaso() {
+    clienteDestinoSeleccionado = null;
+    document.getElementById('clienteDestinoId').value = '';
+    document.getElementById('clienteSeleccionadoContainer').style.display = 'none';
+    document.getElementById('motivoTraspasoContainer').style.display = 'none';
+    document.getElementById('resumenClienteDestino').style.display = 'none';
+    document.getElementById('btnConfirmarTraspaso').disabled = true;
+    document.getElementById('motivoTraspaso').value = '';
+}
+
+// Confirmar traspaso
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#btnConfirmarTraspaso')) {
+        ejecutarTraspaso();
+    }
+});
+
+function ejecutarTraspaso() {
+    if (!clienteDestinoSeleccionado) {
+        Toast.error('Error', 'Debes seleccionar un cliente destino');
+        return;
+    }
+    
+    const motivo = document.getElementById('motivoTraspaso').value.trim();
+    if (!motivo) {
+        Toast.warning('Atención', 'Debes ingresar el motivo del traspaso');
+        document.getElementById('motivoTraspaso').focus();
+        return;
+    }
+    
+    // Confirmar
+    if (!confirm(`¿Confirmar traspaso de membresía a "${clienteDestinoSeleccionado.nombre_completo}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    mostrarLoading(true);
+    
+    fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/traspasar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+        },
+        body: JSON.stringify({
+            id_cliente_destino: clienteDestinoSeleccionado.id,
+            motivo_traspaso: motivo,
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        mostrarLoading(false);
+        if (data.success) {
+            Toast.success('¡Traspaso Exitoso!', data.message);
+            setTimeout(() => {
+                window.location.href = data.redirect_url || '/admin/inscripciones';
+            }, 1500);
+        } else {
+            Toast.error('Error', data.message || 'No se pudo realizar el traspaso');
+        }
+    })
+    .catch(error => {
+        mostrarLoading(false);
+        console.error('Error:', error);
+        Toast.error('Error de conexión', 'No se pudo procesar la solicitud');
+    });
+}
 </script>
 @stop

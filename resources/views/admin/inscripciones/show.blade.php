@@ -799,16 +799,16 @@
     </div>
     @endif
 
-    <!-- INFORMACIÓN DE CAMBIO DE PLAN (si aplica) -->
+    <!-- INFORMACIÓN DE MEJORA DE PLAN (si aplica) -->
     @if($inscripcion->es_cambio_plan)
     <div class="row mb-4">
         <div class="col-12">
             <div class="modern-card" style="border-left: 5px solid var(--success);">
                 <div class="modern-card-header" style="background: linear-gradient(135deg, var(--success) 0%, #00d9a0 100%); color: white;">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Cambio de Plan Realizado</span>
+                    <i class="fas fa-arrow-circle-up"></i>
+                    <span>Mejora de Plan Realizada</span>
                     <span class="badge bg-light text-dark ms-auto">
-                        {{ $inscripcion->tipo_cambio === 'upgrade' ? '⬆️ Upgrade' : '⬇️ Downgrade' }}
+                        ⬆️ Upgrade
                     </span>
                 </div>
                 <div class="modern-card-body">
@@ -885,6 +885,96 @@
                             <p class="mb-0">{{ $inscripcion->motivo_cambio_plan }}</p>
                         </div>
                     @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- INFORMACIÓN DE TRASPASO (si aplica) -->
+    @if($inscripcion->es_traspaso)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="modern-card" style="border-left: 5px solid #9b59b6;">
+                <div class="modern-card-header" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white;">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Membresía Recibida por Traspaso</span>
+                    <span class="badge bg-light text-dark ms-auto">
+                        <i class="fas fa-gift me-1"></i> Traspaso
+                    </span>
+                </div>
+                <div class="modern-card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon" style="background: rgba(155, 89, 182, 0.12); color: #9b59b6;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Traspasada desde</small>
+                                    <strong>
+                                        @if($inscripcion->clienteOriginal)
+                                            <a href="{{ route('admin.clientes.show', $inscripcion->clienteOriginal) }}" class="text-decoration-none" style="color: #9b59b6;">
+                                                {{ $inscripcion->clienteOriginal->nombre }} {{ $inscripcion->clienteOriginal->apellido }}
+                                            </a>
+                                        @else
+                                            Cliente anterior
+                                        @endif
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon info">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Fecha del Traspaso</small>
+                                    <strong>{{ $inscripcion->fecha_traspaso ? $inscripcion->fecha_traspaso->format('d/m/Y H:i') : 'N/A' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if($inscripcion->motivo_traspaso)
+                        <div class="mt-3 pt-3 border-top">
+                            <small class="text-muted d-block mb-1"><i class="fas fa-comment me-1"></i>Motivo del traspaso:</small>
+                            <p class="mb-0">{{ $inscripcion->motivo_traspaso }}</p>
+                        </div>
+                    @endif
+                    @if($inscripcion->inscripcionOrigen)
+                        <div class="mt-3 pt-3 border-top">
+                            <a href="{{ route('admin.inscripciones.show', $inscripcion->inscripcionOrigen) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-history me-1"></i> Ver inscripción original
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- SI ESTA INSCRIPCIÓN FUE TRASPASADA (tiene inscripciones de traspaso) -->
+    @if($inscripcion->inscripcionesTraspasadas && $inscripcion->inscripcionesTraspasadas->count() > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert" style="background: rgba(155, 89, 182, 0.1); border: 1px solid #9b59b6; border-radius: 12px;">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-share fa-lg" style="color: #9b59b6;"></i>
+                    <div>
+                        <strong style="color: #9b59b6;">Esta membresía fue traspasada</strong>
+                        <p class="mb-0 text-muted">
+                            Traspasada a: 
+                            @foreach($inscripcion->inscripcionesTraspasadas as $traspasada)
+                                <a href="{{ route('admin.inscripciones.show', $traspasada) }}" class="fw-bold" style="color: #9b59b6;">
+                                    {{ $traspasada->cliente->nombre ?? 'Cliente' }} {{ $traspasada->cliente->apellido ?? '' }}
+                                </a>
+                                ({{ $traspasada->fecha_traspaso ? $traspasada->fecha_traspaso->format('d/m/Y') : 'N/A' }})
+                                @if(!$loop->last), @endif
+                            @endforeach
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

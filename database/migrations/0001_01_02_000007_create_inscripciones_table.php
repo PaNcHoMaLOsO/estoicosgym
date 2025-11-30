@@ -14,11 +14,11 @@ return new class extends Migration
             $table->unsignedBigInteger('id_cliente');
             $table->unsignedBigInteger('id_membresia');
             
-            // Campos para upgrade/downgrade
+            // Campos para mejora de plan (upgrade)
             $table->foreignId('id_inscripcion_anterior')->nullable();
             $table->boolean('es_cambio_plan')->default(false);
-            $table->enum('tipo_cambio', ['upgrade', 'downgrade'])->nullable();
-            $table->decimal('credito_plan_anterior', 12, 2)->default(0);
+            $table->string('tipo_cambio', 10)->nullable()->default('upgrade')->comment('Solo upgrade permitido');
+            $table->decimal('credito_plan_anterior', 12, 2)->default(0)->comment('Crédito aplicado del plan anterior');
             $table->decimal('precio_nuevo_plan', 12, 2)->nullable();
             $table->decimal('diferencia_a_pagar', 12, 2)->nullable();
             $table->timestamp('fecha_cambio_plan')->nullable();
@@ -50,6 +50,13 @@ return new class extends Migration
             $table->unsignedTinyInteger('max_pausas_permitidas')->default(2);
             $table->unsignedSmallInteger('dias_compensacion')->default(0);
             
+            // Campos para traspaso de membresía
+            $table->boolean('es_traspaso')->default(false);
+            $table->foreignId('id_inscripcion_origen')->nullable()->comment('Inscripción de donde viene el traspaso');
+            $table->unsignedBigInteger('id_cliente_original')->nullable()->comment('Cliente que cedió la membresía');
+            $table->timestamp('fecha_traspaso')->nullable();
+            $table->text('motivo_traspaso')->nullable();
+            
             $table->timestamps();
 
             // Foreign keys
@@ -66,6 +73,8 @@ return new class extends Migration
             $table->index('id_inscripcion_anterior');
             $table->index('es_cambio_plan');
             $table->index('pausada');
+            $table->index('es_traspaso');
+            $table->index('id_cliente_original');
             $table->index(['fecha_inicio', 'fecha_vencimiento']);
         });
     }

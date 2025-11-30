@@ -579,11 +579,11 @@ class InscripcionController extends Controller
     }
 
     // ============================================
-    // CAMBIO DE PLAN (UPGRADE/DOWNGRADE)
+    // MEJORA DE PLAN (UPGRADE)
     // ============================================
 
     /**
-     * Obtener información de precios para cambio de plan
+     * Obtener información de precios para mejora de plan
      * GET /admin/inscripciones/{inscripcion}/info-cambio-plan
      * 
      * @param \App\Models\Inscripcion $inscripcion
@@ -594,7 +594,9 @@ class InscripcionController extends Controller
         try {
             $inscripcion->load(['membresia', 'pagos']);
             
-            // Obtener todas las membresías disponibles (excepto la actual)
+            $precioActual = (float) $inscripcion->precio_final;
+            
+            // Obtener solo membresías de MAYOR precio (upgrade)
             $membresias = Membresia::with(['precios' => function($q) {
                     $q->where('activo', true)
                       ->where('fecha_vigencia_desde', '<=', now())
@@ -613,7 +615,12 @@ class InscripcionController extends Controller
                         'duracion_meses' => $membresia->duracion_meses,
                         'precio' => $precioVigente ? (float) $precioVigente->precio_normal : 0,
                     ];
-                });
+                })
+                ->filter(function($membresia) use ($precioActual) {
+                    // Solo mostrar planes de mayor precio (upgrade)
+                    return $membresia['precio'] > $precioActual;
+                })
+                ->values();
 
             // Calcular el crédito disponible (lo que ya pagó)
             $creditoDisponible = $inscripcion->monto_pagado;
@@ -642,7 +649,7 @@ class InscripcionController extends Controller
     }
 
     /**
-     * Ejecutar cambio de plan (upgrade o downgrade)
+     * Ejecutar mejora de plan (upgrade)
      * POST /admin/inscripciones/{inscripcion}/cambiar-plan
      * 
      * @param \Illuminate\Http\Request $request
@@ -655,8 +662,9 @@ class InscripcionController extends Controller
             $validated = $request->validate([
                 'id_membresia_nueva' => 'required|exists:membresias,id|different:id_membresia_actual',
                 'motivo_cambio' => 'nullable|string|max:500',
-                'id_metodo_pago' => 'required_if:diferencia_positiva,true|exists:metodos_pago,id',
+                'id_metodo_pago' => 'required|exists:metodos_pago,id',
                 'monto_abonado' => 'nullable|numeric|min:0',
+                'aplicar_credito' => 'nullable|boolean', // El admin decide si aplica crédito
             ]);
 
             $inscripcion->load(['cliente', 'membresia', 'pagos']);
@@ -685,9 +693,20 @@ class InscripcionController extends Controller
             }
 
             $precioNuevoPlan = (float) $precioNuevo->precio_normal;
-            $creditoDisponible = (float) $inscripcion->monto_pagado;
+            
+            // Verificar que sea realmente un upgrade
+            if ($precioNuevoPlan <= $inscripcion->precio_final) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se permiten mejoras de plan (planes de mayor precio).',
+                ], 422);
+            }
+            
+            // El admin decide si aplica el crédito del plan anterior
+            $aplicarCredito = $request->boolean('aplicar_credito', false);
+            $creditoDisponible = $aplicarCredito ? (float) $inscripcion->monto_pagado : 0;
             $diferencia = $precioNuevoPlan - $creditoDisponible;
-            $tipoCambio = $precioNuevoPlan > $inscripcion->precio_final ? 'upgrade' : 'downgrade';
+            $tipoCambio = 'upgrade';
 
             // Calcular nueva fecha de vencimiento
             $fechaInicio = now();
@@ -753,16 +772,10 @@ class InscripcionController extends Controller
                     ]);
                 }
 
-                // 4. Si hay crédito a favor del cliente (downgrade), generar nota
+                // Nota sobre el crédito aplicado
                 $mensajeCredito = '';
-                if ($diferencia < 0) {
-                    $creditoAFavor = abs($diferencia);
-                    $mensajeCredito = " Crédito a favor del cliente: $" . number_format($creditoAFavor, 0, ',', '.');
-                    
-                    // Agregar nota en observaciones
-                    $nuevaInscripcion->update([
-                        'observaciones' => $nuevaInscripcion->observaciones . $mensajeCredito,
-                    ]);
+                if ($aplicarCredito && $inscripcion->monto_pagado > 0) {
+                    $mensajeCredito = " Se aplicó crédito de $" . number_format($inscripcion->monto_pagado, 0, ',', '.') . " del plan anterior.";
                 }
 
                 DB::commit();
@@ -795,6 +808,195 @@ class InscripcionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar el cambio de plan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ============================================
+    // TRASPASO DE MEMBRESÍA
+    // ============================================
+
+    /**
+     * Buscar clientes disponibles para recibir traspaso
+     * GET /admin/inscripciones/{inscripcion}/buscar-clientes-traspaso
+     */
+    public function buscarClientesTraspaso(Request $request, Inscripcion $inscripcion)
+    {
+        try {
+            $query = $request->get('q', '');
+            
+            if (strlen($query) < 2) {
+                return response()->json([
+                    'success' => true,
+                    'clientes' => [],
+                ]);
+            }
+
+            // Buscar clientes que NO tienen membresía activa y NO son el cliente actual
+            $clientesConMembresiaActiva = Inscripcion::whereIn('id_estado', [100, 101])
+                ->where('fecha_vencimiento', '>=', now())
+                ->pluck('id_cliente')
+                ->toArray();
+
+            $clientes = Cliente::where('id', '!=', $inscripcion->id_cliente)
+                ->whereNotIn('id', $clientesConMembresiaActiva)
+                ->where(function($q) use ($query) {
+                    $q->where('nombre', 'LIKE', "%{$query}%")
+                      ->orWhere('apellido', 'LIKE', "%{$query}%")
+                      ->orWhere('rut', 'LIKE', "%{$query}%")
+                      ->orWhere('email', 'LIKE', "%{$query}%")
+                      ->orWhere('telefono', 'LIKE', "%{$query}%");
+                })
+                ->limit(10)
+                ->get()
+                ->map(function($cliente) {
+                    // Verificar si tiene membresías vencidas
+                    $ultimaInscripcion = Inscripcion::where('id_cliente', $cliente->id)
+                        ->orderBy('fecha_vencimiento', 'desc')
+                        ->first();
+                    
+                    $estado = 'nuevo';
+                    $ultimaMembresia = null;
+                    
+                    if ($ultimaInscripcion) {
+                        $estado = 'vencido';
+                        $ultimaMembresia = $ultimaInscripcion->membresia->nombre ?? 'N/A';
+                    }
+                    
+                    return [
+                        'id' => $cliente->id,
+                        'nombre_completo' => $cliente->nombre . ' ' . $cliente->apellido,
+                        'rut' => $cliente->rut,
+                        'email' => $cliente->email,
+                        'telefono' => $cliente->telefono,
+                        'estado' => $estado,
+                        'ultima_membresia' => $ultimaMembresia,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'clientes' => $clientes,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error buscando clientes para traspaso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar clientes: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Ejecutar traspaso de membresía
+     * POST /admin/inscripciones/{inscripcion}/traspasar
+     */
+    public function traspasar(Request $request, Inscripcion $inscripcion)
+    {
+        try {
+            $validated = $request->validate([
+                'id_cliente_destino' => 'required|exists:clientes,id|different:id_cliente_actual',
+                'motivo_traspaso' => 'required|string|max:500',
+            ]);
+
+            // Verificar que la inscripción puede ser traspasada
+            if (!$inscripcion->puedeTraspasarse()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta inscripción no puede ser traspasada. Debe estar activa y tener días restantes.',
+                ], 422);
+            }
+
+            // Verificar que el cliente destino puede recibir el traspaso
+            $clienteDestino = Cliente::findOrFail($validated['id_cliente_destino']);
+            
+            if (!Inscripcion::clientePuedeRecibirTraspaso($clienteDestino->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente seleccionado ya tiene una membresía activa.',
+                ], 422);
+            }
+
+            $inscripcion->load(['cliente', 'membresia']);
+
+            DB::beginTransaction();
+
+            try {
+                // 1. Marcar inscripción original como "Traspasada" (estado 106)
+                $inscripcion->update([
+                    'id_estado' => 106, // Estado: Traspasada
+                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') 
+                        . "[" . now()->format('d/m/Y H:i') . "] Traspasada a: {$clienteDestino->nombre} {$clienteDestino->apellido}",
+                ]);
+
+                // 2. Crear nueva inscripción para el cliente destino
+                $nuevaInscripcion = Inscripcion::create([
+                    'id_cliente' => $clienteDestino->id,
+                    'id_membresia' => $inscripcion->id_membresia,
+                    'id_convenio' => null, // Los convenios no se traspasan
+                    'id_precio_acordado' => $inscripcion->id_precio_acordado,
+                    'fecha_inscripcion' => now()->format('Y-m-d'),
+                    'fecha_inicio' => now()->format('Y-m-d'),
+                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('Y-m-d'), // Mantiene la fecha original
+                    'precio_base' => $inscripcion->precio_base,
+                    'descuento_aplicado' => 0, // Sin descuento en traspaso
+                    'precio_final' => $inscripcion->precio_base, // Precio completo
+                    'id_estado' => 100, // Activa
+                    'observaciones' => "Traspaso recibido de: {$inscripcion->cliente->nombre} {$inscripcion->cliente->apellido}",
+                    // Campos de tracking de traspaso
+                    'es_traspaso' => true,
+                    'id_inscripcion_origen' => $inscripcion->id,
+                    'id_cliente_original' => $inscripcion->id_cliente,
+                    'fecha_traspaso' => now(),
+                    'motivo_traspaso' => $validated['motivo_traspaso'],
+                ]);
+
+                // 3. Marcar la nueva inscripción como pagada (el pago ya fue realizado)
+                // Crear un pago de referencia indicando que viene de traspaso
+                Pago::create([
+                    'id_inscripcion' => $nuevaInscripcion->id,
+                    'id_cliente' => $clienteDestino->id,
+                    'monto_total' => $inscripcion->precio_final,
+                    'monto_abonado' => $inscripcion->precio_final, // Ya está pagado
+                    'monto_pendiente' => 0,
+                    'id_estado' => 201, // Pagado
+                    'id_metodo_pago' => 1, // Efectivo por defecto
+                    'fecha_pago' => now()->format('Y-m-d'),
+                    'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
+                    'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
+                ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Membresía traspasada exitosamente a {$clienteDestino->nombre} {$clienteDestino->apellido}.",
+                    'nueva_inscripcion' => [
+                        'uuid' => $nuevaInscripcion->uuid,
+                        'cliente' => $clienteDestino->nombre . ' ' . $clienteDestino->apellido,
+                        'membresia' => $inscripcion->membresia->nombre,
+                        'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+                        'dias_restantes' => $nuevaInscripcion->dias_restantes,
+                    ],
+                    'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . collect($e->errors())->flatten()->first(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al traspasar membresía: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el traspaso: ' . $e->getMessage(),
             ], 500);
         }
     }
