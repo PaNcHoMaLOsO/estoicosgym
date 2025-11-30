@@ -236,7 +236,7 @@
                                 </div>
                             </div>
                             <small class="form-text text-muted" id="dias_info">
-                                <i class="fas fa-calculator"></i> Cálculo: (Meses × 30) + 5 días de gracia
+                                <i class="fas fa-calculator"></i> Mensual: 31 días | Otros: meses × 30
                             </small>
                             @error('duracion_dias')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -388,12 +388,16 @@ document.addEventListener('DOMContentLoaded', function() {
             diasInfo.classList.add('text-warning');
             diasInfo.classList.remove('text-muted');
         } else {
-            // Modo automático
-            const dias = (meses * 30) + 5;
+            // Modo automático: 1 mes = 31 días (30 + 1 gracia), otros = meses × 30
+            const dias = meses === 1 ? 31 : (meses * 30);
             duracionDias.value = dias;
             duracionDiasCalculado.value = dias;
             duracionDiasCalculado.setAttribute('readonly', 'readonly');
-            diasInfo.innerHTML = `<i class="fas fa-calculator"></i> Cálculo: (${meses} × 30) + 5 = <strong>${dias} días</strong>`;
+            if (meses === 1) {
+                diasInfo.innerHTML = `<i class="fas fa-calculator"></i> Mensual: 30 + 1 día de gracia = <strong>${dias} días</strong>`;
+            } else {
+                diasInfo.innerHTML = `<i class="fas fa-calculator"></i> Cálculo: ${meses} × 30 = <strong>${dias} días</strong>`;
+            }
             diasInfo.classList.remove('text-warning');
             diasInfo.classList.add('text-muted');
         }
