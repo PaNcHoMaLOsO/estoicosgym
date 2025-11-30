@@ -28,12 +28,6 @@ class MetodoPagoSeeder extends Seeder
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],
-            [
-                'nombre' => 'Mixto',
-                'descripcion' => 'Combinación de métodos de pago',
-                'requiere_comprobante' => false,
-                'activo' => true,
-            ],
         ]);
     }
 }

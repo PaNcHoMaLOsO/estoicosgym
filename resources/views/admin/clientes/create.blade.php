@@ -482,6 +482,19 @@
                             <div class="form-control bg-light" id="monto-restante-display" style="font-weight:bold; color:#dc3545;">$0</div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="referencia_pago">Referencia / Comprobante</label>
+                            <input type="text" class="form-control" id="referencia_pago" name="referencia_pago" 
+                                   placeholder="Ej: N° Transferencia, Voucher, Recibo...">
+                            <small class="text-muted">Opcional: Número de transacción o comprobante</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="observaciones_pago">Observaciones del Pago</label>
+                            <input type="text" class="form-control" id="observaciones_pago" name="observaciones_pago" 
+                                   placeholder="Notas adicionales sobre el pago...">
+                        </div>
+                    </div>
                 </div>
 
                 <div id="seccion-mixto" style="display:none;">

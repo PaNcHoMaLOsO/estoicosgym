@@ -593,16 +593,101 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    // Validación antes de enviar
+    // Función para formatear números
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    @php
+        $montoTotal = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base ?? 0;
+        $totalPagadoOtros = $pago->inscripcion->pagos()->where('id', '!=', $pago->id)->sum('monto_abonado') ?? 0;
+        $maxPermitido = $montoTotal - $totalPagadoOtros;
+    @endphp
+    
+    const montoMaximo = {{ intval($maxPermitido) }};
+    const montoOriginal = {{ intval($pago->monto_abonado) }};
+
+    // Validar monto en tiempo real
+    $('#monto_abonado').on('input', function() {
+        const monto = parseFloat($(this).val()) || 0;
+        
+        if (monto > montoMaximo) {
+            $(this).addClass('is-invalid');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Monto excede el máximo',
+                html: `El monto máximo permitido es <strong>$${formatNumber(montoMaximo)}</strong>`,
+                confirmButtonColor: '#e94560'
+            });
+            $(this).val(montoMaximo);
+        } else if (monto <= 0) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    // Validación antes de enviar con SweetAlert
     $('#formEditPago').on('submit', function(e) {
+        e.preventDefault();
+        
         const monto = parseFloat($('#monto_abonado').val()) || 0;
+        const metodoPago = $('#id_metodo_pago option:selected').text();
+        
         if (monto <= 0) {
-            e.preventDefault();
-            alert('El monto debe ser mayor a 0');
+            Swal.fire({
+                icon: 'error',
+                title: 'Monto inválido',
+                text: 'El monto debe ser mayor a $0',
+                confirmButtonColor: '#e94560'
+            });
             return false;
         }
+        
+        if (!$('#id_metodo_pago').val()) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Método requerido',
+                text: 'Debes seleccionar un método de pago',
+                confirmButtonColor: '#e94560'
+            });
+            return false;
+        }
+        
+        // Mostrar confirmación
+        Swal.fire({
+            title: '¿Confirmar cambios?',
+            html: `
+                <div style="text-align: left; padding: 10px 0;">
+                    <p><strong>💵 Nuevo monto:</strong> <span style="color: #00bf8e;">$${formatNumber(monto)}</span></p>
+                    <p><strong>💳 Método:</strong> ${metodoPago}</p>
+                    ${monto !== montoOriginal ? `<p style="color: #f0a500;"><i class="fas fa-exclamation-triangle"></i> El monto cambió de $${formatNumber(montoOriginal)} a $${formatNumber(monto)}</p>` : ''}
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-save me-1"></i> Guardar cambios',
+            cancelButtonText: '<i class="fas fa-times me-1"></i> Cancelar',
+            confirmButtonColor: '#f0a500',
+            cancelButtonColor: '#6c757d',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Guardando cambios...',
+                    html: 'Por favor espera',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                this.submit();
+            }
+        });
     });
 });
 </script>

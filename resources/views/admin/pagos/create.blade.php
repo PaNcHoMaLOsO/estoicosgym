@@ -746,10 +746,15 @@ $(document).ready(function() {
             $('#resumenPagado').text('$' + formatNumber(montoPagado));
             $('#resumenPendiente').text('$' + formatNumber(montoPendiente));
 
-            // Set max for monto_abonado
+            // Set max for monto_abonado y limpiar valor previo
             $('#monto_abonado').attr('max', montoPendiente);
+            $('#monto_abonado').val('');
+            $('#monto_metodo1').val('');
+            $('#monto_metodo2').val('');
             
+            // Validar si ya se ingresó un monto mayor al nuevo pendiente
             updateEstePago();
+            updateEstadoResultante();
         } else {
             preview.removeClass('visible');
             montoPendiente = 0;

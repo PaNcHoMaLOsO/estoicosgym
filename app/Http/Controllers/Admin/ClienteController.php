@@ -223,6 +223,8 @@ class ClienteController extends Controller
                 'id_metodo_pago' => $validatedPago['id_metodo_pago'],
                 'id_estado' => $estadoPago,
                 'tipo_pago' => $tipoPago,
+                'referencia_pago' => $request->input('referencia_pago'),
+                'observaciones' => $request->input('observaciones_pago'),
             ]);
 
             // Determinar estado final
