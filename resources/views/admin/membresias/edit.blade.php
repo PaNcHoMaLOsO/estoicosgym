@@ -1301,13 +1301,19 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarDias();
 
     // ========== Formateo de Precio ==========
+    // Precio actual original para comparar
+    const precioOriginal = {{ $precioActual->precio_normal ?? 0 }};
+    const precioConvenioOriginal = {{ $precioActual->precio_convenio ?? 0 }};
+
     function formatearNumero(num) {
         if (!num && num !== 0) return '';
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        // Solo separador de miles con punto (números enteros, sin decimales)
+        return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
     function limpiarNumero(str) {
         if (!str) return 0;
+        // Remover todo excepto dígitos
         return parseInt(str.toString().replace(/\D/g, '')) || 0;
     }
 
@@ -1332,20 +1338,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const precioNormal = limpiarNumero(precioNormalDisplay.value);
         const precioConvenio = limpiarNumero(precioConvenioDisplay.value);
         
-        if (precioNormal > 0) {
+        // Solo mostrar preview si el precio cambió respecto al original
+        const precioCambio = precioNormal !== precioOriginal;
+        const convenioCambio = precioConvenio !== precioConvenioOriginal;
+        
+        if (precioNormal > 0 && (precioCambio || convenioCambio)) {
             precioPreview.style.display = 'block';
             precioPreviewValor.textContent = '$' + formatearNumero(precioNormal);
             
             if (precioConvenio > 0 && precioConvenio < precioNormal) {
                 const descuento = precioNormal - precioConvenio;
                 const porcentaje = Math.round((descuento / precioNormal) * 100);
-                precioPreviewDescuento.innerHTML = `
-                    <span class="text-success">
-                        <i class="fas fa-percentage"></i> Con convenio: $${formatearNumero(precioConvenio)} 
-                        (${porcentaje}% descuento)
-                    </span>`;
+                precioPreviewDescuento.style.display = 'block';
+                document.getElementById('precioPreviewDescuentoText').textContent = 
+                    `Con convenio: $${formatearNumero(precioConvenio)} (${porcentaje}% desc.)`;
             } else {
-                precioPreviewDescuento.textContent = '';
+                precioPreviewDescuento.style.display = 'none';
             }
         } else {
             precioPreview.style.display = 'none';
@@ -1362,14 +1370,15 @@ document.addEventListener('DOMContentLoaded', function() {
         actualizarPreview();
     });
 
-    // Cargar valores iniciales
+    // Cargar valores iniciales (solo formatear, sin mostrar preview)
     if (precioNormalHidden.value) {
         precioNormalDisplay.value = formatearNumero(precioNormalHidden.value);
-        actualizarPreview();
     }
     if (precioConvenioHidden.value) {
         precioConvenioDisplay.value = formatearNumero(precioConvenioHidden.value);
     }
+    // El preview inicia oculto porque no hay cambios aún
+    precioPreview.style.display = 'none';
 
     // ========== Validación del Formulario con SweetAlert ==========
     form.addEventListener('submit', function(e) {
