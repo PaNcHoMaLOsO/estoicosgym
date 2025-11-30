@@ -41,7 +41,7 @@ class PagoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pago::with(['inscripcion.cliente', 'metodoPago', 'estado']);
+        $query = Pago::with(['cliente', 'inscripcion.cliente', 'inscripcion.membresia', 'metodoPago', 'estado']);
         
         // Filtro por inscripción (desde el link de Ver Pagos en inscripciones)
         if ($request->filled('id_inscripcion')) {

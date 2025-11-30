@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\Cliente;
 
 /**
  * @property int $id
@@ -68,6 +69,12 @@ class Pago extends Model
         'monto_pendiente',
         'fecha_pago',
         'id_metodo_pago',
+        'referencia_pago',
+        'cantidad_cuotas',
+        'numero_cuota',
+        'monto_cuota',
+        'periodo_inicio',
+        'periodo_fin',
         'id_estado',
         'tipo_pago',
         'observaciones',
@@ -75,9 +82,14 @@ class Pago extends Model
 
     protected $casts = [
         'fecha_pago' => 'date',
+        'periodo_inicio' => 'date',
+        'periodo_fin' => 'date',
         'monto_total' => 'decimal:2',
         'monto_abonado' => 'decimal:2',
         'monto_pendiente' => 'decimal:2',
+        'monto_cuota' => 'decimal:2',
+        'cantidad_cuotas' => 'integer',
+        'numero_cuota' => 'integer',
     ];
 
     protected static function boot()
@@ -99,6 +111,11 @@ class Pago extends Model
     public function inscripcion()
     {
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente');
     }
 
     public function metodoPago()
