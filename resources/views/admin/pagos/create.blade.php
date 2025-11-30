@@ -994,6 +994,28 @@ $(document).ready(function() {
         const estadoFinal = nuevoSaldo <= 0 ? 'PAGADO ✅' : `PARCIAL (Quedará $${formatNumber(nuevoSaldo)} pendiente)`;
         const estadoColor = nuevoSaldo <= 0 ? '#00bf8e' : '#f0a500';
         
+        // Construir información del método de pago
+        let metodoPagoInfo = '';
+        if (tipo === 'mixto') {
+            const metodo1Nombre = $('#id_metodo_pago1 option:selected').text();
+            const metodo2Nombre = $('#id_metodo_pago2 option:selected').text();
+            const m1 = parseFloat($('#monto_metodo1').val()) || 0;
+            const m2 = parseFloat($('#monto_metodo2').val()) || 0;
+            metodoPagoInfo = `
+                <div style="background: rgba(67, 97, 238, 0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <div style="margin-bottom: 5px;">
+                        <i class="fas fa-credit-card" style="color: #4361ee;"></i> 
+                        ${metodo1Nombre}: <strong>$${formatNumber(m1)}</strong>
+                    </div>
+                    <div>
+                        <i class="fas fa-credit-card" style="color: #4361ee;"></i> 
+                        ${metodo2Nombre}: <strong>$${formatNumber(m2)}</strong>
+                    </div>
+                </div>`;
+        } else {
+            metodoPagoInfo = metodoPago;
+        }
+        
         // Mostrar confirmación con SweetAlert
         Swal.fire({
             title: '¿Confirmar registro de pago?',
@@ -1003,7 +1025,8 @@ $(document).ready(function() {
                     <p><strong>🏋️ Membresía:</strong> ${$('#previewMembresia').text()}</p>
                     <hr>
                     <p><strong>💵 Monto a registrar:</strong> <span style="color: #00bf8e; font-size: 1.2em;">$${formatNumber(montoAPagar)}</span></p>
-                    <p><strong>💳 Método de pago:</strong> ${metodoPago || 'Mixto'}</p>
+                    <p><strong>💳 Método${tipo === 'mixto' ? 's' : ''} de pago:</strong></p>
+                    ${metodoPagoInfo}
                     <hr>
                     <p><strong>📊 Estado resultante:</strong> <span style="color: ${estadoColor}; font-weight: bold;">${estadoFinal}</span></p>
                 </div>

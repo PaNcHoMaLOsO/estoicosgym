@@ -69,6 +69,9 @@ class Pago extends Model
         'monto_pendiente',
         'fecha_pago',
         'id_metodo_pago',
+        'id_metodo_pago2',
+        'monto_metodo1',
+        'monto_metodo2',
         'referencia_pago',
         'cantidad_cuotas',
         'numero_cuota',
@@ -88,6 +91,8 @@ class Pago extends Model
         'monto_abonado' => 'decimal:2',
         'monto_pendiente' => 'decimal:2',
         'monto_cuota' => 'decimal:2',
+        'monto_metodo1' => 'decimal:2',
+        'monto_metodo2' => 'decimal:2',
         'cantidad_cuotas' => 'integer',
         'numero_cuota' => 'integer',
     ];
@@ -121,6 +126,11 @@ class Pago extends Model
     public function metodoPago()
     {
         return $this->belongsTo(MetodoPago::class, 'id_metodo_pago');
+    }
+
+    public function metodoPago2()
+    {
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago2');
     }
 
     public function estado()

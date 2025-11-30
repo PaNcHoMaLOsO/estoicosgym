@@ -130,15 +130,27 @@ class PagoController extends Controller
         $tipoPago = $request->input('tipo_pago', 'abono');
         
         // Validaciones base
-        $validated = $request->validate([
+        $baseRules = [
             'id_inscripcion' => 'required|exists:inscripciones,id',
             'tipo_pago' => 'required|in:abono,completo,mixto',
             'fecha_pago' => 'required|date|before_or_equal:today',
             'referencia_pago' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string|max:500',
             'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-            'id_metodo_pago' => 'required|exists:metodos_pago,id',
-        ]);
+        ];
+        
+        // Método de pago requerido solo para abono y completo
+        if ($tipoPago !== 'mixto') {
+            $baseRules['id_metodo_pago'] = 'required|exists:metodos_pago,id';
+        } else {
+            // Para mixto, validar los dos métodos
+            $baseRules['id_metodo_pago1'] = 'required|exists:metodos_pago,id';
+            $baseRules['id_metodo_pago2'] = 'required|exists:metodos_pago,id|different:id_metodo_pago1';
+            $baseRules['monto_metodo1'] = 'required|integer|min:1';
+            $baseRules['monto_metodo2'] = 'required|integer|min:1';
+        }
+        
+        $validated = $request->validate($baseRules);
 
         $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
@@ -185,6 +197,13 @@ class PagoController extends Controller
                     'monto_metodo1' => "La suma de los montos debe ser exactamente " . number_format($montoPendiente, 0, ',', '.') . " (saldo pendiente)"
                 ])->withInput();
             }
+            
+            // Validar que los métodos sean diferentes (respaldo servidor)
+            if ($validated['id_metodo_pago1'] == $validated['id_metodo_pago2']) {
+                return back()->withErrors([
+                    'id_metodo_pago2' => "Los métodos de pago deben ser diferentes"
+                ])->withInput();
+            }
         }
 
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
@@ -200,7 +219,8 @@ class PagoController extends Controller
         $idCliente = $inscripcion->id_cliente;
         $montoTotal = $montoAbonado + $nuevoSaldoPendiente;
         
-        $pago = Pago::create([
+        // Preparar datos del pago
+        $datosPago = [
             'id_inscripcion' => $validated['id_inscripcion'],
             'id_cliente' => $idCliente,
             'monto_total' => $montoTotal,
@@ -212,11 +232,23 @@ class PagoController extends Controller
             'fecha_pago' => $validated['fecha_pago'],
             'periodo_inicio' => $inscripcion->fecha_inicio,
             'periodo_fin' => $inscripcion->fecha_vencimiento,
-            'id_metodo_pago' => $validated['id_metodo_pago'],
+            'tipo_pago' => $tipoPago,
             'referencia_pago' => $validated['referencia_pago'] ?? null,
             'observaciones' => $validated['observaciones'] ?? null,
             'id_estado' => $idEstado,
-        ]);
+        ];
+        
+        // Agregar campos según tipo de pago
+        if ($tipoPago === 'mixto') {
+            $datosPago['id_metodo_pago'] = $validated['id_metodo_pago1'];
+            $datosPago['id_metodo_pago2'] = $validated['id_metodo_pago2'];
+            $datosPago['monto_metodo1'] = $request->input('monto_metodo1');
+            $datosPago['monto_metodo2'] = $request->input('monto_metodo2');
+        } else {
+            $datosPago['id_metodo_pago'] = $validated['id_metodo_pago'];
+        }
+        
+        $pago = Pago::create($datosPago);
 
         return redirect()->route('admin.pagos.show', $pago->uuid)
             ->with('success', "Pago registrado exitosamente ({$tipoPago}). Verifica los detalles abajo.");
@@ -233,7 +265,9 @@ class PagoController extends Controller
             'inscripcion.estado',
             'inscripcion.pagos.estado',
             'inscripcion.pagos.metodoPago',
+            'inscripcion.pagos.metodoPago2',
             'metodoPago',
+            'metodoPago2',
             'estado'
         ]);
         return view('admin.pagos.show', compact('pago'));

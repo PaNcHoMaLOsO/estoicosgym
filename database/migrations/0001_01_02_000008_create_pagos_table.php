@@ -19,10 +19,15 @@ return new class extends Migration
             $table->decimal('monto_pendiente', 12, 2)->comment('Monto que falta pagar');
 
             $table->date('fecha_pago');
-            $table->unsignedBigInteger('id_metodo_pago');
+            $table->unsignedBigInteger('id_metodo_pago')->nullable();
             $table->unsignedInteger('id_estado')->comment('Estado: 200=Pendiente, 201=Pagado, 202=Parcial');
 
             $table->enum('tipo_pago', ['completo', 'parcial', 'pendiente', 'mixto'])->default('completo');
+            
+            // Campos para pago mixto (dos métodos de pago)
+            $table->unsignedBigInteger('id_metodo_pago2')->nullable()->comment('Segundo método para pago mixto');
+            $table->decimal('monto_metodo1', 12, 2)->nullable()->comment('Monto del primer método en pago mixto');
+            $table->decimal('monto_metodo2', 12, 2)->nullable()->comment('Monto del segundo método en pago mixto');
             
             // Campos para pagos en cuotas y referencias
             $table->string('referencia_pago')->nullable()->comment('Número de transacción, voucher, etc.');
@@ -39,6 +44,7 @@ return new class extends Migration
             $table->foreign('id_inscripcion')->references('id')->on('inscripciones')->onDelete('restrict');
             $table->foreign('id_cliente')->references('id')->on('clientes')->onDelete('restrict');
             $table->foreign('id_metodo_pago')->references('id')->on('metodos_pago')->onDelete('restrict');
+            $table->foreign('id_metodo_pago2')->references('id')->on('metodos_pago')->onDelete('restrict');
             $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
             // Índices

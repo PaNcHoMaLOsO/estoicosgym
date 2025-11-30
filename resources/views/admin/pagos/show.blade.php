@@ -642,19 +642,43 @@
                             <i class="fas fa-credit-card"></i>
                             Método de Pago
                         </span>
-                        @php
-                            $metodoNombre = strtolower($pago->metodoPago->nombre ?? '');
-                            $metodoClass = 'default';
-                            if (str_contains($metodoNombre, 'efectivo')) {
-                                $metodoClass = 'efectivo';
-                            } elseif (str_contains($metodoNombre, 'tarjeta') || str_contains($metodoNombre, 'transfer')) {
-                                $metodoClass = 'transferencia';
-                            }
-                        @endphp
-                        <span class="metodo-badge {{ $metodoClass }}">
-                            <i class="fas fa-{{ $metodoClass == 'efectivo' ? 'money-bill-wave' : ($metodoClass == 'transferencia' ? 'university' : 'wallet') }}"></i>
-                            {{ $pago->metodoPago->nombre ?? 'No especificado' }}
-                        </span>
+                        @if($pago->tipo_pago === 'mixto')
+                            <div>
+                                @php
+                                    $metodo1Nombre = strtolower($pago->metodoPago->nombre ?? '');
+                                    $metodo1Class = str_contains($metodo1Nombre, 'efectivo') ? 'efectivo' : (str_contains($metodo1Nombre, 'tarjeta') || str_contains($metodo1Nombre, 'transfer') ? 'transferencia' : 'default');
+                                    
+                                    $metodo2Nombre = strtolower($pago->metodoPago2->nombre ?? '');
+                                    $metodo2Class = str_contains($metodo2Nombre, 'efectivo') ? 'efectivo' : (str_contains($metodo2Nombre, 'tarjeta') || str_contains($metodo2Nombre, 'transfer') ? 'transferencia' : 'default');
+                                @endphp
+                                <div class="d-flex flex-column gap-2">
+                                    <span class="metodo-badge {{ $metodo1Class }}">
+                                        <i class="fas fa-{{ $metodo1Class == 'efectivo' ? 'money-bill-wave' : ($metodo1Class == 'transferencia' ? 'university' : 'wallet') }}"></i>
+                                        {{ $pago->metodoPago->nombre ?? '-' }}: 
+                                        <strong>${{ number_format($pago->monto_metodo1, 0, ',', '.') }}</strong>
+                                    </span>
+                                    <span class="metodo-badge {{ $metodo2Class }}">
+                                        <i class="fas fa-{{ $metodo2Class == 'efectivo' ? 'money-bill-wave' : ($metodo2Class == 'transferencia' ? 'university' : 'wallet') }}"></i>
+                                        {{ $pago->metodoPago2->nombre ?? '-' }}: 
+                                        <strong>${{ number_format($pago->monto_metodo2, 0, ',', '.') }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        @else
+                            @php
+                                $metodoNombre = strtolower($pago->metodoPago->nombre ?? '');
+                                $metodoClass = 'default';
+                                if (str_contains($metodoNombre, 'efectivo')) {
+                                    $metodoClass = 'efectivo';
+                                } elseif (str_contains($metodoNombre, 'tarjeta') || str_contains($metodoNombre, 'transfer')) {
+                                    $metodoClass = 'transferencia';
+                                }
+                            @endphp
+                            <span class="metodo-badge {{ $metodoClass }}">
+                                <i class="fas fa-{{ $metodoClass == 'efectivo' ? 'money-bill-wave' : ($metodoClass == 'transferencia' ? 'university' : 'wallet') }}"></i>
+                                {{ $pago->metodoPago->nombre ?? 'No especificado' }}
+                            </span>
+                        @endif
                     </div>
                     <div class="info-item">
                         <span class="info-item-label">
