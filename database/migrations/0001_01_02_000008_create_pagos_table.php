@@ -23,6 +23,15 @@ return new class extends Migration
             $table->unsignedInteger('id_estado')->comment('Estado: 200=Pendiente, 201=Pagado, 202=Parcial');
 
             $table->enum('tipo_pago', ['completo', 'parcial', 'pendiente', 'mixto'])->default('completo');
+            
+            // Campos para pagos en cuotas y referencias
+            $table->string('referencia_pago')->nullable()->comment('Número de transacción, voucher, etc.');
+            $table->unsignedTinyInteger('cantidad_cuotas')->nullable()->comment('Total de cuotas para pago fraccionado');
+            $table->unsignedTinyInteger('numero_cuota')->nullable()->comment('Número de la cuota actual');
+            $table->decimal('monto_cuota', 12, 2)->nullable()->comment('Monto de cada cuota');
+            $table->date('periodo_inicio')->nullable()->comment('Inicio del período que cubre este pago');
+            $table->date('periodo_fin')->nullable()->comment('Fin del período que cubre este pago');
+            
             $table->text('observaciones')->nullable();
             $table->timestamps();
 
@@ -37,6 +46,7 @@ return new class extends Migration
             $table->index('id_inscripcion');
             $table->index('fecha_pago');
             $table->index('id_estado');
+            $table->index('referencia_pago');
         });
     }
 
