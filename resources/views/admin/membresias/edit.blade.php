@@ -19,6 +19,30 @@
         --gray-800: #343a40;
     }
 
+    /* ===== HERO HEADER ===== */
+    .page-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 25px 30px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3);
+    }
+
+    .page-header h1 {
+        color: white;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .page-header h1 i {
+        color: var(--accent);
+    }
+
+    .page-header small {
+        color: rgba(255,255,255,0.7);
+    }
+
     /* ===== FORM SECTIONS ===== */
     .form-section-title {
         font-size: 1.1rem;
@@ -37,23 +61,53 @@
     }
 
     /* ===== CARD STYLING ===== */
-    .card-primary .card-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    .card {
+        border: 0;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        border-radius: 16px;
     }
 
-    .card-header h3 {
+    .card-header {
+        background: var(--primary);
         color: white;
+        border-radius: 16px 16px 0 0 !important;
+        border-bottom: none;
+        padding: 1rem 1.25rem;
+    }
+
+    .card-header .card-title {
+        color: white;
+        font-weight: 600;
     }
 
     /* ===== FORM ELEMENTS ===== */
+    .form-control {
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
     .form-control:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.25);
+        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.15);
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--accent);
     }
 
     .input-group-text {
         background: var(--gray-100);
-        border-color: #ced4da;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
     }
 
     /* ===== BUTTONS ===== */
@@ -61,6 +115,7 @@
         transition: all 0.3s ease;
         font-weight: 600;
         border-radius: 10px;
+        padding: 0.75rem 1.5rem;
     }
 
     .btn:hover {
@@ -69,17 +124,24 @@
     }
 
     .btn-primary {
-        background: var(--accent);
-        border-color: var(--accent);
+        background: var(--success);
+        border-color: var(--success);
     }
 
     .btn-primary:hover {
-        background: var(--accent-light);
-        border-color: var(--accent-light);
+        background: var(--success-dark);
+        border-color: var(--success-dark);
     }
 
-    .btn-outline-secondary:hover {
+    .btn-back {
         background: var(--gray-200);
+        border-color: var(--gray-200);
+        color: var(--gray-800);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-600);
+        color: white;
     }
 
     /* ===== CUSTOM CHECKBOX ===== */
@@ -88,52 +150,64 @@
         border-color: var(--success);
     }
 
+    .custom-switch .custom-control-label::before {
+        border-radius: 20px;
+    }
+
+    .custom-switch .custom-control-label::after {
+        border-radius: 50%;
+    }
+
     /* ===== ALERT STYLING ===== */
     .alert {
         border-radius: 12px;
         border: none;
     }
 
-    .alert-danger {
+    .alert-danger-custom {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
         color: white;
+        border-left: 5px solid #c0392b;
     }
 
-    .alert-danger .close {
+    .alert-warning-custom {
+        background: linear-gradient(135deg, var(--warning) 0%, #d99200 100%);
         color: white;
+        border-left: 5px solid #b87800;
     }
 
-    .alert-warning {
-        background: linear-gradient(135deg, #f0a500 0%, #d99200 100%);
+    /* ===== INFO BOX ===== */
+    .info-box-custom {
+        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
         color: white;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
     }
 
-    /* ===== HELPER CLASSES ===== */
-    .text-accent {
-        color: var(--accent) !important;
-    }
-
-    .bg-accent {
-        background-color: var(--accent) !important;
+    .info-box-custom i {
+        margin-right: 0.5rem;
     }
 
     /* ===== PRECIO BOX ===== */
     .precio-preview {
         background: linear-gradient(135deg, var(--gray-100) 0%, white 100%);
-        border: 2px solid var(--primary);
+        border: 2px solid var(--success);
         border-radius: 16px;
         padding: 1.5rem;
         margin-top: 1rem;
+        text-align: center;
     }
 
     .precio-preview h5 {
         color: var(--primary);
         font-weight: 700;
+        margin-bottom: 0.5rem;
     }
 
     .precio-valor {
-        font-size: 2rem;
-        font-weight: 700;
+        font-size: 2.5rem;
+        font-weight: 800;
         color: var(--success);
     }
 
@@ -145,40 +219,59 @@
         margin-top: 2rem;
     }
 
-    /* ===== INFO BOX ===== */
-    .info-box-custom {
-        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
+    /* ===== HELPER TEXT ===== */
+    .form-text {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 15px 20px;
+        }
+
+        .precio-valor {
+            font-size: 1.8rem;
+        }
+
+        .form-actions .d-flex {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-actions .btn {
+            width: 100%;
+        }
     }
 </style>
 @stop
 
 @section('content_header')
-    <div class="row mb-4">
-        <div class="col-sm-8">
-            <h1 class="m-0">
-                <i class="fas fa-edit text-accent"></i> Editar Membresía
-            </h1>
-            <small class="text-muted">Modificar: <strong>{{ $membresia->nombre }}</strong></small>
-        </div>
-        <div class="col-sm-4 text-right">
-            <a href="{{ route('admin.membresias.show', $membresia) }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-sm-8">
+                <h1>
+                    <i class="fas fa-edit"></i> Editar Membresía
+                </h1>
+                <small>Modificar: <strong>{{ $membresia->nombre }}</strong></small>
+            </div>
+            <div class="col-sm-4 text-right">
+                <a href="{{ route('admin.membresias.show', $membresia) }}" class="btn btn-back">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
         </div>
     </div>
 @stop
 
 @section('content')
     @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger-custom alert-dismissible fade show shadow-lg" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
-            <h5 class="alert-heading">
+            <h5 class="alert-heading mb-2">
                 <i class="fas fa-exclamation-circle"></i> Errores en el formulario
             </h5>
             <ul class="mb-0">
@@ -196,14 +289,14 @@
     @endphp
 
     @if ($inscripcionesActivas > 0)
-        <div class="alert alert-warning">
+        <div class="alert alert-warning-custom shadow-lg">
             <h5><i class="fas fa-exclamation-triangle"></i> Atención</h5>
             <p class="mb-0">Esta membresía tiene <strong>{{ $inscripcionesActivas }}</strong> inscripción(es) activa(s). 
             Los cambios de duración o precio afectarán las futuras inscripciones, no las existentes.</p>
         </div>
     @endif
 
-    <div class="card card-primary">
+    <div class="card">
         <div class="card-header">
             <h3 class="card-title">
                 <i class="fas fa-credit-card"></i> Datos de la Membresía
@@ -408,7 +501,7 @@
                 <!-- Botones de Acción -->
                 <div class="form-actions">
                     <div class="d-flex justify-content-between flex-wrap gap-2">
-                        <a href="{{ route('admin.membresias.show', $membresia) }}" class="btn btn-outline-secondary btn-lg">
+                        <a href="{{ route('admin.membresias.show', $membresia) }}" class="btn btn-back btn-lg">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary btn-lg" id="btnGuardar">
@@ -422,6 +515,7 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ========== Referencias a elementos ==========
@@ -550,53 +644,72 @@ document.addEventListener('DOMContentLoaded', function() {
         precioConvenioDisplay.value = formatearNumero(precioConvenioHidden.value);
     }
 
-    // ========== Validación del Formulario ==========
+    // ========== Validación del Formulario con SweetAlert ==========
     form.addEventListener('submit', function(e) {
-        let isValid = true;
-        let errorMsg = '';
+        let errores = [];
 
         // Validar nombre
         const nombre = document.getElementById('nombre').value.trim();
         if (nombre.length < 3) {
-            errorMsg = 'El nombre debe tener al menos 3 caracteres';
-            isValid = false;
+            errores.push('El nombre debe tener al menos 3 caracteres');
         }
 
         // Validar duración días
         const dias = parseInt(duracionDias.value) || 0;
         if (dias < 1) {
-            errorMsg = 'La duración en días debe ser al menos 1';
-            isValid = false;
+            errores.push('La duración en días debe ser al menos 1');
         }
 
         // Validar precio normal
         const precioNormal = limpiarNumero(precioNormalDisplay.value);
         if (precioNormal <= 0) {
-            errorMsg = 'El precio normal debe ser mayor a 0';
-            isValid = false;
+            errores.push('El precio normal debe ser mayor a 0');
         }
 
         // Validar precio convenio (si existe, debe ser menor al normal)
         const precioConvenio = limpiarNumero(precioConvenioDisplay.value);
         if (precioConvenio > 0 && precioConvenio >= precioNormal) {
-            errorMsg = 'El precio con convenio debe ser menor al precio normal';
-            isValid = false;
+            errores.push('El precio con convenio debe ser menor al precio normal');
         }
 
-        if (!isValid) {
+        if (errores.length > 0) {
             e.preventDefault();
             Swal.fire({
                 icon: 'error',
-                title: 'Error de validación',
-                text: errorMsg,
-                confirmButtonColor: '#e94560'
+                title: '<i class="fas fa-exclamation-triangle"></i> Error de validación',
+                html: '<ul class="text-left">' + errores.map(e => `<li>${e}</li>`).join('') + '</ul>',
+                confirmButtonColor: '#e94560',
+                confirmButtonText: 'Entendido'
             });
             return false;
         }
 
-        // Deshabilitar botón para evitar doble envío
-        btnGuardar.disabled = true;
-        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        // Confirmar antes de guardar
+        e.preventDefault();
+        Swal.fire({
+            title: '¿Guardar cambios?',
+            html: `
+                <p>Vas a actualizar la membresía:</p>
+                <strong>${nombre}</strong>
+                <div class="mt-3" style="font-size: 0.9rem; color: #6c757d;">
+                    <div><i class="fas fa-calendar-alt"></i> Duración: ${dias} días</div>
+                    <div><i class="fas fa-dollar-sign"></i> Precio: $${formatearNumero(precioNormal)}</div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#00bf8e',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-save"></i> Sí, guardar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Deshabilitar botón para evitar doble envío
+                btnGuardar.disabled = true;
+                btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                form.submit();
+            }
+        });
     });
 });
 </script>
