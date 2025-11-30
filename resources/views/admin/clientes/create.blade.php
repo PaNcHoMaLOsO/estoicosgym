@@ -2,1369 +2,2083 @@
 
 @section('title', 'Crear Cliente - EstóicosGym')
 
-@section('css')
-<style>
-    /* ===== WIZARD STEPS ===== */
-    .step-indicator { display: none; }
-    .step-indicator.active { display: block; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    
-    .steps-nav { 
-        display: flex; 
-        gap: 1rem; 
-        margin-bottom: 2rem; 
-        flex-wrap: wrap;
-        padding: 1rem;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 0.75rem;
-    }
-    
-    .step-btn {
-        flex: 1;
-        min-width: 120px;
-        padding: 1rem;
-        text-align: center;
-        border-radius: 0.75rem;
-        background: white;
-        border: 2px solid #dee2e6;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-    
-    .step-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .step-btn.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: #667eea;
-    }
-
-    .step-btn.completed {
-        background: linear-gradient(135deg, #28a745 0%, #38ef7d 100%);
-        color: white;
-        border-color: #28a745;
-    }
-
-    .step-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* ===== FORM SECTIONS ===== */
-    .form-section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #667eea;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .precio-box {
-        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
-        border: 2px solid #667eea;
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-top: 1rem;
-    }
-
-    /* ===== BUTTONS ===== */
-    .buttons-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        margin-top: 2rem;
-        flex-wrap: wrap;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 0.75rem;
-        border: 1px solid #dee2e6;
-    }
-
-    .buttons-group {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .btn {
-        transition: all 0.3s ease;
-        font-weight: 600;
-        border-radius: 0.5rem;
-    }
-
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .btn-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        border: none;
-        color: #212529;
-    }
-
-    .btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-        border: none;
-    }
-
-    /* ===== CARD ===== */
-    .card-primary .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    /* ===== FORM CONTROLS ===== */
-    .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    .form-control.is-invalid {
-        border-color: #dc3545 !important;
-        background-color: #fff5f5 !important;
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
-        animation: shake 0.4s ease;
-    }
-
-    .form-control.is-valid {
-        border-color: #28a745 !important;
-        background-color: #f0fff4 !important;
-    }
-
-    select.is-invalid {
-        border-color: #dc3545 !important;
-        background-color: #fff5f5 !important;
-    }
-
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        20% { transform: translateX(-8px); }
-        40% { transform: translateX(8px); }
-        60% { transform: translateX(-8px); }
-        80% { transform: translateX(8px); }
-    }
-
-    /* ===== SWEETALERT CUSTOM ===== */
-    .swal-error-popup { border-radius: 12px !important; }
-    .swal-error-title { color: #dc3545 !important; font-weight: 700 !important; }
-    .swal-confirm-popup { border-radius: 12px !important; }
-    .swal-confirm-title { color: #2c3e50 !important; font-weight: 700 !important; }
-    .swal-warning-popup { border-radius: 12px !important; }
-    .swal-warning-title { color: #ff6b6b !important; font-weight: 700 !important; }
-
-    .swal2-confirm, .swal2-cancel {
-        border-radius: 6px !important;
-        padding: 10px 24px !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-        .buttons-container { flex-direction: column; }
-        .buttons-group { width: 100%; }
-        .buttons-group .btn { flex: 1; justify-content: center; }
-    }
-</style>
-@endsection
-
 @section('content_header')
-<div class="row mb-4">
-    <div class="col-sm-8">
-        <h1 class="m-0"><i class="fas fa-user-plus"></i> Crear Nuevo Cliente</h1>
-    </div>
-    <div class="col-sm-4 text-right">
-        <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-    </div>
-</div>
 @stop
 
 @section('content')
-@if ($errors->any())
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <h5><i class="fas fa-exclamation-triangle"></i> Errores en el Formulario</h5>
-    <ul class="mb-0">
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-</div>
-@endif
-
-<div class="card card-primary">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tasks"></i> Registro de Cliente - 3 Pasos</h3>
+<div class="create-cliente-container">
+    <!-- Hero Header -->
+    <div class="create-hero">
+        <a href="{{ route('admin.clientes.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="hero-text">
+                <h1>Nuevo Cliente</h1>
+                <p>Registra un nuevo cliente en el sistema</p>
+            </div>
+        </div>
     </div>
 
-    <div class="card-body">
-        <div class="steps-nav">
-            <button type="button" class="step-btn active" id="step1-btn">
-                <i class="fas fa-user"></i> Paso 1: Datos
-            </button>
-            <button type="button" class="step-btn" id="step2-btn" disabled>
-                <i class="fas fa-dumbbell"></i> Paso 2: Membresía
-            </button>
-            <button type="button" class="step-btn" id="step3-btn" disabled>
-                <i class="fas fa-credit-card"></i> Paso 3: Pago
-            </button>
+    <!-- Wizard Steps -->
+    <div class="wizard-steps">
+        <div class="step active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-info">
+                <span class="step-title">Datos Personales</span>
+                <span class="step-desc">Información del cliente</span>
+            </div>
         </div>
+        <div class="step-connector"></div>
+        <div class="step" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-info">
+                <span class="step-title">Membresía</span>
+                <span class="step-desc">Plan y convenio</span>
+            </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-info">
+                <span class="step-title">Pago</span>
+                <span class="step-desc">Forma de pago</span>
+            </div>
+        </div>
+    </div>
 
+    <!-- Form Container -->
+    <div class="form-container">
         <form action="{{ route('admin.clientes.store') }}" method="POST" id="clienteForm">
             @csrf
             <input type="hidden" id="form_submit_token" name="form_submit_token" value="{{ uniqid() }}">
             <input type="hidden" id="flujo_cliente" name="flujo_cliente" value="solo_cliente">
-            <input type="hidden" id="precio-final-oculto" name="precio_final_oculto" value="0">
+            <input type="hidden" id="precio_final_oculto" name="precio_final_oculto" value="0">
 
             <!-- ========== PASO 1: DATOS DEL CLIENTE ========== -->
-            <div class="step-indicator active" id="step-1">
-                <div class="form-section-title"><i class="fas fa-id-card"></i> Identificación</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="run_pasaporte">RUT/Pasaporte</label>
-                        <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
-                               id="run_pasaporte" name="run_pasaporte" placeholder="Ej: 12.345.678-9" 
-                               value="{{ old('run_pasaporte') }}">
-                        @error('run_pasaporte')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="step-content active" id="step-1">
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-id-card"></i>
+                        <h3>Identificación</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="run_pasaporte">
+                                    <i class="fas fa-fingerprint"></i> RUT/Pasaporte
+                                </label>
+                                <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
+                                       id="run_pasaporte" name="run_pasaporte" 
+                                       placeholder="Ej: 12.345.678-9"
+                                       value="{{ old('run_pasaporte') }}">
+                                <small class="form-hint">Campo opcional - Formato chileno o pasaporte</small>
+                                @error('run_pasaporte')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="fecha_nacimiento">
+                                    <i class="fas fa-birthday-cake"></i> Fecha de Nacimiento
+                                </label>
+                                <input type="date" class="form-control @error('fecha_nacimiento') is-invalid @enderror" 
+                                       id="fecha_nacimiento" name="fecha_nacimiento"
+                                       value="{{ old('fecha_nacimiento') }}">
+                                @error('fecha_nacimiento')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-section-title"><i class="fas fa-user"></i> Datos Personales</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="nombres">Nombres <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('nombres') is-invalid @enderror" 
-                               id="nombres" name="nombres" value="{{ old('nombres') }}" required>
-                        @error('nombres')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-user"></i>
+                        <h3>Datos Personales</h3>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="apellido_paterno">Apellido Paterno <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('apellido_paterno') is-invalid @enderror" 
-                               id="apellido_paterno" name="apellido_paterno" value="{{ old('apellido_paterno') }}" required>
-                        @error('apellido_paterno')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="apellido_materno">Apellido Materno</label>
-                        <input type="text" class="form-control" id="apellido_materno" name="apellido_materno" 
-                               value="{{ old('apellido_materno') }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-                        <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" 
-                               value="{{ old('fecha_nacimiento') }}">
-                    </div>
-                </div>
-
-                <div class="form-section-title"><i class="fas fa-phone"></i> Contacto</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="email">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                               id="email" name="email" value="{{ old('email') }}" required>
-                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="celular">Celular <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control @error('celular') is-invalid @enderror" 
-                               id="celular" name="celular" value="{{ old('celular') }}" required>
-                        @error('celular')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-
-                <div class="form-section-title"><i class="fas fa-heart-pulse"></i> Contacto de Emergencia</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="contacto_emergencia">Nombre del Contacto</label>
-                        <input type="text" class="form-control" id="contacto_emergencia" name="contacto_emergencia" 
-                               value="{{ old('contacto_emergencia') }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="telefono_emergencia">Teléfono del Contacto</label>
-                        <input type="tel" class="form-control" id="telefono_emergencia" name="telefono_emergencia" 
-                               value="{{ old('telefono_emergencia') }}">
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="nombres">
+                                    <i class="fas fa-user-tag"></i> Nombres <span class="required">*</span>
+                                </label>
+                                <input type="text" class="form-control @error('nombres') is-invalid @enderror" 
+                                       id="nombres" name="nombres" required
+                                       placeholder="Ej: Juan Pablo"
+                                       value="{{ old('nombres') }}">
+                                @error('nombres')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="apellido_paterno">
+                                    <i class="fas fa-user"></i> Apellido Paterno <span class="required">*</span>
+                                </label>
+                                <input type="text" class="form-control @error('apellido_paterno') is-invalid @enderror" 
+                                       id="apellido_paterno" name="apellido_paterno" required
+                                       placeholder="Ej: González"
+                                       value="{{ old('apellido_paterno') }}">
+                                @error('apellido_paterno')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="apellido_materno">
+                                    <i class="fas fa-user"></i> Apellido Materno
+                                </label>
+                                <input type="text" class="form-control @error('apellido_materno') is-invalid @enderror" 
+                                       id="apellido_materno" name="apellido_materno"
+                                       placeholder="Ej: Pérez"
+                                       value="{{ old('apellido_materno') }}">
+                                @error('apellido_materno')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-section-title"><i class="fas fa-map-marker-alt"></i> Domicilio</div>
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <label for="direccion">Dirección</label>
-                        <input type="text" class="form-control" id="direccion" name="direccion" 
-                               value="{{ old('direccion') }}">
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-address-book"></i>
+                        <h3>Contacto</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="celular">
+                                    <i class="fas fa-mobile-alt"></i> Celular <span class="required">*</span>
+                                </label>
+                                <input type="tel" class="form-control @error('celular') is-invalid @enderror" 
+                                       id="celular" name="celular" required
+                                       placeholder="Ej: +56 9 1234 5678"
+                                       value="{{ old('celular') }}">
+                                @error('celular')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="email">
+                                    <i class="fas fa-envelope"></i> Email <span class="required">*</span>
+                                </label>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                       id="email" name="email" required
+                                       placeholder="Ej: cliente@email.com"
+                                       value="{{ old('email') }}">
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="direccion">
+                                    <i class="fas fa-map-marker-alt"></i> Dirección
+                                </label>
+                                <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
+                                       id="direccion" name="direccion"
+                                       placeholder="Ej: Av. Principal 123, Santiago"
+                                       value="{{ old('direccion') }}">
+                                @error('direccion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-section-title"><i class="fas fa-sticky-note"></i> Observaciones</div>
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ old('observaciones') }}</textarea>
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-ambulance"></i>
+                        <h3>Contacto de Emergencia</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="contacto_emergencia">
+                                    <i class="fas fa-user-shield"></i> Nombre Contacto
+                                </label>
+                                <input type="text" class="form-control @error('contacto_emergencia') is-invalid @enderror" 
+                                       id="contacto_emergencia" name="contacto_emergencia"
+                                       placeholder="Ej: María González (Madre)"
+                                       value="{{ old('contacto_emergencia') }}">
+                                @error('contacto_emergencia')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="telefono_emergencia">
+                                    <i class="fas fa-phone-alt"></i> Teléfono Emergencia
+                                </label>
+                                <input type="tel" class="form-control @error('telefono_emergencia') is-invalid @enderror" 
+                                       id="telefono_emergencia" name="telefono_emergencia"
+                                       placeholder="Ej: +56 9 8765 4321"
+                                       value="{{ old('telefono_emergencia') }}">
+                                @error('telefono_emergencia')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="observaciones">
+                                    <i class="fas fa-sticky-note"></i> Observaciones
+                                </label>
+                                <textarea class="form-control @error('observaciones') is-invalid @enderror" 
+                                          id="observaciones" name="observaciones" rows="3"
+                                          placeholder="Ej: Condiciones médicas, preferencias, etc.">{{ old('observaciones') }}</textarea>
+                                @error('observaciones')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- ========== PASO 2: MEMBRESÍA ========== -->
-            <div class="step-indicator" id="step-2">
-                <div class="alert alert-info">
-                    <strong><i class="fas fa-user"></i> Cliente:</strong> 
-                    <span id="cliente-nombre">Ingrese datos en Paso 1</span>
-                </div>
-
-                <div class="form-section-title"><i class="fas fa-dumbbell"></i> Seleccionar Membresía</div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="id_membresia">Membresía <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_membresia') is-invalid @enderror" id="id_membresia" name="id_membresia">
-                            <option value="">-- Seleccionar Membresía --</option>
-                            @foreach($membresias as $membresia)
-                                <option value="{{ $membresia->id }}" data-duracion="{{ $membresia->duracion_dias }}" {{ old('id_membresia') == $membresia->id ? 'selected' : '' }}>
-                                    {{ $membresia->nombre }} ({{ $membresia->duracion_dias }} días)
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_membresia')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="step-content" id="step-2">
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-handshake"></i>
+                        <h3>Convenio (Opcional)</h3>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="fecha_inicio">Fecha de Inicio <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
-                               id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', now()->format('Y-m-d')) }}">
-                        @error('fecha_inicio')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="fecha_termino_display">Fecha de Término</label>
-                        <input type="text" class="form-control" id="fecha_termino_display" readonly 
-                               style="background-color: #e9ecef; font-weight: bold; color: #28a745;">
-                        <small class="text-muted">Se calcula automáticamente</small>
-                    </div>
-                </div>
-
-                <div class="form-section-title"><i class="fas fa-handshake"></i> Convenio / Descuento</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="id_convenio">¿Tiene Convenio?</label>
-                        <select class="form-control" id="id_convenio" name="id_convenio">
-                            <option value="">-- Sin Convenio --</option>
-                            @foreach($convenios as $convenio)
-                                <option value="{{ $convenio->id }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
-                                    {{ $convenio->nombre }} ({{ $convenio->descuento_porcentaje }}%)
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="id_motivo_descuento">Motivo del Descuento</label>
-                        <select class="form-control" id="id_motivo_descuento" name="id_motivo_descuento">
-                            <option value="">-- Sin Motivo --</option>
-                            @php $motivosDescuento = \App\Models\MotivoDescuento::where('activo', true)->get(); @endphp
-                            @foreach($motivosDescuento as $motivo)
-                                <option value="{{ $motivo->id }}">{{ $motivo->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="descuento_manual">Descuento Manual ($)</label>
-                        <input type="number" class="form-control" id="descuento_manual" name="descuento_manual" 
-                               min="0" step="1" value="{{ old('descuento_manual', 0) }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="observaciones_inscripcion">Observaciones</label>
-                        <input type="text" class="form-control" id="observaciones_inscripcion" name="observaciones_inscripcion" 
-                               placeholder="Notas sobre la inscripción">
-                    </div>
-                </div>
-
-                <div class="precio-box" id="precioBox" style="display:none;">
-                    <h5><i class="fas fa-tag"></i> Resumen de Precios</h5>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Precio Base:</strong> <span id="precio-normal" class="text-primary">$0</span></p>
-                            <p><strong>Convenio:</strong> <span id="precio-convenio" class="text-success">$0</span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Descuento Manual:</strong> <span id="desc-manual-display" class="text-danger">-$0</span></p>
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="id_convenio">
+                                    <i class="fas fa-building"></i> Seleccionar Convenio
+                                </label>
+                                <select class="form-control @error('id_convenio') is-invalid @enderror" 
+                                        id="id_convenio" name="id_convenio">
+                                    <option value="">Sin convenio</option>
+                                    @foreach($convenios as $convenio)
+                                        <option value="{{ $convenio->id }}" {{ old('id_convenio') == $convenio->id ? 'selected' : '' }}>
+                                            {{ $convenio->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-hint">Si el cliente pertenece a una empresa con convenio</small>
+                                @error('id_convenio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
                     </div>
-                    <hr>
-                    <div class="text-center">
-                        <h4><strong>Precio Final: <span id="precio-total" class="text-primary">$0</span></strong></h4>
-                        <p class="text-muted"><strong>Fecha de Término:</strong> <span id="fecha-termino">-</span></p>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-dumbbell"></i>
+                        <h3>Plan de Membresía</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_membresia">
+                                    <i class="fas fa-award"></i> Tipo de Membresía <span class="required">*</span>
+                                </label>
+                                <select class="form-control @error('id_membresia') is-invalid @enderror" 
+                                        id="id_membresia" name="id_membresia">
+                                    <option value="">Seleccionar membresía...</option>
+                                    @foreach($membresias as $membresia)
+                                        @php
+                                            $precioActual = $membresia->precios->first();
+                                            $precioNormal = $precioActual ? $precioActual->precio_normal : 0;
+                                            $precioConvenio = $precioActual ? ($precioActual->precio_convenio ?? $precioActual->precio_normal) : 0;
+                                        @endphp
+                                        <option value="{{ $membresia->id }}" 
+                                                data-duracion="{{ $membresia->duracion_dias }}"
+                                                data-precio-normal="{{ $precioNormal }}"
+                                                data-precio-convenio="{{ $precioConvenio }}"
+                                                {{ old('id_membresia') == $membresia->id ? 'selected' : '' }}>
+                                            {{ $membresia->nombre }} ({{ $membresia->duracion_dias }} días) - ${{ number_format($precioNormal, 0, ',', '.') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_membresia')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="fecha_inicio">
+                                    <i class="fas fa-calendar-alt"></i> Fecha de Inicio <span class="required">*</span>
+                                </label>
+                                <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
+                                       id="fecha_inicio" name="fecha_inicio"
+                                       value="{{ old('fecha_inicio', date('Y-m-d')) }}">
+                                @error('fecha_inicio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="fecha_termino">
+                                    <i class="fas fa-calendar-check"></i> Fecha de Término
+                                </label>
+                                <input type="date" class="form-control" 
+                                       id="fecha_termino" name="fecha_termino"
+                                       readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <small class="form-hint">Se calcula automáticamente</small>
+                            </div>
+                        </div>
+
+                        <!-- Precio Box -->
+                        <div class="precio-display" id="precioDisplay" style="display: none;">
+                            <div class="precio-header">
+                                <i class="fas fa-tag"></i>
+                                <span>Resumen de Precio</span>
+                            </div>
+                            <div class="precio-body">
+                                <div class="precio-row">
+                                    <span class="precio-label">Precio Normal:</span>
+                                    <span class="precio-value" id="precioNormal">$0</span>
+                                </div>
+                                <div class="precio-row descuento" id="descuentoConvenioRow" style="display: none;">
+                                    <span class="precio-label">Descuento Convenio:</span>
+                                    <span class="precio-value text-success" id="descuentoConvenio">-$0</span>
+                                </div>
+                                <div class="precio-row descuento" id="descuentoManualRow" style="display: none;">
+                                    <span class="precio-label">Descuento Manual:</span>
+                                    <span class="precio-value text-success" id="descuentoManualDisplay">-$0</span>
+                                </div>
+                                <div class="precio-row total">
+                                    <span class="precio-label">Precio Final:</span>
+                                    <span class="precio-value" id="precioFinal">$0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-group col-md-6">
+                                <label for="id_motivo_descuento">
+                                    <i class="fas fa-percent"></i> Motivo de Descuento
+                                </label>
+                                <select class="form-control @error('id_motivo_descuento') is-invalid @enderror" 
+                                        id="id_motivo_descuento" name="id_motivo_descuento">
+                                    <option value="">Sin descuento adicional</option>
+                                    @foreach($motivos_descuento as $motivo)
+                                        <option value="{{ $motivo->id }}" {{ old('id_motivo_descuento') == $motivo->id ? 'selected' : '' }}>
+                                            {{ $motivo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_motivo_descuento')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="descuento_manual">
+                                    <i class="fas fa-dollar-sign"></i> Descuento Manual ($)
+                                </label>
+                                <input type="number" class="form-control" 
+                                       id="descuento_manual" name="descuento_manual"
+                                       min="0" step="100" value="{{ old('descuento_manual', 0) }}"
+                                       placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="observaciones_inscripcion">
+                                    <i class="fas fa-comment-alt"></i> Observaciones de Inscripción
+                                </label>
+                                <textarea class="form-control" id="observaciones_inscripcion" 
+                                          name="observaciones_inscripcion" rows="2"
+                                          placeholder="Notas adicionales sobre la inscripción...">{{ old('observaciones_inscripcion') }}</textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- ========== PASO 3: PAGO ========== -->
-            <div class="step-indicator" id="step-3">
-                <div class="card card-info mb-3">
-                    <div class="card-header"><h5 class="mb-0"><i class="fas fa-info-circle"></i> Resumen del Registro</h5></div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Cliente:</strong> <span id="resumen-cliente">-</span></p>
-                                <p><strong>Membresía:</strong> <span id="resumen-membresia">-</span></p>
+            <div class="step-content" id="step-3">
+                <!-- Ficha Resumen del Cliente y Membresía -->
+                <div class="resumen-ficha">
+                    <div class="ficha-header">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>Resumen de Inscripción</h3>
+                    </div>
+                    <div class="ficha-body">
+                        <div class="ficha-row">
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-user"></i> Cliente</span>
+                                <span class="ficha-value" id="fichaCliente">-</span>
                             </div>
-                            <div class="col-md-6">
-                                <p><strong>Convenio:</strong> <span id="resumen-convenio">No</span></p>
-                                <p><strong>Motivo Descuento:</strong> <span id="resumen-motivo">-</span></p>
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-id-card"></i> RUT</span>
+                                <span class="ficha-value" id="fichaRut">-</span>
                             </div>
                         </div>
-                        <p><strong>Descuento Manual:</strong> <span id="resumen-desc-manual">-$0</span></p>
-                        <h5 class="text-primary"><strong>Precio Final: <span id="resumen-precio-final">$0</span></strong></h5>
-                    </div>
-                </div>
-
-                <div class="form-section-title"><i class="fas fa-credit-card"></i> Información de Pago</div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="tipo_pago">Tipo de Pago <span class="text-danger">*</span></label>
-                        <select class="form-control" id="tipo_pago" name="tipo_pago">
-                            <option value="">-- Seleccionar Tipo --</option>
-                            <option value="completo">Pago Completo</option>
-                            <option value="parcial">Pago Parcial / Abono</option>
-                            <option value="pendiente">Pago Pendiente</option>
-                            <option value="mixto">Pago Mixto</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="fecha_pago">Fecha de Pago <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="fecha_pago" name="fecha_pago" 
-                               value="{{ old('fecha_pago', now()->format('Y-m-d')) }}">
-                    </div>
-                </div>
-
-                <div id="seccion-monto" style="display:none;">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label id="label-monto">Monto a Abonar <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="monto_abonado" name="monto_abonado" min="0" step="1">
-                            <small class="text-muted" id="hint-monto"></small>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="id_metodo_pago">Método de Pago <span class="text-danger">*</span></label>
-                            <select class="form-control" id="id_metodo_pago" name="id_metodo_pago">
-                                <option value="">-- Seleccionar --</option>
-                                @foreach($metodos_pago as $metodo)
-                                    @if(strtolower($metodo->nombre) !== 'mixto')
-                                    <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-3" id="seccion-restante" style="display:none;">
-                            <label>Restante por Pagar</label>
-                            <div class="form-control bg-light" id="monto-restante-display" style="font-weight:bold; color:#dc3545;">$0</div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="referencia_pago">Referencia / Comprobante</label>
-                            <input type="text" class="form-control" id="referencia_pago" name="referencia_pago" 
-                                   placeholder="Ej: N° Transferencia, Voucher, Recibo...">
-                            <small class="text-muted">Opcional: Número de transacción o comprobante</small>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="observaciones_pago">Observaciones del Pago</label>
-                            <input type="text" class="form-control" id="observaciones_pago" name="observaciones_pago" 
-                                   placeholder="Notas adicionales sobre el pago...">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="seccion-mixto" style="display:none;">
-                    <div class="card card-warning">
-                        <div class="card-header"><h5 class="mb-0"><i class="fas fa-shuffle"></i> Pago Mixto</h5></div>
-                        <div class="card-body">
-                            <table class="table table-sm" id="tabla-pagos-mixto">
-                                <thead><tr><th>Acción</th><th>Monto</th><th>Método</th><th>Total</th></tr></thead>
-                                <tbody></tbody>
-                            </table>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="agregarLineaPago()">
-                                <i class="fas fa-plus"></i> Agregar Línea
-                            </button>
-                            <div class="alert alert-light mt-3" id="alerta-total-mixto">
-                                <strong>Total:</strong> <span id="resumen-total-mixto">$0</span>
+                        <div class="ficha-row">
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-dumbbell"></i> Membresía</span>
+                                <span class="ficha-value" id="fichaMembresia">-</span>
                             </div>
-                            <input type="hidden" id="total-mixto" name="total_mixto" value="0">
-                            <input type="hidden" id="detalle-pagos-mixto" name="detalle_pagos_mixto" value="[]">
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-clock"></i> Duración</span>
+                                <span class="ficha-value" id="fichaDuracion">-</span>
+                            </div>
+                        </div>
+                        <div class="ficha-row">
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-calendar-alt"></i> Fecha Inicio</span>
+                                <span class="ficha-value" id="fichaFechaInicio">-</span>
+                            </div>
+                            <div class="ficha-item">
+                                <span class="ficha-label"><i class="fas fa-calendar-check"></i> Fecha Término</span>
+                                <span class="ficha-value ficha-fecha-termino" id="fichaFechaTermino">-</span>
+                            </div>
+                        </div>
+                        <div class="ficha-row" id="fichaConvenioRow" style="display: none;">
+                            <div class="ficha-item full">
+                                <span class="ficha-label"><i class="fas fa-building"></i> Convenio</span>
+                                <span class="ficha-value ficha-convenio" id="fichaConvenio">-</span>
+                            </div>
+                        </div>
+                        <div class="ficha-divider"></div>
+                        <div class="ficha-row">
+                            <div class="ficha-item">
+                                <span class="ficha-label">Precio Normal</span>
+                                <span class="ficha-value" id="fichaPrecioNormal">$0</span>
+                            </div>
+                            <div class="ficha-item" id="fichaDescuentoConvenioItem" style="display: none;">
+                                <span class="ficha-label">Desc. Convenio</span>
+                                <span class="ficha-value ficha-descuento" id="fichaDescuentoConvenio">-$0</span>
+                            </div>
+                        </div>
+                        <div class="ficha-row" id="fichaDescuentoManualRow" style="display: none;">
+                            <div class="ficha-item">
+                                <span class="ficha-label">Desc. Manual</span>
+                                <span class="ficha-value ficha-descuento" id="fichaDescuentoManual">-$0</span>
+                            </div>
+                        </div>
+                        <div class="ficha-total">
+                            <span class="ficha-total-label">TOTAL A PAGAR</span>
+                            <span class="ficha-total-value" id="montoAPagar">$0</span>
                         </div>
                     </div>
                 </div>
 
-                <div id="info-adicional" style="display:none;">
-                    <div class="alert alert-info" id="alert-tipo-pago"></div>
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>Forma de Pago</h3>
+                    </div>
+                    <div class="section-body">
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="tipo_pago">
+                                    <i class="fas fa-money-check-alt"></i> Tipo de Pago <span class="required">*</span>
+                                </label>
+                                <select class="form-control @error('tipo_pago') is-invalid @enderror" 
+                                        id="tipo_pago" name="tipo_pago" required>
+                                    <option value="completo" {{ old('tipo_pago', 'completo') == 'completo' ? 'selected' : '' }}>Pago Completo</option>
+                                    <option value="parcial" {{ old('tipo_pago') == 'parcial' ? 'selected' : '' }}>Abono Parcial</option>
+                                    <option value="pendiente" {{ old('tipo_pago') == 'pendiente' ? 'selected' : '' }}>Dejar Pendiente</option>
+                                    <option value="mixto" {{ old('tipo_pago') == 'mixto' ? 'selected' : '' }}>Pago Mixto</option>
+                                </select>
+                                @error('tipo_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="fecha_pago">
+                                    <i class="fas fa-calendar-check"></i> Fecha de Pago <span class="required">*</span>
+                                </label>
+                                <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
+                                       id="fecha_pago" name="fecha_pago" required
+                                       value="{{ old('fecha_pago', date('Y-m-d')) }}">
+                                @error('fecha_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Método de pago principal -->
+                        <div class="form-row" id="metodoPagoRow">
+                            <div class="form-group col-md-6">
+                                <label for="id_metodo_pago">
+                                    <i class="fas fa-wallet"></i> Método de Pago <span class="required">*</span>
+                                </label>
+                                <select class="form-control select-styled @error('id_metodo_pago') is-invalid @enderror" 
+                                        id="id_metodo_pago" name="id_metodo_pago">
+                                    <option value="">Seleccionar método...</option>
+                                    @foreach($metodos_pago as $metodo)
+                                        <option value="{{ $metodo->id }}" {{ old('id_metodo_pago') == $metodo->id ? 'selected' : '' }}>
+                                            {{ $metodo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_metodo_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Campos para pago parcial -->
+                        <div class="form-row" id="montoAbonadoRow" style="display: none;">
+                            <div class="form-group col-md-6">
+                                <label for="monto_abonado">
+                                    <i class="fas fa-coins"></i> Monto a Abonar <span class="required">*</span>
+                                </label>
+                                <input type="number" class="form-control @error('monto_abonado') is-invalid @enderror" 
+                                       id="monto_abonado" name="monto_abonado"
+                                       min="0" step="100" placeholder="Ingrese el monto"
+                                       value="{{ old('monto_abonado') }}">
+                                <small class="form-hint" id="montoPendienteHint"></small>
+                                @error('monto_abonado')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <div class="monto-pendiente-box" id="montoPendienteBox">
+                                    <span class="monto-pendiente-label">Quedará Pendiente:</span>
+                                    <span class="monto-pendiente-value" id="montoPendienteDisplay">$0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos para pago MIXTO - Dos métodos de pago -->
+                        <div id="pagoMixtoSection" style="display: none;">
+                            <div class="mixto-header">
+                                <i class="fas fa-random"></i>
+                                <span>Distribución de Pago Mixto</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="metodo_mixto_1">
+                                        <i class="fas fa-wallet"></i> Primer Método <span class="required">*</span>
+                                    </label>
+                                    <select class="form-control select-styled" id="metodo_mixto_1" name="metodo_mixto_1">
+                                        <option value="">Seleccionar método...</option>
+                                        @foreach($metodos_pago as $metodo)
+                                            <option value="{{ $metodo->id }}" {{ old('metodo_mixto_1') == $metodo->id ? 'selected' : '' }}>{{ $metodo->nombre }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="monto_mixto_1">
+                                        <i class="fas fa-coins"></i> Monto Primer Pago <span class="required">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" 
+                                           id="monto_mixto_1" name="monto_mixto_1"
+                                           min="0" step="100" placeholder="$0"
+                                           value="{{ old('monto_mixto_1') }}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="metodo_mixto_2">
+                                        <i class="fas fa-wallet"></i> Segundo Método <span class="required">*</span>
+                                    </label>
+                                    <select class="form-control select-styled" id="metodo_mixto_2" name="metodo_mixto_2">
+                                        <option value="">Seleccionar método...</option>
+                                        @foreach($metodos_pago as $metodo)
+                                            <option value="{{ $metodo->id }}" {{ old('metodo_mixto_2') == $metodo->id ? 'selected' : '' }}>{{ $metodo->nombre }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="monto_mixto_2">
+                                        <i class="fas fa-coins"></i> Monto Segundo Pago <span class="required">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" 
+                                           id="monto_mixto_2" name="monto_mixto_2"
+                                           min="0" step="100" placeholder="$0"
+                                           value="{{ old('monto_mixto_2') }}">
+                                </div>
+                            </div>
+                            <div class="mixto-total-box">
+                                <div class="mixto-total-row">
+                                    <span>Total a pagar:</span>
+                                    <span id="mixtoTotalAPagar">$0</span>
+                                </div>
+                                <div class="mixto-total-row">
+                                    <span>Suma de pagos:</span>
+                                    <span id="mixtoSumaPagos">$0</span>
+                                </div>
+                                <div class="mixto-total-row diferencia" id="mixtoDiferenciaRow" style="display: none;">
+                                    <span>Diferencia:</span>
+                                    <span id="mixtoDiferencia">$0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="referencia_pago">
+                                    <i class="fas fa-receipt"></i> Referencia/Comprobante
+                                </label>
+                                <input type="text" class="form-control" 
+                                       id="referencia_pago" name="referencia_pago"
+                                       placeholder="Ej: N° transferencia, voucher, etc."
+                                       value="{{ old('referencia_pago') }}">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="observaciones_pago">
+                                    <i class="fas fa-comment"></i> Observaciones del Pago
+                                </label>
+                                <input type="text" class="form-control" 
+                                       id="observaciones_pago" name="observaciones_pago"
+                                       placeholder="Notas adicionales..."
+                                       value="{{ old('observaciones_pago') }}">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- ========== BOTONES DE NAVEGACIÓN Y GUARDADO ========== -->
-            <div class="buttons-container">
-                <a href="{{ route('admin.clientes.index') }}" class="btn btn-outline-secondary btn-lg" id="btn-cancelar">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-                <div class="buttons-group">
-                    {{-- Botón Anterior (oculto en paso 1) --}}
-                    <button type="button" id="btn-anterior" class="btn btn-outline-secondary btn-lg" style="display:none;">
+            <!-- Navigation Buttons -->
+            <div class="wizard-navigation">
+                <div class="nav-left">
+                    <button type="button" class="btn-nav btn-prev" id="btnPrev" style="display: none;">
                         <i class="fas fa-arrow-left"></i> Anterior
                     </button>
-                    
-                    {{-- Botón Siguiente (visible en pasos 1 y 2) --}}
-                    <button type="button" id="btn-siguiente" class="btn btn-primary btn-lg">
-                        Siguiente <i class="fas fa-arrow-right"></i>
-                    </button>
-                    
-                    {{-- PASO 1: Guardar Solo Cliente --}}
-                    <button type="submit" id="btn-guardar-solo-cliente" class="btn btn-info btn-lg" data-flujo="solo_cliente">
+                </div>
+                <div class="nav-center">
+                    <button type="button" class="btn-save-only" id="btnSoloCliente">
                         <i class="fas fa-user-check"></i> Guardar Solo Cliente
                     </button>
-                    
-                    {{-- PASO 2: Guardar con Membresía (sin pago) --}}
-                    <button type="submit" id="btn-guardar-con-membresia" class="btn btn-warning btn-lg" style="display:none;" data-flujo="con_membresia">
-                        <i class="fas fa-id-card"></i> Guardar con Membresía
+                </div>
+                <div class="nav-right">
+                    <button type="button" class="btn-nav btn-next" id="btnNext">
+                        Siguiente <i class="fas fa-arrow-right"></i>
                     </button>
-                    
-                    {{-- PASO 3: Guardar Completo (cliente + membresía + pago) --}}
-                    <button type="submit" id="btn-guardar-completo" class="btn btn-success btn-lg" style="display:none;" data-flujo="completo">
-                        <i class="fas fa-check-circle"></i> Guardar Todo
+                    <button type="submit" class="btn-nav btn-submit" id="btnSubmit" style="display: none;">
+                        <i class="fas fa-check"></i> Registrar Cliente
                     </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
-@endsection
+@stop
 
-@push('js')
-{{-- Cargar SweetAlert2 por si no está en el layout --}}
+@section('css')
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --success: #00bf8e;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --danger: #dc3545;
+        --text-primary: #2c3e50;
+        --text-secondary: #6c757d;
+        --bg-light: #f8f9fa;
+        --border-color: #e9ecef;
+        --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    .content-wrapper {
+        background: var(--bg-light) !important;
+    }
+
+    .create-cliente-container {
+        padding: 20px;
+        width: 100%;
+    }
+
+    /* Hero Header */
+    .create-hero {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 20px;
+        padding: 30px 40px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow);
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .btn-back {
+        width: 45px;
+        height: 45px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background: rgba(255,255,255,0.25);
+        color: #fff;
+        transform: translateX(-3px);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .hero-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-icon i {
+        font-size: 32px;
+        color: #fff;
+    }
+
+    .hero-text h1 {
+        color: #fff;
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .hero-text p {
+        color: rgba(255,255,255,0.8);
+        margin: 5px 0 0;
+        font-size: 15px;
+    }
+
+    /* Wizard Steps */
+    .wizard-steps {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px 40px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+    }
+
+    .step.active, .step.completed {
+        opacity: 1;
+    }
+
+    .step-number {
+        width: 45px;
+        height: 45px;
+        background: var(--border-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+    }
+
+    .step.active .step-number {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .step.completed .step-number {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .step-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .step-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+
+    .step-desc {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .step-connector {
+        width: 60px;
+        height: 3px;
+        background: var(--border-color);
+        margin: 0 20px;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .step.completed + .step-connector {
+        background: var(--success);
+    }
+
+    /* Form Container */
+    .form-container {
+        background: #fff;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow);
+    }
+
+    .step-content {
+        display: none;
+    }
+
+    .step-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Section Cards */
+    .section-card {
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-header i {
+        font-size: 20px;
+        color: #fff;
+    }
+
+    .section-header h3 {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .section-body {
+        padding: 24px;
+    }
+
+    /* Form Elements */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px;
+    }
+
+    .form-group {
+        padding: 0 10px;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-group label i {
+        color: var(--primary);
+        font-size: 14px;
+    }
+
+    .required {
+        color: var(--accent);
+    }
+
+    .form-control {
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background-color: #fff;
+        color: var(--text-primary);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
+        outline: none;
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--danger);
+    }
+
+    .form-hint {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 6px;
+        display: block;
+    }
+
+    .invalid-feedback {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    /* Precio Display */
+    .precio-display {
+        background: linear-gradient(135deg, rgba(26,26,46,0.03) 0%, rgba(26,26,46,0.06) 100%);
+        border: 2px solid var(--primary);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 20px;
+    }
+
+    .precio-header {
+        background: var(--primary);
+        color: #fff;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+    }
+
+    .precio-body {
+        padding: 20px;
+    }
+
+    .precio-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--border-color);
+    }
+
+    .precio-row:last-child {
+        border-bottom: none;
+    }
+
+    .precio-row.total {
+        padding-top: 16px;
+        margin-top: 10px;
+        border-top: 2px solid var(--primary);
+        border-bottom: none;
+    }
+
+    .precio-label {
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .precio-row.total .precio-label {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+
+    .precio-value {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+
+    .precio-row.total .precio-value {
+        font-size: 24px;
+        color: var(--success);
+    }
+
+    .text-success {
+        color: var(--success) !important;
+    }
+
+    /* Pago Resumen */
+    .pago-resumen {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .resumen-label {
+        color: rgba(255,255,255,0.8);
+        font-size: 14px;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .resumen-value {
+        color: #fff;
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    /* Mixto Separator */
+    .mixto-separator {
+        text-align: center;
+        margin: 24px 0;
+        position: relative;
+    }
+
+    .mixto-separator::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--border-color);
+    }
+
+    .mixto-separator span {
+        background: #fff;
+        padding: 0 16px;
+        position: relative;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    /* Wizard Navigation */
+    .wizard-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 0 0;
+        border-top: 1px solid var(--border-color);
+        margin-top: 30px;
+    }
+
+    .nav-left, .nav-right {
+        display: flex;
+        gap: 12px;
+    }
+
+    .nav-center {
+        flex: 1;
+        text-align: center;
+    }
+
+    .btn-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-prev {
+        background: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .btn-prev:hover {
+        background: #dee2e6;
+        transform: translateX(-3px);
+    }
+
+    .btn-next {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .btn-next:hover {
+        background: var(--primary-light);
+        transform: translateX(3px);
+    }
+
+    .btn-submit {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .btn-submit:hover {
+        background: #00a67e;
+        transform: translateY(-2px);
+    }
+
+    .btn-save-only {
+        background: transparent;
+        border: 2px solid var(--info);
+        color: var(--info);
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-save-only:hover {
+        background: var(--info);
+        color: #fff;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .create-hero {
+            flex-direction: column;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .btn-back {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+        }
+
+        .hero-content {
+            flex-direction: column;
+        }
+
+        .wizard-steps {
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .step-connector {
+            width: 3px;
+            height: 30px;
+            margin: 0;
+        }
+
+        .form-container {
+            padding: 20px;
+        }
+
+        .wizard-navigation {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .nav-left, .nav-center, .nav-right {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-nav {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+
+    /* ============================================
+       ESTILOS MEJORADOS PARA SELECTS
+       ============================================ */
+    .form-control.select-styled,
+    select.form-control {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%231a1a2e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 20px;
+        padding-right: 45px;
+        cursor: pointer;
+        min-height: 48px;
+        font-size: 15px;
+        line-height: 1.4;
+        white-space: normal;
+        word-wrap: break-word;
+        color: #1a1a2e;
+    }
+
+    select.form-control option {
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.5;
+        background-color: #fff;
+        color: #1a1a2e;
+    }
+
+    select.form-control option:hover,
+    select.form-control option:focus,
+    select.form-control option:checked {
+        background-color: rgba(26, 26, 46, 0.1);
+        color: #1a1a2e;
+    }
+
+    select.form-control:disabled {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    /* ============================================
+       FICHA RESUMEN DE INSCRIPCIÓN
+       ============================================ */
+    .resumen-ficha {
+        background: #fff;
+        border: 2px solid var(--primary);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .ficha-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .ficha-header i {
+        font-size: 22px;
+        color: #fff;
+    }
+
+    .ficha-header h3 {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .ficha-body {
+        padding: 24px;
+    }
+
+    .ficha-row {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+    }
+
+    .ficha-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .ficha-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ficha-item.full {
+        flex: 2;
+    }
+
+    .ficha-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .ficha-label i {
+        font-size: 12px;
+        color: var(--primary);
+    }
+
+    .ficha-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .ficha-value.ficha-convenio {
+        color: var(--info);
+        background: rgba(67, 97, 238, 0.1);
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        width: fit-content;
+    }
+
+    .ficha-value.ficha-descuento {
+        color: var(--success);
+    }
+
+    .ficha-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        margin: 20px 0;
+    }
+
+    .ficha-total {
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        margin: 20px -24px -24px -24px;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ficha-total-label {
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .ficha-total-value {
+        color: #fff;
+        font-size: 32px;
+        font-weight: 800;
+    }
+
+    /* ============================================
+       MONTO PENDIENTE BOX
+       ============================================ */
+    .monto-pendiente-box {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid var(--warning);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 28px;
+    }
+
+    .monto-pendiente-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #92400e;
+        text-transform: uppercase;
+    }
+
+    .monto-pendiente-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #b45309;
+    }
+
+    /* ============================================
+       TIPO PAGO BADGES
+       ============================================ */
+    .tipo-pago-info {
+        background: rgba(67, 97, 238, 0.1);
+        border: 1px solid var(--info);
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--info);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tipo-pago-info i {
+        font-size: 16px;
+    }
+
+    /* ============================================
+       FECHA TÉRMINO EN FICHA
+       ============================================ */
+    .ficha-value.ficha-fecha-termino {
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    /* ============================================
+       PAGO MIXTO STYLES
+       ============================================ */
+    .mixto-header {
+        background: linear-gradient(135deg, var(--info) 0%, #3730a3 100%);
+        color: #fff;
+        padding: 14px 20px;
+        border-radius: 12px 12px 0 0;
+        margin: 20px 0 0 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .mixto-header i {
+        font-size: 18px;
+    }
+
+    #pagoMixtoSection .form-row {
+        background: #f8f9ff;
+        padding: 16px 20px;
+        margin: 0;
+        border-left: 2px solid var(--info);
+        border-right: 2px solid var(--info);
+    }
+
+    #pagoMixtoSection .form-row:first-of-type {
+        padding-top: 20px;
+        border-top: none;
+    }
+
+    #pagoMixtoSection .form-group label {
+        color: #1e1b4b;
+        font-weight: 600;
+    }
+
+    #pagoMixtoSection .form-control {
+        background-color: #fff;
+        border: 2px solid #c7d2fe;
+        color: #1e1b4b;
+    }
+
+    #pagoMixtoSection .form-control:focus {
+        border-color: var(--info);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+
+    #pagoMixtoSection .form-control option {
+        background-color: #fff;
+        color: #1e1b4b;
+    }
+
+    .mixto-total-box {
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        border: 2px solid var(--info);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 16px 20px;
+    }
+
+    .mixto-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 14px;
+        color: #4338ca;
+    }
+
+    .mixto-total-row span:last-child {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .mixto-total-row.diferencia {
+        border-top: 1px dashed #818cf8;
+        margin-top: 8px;
+        padding-top: 12px;
+        color: var(--danger);
+    }
+
+    .mixto-total-row.diferencia.ok {
+        color: var(--success);
+    }
+
+    /* ============================================
+       RESPONSIVE STYLES
+       ============================================ */
+    @media (max-width: 768px) {
+        .ficha-row {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ficha-item {
+            flex: none;
+        }
+
+        .ficha-total {
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+        }
+
+        .ficha-total-value {
+            font-size: 26px;
+        }
+
+        .wizard-steps {
+            gap: 8px;
+        }
+
+        .step {
+            flex-direction: column;
+            padding: 10px 8px;
+        }
+
+        .step-number {
+            margin-bottom: 4px;
+        }
+
+        .step-info {
+            text-align: center;
+        }
+
+        .step-desc {
+            font-size: 10px;
+        }
+
+        .monto-pendiente-box {
+            margin-top: 16px;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+        }
+    }
+</style>
+@stop
+
+@section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{{-- Timestamp para evitar caché: {{ now()->timestamp }} --}}
 <script>
-// ===== VERIFICAR CARGA - VERSION 4 =====
-console.log('%c[CREATE.BLADE] Script cargado - VERSION 4 - {{ now()->timestamp }}', 'background: green; color: white; padding: 2px 5px;');
-console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+$(document).ready(function() {
+    let currentStep = 1;
+    const totalSteps = 3;
+    let precioFinal = 0;
+    let precioNormal = 0;
+    let formSubmitting = false; // Flag para prevenir doble submit
 
-// ===== MOSTRAR ERRORES DE LARAVEL =====
-@if($errors->any())
-document.addEventListener('DOMContentLoaded', function() {
-    const erroresLaravel = @json($errors->all());
-    console.log('Errores de Laravel:', erroresLaravel);
-    Swal.fire({
-        icon: 'error',
-        title: 'Error de Validación',
-        html: '<ul style="text-align:left;">' + erroresLaravel.map(e => '<li>' + e + '</li>').join('') + '</ul>',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#dc3545'
+    // Prevenir doble submit del formulario
+    $('#clienteForm').on('submit', function(e) {
+        if (formSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+        formSubmitting = true;
+        
+        // Deshabilitar botones de submit
+        $('#btnSubmit, #btnSoloCliente').prop('disabled', true).css('opacity', '0.6');
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: 'Guardando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
     });
-});
-@endif
 
-@if(session('error'))
-document.addEventListener('DOMContentLoaded', function() {
-    Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: '{{ session('error') }}',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#dc3545'
+    // Función para cambiar de paso
+    function goToStep(step) {
+        // Validar paso actual antes de avanzar
+        if (step > currentStep && !validateStep(currentStep)) {
+            return false;
+        }
+
+        // Marcar paso anterior como completado
+        if (step > currentStep) {
+            $(`.step[data-step="${currentStep}"]`).addClass('completed').removeClass('active');
+        }
+
+        // Actualizar paso actual
+        currentStep = step;
+
+        // Actualizar UI de pasos
+        $('.step').removeClass('active');
+        $(`.step[data-step="${step}"]`).addClass('active');
+
+        // Mostrar contenido del paso
+        $('.step-content').removeClass('active');
+        $(`#step-${step}`).addClass('active');
+
+        // Actualizar botones de navegación
+        updateNavButtons();
+
+        // Actualizar flujo según paso
+        updateFlujo();
+
+        // Actualizar ficha resumen al llegar al paso 3
+        if (step === 3) {
+            updateFichaResumen();
+        }
+    }
+
+    function validateStep(step) {
+        let isValid = true;
+        
+        if (step === 1) {
+            // Validar campos requeridos del paso 1
+            const campos = ['nombres', 'apellido_paterno', 'celular', 'email'];
+            campos.forEach(campo => {
+                const input = $(`#${campo}`);
+                if (!input.val().trim()) {
+                    input.addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    input.removeClass('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                Swal.fire({
+                    title: 'Campos requeridos',
+                    text: 'Por favor completa todos los campos obligatorios',
+                    icon: 'warning',
+                    confirmButtonColor: '#1a1a2e'
+                });
+            }
+        }
+
+        if (step === 2) {
+            const membresia = $('#id_membresia').val();
+            const fechaInicio = $('#fecha_inicio').val();
+
+            if (!membresia) {
+                $('#id_membresia').addClass('is-invalid');
+                isValid = false;
+            }
+            if (!fechaInicio) {
+                $('#fecha_inicio').addClass('is-invalid');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                Swal.fire({
+                    title: 'Membresía requerida',
+                    text: 'Debes seleccionar una membresía y fecha de inicio',
+                    icon: 'warning',
+                    confirmButtonColor: '#1a1a2e'
+                });
+            }
+        }
+
+        return isValid;
+    }
+
+    function updateNavButtons() {
+        // Botón anterior
+        if (currentStep > 1) {
+            $('#btnPrev').show();
+        } else {
+            $('#btnPrev').hide();
+        }
+
+        // Botones siguiente/submit
+        if (currentStep < totalSteps) {
+            $('#btnNext').show();
+            $('#btnSubmit').hide();
+        } else {
+            $('#btnNext').hide();
+            $('#btnSubmit').show();
+        }
+
+        // Botón solo cliente
+        if (currentStep === 1) {
+            $('#btnSoloCliente').show();
+        } else {
+            $('#btnSoloCliente').hide();
+        }
+    }
+
+    function updateFlujo() {
+        if (currentStep === 1) {
+            $('#flujo_cliente').val('solo_cliente');
+        } else if (currentStep === 2) {
+            $('#flujo_cliente').val('con_membresia');
+        } else {
+            $('#flujo_cliente').val('completo');
+        }
+    }
+
+    // Event Listeners
+    $('#btnNext').on('click', function() {
+        if (currentStep < totalSteps) {
+            goToStep(currentStep + 1);
+        }
     });
-});
-@endif
 
-@if(session('success'))
-document.addEventListener('DOMContentLoaded', function() {
+    $('#btnPrev').on('click', function() {
+        if (currentStep > 1) {
+            goToStep(currentStep - 1);
+        }
+    });
+
+    $('#btnSoloCliente').on('click', function() {
+        if (validateStep(1)) {
+            $('#flujo_cliente').val('solo_cliente');
+            Swal.fire({
+                title: '¿Guardar solo cliente?',
+                text: 'Se registrará el cliente sin membresía ni pago',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#1a1a2e',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#clienteForm').submit();
+                }
+            });
+        }
+    });
+
+    // Cargar precio de membresía desde data attributes
+    $('#id_membresia, #id_convenio').on('change', function() {
+        calcularPrecios();
+        calcularFechaTermino();
+    });
+
+    // Calcular fecha de término al cambiar fecha de inicio
+    $('#fecha_inicio').on('change', function() {
+        calcularFechaTermino();
+    });
+
+    function calcularFechaTermino() {
+        const membresiaOption = $('#id_membresia option:selected');
+        const duracion = parseInt(membresiaOption.data('duracion')) || 0;
+        const fechaInicio = $('#fecha_inicio').val();
+
+        if (duracion > 0 && fechaInicio) {
+            const fecha = new Date(fechaInicio);
+            fecha.setDate(fecha.getDate() + duracion);
+            
+            // Formatear fecha para input
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            $('#fecha_termino').val(`${year}-${month}-${day}`);
+        } else {
+            $('#fecha_termino').val('');
+        }
+    }
+
+    function calcularPrecios() {
+        const membresiaSelect = $('#id_membresia');
+        const membresiaOption = membresiaSelect.find('option:selected');
+        const convenioId = $('#id_convenio').val();
+
+        if (membresiaSelect.val()) {
+            // Obtener precios de los data attributes
+            precioNormal = parseInt(membresiaOption.data('precio-normal')) || 0;
+            const precioConvenioBase = parseInt(membresiaOption.data('precio-convenio')) || precioNormal;
+            
+            // Calcular descuento convenio
+            let descuentoConvenio = 0;
+            if (convenioId && precioConvenioBase < precioNormal) {
+                descuentoConvenio = precioNormal - precioConvenioBase;
+                precioFinal = precioConvenioBase;
+            } else {
+                precioFinal = precioNormal;
+            }
+
+            // Aplicar descuento manual
+            const descuentoManual = parseInt($('#descuento_manual').val()) || 0;
+            precioFinal = Math.max(0, precioFinal - descuentoManual);
+
+            // Actualizar display
+            $('#precioNormal').text(formatCurrency(precioNormal));
+            
+            if (descuentoConvenio > 0) {
+                $('#descuentoConvenioRow').show();
+                $('#descuentoConvenio').text('-' + formatCurrency(descuentoConvenio));
+            } else {
+                $('#descuentoConvenioRow').hide();
+            }
+
+            if (descuentoManual > 0) {
+                $('#descuentoManualRow').show();
+                $('#descuentoManualDisplay').text('-' + formatCurrency(descuentoManual));
+            } else {
+                $('#descuentoManualRow').hide();
+            }
+
+            $('#precioFinal').text(formatCurrency(precioFinal));
+            $('#montoAPagar').text(formatCurrency(precioFinal));
+            $('#precio_final_oculto').val(precioFinal);
+            $('#precioDisplay').show();
+        } else {
+            $('#precioDisplay').hide();
+            precioNormal = 0;
+            precioFinal = 0;
+        }
+    }
+
+    // Descuento manual - recalcular usando la función principal
+    $('#descuento_manual').on('input', function() {
+        calcularPrecios();
+    });
+
+    // Tipo de pago
+    $('#tipo_pago').on('change', function() {
+        const tipo = $(this).val();
+        
+        if (tipo === 'parcial') {
+            $('#montoAbonadoRow').show();
+            $('#metodoPagoRow').show();
+            $('#pagoMixtoSection').hide();
+            $('#montoPendienteHint').text(`Monto máximo: ${formatCurrency(precioFinal)}`);
+        } else if (tipo === 'mixto') {
+            $('#montoAbonadoRow').hide();
+            $('#metodoPagoRow').hide();
+            $('#pagoMixtoSection').show();
+            // Actualizar total en sección mixto
+            $('#mixtoTotalAPagar').text(formatCurrency(precioFinal));
+            actualizarSumaMixto();
+        } else if (tipo === 'pendiente') {
+            $('#montoAbonadoRow').hide();
+            $('#metodoPagoRow').hide();
+            $('#pagoMixtoSection').hide();
+        } else {
+            // completo
+            $('#montoAbonadoRow').hide();
+            $('#metodoPagoRow').show();
+            $('#pagoMixtoSection').hide();
+        }
+
+        // Actualizar ficha pendiente
+        updateFichaPendiente();
+    });
+
+    // Eventos para pago mixto
+    $('#monto_mixto_1, #monto_mixto_2').on('input', function() {
+        actualizarSumaMixto();
+    });
+
+    function actualizarSumaMixto() {
+        const monto1 = parseInt($('#monto_mixto_1').val()) || 0;
+        const monto2 = parseInt($('#monto_mixto_2').val()) || 0;
+        const suma = monto1 + monto2;
+        const diferencia = precioFinal - suma;
+
+        $('#mixtoSumaPagos').text(formatCurrency(suma));
+
+        if (diferencia !== 0) {
+            $('#mixtoDiferenciaRow').show();
+            $('#mixtoDiferencia').text(formatCurrency(Math.abs(diferencia)));
+            if (diferencia > 0) {
+                $('#mixtoDiferenciaRow').removeClass('ok').addClass('diferencia');
+                $('#mixtoDiferenciaRow span:first').text('Falta:');
+            } else {
+                $('#mixtoDiferenciaRow').removeClass('diferencia').addClass('ok');
+                $('#mixtoDiferenciaRow span:first').text('Excede:');
+            }
+        } else {
+            $('#mixtoDiferenciaRow').hide();
+            $('#mixtoDiferenciaRow').addClass('ok');
+        }
+    }
+
+    // Validación de monto y actualización de pendiente
+    $('#monto_abonado').on('input', function() {
+        const monto = parseInt($(this).val()) || 0;
+        if (monto > precioFinal) {
+            $(this).val(precioFinal);
+            Swal.fire({
+                title: 'Monto excedido',
+                text: `El monto no puede superar ${formatCurrency(precioFinal)}`,
+                icon: 'warning',
+                confirmButtonColor: '#1a1a2e'
+            });
+        }
+        // Actualizar monto pendiente display
+        const montoFinal = parseInt($(this).val()) || 0;
+        const pendiente = Math.max(0, precioFinal - montoFinal);
+        $('#montoPendienteDisplay').text(formatCurrency(pendiente));
+        
+        // Actualizar ficha pendiente
+        updateFichaPendiente();
+    });
+
+    // Formato de moneda
+    function formatCurrency(value) {
+        return '$' + parseInt(value).toLocaleString('es-CL');
+    }
+
+    // Actualizar ficha resumen
+    function updateFichaResumen() {
+        // Datos del cliente
+        const nombres = $('#nombres').val() || '';
+        const apPaterno = $('#apellido_paterno').val() || '';
+        const apMaterno = $('#apellido_materno').val() || '';
+        const nombreCompleto = `${nombres} ${apPaterno} ${apMaterno}`.trim();
+        $('#fichaCliente').text(nombreCompleto || 'Sin nombre');
+
+        // RUT del cliente
+        const rut = $('#rut').val() || '-';
+        $('#fichaRut').text(rut);
+
+        // Datos de membresía
+        const membresiaSelect = $('#id_membresia option:selected');
+        const membresiaTexto = membresiaSelect.text().split(' - $')[0]; // Quitar precio del texto
+        const duracion = membresiaSelect.data('duracion') || '-';
+        $('#fichaMembresia').text(membresiaTexto || 'No seleccionada');
+        $('#fichaDuracion').text(duracion + ' días');
+
+        // Fechas de inicio y término
+        const fechaInicio = $('#fecha_inicio').val();
+        const fechaTermino = $('#fecha_termino').val();
+        
+        if (fechaInicio) {
+            const fechaInicioObj = new Date(fechaInicio + 'T00:00:00');
+            $('#fichaFechaInicio').text(fechaInicioObj.toLocaleDateString('es-CL', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }));
+        } else {
+            $('#fichaFechaInicio').text('-');
+        }
+
+        if (fechaTermino) {
+            const fechaTerminoObj = new Date(fechaTermino + 'T00:00:00');
+            $('#fichaFechaTermino').text(fechaTerminoObj.toLocaleDateString('es-CL', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }));
+        } else {
+            $('#fichaFechaTermino').text('-');
+        }
+
+        // Convenio aplicado
+        const convenioId = $('#id_convenio').val();
+        const convenioTexto = $('#id_convenio option:selected').text();
+        if (convenioId && convenioId !== '') {
+            $('#fichaConvenioRow').show();
+            $('#fichaConvenio').text(convenioTexto);
+        } else {
+            $('#fichaConvenioRow').hide();
+        }
+
+        // Precio normal
+        $('#fichaPrecioNormal').text(formatCurrency(precioNormal));
+
+        // Descuento convenio
+        const precioConvenioBase = parseInt(membresiaSelect.data('precio-convenio')) || precioNormal;
+        if (convenioId && convenioId !== '' && precioConvenioBase < precioNormal) {
+            const descConvenio = precioNormal - precioConvenioBase;
+            $('#fichaDescuentoConvenioItem').show();
+            $('#fichaDescuentoConvenio').text('-' + formatCurrency(descConvenio));
+        } else {
+            $('#fichaDescuentoConvenioItem').hide();
+        }
+
+        // Descuento manual
+        const descuentoManual = parseInt($('#descuento_manual').val()) || 0;
+        const motivoDescuento = $('#id_motivo_descuento option:selected').text();
+        if (descuentoManual > 0) {
+            $('#fichaDescuentoManualRow').show();
+            $('#fichaDescuentoManual').text('-' + formatCurrency(descuentoManual) + ` (${motivoDescuento})`);
+        } else {
+            $('#fichaDescuentoManualRow').hide();
+        }
+
+        // Total
+        $('#montoAPagar').text(formatCurrency(precioFinal));
+    }
+
+    // Actualizar monto pendiente en la ficha
+    function updateFichaPendiente() {
+        const tipoPago = $('#tipo_pago').val();
+        const montoAbonado = parseInt($('#monto_abonado').val()) || 0;
+
+        if (tipoPago === 'completo') {
+            $('#montoPendienteBox').hide();
+        } else if (tipoPago === 'pendiente') {
+            $('#montoPendienteBox').show();
+            $('#montoPendienteDisplay').text(formatCurrency(precioFinal));
+        } else if (tipoPago === 'parcial' || tipoPago === 'mixto') {
+            $('#montoPendienteBox').show();
+            const pendiente = Math.max(0, precioFinal - montoAbonado);
+            $('#montoPendienteDisplay').text(formatCurrency(pendiente));
+        }
+    }
+
+    // Inicializar
+    updateNavButtons();
+    
+    // Restaurar estado si hay datos previos (por ejemplo, después de error de validación)
+    function inicializarDatosPrevios() {
+        // Si hay membresía seleccionada, recalcular todo
+        if ($('#id_membresia').val()) {
+            calcularPrecios();
+            calcularFechaTermino();
+            $('#precioDisplay').show();
+        }
+        
+        // Restaurar tipo de pago y sus campos
+        const tipoPagoGuardado = $('#tipo_pago').val();
+        if (tipoPagoGuardado) {
+            $('#tipo_pago').trigger('change');
+            
+            // Si es mixto, actualizar la suma
+            if (tipoPagoGuardado === 'mixto') {
+                actualizarSumaMixto();
+            }
+            
+            // Si es parcial, actualizar el monto pendiente
+            if (tipoPagoGuardado === 'parcial') {
+                const monto = parseInt($('#monto_abonado').val()) || 0;
+                const pendiente = Math.max(0, precioFinal - monto);
+                $('#montoPendienteDisplay').text(formatCurrency(pendiente));
+            }
+        }
+    }
+    
+    // Ejecutar inicialización
+    inicializarDatosPrevios();
+
+    // Success/Error messages from session
+    @if(session('success'))
     Swal.fire({
-        icon: 'success',
         title: '¡Éxito!',
         text: '{{ session('success') }}',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#28a745'
+        icon: 'success',
+        confirmButtonColor: '#1a1a2e',
+        timer: 3000,
+        timerProgressBar: true
     });
-});
-@endif
+    @endif
 
-// ===== VARIABLES GLOBALES =====
-let currentStep = 1;
-const totalSteps = 3;
-let hayDatosNoGuardados = false;
-
-// ===== HELPER PARA OBTENER VALOR DE CAMPO =====
-function getFieldValue(id) {
-    const field = document.getElementById(id);
-    if (!field) {
-        console.warn('Campo no encontrado:', id);
-        return '';
-    }
-    return field.value ? field.value.trim() : '';
-}
-
-// ===== MARCAR CAMPO CON ERROR =====
-function marcarCampoError(id, tieneError) {
-    const field = document.getElementById(id);
-    if (field) {
-        if (tieneError) {
-            field.classList.add('is-invalid');
-            field.classList.remove('is-valid');
-        } else {
-            field.classList.remove('is-invalid');
-            field.classList.add('is-valid');
-        }
-    }
-}
-
-// ===== LIMPIAR ERRORES VISUALES =====
-function limpiarErroresVisuales() {
-    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-    document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
-}
-
-// ===== VALIDACIÓN =====
-function validarPaso(paso) {
-    console.log('=== VALIDANDO PASO', paso, '===');
-    const errores = [];
-    
-    // Limpiar errores previos
-    limpiarErroresVisuales();
-    
-    if (paso === 1) {
-        // Validar Nombres (requerido)
-        const nombres = getFieldValue('nombres');
-        if (!nombres) {
-            errores.push('Nombres es requerido');
-            marcarCampoError('nombres', true);
-        } else {
-            marcarCampoError('nombres', false);
-        }
-        
-        // Validar Apellido Paterno (requerido)
-        const apellido = getFieldValue('apellido_paterno');
-        if (!apellido) {
-            errores.push('Apellido Paterno es requerido');
-            marcarCampoError('apellido_paterno', true);
-        } else {
-            marcarCampoError('apellido_paterno', false);
-        }
-        
-        // Validar Email (solo requerido, sin validar formato)
-        const email = getFieldValue('email');
-        if (!email) {
-            errores.push('Email es requerido');
-            marcarCampoError('email', true);
-        } else {
-            marcarCampoError('email', false);
-        }
-        
-        // Validar Celular (requerido)
-        const celular = getFieldValue('celular');
-        if (!celular) {
-            errores.push('Celular es requerido');
-            marcarCampoError('celular', true);
-        } else {
-            marcarCampoError('celular', false);
-        }
-        
-        // RUT/Pasaporte es OPCIONAL - no validar
-    } 
-    else if (paso === 2) {
-        // Validar Membresía
-        const membresia = getFieldValue('id_membresia');
-        console.log('Membresía:', membresia);
-        if (!membresia) {
-            errores.push('Membresía es requerida');
-            marcarCampoError('id_membresia', true);
-        } else {
-            marcarCampoError('id_membresia', false);
-        }
-        
-        // Validar Fecha Inicio
-        const fechaInicio = getFieldValue('fecha_inicio');
-        console.log('Fecha Inicio:', fechaInicio);
-        if (!fechaInicio) {
-            errores.push('Fecha de Inicio es requerida');
-            marcarCampoError('fecha_inicio', true);
-        } else {
-            marcarCampoError('fecha_inicio', false);
-        }
-    } 
-    else if (paso === 3) {
-        const tipoPago = getFieldValue('tipo_pago');
-        console.log('Tipo Pago:', tipoPago);
-        if (!tipoPago) {
-            errores.push('Tipo de Pago es requerido');
-            marcarCampoError('tipo_pago', true);
-        } else {
-            marcarCampoError('tipo_pago', false);
-        }
-        
-        const fechaPago = getFieldValue('fecha_pago');
-        if (!fechaPago) {
-            errores.push('Fecha de Pago es requerida');
-            marcarCampoError('fecha_pago', true);
-        } else {
-            marcarCampoError('fecha_pago', false);
-        }
-        
-        if (tipoPago === 'completo' || tipoPago === 'parcial') {
-            if (!getFieldValue('id_metodo_pago')) {
-                errores.push('Método de Pago es requerido');
-                marcarCampoError('id_metodo_pago', true);
-            } else {
-                marcarCampoError('id_metodo_pago', false);
-            }
-        }
-        if (tipoPago === 'parcial') {
-            const monto = parseInt(getFieldValue('monto_abonado') || '0');
-            if (monto <= 0) errores.push('El monto debe ser mayor a $0');
-        }
-        if (tipoPago === 'mixto') {
-            const total = parseInt(getFieldValue('total-mixto') || '0');
-            if (total <= 0) errores.push('Agregue al menos un pago en modo mixto');
-            
-            // Validar que cada línea tenga método seleccionado
-            let lineasSinMetodo = 0;
-            document.querySelectorAll('#tabla-pagos-mixto tbody tr').forEach((fila, idx) => {
-                const monto = parseInt(fila.querySelector('.monto-mixto')?.value || '0');
-                const metodo = fila.querySelector('.metodo-mixto')?.value;
-                if (monto > 0 && !metodo) {
-                    lineasSinMetodo++;
-                }
-            });
-            if (lineasSinMetodo > 0) {
-                errores.push(`Seleccione método de pago en ${lineasSinMetodo} línea(s) de pago mixto`);
-            }
-        }
-    }
-    
-    console.log('Errores encontrados:', errores);
-    return { valido: errores.length === 0, errores };
-}
-
-function mostrarErrores(errores) {
-    console.log('Mostrando errores:', errores);
-    
-    // Hacer scroll al primer campo con error
-    const primerCampoError = document.querySelector('.is-invalid');
-    if (primerCampoError) {
-        primerCampoError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        primerCampoError.focus();
-    }
-    
-    if (typeof Swal === 'undefined') {
-        console.warn('SweetAlert2 no disponible, usando alert nativo');
-        alert('Por favor complete los siguientes campos:\n\n• ' + errores.join('\n• '));
-        return;
-    }
-    
-    const html = errores.map(e => `<li style="padding:4px 0;"><i class="fas fa-exclamation-circle text-danger"></i> ${e}</li>`).join('');
+    @if(session('error'))
     Swal.fire({
+        title: 'Error',
+        text: '{{ session('error') }}',
         icon: 'error',
-        title: '<i class="fas fa-exclamation-triangle"></i> Campos incompletos',
-        html: `<ul style="text-align:left;margin:0;padding-left:20px;list-style:none;">${html}</ul>`,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#dc3545',
-        customClass: {
-            popup: 'animated shake'
-        }
+        confirmButtonColor: '#e94560'
     });
-}
+    @endif
 
-// ===== NAVEGACIÓN =====
-function goToStep(step, skipValidation = false) {
-    console.log('goToStep llamado:', step, 'skipValidation:', skipValidation, 'currentStep:', currentStep);
-    
-    if (step < 1 || step > totalSteps) {
-        console.log('Paso fuera de rango');
-        return;
-    }
-    
-    if (!skipValidation && step > currentStep) {
-        console.log('Validando paso:', currentStep);
-        const result = validarPaso(currentStep);
-        console.log('Resultado validación:', result);
-        if (!result.valido) {
-            mostrarErrores(result.errores);
-            return;
-        }
-    }
-    
-    document.querySelectorAll('.step-indicator').forEach(el => el.classList.remove('active'));
-    const stepElement = document.getElementById(`step-${step}`);
-    console.log('Elemento step:', stepElement);
-    if (stepElement) stepElement.classList.add('active');
-    currentStep = step;
-    
-    updateButtons();
-    updateStepButtons();
-    
-    if (step === 2) actualizarNombreCliente();
-    if (step === 3) {
-        actualizarPrecio();
-        setTimeout(actualizarResumenPaso3, 100);
-    }
-    
-    console.log('Navegación completada a paso:', step);
-}
-
-function nextStep() { 
-    console.log('nextStep llamado');
-    goToStep(currentStep + 1, false); 
-}
-function previousStep() { 
-    console.log('previousStep llamado');
-    goToStep(currentStep - 1, true); 
-}
-
-function updateButtons() {
-    const btns = {
-        anterior: document.getElementById('btn-anterior'),
-        siguiente: document.getElementById('btn-siguiente'),
-        soloCliente: document.getElementById('btn-guardar-solo-cliente'),
-        conMembresia: document.getElementById('btn-guardar-con-membresia'),
-        completo: document.getElementById('btn-guardar-completo')
-    };
-    const flujo = document.getElementById('flujo_cliente');
-    
-    // Ocultar todos primero
-    Object.values(btns).forEach(b => { if(b) b.style.display = 'none'; });
-    
-    if (currentStep === 1) {
-        // Paso 1: Datos del Cliente
-        // Mostrar: Siguiente + Guardar Solo Cliente
-        if(btns.siguiente) btns.siguiente.style.display = 'inline-block';
-        if(btns.soloCliente) btns.soloCliente.style.display = 'inline-block';
-        if(flujo) flujo.value = 'solo_cliente';
-    } else if (currentStep === 2) {
-        // Paso 2: Membresía
-        // Mostrar: Anterior + Siguiente + Guardar con Membresía
-        if(btns.anterior) btns.anterior.style.display = 'inline-block';
-        if(btns.siguiente) btns.siguiente.style.display = 'inline-block';
-        if(btns.conMembresia) btns.conMembresia.style.display = 'inline-block';
-        if(flujo) flujo.value = 'con_membresia';
-    } else if (currentStep === 3) {
-        // Paso 3: Pago
-        // Mostrar: Anterior + Guardar Todo
-        if(btns.anterior) btns.anterior.style.display = 'inline-block';
-        if(btns.completo) btns.completo.style.display = 'inline-block';
-        if(flujo) flujo.value = 'completo';
-    }
-}
-
-function updateStepButtons() {
-    for (let i = 1; i <= totalSteps; i++) {
-        const btn = document.getElementById(`step${i}-btn`);
-        btn.classList.remove('active', 'completed');
-        if (i < currentStep) { btn.classList.add('completed'); btn.disabled = false; }
-        else if (i === currentStep) { btn.classList.add('active'); btn.disabled = false; }
-        else { btn.disabled = true; }
-    }
-}
-
-// ===== PRECIOS =====
-function actualizarPrecio() {
-    const membresiaId = document.getElementById('id_membresia')?.value;
-    const convenioId = document.getElementById('id_convenio')?.value || '';
-    
-    if (!membresiaId) {
-        document.getElementById('precioBox').style.display = 'none';
-        return;
-    }
-    
-    let url = `/api/precio-membresia/${membresiaId}`;
-    if (convenioId) url += `?convenio=${convenioId}`;
-    
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            if (data.error) return;
-            
-            const precioBase = parseInt(data.precio_base) || 0;
-            const precioConvenio = parseInt(data.precio_final) || precioBase;
-            const duracionDias = parseInt(data.duracion_dias) || 30;
-            
-            document.getElementById('precioBox').style.display = 'block';
-            document.getElementById('precio-normal').textContent = '$' + precioBase.toLocaleString('es-CL');
-            document.getElementById('precio-convenio').textContent = '$' + precioConvenio.toLocaleString('es-CL');
-            
-            const fechaInicio = document.getElementById('fecha_inicio')?.value;
-            if (fechaInicio) {
-                const termino = new Date(fechaInicio);
-                termino.setDate(termino.getDate() + duracionDias);
-                const fechaFormateada = termino.toLocaleDateString('es-CL');
-                document.getElementById('fecha-termino').textContent = fechaFormateada;
-                // También actualizar el nuevo campo fecha_termino_display
-                const displayField = document.getElementById('fecha_termino_display');
-                if (displayField) displayField.value = fechaFormateada;
-            }
-            
-            actualizarPrecioFinal(precioConvenio);
-        })
-        .catch(console.error);
-}
-
-function actualizarPrecioFinal(precioConvenio = null) {
-    if (precioConvenio === null) {
-        const text = document.getElementById('precio-convenio')?.textContent || '$0';
-        precioConvenio = parseInt(text.replace(/\D/g, '')) || 0;
-    }
-    
-    const descuento = parseInt(document.getElementById('descuento_manual')?.value || '0');
-    const total = Math.max(0, precioConvenio - descuento);
-    
-    document.getElementById('desc-manual-display').textContent = '-$' + descuento.toLocaleString('es-CL');
-    document.getElementById('precio-total').textContent = '$' + total.toLocaleString('es-CL');
-    document.getElementById('precio-final-oculto').value = total;
-    
-    // Sincronizar con resumen en Paso 3
-    const resumenPrecio = document.getElementById('resumen-precio-final');
-    if (resumenPrecio) resumenPrecio.textContent = '$' + total.toLocaleString('es-CL');
-}
-
-// ===== RESUMEN =====
-function actualizarNombreCliente() {
-    const nombres = document.getElementById('nombres')?.value || '';
-    const apellido = document.getElementById('apellido_paterno')?.value || '';
-    document.getElementById('cliente-nombre').textContent = (nombres + ' ' + apellido).trim() || 'Ingrese datos en Paso 1';
-}
-
-function actualizarResumenPaso3() {
-    const nombres = document.getElementById('nombres')?.value || '';
-    const apellido = document.getElementById('apellido_paterno')?.value || '';
-    const membresiaEl = document.getElementById('id_membresia');
-    const convenioEl = document.getElementById('id_convenio');
-    const motivoEl = document.getElementById('id_motivo_descuento');
-    const descuento = parseInt(document.getElementById('descuento_manual')?.value || '0');
-    const precioFinal = document.getElementById('precio-total')?.textContent || '$0';
-    
-    document.getElementById('resumen-cliente').textContent = (nombres + ' ' + apellido).trim() || '-';
-    document.getElementById('resumen-membresia').textContent = membresiaEl?.options[membresiaEl.selectedIndex]?.text || '-';
-    document.getElementById('resumen-convenio').textContent = convenioEl?.value ? convenioEl.options[convenioEl.selectedIndex]?.text : 'No';
-    document.getElementById('resumen-motivo').textContent = motivoEl?.value ? motivoEl.options[motivoEl.selectedIndex]?.text : '-';
-    document.getElementById('resumen-desc-manual').textContent = '-$' + descuento.toLocaleString('es-CL');
-    document.getElementById('resumen-precio-final').textContent = precioFinal;
-}
-
-// ===== TIPO DE PAGO =====
-function actualizarTipoPago() {
-    const tipo = document.getElementById('tipo_pago').value;
-    const precioFinal = parseInt(document.getElementById('precio-final-oculto')?.value || '0');
-    
-    document.getElementById('seccion-monto').style.display = 'none';
-    document.getElementById('seccion-mixto').style.display = 'none';
-    document.getElementById('info-adicional').style.display = 'none';
-    document.getElementById('seccion-restante').style.display = 'none';
-    
-    const monto = document.getElementById('monto_abonado');
-    const label = document.getElementById('label-monto');
-    const hint = document.getElementById('hint-monto');
-    const alert = document.getElementById('alert-tipo-pago');
-    
-    if (tipo === 'completo') {
-        document.getElementById('seccion-monto').style.display = 'block';
-        monto.value = precioFinal;
-        monto.readOnly = true;
-        label.textContent = 'Monto Total';
-        hint.textContent = 'Pago completo';
-        document.getElementById('info-adicional').style.display = 'block';
-        alert.className = 'alert alert-success';
-        alert.innerHTML = '<i class="fas fa-check-circle"></i> Pago completo: $' + precioFinal.toLocaleString('es-CL');
-    } 
-    else if (tipo === 'parcial') {
-        document.getElementById('seccion-monto').style.display = 'block';
-        document.getElementById('seccion-restante').style.display = 'block';
-        monto.value = '';
-        monto.readOnly = false;
-        label.textContent = 'Monto a Abonar';
-        hint.textContent = 'Total a pagar: $' + precioFinal.toLocaleString('es-CL');
-        document.getElementById('monto-restante-display').textContent = '$' + precioFinal.toLocaleString('es-CL');
-        document.getElementById('info-adicional').style.display = 'block';
-        alert.className = 'alert alert-info';
-        alert.innerHTML = '<i class="fas fa-info-circle"></i> Pago parcial - Ingrese el monto a abonar';
-    } 
-    else if (tipo === 'pendiente') {
-        document.getElementById('info-adicional').style.display = 'block';
-        alert.className = 'alert alert-warning';
-        alert.innerHTML = '<i class="fas fa-clock"></i> Sin pago - Total pendiente: $' + precioFinal.toLocaleString('es-CL');
-    } 
-    else if (tipo === 'mixto') {
-        document.getElementById('seccion-mixto').style.display = 'block';
-        const tbody = document.querySelector('#tabla-pagos-mixto tbody');
-        if (tbody.children.length === 0) agregarLineaPago();
-        document.getElementById('info-adicional').style.display = 'block';
-        alert.className = 'alert alert-info';
-        alert.innerHTML = '<i class="fas fa-shuffle"></i> Pago mixto - Total: $' + precioFinal.toLocaleString('es-CL');
-    }
-}
-
-// ===== PAGO MIXTO =====
-function agregarLineaPago() {
-    const tbody = document.querySelector('#tabla-pagos-mixto tbody');
-    const fila = document.createElement('tr');
-    fila.innerHTML = `
-        <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarLineaPago(this)"><i class="fas fa-trash"></i></button></td>
-        <td><input type="number" class="form-control form-control-sm monto-mixto" min="0" placeholder="0"></td>
-        <td><select class="form-control form-control-sm metodo-mixto">
-            <option value="">-- Método --</option>
-            @foreach($metodos_pago as $metodo)
-            @if(strtolower($metodo->nombre) !== 'mixto')
-            <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
-            @endif
-            @endforeach
-        </select></td>
-        <td class="text-right"><span class="monto-display">$0</span></td>
-    `;
-    tbody.appendChild(fila);
-    console.log('[agregarLineaPago] Nueva línea agregada');
-}
-
-function eliminarLineaPago(btn) {
-    btn.closest('tr').remove();
-    setTimeout(recalcularTotalMixto, 10);
-}
-
-// La función calcularTotalMixto ahora es un alias definido al final del script
-
-// ===== ENVÍO DEL FORMULARIO =====
-// Variable para saber qué botón se presionó
-let botonPresionado = null;
-
-// La lógica de submit se configura dentro de DOMContentLoaded más abajo
-
-// ===== INICIALIZACIÓN =====
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DOM CARGADO - INICIALIZANDO ===');
-    
-    // Inicializar en paso 1
-    goToStep(1, true);
-    
-    // ===== EVENT LISTENERS PARA NAVEGACIÓN =====
-    // Botón Siguiente
-    const btnSiguiente = document.getElementById('btn-siguiente');
-    if (btnSiguiente) {
-        console.log('Botón Siguiente encontrado, agregando listener');
-        btnSiguiente.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Click en Siguiente');
-            nextStep();
-        });
-    } else {
-        console.error('Botón Siguiente NO encontrado');
-    }
-    
-    // Botón Anterior
-    const btnAnterior = document.getElementById('btn-anterior');
-    if (btnAnterior) {
-        btnAnterior.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Click en Anterior');
-            previousStep();
-        });
-    }
-    
-    // Botones de pasos
-    document.getElementById('step1-btn')?.addEventListener('click', () => goToStep(1, true));
-    document.getElementById('step2-btn')?.addEventListener('click', () => goToStep(2, false));
-    document.getElementById('step3-btn')?.addEventListener('click', () => goToStep(3, false));
-    
-    // ===== EVENT LISTENERS PARA FORMULARIO =====
-    document.getElementById('id_membresia')?.addEventListener('change', actualizarPrecio);
-    document.getElementById('id_convenio')?.addEventListener('change', actualizarPrecio);
-    document.getElementById('fecha_inicio')?.addEventListener('change', actualizarPrecio);
-    document.getElementById('descuento_manual')?.addEventListener('input', () => actualizarPrecioFinal());
-    document.getElementById('nombres')?.addEventListener('input', actualizarNombreCliente);
-    document.getElementById('apellido_paterno')?.addEventListener('input', actualizarNombreCliente);
-    document.getElementById('tipo_pago')?.addEventListener('change', actualizarTipoPago);
-    
-    // Calcular restante en pago parcial y validar máximo
-    document.getElementById('monto_abonado')?.addEventListener('input', function() {
-        const precioFinal = parseInt(document.getElementById('precio-final-oculto')?.value || '0');
-        let abonado = parseInt(this.value) || 0;
-        
-        // No permitir monto mayor al precio final
-        if (abonado > precioFinal) {
-            abonado = precioFinal;
-            this.value = precioFinal;
-        }
-        
-        const restante = Math.max(0, precioFinal - abonado);
-        document.getElementById('monto-restante-display').textContent = '$' + restante.toLocaleString('es-CL');
-        
-        // Actualizar alerta
-        const alert = document.getElementById('alert-tipo-pago');
-        if (abonado > 0 && abonado < precioFinal) {
-            alert.className = 'alert alert-info';
-            alert.innerHTML = `<i class="fas fa-info-circle"></i> Abono: $${abonado.toLocaleString('es-CL')} | Restante: $${restante.toLocaleString('es-CL')}`;
-        } else if (abonado >= precioFinal) {
-            alert.className = 'alert alert-success';
-            alert.innerHTML = '<i class="fas fa-check-circle"></i> Monto cubre el total';
-        }
+    @if($errors->any())
+    Swal.fire({
+        title: 'Errores en el formulario',
+        html: '<ul style="text-align:left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+        icon: 'error',
+        confirmButtonColor: '#e94560'
     });
-    
-    // Detectar cambios
-    document.getElementById('clienteForm')?.addEventListener('input', () => hayDatosNoGuardados = true);
-    
-    // Advertencia al salir
-    window.addEventListener('beforeunload', e => {
-        if (hayDatosNoGuardados) { e.preventDefault(); e.returnValue = ''; }
-    });
-    
-    document.getElementById('btn-cancelar')?.addEventListener('click', function(e) {
-        if (hayDatosNoGuardados) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: '¿Salir sin guardar?',
-                text: 'Los datos se perderán',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, salir',
-                cancelButtonText: 'Volver',
-                confirmButtonColor: '#dc3545'
-            }).then(result => {
-                if (result.isConfirmed) window.location.href = e.target.href;
-            });
-        }
-    });
-    
-    // ===== DELEGACIÓN DE EVENTOS PARA PAGO MIXTO =====
-    // Usar setTimeout para asegurar que el valor del input esté actualizado
-    const tablaMixto = document.getElementById('tabla-pagos-mixto');
-    if (tablaMixto) {
-        tablaMixto.addEventListener('input', function(e) {
-            if (e.target.classList.contains('monto-mixto')) {
-                // Usar setTimeout para esperar que el valor se actualice completamente
-                setTimeout(recalcularTotalMixto, 50);
-            }
-        });
-        
-        tablaMixto.addEventListener('change', function(e) {
-            if (e.target.classList.contains('metodo-mixto') || e.target.classList.contains('monto-mixto')) {
-                setTimeout(recalcularTotalMixto, 50);
-            }
-        });
-        console.log('[INIT] Delegación de eventos configurada para tabla-pagos-mixto');
-    }
-    
-    // ===== CONFIGURAR ENVÍO DEL FORMULARIO =====
-    // Detectar qué botón submit se presionó
-    document.querySelectorAll('button[type="submit"]').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            botonPresionado = this;
-            console.log('[SUBMIT] Botón presionado:', this.id, 'flujo:', this.dataset.flujo);
-            const flujo = this.dataset.flujo;
-            if (flujo) {
-                document.getElementById('flujo_cliente').value = flujo;
-            }
-        });
-    });
-    
-    const clienteForm = document.getElementById('clienteForm');
-    if (clienteForm) {
-        clienteForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('[SUBMIT] Formulario enviado');
-            
-            const flujo = document.getElementById('flujo_cliente').value;
-            console.log('[SUBMIT] Flujo:', flujo);
-            
-            // Validar según el paso actual y el flujo
-            let pasoAValidar = currentStep;
-            if (flujo === 'solo_cliente') pasoAValidar = 1;
-            else if (flujo === 'con_membresia') pasoAValidar = 2;
-            
-            const result = validarPaso(pasoAValidar);
-            if (!result.valido) {
-                mostrarErrores(result.errores);
-                return;
-            }
-            
-            // Si es con_membresia, también validar paso 1
-            if (flujo === 'con_membresia') {
-                const result1 = validarPaso(1);
-                if (!result1.valido) {
-                    mostrarErrores(result1.errores);
-                    return;
-                }
-            }
-            
-            // Si es completo, validar todos los pasos
-            if (flujo === 'completo') {
-                for (let i = 1; i <= 3; i++) {
-                    const r = validarPaso(i);
-                    if (!r.valido) {
-                        mostrarErrores(r.errores);
-                        return;
-                    }
-                }
-            }
-            
-            let titulo = 'Confirmar';
-            let mensaje = '';
-            let icono = 'question';
-            
-            if (flujo === 'solo_cliente') {
-                titulo = '¿Guardar solo cliente?';
-                mensaje = 'Se creará el cliente sin membresía ni pago.';
-                icono = 'info';
-            } else if (flujo === 'con_membresia') {
-                titulo = '¿Guardar cliente con membresía?';
-                mensaje = 'Se creará el cliente con membresía. El pago quedará pendiente.';
-                icono = 'warning';
-            } else {
-                titulo = '¿Confirmar registro completo?';
-                mensaje = 'Se registrará cliente, membresía y pago.';
-                icono = 'success';
-            }
-            
-            Swal.fire({
-                icon: icono,
-                title: titulo,
-                text: mensaje,
-                showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-check"></i> Sí, guardar',
-                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    Swal.fire({ 
-                        title: 'Guardando...', 
-                        html: '<i class="fas fa-spinner fa-spin fa-2x"></i><br><small>Por favor espere...</small>',
-                        allowOutsideClick: false, 
-                        showConfirmButton: false
-                    });
-                    hayDatosNoGuardados = false;
-                    // Enviar formulario nativamente
-                    clienteForm.submit();
-                }
-            });
-        });
-        console.log('[INIT] Listener de submit configurado');
-    }
-    
-    console.log('=== INICIALIZACIÓN COMPLETA ===');
+    @endif
 });
-
-// ===== FUNCIÓN RECALCULAR TOTAL MIXTO - VERSIÓN FINAL =====
-function recalcularTotalMixto() {
-    const precioFinal = parseInt(document.getElementById('precio-final-oculto')?.value || '0');
-    let total = 0;
-    const detalles = [];
-    
-    const filas = document.querySelectorAll('#tabla-pagos-mixto tbody tr');
-    
-    // Primero calculamos el total sin modificar
-    let totalPrevio = 0;
-    filas.forEach((fila) => {
-        const montoInput = fila.querySelector('.monto-mixto');
-        if (montoInput && montoInput.value !== '') {
-            totalPrevio += parseInt(montoInput.value, 10) || 0;
-        }
-    });
-    
-    filas.forEach((fila, idx) => {
-        const montoInput = fila.querySelector('.monto-mixto');
-        const metodoSelect = fila.querySelector('.metodo-mixto');
-        const montoDisplay = fila.querySelector('.monto-display');
-        
-        // Leer el valor actual del input
-        let monto = 0;
-        if (montoInput && montoInput.value !== '') {
-            monto = parseInt(montoInput.value, 10) || 0;
-        }
-        
-        // Validar que el total no exceda el precio final
-        const otrosMontos = totalPrevio - monto;
-        const maxPermitido = precioFinal - otrosMontos;
-        
-        if (monto > maxPermitido && maxPermitido >= 0) {
-            monto = maxPermitido;
-            montoInput.value = monto;
-            // Mostrar aviso
-            Swal.fire({
-                icon: 'warning',
-                title: 'Monto ajustado',
-                text: `El monto máximo permitido es $${maxPermitido.toLocaleString('es-CL')} para no exceder el precio final.`,
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
-        }
-        
-        const metodo = metodoSelect ? metodoSelect.value : '';
-        
-        console.log(`[MIXTO] Fila ${idx+1}: valor="${montoInput?.value}" => ${monto}`);
-        
-        // Actualizar display
-        if (montoDisplay) {
-            montoDisplay.textContent = '$' + monto.toLocaleString('es-CL');
-        }
-        
-        total += monto;
-        if (monto > 0) {
-            detalles.push({ monto, metodo });
-        }
-    });
-    
-    console.log(`[MIXTO] TOTAL CALCULADO: ${total}`);
-    
-    // Actualizar campos
-    const resumenTotal = document.getElementById('resumen-total-mixto');
-    const inputTotal = document.getElementById('total-mixto');
-    const inputDetalle = document.getElementById('detalle-pagos-mixto');
-    const alerta = document.getElementById('alerta-total-mixto');
-    
-    if (resumenTotal) resumenTotal.textContent = '$' + total.toLocaleString('es-CL');
-    if (inputTotal) inputTotal.value = total;
-    if (inputDetalle) inputDetalle.value = JSON.stringify(detalles);
-    
-    if (alerta) {
-        if (total === 0) {
-            alerta.className = 'alert alert-light';
-            alerta.innerHTML = '<strong>Total:</strong> $0';
-        } else if (total < precioFinal) {
-            alerta.className = 'alert alert-info';
-            alerta.innerHTML = `<strong>Abonado:</strong> $${total.toLocaleString('es-CL')} | <strong>Pendiente:</strong> $${(precioFinal - total).toLocaleString('es-CL')}`;
-        } else if (total === precioFinal) {
-            alerta.className = 'alert alert-success';
-            alerta.innerHTML = '<i class="fas fa-check"></i> <strong>Cubierto:</strong> $' + total.toLocaleString('es-CL');
-        } else {
-            alerta.className = 'alert alert-danger';
-            alerta.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> Excede el precio final';
-        }
-    }
-}
-
-// Alias para compatibilidad con código existente
-function calcularTotalMixto() {
-    recalcularTotalMixto();
-}
-
-function calcularTotalMixtoV3() {
-    recalcularTotalMixto();
-}
 </script>
-@endpush
+@stop

@@ -65,18 +65,29 @@ class MembresiaController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
+        Log::info('Creando membresía', $request->all());
+
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:membresias',
+            'nombre' => 'required|string|min:3|max:50|unique:membresias',
             'duracion_meses' => 'required|integer|min:0|max:12',
-            'duracion_dias' => 'required|integer|min:1',
+            'duracion_dias' => 'required|integer|min:1|max:365',
             'descripcion' => 'nullable|string|max:1000',
-            'precio_normal' => 'required|numeric|min:0',
-            'precio_convenio' => 'nullable|numeric|min:0|less_than:precio_normal',
+            'precio_normal' => 'required|numeric|min:1',
+            'precio_convenio' => 'nullable|numeric|min:0|lt:precio_normal',
             'activo' => 'boolean',
+        ], [
+            'nombre.required' => 'El nombre es obligatorio',
+            'nombre.min' => 'El nombre debe tener al menos 3 caracteres',
+            'nombre.unique' => 'Ya existe una membresía con este nombre',
+            'duracion_dias.required' => 'La duración en días es obligatoria',
+            'duracion_dias.min' => 'La duración mínima es 1 día',
+            'precio_normal.required' => 'El precio es obligatorio',
+            'precio_normal.min' => 'El precio debe ser mayor a 0',
+            'precio_convenio.lt' => 'El precio con convenio debe ser menor al precio normal',
         ]);
 
-        // Limpiar precio_convenio si viene vacío
-        if (empty($validated['precio_convenio'])) {
+        // Limpiar precio_convenio si viene vacío o es 0
+        if (empty($validated['precio_convenio']) || $validated['precio_convenio'] == 0) {
             $validated['precio_convenio'] = null;
         }
 

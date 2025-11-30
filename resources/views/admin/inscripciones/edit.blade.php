@@ -3,6 +3,7 @@
 @section('title', 'Editar Inscripción - EstóicosGym')
 
 @section('css')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 <script src="{{ asset('js/precio-formatter.js') }}"></script>
@@ -43,10 +44,10 @@
     .hero-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         color: white;
-        padding: 30px 35px;
-        border-radius: 16px;
-        margin-bottom: 25px;
-        box-shadow: 0 15px 40px rgba(26, 26, 46, 0.4);
+        padding: 20px 25px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3);
         position: relative;
         overflow: hidden;
     }
@@ -74,13 +75,13 @@
     }
     .hero-header-content { position: relative; z-index: 1; }
     .hero-title { 
-        font-size: 1.8em; 
-        font-weight: 800; 
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
+        font-size: 1.4em; 
+        font-weight: 700; 
+        margin-bottom: 5px;
+        letter-spacing: -0.3px;
     }
     .hero-subtitle { 
-        font-size: 1em; 
+        font-size: 0.9em; 
         opacity: 0.9;
         font-weight: 400;
     }
@@ -88,24 +89,24 @@
     /* MODERN CARDS */
     .modern-card {
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.06);
         border: none;
         overflow: hidden;
-        margin-bottom: 25px;
+        margin-bottom: 18px;
         transition: all 0.3s ease;
     }
     .modern-card:hover {
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
     .modern-card-header {
-        padding: 18px 25px;
+        padding: 12px 18px;
         border-bottom: 1px solid var(--gray-200);
-        font-weight: 700;
-        font-size: 1.05em;
+        font-weight: 600;
+        font-size: 0.95em;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     .modern-card-header.primary { 
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
@@ -131,31 +132,31 @@
         font-size: 1.1em;
     }
     .modern-card-body {
-        padding: 25px;
+        padding: 16px 18px;
     }
 
     /* FORM STYLES */
     .form-label {
         font-weight: 600;
         color: var(--gray-800);
-        margin-bottom: 8px;
+        margin-bottom: 5px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 0.9em;
+        gap: 6px;
+        font-size: 0.85em;
     }
     .form-label i {
         color: var(--info);
-        font-size: 0.9em;
+        font-size: 0.85em;
     }
     .form-control, .form-select, select.form-control {
-        border-radius: 10px;
+        border-radius: 8px;
         border: 2px solid var(--gray-200);
-        padding: 12px 15px;
+        padding: 8px 12px;
         transition: all 0.3s ease;
-        font-size: 0.95em;
+        font-size: 0.9em;
         height: auto;
-        min-height: 48px;
+        min-height: 38px;
         line-height: 1.4;
     }
     select.form-control {
@@ -180,11 +181,11 @@
     .input-group-text {
         background: var(--gray-200);
         border: 2px solid var(--gray-200);
-        border-radius: 10px 0 0 10px;
+        border-radius: 8px 0 0 8px;
         font-weight: 600;
         color: var(--gray-600);
-        padding: 12px 15px;
-        min-height: 48px;
+        padding: 8px 12px;
+        min-height: 38px;
     }
     .input-group .form-control {
         border-radius: 0 10px 10px 0;
@@ -193,14 +194,15 @@
 
     /* BUTTONS */
     .btn-modern {
-        border-radius: 10px;
-        padding: 12px 25px;
+        border-radius: 8px;
+        padding: 10px 20px;
         font-weight: 600;
         transition: all 0.3s ease;
         border: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        font-size: 0.9em;
     }
     .btn-modern:hover {
         transform: translateY(-2px);
@@ -227,13 +229,14 @@
         color: white;
     }
     .btn-outline-modern {
-        border-radius: 10px;
-        padding: 12px 25px;
+        border-radius: 8px;
+        padding: 10px 20px;
         font-weight: 600;
         border: 2px solid var(--gray-200);
         background: white;
         color: var(--gray-600);
         transition: all 0.3s ease;
+        font-size: 0.9em;
     }
     .btn-outline-modern:hover {
         border-color: var(--primary);
@@ -264,8 +267,8 @@
     .pause-option {
         background: white;
         border: 2px solid var(--gray-200);
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 10px;
+        padding: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
         text-align: center;
@@ -290,14 +293,14 @@
         background: linear-gradient(135deg, rgba(233, 69, 96, 0.08) 0%, rgba(233, 69, 96, 0.04) 100%);
     }
     .pause-option-icon {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 15px;
-        font-size: 1.3em;
+        margin: 0 auto 10px;
+        font-size: 1.1em;
     }
     .pause-option-icon.days {
         background: rgba(67, 97, 238, 0.12);
@@ -321,59 +324,61 @@
     /* PAUSE INFO BOX */
     .pause-info-box {
         background: var(--gray-100);
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 20px;
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 15px;
     }
     .pause-info-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 0;
+        gap: 10px;
+        padding: 8px 0;
         border-bottom: 1px solid var(--gray-200);
     }
     .pause-info-item:last-child {
         border-bottom: none;
     }
     .pause-info-item i {
-        width: 35px;
-        height: 35px;
-        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: white;
         color: var(--info);
+        font-size: 0.85em;
     }
 
     /* PAUSE COUNTER */
     .pause-counter {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         background: var(--gray-100);
-        padding: 15px 20px;
-        border-radius: 12px;
-        margin-top: 20px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-top: 15px;
     }
     .pause-counter-number {
-        font-size: 2em;
+        font-size: 1.6em;
         font-weight: 800;
         color: var(--info);
     }
     .pause-counter-label {
-        font-size: 0.9em;
+        font-size: 0.85em;
         color: var(--gray-600);
     }
 
     /* ALERT MODERN */
     .alert-modern {
-        border-radius: 12px;
-        padding: 15px 20px;
+        border-radius: 10px;
+        padding: 12px 16px;
         border: none;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        font-size: 0.9em;
     }
     .alert-modern.warning {
         background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
@@ -476,25 +481,25 @@
     .info-display-card {
         display: flex;
         align-items: center;
-        gap: 15px;
-        padding: 15px;
+        gap: 12px;
+        padding: 12px;
         background: var(--gray-100);
-        border-radius: 12px;
+        border-radius: 10px;
         border: 1px solid var(--gray-200);
     }
     .info-display-card.compact {
-        padding: 12px;
+        padding: 10px;
     }
     .info-display-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(67, 97, 238, 0.12);
         color: var(--info);
-        font-size: 1.2em;
+        font-size: 1em;
         flex-shrink: 0;
     }
     .info-display-icon.small {
@@ -545,27 +550,27 @@
     /* MODE TABS */
     .mode-tabs {
         display: flex;
-        gap: 10px;
-        margin-bottom: 25px;
+        gap: 8px;
+        margin-bottom: 18px;
         background: var(--gray-100);
-        padding: 8px;
-        border-radius: 16px;
+        padding: 6px;
+        border-radius: 12px;
     }
     .mode-tab {
         flex: 1;
-        padding: 16px 24px;
+        padding: 12px 18px;
         border: none;
         background: transparent;
-        border-radius: 12px;
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 0.95em;
+        font-size: 0.88em;
         color: var(--gray-600);
         cursor: pointer;
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
     }
     .mode-tab:hover {
         background: rgba(255,255,255,0.5);
@@ -599,8 +604,8 @@
     .plan-card {
         background: white;
         border: 2px solid var(--gray-200);
-        border-radius: 16px;
-        padding: 20px;
+        border-radius: 12px;
+        padding: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
@@ -641,16 +646,16 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
     .plan-card-name {
         font-weight: 700;
-        font-size: 1.1em;
+        font-size: 1em;
         color: var(--gray-800);
     }
     .plan-card-price {
         font-weight: 800;
-        font-size: 1.3em;
+        font-size: 1.15em;
         color: var(--success);
     }
     .plan-card-duration {
@@ -683,16 +688,17 @@
     /* RESUMEN CAMBIO */
     .cambio-resumen {
         background: linear-gradient(135deg, var(--gray-100) 0%, white 100%);
-        border-radius: 16px;
-        padding: 25px;
+        border-radius: 12px;
+        padding: 16px;
         border: 2px solid var(--gray-200);
     }
     .cambio-resumen-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 0;
+        padding: 8px 0;
         border-bottom: 1px solid var(--gray-200);
+        font-size: 0.9em;
     }
     .cambio-resumen-row:last-child {
         border-bottom: none;
@@ -794,6 +800,41 @@
             transform: translateX(100%);
             opacity: 0;
         }
+    }
+
+    /* DROPDOWN DE BÚSQUEDA TRASPASO */
+    #resultadosBusquedaTraspaso {
+        position: fixed !important;
+        background: #fff;
+        border: 2px solid #9b59b6;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        z-index: 999999 !important;
+        min-width: 450px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    #resultadosBusquedaTraspaso.dropdown-arriba {
+        border-radius: 12px 12px 12px 12px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.25), 0 5px 20px rgba(0,0,0,0.15);
+    }
+    #resultadosBusquedaTraspaso.dropdown-abajo {
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    }
+    #resultadosBusquedaTraspaso .cliente-resultado-item {
+        display: block;
+        padding: 14px 18px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        transition: all 0.2s;
+        background: #fff;
+    }
+    #resultadosBusquedaTraspaso .cliente-resultado-item:hover {
+        background: linear-gradient(135deg, #f8f4ff 0%, #f0e6ff 100%) !important;
+    }
+    #resultadosBusquedaTraspaso .cliente-resultado-item:last-child {
+        border-bottom: none;
     }
 </style>
 @stop
@@ -1525,6 +1566,9 @@
     <!-- ========================================== -->
     <!-- MODO 3: TRASPASO DE MEMBRESÍA             -->
     <!-- ========================================== -->
+    @php
+        $infoTraspaso = $inscripcion->getInfoTraspaso();
+    @endphp
     <div class="mode-content" id="modo-traspaso">
         <div class="row">
             <!-- Columna Principal: Búsqueda de Cliente -->
@@ -1535,57 +1579,98 @@
                         <span>Traspasar Membresía</span>
                     </div>
                     <div class="modern-card-body">
-                        <div class="alert-modern warning mb-4">
+                        <!-- Alerta de deuda pendiente -->
+                        @if($infoTraspaso['tiene_deuda'])
+                        <div class="alert-modern danger mb-3">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>⚠️ Deuda Pendiente</strong>
+                                <p class="mb-1">Esta inscripción tiene un saldo pendiente de <strong>${{ number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') }}</strong></p>
+                                <small>Pagado: ${{ number_format($infoTraspaso['monto_pagado'], 0, ',', '.') }} de ${{ number_format($infoTraspaso['monto_total'], 0, ',', '.') }} ({{ round($infoTraspaso['porcentaje_pagado']) }}%)</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Opciones de flexibilidad -->
+                        <div class="card mb-3" style="border: 2px solid var(--warning); border-radius: 10px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+                            <div class="card-body py-2">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="ignorarDeudaCheck" onchange="toggleOpcionesDeuda()">
+                                    <label class="form-check-label fw-bold" for="ignorarDeudaCheck">
+                                        <i class="fas fa-unlock me-1"></i> Ignorar requisito de pago completo
+                                    </label>
+                                    <small class="d-block text-muted">Permite traspasar aunque exista deuda pendiente</small>
+                                </div>
+                                
+                                <div id="opcionTransferirDeuda" style="display: none; margin-left: 24px; padding-top: 8px; border-top: 1px dashed #d97706;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="transferirDeudaCheck" checked>
+                                        <label class="form-check-label" for="transferirDeudaCheck">
+                                            <i class="fas fa-exchange-alt me-1"></i> Transferir deuda al nuevo cliente
+                                        </label>
+                                        <small class="d-block text-muted">El nuevo cliente asumirá la deuda de ${{ number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        <div class="alert-modern success mb-3">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <strong>✓ Pagos al día</strong>
+                                <p class="mb-0">Esta inscripción está completamente pagada. Puede traspasar sin restricciones.</p>
+                            </div>
+                        </div>
+                        @endif
+
+                        <div class="alert-modern warning mb-3">
                             <i class="fas fa-exclamation-triangle"></i>
                             <div>
                                 <strong>⚠️ Acción Irreversible</strong>
-                                <p class="mb-0">El traspaso transferirá la membresía y los días restantes a otro cliente. Esta acción no se puede deshacer.</p>
+                                <p class="mb-0" style="font-size: 0.85em;">El traspaso transferirá la membresía y los días restantes a otro cliente. Esta acción no se puede deshacer.</p>
                             </div>
                         </div>
 
-                        <div class="alert-modern info mb-4">
+                        <div class="alert-modern info mb-3">
                             <i class="fas fa-info-circle"></i>
                             <div>
                                 <strong>¿Cómo funciona el traspaso?</strong>
-                                <ul class="mb-0 ps-3" style="font-size: 0.9em;">
+                                <ul class="mb-0 ps-3" style="font-size: 0.85em;">
                                     <li>El cliente actual perderá acceso inmediatamente</li>
                                     <li>El nuevo cliente recibirá los <strong>{{ $inscripcion->dias_restantes }} días</strong> restantes</li>
-                                    <li>Solo se puede traspasar a clientes sin membresía activa</li>
-                                    <li>Se mantendrá registro del traspaso para auditoría</li>
+                                    <li>Solo clientes sin membresía activa pueden recibir traspaso</li>
+                                    <li>Se mantendrá registro para auditoría</li>
                                 </ul>
                             </div>
                         </div>
 
-                        <h6 class="mb-3 fw-bold"><i class="fas fa-search me-2"></i>Buscar Cliente Destino</h6>
+                        <h6 class="mb-2 fw-bold" style="font-size: 0.95em;"><i class="fas fa-search me-2"></i>Buscar Cliente Destino</h6>
                         
-                        <div class="position-relative mb-4">
+                        <div class="position-relative mb-3" id="busquedaTraspasoWrapper">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-user-plus"></i></span>
-                                <input type="text" class="form-control form-control-lg" 
+                                <input type="text" class="form-control" 
                                        id="buscarClienteTraspaso" 
                                        placeholder="Buscar por nombre, RUT, email o teléfono..."
-                                       autocomplete="off">
-                            </div>
-                            <div id="resultadosBusquedaTraspaso" class="dropdown-menu w-100" style="display: none; max-height: 300px; overflow-y: auto;">
+                                       autocomplete="off"
+                                       @if($infoTraspaso['tiene_deuda'] && !$infoTraspaso['puede_traspasar']) disabled @endif>
                             </div>
                         </div>
 
                         <!-- Cliente Seleccionado -->
-                        <div id="clienteSeleccionadoContainer" style="display: none;">
-                            <h6 class="mb-3 fw-bold"><i class="fas fa-user-check me-2"></i>Cliente Seleccionado</h6>
-                            <div class="card" style="border: 2px solid var(--success); border-radius: 12px;">
-                                <div class="card-body">
+                        <div id="clienteSeleccionadoContainer" style="display: none;" class="mb-3">
+                            <h6 class="mb-2 fw-bold" style="font-size: 0.95em;"><i class="fas fa-user-check me-2 text-success"></i>Cliente Seleccionado</h6>
+                            <div class="card" style="border: 2px solid #28a745; border-radius: 12px; background: linear-gradient(135deg, #f0fff4 0%, #dcfce7 100%);">
+                                <div class="card-body py-3">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="stat-icon success" style="width: 60px; height: 60px; font-size: 1.5em;">
+                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.3em;">
                                             <i class="fas fa-user"></i>
                                         </div>
                                         <div class="flex-grow-1">
-                                            <h5 class="mb-1" id="clienteDestinoNombre"></h5>
-                                            <p class="text-muted mb-0" id="clienteDestinoRut"></p>
-                                            <small class="text-muted" id="clienteDestinoEmail"></small>
+                                            <h6 class="mb-0 fw-bold" id="clienteDestinoNombre" style="font-size: 1em; color: #1a1a2e;"></h6>
+                                            <small class="text-muted" id="clienteDestinoRut"></small>
                                         </div>
-                                        <span class="badge" id="clienteDestinoBadge" style="font-size: 0.85em;"></span>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="limpiarClienteTraspaso()">
+                                        <span class="badge" id="clienteDestinoBadge" style="font-size: 0.75em;"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="limpiarClienteTraspaso()" title="Quitar selección">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
@@ -1595,13 +1680,13 @@
                         </div>
 
                         <!-- Motivo del traspaso -->
-                        <div class="mt-4" id="motivoTraspasoContainer" style="display: none;">
+                        <div class="mt-3" id="motivoTraspasoContainer" style="display: none;">
                             <label class="form-label">
                                 <i class="fas fa-comment-alt"></i> Motivo del traspaso <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control" id="motivoTraspaso" rows="3" 
-                                      placeholder="Ej: El cliente no puede continuar asistiendo y cede la membresía a un familiar..."
-                                      required></textarea>
+                            <textarea class="form-control" id="motivoTraspaso" rows="2" 
+                                      placeholder="Ej: El cliente cede la membresía a un familiar..."
+                                      required style="font-size: 0.9em;"></textarea>
                             <small class="text-muted">Este registro quedará guardado para auditoría.</small>
                         </div>
                     </div>
@@ -1619,7 +1704,7 @@
                         <div class="cambio-resumen">
                             <div class="cambio-resumen-row">
                                 <span class="cambio-resumen-label">De Cliente</span>
-                                <span class="cambio-resumen-value">{{ $inscripcion->cliente->nombre }} {{ $inscripcion->cliente->apellido }}</span>
+                                <span class="cambio-resumen-value">{{ $inscripcion->cliente->nombres }} {{ $inscripcion->cliente->apellido_paterno }}</span>
                             </div>
                             <div class="cambio-resumen-row">
                                 <span class="cambio-resumen-label">Membresía</span>
@@ -1635,11 +1720,34 @@
                                 <span class="cambio-resumen-label">Vencimiento</span>
                                 <span class="cambio-resumen-value">{{ $inscripcion->fecha_vencimiento->format('d/m/Y') }}</span>
                             </div>
-                            <div class="cambio-resumen-row" id="resumenClienteDestino" style="display: none; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px;">
+                            
+                            @if($infoTraspaso['tiene_deuda'])
+                            <div class="cambio-resumen-row" style="background: rgba(233, 69, 96, 0.08); margin: 8px -16px; padding: 8px 16px;">
+                                <span class="cambio-resumen-label" style="color: var(--accent);">
+                                    <i class="fas fa-exclamation-circle me-1"></i> Deuda
+                                </span>
+                                <span class="cambio-resumen-value" style="color: var(--accent);">
+                                    ${{ number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') }}
+                                </span>
+                            </div>
+                            @endif
+                            
+                            <div class="cambio-resumen-row" id="resumenClienteDestino" style="display: none; border-top: 2px solid var(--gray-200); padding-top: 8px; margin-top: 8px;">
                                 <span class="cambio-resumen-label fw-bold">
                                     <i class="fas fa-arrow-right me-1"></i> A Cliente
                                 </span>
                                 <span class="cambio-resumen-value" id="resumenNombreDestino" style="color: #9b59b6;"></span>
+                            </div>
+                            
+                            <div id="resumenDeudaTransferida" style="display: none;">
+                                <div class="cambio-resumen-row" style="background: rgba(240, 165, 0, 0.1); margin: 8px -16px; padding: 8px 16px;">
+                                    <span class="cambio-resumen-label" style="color: #d97706;">
+                                        <i class="fas fa-exchange-alt me-1"></i> Deuda a transferir
+                                    </span>
+                                    <span class="cambio-resumen-value" style="color: #d97706;">
+                                        ${{ number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -1649,7 +1757,7 @@
                             <i class="fas fa-exchange-alt me-2"></i> Confirmar Traspaso
                         </button>
                         
-                        <p class="text-muted text-center mt-2" style="font-size: 0.8em;">
+                        <p class="text-muted text-center mt-2" style="font-size: 0.75em;">
                             <i class="fas fa-history me-1"></i>
                             Se guardará registro completo del traspaso
                         </p>
@@ -1722,6 +1830,10 @@
             </div>
         </div>
     </div>
+
+<!-- Dropdown de resultados de búsqueda - FUERA de cualquier contenedor para máximo z-index -->
+<div id="resultadosBusquedaTraspaso" style="display: none;"></div>
+
 @stop
 
 @section('js')
@@ -2379,9 +2491,87 @@ document.addEventListener('DOMContentLoaded', function() {
 let clienteDestinoSeleccionado = null;
 let timeoutBusqueda = null;
 
-// Buscar clientes para traspaso
+// Referencias principales
 const inputBusqueda = document.getElementById('buscarClienteTraspaso');
 const resultadosContainer = document.getElementById('resultadosBusquedaTraspaso');
+const ignorarDeudaCheck = document.getElementById('ignorarDeudaCheck');
+const transferirDeudaCheck = document.getElementById('transferirDeudaCheck');
+const opcionTransferirDeuda = document.getElementById('opcionTransferirDeuda');
+const resumenDeudaTransferida = document.getElementById('resumenDeudaTransferida');
+
+// Función para toggle de opciones de deuda
+function toggleOpcionesDeuda() {
+    if (!ignorarDeudaCheck) return;
+    
+    const isChecked = ignorarDeudaCheck.checked;
+    
+    // Mostrar/ocultar opción de transferir deuda
+    if (opcionTransferirDeuda) {
+        opcionTransferirDeuda.style.display = isChecked ? 'block' : 'none';
+    }
+    
+    // Habilitar/deshabilitar el buscador de clientes
+    if (inputBusqueda) {
+        inputBusqueda.disabled = !isChecked && inputBusqueda.hasAttribute('disabled');
+        // Si se activa el checkbox, habilitar el buscador siempre
+        if (isChecked) {
+            inputBusqueda.disabled = false;
+        }
+    }
+    
+    // Actualizar resumen de deuda transferida
+    actualizarResumenDeuda();
+}
+
+// Función para actualizar resumen de deuda
+function actualizarResumenDeuda() {
+    if (!resumenDeudaTransferida) return;
+    
+    const mostrarDeuda = ignorarDeudaCheck && ignorarDeudaCheck.checked && 
+                         transferirDeudaCheck && transferirDeudaCheck.checked &&
+                         clienteDestinoSeleccionado;
+    
+    resumenDeudaTransferida.style.display = mostrarDeuda ? 'block' : 'none';
+}
+
+// Listener para el checkbox de transferir deuda
+if (transferirDeudaCheck) {
+    transferirDeudaCheck.addEventListener('change', actualizarResumenDeuda);
+}
+
+// Función para posicionar el dropdown - detecta espacio disponible
+function posicionarDropdown() {
+    const wrapper = document.getElementById('busquedaTraspasoWrapper');
+    if (!wrapper || !resultadosContainer) return;
+    
+    const rect = wrapper.getBoundingClientRect();
+    const dropdownHeight = 400; // max-height del dropdown
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // Resetear estilos
+    resultadosContainer.style.top = 'auto';
+    resultadosContainer.style.bottom = 'auto';
+    
+    // Determinar si hay más espacio arriba o abajo
+    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        // Mostrar ARRIBA del input
+        resultadosContainer.style.bottom = (viewportHeight - rect.top + 5) + 'px';
+        resultadosContainer.style.maxHeight = Math.min(spaceAbove - 20, 400) + 'px';
+        resultadosContainer.classList.add('dropdown-arriba');
+        resultadosContainer.classList.remove('dropdown-abajo');
+    } else {
+        // Mostrar ABAJO del input (por defecto)
+        resultadosContainer.style.top = (rect.bottom + 5) + 'px';
+        resultadosContainer.style.maxHeight = Math.min(spaceBelow - 20, 400) + 'px';
+        resultadosContainer.classList.add('dropdown-abajo');
+        resultadosContainer.classList.remove('dropdown-arriba');
+    }
+    
+    resultadosContainer.style.left = rect.left + 'px';
+    resultadosContainer.style.width = Math.max(rect.width, 450) + 'px';
+}
 
 if (inputBusqueda) {
     inputBusqueda.addEventListener('input', function() {
@@ -2394,8 +2584,16 @@ if (inputBusqueda) {
         }
         
         timeoutBusqueda = setTimeout(() => {
+            posicionarDropdown();
             buscarClientesTraspaso(query);
         }, 300);
+    });
+    
+    // Reposicionar al hacer scroll
+    window.addEventListener('scroll', function() {
+        if (resultadosContainer.style.display === 'block') {
+            posicionarDropdown();
+        }
     });
     
     // Cerrar resultados al hacer clic fuera
@@ -2419,9 +2617,10 @@ function buscarClientesTraspaso(query) {
             renderizarResultadosTraspaso(data.clientes);
         } else {
             resultadosContainer.innerHTML = `
-                <div class="dropdown-item text-muted">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No se encontraron clientes disponibles
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <i class="fas fa-search" style="font-size: 2em; color: #ccc; margin-bottom: 10px;"></i>
+                    <p style="margin: 0; font-size: 0.9em;">No se encontraron clientes disponibles</p>
+                    <small style="color: #999;">Intenta con otro término de búsqueda</small>
                 </div>
             `;
             resultadosContainer.style.display = 'block';
@@ -2430,9 +2629,9 @@ function buscarClientesTraspaso(query) {
     .catch(error => {
         console.error('Error buscando clientes:', error);
         resultadosContainer.innerHTML = `
-            <div class="dropdown-item text-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Error al buscar clientes
+            <div style="padding: 20px; text-align: center; color: #dc3545;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2em; margin-bottom: 10px;"></i>
+                <p style="margin: 0; font-size: 0.9em;">Error al buscar clientes</p>
             </div>
         `;
         resultadosContainer.style.display = 'block';
@@ -2442,64 +2641,115 @@ function buscarClientesTraspaso(query) {
 function renderizarResultadosTraspaso(clientes) {
     let html = '';
     
-    clientes.forEach(cliente => {
-        const badgeColor = cliente.estado === 'nuevo' ? 'success' : 'secondary';
-        const badgeText = cliente.estado === 'nuevo' ? 'Nuevo' : 'Sin membresía activa';
+    // Guardar clientes en variable global para acceso
+    window.clientesTraspasoTemp = clientes;
+    
+    clientes.forEach((cliente, index) => {
+        const badgeColor = cliente.estado === 'nuevo' ? 'success' : 'info';
+        const badgeText = cliente.estado === 'nuevo' ? 'Cliente Nuevo' : 'Sin membresía';
         
         html += `
-            <a href="#" class="dropdown-item py-2" onclick="seleccionarClienteTraspaso(${JSON.stringify(cliente).replace(/"/g, '&quot;')})">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas fa-user-circle fa-2x text-muted"></i>
+            <div class="cliente-resultado-item" 
+                 data-index="${index}"
+                 style="display: block; padding: 14px 18px; cursor: pointer; border-bottom: 1px solid #eee; transition: all 0.2s;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2em; flex-shrink: 0;">
+                        ${cliente.nombre_completo.charAt(0).toUpperCase()}
                     </div>
-                    <div class="flex-grow-1">
-                        <strong>${cliente.nombre_completo}</strong>
-                        <br>
-                        <small class="text-muted">
-                            RUT: ${cliente.rut || 'N/A'} | ${cliente.email || cliente.telefono || 'Sin contacto'}
-                        </small>
-                        ${cliente.ultima_membresia ? `<br><small class="text-muted">Última: ${cliente.ultima_membresia}</small>` : ''}
+                    <div class="flex-grow-1" style="min-width: 0;">
+                        <div style="font-weight: 600; font-size: 1em; color: #1a1a2e;">${cliente.nombre_completo}</div>
+                        <div style="font-size: 0.85em; color: #666;">
+                            <i class="fas fa-id-card me-1"></i> ${cliente.rut || 'Sin RUT'}
+                        </div>
+                        ${cliente.email ? `<div style="font-size: 0.8em; color: #888;"><i class="fas fa-envelope me-1"></i>${cliente.email}</div>` : ''}
+                        ${cliente.ultima_membresia ? `<div style="font-size: 0.75em; color: #999;"><i class="fas fa-history me-1"></i>Última: ${cliente.ultima_membresia}</div>` : ''}
                     </div>
-                    <span class="badge bg-${badgeColor}">${badgeText}</span>
+                    <span class="badge bg-${badgeColor}" style="font-size: 0.75em; padding: 6px 12px; flex-shrink: 0;">${badgeText}</span>
                 </div>
-            </a>
+            </div>
         `;
     });
     
     resultadosContainer.innerHTML = html;
     resultadosContainer.style.display = 'block';
+    
+    // Agregar event listeners
+    document.querySelectorAll('.cliente-resultado-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = '#f8f4ff';
+            this.style.transform = 'translateX(5px)';
+        });
+        item.addEventListener('mouseleave', function() {
+            this.style.background = '#fff';
+            this.style.transform = 'translateX(0)';
+        });
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(this.dataset.index);
+            console.log('Click en cliente index:', index);
+            const cliente = window.clientesTraspasoTemp[index];
+            console.log('Datos del cliente:', cliente);
+            if (cliente) {
+                seleccionarClienteTraspaso(cliente);
+            }
+        });
+    });
 }
 
 function seleccionarClienteTraspaso(cliente) {
-    clienteDestinoSeleccionado = cliente;
+    console.log('Seleccionando cliente:', cliente);
     
-    // Mostrar cliente seleccionado
-    document.getElementById('clienteDestinoNombre').textContent = cliente.nombre_completo;
-    document.getElementById('clienteDestinoRut').textContent = 'RUT: ' + (cliente.rut || 'N/A');
-    document.getElementById('clienteDestinoEmail').textContent = cliente.email || cliente.telefono || '';
-    document.getElementById('clienteDestinoId').value = cliente.id;
-    
-    const badge = document.getElementById('clienteDestinoBadge');
-    if (cliente.estado === 'nuevo') {
-        badge.className = 'badge bg-success';
-        badge.textContent = 'Cliente Nuevo';
-    } else {
-        badge.className = 'badge bg-secondary';
-        badge.textContent = 'Sin membresía activa';
+    try {
+        clienteDestinoSeleccionado = cliente;
+        
+        // Mostrar cliente seleccionado
+        const nombreEl = document.getElementById('clienteDestinoNombre');
+        const rutEl = document.getElementById('clienteDestinoRut');
+        const idEl = document.getElementById('clienteDestinoId');
+        const badgeEl = document.getElementById('clienteDestinoBadge');
+        
+        if (nombreEl) nombreEl.textContent = cliente.nombre_completo;
+        if (rutEl) rutEl.textContent = 'RUT: ' + (cliente.rut || 'N/A');
+        if (idEl) idEl.value = cliente.id;
+        
+        if (badgeEl) {
+            if (cliente.estado === 'nuevo') {
+                badgeEl.className = 'badge bg-success';
+                badgeEl.textContent = 'Cliente Nuevo';
+            } else {
+                badgeEl.className = 'badge bg-info';
+                badgeEl.textContent = 'Sin membresía';
+            }
+        }
+        
+        // Actualizar resumen lateral
+        const resumenNombre = document.getElementById('resumenNombreDestino');
+        const resumenCliente = document.getElementById('resumenClienteDestino');
+        if (resumenNombre) resumenNombre.textContent = cliente.nombre_completo;
+        if (resumenCliente) resumenCliente.style.display = 'flex';
+        
+        // Mostrar contenedores
+        const contenedorCliente = document.getElementById('clienteSeleccionadoContainer');
+        const contenedorMotivo = document.getElementById('motivoTraspasoContainer');
+        const btnConfirmar = document.getElementById('btnConfirmarTraspaso');
+        
+        if (contenedorCliente) contenedorCliente.style.display = 'block';
+        if (contenedorMotivo) contenedorMotivo.style.display = 'block';
+        if (btnConfirmar) btnConfirmar.disabled = false;
+        
+        // Ocultar resultados y limpiar búsqueda
+        if (resultadosContainer) resultadosContainer.style.display = 'none';
+        const inputBusq = document.getElementById('buscarClienteTraspaso');
+        if (inputBusq) inputBusq.value = '';
+        
+        // Actualizar resumen de deuda si aplica
+        actualizarResumenDeuda();
+        
+        console.log('Cliente seleccionado correctamente');
+    } catch (error) {
+        console.error('Error al seleccionar cliente:', error);
     }
-    
-    // Actualizar resumen
-    document.getElementById('resumenNombreDestino').textContent = cliente.nombre_completo;
-    document.getElementById('resumenClienteDestino').style.display = 'flex';
-    
-    // Mostrar contenedores
-    document.getElementById('clienteSeleccionadoContainer').style.display = 'block';
-    document.getElementById('motivoTraspasoContainer').style.display = 'block';
-    document.getElementById('btnConfirmarTraspaso').disabled = false;
-    
-    // Ocultar resultados y limpiar búsqueda
-    resultadosContainer.style.display = 'none';
-    document.getElementById('buscarClienteTraspaso').value = '';
 }
 
 function limpiarClienteTraspaso() {
@@ -2510,6 +2760,11 @@ function limpiarClienteTraspaso() {
     document.getElementById('resumenClienteDestino').style.display = 'none';
     document.getElementById('btnConfirmarTraspaso').disabled = true;
     document.getElementById('motivoTraspaso').value = '';
+    
+    // Ocultar resumen de deuda transferida
+    if (resumenDeudaTransferida) {
+        resumenDeudaTransferida.style.display = 'none';
+    }
 }
 
 // Confirmar traspaso
@@ -2520,6 +2775,8 @@ document.addEventListener('click', function(e) {
 });
 
 function ejecutarTraspaso() {
+    console.log('=== EJECUTAR TRASPASO LLAMADO ===');
+    
     if (!clienteDestinoSeleccionado) {
         Toast.error('Error', 'Debes seleccionar un cliente destino');
         return;
@@ -2532,41 +2789,122 @@ function ejecutarTraspaso() {
         return;
     }
     
-    // Confirmar
-    if (!confirm(`¿Confirmar traspaso de membresía a "${clienteDestinoSeleccionado.nombre_completo}"?\n\nEsta acción no se puede deshacer.`)) {
+    // Determinar si se ignora la deuda y si se transfiere
+    const ignorarDeuda = ignorarDeudaCheck ? ignorarDeudaCheck.checked : false;
+    const transferirDeuda = transferirDeudaCheck ? transferirDeudaCheck.checked : false;
+    
+    // Construir mensaje de confirmación
+    let mensajeConfirmacion = `¿Confirmar traspaso de membresía a "${clienteDestinoSeleccionado.nombre_completo}"?`;
+    let textoAdicional = '';
+    
+    if (ignorarDeuda && transferirDeuda) {
+        textoAdicional = '⚠️ La deuda pendiente se transferirá al nuevo cliente.';
+    } else if (ignorarDeuda && !transferirDeuda) {
+        textoAdicional = '⚠️ La deuda pendiente se condonará.';
+    }
+    
+    // Guardar valores en variables locales para usar en el callback
+    const clienteId = clienteDestinoSeleccionado.id;
+    const motivoTraspaso = motivo;
+    const ignDeuda = ignorarDeuda;
+    const transfDeuda = transferirDeuda;
+    
+    console.log('Datos a enviar:', { clienteId, motivoTraspaso, ignDeuda, transfDeuda });
+    
+    // Confirmar con SweetAlert
+    Swal.fire({
+        title: '¿Confirmar traspaso?',
+        html: `${mensajeConfirmacion}${textoAdicional ? '<br><br>' + textoAdicional : ''}<br><br><strong>Esta acción no se puede deshacer.</strong>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, traspasar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then(function(result) {
+        console.log('SweetAlert result:', result);
+        if (result.isConfirmed) {
+            console.log('=== CONFIRMADO - ENVIANDO FETCH ===');
+            enviarTraspaso(clienteId, motivoTraspaso, ignDeuda, transfDeuda);
+        }
+    });
+}
+
+function enviarTraspaso(clienteId, motivo, ignorarDeuda, transferirDeuda) {
+    console.log('=== ENVIANDO TRASPASO AL SERVIDOR ===');
+    
+    // Mostrar loading
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
+    
+    // Obtener token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                      document.querySelector('input[name="_token"]')?.value;
+    
+    if (!csrfToken) {
+        if (overlay) overlay.classList.remove('active');
+        Toast.error('Error', 'No se encontró el token CSRF. Recarga la página.');
         return;
     }
     
-    mostrarLoading(true);
+    const url = `/admin/inscripciones/${INSCRIPCION_UUID}/traspasar`;
+    const datos = {
+        id_cliente_destino: clienteId,
+        motivo_traspaso: motivo,
+        ignorar_deuda: ignorarDeuda,
+        transferir_deuda: transferirDeuda,
+    };
     
-    fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/traspasar`, {
+    console.log('URL:', url);
+    console.log('Datos:', datos);
+    console.log('CSRF:', csrfToken);
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
         },
-        body: JSON.stringify({
-            id_cliente_destino: clienteDestinoSeleccionado.id,
-            motivo_traspaso: motivo,
-        }),
+        body: JSON.stringify(datos),
     })
-    .then(response => response.json())
-    .then(data => {
-        mostrarLoading(false);
-        if (data.success) {
-            Toast.success('¡Traspaso Exitoso!', data.message);
-            setTimeout(() => {
-                window.location.href = data.redirect_url || '/admin/inscripciones';
-            }, 1500);
+    .then(function(response) {
+        console.log('Response status:', response.status);
+        return response.json().then(function(data) {
+            return { ok: response.ok, status: response.status, data: data };
+        });
+    })
+    .then(function(result) {
+        if (overlay) overlay.classList.remove('active');
+        console.log('Resultado:', result);
+        
+        if (result.ok && result.data.success) {
+            Swal.fire({
+                title: '¡Traspaso Exitoso!',
+                text: result.data.message,
+                icon: 'success',
+                confirmButtonText: 'Ver nueva inscripción'
+            }).then(function() {
+                window.location.href = result.data.redirect_url || '/admin/inscripciones';
+            });
         } else {
-            Toast.error('Error', data.message || 'No se pudo realizar el traspaso');
+            Swal.fire({
+                title: 'Error',
+                text: result.data.message || 'No se pudo realizar el traspaso',
+                icon: 'error'
+            });
         }
     })
-    .catch(error => {
-        mostrarLoading(false);
-        console.error('Error:', error);
-        Toast.error('Error de conexión', 'No se pudo procesar la solicitud');
+    .catch(function(error) {
+        if (overlay) overlay.classList.remove('active');
+        console.error('Error en fetch:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Error de conexión: ' + error.message,
+            icon: 'error'
+        });
     });
 }
 </script>

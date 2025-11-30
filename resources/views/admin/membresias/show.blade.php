@@ -2,12 +2,106 @@
 
 @section('title', $membresia->nombre . ' - EstóicosGym')
 
+@section('css')
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --accent-light: #ff6b6b;
+        --success: #00bf8e;
+        --success-dark: #00a67d;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --gray-100: #f8f9fa;
+        --gray-200: #e9ecef;
+        --gray-600: #6c757d;
+        --gray-800: #343a40;
+    }
+
+    /* ===== CARD STYLING ===== */
+    .card-primary .card-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    }
+
+    .card-info .card-header {
+        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
+    }
+
+    .card-success .card-header {
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    }
+
+    .card-header h3 {
+        color: white;
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box-icon.bg-accent {
+        background: var(--accent) !important;
+    }
+
+    .info-box-icon.bg-success-custom {
+        background: var(--success) !important;
+    }
+
+    .info-box-icon.bg-info-custom {
+        background: var(--info) !important;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-warning {
+        background: var(--warning);
+        border-color: var(--warning);
+        color: white;
+    }
+
+    /* ===== ALERT STYLING ===== */
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+        color: white;
+    }
+
+    .alert-success .close {
+        color: white;
+    }
+
+    /* ===== HELPER CLASSES ===== */
+    .text-accent {
+        color: var(--accent) !important;
+    }
+
+    .precio-grande {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--success);
+    }
+</style>
+@stop
+
 @section('content_header')
     <div class="row mb-4">
         <div class="col-sm-8">
             <h1 class="m-0">
-                <i class="fas fa-credit-card"></i> {{ $membresia->nombre }}
+                <i class="fas fa-credit-card text-accent"></i> {{ $membresia->nombre }}
             </h1>
+            <small class="text-muted">Detalles de la membresía</small>
         </div>
         <div class="col-sm-4 text-right">
             <a href="{{ route('admin.membresias.edit', $membresia) }}" class="btn btn-warning mr-2">
@@ -44,7 +138,7 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <div class="info-box">
-                        <span class="info-box-icon bg-info">
+                        <span class="info-box-icon bg-accent">
                             <i class="fas fa-tag"></i>
                         </span>
                         <div class="info-box-content">
@@ -56,7 +150,7 @@
 
                 <div class="col-md-6 mb-3">
                     <div class="info-box">
-                        <span class="info-box-icon bg-primary">
+                        <span class="info-box-icon bg-info-custom">
                             <i class="fas fa-calendar-days"></i>
                         </span>
                         <div class="info-box-content">
@@ -76,25 +170,30 @@
                         $precioActual = $membresia->precios->where('activo', true)->first() ?? $membresia->precios->last();
                     @endphp
                     <div class="info-box">
-                        <span class="info-box-icon bg-success">
+                        <span class="info-box-icon bg-success-custom">
                             <i class="fas fa-dollar-sign"></i>
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Precio Actual</span>
-                            <span class="info-box-number">
+                            <span class="info-box-number precio-grande">
                                 @if ($precioActual)
-                                    ${{ number_format($precioActual->precio_normal, 0, '.', '.') }}
+                                    ${{ number_format($precioActual->precio_normal, 0, ',', '.') }}
                                 @else
-                                    N/A
+                                    Sin precio
                                 @endif
                             </span>
+                            @if ($precioActual && $precioActual->precio_convenio)
+                                <small class="text-info">
+                                    <i class="fas fa-handshake"></i> Con convenio: ${{ number_format($precioActual->precio_convenio, 0, ',', '.') }}
+                                </small>
+                            @endif
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <div class="info-box">
-                        <span class="info-box-icon {{ $membresia->activo ? 'bg-success' : 'bg-secondary' }}">
+                        <span class="info-box-icon {{ $membresia->activo ? 'bg-success-custom' : 'bg-secondary' }}">
                             <i class="fas fa-toggle-{{ $membresia->activo ? 'on' : 'off' }}"></i>
                         </span>
                         <div class="info-box-content">
@@ -114,7 +213,7 @@
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <div class="form-group">
-                        <label class="form-label"><i class="fas fa-align-left"></i> Descripción</label>
+                        <label class="form-label"><i class="fas fa-align-left text-accent"></i> Descripción</label>
                         <div class="border rounded p-3 bg-light">
                             @if ($membresia->descripcion)
                                 {{ $membresia->descripcion }}

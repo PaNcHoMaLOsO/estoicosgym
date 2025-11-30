@@ -2,11 +2,132 @@
 
 @section('title', 'Membresías - Configuración EstóicosGym')
 
+@section('css')
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --accent-light: #ff6b6b;
+        --success: #00bf8e;
+        --success-dark: #00a67d;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --gray-100: #f8f9fa;
+        --gray-200: #e9ecef;
+        --gray-600: #6c757d;
+        --gray-800: #343a40;
+    }
+
+    /* ===== CARD STYLING ===== */
+    .card-primary .card-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    }
+
+    .card-header h3 {
+        color: white;
+    }
+
+    /* ===== TABLE STYLING ===== */
+    .table thead th {
+        background: var(--gray-100);
+        border-bottom: 2px solid var(--accent);
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(233, 69, 96, 0.05);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+        background: var(--accent-light);
+        border-color: var(--accent-light);
+    }
+
+    /* ===== BADGES ===== */
+    .badge-success {
+        background: var(--success);
+    }
+
+    .badge-info {
+        background: var(--info);
+    }
+
+    .badge-primary {
+        background: var(--accent);
+    }
+
+    /* ===== ALERT STYLING ===== */
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+        color: white;
+    }
+
+    .alert-success .close {
+        color: white;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+        color: white;
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
+        color: white;
+    }
+
+    .alert-info a {
+        color: white;
+        text-decoration: underline;
+    }
+
+    /* ===== HELPER CLASSES ===== */
+    .text-accent {
+        color: var(--accent) !important;
+    }
+
+    /* ===== PRECIO CELL ===== */
+    .precio-cell {
+        font-weight: 700;
+        color: var(--success);
+    }
+
+    .precio-convenio {
+        font-size: 0.85rem;
+        color: var(--info);
+    }
+</style>
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1><i class="fas fa-cog"></i> Membresías</h1>
-            <small class="text-muted">Gestión de planes y precios</small>
+            <h1><i class="fas fa-credit-card text-accent"></i> Membresías</h1>
+            <small class="text-muted">Gestión de planes y precios del gimnasio</small>
         </div>
         <div class="col-sm-6">
             <a href="{{ route('admin.membresias.create') }}" class="btn btn-primary float-right">
@@ -87,12 +208,14 @@
                                                 ->first() ?? $membresia->precios->last();
                                         @endphp
                                         @if ($precioActual)
-                                            <strong>${{ number_format($precioActual->precio_normal, 0, '.', '.') }}</strong>
+                                            <span class="precio-cell">${{ number_format($precioActual->precio_normal, 0, ',', '.') }}</span>
                                             @if ($precioActual->precio_convenio)
-                                                <br><small class="text-success">con convenio: ${{ number_format($precioActual->precio_convenio, 0, '.', '.') }}</small>
+                                                <br><small class="precio-convenio">
+                                                    <i class="fas fa-handshake"></i> ${{ number_format($precioActual->precio_convenio, 0, ',', '.') }}
+                                                </small>
                                             @endif
                                         @else
-                                            <span class="text-muted">N/A</span>
+                                            <span class="text-muted">Sin precio</span>
                                         @endif
                                     </td>
                                     <td>

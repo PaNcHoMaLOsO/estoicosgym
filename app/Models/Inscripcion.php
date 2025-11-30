@@ -428,10 +428,49 @@ class Inscripcion extends Model
     /**
      * Verificar si esta inscripción puede ser traspasada
      * Solo inscripciones activas o pausadas pueden traspasarse
+     * @param bool $ignorarDeuda Si es true, ignora la validación de deuda pendiente
      */
-    public function puedeTraspasarse()
+    public function puedeTraspasarse($ignorarDeuda = false)
     {
-        return in_array($this->id_estado, [100, 101]) && $this->dias_restantes > 0;
+        // Debe estar activa o pausada
+        if (!in_array($this->id_estado, [100, 101])) {
+            return false;
+        }
+        
+        // Debe tener días restantes
+        if ($this->dias_restantes <= 0) {
+            return false;
+        }
+        
+        // Si no se ignora la deuda, verificar que esté completamente pagada
+        if (!$ignorarDeuda && $this->monto_pendiente > 0) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Obtener información detallada de traspaso
+     * Incluye validaciones y montos de deuda si existen
+     */
+    public function getInfoTraspaso()
+    {
+        $estadoPago = $this->obtenerEstadoPago();
+        
+        return [
+            'puede_traspasar' => $this->puedeTraspasarse(false), // Sin ignorar deuda
+            'puede_traspasar_con_deuda' => $this->puedeTraspasarse(true), // Ignorando deuda
+            'tiene_deuda' => $estadoPago['pendiente'] > 0,
+            'monto_total' => $estadoPago['monto_total'],
+            'monto_pagado' => $estadoPago['total_abonado'],
+            'monto_pendiente' => $estadoPago['pendiente'],
+            'porcentaje_pagado' => $estadoPago['porcentaje_pagado'],
+            'estado_pago' => $estadoPago['estado'],
+            'dias_restantes' => $this->dias_restantes,
+            'membresia' => $this->membresia->nombre ?? 'N/A',
+            'fecha_vencimiento' => $this->fecha_vencimiento->format('d/m/Y'),
+        ];
     }
 
     /**

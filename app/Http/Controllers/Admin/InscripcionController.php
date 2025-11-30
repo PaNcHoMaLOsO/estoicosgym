@@ -426,7 +426,11 @@ class InscripcionController extends Controller
         $convenios = Convenio::all();
         $motivos = MotivoDescuento::all();
         $metodosPago = MetodoPago::where('activo', true)->get();
-        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago'));
+        
+        // Obtener información de traspaso para la sección de traspaso
+        $infoTraspaso = $inscripcion->getInfoTraspaso();
+        
+        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago', 'infoTraspaso'));
     }
 
     /**
@@ -838,14 +842,16 @@ class InscripcionController extends Controller
                 ->pluck('id_cliente')
                 ->toArray();
 
+            // Incluir todos los clientes (activos e inactivos) que no tienen membresía activa
             $clientes = Cliente::where('id', '!=', $inscripcion->id_cliente)
                 ->whereNotIn('id', $clientesConMembresiaActiva)
                 ->where(function($q) use ($query) {
-                    $q->where('nombre', 'LIKE', "%{$query}%")
-                      ->orWhere('apellido', 'LIKE', "%{$query}%")
-                      ->orWhere('rut', 'LIKE', "%{$query}%")
+                    $q->where('nombres', 'LIKE', "%{$query}%")
+                      ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
+                      ->orWhere('apellido_materno', 'LIKE', "%{$query}%")
+                      ->orWhere('run_pasaporte', 'LIKE', "%{$query}%")
                       ->orWhere('email', 'LIKE', "%{$query}%")
-                      ->orWhere('telefono', 'LIKE', "%{$query}%");
+                      ->orWhere('celular', 'LIKE', "%{$query}%");
                 })
                 ->limit(10)
                 ->get()
@@ -865,12 +871,13 @@ class InscripcionController extends Controller
                     
                     return [
                         'id' => $cliente->id,
-                        'nombre_completo' => $cliente->nombre . ' ' . $cliente->apellido,
-                        'rut' => $cliente->rut,
+                        'nombre_completo' => $cliente->nombres . ' ' . $cliente->apellido_paterno,
+                        'rut' => $cliente->run_pasaporte,
                         'email' => $cliente->email,
-                        'telefono' => $cliente->telefono,
+                        'telefono' => $cliente->celular,
                         'estado' => $estado,
                         'ultima_membresia' => $ultimaMembresia,
+                        'activo' => $cliente->activo,
                     ];
                 });
 
@@ -894,14 +901,46 @@ class InscripcionController extends Controller
      */
     public function traspasar(Request $request, Inscripcion $inscripcion)
     {
+        Log::info('=== INICIO TRASPASAR ===', [
+            'inscripcion_id' => $inscripcion->id,
+            'inscripcion_uuid' => $inscripcion->uuid,
+            'request_data' => $request->all()
+        ]);
+        
         try {
             $validated = $request->validate([
-                'id_cliente_destino' => 'required|exists:clientes,id|different:id_cliente_actual',
+                'id_cliente_destino' => 'required|exists:clientes,id',
                 'motivo_traspaso' => 'required|string|max:500',
+                'ignorar_deuda' => 'nullable|boolean',
+                'transferir_deuda' => 'nullable|boolean',
             ]);
+            
+            Log::info('Validación pasada', $validated);
+            
+            // Validar que no sea el mismo cliente
+            if ($validated['id_cliente_destino'] == $inscripcion->id_cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes traspasar la membresía al mismo cliente.',
+                ], 422);
+            }
+
+            $ignorarDeuda = $request->boolean('ignorar_deuda', false);
+            $transferirDeuda = $request->boolean('transferir_deuda', false);
 
             // Verificar que la inscripción puede ser traspasada
-            if (!$inscripcion->puedeTraspasarse()) {
+            if (!$inscripcion->puedeTraspasarse($ignorarDeuda)) {
+                $infoTraspaso = $inscripcion->getInfoTraspaso();
+                
+                if ($infoTraspaso['tiene_deuda']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta inscripción tiene una deuda pendiente de $' . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . '. Active la opción "Ignorar requisito de pago completo" si desea continuar.',
+                        'tiene_deuda' => true,
+                        'monto_pendiente' => $infoTraspaso['monto_pendiente'],
+                    ], 422);
+                }
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Esta inscripción no puede ser traspasada. Debe estar activa y tener días restantes.',
@@ -918,16 +957,21 @@ class InscripcionController extends Controller
                 ], 422);
             }
 
-            $inscripcion->load(['cliente', 'membresia']);
+            $inscripcion->load(['cliente', 'membresia', 'pagos']);
+            $infoTraspaso = $inscripcion->getInfoTraspaso();
 
             DB::beginTransaction();
 
             try {
                 // 1. Marcar inscripción original como "Traspasada" (estado 106)
+                $observacionTraspaso = "[" . now()->format('d/m/Y H:i') . "] Traspasada a: {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
+                if ($infoTraspaso['tiene_deuda'] && $ignorarDeuda) {
+                    $observacionTraspaso .= " | Deuda transferida: $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.');
+                }
+                
                 $inscripcion->update([
                     'id_estado' => 106, // Estado: Traspasada
-                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') 
-                        . "[" . now()->format('d/m/Y H:i') . "] Traspasada a: {$clienteDestino->nombre} {$clienteDestino->apellido}",
+                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') . $observacionTraspaso,
                 ]);
 
                 // 2. Crear nueva inscripción para el cliente destino
@@ -938,12 +982,12 @@ class InscripcionController extends Controller
                     'id_precio_acordado' => $inscripcion->id_precio_acordado,
                     'fecha_inscripcion' => now()->format('Y-m-d'),
                     'fecha_inicio' => now()->format('Y-m-d'),
-                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('Y-m-d'), // Mantiene la fecha original
+                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
                     'precio_base' => $inscripcion->precio_base,
-                    'descuento_aplicado' => 0, // Sin descuento en traspaso
-                    'precio_final' => $inscripcion->precio_base, // Precio completo
+                    'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
+                    'precio_final' => $inscripcion->precio_final,
                     'id_estado' => 100, // Activa
-                    'observaciones' => "Traspaso recibido de: {$inscripcion->cliente->nombre} {$inscripcion->cliente->apellido}",
+                    'observaciones' => "Traspaso recibido de: {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
                     // Campos de tracking de traspaso
                     'es_traspaso' => true,
                     'id_inscripcion_origen' => $inscripcion->id,
@@ -952,32 +996,71 @@ class InscripcionController extends Controller
                     'motivo_traspaso' => $validated['motivo_traspaso'],
                 ]);
 
-                // 3. Marcar la nueva inscripción como pagada (el pago ya fue realizado)
-                // Crear un pago de referencia indicando que viene de traspaso
-                Pago::create([
-                    'id_inscripcion' => $nuevaInscripcion->id,
-                    'id_cliente' => $clienteDestino->id,
-                    'monto_total' => $inscripcion->precio_final,
-                    'monto_abonado' => $inscripcion->precio_final, // Ya está pagado
-                    'monto_pendiente' => 0,
-                    'id_estado' => 201, // Pagado
-                    'id_metodo_pago' => 1, // Efectivo por defecto
-                    'fecha_pago' => now()->format('Y-m-d'),
-                    'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
-                    'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
-                ]);
+                // 3. Crear pago(s) para la nueva inscripción
+                // Si se transfiere la deuda, creamos un pago con lo que se había abonado y otro pendiente
+                if ($infoTraspaso['tiene_deuda'] && $transferirDeuda) {
+                    // Pago por el monto ya abonado
+                    if ($infoTraspaso['monto_pagado'] > 0) {
+                        Pago::create([
+                            'id_inscripcion' => $nuevaInscripcion->id,
+                            'id_cliente' => $clienteDestino->id,
+                            'monto_total' => $infoTraspaso['monto_total'],
+                            'monto_abonado' => $infoTraspaso['monto_pagado'],
+                            'monto_pendiente' => $infoTraspaso['monto_pendiente'],
+                            'id_estado' => 200, // Pendiente (parcialmente pagado)
+                            'id_metodo_pago' => 1,
+                            'fecha_pago' => now()->format('Y-m-d'),
+                            'observaciones' => "Pago transferido por traspaso (incluye deuda) desde inscripción #{$inscripcion->id}",
+                            'referencia_pago' => 'TRASPASO-DEUDA-' . $inscripcion->id,
+                        ]);
+                    } else {
+                        // Solo deuda, sin abono previo
+                        Pago::create([
+                            'id_inscripcion' => $nuevaInscripcion->id,
+                            'id_cliente' => $clienteDestino->id,
+                            'monto_total' => $infoTraspaso['monto_total'],
+                            'monto_abonado' => 0,
+                            'monto_pendiente' => $infoTraspaso['monto_pendiente'],
+                            'id_estado' => 200, // Pendiente
+                            'id_metodo_pago' => 1,
+                            'fecha_pago' => now()->format('Y-m-d'),
+                            'observaciones' => "Deuda transferida por traspaso desde inscripción #{$inscripcion->id}",
+                            'referencia_pago' => 'TRASPASO-DEUDA-' . $inscripcion->id,
+                        ]);
+                    }
+                } else {
+                    // Sin deuda o ignorando deuda sin transferir
+                    Pago::create([
+                        'id_inscripcion' => $nuevaInscripcion->id,
+                        'id_cliente' => $clienteDestino->id,
+                        'monto_total' => $infoTraspaso['monto_pagado'], // Solo lo pagado
+                        'monto_abonado' => $infoTraspaso['monto_pagado'],
+                        'monto_pendiente' => 0,
+                        'id_estado' => 201, // Pagado
+                        'id_metodo_pago' => 1,
+                        'fecha_pago' => now()->format('Y-m-d'),
+                        'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
+                        'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
+                    ]);
+                }
 
                 DB::commit();
 
+                $mensajeExito = "Membresía traspasada exitosamente a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}.";
+                if ($infoTraspaso['tiene_deuda'] && $transferirDeuda) {
+                    $mensajeExito .= " Se transfirió una deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.');
+                }
+
                 return response()->json([
                     'success' => true,
-                    'message' => "Membresía traspasada exitosamente a {$clienteDestino->nombre} {$clienteDestino->apellido}.",
+                    'message' => $mensajeExito,
                     'nueva_inscripcion' => [
                         'uuid' => $nuevaInscripcion->uuid,
-                        'cliente' => $clienteDestino->nombre . ' ' . $clienteDestino->apellido,
+                        'cliente' => $clienteDestino->nombres . ' ' . $clienteDestino->apellido_paterno,
                         'membresia' => $inscripcion->membresia->nombre,
                         'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
                         'dias_restantes' => $nuevaInscripcion->dias_restantes,
+                        'deuda_transferida' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda) ? $infoTraspaso['monto_pendiente'] : 0,
                     ],
                     'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
                 ]);

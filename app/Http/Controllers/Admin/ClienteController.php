@@ -50,10 +50,44 @@ class ClienteController extends Controller
         // Mostrar solo clientes activos
         $clientes = Cliente::where('activo', true)
             ->with(['inscripciones' => function ($q) {
-                $q->where('id_estado', 100); // 100 = Activa
-            }])
+                $q->orderBy('fecha_vencimiento', 'desc');
+            }, 'inscripciones.membresia'])
             ->paginate(20);
-        return view('admin.clientes.index', compact('clientes'));
+
+        // Estadísticas
+        $totalClientes = Cliente::where('activo', true)->count();
+        
+        // Clientes con inscripción activa (estado 100)
+        $clientesActivos = Cliente::where('activo', true)
+            ->whereHas('inscripciones', function($q) {
+                $q->where('id_estado', 100);
+            })->count();
+        
+        // Clientes con inscripción vencida (estado 102)
+        $clientesVencidos = Cliente::where('activo', true)
+            ->whereHas('inscripciones', function($q) {
+                $q->where('id_estado', 102);
+            })
+            ->whereDoesntHave('inscripciones', function($q) {
+                $q->where('id_estado', 100);
+            })->count();
+        
+        // Clientes con inscripción pausada (estado 101)
+        $clientesPausados = Cliente::where('activo', true)
+            ->whereHas('inscripciones', function($q) {
+                $q->where('id_estado', 101);
+            })
+            ->whereDoesntHave('inscripciones', function($q) {
+                $q->where('id_estado', 100);
+            })->count();
+
+        return view('admin.clientes.index', compact(
+            'clientes', 
+            'totalClientes', 
+            'clientesActivos', 
+            'clientesVencidos', 
+            'clientesPausados'
+        ));
     }
 
     /**
@@ -62,10 +96,16 @@ class ClienteController extends Controller
     public function create()
     {
         $convenios = Convenio::where('activo', true)->get();
-        $membresias = Membresia::where('activo', true)->get();
+        $membresias = Membresia::where('activo', true)->with(['precios' => function($q) {
+            $q->where(function ($query) {
+                $query->whereNull('fecha_vigencia_hasta')
+                      ->orWhere('fecha_vigencia_hasta', '>=', now());
+            })->orderBy('fecha_vigencia_hasta', 'desc');
+        }])->get();
         $metodos_pago = MetodoPago::all();
+        $motivos_descuento = \App\Models\MotivoDescuento::where('activo', true)->get();
         
-        return view('admin.clientes.create', compact('convenios', 'membresias', 'metodos_pago'));
+        return view('admin.clientes.create', compact('convenios', 'membresias', 'metodos_pago', 'motivos_descuento'));
     }
 
     /**
@@ -249,11 +289,15 @@ class ClienteController extends Controller
      */
     public function show(Cliente $cliente)
     {
-        $cliente->load(['inscripciones' => function ($q) {
-            $q->with('membresia', 'estado')->latest();
-        }, 'pagos' => function ($q) {
-            $q->with('estado', 'metodoPago')->latest();
-        }]);
+        $cliente->load([
+            'convenio',
+            'inscripciones' => function ($q) {
+                $q->with(['membresia', 'estado', 'pagos'])->latest();
+            }, 
+            'pagos' => function ($q) {
+                $q->with(['estado', 'metodoPago', 'inscripcion.membresia'])->latest();
+            }
+        ]);
         
         return view('admin.clientes.show', compact('cliente'));
     }
@@ -263,6 +307,7 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
+        $cliente->load('convenio');
         $convenios = Convenio::where('activo', true)->get();
         return view('admin.clientes.edit', compact('cliente', 'convenios'));
     }

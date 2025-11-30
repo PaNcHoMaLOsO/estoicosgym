@@ -2,12 +2,153 @@
 
 @section('title', 'Crear Membresía - EstóicosGym')
 
+@section('css')
+<style>
+    :root {
+        --primary: #1a1a2e;
+        --primary-light: #16213e;
+        --accent: #e94560;
+        --accent-light: #ff6b6b;
+        --success: #00bf8e;
+        --success-dark: #00a67d;
+        --warning: #f0a500;
+        --info: #4361ee;
+        --gray-100: #f8f9fa;
+        --gray-200: #e9ecef;
+        --gray-600: #6c757d;
+        --gray-800: #343a40;
+    }
+
+    /* ===== FORM SECTIONS ===== */
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 1.5rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-section-title i {
+        color: var(--accent);
+    }
+
+    /* ===== CARD STYLING ===== */
+    .card-primary .card-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    }
+
+    .card-header h3 {
+        color: white;
+    }
+
+    /* ===== FORM ELEMENTS ===== */
+    .form-control:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.25);
+    }
+
+    .input-group-text {
+        background: var(--gray-100);
+        border-color: #ced4da;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+        background: var(--accent-light);
+        border-color: var(--accent-light);
+    }
+
+    .btn-outline-secondary:hover {
+        background: var(--gray-200);
+    }
+
+    /* ===== CUSTOM CHECKBOX ===== */
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: var(--success);
+        border-color: var(--success);
+    }
+
+    /* ===== ALERT STYLING ===== */
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+        color: white;
+    }
+
+    .alert-danger .close {
+        color: white;
+    }
+
+    /* ===== HELPER CLASSES ===== */
+    .text-accent {
+        color: var(--accent) !important;
+    }
+
+    .bg-accent {
+        background-color: var(--accent) !important;
+    }
+
+    /* ===== PRECIO BOX ===== */
+    .precio-preview {
+        background: linear-gradient(135deg, var(--gray-100) 0%, white 100%);
+        border: 2px solid var(--primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .precio-preview h5 {
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    .precio-valor {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--success);
+    }
+
+    /* ===== FORM ACTIONS ===== */
+    .form-actions {
+        background: var(--gray-100);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+</style>
+@stop
+
 @section('content_header')
     <div class="row mb-4">
         <div class="col-sm-8">
             <h1 class="m-0">
-                <i class="fas fa-plus-circle"></i> Crear Nueva Membresía
+                <i class="fas fa-plus-circle text-accent"></i> Crear Nueva Membresía
             </h1>
+            <small class="text-muted">Configure un nuevo plan de membresía para el gimnasio</small>
         </div>
         <div class="col-sm-4 text-right">
             <a href="{{ route('admin.membresias.index') }}" class="btn btn-outline-secondary">
@@ -41,16 +182,13 @@
             </h3>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.membresias.store') }}" method="POST" class="needs-validation" novalidate>
+            <form action="{{ route('admin.membresias.store') }}" method="POST" id="formMembresia" class="needs-validation" novalidate>
                 @csrf
+                <input type="hidden" name="form_submit_token" value="{{ uniqid('membresia_', true) }}_{{ time() }}">
 
                 <!-- Sección Información Básica -->
-                <div class="row">
-                    <div class="col-12">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-info-circle"></i> Información Básica
-                        </h5>
-                    </div>
+                <div class="form-section-title">
+                    <i class="fas fa-info-circle"></i> Información Básica
                 </div>
 
                 <div class="row">
@@ -58,8 +196,9 @@
                         <div class="form-group">
                             <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
-                                   id="nombre" name="nombre" placeholder="Ej: Plan Básico, Plan Premium" 
-                                   value="{{ old('nombre') }}" required>
+                                   id="nombre" name="nombre" placeholder="Ej: Plan Mensual, Pase Diario" 
+                                   value="{{ old('nombre') }}" required minlength="3" maxlength="50">
+                            <small class="form-text text-muted">Nombre único que identifica la membresía</small>
                             @error('nombre')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -67,15 +206,16 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="duracion_meses" class="form-label">Duración (Meses) <span class="text-danger">*</span></label>
+                            <label for="duracion_meses" class="form-label">Duración en Meses <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="number" class="form-control @error('duracion_meses') is-invalid @enderror" 
                                        id="duracion_meses" name="duracion_meses" 
-                                       value="{{ old('duracion_meses', 0) }}" min="0" max="12" placeholder="0" required>
+                                       value="{{ old('duracion_meses', 1) }}" min="0" max="12" required>
                                 <div class="input-group-append">
                                     <span class="input-group-text">meses</span>
                                 </div>
                             </div>
+                            <small class="form-text text-muted">0 = Pase diario o personalizado</small>
                             @error('duracion_meses')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -86,36 +226,39 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="duracion_dias_calculado" class="form-label">Duración Total (Días)</label>
+                            <label for="duracion_dias_calculado" class="form-label">Duración Total en Días</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" 
-                                       id="duracion_dias_calculado" placeholder="Calculado automáticamente" min="1">
-                                <input type="hidden" id="duracion_dias" name="duracion_dias">
+                                       id="duracion_dias_calculado" min="1" max="365">
+                                <input type="hidden" id="duracion_dias" name="duracion_dias" value="{{ old('duracion_dias', 35) }}">
                                 <div class="input-group-append">
                                     <span class="input-group-text">días</span>
                                 </div>
                             </div>
-                            <small class="form-text text-muted d-block mt-1" id="dias_info">Se calcula: (Meses × 30) + 5</small>
+                            <small class="form-text text-muted" id="dias_info">
+                                <i class="fas fa-calculator"></i> Cálculo: (Meses × 30) + 5 días de gracia
+                            </small>
+                            @error('duracion_dias')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Sección Descripción -->
-                <div class="row">
-                    <div class="col-12">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-align-left"></i> Descripción
-                        </h5>
-                    </div>
+                <div class="form-section-title">
+                    <i class="fas fa-align-left"></i> Descripción
                 </div>
 
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <div class="form-group">
-                            <label for="descripcion" class="form-label">Descripción</label>
+                            <label for="descripcion" class="form-label">Descripción <small class="text-muted">(opcional)</small></label>
                             <textarea class="form-control @error('descripcion') is-invalid @enderror" 
-                                      id="descripcion" name="descripcion" rows="4" 
-                                      placeholder="Detalles y características de esta membresía...">{{ old('descripcion') }}</textarea>
+                                      id="descripcion" name="descripcion" rows="3" 
+                                      placeholder="Beneficios incluidos, horarios, restricciones..."
+                                      maxlength="1000">{{ old('descripcion') }}</textarea>
+                            <small class="form-text text-muted">Máximo 1000 caracteres</small>
                             @error('descripcion')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -124,26 +267,24 @@
                 </div>
 
                 <!-- Sección Precio -->
-                <div class="row">
-                    <div class="col-12">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-dollar-sign"></i> Precio
-                        </h5>
-                    </div>
+                <div class="form-section-title">
+                    <i class="fas fa-dollar-sign"></i> Configuración de Precios
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="precio_normal" class="form-label">Precio Normal ($) <span class="text-danger">*</span></label>
+                            <label for="precio_normal" class="form-label">Precio Normal <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
-                                <input type="number" class="form-control @error('precio_normal') is-invalid @enderror" 
-                                       id="precio_normal" name="precio_normal" value="{{ old('precio_normal') }}" 
-                                       min="0" step="0.01" placeholder="0.00" required>
+                                <input type="text" class="form-control @error('precio_normal') is-invalid @enderror" 
+                                       id="precio_normal_display" 
+                                       placeholder="Ej: 25.000" required>
+                                <input type="hidden" id="precio_normal" name="precio_normal" value="{{ old('precio_normal') }}">
                             </div>
+                            <small class="form-text text-muted">Precio sin descuento</small>
                             @error('precio_normal')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -151,16 +292,17 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="form-group">
-                            <label for="precio_convenio" class="form-label">Precio con Convenio ($) <small class="text-muted">(opcional)</small></label>
+                            <label for="precio_convenio" class="form-label">Precio con Convenio <small class="text-muted">(opcional)</small></label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">$</span>
                                 </div>
-                                <input type="number" class="form-control @error('precio_convenio') is-invalid @enderror" 
-                                       id="precio_convenio" name="precio_convenio" value="{{ old('precio_convenio') }}" 
-                                       min="0" step="0.01" placeholder="Dejar vacío si no aplica">
+                                <input type="text" class="form-control @error('precio_convenio') is-invalid @enderror" 
+                                       id="precio_convenio_display" 
+                                       placeholder="Ej: 20.000">
+                                <input type="hidden" id="precio_convenio" name="precio_convenio" value="{{ old('precio_convenio') }}">
                             </div>
-                            <small class="form-text text-muted d-block mt-1">Solo para membresías que aplican descuento por convenio</small>
+                            <small class="form-text text-muted">Precio para clientes con convenio empresarial</small>
                             @error('precio_convenio')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -168,37 +310,44 @@
                     </div>
                 </div>
 
-                <!-- Sección Estado -->
+                <!-- Preview de Precio -->
                 <div class="row">
-                    <div class="col-12">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-toggle-on"></i> Estado
-                        </h5>
+                    <div class="col-md-6">
+                        <div class="precio-preview text-center" id="precioPreview" style="display: none;">
+                            <h5><i class="fas fa-tag"></i> Vista Previa del Precio</h5>
+                            <div class="precio-valor" id="precioPreviewValor">$0</div>
+                            <small class="text-muted" id="precioPreviewDescuento"></small>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Sección Estado -->
+                <div class="form-section-title">
+                    <i class="fas fa-toggle-on"></i> Estado de la Membresía
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="custom-control custom-checkbox">
+                        <div class="custom-control custom-switch">
                             <input type="hidden" name="activo" value="0">
                             <input type="checkbox" class="custom-control-input" id="activo" name="activo" value="1" checked>
-                            <label class="custom-control-label" for="activo">Membresía Activa</label>
+                            <label class="custom-control-label" for="activo">
+                                <strong>Membresía Activa</strong>
+                            </label>
                         </div>
-                        <small class="d-block text-muted mt-2">Los clientes podrán contratar esta membresía</small>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-info-circle"></i> Si está activa, los clientes podrán contratar esta membresía
+                        </small>
                     </div>
                 </div>
 
-                <hr class="my-4">
-
                 <!-- Botones de Acción -->
-                <div class="form-group d-flex gap-2 justify-content-between flex-wrap">
-                    <div>
-                        <a href="{{ route('admin.membresias.index') }}" class="btn btn-outline-secondary">
+                <div class="form-actions">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <a href="{{ route('admin.membresias.index') }}" class="btn btn-outline-secondary btn-lg">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
-                    </div>
-                    <div>
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="submit" class="btn btn-primary btn-lg" id="btnGuardar">
                             <i class="fas fa-save"></i> Crear Membresía
                         </button>
                     </div>
@@ -211,63 +360,172 @@
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ========== Lógica de Duración de Días ==========
+    // ========== Referencias a elementos ==========
+    const form = document.getElementById('formMembresia');
     const duracionMeses = document.getElementById('duracion_meses');
     const duracionDias = document.getElementById('duracion_dias');
     const duracionDiasCalculado = document.getElementById('duracion_dias_calculado');
     const diasInfo = document.getElementById('dias_info');
+    const precioNormalDisplay = document.getElementById('precio_normal_display');
+    const precioNormalHidden = document.getElementById('precio_normal');
+    const precioConvenioDisplay = document.getElementById('precio_convenio_display');
+    const precioConvenioHidden = document.getElementById('precio_convenio');
+    const precioPreview = document.getElementById('precioPreview');
+    const precioPreviewValor = document.getElementById('precioPreviewValor');
+    const precioPreviewDescuento = document.getElementById('precioPreviewDescuento');
+    const btnGuardar = document.getElementById('btnGuardar');
 
+    // ========== Lógica de Duración de Días ==========
     function actualizarDias() {
         const meses = parseInt(duracionMeses.value) || 0;
         
         if (meses === 0) {
-            // Modo manual: permitir entrada de días
+            // Modo manual para pase diario
             duracionDiasCalculado.removeAttribute('readonly');
-            duracionDiasCalculado.value = '';
-            duracionDiasCalculado.placeholder = 'Ingresa duración manual (Ej: Pase Diario=1)';
-            diasInfo.textContent = '⚠️ Meses = 0: Ingresa manualmente la duración en días';
-            
-            // Sincronizar cambios en el campo visible al hidden
-            duracionDiasCalculado.addEventListener('input', function() {
-                duracionDias.value = this.value;
-            });
+            duracionDiasCalculado.value = duracionDias.value || 1;
+            duracionDiasCalculado.placeholder = 'Ej: 1 para pase diario';
+            diasInfo.innerHTML = '<i class="fas fa-hand-pointer"></i> Meses = 0: Ingresa los días manualmente';
+            diasInfo.classList.add('text-warning');
+            diasInfo.classList.remove('text-muted');
         } else {
-            // Modo automático: calcular días
+            // Modo automático
             const dias = (meses * 30) + 5;
             duracionDias.value = dias;
             duracionDiasCalculado.value = dias;
             duracionDiasCalculado.setAttribute('readonly', 'readonly');
-            duracionDiasCalculado.placeholder = 'Calculado automáticamente';
-            diasInfo.textContent = `Cálculo automático: (${meses} meses × 30) + 5 = ${dias} días`;
-            duracionDiasCalculado.removeEventListener('input', null);
+            diasInfo.innerHTML = `<i class="fas fa-calculator"></i> Cálculo: (${meses} × 30) + 5 = <strong>${dias} días</strong>`;
+            diasInfo.classList.remove('text-warning');
+            diasInfo.classList.add('text-muted');
         }
     }
+
+    // Sincronizar días manual con hidden
+    duracionDiasCalculado.addEventListener('input', function() {
+        duracionDias.value = this.value;
+    });
 
     duracionMeses.addEventListener('change', actualizarDias);
     duracionMeses.addEventListener('input', actualizarDias);
     actualizarDias();
 
-    // ========== Formateo de Precio con Puntos de Miles ==========
-    const precioInput = document.getElementById('precio_normal');
-    
-    function formatearPrecio(valor) {
-        // Remover todo excepto números
-        const numeros = valor.replace(/\D/g, '');
-        // Formatear con puntos de miles
-        return numeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // ========== Formateo de Precio ==========
+    function formatearNumero(num) {
+        if (!num && num !== 0) return '';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
-    precioInput.addEventListener('input', function(e) {
-        let valor = e.target.value;
-        let formateado = formatearPrecio(valor);
-        e.target.value = formateado;
+    function limpiarNumero(str) {
+        if (!str) return 0;
+        return parseInt(str.replace(/\D/g, '')) || 0;
+    }
+
+    function actualizarPrecioDisplay(displayEl, hiddenEl) {
+        const valor = displayEl.value;
+        const numero = limpiarNumero(valor);
+        hiddenEl.value = numero;
+        
+        // Mantener cursor
+        const cursorPos = displayEl.selectionStart;
+        const oldLen = displayEl.value.length;
+        
+        displayEl.value = numero > 0 ? formatearNumero(numero) : '';
+        
+        // Ajustar cursor
+        const newLen = displayEl.value.length;
+        const newPos = cursorPos + (newLen - oldLen);
+        displayEl.setSelectionRange(Math.max(0, newPos), Math.max(0, newPos));
+    }
+
+    function actualizarPreview() {
+        const precioNormal = limpiarNumero(precioNormalDisplay.value);
+        const precioConvenio = limpiarNumero(precioConvenioDisplay.value);
+        
+        if (precioNormal > 0) {
+            precioPreview.style.display = 'block';
+            precioPreviewValor.textContent = '$' + formatearNumero(precioNormal);
+            
+            if (precioConvenio > 0 && precioConvenio < precioNormal) {
+                const descuento = precioNormal - precioConvenio;
+                const porcentaje = Math.round((descuento / precioNormal) * 100);
+                precioPreviewDescuento.innerHTML = `
+                    <span class="text-success">
+                        <i class="fas fa-percentage"></i> Con convenio: $${formatearNumero(precioConvenio)} 
+                        (${porcentaje}% descuento)
+                    </span>`;
+            } else {
+                precioPreviewDescuento.textContent = '';
+            }
+        } else {
+            precioPreview.style.display = 'none';
+        }
+    }
+
+    precioNormalDisplay.addEventListener('input', function() {
+        actualizarPrecioDisplay(this, precioNormalHidden);
+        actualizarPreview();
     });
 
-    precioInput.addEventListener('blur', function(e) {
-        // Al perder foco, asegurar que el valor esté bien formateado
-        let valor = e.target.value;
-        let formateado = formatearPrecio(valor);
-        e.target.value = formateado;
+    precioConvenioDisplay.addEventListener('input', function() {
+        actualizarPrecioDisplay(this, precioConvenioHidden);
+        actualizarPreview();
+    });
+
+    // Cargar valores iniciales si existen (old)
+    if (precioNormalHidden.value) {
+        precioNormalDisplay.value = formatearNumero(precioNormalHidden.value);
+        actualizarPreview();
+    }
+    if (precioConvenioHidden.value) {
+        precioConvenioDisplay.value = formatearNumero(precioConvenioHidden.value);
+    }
+
+    // ========== Validación del Formulario ==========
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMsg = '';
+
+        // Validar nombre
+        const nombre = document.getElementById('nombre').value.trim();
+        if (nombre.length < 3) {
+            errorMsg = 'El nombre debe tener al menos 3 caracteres';
+            isValid = false;
+        }
+
+        // Validar duración días
+        const dias = parseInt(duracionDias.value) || 0;
+        if (dias < 1) {
+            errorMsg = 'La duración en días debe ser al menos 1';
+            isValid = false;
+        }
+
+        // Validar precio normal
+        const precioNormal = limpiarNumero(precioNormalDisplay.value);
+        if (precioNormal <= 0) {
+            errorMsg = 'El precio normal debe ser mayor a 0';
+            isValid = false;
+        }
+
+        // Validar precio convenio (si existe, debe ser menor al normal)
+        const precioConvenio = limpiarNumero(precioConvenioDisplay.value);
+        if (precioConvenio > 0 && precioConvenio >= precioNormal) {
+            errorMsg = 'El precio con convenio debe ser menor al precio normal';
+            isValid = false;
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de validación',
+                text: errorMsg,
+                confirmButtonColor: '#e94560'
+            });
+            return false;
+        }
+
+        // Deshabilitar botón para evitar doble envío
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     });
 });
 </script>
