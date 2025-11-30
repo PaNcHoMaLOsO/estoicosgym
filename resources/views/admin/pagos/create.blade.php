@@ -706,6 +706,7 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
     // Initialize Select2
@@ -795,6 +796,27 @@ $(document).ready(function() {
         updateEstePago();
     });
 
+    // Validar que no se seleccionen los mismos métodos de pago en mixto
+    $('#id_metodo_pago1, #id_metodo_pago2').on('change', function() {
+        const metodo1 = $('#id_metodo_pago1').val();
+        const metodo2 = $('#id_metodo_pago2').val();
+        
+        if (metodo1 && metodo2 && metodo1 === metodo2) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Métodos iguales',
+                text: 'No puedes seleccionar el mismo método de pago en ambos campos. Por favor, elige métodos diferentes.',
+                confirmButtonColor: '#e94560'
+            });
+            
+            // Limpiar el segundo select
+            $(this).val('');
+            $(this).addClass('is-invalid');
+        } else {
+            $('#id_metodo_pago1, #id_metodo_pago2').removeClass('is-invalid');
+        }
+    });
+
     // Función para formatear números al estilo chileno (miles con punto)
     function formatNumber(num) {
         return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -823,10 +845,233 @@ $(document).ready(function() {
         $('#resumenPagado').text('$0');
         $('#resumenPendiente').text('$0');
         $('#resumenEstePago').text('$0');
+        $('#estadoResultante').remove();
     }
 
     // Initial tipo pago check
     $('input[name="tipo_pago"]:checked').trigger('change');
+
+    // ========================================
+    // VALIDACIONES Y SWEETALERTS
+    // ========================================
+    
+    // Validar monto en tiempo real
+    $('#monto_abonado').on('input', function() {
+        const monto = parseFloat($(this).val()) || 0;
+        
+        if (monto > montoPendiente) {
+            $(this).addClass('is-invalid');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Monto excede el pendiente',
+                text: `El monto máximo a abonar es $${formatNumber(montoPendiente)}`,
+                confirmButtonColor: '#e94560'
+            });
+            $(this).val(montoPendiente);
+        } else if (monto > 0 && monto < 1000) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+        
+        // Sugerir pago completo si el monto iguala el pendiente
+        if (monto === montoPendiente && $('input[name="tipo_pago"]:checked').val() === 'abono') {
+            Swal.fire({
+                icon: 'info',
+                title: '¡Pago completo detectado!',
+                text: 'El monto ingresado cubre el total pendiente. ¿Deseas cambiar a "Pago Completo"?',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'No, mantener abono',
+                confirmButtonColor: '#00bf8e',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#tipo_completo').prop('checked', true).trigger('change');
+                }
+            });
+        }
+        
+        updateEstePago();
+    });
+
+    // Validación del formulario antes de enviar
+    $('#formPago').on('submit', function(e) {
+        e.preventDefault();
+        
+        const tipo = $('input[name="tipo_pago"]:checked').val();
+        const inscripcion = $('#id_inscripcion').val();
+        const metodoPago = $('#id_metodo_pago option:selected').text();
+        
+        // Validaciones básicas
+        if (!inscripcion) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Inscripción requerida',
+                text: 'Debes seleccionar una inscripción',
+                confirmButtonColor: '#e94560'
+            });
+            return;
+        }
+        
+        let montoAPagar = 0;
+        if (tipo === 'abono') {
+            montoAPagar = parseFloat($('#monto_abonado').val()) || 0;
+            if (montoAPagar < 1000) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Monto inválido',
+                    text: 'El monto mínimo a abonar es $1.000',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+        } else if (tipo === 'completo') {
+            montoAPagar = montoPendiente;
+        } else if (tipo === 'mixto') {
+            const m1 = parseFloat($('#monto_metodo1').val()) || 0;
+            const m2 = parseFloat($('#monto_metodo2').val()) || 0;
+            const metodo1 = $('#id_metodo_pago1').val();
+            const metodo2 = $('#id_metodo_pago2').val();
+            montoAPagar = m1 + m2;
+            
+            // Validar que se seleccionen ambos métodos
+            if (!metodo1 || !metodo2) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Métodos requeridos',
+                    text: 'Debes seleccionar ambos métodos de pago',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+            
+            // Validar que los métodos sean diferentes
+            if (metodo1 === metodo2) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Métodos iguales',
+                    text: 'Los métodos de pago deben ser diferentes',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+            
+            // Validar que los montos sean mayores a 0
+            if (m1 <= 0 || m2 <= 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Montos inválidos',
+                    text: 'Ambos montos deben ser mayores a $0',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+            
+            if (montoAPagar !== montoPendiente) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Suma incorrecta',
+                    html: `La suma de los montos (<strong>$${formatNumber(montoAPagar)}</strong>) debe ser exactamente <strong>$${formatNumber(montoPendiente)}</strong>`,
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+        }
+        
+        if (!$('#id_metodo_pago').val() && tipo !== 'mixto') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Método de pago requerido',
+                text: 'Debes seleccionar un método de pago',
+                confirmButtonColor: '#e94560'
+            });
+            return;
+        }
+        
+        // Determinar si quedará pagado completamente
+        const nuevoSaldo = montoPendiente - montoAPagar;
+        const estadoFinal = nuevoSaldo <= 0 ? 'PAGADO ✅' : `PARCIAL (Quedará $${formatNumber(nuevoSaldo)} pendiente)`;
+        const estadoColor = nuevoSaldo <= 0 ? '#00bf8e' : '#f0a500';
+        
+        // Mostrar confirmación con SweetAlert
+        Swal.fire({
+            title: '¿Confirmar registro de pago?',
+            html: `
+                <div style="text-align: left; padding: 10px 0;">
+                    <p><strong>📋 Cliente:</strong> ${$('#previewCliente').text()}</p>
+                    <p><strong>🏋️ Membresía:</strong> ${$('#previewMembresia').text()}</p>
+                    <hr>
+                    <p><strong>💵 Monto a registrar:</strong> <span style="color: #00bf8e; font-size: 1.2em;">$${formatNumber(montoAPagar)}</span></p>
+                    <p><strong>💳 Método de pago:</strong> ${metodoPago || 'Mixto'}</p>
+                    <hr>
+                    <p><strong>📊 Estado resultante:</strong> <span style="color: ${estadoColor}; font-weight: bold;">${estadoFinal}</span></p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-check me-1"></i> Sí, registrar pago',
+            cancelButtonText: '<i class="fas fa-times me-1"></i> Cancelar',
+            confirmButtonColor: '#00bf8e',
+            cancelButtonColor: '#6c757d',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Registrando pago...',
+                    html: 'Por favor espera',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Enviar formulario
+                this.submit();
+            }
+        });
+    });
+
+    // Mostrar indicador de estado resultante en resumen
+    function updateEstadoResultante() {
+        const tipo = $('input[name="tipo_pago"]:checked').val();
+        let montoAPagar = 0;
+        
+        if (tipo === 'abono') {
+            montoAPagar = parseFloat($('#monto_abonado').val()) || 0;
+        } else if (tipo === 'completo') {
+            montoAPagar = montoPendiente;
+        } else if (tipo === 'mixto') {
+            montoAPagar = (parseFloat($('#monto_metodo1').val()) || 0) + (parseFloat($('#monto_metodo2').val()) || 0);
+        }
+        
+        const nuevoSaldo = montoPendiente - montoAPagar;
+        
+        // Remover indicador anterior
+        $('#estadoResultante').remove();
+        
+        if (montoAPagar > 0) {
+            let html = '';
+            if (nuevoSaldo <= 0) {
+                html = `<div id="estadoResultante" class="alert mt-3" style="background: rgba(0, 191, 142, 0.15); border: 1px solid #00bf8e; border-radius: 10px; color: #00bf8e;">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>¡Quedará completamente pagado!</strong>
+                </div>`;
+            } else {
+                html = `<div id="estadoResultante" class="alert mt-3" style="background: rgba(240, 165, 0, 0.15); border: 1px solid #f0a500; border-radius: 10px; color: #f0a500;">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Quedará un saldo de <strong>$${formatNumber(nuevoSaldo)}</strong>
+                </div>`;
+            }
+            $('.precio-box').after(html);
+        }
+    }
+
+    // Actualizar estado resultante cuando cambie el monto
+    $('#monto_abonado, #monto_metodo1, #monto_metodo2').on('input', updateEstadoResultante);
+    $('input[name="tipo_pago"]').on('change', updateEstadoResultante);
 });
 </script>
 @stop
