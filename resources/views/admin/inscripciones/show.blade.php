@@ -106,11 +106,11 @@
         font-size: 1.4rem;
         margin-bottom: 0.75rem;
     }
-    .stat-card .stat-icon.primary { background: rgba(26,26,46,0.1); color: var(--primary); }
-    .stat-card .stat-icon.success { background: rgba(0,191,142,0.1); color: var(--success); }
-    .stat-card .stat-icon.warning { background: rgba(240,165,0,0.1); color: var(--warning); }
-    .stat-card .stat-icon.accent { background: rgba(233,69,96,0.1); color: var(--accent); }
-    .stat-card .stat-icon.info { background: rgba(67,97,238,0.1); color: var(--info); }
+    .stat-card .stat-icon.primary { background: rgba(26,26,46,0.15); color: var(--primary); }
+    .stat-card .stat-icon.success { background: rgba(0,191,142,0.2); color: var(--success); }
+    .stat-card .stat-icon.warning { background: rgba(240,165,0,0.2); color: var(--warning); }
+    .stat-card .stat-icon.accent { background: rgba(233,69,96,0.2); color: var(--accent); }
+    .stat-card .stat-icon.info { background: rgba(67,97,238,0.2); color: var(--info); }
     .stat-card .stat-value {
         font-size: 1.5rem;
         font-weight: 700;
@@ -656,14 +656,14 @@
                 <div class="card-body-custom">
                     <div class="d-flex align-items-start mb-3">
                         <div class="client-avatar">
-                            {{ strtoupper(substr($inscripcion->cliente->nombre ?? 'C', 0, 1)) }}
+                            {{ strtoupper(substr($inscripcion->cliente->nombres ?? 'C', 0, 1)) }}
                         </div>
                         <div>
                             <h5 class="mb-1 font-weight-bold" style="color: var(--primary);">
-                                {{ $inscripcion->cliente->nombre ?? 'N/A' }} {{ $inscripcion->cliente->apellido ?? '' }}
+                                {{ $inscripcion->cliente->nombres ?? 'N/A' }} {{ $inscripcion->cliente->apellido_paterno ?? '' }} {{ $inscripcion->cliente->apellido_materno ?? '' }}
                             </h5>
                             <p class="text-muted mb-2">
-                                <i class="fas fa-id-card mr-2"></i>RUT: {{ $inscripcion->cliente->rut ?? 'N/A' }}
+                                <i class="fas fa-id-card mr-2"></i>RUT: {{ $inscripcion->cliente->run_pasaporte ?? 'N/A' }}
                             </p>
                             <div class="d-flex flex-wrap gap-2">
                                 @if($inscripcion->cliente->email)
@@ -671,9 +671,9 @@
                                         <i class="fas fa-envelope mr-1 text-info"></i>{{ $inscripcion->cliente->email }}
                                     </span>
                                 @endif
-                                @if($inscripcion->cliente->telefono)
+                                @if($inscripcion->cliente->celular)
                                     <span class="badge badge-light px-3 py-2">
-                                        <i class="fas fa-phone mr-1 text-success"></i>{{ $inscripcion->cliente->telefono }}
+                                        <i class="fas fa-phone mr-1 text-success"></i>{{ $inscripcion->cliente->celular }}
                                     </span>
                                 @endif
                             </div>
@@ -863,15 +863,19 @@
                                             </td>
                                             <td>
                                                 @php
-                                                    $estadoPago = $pago->estado ?? 'completado';
-                                                    $clasePago = match($estadoPago) {
-                                                        'completado', 'pagado' => 'pago-completo',
-                                                        'parcial' => 'pago-parcial',
-                                                        'pendiente' => 'pago-pendiente',
+                                                    // El estado viene como relación, obtener el nombre
+                                                    $estadoPagoObj = $pago->estado;
+                                                    $estadoPagoNombre = is_object($estadoPagoObj) ? ($estadoPagoObj->nombre ?? 'Pagado') : ($estadoPagoObj ?? 'Pagado');
+                                                    $estadoPagoCodigo = is_object($estadoPagoObj) ? ($estadoPagoObj->codigo ?? 201) : 201;
+                                                    
+                                                    $clasePago = match(true) {
+                                                        $estadoPagoCodigo == 201 || str_contains(strtolower($estadoPagoNombre), 'pagado') || str_contains(strtolower($estadoPagoNombre), 'completo') => 'pago-completo',
+                                                        $estadoPagoCodigo == 202 || str_contains(strtolower($estadoPagoNombre), 'parcial') => 'pago-parcial',
+                                                        $estadoPagoCodigo == 200 || str_contains(strtolower($estadoPagoNombre), 'pendiente') => 'pago-pendiente',
                                                         default => 'pago-completo'
                                                     };
                                                 @endphp
-                                                <span class="pago-badge {{ $clasePago }}">{{ ucfirst($estadoPago) }}</span>
+                                                <span class="pago-badge {{ $clasePago }}">{{ $estadoPagoNombre }}</span>
                                             </td>
                                             <td>
                                                 <small class="text-muted">{{ $pago->observacion ?? '-' }}</small>
@@ -1047,9 +1051,9 @@
                         <i class="fas fa-users"></i>
                         <div>
                             <strong>Inscripción Traspasada</strong>
-                            @if($inscripcion->inscripcionOrigenTraspaso)
+                            @if($inscripcion->inscripcionOrigen && $inscripcion->inscripcionOrigen->cliente)
                                 <p class="mb-0 small">
-                                    Cliente origen: <strong>{{ $inscripcion->inscripcionOrigenTraspaso->cliente->nombre ?? 'N/A' }} {{ $inscripcion->inscripcionOrigenTraspaso->cliente->apellido ?? '' }}</strong>
+                                    Cliente origen: <strong>{{ $inscripcion->inscripcionOrigen->cliente->nombres ?? 'N/A' }} {{ $inscripcion->inscripcionOrigen->cliente->apellido_paterno ?? '' }}</strong>
                                 </p>
                             @endif
                         </div>
@@ -1074,7 +1078,7 @@
                                 <i class="fas fa-level-up-alt"></i>Mejorar Plan
                             </a>
                         @endif
-                        <a href="{{ route('admin.clientes.show', $inscripcion->cliente->id ?? 0) }}" class="btn btn-block btn-secondary-estoicos">
+                        <a href="{{ route('admin.clientes.show', $inscripcion->id_cliente) }}" class="btn btn-block btn-secondary-estoicos">
                             <i class="fas fa-user"></i>Ver Cliente
                         </a>
                     </div>
