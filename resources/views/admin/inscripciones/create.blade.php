@@ -13,52 +13,149 @@
         --success-dark: #00a67d;
         --warning: #f0a500;
         --info: #4361ee;
+        --danger: #dc3545;
+        --gray-50: #fafbfc;
         --gray-100: #f8f9fa;
         --gray-200: #e9ecef;
+        --gray-300: #dee2e6;
         --gray-600: #6c757d;
         --gray-800: #343a40;
+        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
     }
 
-    /* ===== WIZARD STEPS ===== */
+    /* ===== ANIMACIONES ===== */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    /* ===== WIZARD STEPS MEJORADO ===== */
     .step-indicator { display: none; }
-    .step-indicator.active { display: block; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .step-indicator.active { display: block; animation: fadeIn 0.4s ease-out; }
     
+    .wizard-container {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: var(--radius-xl);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .wizard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .wizard-header h2 {
+        color: white;
+        font-weight: 800;
+        font-size: 1.5rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+
+    .wizard-header h2 i {
+        color: var(--accent);
+        font-size: 1.75rem;
+    }
+
+    .wizard-header p {
+        color: rgba(255,255,255,0.7);
+        margin: 0.5rem 0 0 0;
+        font-size: 0.95rem;
+    }
+
     .steps-nav { 
         display: flex; 
-        gap: 1rem; 
-        margin-bottom: 2rem; 
-        flex-wrap: wrap;
-        padding: 1.25rem;
-        background: var(--gray-100);
-        border-radius: 16px;
+        gap: 0.5rem;
+        position: relative;
+        padding: 0;
+        background: transparent;
+    }
+
+    .steps-nav::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 60px;
+        right: 60px;
+        height: 3px;
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-50%);
+        z-index: 0;
+        border-radius: 2px;
     }
     
     .step-btn {
         flex: 1;
-        min-width: 150px;
-        padding: 1rem;
+        padding: 1.25rem 1rem;
         text-align: center;
-        border-radius: 12px;
-        background: white;
-        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.2);
         cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: rgba(255,255,255,0.7);
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-btn .step-number {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 800;
         transition: all 0.3s ease;
-        color: var(--gray-600);
+    }
+
+    .step-btn .step-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .step-btn .step-icon {
+        font-size: 1.1rem;
     }
     
     .step-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border-color: var(--accent);
+        transform: translateY(-3px);
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
     
     .step-btn.active {
-        background: var(--primary);
+        background: white;
+        color: var(--primary);
+        border-color: white;
+        box-shadow: 0 8px 30px rgba(233, 69, 96, 0.4);
+    }
+
+    .step-btn.active .step-number {
+        background: var(--accent);
         color: white;
-        border-color: var(--primary);
     }
 
     .step-btn.completed {
@@ -67,104 +164,158 @@
         border-color: var(--success);
     }
 
+    .step-btn.completed .step-number {
+        background: white;
+        color: var(--success);
+    }
+
+    .step-btn.completed .step-number::after {
+        content: '✓';
+        font-weight: 900;
+    }
+
+    .step-btn.completed .step-number span {
+        display: none;
+    }
+
     .step-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 
     /* ===== FORM SECTIONS ===== */
     .form-section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1.15rem;
+        font-weight: 800;
         color: var(--primary);
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 3px solid var(--accent);
+        margin: 2rem 0 1.25rem 0;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(90deg, rgba(233, 69, 96, 0.1) 0%, transparent 100%);
+        border-left: 4px solid var(--accent);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .form-section-title i {
+        color: var(--accent);
+        font-size: 1.1rem;
+    }
+
+    /* ===== PRECIO BOX MEJORADO ===== */
+    .precio-box {
+        background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
+        margin-top: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .precio-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+
+    .precio-box h5 {
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .form-section-title i {
+    .precio-box h5 i {
         color: var(--accent);
-    }
-
-    .precio-box {
-        background: white;
-        border: 2px solid var(--primary);
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-top: 1rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-    }
-
-    .precio-box h5 {
-        color: var(--primary);
     }
 
     .precio-row {
         display: flex;
         justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 1px dashed var(--gray-200);
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--gray-200);
     }
 
     .precio-row:last-child {
         border-bottom: none;
-        padding-top: 1rem;
-        margin-top: 0.5rem;
-        border-top: 2px solid var(--primary);
+        padding-top: 1.25rem;
+        margin-top: 0.75rem;
+        border-top: 2px dashed var(--primary);
+        background: rgba(0, 191, 142, 0.05);
+        margin: 0.75rem -1rem -1rem -1rem;
+        padding: 1rem 1rem;
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
     }
 
     .precio-label {
         color: var(--gray-600);
         font-weight: 500;
+        font-size: 0.95rem;
     }
 
     .precio-valor {
         font-weight: 700;
         color: var(--gray-800);
+        font-size: 1.05rem;
     }
 
     .precio-total {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         color: var(--success);
+        font-weight: 800;
     }
 
-    /* ===== BUTTONS ===== */
+    /* ===== BUTTONS MEJORADOS ===== */
     .buttons-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
-        margin-top: 2rem;
-        flex-wrap: wrap;
-        padding: 1.5rem;
-        background: var(--gray-100);
-        border-radius: 16px;
+        margin-top: 2.5rem;
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
     }
 
     .buttons-group {
         display: flex;
-        gap: 0.75rem;
+        gap: 1rem;
         flex-wrap: wrap;
         align-items: center;
     }
 
     .btn {
-        transition: all 0.3s ease;
-        font-weight: 600;
-        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 700;
+        border-radius: var(--radius-md);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
     }
 
     .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
+        padding: 0.875rem 2rem;
+        font-size: 0.9rem;
     }
 
     .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+
+    .btn:active {
+        transform: translateY(-1px);
     }
 
     .btn-info {
@@ -190,109 +341,181 @@
     }
 
     .btn-success {
-        background: var(--success);
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
         border: none;
         color: white;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4);
     }
 
     .btn-success:hover {
-        background: var(--success-dark);
+        background: linear-gradient(135deg, var(--success-dark) 0%, #008f6b 100%);
         color: white;
+        box-shadow: 0 6px 25px rgba(0, 191, 142, 0.5);
     }
 
     .btn-primary {
-        background: var(--primary);
-        border: none;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.3);
         color: white;
     }
 
     .btn-primary:hover {
-        background: var(--primary-light);
-        color: white;
-    }
-
-    /* ===== CARD ===== */
-    .card-primary .card-header {
-        background: var(--primary);
-    }
-
-    .card {
-        border: none;
-        border-radius: 16px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-    }
-
-    /* ===== PAGE HEADER ===== */
-    .page-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
-        padding: 25px 30px;
-        border-radius: 16px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3);
-    }
-
-    .page-header h1 {
-        color: white;
-        margin: 0;
-        font-weight: 700;
-    }
-
-    .page-header h1 i {
-        color: var(--accent);
-    }
-
-    .btn-back {
-        background: transparent;
-        color: white;
-        border: 2px solid rgba(255,255,255,0.5);
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-    }
-
-    .btn-back:hover {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.25);
         color: white;
         border-color: white;
     }
 
-    /* ===== FORM CONTROLS ===== */
+    .btn-outline-danger {
+        background: transparent;
+        border: 2px solid rgba(255,255,255,0.3);
+        color: white;
+    }
+
+    .btn-outline-danger:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.4);
+        color: white;
+    }
+
+    /* ===== CARD PRINCIPAL ===== */
+    .card-inscripcion {
+        border: none;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        background: white;
+    }
+
+    .card-inscripcion .card-body {
+        padding: 2rem;
+    }
+
+    /* ===== PAGE HEADER REMOVIDO - Usamos wizard-container ===== */
+    .page-header {
+        display: none;
+    }
+
+    /* ===== FORM CONTROLS MEJORADOS ===== */
     .form-control {
         border: 2px solid var(--gray-200);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: var(--gray-50);
     }
 
     .form-control:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.15);
+        box-shadow: 0 0 0 4px rgba(233, 69, 96, 0.1);
+        background: white;
     }
 
     .form-control.is-invalid {
-        border-color: var(--accent) !important;
-        background-color: rgba(233, 69, 96, 0.05) !important;
+        border-color: var(--danger) !important;
+        background-color: rgba(220, 53, 69, 0.05) !important;
     }
 
-    /* ===== CLIENTE CARD ===== */
+    .form-control-lg {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        border-radius: var(--radius-md);
+    }
+
+    label {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    label .text-danger {
+        color: var(--accent) !important;
+    }
+
+    /* ===== CLIENTE CARD MEJORADO ===== */
+    .clientes-list {
+        max-height: 450px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+        border: 2px solid var(--gray-200);
+    }
+
+    .clientes-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .clientes-list::-webkit-scrollbar-track {
+        background: var(--gray-100);
+        border-radius: 4px;
+    }
+
+    .clientes-list::-webkit-scrollbar-thumb {
+        background: var(--gray-300);
+        border-radius: 4px;
+    }
+
+    .clientes-list::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+    }
+
     .cliente-card {
         border: 2px solid var(--gray-200);
-        border-radius: 12px;
-        padding: 1rem;
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
         margin-bottom: 0.75rem;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         background: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cliente-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: transparent;
+        transition: all 0.3s ease;
     }
 
     .cliente-card:hover {
         border-color: var(--accent);
-        background: rgba(233, 69, 96, 0.03);
-        transform: translateX(5px);
+        background: white;
+        transform: translateX(8px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .cliente-card:hover::before {
+        background: var(--accent);
     }
 
     .cliente-card.selected {
         border-color: var(--success);
-        background: rgba(0, 191, 142, 0.08);
+        background: rgba(0, 191, 142, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 191, 142, 0.2);
+    }
+
+    .cliente-card.selected::before {
+        background: var(--success);
     }
 
     .cliente-card .cliente-nombre {
@@ -565,24 +788,12 @@
 @endsection
 
 @section('content_header')
-<div class="page-header">
-    <div class="row align-items-center">
-        <div class="col-sm-8">
-            <h1><i class="fas fa-clipboard-list"></i> Nueva Inscripción</h1>
-        </div>
-        <div class="col-sm-4 text-right">
-            <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-back">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
-    </div>
-</div>
 @stop
 
 @section('content')
 @if ($errors->any())
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <h5><i class="fas fa-exclamation-triangle"></i> Errores en el Formulario</h5>
+<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius: var(--radius-lg); border-left: 4px solid var(--accent);">
+    <h5 class="mb-2"><i class="fas fa-exclamation-triangle text-danger"></i> Errores en el Formulario</h5>
     <ul class="mb-0">
         @foreach ($errors->all() as $error)
             <li>{{ $error }}</li>
@@ -592,24 +803,35 @@
 </div>
 @endif
 
-<div class="card card-primary">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tasks"></i> Registro de Inscripción - 3 Pasos</h3>
+<!-- WIZARD CONTAINER -->
+<div class="wizard-container">
+    <div class="wizard-header">
+        <h2><i class="fas fa-clipboard-list"></i> Nueva Inscripción</h2>
+        <p>Complete los 3 pasos para registrar una nueva inscripción</p>
     </div>
+    
+    <div class="steps-nav">
+        <button type="button" class="step-btn active" id="step1-btn">
+            <div class="step-number"><span>1</span></div>
+            <span class="step-icon"><i class="fas fa-user"></i></span>
+            <span class="step-label">Cliente</span>
+        </button>
+        <button type="button" class="step-btn" id="step2-btn" disabled>
+            <div class="step-number"><span>2</span></div>
+            <span class="step-icon"><i class="fas fa-dumbbell"></i></span>
+            <span class="step-label">Membresía</span>
+        </button>
+        <button type="button" class="step-btn" id="step3-btn" disabled>
+            <div class="step-number"><span>3</span></div>
+            <span class="step-icon"><i class="fas fa-credit-card"></i></span>
+            <span class="step-label">Pago</span>
+        </button>
+    </div>
+</div>
 
+<!-- FORMULARIO PRINCIPAL -->
+<div class="card-inscripcion">
     <div class="card-body">
-        <div class="steps-nav">
-            <button type="button" class="step-btn active" id="step1-btn">
-                <i class="fas fa-user-check"></i> Paso 1: Cliente
-            </button>
-            <button type="button" class="step-btn" id="step2-btn" disabled>
-                <i class="fas fa-dumbbell"></i> Paso 2: Membresía
-            </button>
-            <button type="button" class="step-btn" id="step3-btn" disabled>
-                <i class="fas fa-credit-card"></i> Paso 3: Pago
-            </button>
-        </div>
-
         <form action="{{ route('admin.inscripciones.store') }}" method="POST" id="inscripcionForm">
             @csrf
             <input type="hidden" id="form_submit_token" name="form_submit_token" value="{{ uniqid() }}">
@@ -624,15 +846,21 @@
                     <i class="fas fa-user-check"></i> Seleccionar Cliente
                 </div>
                 
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Clientes disponibles:</strong> Solo se muestran clientes activos que NO tienen una membresía vigente 
-                    (clientes nuevos sin inscripción o con membresía vencida/cancelada).
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle mr-2"></i> 
+                    <strong>Clientes disponibles:</strong> Solo clientes activos sin membresía vigente.
                 </div>
 
-                <div class="search-clientes">
-                    <input type="text" class="form-control form-control-lg" id="buscarCliente" 
-                           placeholder="🔍 Buscar cliente por nombre o RUT...">
+                <div class="search-clientes mb-3">
+                    <div class="input-group input-group-lg">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" style="background: var(--primary); color: white; border: none;">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                        <input type="text" class="form-control form-control-lg" id="buscarCliente" 
+                               placeholder="Buscar por nombre o RUT..." style="border-left: none;">
+                    </div>
                 </div>
 
                 <div class="clientes-list" id="clientesList">
@@ -999,19 +1227,19 @@
             <!-- ========== BOTONES DE NAVEGACIÓN ========== -->
             <div class="buttons-container">
                 <div class="buttons-group">
-                    <button type="button" class="btn btn-secondary btn-lg" id="btnAnterior" style="display: none;">
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                </div>
-                <div class="buttons-group">
                     <a href="{{ route('admin.inscripciones.index') }}" class="btn btn-outline-danger btn-lg">
                         <i class="fas fa-times"></i> Cancelar
                     </a>
+                    <button type="button" class="btn btn-secondary btn-lg" id="btnAnterior" style="display: none;">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                </div>
+                <div class="buttons-group">
                     <button type="button" class="btn btn-primary btn-lg" id="btnSiguiente">
-                        Siguiente <i class="fas fa-arrow-right"></i>
+                        Siguiente <i class="fas fa-chevron-right"></i>
                     </button>
                     <button type="submit" class="btn btn-success btn-lg" id="btnGuardar" style="display: none;">
-                        <i class="fas fa-save"></i> Registrar Inscripción
+                        <i class="fas fa-check-circle"></i> Confirmar Inscripción
                     </button>
                 </div>
             </div>
