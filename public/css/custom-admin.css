@@ -1,0 +1,973 @@
+/**
+ * EstoicosGym - Admin Theme Pro
+ * Diseño elegante y profesional
+ */
+
+/* ============================================
+   VARIABLES - Colores del Logo
+   ============================================ */
+:root {
+    --gym-purple: #c140d4;
+    --gym-purple-dark: #a035b5;
+    --gym-purple-light: #d466e3;
+    --gym-cream: #f1e6bf;
+    --gym-navy: #253a5b;
+    --gym-navy-light: #2f4a6f;
+    --gym-gray: #434750;
+}
+
+/* ============================================
+   SIDEBAR PRINCIPAL
+   ============================================ */
+.main-sidebar {
+    background: linear-gradient(180deg, #1c2e4a 0%, #15253d 100%) !important;
+    box-shadow: 3px 0 20px rgba(0, 0, 0, 0.25);
+    overflow: hidden !important;
+}
+
+.main-sidebar .sidebar {
+    overflow: hidden !important;
+}
+
+/* ============================================
+   LOGO - ESTOICOS GYM
+   ============================================ */
+.brand-link {
+    background: linear-gradient(135deg, #2a3f5f 0%, #1f3351 100%) !important;
+    border-bottom: 3px solid var(--gym-purple) !important;
+    padding: 0 1rem !important;
+    height: 50px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.brand-link:hover {
+    background: linear-gradient(135deg, #344b6d 0%, #283d5a 100%) !important;
+}
+
+/* Ocultar imagen completamente */
+.brand-image,
+.brand-link img {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Texto del logo */
+.brand-text {
+    font-size: 1.25rem !important;
+    letter-spacing: 2px;
+    margin: 0 !important;
+    padding-left: 0 !important;
+}
+
+.brand-first {
+    font-weight: 600;
+    color: var(--gym-cream);
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.brand-second {
+    font-weight: 800;
+    color: var(--gym-purple);
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    margin-left: 2px;
+}
+
+/* Sidebar colapsado */
+.sidebar-collapse .brand-text {
+    font-size: 1.1rem !important;
+    letter-spacing: 1px;
+}
+
+.sidebar-collapse .brand-first {
+    display: none;
+}
+
+.sidebar-collapse .brand-second::before {
+    content: 'E';
+    font-weight: 600;
+    color: var(--gym-cream);
+}
+
+/* ============================================
+   NAVEGACIÓN - Texto más grande
+   ============================================ */
+.sidebar {
+    padding-top: 0.5rem;
+    overflow: hidden !important;
+    height: auto !important;
+}
+
+.nav-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    padding: 0.5rem 1rem !important;
+    margin: 1px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem !important;
+    font-weight: 400;
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
+}
+
+.nav-sidebar .nav-link:hover {
+    background: rgba(193, 64, 212, 0.15) !important;
+    color: #fff !important;
+    border-left-color: var(--gym-purple);
+    transform: translateX(3px);
+}
+
+.nav-sidebar .nav-link.active {
+    background: linear-gradient(90deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+    color: #fff !important;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(193, 64, 212, 0.35);
+    border-left-color: var(--gym-cream);
+}
+
+/* Iconos */
+.nav-sidebar .nav-icon {
+    color: var(--gym-purple-light);
+    width: 1.5rem !important;
+    font-size: 0.9rem !important;
+    margin-right: 0.5rem;
+    transition: all 0.25s ease;
+}
+
+.nav-sidebar .nav-link:hover .nav-icon {
+    color: var(--gym-cream);
+    transform: scale(1.1);
+}
+
+.nav-sidebar .nav-link.active .nav-icon {
+    color: #fff;
+}
+
+/* Texto del menú */
+.nav-sidebar .nav-link p {
+    font-size: 0.92rem !important;
+    margin: 0;
+}
+
+/* ============================================
+   HEADERS DE SECCIÓN
+   ============================================ */
+.nav-header {
+    color: var(--gym-purple-light) !important;
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.5px;
+    padding: 0.8rem 1rem 0.3rem !important;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+    border-top: 1px solid rgba(193, 64, 212, 0.15);
+}
+
+.nav-header:first-of-type {
+    border-top: none;
+    margin-top: 0;
+}
+
+/* ============================================
+   SUBMENÚS
+   ============================================ */
+.nav-treeview {
+    background: rgba(0, 0, 0, 0.2);
+    margin: 2px 8px;
+    border-radius: 6px;
+    padding: 4px 0;
+    border-left: 2px solid var(--gym-purple);
+}
+
+.nav-treeview .nav-link {
+    padding: 0.4rem 0.8rem 0.4rem 1.5rem !important;
+    font-size: 0.82rem !important;
+    margin: 1px 4px !important;
+    border-left: none;
+}
+
+.nav-treeview .nav-icon {
+    font-size: 0.75rem !important;
+    width: 1.2rem !important;
+}
+
+/* Flecha del menú desplegable */
+.nav-sidebar .nav-link > .right,
+.nav-sidebar .nav-link > p > .right {
+    color: var(--gym-purple-light);
+    transition: transform 0.3s ease;
+}
+
+.nav-sidebar .menu-open > .nav-link > .right,
+.nav-sidebar .menu-open > .nav-link > p > .right {
+    transform: rotate(-90deg);
+}
+
+/* ============================================
+   NAVBAR SUPERIOR
+   ============================================ */
+.main-header.navbar {
+    background: #fff !important;
+    border-bottom: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    height: 60px;
+}
+
+.main-header .nav-link {
+    color: var(--gym-gray) !important;
+    padding: 0.5rem 1rem;
+}
+
+.main-header .nav-link:hover {
+    color: var(--gym-purple) !important;
+}
+
+.main-header .nav-link i {
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   CONTENIDO PRINCIPAL
+   ============================================ */
+.content-wrapper {
+    background: #f0f2f5 !important;
+}
+
+.content-header {
+    padding: 1rem 1.5rem;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gym-navy);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 2px solid #f0f0f0;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+.card-primary .card-header {
+    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+    color: #fff;
+    border: none;
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+.btn-primary {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+    border-radius: 6px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: var(--gym-purple-dark);
+    border-color: var(--gym-purple-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(193, 64, 212, 0.3);
+}
+
+.btn-info {
+    background: var(--gym-navy);
+    border-color: var(--gym-navy);
+}
+
+.btn-info:hover {
+    background: var(--gym-navy-light);
+    border-color: var(--gym-navy-light);
+}
+
+/* ============================================
+   TABLAS
+   ============================================ */
+.table thead th {
+    background: var(--gym-navy);
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    padding: 1rem;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(193, 64, 212, 0.03);
+}
+
+.table-hover tbody tr:hover {
+    background: rgba(193, 64, 212, 0.08);
+}
+
+/* ============================================
+   SMALL BOXES (Dashboard)
+   ============================================ */
+.small-box {
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.small-box .icon {
+    font-size: 70px;
+    opacity: 0.3;
+}
+
+.small-box.bg-purple,
+.small-box.bg-primary {
+    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+}
+
+.small-box.bg-info {
+    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a2f4a 100%) !important;
+}
+
+.small-box.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+}
+
+.small-box.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%) !important;
+}
+
+/* ============================================
+   INFO BOXES
+   ============================================ */
+.info-box {
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    min-height: 90px;
+}
+
+.info-box-icon {
+    border-radius: 10px 0 0 10px;
+}
+
+.info-box-icon.bg-purple {
+    background: var(--gym-purple) !important;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.badge-primary,
+.badge-purple {
+    background: var(--gym-purple);
+}
+
+.badge-info {
+    background: var(--gym-navy);
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    padding: 0.6rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--gym-purple);
+    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+.dark-mode .content-wrapper {
+    background: #2c3e50 !important;
+}
+
+.dark-mode .card {
+    background: #34495e;
+    color: #ecf0f1;
+}
+
+.dark-mode .card-header {
+    background: #2c3e50;
+    border-color: #3d566e;
+    color: #ecf0f1;
+}
+
+.dark-mode .main-header.navbar {
+    background: var(--gym-gray) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .main-header .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-mode .table {
+    color: #ecf0f1;
+}
+
+.dark-mode .form-control {
+    background: #34495e;
+    border-color: #4a6278;
+    color: #ecf0f1;
+}
+
+/* ============================================
+   USER MENU
+   ============================================ */
+.user-menu .dropdown-menu {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.user-header {
+    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a2f4a 100%) !important;
+    padding: 1.5rem;
+}
+
+.user-header p {
+    color: #fff;
+    font-size: 1rem;
+}
+
+/* ============================================
+   SCROLLBAR - Completamente oculta
+   ============================================ */
+.sidebar,
+.main-sidebar,
+.main-sidebar .sidebar,
+.os-host,
+.os-viewport {
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.main-sidebar::-webkit-scrollbar,
+.os-viewport::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* ============================================
+   PRELOADER
+   ============================================ */
+.preloader {
+    background: var(--gym-navy) !important;
+}
+
+/* ============================================
+   ENLACES
+   ============================================ */
+a {
+    color: var(--gym-purple);
+}
+
+a:hover {
+    color: var(--gym-purple-dark);
+}
+
+.text-primary {
+    color: var(--gym-purple) !important;
+}
+
+.bg-primary {
+    background: var(--gym-purple) !important;
+}
+
+.bg-purple {
+    background: var(--gym-purple) !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 991.98px) {
+    .nav-sidebar .nav-link {
+        margin: 3px 6px;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .nav-treeview {
+        margin: 3px 6px;
+    }
+    
+    .brand-text {
+        font-size: 1.3rem !important;
+    }
+}
+
+/* ============================================
+   ANIMACIONES SUTILES
+   ============================================ */
+.nav-sidebar .nav-item {
+    transition: all 0.2s ease;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+    transition: all 0.2s ease;
+}
+
+/* ============================================
+   ESTILOS GLOBALES PARA MÓDULOS
+   ============================================ */
+
+/* Hero Headers de módulos */
+.clientes-hero,
+.inscripciones-hero,
+.pagos-hero,
+.membresias-hero,
+.convenios-hero,
+[class*="-hero"] {
+    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%) !important;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(37, 58, 91, 0.3);
+}
+
+[class*="-hero"] .hero-icon i,
+[class*="-hero"] .hero-content i {
+    color: var(--gym-purple) !important;
+}
+
+[class*="-hero"] h1,
+[class*="-hero"] .hero-text h1 {
+    color: var(--gym-cream) !important;
+}
+
+[class*="-hero"] p,
+[class*="-hero"] .hero-text p {
+    color: rgba(241, 230, 191, 0.7) !important;
+}
+
+/* Botones de acción en heroes */
+.btn-nuevo-cliente,
+.btn-nueva-inscripcion,
+.btn-nuevo-pago,
+[class*="btn-nuevo"],
+[class*="btn-nueva"] {
+    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(193, 64, 212, 0.3);
+    transition: all 0.3s ease;
+}
+
+[class*="btn-nuevo"]:hover,
+[class*="btn-nueva"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(193, 64, 212, 0.4);
+    color: #fff !important;
+}
+
+.btn-ver-inactivos,
+[class*="btn-ver"] {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(241, 230, 191, 0.3) !important;
+    color: var(--gym-cream) !important;
+    border-radius: 8px;
+}
+
+[class*="btn-ver"]:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+/* Stat Cards */
+.stat-card,
+.stats-grid .stat-card,
+[class*="stat-card"] {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    border-left: 4px solid var(--gym-purple);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover,
+[class*="stat-card"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-icon i,
+[class*="stat-card"] .stat-icon i {
+    color: var(--gym-purple);
+}
+
+.stat-card.stat-activos,
+.stat-activos {
+    border-left-color: #28a745;
+}
+
+.stat-card.stat-activos .stat-icon i {
+    color: #28a745;
+}
+
+.stat-card.stat-vencidos,
+.stat-vencidos {
+    border-left-color: #dc3545;
+}
+
+.stat-card.stat-vencidos .stat-icon i {
+    color: #dc3545;
+}
+
+.stat-card.stat-total,
+.stat-total {
+    border-left-color: var(--gym-navy);
+}
+
+.stat-card.stat-total .stat-icon i {
+    color: var(--gym-navy);
+}
+
+/* Cards de contenido */
+.card-primary:not(.card-outline) .card-header,
+.card-info:not(.card-outline) .card-header {
+    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+    border: none;
+}
+
+.card-outline.card-primary {
+    border-top-color: var(--gym-purple) !important;
+}
+
+.card-outline.card-info {
+    border-top-color: var(--gym-navy) !important;
+}
+
+/* DataTables */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--gym-purple) !important;
+    border-color: var(--gym-purple) !important;
+    color: #fff !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: var(--gym-navy) !important;
+    border-color: var(--gym-navy) !important;
+    color: #fff !important;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--gym-purple);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
+}
+
+/* Badges de estado */
+.badge-success,
+.badge-activo,
+.estado-activa {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+}
+
+.badge-danger,
+.badge-vencido,
+.estado-vencida {
+    background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%) !important;
+}
+
+.badge-warning,
+.badge-pendiente,
+.estado-pendiente {
+    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%) !important;
+    color: #212529 !important;
+}
+
+.badge-info,
+.badge-pausada,
+.estado-pausada {
+    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%) !important;
+}
+
+.badge-secondary,
+.badge-inactivo {
+    background: linear-gradient(135deg, var(--gym-gray) 0%, #363a42 100%) !important;
+}
+
+/* Botones de acción en tablas */
+.btn-group .btn,
+.acciones .btn,
+td .btn {
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+.btn-outline-primary {
+    color: var(--gym-purple);
+    border-color: var(--gym-purple);
+}
+
+.btn-outline-primary:hover {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+    color: #fff;
+}
+
+.btn-outline-info {
+    color: var(--gym-navy);
+    border-color: var(--gym-navy);
+}
+
+.btn-outline-info:hover {
+    background: var(--gym-navy);
+    border-color: var(--gym-navy);
+    color: #fff;
+}
+
+/* Modales */
+.modal-header {
+    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.3rem 0.3rem 0 0;
+}
+
+.modal-header .close,
+.modal-header .btn-close {
+    color: #fff;
+    opacity: 0.8;
+}
+
+.modal-header .close:hover,
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-title {
+    color: var(--gym-cream);
+}
+
+.modal-footer .btn-primary {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+}
+
+/* Select2 */
+.select2-container--default .select2-selection--single {
+    border-radius: 6px;
+    border-color: #ddd;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+}
+
+.select2-container--default .select2-selection--single:focus,
+.select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: var(--gym-purple);
+    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: var(--gym-purple);
+}
+
+/* Tabs/Nav Pills */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    background: var(--gym-purple);
+}
+
+.nav-pills .nav-link {
+    color: var(--gym-purple);
+    border-radius: 6px;
+}
+
+.nav-pills .nav-link:hover {
+    background: rgba(193, 64, 212, 0.1);
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom: 3px solid var(--gym-purple);
+    color: var(--gym-purple);
+}
+
+/* Progress bars */
+.progress-bar {
+    background: linear-gradient(90deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+}
+
+.progress-bar.bg-success {
+    background: linear-gradient(90deg, #28a745 0%, #1e7e34 100%) !important;
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(90deg, #dc3545 0%, #bd2130 100%) !important;
+}
+
+/* Alertas */
+.alert-primary {
+    background: rgba(193, 64, 212, 0.1);
+    border-color: var(--gym-purple);
+    color: var(--gym-purple-dark);
+}
+
+.alert-info {
+    background: rgba(37, 58, 91, 0.1);
+    border-color: var(--gym-navy);
+    color: var(--gym-navy);
+}
+
+/* Breadcrumbs */
+.breadcrumb-item.active {
+    color: var(--gym-purple);
+}
+
+.breadcrumb-item a {
+    color: var(--gym-navy);
+}
+
+.breadcrumb-item a:hover {
+    color: var(--gym-purple);
+}
+
+/* Tooltips */
+.tooltip-inner {
+    background: var(--gym-navy);
+}
+
+.bs-tooltip-top .arrow::before,
+.bs-tooltip-auto[x-placement^="top"] .arrow::before {
+    border-top-color: var(--gym-navy);
+}
+
+/* Switch/Toggle */
+.custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+}
+
+/* Checkbox y Radio */
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before,
+.custom-radio .custom-control-input:checked ~ .custom-control-label::before {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+}
+
+/* Loading/Spinner */
+.spinner-border.text-primary {
+    color: var(--gym-purple) !important;
+}
+
+/* Calendario/DatePicker */
+.daterangepicker td.active,
+.daterangepicker td.active:hover {
+    background: var(--gym-purple);
+}
+
+.daterangepicker .btn-primary {
+    background: var(--gym-purple);
+    border-color: var(--gym-purple);
+}
+
+/* Timeline */
+.timeline > .time-label > span {
+    background: var(--gym-purple);
+}
+
+.timeline > li > .timeline-item {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Callouts */
+.callout.callout-primary {
+    border-left-color: var(--gym-purple);
+}
+
+.callout.callout-info {
+    border-left-color: var(--gym-navy);
+}
+
+/* Ribbons */
+.ribbon-wrapper .ribbon {
+    background: var(--gym-purple);
+}
+
+/* Iconos flotantes */
+.icon-circle {
+    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+    border-radius: 50%;
+    color: #fff;
+}
+
+/* Links en cards */
+.card a:not(.btn) {
+    color: var(--gym-purple);
+}
+
+.card a:not(.btn):hover {
+    color: var(--gym-purple-dark);
+}
+
+/* Empty state */
+.empty-state i {
+    color: var(--gym-purple);
+    opacity: 0.5;
+}
+
+/* Dark mode para módulos */
+.dark-mode .stat-card,
+.dark-mode [class*="stat-card"] {
+    background: #34495e;
+    color: #ecf0f1;
+}
+
+.dark-mode [class*="-hero"] {
+    background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%) !important;
+}
+
+.dark-mode .modal-content {
+    background: #34495e;
+    color: #ecf0f1;
+}
+
+.dark-mode .modal-header {
+    background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+}

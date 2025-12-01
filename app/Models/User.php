@@ -79,4 +79,33 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Rol::class, 'id_rol');
     }
+
+    /**
+     * Métodos requeridos por AdminLTE para el menú de usuario
+     */
+    
+    /**
+     * Obtener la descripción del usuario para AdminLTE
+     */
+    public function adminlte_desc(): string
+    {
+        return $this->rol ? $this->rol->nombre : 'Usuario';
+    }
+
+    /**
+     * Obtener la imagen de perfil del usuario para AdminLTE
+     */
+    public function adminlte_image(): string
+    {
+        // Puedes cambiar esto por una imagen real del usuario
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=e94560&color=fff&size=128';
+    }
+
+    /**
+     * Obtener la URL del perfil del usuario para AdminLTE
+     */
+    public function adminlte_profile_url(): string
+    {
+        return '#'; // Cambiar a route('profile') si tienes una página de perfil
+    }
 }

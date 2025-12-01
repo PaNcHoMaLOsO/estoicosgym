@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
@@ -30,15 +31,49 @@ Route::model('cliente', Cliente::class);
 Route::model('membresia', Membresia::class);
 Route::model('convenio', Convenio::class);
 
+// ===== RUTAS PÚBLICAS =====
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('login');
 });
 
-// Dashboard
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// ===== AUTENTICACIÓN =====
+Route::middleware('guest')->group(function () {
+    Route::get('/login', function () {
+        return view('auth.login');
+    })->name('login');
+    
+    Route::post('/login', function () {
+        $credentials = request()->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+        
+        if (Auth::attempt($credentials, request()->boolean('remember'))) {
+            request()->session()->regenerate();
+            return redirect()->intended('dashboard');
+        }
+        
+        return back()->withErrors([
+            'email' => 'Las credenciales no coinciden con nuestros registros.',
+        ])->onlyInput('email');
+    });
+});
 
-// Rutas Admin - Grupo con prefijo 'admin'
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/login');
+})->middleware('auth')->name('logout');
+
+// ===== RUTAS PROTEGIDAS (Requieren autenticación) =====
+Route::middleware('auth')->group(function () {
+    
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Rutas Admin - Grupo con prefijo 'admin'
+    Route::prefix('admin')->name('admin.')->group(function () {
     // Rutas personalizadas de clientes (deben ir antes del resource)
     Route::get('clientes-desactivados/ver', [ClienteController::class, 'showInactive'])->name('clientes.inactive');
     Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
@@ -105,10 +140,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/{notificacion}/cancelar', [NotificacionController::class, 'cancelar'])->name('cancelar');
         Route::get('/{notificacion}/logs', [NotificacionController::class, 'logs'])->name('logs');
     });
-});
+}); // Fin rutas admin
+
+}); // Fin middleware('auth')
 
 // API Routes - Grupo con prefijo 'api'
-Route::prefix('api')->group(function () {
+Route::prefix('api')->middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard/stats', [DashboardApiController::class, 'stats']);
     Route::get('/dashboard/ingresos-mes', [DashboardApiController::class, 'ingresosPorMes']);
