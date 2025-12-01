@@ -106,11 +106,11 @@
         font-size: 1.4rem;
         margin-bottom: 0.75rem;
     }
-    .stat-card .stat-icon.primary { background: rgba(26,26,46,0.15); color: var(--primary); }
-    .stat-card .stat-icon.success { background: rgba(0,191,142,0.2); color: var(--success); }
-    .stat-card .stat-icon.warning { background: rgba(240,165,0,0.2); color: var(--warning); }
-    .stat-card .stat-icon.accent { background: rgba(233,69,96,0.2); color: var(--accent); }
-    .stat-card .stat-icon.info { background: rgba(67,97,238,0.2); color: var(--info); }
+    .stat-card .stat-icon.primary { background: rgba(26,26,46,0.4); color: var(--primary); }
+    .stat-card .stat-icon.success { background: rgba(0,191,142,0.4); color: var(--success); }
+    .stat-card .stat-icon.warning { background: rgba(240,165,0,0.4); color: var(--warning); }
+    .stat-card .stat-icon.accent { background: rgba(233,69,96,0.4); color: var(--accent); }
+    .stat-card .stat-icon.info { background: rgba(67,97,238,0.4); color: var(--info); }
     .stat-card .stat-value {
         font-size: 1.5rem;
         font-weight: 700;
