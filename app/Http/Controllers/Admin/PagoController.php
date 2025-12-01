@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Models\Pago;
 use App\Models\Inscripcion;
@@ -125,6 +126,20 @@ class PagoController extends Controller
     {
         if (!$this->validateFormToken($request, 'pago_create')) {
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
+        // VALIDACIÓN: Verificar estado de inscripción antes de crear pago
+        $inscripcionCheck = Inscripcion::find($request->input('id_inscripcion'));
+        if ($inscripcionCheck) {
+            // No permitir pagos en inscripciones finalizadas (Cancelada, Cambiada, Traspasada)
+            if (in_array($inscripcionCheck->id_estado, EstadosCodigo::INSCRIPCION_FINALIZADOS)) {
+                $estadoNombre = EstadosCodigo::getNombre($inscripcionCheck->id_estado);
+                return back()->with('error', "No se puede registrar pago para una inscripción con estado '{$estadoNombre}'.");
+            }
+            // Verificar que el cliente esté activo
+            if ($inscripcionCheck->cliente && !$inscripcionCheck->cliente->activo) {
+                return back()->with('error', 'No se puede registrar pago para un cliente inactivo.');
+            }
         }
 
         $tipoPago = $request->input('tipo_pago', 'abono');

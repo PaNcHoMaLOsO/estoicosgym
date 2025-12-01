@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Models\Inscripcion;
 use App\Models\Cliente;
@@ -179,6 +180,12 @@ class InscripcionController extends Controller
     {
         if (!$this->validateFormToken($request, 'inscripcion_create')) {
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
+        // VALIDACIÓN: Verificar que el cliente está activo antes de crear inscripción
+        $cliente = Cliente::find($request->input('id_cliente'));
+        if ($cliente && !$cliente->activo) {
+            return back()->with('error', 'No se puede crear inscripción para un cliente inactivo. Por favor, reactive el cliente primero.');
         }
 
         // Verificar tipo de pago

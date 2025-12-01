@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EstadosCodigo;
 use App\Models\Cliente;
 use App\Models\Convenio;
 use App\Models\Inscripcion;
@@ -350,19 +351,22 @@ class ClienteController extends Controller
      */
     public function destroy(Cliente $cliente)
     {
-        // Validar que no tenga inscripciones activas (id_estado = 1)
-        if ($cliente->inscripciones()->where('id_estado', 100)->exists()) {
+        // Validar que no tenga inscripciones activas o pausadas 
+        // (estados que requieren cliente activo según EstadosCodigo)
+        $estadosReqClienteActivo = EstadosCodigo::INSCRIPCION_REQUIERE_CLIENTE_ACTIVO;
+        if ($cliente->inscripciones()->whereIn('id_estado', $estadosReqClienteActivo)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
-                ->with('error', 'No se puede desactivar este cliente. Tiene inscripciones activas registradas. Por favor, venza o cancele estas inscripciones primero.');
+                ->with('error', 'No se puede desactivar este cliente. Tiene inscripciones activas o pausadas. Por favor, venza o cancele estas inscripciones primero.');
         }
 
-        // Validar que no tenga pagos pendientes (id_estado = 101)
-        if ($cliente->pagos()->where('id_estado', 200)->exists()) {
+        // Validar que no tenga pagos pendientes o parciales
+        $estadosPagoPendientes = EstadosCodigo::PAGO_PENDIENTES_COBRO;
+        if ($cliente->pagos()->whereIn('id_estado', $estadosPagoPendientes)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
                 ->with('error', 'No se puede desactivar este cliente. Tiene pagos pendientes. Por favor, procese estos pagos primero.');
         }
 
-        // Soft delete: marcar como inactivo en lugar de eliminar físicamente
+        // Soft delete: marcar como inactivo (id_estado se actualiza automáticamente en boot())
         $cliente->update(['activo' => false]);
 
         return redirect()->route('admin.clientes.index')
