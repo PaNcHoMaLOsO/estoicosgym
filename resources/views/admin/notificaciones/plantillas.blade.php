@@ -20,18 +20,25 @@
 @stop
 
 @section('content')
-<div class="container-fluid animate__animated animate__fadeIn">
+<div class="container-fluid">
     {{-- Alert informativo --}}
-    <div class="alert border-0 mb-4" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 15px;">
-        <div class="d-flex align-items-center text-white">
-            <i class="fas fa-lightbulb mr-3" style="font-size: 1.5rem; color: #f0a500;"></i>
+    <div class="alert alert-info border-0 mb-4" style="border-radius: 10px;">
+        <div class="d-flex align-items-start">
+            <i class="fas fa-lightbulb mr-3 mt-1" style="font-size: 1.5rem;"></i>
             <div>
                 <strong>Variables disponibles en las plantillas:</strong><br>
-                <code class="text-warning">{nombre}</code>, 
-                <code class="text-warning">{membresia}</code>, 
-                <code class="text-warning">{fecha_vencimiento}</code>, 
-                <code class="text-warning">{dias_restantes}</code>,
-                <code class="text-warning">{monto_pendiente}</code>
+                <small class="text-muted">Generales:</small> 
+                <code>{nombre}</code>, 
+                <code>{membresia}</code>, 
+                <code>{fecha_vencimiento}</code>, 
+                <code>{dias_restantes}</code>,
+                <code>{monto_pendiente}</code><br>
+                <small class="text-muted">Festivos:</small>
+                <code>{nombre_festivo}</code>,
+                <code>{fecha_festivo}</code>,
+                <code>{horarios_festivo}</code>,
+                <code>{mensaje_adicional}</code>,
+                <code>{instagram_post_url}</code>
             </div>
         </div>
     </div>
@@ -39,33 +46,35 @@
     <div class="row">
         @foreach($tipos as $tipo)
         <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100" style="border-radius: 15px; overflow: hidden; border: none;">
+            <div class="card shadow-sm h-100" style="border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6;">
                 @php
                     $tipoConfig = [
-                        'membresia_por_vencer' => ['icon' => 'clock', 'color' => '#f0a500', 'bg' => 'linear-gradient(135deg, #f0a500 0%, #f5c842 100%)'],
-                        'membresia_vencida' => ['icon' => 'calendar-times', 'color' => '#e94560', 'bg' => 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)'],
-                        'bienvenida' => ['icon' => 'hand-sparkles', 'color' => '#00bf8e', 'bg' => 'linear-gradient(135deg, #00bf8e 0%, #00e6a7 100%)'],
-                        'pago_pendiente' => ['icon' => 'credit-card', 'color' => '#6c757d', 'bg' => 'linear-gradient(135deg, #6c757d 0%, #868e96 100%)'],
+                        'membresia_por_vencer' => ['icon' => 'clock', 'color' => '#f0a500'],
+                        'membresia_vencida' => ['icon' => 'calendar-times', 'color' => '#e94560'],
+                        'bienvenida' => ['icon' => 'hand-sparkles', 'color' => '#00bf8e'],
+                        'pago_pendiente' => ['icon' => 'credit-card', 'color' => '#6c757d'],
+                        'horario_festivo' => ['icon' => 'calendar-day', 'color' => '#e94560'],
                     ];
-                    $config = $tipoConfig[$tipo->codigo] ?? ['icon' => 'bell', 'color' => '#0dcaf0', 'bg' => 'linear-gradient(135deg, #0dcaf0 0%, #45caff 100%)'];
+                    $config = $tipoConfig[$tipo->codigo] ?? ['icon' => 'bell', 'color' => '#0dcaf0'];
                 @endphp
                 
-                <div class="card-header py-3 d-flex align-items-center" style="background: {{ $config['bg'] }};">
-                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px;">
+                <div class="card-header py-3 d-flex align-items-center bg-white border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" 
+                         style="width: 45px; height: 45px; background-color: {{ $config['color'] }}15;">
                         <i class="fas fa-{{ $config['icon'] }}" style="color: {{ $config['color'] }}; font-size: 1.2rem;"></i>
                     </div>
-                    <div class="text-white">
-                        <h5 class="mb-0">{{ $tipo->nombre }}</h5>
-                        <small style="opacity: 0.9;">{{ $tipo->descripcion }}</small>
+                    <div>
+                        <h5 class="mb-0 text-dark">{{ $tipo->nombre }}</h5>
+                        <small class="text-muted">{{ $tipo->descripcion }}</small>
                     </div>
                     <div class="ml-auto">
                         @if($tipo->activo)
-                            <span class="badge badge-light">
-                                <i class="fas fa-check text-success"></i> Activo
+                            <span class="badge badge-success">
+                                <i class="fas fa-check"></i> Activo
                             </span>
                         @else
-                            <span class="badge badge-dark">
-                                <i class="fas fa-times text-danger"></i> Inactivo
+                            <span class="badge badge-secondary">
+                                <i class="fas fa-times"></i> Inactivo
                             </span>
                         @endif
                     </div>
@@ -117,14 +126,33 @@
                                  style="background: #1a1a2e; max-height: 200px; overflow-y: auto; display: block;">
                                 <pre style="color: #00bf8e; margin: 0; white-space: pre-wrap; font-size: 11px;">{{ $tipo->plantilla_email }}</pre>
                             </div>
-                            <div id="preview-{{ $tipo->id }}" class="border rounded" 
-                                 style="max-height: 300px; overflow-y: auto; display: none;">
-                                {!! str_replace(
+                            {{-- Usamos iframe para aislar los estilos del email --}}
+                            @php
+                                $previewContent = str_replace(
                                     ['{nombre}', '{membresia}', '{fecha_vencimiento}', '{dias_restantes}', '{monto_pendiente}'],
                                     ['Juan Pérez', 'Premium Mensual', date('d/m/Y', strtotime('+7 days')), '7', '150.000'],
                                     $tipo->plantilla_email
-                                ) !!}
-                            </div>
+                                );
+                            @endphp
+                            <iframe id="preview-{{ $tipo->id }}" class="border rounded w-100" 
+                                 style="height: 300px; display: none; background: #fff;">
+                            </iframe>
+                            <script>
+                                (function() {
+                                    var content = @json($previewContent);
+                                    var iframe = document.getElementById('preview-{{ $tipo->id }}');
+                                    iframe.onload = function() {
+                                        iframe.contentDocument.open();
+                                        iframe.contentDocument.write(content);
+                                        iframe.contentDocument.close();
+                                    };
+                                    if (iframe.contentDocument) {
+                                        iframe.contentDocument.open();
+                                        iframe.contentDocument.write(content);
+                                        iframe.contentDocument.close();
+                                    }
+                                })();
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -136,15 +164,21 @@
                             Actualizado: {{ $tipo->updated_at->format('d/m/Y H:i') }}
                         </small>
                         <div>
-                            <button type="button" class="btn btn-outline-info btn-sm" 
-                                    onclick="editarPlantilla({{ $tipo->id }}, '{{ addslashes($tipo->nombre) }}')">
+                            <a href="{{ route('admin.notificaciones.plantillas.editar', $tipo) }}" 
+                               class="btn btn-outline-info btn-sm">
                                 <i class="fas fa-edit mr-1"></i> Editar
-                            </button>
-                            <form action="#" method="POST" class="d-inline">
+                            </a>
+                            <form action="{{ route('admin.notificaciones.plantillas.actualizar', $tipo) }}" 
+                                  method="POST" class="d-inline toggle-form">
                                 @csrf
-                                @method('PATCH')
-                                <button type="button" class="btn btn-{{ $tipo->activo ? 'outline-secondary' : 'outline-success' }} btn-sm"
-                                        onclick="toggleEstado({{ $tipo->id }}, {{ $tipo->activo ? 'true' : 'false' }})">
+                                @method('PUT')
+                                <input type="hidden" name="nombre" value="{{ $tipo->nombre }}">
+                                <input type="hidden" name="asunto_email" value="{{ $tipo->asunto_email }}">
+                                <input type="hidden" name="plantilla_email" value="{{ $tipo->plantilla_email }}">
+                                <input type="hidden" name="dias_anticipacion" value="{{ $tipo->dias_anticipacion }}">
+                                <input type="hidden" name="activo" value="{{ $tipo->activo ? '0' : '1' }}">
+                                <input type="hidden" name="enviar_email" value="{{ $tipo->enviar_email ? '1' : '0' }}">
+                                <button type="submit" class="btn btn-{{ $tipo->activo ? 'outline-secondary' : 'outline-success' }} btn-sm">
                                     <i class="fas fa-{{ $tipo->activo ? 'pause' : 'play' }} mr-1"></i>
                                     {{ $tipo->activo ? 'Desactivar' : 'Activar' }}
                                 </button>
@@ -158,10 +192,10 @@
     </div>
 
     {{-- Estadísticas de uso --}}
-    <div class="card shadow-sm mt-4" style="border-radius: 15px; overflow: hidden; border: none;">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
-            <h5 class="mb-0 text-white">
-                <i class="fas fa-chart-pie mr-2"></i>
+    <div class="card shadow-sm mt-4" style="border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6;">
+        <div class="card-header py-3 bg-white border-bottom">
+            <h5 class="mb-0 text-dark">
+                <i class="fas fa-chart-pie mr-2 text-primary"></i>
                 Estadísticas de Uso por Plantilla
             </h5>
         </div>
@@ -169,14 +203,14 @@
             <div class="row">
                 @foreach($tipos as $tipo)
                 @php
-                    $totalEnviadas = \App\Models\Notificacion::where('tipo_notificacion_id', $tipo->id)
-                        ->where('estado_id', 601)
+                    $totalEnviadas = \App\Models\Notificacion::where('id_tipo_notificacion', $tipo->id)
+                        ->where('id_estado', 601)
                         ->count();
-                    $totalFallidas = \App\Models\Notificacion::where('tipo_notificacion_id', $tipo->id)
-                        ->where('estado_id', 602)
+                    $totalFallidas = \App\Models\Notificacion::where('id_tipo_notificacion', $tipo->id)
+                        ->where('id_estado', 602)
                         ->count();
-                    $totalPendientes = \App\Models\Notificacion::where('tipo_notificacion_id', $tipo->id)
-                        ->where('estado_id', 600)
+                    $totalPendientes = \App\Models\Notificacion::where('id_tipo_notificacion', $tipo->id)
+                        ->where('id_estado', 600)
                         ->count();
                 @endphp
                 <div class="col-md-3 mb-3">
@@ -211,13 +245,13 @@
 {{-- Modal Editar Plantilla --}}
 <div class="modal fade" id="modalEditarPlantilla" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl" role="document">
-        <div class="modal-content" style="border-radius: 15px; overflow: hidden;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
-                <h5 class="modal-title text-white">
-                    <i class="fas fa-edit mr-2"></i>
+        <div class="modal-content" style="border-radius: 10px; overflow: hidden;">
+            <div class="modal-header bg-white border-bottom">
+                <h5 class="modal-title text-dark">
+                    <i class="fas fa-edit mr-2 text-primary"></i>
                     Editar Plantilla: <span id="modalTipoNombre"></span>
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
+                <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -281,21 +315,19 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 <style>
+    .content-wrapper {
+        background: #f8f9fa !important;
+    }
+    
     .card {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
     .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
     }
     pre {
-        font-family: 'Fira Code', 'Consolas', monospace;
-    }
-    .custom-control-input:checked ~ .custom-control-label::before {
-        background-color: #00bf8e;
-        border-color: #00bf8e;
+        font-family: 'Consolas', 'Monaco', monospace;
     }
 </style>
 @stop

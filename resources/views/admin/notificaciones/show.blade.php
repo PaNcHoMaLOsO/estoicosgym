@@ -20,15 +20,15 @@
 @stop
 
 @section('content')
-<div class="container-fluid animate__animated animate__fadeIn">
+<div class="container-fluid">
     <div class="row">
         {{-- Información Principal --}}
         <div class="col-lg-8">
             {{-- Card Estado --}}
-            <div class="card shadow-sm mb-4" style="border-radius: 15px; overflow: hidden; border: none;">
-                <div class="card-header py-3" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
-                    <h5 class="mb-0 text-white">
-                        <i class="fas fa-info-circle mr-2"></i>
+            <div class="card shadow-sm mb-4" style="border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6;">
+                <div class="card-header py-3 bg-white border-bottom">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-info-circle mr-2 text-primary"></i>
                         Estado de la Notificación
                     </h5>
                 </div>
@@ -83,10 +83,10 @@
             </div>
 
             {{-- Card Destinatario --}}
-            <div class="card shadow-sm mb-4" style="border-radius: 15px; overflow: hidden; border: none;">
+            <div class="card shadow-sm mb-4" style="border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6;">
                 <div class="card-header py-3 bg-white border-bottom">
                     <h5 class="mb-0 text-dark">
-                        <i class="fas fa-user mr-2 text-info"></i>
+                        <i class="fas fa-user mr-2 text-primary"></i>
                         Información del Destinatario
                     </h5>
                 </div>
@@ -339,13 +339,13 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 <style>
-    .card {
-        transition: all 0.3s ease;
+    .content-wrapper {
+        background: #f8f9fa !important;
     }
-    .card:hover {
-        transform: translateY(-2px);
+    
+    .card {
+        transition: all 0.2s ease;
     }
     .badge {
         font-weight: 500;

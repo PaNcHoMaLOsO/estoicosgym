@@ -4,6 +4,10 @@
 
 @section('css')
 <style>
+    .content-wrapper {
+        background: #f8f9fa !important;
+    }
+
     :root {
         --primary: #1a1a2e;
         --primary-light: #16213e;

@@ -90,17 +90,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // ===== NOTIFICACIONES =====
     Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        // Rutas específicas PRIMERO (antes de las rutas con parámetros)
         Route::get('/', [NotificacionController::class, 'index'])->name('index');
+        Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
+        
+        // Plantillas (rutas específicas)
+        Route::get('/plantillas', [NotificacionController::class, 'plantillas'])->name('plantillas');
+        Route::get('/plantillas/{tipoNotificacion}/editar', [NotificacionController::class, 'editarPlantilla'])->name('plantillas.editar');
+        Route::put('/plantillas/{tipoNotificacion}', [NotificacionController::class, 'actualizarPlantilla'])->name('plantillas.actualizar');
+        
+        // Rutas con parámetros AL FINAL
         Route::get('/{notificacion}', [NotificacionController::class, 'show'])->name('show');
         Route::post('/{notificacion}/reenviar', [NotificacionController::class, 'reenviar'])->name('reenviar');
         Route::post('/{notificacion}/cancelar', [NotificacionController::class, 'cancelar'])->name('cancelar');
-        Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
         Route::get('/{notificacion}/logs', [NotificacionController::class, 'logs'])->name('logs');
-        
-        // Plantillas
-        Route::get('/config/plantillas', [NotificacionController::class, 'plantillas'])->name('plantillas');
-        Route::get('/config/plantillas/{tipoNotificacion}/editar', [NotificacionController::class, 'editarPlantilla'])->name('plantillas.editar');
-        Route::put('/config/plantillas/{tipoNotificacion}', [NotificacionController::class, 'actualizarPlantilla'])->name('plantillas.actualizar');
     });
 });
 

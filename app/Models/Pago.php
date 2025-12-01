@@ -135,7 +135,7 @@ class Pago extends Model
 
     public function estado()
     {
-        return $this->belongsTo(Estado::class, 'id_estado');
+        return $this->belongsTo(Estado::class, 'id_estado', 'codigo');
     }
 
     public function motivoDescuento()

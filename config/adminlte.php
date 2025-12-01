@@ -327,11 +327,6 @@ return [
             'icon' => 'fas fa-fw fa-users',
         ],
         [
-            'text' => 'Membresías',
-            'url' => 'admin/membresias',
-            'icon' => 'fas fa-fw fa-dumbbell',
-        ],
-        [
             'text' => 'Inscripciones',
             'url' => 'admin/inscripciones',
             'icon' => 'fas fa-fw fa-credit-card',
@@ -359,6 +354,11 @@ return [
             ],
         ],
         ['header' => 'CONFIGURACIÓN'],
+        [
+            'text' => 'Membresías',
+            'url' => 'admin/membresias',
+            'icon' => 'fas fa-fw fa-dumbbell',
+        ],
         [
             'text' => 'Convenios',
             'url' => 'admin/convenios',
