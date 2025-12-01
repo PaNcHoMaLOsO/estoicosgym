@@ -99,8 +99,12 @@ class PagoController extends Controller
      */
     public function create(Request $request)
     {
-        // Obtener todas las inscripciones con saldo pendiente (sin importar estado)
+        // Obtener inscripciones con saldo pendiente y que no estén finalizadas
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
+            ->whereNotIn('id_estado', EstadosCodigo::INSCRIPCION_FINALIZADOS)
+            ->whereHas('cliente', function($q) {
+                $q->where('activo', true); // Solo clientes activos
+            })
             ->orderBy('id', 'desc')
             ->get()
             ->filter(function($insc) {
@@ -189,9 +193,9 @@ class PagoController extends Controller
 
             $montoAbonado = $request->input('monto_abonado');
 
-            if ($montoAbonado <= 0 || $montoAbonado > $montoPendiente) {
+            if ($montoAbonado < 1000 || $montoAbonado > $montoPendiente) {
                 return back()->withErrors([
-                    'monto_abonado' => "El monto debe ser entre 0 y {$montoPendiente} (saldo pendiente)"
+                    'monto_abonado' => "El monto debe ser entre $1.000 y $" . number_format($montoPendiente, 0, ',', '.') . " (saldo pendiente)"
                 ])->withInput();
             }
         }
