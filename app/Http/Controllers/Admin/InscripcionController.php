@@ -322,7 +322,8 @@ class InscripcionController extends Controller
     {
         // Ya NO hay cuotas - Los abonos se irán acumulando en la tabla pagos
         $montoAbonado = $validated['monto_abonado'];
-        $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+        // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
+        $idEstadoPago = $montoAbonado >= $precioFinal ? 201 : 202;
 
         Pago::create([
             'id_inscripcion' => $inscripcion->id,
@@ -360,7 +361,8 @@ class InscripcionController extends Controller
             $montoTotalAbonado += (float) ($detalle['monto'] ?? 0);
         }
         
-        $idEstadoPago = $montoTotalAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+        // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
+        $idEstadoPago = $montoTotalAbonado >= $precioFinal ? 201 : 202;
         $montoPendienteRestante = $precioFinal;
 
         foreach ($detallePagos as $index => $detalle) {
@@ -761,7 +763,8 @@ class InscripcionController extends Controller
                 // 3. Si hay diferencia a favor del gym (upgrade), crear pago
                 if ($diferencia > 0 && isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
                     $montoAbonado = min($validated['monto_abonado'], $diferencia);
-                    $estadoPago = $montoAbonado >= $diferencia ? 102 : 103; // 102=Pagado, 103=Parcial
+                    // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
+                    $estadoPago = $montoAbonado >= $diferencia ? 201 : 202;
 
                     Pago::create([
                         'id_inscripcion' => $nuevaInscripcion->id,

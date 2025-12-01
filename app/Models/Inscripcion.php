@@ -215,7 +215,8 @@ class Inscripcion extends Model
      */
     public function estaPausada()
     {
-        return $this->pausada === true || $this->id_estado == 102;
+        // Estado 101 = Pausada (NO confundir con 102 = Vencida)
+        return $this->pausada === true || $this->id_estado == 101;
     }
 
     /**
@@ -257,7 +258,8 @@ class Inscripcion extends Model
         $this->razon_pausa = $razon;
         $this->pausa_indefinida = $indefinida;
         $this->pausas_realizadas = $this->pausas_realizadas + 1;
-        $this->id_estado = 102; // Estado Pausada
+        // Estado 101 = Pausada (NO confundir con 102 = Vencida)
+        $this->id_estado = 101;
 
         return $this->save();
     }

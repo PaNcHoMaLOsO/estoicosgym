@@ -102,7 +102,8 @@ class InscripcionController extends Controller
         $montoCuota = $precioFinal / $cantidadCuotas;
         
         // Determinar estado del pago
-        $idEstadoPago = $montoAbonado >= $precioFinal ? 102 : 103; // 102=Pagado, 103=Parcial
+        // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
+        $idEstadoPago = $montoAbonado >= $precioFinal ? 201 : 202;
 
         \App\Models\Pago::create([
             'uuid' => \Illuminate\Support\Str::uuid(),

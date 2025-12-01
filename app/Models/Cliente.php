@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadosCodigo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -73,6 +74,7 @@ class Cliente extends Model
         'contacto_emergencia',
         'telefono_emergencia',
         'id_convenio',
+        'id_estado',
         'observaciones',
         'activo',
     ];
@@ -93,6 +95,17 @@ class Cliente extends Model
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = Str::uuid();
+            }
+            // Sincronizar id_estado con activo al crear
+            if (empty($model->id_estado)) {
+                $model->id_estado = $model->activo ? EstadosCodigo::CLIENTE_ACTIVO : EstadosCodigo::CLIENTE_CANCELADO;
+            }
+        });
+
+        // Sincronizar id_estado cuando cambia activo
+        static::updating(function ($model) {
+            if ($model->isDirty('activo')) {
+                $model->id_estado = $model->activo ? EstadosCodigo::CLIENTE_ACTIVO : EstadosCodigo::CLIENTE_CANCELADO;
             }
         });
     }
