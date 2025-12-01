@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login | Estoicos Gym - Panel Administrativo</title>
+    <title>Recuperar Contraseña | Estoicos Gym</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -105,22 +105,14 @@
         }
 
         @keyframes float {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            25% {
-                transform: translateY(-20px) rotate(5deg);
-            }
-            50% {
-                transform: translateY(0) rotate(0deg);
-            }
-            75% {
-                transform: translateY(20px) rotate(-5deg);
-            }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(20px) rotate(-5deg); }
         }
 
-        /* Login container */
-        .login-container {
+        /* Container */
+        .reset-container {
             position: relative;
             z-index: 1;
             width: 100%;
@@ -128,7 +120,7 @@
             padding: 20px;
         }
 
-        .login-card {
+        .reset-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             border-radius: 24px;
@@ -137,36 +129,41 @@
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
         }
 
-        /* Logo section */
-        .logo-section {
+        /* Header section */
+        .header-section {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
 
-        .logo-section img {
-            width: 120px;
-            height: 120px;
-            object-fit: contain;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 10px 30px rgba(193, 64, 212, 0.4));
+        .header-section .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            box-shadow: 0 10px 30px rgba(193, 64, 212, 0.4);
         }
 
-        .logo-section h1 {
+        .header-section .icon-circle i {
+            font-size: 35px;
+            color: white;
+        }
+
+        .header-section h1 {
             color: var(--text-cream);
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
         }
 
-        .logo-section h1 span {
-            color: var(--gym-purple);
-        }
-
-        .logo-section p {
+        .header-section p {
             color: var(--text-muted);
             font-size: 14px;
-            font-weight: 300;
+            line-height: 1.6;
         }
 
         /* Form styles */
@@ -220,7 +217,7 @@
             outline: none;
             border-color: var(--accent);
             background: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.2);
+            box-shadow: 0 0 20px rgba(193, 64, 212, 0.2);
         }
 
         .form-control:focus ~ i.input-icon {
@@ -231,80 +228,8 @@
             border-color: var(--error);
         }
 
-        /* Password toggle */
-        .password-toggle {
-            position: absolute;
-            right: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 18px;
-            transition: color 0.3s ease;
-            padding: 5px;
-        }
-
-        .password-toggle:hover {
-            color: var(--accent);
-        }
-
-        /* Remember me */
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .remember-me input[type="checkbox"] {
-            display: none;
-        }
-
-        .remember-me .checkmark {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .remember-me input:checked + .checkmark {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-
-        .remember-me .checkmark i {
-            color: white;
-            font-size: 12px;
-            opacity: 0;
-            transform: scale(0);
-            transition: all 0.2s ease;
-        }
-
-        .remember-me input:checked + .checkmark i {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .remember-me span {
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        /* Submit button */
-        .btn-login {
+        /* Buttons */
+        .btn-submit {
             width: 100%;
             padding: 16px;
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
@@ -320,9 +245,10 @@
             overflow: hidden;
             text-transform: uppercase;
             letter-spacing: 2px;
+            margin-bottom: 15px;
         }
 
-        .btn-login::before {
+        .btn-submit::before {
             content: '';
             position: absolute;
             top: 0;
@@ -333,37 +259,46 @@
             transition: left 0.5s ease;
         }
 
-        .btn-login:hover {
+        .btn-submit:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(193, 64, 212, 0.5);
         }
 
-        .btn-login:hover::before {
+        .btn-submit:hover::before {
             left: 100%;
         }
 
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .btn-login:disabled {
+        .btn-submit:disabled {
             opacity: 0.7;
             cursor: not-allowed;
         }
 
-        .btn-login .spinner {
-            display: none;
+        .btn-back {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: var(--text-cream);
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
 
-        .btn-login.loading .btn-text {
-            display: none;
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--gym-purple);
+            color: white;
         }
 
-        .btn-login.loading .spinner {
-            display: inline-block;
-        }
-
-        /* Error messages */
+        /* Alerts */
         .alert {
             padding: 15px 20px;
             border-radius: 10px;
@@ -374,15 +309,15 @@
         }
 
         .alert-danger {
-            background: rgba(255, 71, 87, 0.15);
-            border: 1px solid rgba(255, 71, 87, 0.3);
+            background: rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.3);
             color: #ff6b7a;
         }
 
         .alert-success {
-            background: rgba(0, 191, 142, 0.15);
-            border: 1px solid rgba(0, 191, 142, 0.3);
-            color: #00bf8e;
+            background: rgba(40, 167, 69, 0.15);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #5dd879;
         }
 
         .alert i {
@@ -398,44 +333,7 @@
             gap: 6px;
         }
 
-        /* Footer */
-        .login-footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .login-footer p {
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .login-footer a {
-            color: var(--accent);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .login-footer a:hover {
-            color: var(--accent-light);
-        }
-
-        /* Forgot password link */
-        .forgot-password {
-            color: var(--text-cream);
-            font-size: 13px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            opacity: 0.8;
-        }
-
-        .forgot-password:hover {
-            color: var(--gym-purple-light);
-            opacity: 1;
-        }
-
-        /* Dumbbell icon decoration */
+        /* Dumbbell decorations */
         .dumbbell-decoration {
             position: absolute;
             font-size: 150px;
@@ -455,23 +353,19 @@
             transform: rotate(-45deg);
         }
 
-        /* Responsive */
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 40px 25px;
-            }
-
-            .logo-section h1 {
-                font-size: 24px;
-            }
-
-            .form-options {
-                flex-direction: column;
-                gap: 15px;
-            }
+        /* Loading */
+        .btn-submit .spinner {
+            display: none;
         }
 
-        /* Loading animation */
+        .btn-submit.loading .btn-text {
+            display: none;
+        }
+
+        .btn-submit.loading .spinner {
+            display: inline-block;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -484,6 +378,16 @@
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .reset-card {
+                padding: 40px 25px;
+            }
+            .header-section h1 {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -500,14 +404,24 @@
     <i class="fas fa-dumbbell dumbbell-decoration top-right"></i>
     <i class="fas fa-dumbbell dumbbell-decoration bottom-left"></i>
 
-    <div class="login-container">
-        <div class="login-card">
-            <!-- Logo Section -->
-            <div class="logo-section">
-                <img src="{{ asset('vendor/adminlte/dist/img/Logo_Estoicos_Gym.svg') }}" alt="Estoicos Gym">
-                <h1>ESTOICOS <span>GYM</span></h1>
-                <p>Panel Administrativo</p>
+    <div class="reset-container">
+        <div class="reset-card">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="icon-circle">
+                    <i class="fas fa-unlock-alt"></i>
+                </div>
+                <h1>Recuperar Contraseña</h1>
+                <p>Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
             </div>
+
+            <!-- Success Alert -->
+            @if (session('status'))
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{{ session('status') }}</span>
+                </div>
+            @endif
 
             <!-- Error Alert -->
             @if ($errors->any())
@@ -517,15 +431,8 @@
                 </div>
             @endif
 
-            @if (session('status'))
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <span>{{ session('status') }}</span>
-                </div>
-            @endif
-
-            <!-- Login Form -->
-            <form method="POST" action="{{ route('login') }}" id="loginForm">
+            <!-- Reset Form -->
+            <form method="POST" action="{{ route('password.email') }}" id="resetForm">
                 @csrf
 
                 <div class="form-group">
@@ -536,7 +443,7 @@
                                name="email" 
                                class="form-control @error('email') is-invalid @enderror" 
                                value="{{ old('email') }}"
-                               placeholder="admin@estoicosgym.cl"
+                               placeholder="tu@correo.com"
                                required 
                                autofocus>
                         <i class="fas fa-envelope input-icon"></i>
@@ -549,77 +456,28 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <div class="input-wrapper">
-                        <input type="password" 
-                               id="password" 
-                               name="password" 
-                               class="form-control @error('password') is-invalid @enderror" 
-                               placeholder="••••••••"
-                               required>
-                        <i class="fas fa-lock input-icon"></i>
-                        <button type="button" class="password-toggle" onclick="togglePassword()">
-                            <i class="fas fa-eye" id="toggleIcon"></i>
-                        </button>
-                    </div>
-                    @error('password')
-                        <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            {{ $message }}
-                        </div>
-                    @enderror
-                </div>
-
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                        <span class="checkmark"><i class="fas fa-check"></i></span>
-                        <span>Recordarme</span>
-                    </label>
-                    <a href="{{ route('password.request') }}" class="forgot-password">
-                        <i class="fas fa-key"></i> ¿Olvidaste tu contraseña?
-                    </a>
-                </div>
-
-                <button type="submit" class="btn-login" id="btnLogin">
+                <button type="submit" class="btn-submit" id="btnSubmit">
                     <span class="btn-text">
-                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        <i class="fas fa-paper-plane"></i> Enviar Enlace
                     </span>
                     <div class="spinner"></div>
                 </button>
-            </form>
 
-            <div class="login-footer">
-                <p>© {{ date('Y') }} Estoicos Gym. Todos los derechos reservados.</p>
-            </div>
+                <a href="{{ route('login') }}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver al inicio de sesión
+                </a>
+            </form>
         </div>
     </div>
 
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('fa-eye');
-                toggleIcon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('fa-eye-slash');
-                toggleIcon.classList.add('fa-eye');
-            }
-        }
-
-        // Form submit animation
-        document.getElementById('loginForm').addEventListener('submit', function() {
-            const btn = document.getElementById('btnLogin');
+        document.getElementById('resetForm').addEventListener('submit', function() {
+            const btn = document.getElementById('btnSubmit');
             btn.classList.add('loading');
             btn.disabled = true;
         });
 
-        // Input focus effects
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('focus', function() {
                 this.parentElement.classList.add('focused');

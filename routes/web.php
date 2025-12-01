@@ -38,6 +38,7 @@ Route::get('/', function () {
 
 // ===== AUTENTICACIÓN =====
 Route::middleware('guest')->group(function () {
+    // Login
     Route::get('/login', function () {
         return view('auth.login');
     })->name('login');
@@ -57,6 +58,80 @@ Route::middleware('guest')->group(function () {
             'email' => 'Las credenciales no coinciden con nuestros registros.',
         ])->onlyInput('email');
     });
+    
+    // Recuperar contraseña - Solicitar enlace
+    Route::get('/forgot-password', function () {
+        return view('auth.forgot-password');
+    })->name('password.request');
+    
+    Route::post('/forgot-password', function () {
+        request()->validate(['email' => 'required|email']);
+        
+        $user = \App\Models\User::where('email', request('email'))->first();
+        
+        if (!$user) {
+            return back()->withErrors(['email' => 'No encontramos un usuario con ese correo.']);
+        }
+        
+        // Generar token
+        $token = \Illuminate\Support\Str::random(64);
+        
+        // Guardar en password_reset_tokens
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => request('email')],
+            [
+                'email' => request('email'),
+                'token' => bcrypt($token),
+                'created_at' => now()
+            ]
+        );
+        
+        // Por ahora, mostrar el token (en producción enviar por email)
+        // En un entorno real, usarías Mail::to($user)->send(new ResetPasswordMail($token));
+        return back()->with('status', 'Si el correo existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña. (Token de prueba: ' . $token . ')');
+    })->name('password.email');
+    
+    // Restablecer contraseña - Formulario
+    Route::get('/reset-password/{token}', function ($token) {
+        return view('auth.reset-password', ['token' => $token, 'email' => request('email')]);
+    })->name('password.reset');
+    
+    Route::post('/reset-password', function () {
+        request()->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+        
+        // Verificar token
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', request('email'))
+            ->first();
+        
+        if (!$record || !\Illuminate\Support\Facades\Hash::check(request('token'), $record->token)) {
+            return back()->withErrors(['email' => 'El token de recuperación es inválido o ha expirado.']);
+        }
+        
+        // Verificar que no haya expirado (1 hora)
+        if (now()->diffInMinutes($record->created_at) > 60) {
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();
+            return back()->withErrors(['email' => 'El token de recuperación ha expirado.']);
+        }
+        
+        // Actualizar contraseña
+        $user = \App\Models\User::where('email', request('email'))->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'No encontramos un usuario con ese correo.']);
+        }
+        
+        $user->password = \Illuminate\Support\Facades\Hash::make(request('password'));
+        $user->save();
+        
+        // Eliminar token usado
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();
+        
+        return redirect()->route('login')->with('status', '¡Contraseña actualizada! Ya puedes iniciar sesión.');
+    })->name('password.update');
 });
 
 Route::post('/logout', function () {
