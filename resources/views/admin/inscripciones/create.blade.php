@@ -76,24 +76,13 @@
 
     .steps-nav { 
         display: flex; 
-        gap: 0.5rem;
+        gap: 1rem;
         position: relative;
         padding: 0;
         background: transparent;
     }
 
-    .steps-nav::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 60px;
-        right: 60px;
-        height: 3px;
-        background: rgba(255,255,255,0.2);
-        transform: translateY(-50%);
-        z-index: 0;
-        border-radius: 2px;
-    }
+    /* REMOVIDA la línea que atravesaba los pasos */
     
     .step-btn {
         flex: 1;
@@ -107,7 +96,7 @@
         font-weight: 700;
         font-size: 0.85rem;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        color: rgba(255,255,255,0.7);
+        color: rgba(255,255,255,0.5);
         position: relative;
         z-index: 1;
         display: flex;
@@ -117,26 +106,27 @@
     }
 
     .step-btn .step-number {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: rgba(255,255,255,0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 800;
         transition: all 0.3s ease;
+        border: 2px solid transparent;
     }
 
     .step-btn .step-label {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .step-btn .step-icon {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
     
     .step-btn:hover:not(:disabled) {
@@ -144,43 +134,70 @@
         background: rgba(255,255,255,0.2);
         border-color: rgba(255,255,255,0.4);
         box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        color: rgba(255,255,255,0.9);
     }
     
+    /* PASO ACTIVO - Color accent destacado */
     .step-btn.active {
         background: white;
         color: var(--primary);
-        border-color: white;
-        box-shadow: 0 8px 30px rgba(233, 69, 96, 0.4);
+        border-color: var(--accent);
+        box-shadow: 0 8px 30px rgba(233, 69, 96, 0.5);
+        transform: translateY(-2px);
     }
 
     .step-btn.active .step-number {
-        background: var(--accent);
+        background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 100%);
         color: white;
+        border-color: var(--accent);
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.5);
     }
 
+    .step-btn.active .step-icon {
+        color: var(--accent);
+    }
+
+    /* PASO COMPLETADO - Color success */
     .step-btn.completed {
-        background: var(--success);
+        background: rgba(0, 191, 142, 0.2);
         color: white;
         border-color: var(--success);
     }
 
     .step-btn.completed .step-number {
-        background: white;
-        color: var(--success);
+        background: var(--success);
+        color: white;
+        border-color: var(--success);
     }
 
     .step-btn.completed .step-number::after {
         content: '✓';
         font-weight: 900;
+        font-size: 1.2rem;
     }
 
     .step-btn.completed .step-number span {
         display: none;
     }
 
-    .step-btn:disabled {
+    .step-btn.completed .step-icon {
+        color: var(--success);
+    }
+
+    /* PASO DESHABILITADO - menor prioridad que active y completed */
+    .step-btn:disabled:not(.active):not(.completed) {
         opacity: 0.4;
         cursor: not-allowed;
+    }
+
+    .step-btn:disabled:not(.active):not(.completed):hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Asegurar que active siempre se vea brillante */
+    .step-btn.active {
+        opacity: 1 !important;
     }
 
     /* ===== FORM SECTIONS ===== */
@@ -354,16 +371,25 @@
     }
 
     .btn-primary {
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255,255,255,0.3);
-        color: white;
+        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
+        border: none;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+        opacity: 1 !important;
     }
 
     .btn-primary:hover {
-        background: rgba(255,255,255,0.25);
-        color: white;
-        border-color: white;
+        background: linear-gradient(135deg, #3451d4 0%, #2a41aa 100%);
+        color: white !important;
+        box-shadow: 0 6px 25px rgba(67, 97, 238, 0.5);
+        transform: translateY(-3px);
+    }
+
+    .btn-primary:focus,
+    .btn-primary:active {
+        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%) !important;
+        color: white !important;
+        opacity: 1 !important;
     }
 
     .btn-outline-danger {
@@ -433,6 +459,19 @@
         padding: 1rem 1.25rem;
         font-size: 1rem;
         border-radius: var(--radius-md);
+    }
+
+    /* ===== SELECT MEJORADO ===== */
+    select.form-control {
+        height: auto !important;
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+    }
+
+    select.form-control.form-control-lg {
+        min-height: 56px;
+        padding: 1rem 1.25rem;
     }
 
     label {
@@ -578,49 +617,77 @@
         background: var(--gray-100);
     }
 
-    /* ===== TIPO PAGO ===== */
-    .tipo-pago-options {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+    /* ===== TIPO PAGO OPCIONES (Nuevo diseño) ===== */
+    .tipo-pago-container {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
         margin-bottom: 1.5rem;
     }
-
-    .tipo-pago-card {
+    
+    .tipo-pago-option {
+        flex: 1;
+        min-width: 200px;
+        position: relative;
+    }
+    
+    .tipo-pago-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .tipo-pago-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 16px;
         border: 2px solid var(--gray-200);
-        border-radius: 12px;
-        padding: 1.25rem;
-        text-align: center;
+        border-radius: 16px;
         cursor: pointer;
         transition: all 0.3s ease;
+        text-align: center;
         background: white;
+        height: 100%;
     }
-
-    .tipo-pago-card:hover {
-        border-color: var(--accent);
+    
+    .tipo-pago-option label:hover {
+        border-color: var(--info);
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.15);
     }
-
-    .tipo-pago-card.selected {
+    
+    .tipo-pago-option input:checked + label {
         border-color: var(--success);
         background: rgba(0, 191, 142, 0.08);
+        box-shadow: 0 8px 30px rgba(0, 191, 142, 0.2);
+        transform: translateY(-3px);
     }
-
-    .tipo-pago-card i {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        color: var(--accent);
+    
+    .tipo-pago-icon {
+        font-size: 2.5em;
+        margin-bottom: 12px;
+        color: var(--info);
+        transition: all 0.3s ease;
     }
-
-    .tipo-pago-card .tipo-nombre {
+    
+    .tipo-pago-option input:checked + label .tipo-pago-icon {
+        color: var(--success);
+        transform: scale(1.1);
+    }
+    
+    .tipo-pago-title {
         font-weight: 700;
         color: var(--gray-800);
+        margin-bottom: 6px;
+        font-size: 1.05em;
     }
-
-    .tipo-pago-card .tipo-desc {
-        font-size: 0.85rem;
+    
+    .tipo-pago-desc {
+        font-size: 0.85em;
         color: var(--gray-600);
+        line-height: 1.4;
     }
 
     /* ===== RESUMEN INSCRIPCIÓN ===== */
@@ -657,30 +724,133 @@
         margin-top: 0.25rem;
     }
 
-    /* ===== PAGO MIXTO TABLA ===== */
-    #tabla-pagos-mixto {
-        border-radius: 12px;
+    /* ===== CARD TOTAL A PAGAR - DESTACADA ===== */
+    .info-card.info-card-total {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 50%, #008f6b 100%) !important;
+        position: relative;
         overflow: hidden;
+        animation: pulseGlow 2s ease-in-out infinite;
     }
 
-    #tabla-pagos-mixto thead {
-        background: var(--primary);
+    .info-card.info-card-total::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+        animation: shimmer 3s linear infinite;
     }
 
-    #tabla-pagos-mixto thead th {
+    @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 5px 20px rgba(0, 191, 142, 0.4); }
+        50% { box-shadow: 0 8px 35px rgba(0, 191, 142, 0.6); }
+    }
+
+    @keyframes shimmer {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .info-card-total .total-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        border: 3px solid rgba(255,255,255,0.3);
+    }
+
+    .info-card-total .total-icon-wrapper i {
+        font-size: 1.8rem;
         color: white;
-        border: none;
     }
 
-    #tabla-pagos-mixto .monto-mixto,
-    #tabla-pagos-mixto .metodo-mixto {
-        min-width: 120px;
+    .info-card-total .total-amount {
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        margin: 8px 0;
+    }
+
+    .info-card-total .total-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .info-card-total .total-badge i {
+        font-size: 0.85rem;
+    }
+
+    /* ===== PAGO MIXTO MEJORADO ===== */
+    .mixto-section {
+        background: var(--gray-100);
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 15px;
+        border: 2px solid var(--gray-200);
+    }
+    
+    .mixto-title {
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.1em;
+    }
+    
+    .mixto-title i { 
+        color: var(--warning);
+        font-size: 1.2em;
+    }
+
+    .mixto-metodo-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border: 2px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .mixto-metodo-card:hover {
+        border-color: var(--info);
+    }
+
+    .mixto-metodo-card .metodo-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .mixto-metodo-card .metodo-header i {
+        color: var(--info);
     }
 
     .resumen-mixto {
-        background: var(--gray-100);
+        background: white;
         border-radius: 12px;
         padding: 1rem;
+        margin-top: 20px;
+        border: 2px solid var(--success);
     }
 
     #mixto-diferencia-box {
@@ -1075,10 +1245,15 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="info-card bg-success text-white">
-                                <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                            <div class="info-card info-card-total">
+                                <div class="total-icon-wrapper">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
                                 <div class="info-label">Total a Pagar</div>
-                                <div class="info-value h3" id="paso3-precio-total">$0</div>
+                                <div class="info-value total-amount" id="paso3-precio-total">$0</div>
+                                <div class="total-badge">
+                                    <i class="fas fa-check-circle"></i> Paso Final
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1086,17 +1261,43 @@
 
                 <div class="form-section-title"><i class="fas fa-money-check-alt"></i> Seleccione Tipo de Pago</div>
                 
-                <div class="row mb-4">
-                    <div class="col-md-6 mb-3">
-                        <label for="tipo_pago_select">Tipo de Pago <span class="text-danger">*</span></label>
-                        <select class="form-control form-control-lg" id="tipo_pago_select">
-                            <option value="">-- Seleccionar Tipo --</option>
-                            <option value="completo">💵 Pago Completo</option>
-                            <option value="abono">💰 Pago Parcial / Abono</option>
-                            <option value="mixto">🔀 Pago Mixto</option>
-                            <option value="pendiente">⏰ Pago Pendiente</option>
-                        </select>
+                <!-- TIPO PAGO - Nuevo diseño con radio buttons -->
+                <div class="tipo-pago-container">
+                    <div class="tipo-pago-option">
+                        <input type="radio" name="tipo_pago_radio" id="tipo_completo" value="completo">
+                        <label for="tipo_completo">
+                            <i class="fas fa-money-bill-wave tipo-pago-icon"></i>
+                            <span class="tipo-pago-title">Pago Completo</span>
+                            <span class="tipo-pago-desc">Pagar el total de la membresía</span>
+                        </label>
                     </div>
+                    <div class="tipo-pago-option">
+                        <input type="radio" name="tipo_pago_radio" id="tipo_abono" value="abono">
+                        <label for="tipo_abono">
+                            <i class="fas fa-hand-holding-usd tipo-pago-icon"></i>
+                            <span class="tipo-pago-title">Pago Parcial</span>
+                            <span class="tipo-pago-desc">Abonar una parte del total</span>
+                        </label>
+                    </div>
+                    <div class="tipo-pago-option">
+                        <input type="radio" name="tipo_pago_radio" id="tipo_mixto" value="mixto">
+                        <label for="tipo_mixto">
+                            <i class="fas fa-random tipo-pago-icon"></i>
+                            <span class="tipo-pago-title">Pago Mixto</span>
+                            <span class="tipo-pago-desc">Combinar varios métodos de pago</span>
+                        </label>
+                    </div>
+                    <div class="tipo-pago-option">
+                        <input type="radio" name="tipo_pago_radio" id="tipo_pendiente" value="pendiente">
+                        <label for="tipo_pendiente">
+                            <i class="fas fa-clock tipo-pago-icon"></i>
+                            <span class="tipo-pago-title">Pago Pendiente</span>
+                            <span class="tipo-pago-desc">Cliente pagará después</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
                     <div class="col-md-6 mb-3">
                         <label for="fecha_pago">Fecha de Pago <span class="text-danger">*</span></label>
                         <input type="date" class="form-control form-control-lg" id="fecha_pago" name="fecha_pago" 
@@ -1138,6 +1339,14 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="referencia_pago">Referencia / Comprobante</label>
+                                    <input type="text" class="form-control" id="referencia_pago" name="referencia_pago"
+                                           placeholder="Ej: N° Transferencia, N° Boleta, Recibo...">
+                                    <small class="text-muted">Opcional: Ingrese número de comprobante o referencia del pago</small>
+                                </div>
+                            </div>
                             <div id="seccion-restante" style="display:none;">
                                 <div class="alert alert-warning">
                                     <div class="row align-items-center">
@@ -1155,54 +1364,117 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN PAGO MIXTO -->
+                <!-- SECCIÓN PAGO MIXTO (Diseño simple: 2 métodos) -->
                 <div id="seccion-mixto" style="display:none;">
-                    <div class="card card-outline card-warning mb-3">
-                        <div class="card-header bg-warning">
-                            <h5 class="mb-0"><i class="fas fa-shuffle"></i> Pago Mixto - Múltiples Métodos</h5>
+                    <div class="mixto-section">
+                        <div class="mixto-title">
+                            <i class="fas fa-random"></i>
+                            Dividir Pago en Dos Métodos
                         </div>
-                        <div class="card-body">
-                            <table class="table table-bordered table-hover" id="tabla-pagos-mixto">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th width="80" class="text-center">Acción</th>
-                                        <th>Monto</th>
-                                        <th>Método de Pago</th>
-                                        <th width="150" class="text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                            <button type="button" class="btn btn-primary btn-sm" id="btn-agregar-linea">
-                                <i class="fas fa-plus"></i> Agregar Línea de Pago
-                            </button>
-                            
-                            <div class="resumen-mixto mt-3">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <small class="text-muted">Total a Pagar</small>
-                                            <div class="h4 text-primary mb-0" id="mixto-total-pagar">$0</div>
+                        <div class="row">
+                            <!-- Método 1 -->
+                            <div class="col-md-6 mb-3">
+                                <div class="mixto-metodo-card">
+                                    <div class="metodo-header">
+                                        <i class="fas fa-1"></i> Primer Método
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Método de Pago</label>
+                                        <select class="form-control" name="id_metodo_pago1" id="id_metodo_pago1">
+                                            <option value="">Seleccione...</option>
+                                            @foreach($metodosPago as $metodo)
+                                                @if(strtolower($metodo->nombre) !== 'mixto')
+                                                <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Monto</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-success text-white">$</span>
+                                            </div>
+                                            <input type="number" step="1" min="0" class="form-control" 
+                                                   name="monto_metodo1" id="monto_metodo1" placeholder="0">
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <small class="text-muted">Total Ingresado</small>
-                                            <div class="h4 text-success mb-0" id="mixto-total-ingresado">$0</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 rounded" id="mixto-diferencia-box">
-                                            <small class="text-muted">Diferencia</small>
-                                            <div class="h4 mb-0" id="mixto-diferencia">$0</div>
-                                        </div>
+                                    <div>
+                                        <label class="form-label">Referencia</label>
+                                        <input type="text" class="form-control" name="referencia_metodo1" id="referencia_metodo1"
+                                               placeholder="N° Comprobante...">
                                     </div>
                                 </div>
                             </div>
-                            
-                            <input type="hidden" id="total-mixto" name="total_mixto" value="0">
-                            <input type="hidden" id="detalle-pagos-mixto" name="detalle_pagos_mixto" value="[]">
+                            <!-- Método 2 -->
+                            <div class="col-md-6 mb-3">
+                                <div class="mixto-metodo-card">
+                                    <div class="metodo-header">
+                                        <i class="fas fa-2"></i> Segundo Método
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Método de Pago</label>
+                                        <select class="form-control" name="id_metodo_pago2" id="id_metodo_pago2">
+                                            <option value="">Seleccione...</option>
+                                            @foreach($metodosPago as $metodo)
+                                                @if(strtolower($metodo->nombre) !== 'mixto')
+                                                <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Monto</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-info text-white">$</span>
+                                            </div>
+                                            <input type="number" step="1" min="0" class="form-control" 
+                                                   name="monto_metodo2" id="monto_metodo2" placeholder="0">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Referencia</label>
+                                        <input type="text" class="form-control" name="referencia_metodo2" id="referencia_metodo2"
+                                               placeholder="N° Comprobante...">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- Resumen del pago mixto -->
+                        <div class="resumen-mixto">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <i class="fas fa-receipt text-primary mb-2" style="font-size: 1.5em;"></i>
+                                        <small class="text-muted d-block">Total a Pagar</small>
+                                        <div class="h4 text-primary mb-0" id="mixto-total-pagar">$0</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <i class="fas fa-coins text-success mb-2" style="font-size: 1.5em;"></i>
+                                        <small class="text-muted d-block">Suma Ingresada</small>
+                                        <div class="h4 text-success mb-0" id="mixto-total-ingresado">$0</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 rounded" id="mixto-diferencia-box">
+                                        <i class="fas fa-balance-scale text-warning mb-2" style="font-size: 1.5em;"></i>
+                                        <small class="text-muted d-block">Diferencia</small>
+                                        <div class="h4 mb-0" id="mixto-diferencia">$0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0" style="border-radius: 10px;">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span>La suma de ambos montos debe igualar el total a pagar</span>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="total-mixto" name="total_mixto" value="0">
+                        <input type="hidden" id="detalle-pagos-mixto" name="detalle_pagos_mixto" value="[]">
                     </div>
                 </div>
 
@@ -1385,8 +1657,8 @@ $(document).ready(function() {
     $('#id_convenio').on('change', calcularPrecios);
     $('#descuento_aplicado').on('input', calcularPrecios);
 
-    // ========== TIPO DE PAGO (SELECT) ==========
-    $('#tipo_pago_select').on('change', function() {
+    // ========== TIPO DE PAGO (RADIO BUTTONS) ==========
+    $('input[name="tipo_pago_radio"]').on('change', function() {
         const tipo = $(this).val();
         $('#tipo_pago').val(tipo);
         
@@ -1422,12 +1694,9 @@ $(document).ready(function() {
         else if (tipo === 'mixto') {
             $('#seccion-mixto').show();
             $('#pago_pendiente').val('0');
-            // Agregar primera línea si no hay ninguna
-            if ($('#tabla-pagos-mixto tbody tr').length === 0) {
-                agregarLineaPago();
-            }
+            // Actualizar resumen mixto
             actualizarResumenMixto();
-            mostrarInfoPago('info', '<i class="fas fa-shuffle"></i> Pago mixto - Combine métodos de pago');
+            mostrarInfoPago('info', '<i class="fas fa-random"></i> Pago mixto - Divida el pago en 2 métodos');
         }
     });
 
@@ -1439,103 +1708,45 @@ $(document).ready(function() {
         $('#info-tipo-pago').show();
     }
 
-    // ========== PAGO MIXTO - TABLA DINÁMICA ==========
-    function agregarLineaPago() {
-        const tbody = $('#tabla-pagos-mixto tbody');
-        const fila = $(`
-            <tr>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger btn-eliminar-linea">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">$</span>
-                        </div>
-                        <input type="number" class="form-control monto-mixto" min="0" step="1" placeholder="0">
-                    </div>
-                </td>
-                <td>
-                    <select class="form-control metodo-mixto">
-                        <option value="">-- Método --</option>
-                        @foreach($metodosPago as $metodo)
-                        @if(strtolower($metodo->nombre) !== 'mixto')
-                        <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
-                        @endif
-                        @endforeach
-                    </select>
-                </td>
-                <td class="text-right">
-                    <span class="subtotal-display font-weight-bold">$0</span>
-                </td>
-            </tr>
-        `);
-        tbody.append(fila);
-        actualizarResumenMixto();
-    }
-
-    // Botón agregar línea
-    $('#btn-agregar-linea').on('click', function() {
-        agregarLineaPago();
-        Toast.fire({
-            icon: 'info',
-            title: 'Línea agregada'
-        });
-    });
-
-    // Eliminar línea
-    $(document).on('click', '.btn-eliminar-linea', function() {
-        const fila = $(this).closest('tr');
-        if ($('#tabla-pagos-mixto tbody tr').length > 1) {
-            fila.remove();
-            actualizarResumenMixto();
-        } else {
-            SwalEstoicos.fire({
-                icon: 'warning',
-                title: 'Acción no permitida',
-                text: 'Debe haber al menos una línea de pago',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-    });
-
-    // Actualizar subtotal y resumen al cambiar montos
-    $(document).on('input', '.monto-mixto', function() {
-        const fila = $(this).closest('tr');
-        const monto = parseInt($(this).val()) || 0;
-        fila.find('.subtotal-display').text('$' + monto.toLocaleString('es-CL'));
+    // ========== PAGO MIXTO - 2 MÉTODOS SIMPLES ==========
+    // Actualizar resumen al cambiar montos
+    $('#monto_metodo1, #monto_metodo2').on('input', function() {
         actualizarResumenMixto();
     });
 
-    $(document).on('change', '.metodo-mixto', function() {
+    $('#id_metodo_pago1, #id_metodo_pago2').on('change', function() {
         actualizarResumenMixto();
     });
 
     function actualizarResumenMixto() {
-        let totalIngresado = 0;
-        const detalles = [];
-
-        $('#tabla-pagos-mixto tbody tr').each(function() {
-            const monto = parseInt($(this).find('.monto-mixto').val()) || 0;
-            const metodo = $(this).find('.metodo-mixto').val();
-            const metodoNombre = $(this).find('.metodo-mixto option:selected').text();
-            
-            totalIngresado += monto;
-            
-            if (monto > 0 && metodo) {
-                detalles.push({
-                    monto: monto,
-                    id_metodo_pago: metodo,
-                    metodo_nombre: metodoNombre
-                });
-            }
-        });
-
+        const monto1 = parseInt($('#monto_metodo1').val()) || 0;
+        const monto2 = parseInt($('#monto_metodo2').val()) || 0;
+        const metodo1 = $('#id_metodo_pago1').val();
+        const metodo2 = $('#id_metodo_pago2').val();
+        const metodo1Nombre = $('#id_metodo_pago1 option:selected').text();
+        const metodo2Nombre = $('#id_metodo_pago2 option:selected').text();
+        
+        const totalIngresado = monto1 + monto2;
         const diferencia = precioFinal - totalIngresado;
 
+        // Construir array de detalles para el hidden field
+        const detalles = [];
+        if (monto1 > 0 && metodo1) {
+            detalles.push({
+                monto: monto1,
+                id_metodo_pago: metodo1,
+                metodo_nombre: metodo1Nombre
+            });
+        }
+        if (monto2 > 0 && metodo2) {
+            detalles.push({
+                monto: monto2,
+                id_metodo_pago: metodo2,
+                metodo_nombre: metodo2Nombre
+            });
+        }
+
+        // Actualizar displays
         $('#mixto-total-pagar').text('$' + precioFinal.toLocaleString('es-CL'));
         $('#mixto-total-ingresado').text('$' + totalIngresado.toLocaleString('es-CL'));
         
@@ -1543,17 +1754,15 @@ $(document).ready(function() {
         boxDiferencia.removeClass('ok error');
         
         if (diferencia === 0) {
-            $('#mixto-diferencia').text('$0 ✓');
+            $('#mixto-diferencia').text('$0 ✓').css('color', 'var(--success)');
             boxDiferencia.addClass('ok');
         } else if (diferencia > 0) {
-            $('#mixto-diferencia').text('-$' + diferencia.toLocaleString('es-CL'));
-            boxDiferencia.addClass('error');
+            $('#mixto-diferencia').text('-$' + diferencia.toLocaleString('es-CL')).css('color', 'var(--warning)');
         } else {
-            $('#mixto-diferencia').text('+$' + Math.abs(diferencia).toLocaleString('es-CL'));
-            boxDiferencia.addClass('error');
+            $('#mixto-diferencia').text('+$' + Math.abs(diferencia).toLocaleString('es-CL')).css('color', 'var(--accent)');
         }
 
-        // Guardar en campos ocultos
+        // Guardar en hidden fields
         $('#total-mixto').val(totalIngresado);
         $('#detalle-pagos-mixto').val(JSON.stringify(detalles));
     }
@@ -1584,10 +1793,13 @@ $(document).ready(function() {
         $('.step-indicator').removeClass('active');
         $('#step-' + paso).addClass('active');
         
-        $('.step-btn').removeClass('active');
-        $('#step' + paso + '-btn').addClass('active');
+        // Remover todas las clases de estado de los botones
+        $('.step-btn').removeClass('active completed').prop('disabled', true);
         
-        // Marcar pasos anteriores como completados
+        // Marcar el paso actual como activo (sin disabled)
+        $('#step' + paso + '-btn').addClass('active').prop('disabled', false);
+        
+        // Marcar pasos anteriores como completados y habilitarlos
         for (let i = 1; i < paso; i++) {
             $('#step' + i + '-btn').addClass('completed').prop('disabled', false);
         }
@@ -1705,32 +1917,49 @@ $(document).ready(function() {
         }
         
         if (tipoPago === 'mixto') {
-            const totalMixto = parseInt($('#total-mixto').val()) || 0;
-            const detalles = JSON.parse($('#detalle-pagos-mixto').val() || '[]');
+            const monto1 = parseInt($('#monto_metodo1').val()) || 0;
+            const monto2 = parseInt($('#monto_metodo2').val()) || 0;
+            const metodo1 = $('#id_metodo_pago1').val();
+            const metodo2 = $('#id_metodo_pago2').val();
+            const totalMixto = monto1 + monto2;
             
-            if (detalles.length === 0 || totalMixto <= 0) {
+            if (totalMixto <= 0) {
                 SwalEstoicos.fire({
                     icon: 'error',
                     title: 'Error en pago mixto',
-                    text: 'Agregue al menos un método de pago con monto',
+                    text: 'Ingrese al menos un monto en alguno de los métodos',
                     confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
 
-            // Verificar que todos tengan método seleccionado
-            let lineasSinMetodo = 0;
-            $('#tabla-pagos-mixto tbody tr').each(function() {
-                const monto = parseInt($(this).find('.monto-mixto').val()) || 0;
-                const metodo = $(this).find('.metodo-mixto').val();
-                if (monto > 0 && !metodo) lineasSinMetodo++;
-            });
-            
-            if (lineasSinMetodo > 0) {
+            // Verificar que si hay monto, haya método
+            if (monto1 > 0 && !metodo1) {
                 SwalEstoicos.fire({
                     icon: 'error',
                     title: 'Error de validación',
-                    text: `Seleccione método de pago en ${lineasSinMetodo} línea(s)`,
+                    text: 'Seleccione el método de pago para el primer monto',
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
+                });
+                return false;
+            }
+            
+            if (monto2 > 0 && !metodo2) {
+                SwalEstoicos.fire({
+                    icon: 'error',
+                    title: 'Error de validación',
+                    text: 'Seleccione el método de pago para el segundo monto',
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
+                });
+                return false;
+            }
+
+            // Verificar que la suma sea igual al total
+            if (totalMixto !== precioFinal) {
+                SwalEstoicos.fire({
+                    icon: 'warning',
+                    title: 'Montos no coinciden',
+                    text: `La suma ($${totalMixto.toLocaleString('es-CL')}) debe ser igual al total ($${precioFinal.toLocaleString('es-CL')})`,
                     confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
