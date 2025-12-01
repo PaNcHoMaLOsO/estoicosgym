@@ -397,39 +397,40 @@
     /* Stats Grid */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
     }
 
     .stat-card {
         background: #fff;
-        border-radius: 16px;
-        padding: 24px;
+        border-radius: 12px;
+        padding: 16px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         box-shadow: var(--shadow);
         transition: all 0.3s ease;
         border: 1px solid var(--border-color);
     }
 
     .stat-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-2px);
         box-shadow: var(--shadow-hover);
     }
 
     .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .stat-icon i {
-        font-size: 24px;
+        font-size: 18px;
         color: #fff;
     }
 
@@ -449,22 +450,30 @@
         background: linear-gradient(135deg, var(--warning) 0%, #d69200 100%);
     }
 
+    .stat-sin-membresia .stat-icon {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
     .stat-info {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     .stat-number {
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 700;
         color: var(--text-primary);
         line-height: 1.2;
     }
 
     .stat-label {
-        font-size: 14px;
+        font-size: 12px;
         color: var(--text-secondary);
         font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Filters Section */
@@ -836,9 +845,33 @@
     }
 
     /* Responsive */
+    @media (max-width: 1400px) {
+        .stats-grid {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .stat-card {
+            padding: 12px;
+            gap: 10px;
+        }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+        }
+        .stat-icon i {
+            font-size: 16px;
+        }
+        .stat-number {
+            font-size: 18px;
+        }
+        .stat-label {
+            font-size: 11px;
+        }
+    }
+
     @media (max-width: 1200px) {
         .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
         }
     }
 
@@ -855,7 +888,7 @@
         }
 
         .stats-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
         }
 
         .filters-section {
