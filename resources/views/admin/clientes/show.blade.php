@@ -466,10 +466,11 @@
 
     <!-- Danger Zone -->
     @php
-        $estadoActiva = \App\Models\Estado::where('codigo', 100)->first();
-        $estadoPendiente = \App\Models\Estado::where('codigo', 200)->first();
-        $puedoDesactivar = !$cliente->inscripciones()->where('id_estado', $estadoActiva?->id)->exists() && 
-                          !$cliente->pagos()->where('id_estado', $estadoPendiente?->id)->exists();
+        // id_estado almacena el CÓDIGO directamente (100, 200, etc), no el ID del registro Estado
+        $tieneInscripcionActiva = $cliente->inscripciones()->where('id_estado', 100)->exists();
+        $tieneInscripcionPausada = $cliente->inscripciones()->where('id_estado', 101)->exists();
+        $tienePagosPendientes = $cliente->pagos()->whereIn('id_estado', [200, 202])->exists(); // Pendiente o Parcial
+        $puedoDesactivar = !$tieneInscripcionActiva && !$tieneInscripcionPausada && !$tienePagosPendientes;
     @endphp
     <div class="danger-zone">
         <div class="danger-header">
@@ -481,7 +482,18 @@
                 <h4>Desactivar Cliente</h4>
                 <p>El cliente no será eliminado, solo se ocultará de la lista activa.</p>
                 @if(!$puedoDesactivar)
-                <p class="warning-text"><i class="fas fa-lock"></i> No disponible: tiene inscripciones activas o pagos pendientes.</p>
+                <p class="warning-text">
+                    <i class="fas fa-lock"></i> No disponible: 
+                    @if($tieneInscripcionActiva)
+                        tiene inscripciones activas.
+                    @elseif($tieneInscripcionPausada)
+                        tiene inscripciones pausadas.
+                    @endif
+                    @if($tienePagosPendientes)
+                        @if($tieneInscripcionActiva || $tieneInscripcionPausada) Además, @endif
+                        tiene pagos pendientes.
+                    @endif
+                </p>
                 @endif
             </div>
             <button type="button" class="btn-danger-action" id="btnDesactivar" {{ !$puedoDesactivar ? 'disabled' : '' }}>

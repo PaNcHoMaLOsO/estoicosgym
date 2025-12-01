@@ -413,19 +413,21 @@ class ClienteController extends Controller
                 ->with('error', 'Este cliente ya está desactivado.');
         }
 
-        // Validar que no tenga inscripciones activas
-        if ($cliente->inscripciones()->where('id_estado', 100)->exists()) {
+        // Validar que no tenga inscripciones activas o pausadas
+        $estadosReqClienteActivo = EstadosCodigo::INSCRIPCION_REQUIERE_CLIENTE_ACTIVO;
+        if ($cliente->inscripciones()->whereIn('id_estado', $estadosReqClienteActivo)->exists()) {
             return redirect()->route('admin.clientes.edit', $cliente)
-                ->with('error', 'No se puede desactivar. El cliente tiene inscripciones activas.');
+                ->with('error', 'No se puede desactivar. El cliente tiene inscripciones activas o pausadas.');
         }
 
-        // Validar que no tenga pagos pendientes
-        if ($cliente->pagos()->where('id_estado', 200)->exists()) {
+        // Validar que no tenga pagos pendientes o parciales
+        $estadosPagoPendientes = EstadosCodigo::PAGO_PENDIENTES_COBRO;
+        if ($cliente->pagos()->whereIn('id_estado', $estadosPagoPendientes)->exists()) {
             return redirect()->route('admin.clientes.edit', $cliente)
                 ->with('error', 'No se puede desactivar. El cliente tiene pagos pendientes.');
         }
 
-        // Desactivar
+        // Desactivar (id_estado se actualiza automáticamente en boot())
         $cliente->update(['activo' => false]);
 
         return redirect()->route('admin.clientes.index')

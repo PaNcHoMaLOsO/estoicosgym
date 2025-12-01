@@ -1090,11 +1090,11 @@
 
                 {{-- GESTIÓN DE ESTADO --}}
                 @php
-                    $estadoActiva = \App\Models\Estado::where('codigo', 100)->first();
-                    $estadoPendiente = \App\Models\Estado::where('codigo', 200)->first();
-                    $tieneInscripcionActiva = $cliente->inscripciones()->where('id_estado', $estadoActiva?->id)->exists();
-                    $tienePagosPendientes = $cliente->pagos()->where('id_estado', $estadoPendiente?->id)->exists();
-                    $puedoDesactivar = !$tieneInscripcionActiva && !$tienePagosPendientes;
+                    // id_estado almacena el CÓDIGO directamente (100, 200, etc), no el ID del registro Estado
+                    $tieneInscripcionActiva = $cliente->inscripciones()->where('id_estado', 100)->exists();
+                    $tieneInscripcionPausada = $cliente->inscripciones()->where('id_estado', 101)->exists();
+                    $tienePagosPendientes = $cliente->pagos()->whereIn('id_estado', [200, 202])->exists(); // Pendiente o Parcial
+                    $puedoDesactivar = !$tieneInscripcionActiva && !$tieneInscripcionPausada && !$tienePagosPendientes;
                 @endphp
                 <div class="state-management {{ $cliente->activo ? 'is-active' : 'is-inactive' }}">
                     <div class="state-header">
@@ -1119,9 +1119,11 @@
                             <strong>No se puede desactivar:</strong>
                             @if($tieneInscripcionActiva)
                                 El cliente tiene una membresía activa.
+                            @elseif($tieneInscripcionPausada)
+                                El cliente tiene una membresía pausada.
                             @endif
                             @if($tienePagosPendientes)
-                                El cliente tiene pagos pendientes.
+                                El cliente tiene pagos pendientes o parciales.
                             @endif
                         </div>
                     @endif
