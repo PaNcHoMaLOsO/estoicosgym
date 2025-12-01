@@ -60,6 +60,6 @@ class RutValido implements Rule
      */
     public function message()
     {
-        return 'El RUT ingresado no es válido. Formato correcto: 7.882.382-4 o 78823824';
+        return 'El RUT ingresado no es válido. Formato correcto: 12.345.678-5 o 123456785';
     }
 }

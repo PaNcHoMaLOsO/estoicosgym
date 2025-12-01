@@ -275,7 +275,8 @@ class PagoController extends Controller
     public function show(Pago $pago)
     {
         $pago->load([
-            'inscripcion.cliente',
+            'cliente', // Cliente original que pagó
+            'inscripcion.cliente', // Cliente actual de la inscripción (puede ser diferente si hubo traspaso)
             'inscripcion.membresia',
             'inscripcion.estado',
             'inscripcion.pagos.estado',

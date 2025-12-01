@@ -2,6 +2,280 @@
 
 @section('title', 'Detalle de Pago - EstóicosGym')
 
+@section('meta_tags')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@stop
+
+@section('content_header')
+@stop
+
+@section('content')
+<div class="pago-detail-container">
+    <!-- Hero Header -->
+    <div class="detail-hero">
+        <div class="hero-content">
+            <a href="{{ route('admin.pagos.index') }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="hero-info">
+                <div class="hero-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="hero-text">
+                    <h1>Pago #{{ $pago->id }}</h1>
+                    <p>
+                        <i class="fas fa-calendar-alt"></i> 
+                        Registrado el {{ $pago->created_at->format('d/m/Y H:i') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="hero-status">
+            @php
+                $estadoNombre = strtolower($pago->estado->nombre ?? '');
+                $estadoClass = 'pendiente';
+                if (str_contains($estadoNombre, 'pagado') || str_contains($estadoNombre, 'completo')) {
+                    $estadoClass = 'pagado';
+                } elseif (str_contains($estadoNombre, 'parcial')) {
+                    $estadoClass = 'parcial';
+                } elseif (str_contains($estadoNombre, 'vencid') || str_contains($estadoNombre, 'cancelad')) {
+                    $estadoClass = 'vencido';
+                }
+            @endphp
+            <span class="estado-badge-hero {{ $estadoClass }}">
+                <i class="fas fa-{{ $estadoClass === 'pagado' ? 'check-circle' : ($estadoClass === 'parcial' ? 'hourglass-half' : 'times-circle') }}"></i>
+                {{ $pago->estado->nombre ?? 'Sin estado' }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    @php
+        $porcentajePagado = $pago->monto_total > 0 
+            ? min(100, ($pago->monto_abonado / $pago->monto_total) * 100) 
+            : 0;
+    @endphp
+    <div class="stats-row">
+        <div class="stat-card stat-total">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Monto Total</span>
+                <span class="stat-number">${{ number_format($pago->monto_total, 0, ',', '.') }}</span>
+            </div>
+        </div>
+        <div class="stat-card stat-abonado">
+            <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Abonado</span>
+                <span class="stat-number">${{ number_format($pago->monto_abonado, 0, ',', '.') }}</span>
+            </div>
+        </div>
+        <div class="stat-card stat-pendiente">
+            <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Pendiente</span>
+                <span class="stat-number">${{ number_format($pago->monto_pendiente, 0, ',', '.') }}</span>
+            </div>
+        </div>
+        <div class="stat-card stat-progress">
+            <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Progreso</span>
+                <span class="stat-number">{{ number_format($porcentajePagado, 0) }}%</span>
+            </div>
+            <div class="mini-progress">
+                <div class="mini-progress-fill {{ $porcentajePagado >= 100 ? 'complete' : 'partial' }}" 
+                     style="width: {{ $porcentajePagado }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Left Column - Info Cards -->
+        <div class="main-column">
+            <!-- Información del Pago -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Información del Pago</span>
+                </div>
+                <div class="info-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-calendar"></i> Fecha de Pago</span>
+                            <span class="info-value">{{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'No registrada' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-tag"></i> Tipo de Pago</span>
+                            <span class="info-value tipo-badge {{ $pago->tipo_pago ?? 'normal' }}">
+                                {{ ucfirst($pago->tipo_pago ?? 'Normal') }}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-credit-card"></i> Método de Pago</span>
+                            @if($pago->tipo_pago === 'mixto')
+                                <div class="metodos-mixtos">
+                                    <span class="metodo-tag">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        {{ $pago->metodoPago->nombre ?? '-' }}: ${{ number_format($pago->monto_metodo1, 0, ',', '.') }}
+                                    </span>
+                                    <span class="metodo-tag">
+                                        <i class="fas fa-university"></i>
+                                        {{ $pago->metodoPago2->nombre ?? '-' }}: ${{ number_format($pago->monto_metodo2, 0, ',', '.') }}
+                                    </span>
+                                </div>
+                            @else
+                                <span class="metodo-tag">
+                                    @php
+                                        $metodoNombre = strtolower($pago->metodoPago->nombre ?? '');
+                                    @endphp
+                                    <i class="fas fa-{{ str_contains($metodoNombre, 'efectivo') ? 'money-bill-wave' : (str_contains($metodoNombre, 'tarjeta') ? 'credit-card' : 'university') }}"></i>
+                                    {{ $pago->metodoPago->nombre ?? 'No especificado' }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-barcode"></i> Referencia</span>
+                            <span class="info-value">{{ $pago->referencia_pago ?? 'Sin referencia' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Observaciones</span>
+                </div>
+                <div class="info-card-body">
+                    @if($pago->observaciones)
+                        <div class="observaciones-content">
+                            <p>{{ $pago->observaciones }}</p>
+                        </div>
+                    @else
+                        <div class="empty-obs">
+                            <i class="fas fa-comment-slash"></i>
+                            <span>No hay observaciones registradas</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Membresía Asociada -->
+            @if($pago->inscripcion && $pago->inscripcion->membresia)
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fas fa-id-card"></i>
+                    <span>Membresía Asociada</span>
+                </div>
+                <div class="info-card-body">
+                    <div class="membresia-detail">
+                        <div class="membresia-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="membresia-info">
+                            <h4>{{ $pago->inscripcion->membresia->nombre }}</h4>
+                            <div class="membresia-dates">
+                                <span><i class="fas fa-play"></i> {{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }}</span>
+                                <span class="separator">→</span>
+                                <span><i class="fas fa-stop"></i> {{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}</span>
+                            </div>
+                            <span class="membresia-estado {{ strtolower($pago->inscripcion->estado->nombre ?? '') }}">
+                                {{ $pago->inscripcion->estado->nombre ?? 'Sin estado' }}
+                            </span>
+                        </div>
+                        <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn-ver-inscripcion">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        <!-- Right Column - Client Card -->
+        <div class="side-column">
+            @php
+                // Cliente actual de la inscripción (dueño actual de la membresía)
+                $clienteActual = $pago->inscripcion?->cliente;
+                // Cliente original que pagó (puede ser diferente si hubo traspaso)
+                $clienteOriginal = $pago->cliente;
+                // Detectar si es un traspaso (cliente actual diferente al que pagó)
+                $esTraspaso = $clienteActual && $clienteOriginal && $clienteActual->id !== $clienteOriginal->id;
+                // Usar cliente actual si existe, sino el original
+                $cliente = $clienteActual ?? $clienteOriginal;
+            @endphp
+            @if($cliente)
+                @php
+                    $iniciales = strtoupper(substr($cliente->nombres ?? 'N', 0, 1) . substr($cliente->apellido_paterno ?? 'A', 0, 1));
+                @endphp
+                <div class="client-card {{ $esTraspaso ? 'traspaso' : '' }}">
+                    @if($esTraspaso)
+                    <div class="traspaso-banner">
+                        <i class="fas fa-exchange-alt"></i>
+                        Membresía Traspasada
+                    </div>
+                    @endif
+                    <div class="client-avatar {{ $esTraspaso ? 'traspaso' : '' }}">{{ $iniciales }}</div>
+                    <h3 class="client-name">{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</h3>
+                    <p class="client-email">{{ $cliente->email ?? 'Sin correo' }}</p>
+                    <span class="client-role">{{ $esTraspaso ? 'Dueño Actual de Membresía' : 'Cliente' }}</span>
+                    <div class="client-details">
+                        @if($cliente->run_pasaporte)
+                        <div class="detail-item">
+                            <i class="fas fa-id-card"></i>
+                            <span>{{ $cliente->run_pasaporte }}</span>
+                        </div>
+                        @endif
+                        @if($cliente->celular)
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ $cliente->celular }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    <a href="{{ route('admin.clientes.show', $cliente) }}" class="btn-ver-cliente">
+                        <i class="fas fa-user"></i>
+                        Ver Perfil Completo
+                    </a>
+                    
+                    @if($esTraspaso && $clienteOriginal)
+                    <div class="cliente-original-info">
+                        <h5><i class="fas fa-history"></i> Pagado originalmente por:</h5>
+                        <div class="cliente-original-card">
+                            <span class="nombre">{{ $clienteOriginal->nombres }} {{ $clienteOriginal->apellido_paterno }}</span>
+                            <a href="{{ route('admin.clientes.show', $clienteOriginal) }}" class="btn-ver-original">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            @endif
+
+            <!-- Acciones Rápidas -->
+            <div class="quick-actions">
+                <h4><i class="fas fa-bolt"></i> Acciones</h4>
+                <a href="{{ route('admin.pagos.edit', $pago) }}" class="action-btn edit">
+                    <i class="fas fa-edit"></i>
+                    Editar Pago
+                </a>
+                <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="delete-form">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="action-btn delete">
+                        <i class="fas fa-trash"></i>
+                        Eliminar Pago
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@stop
+
 @section('css')
 <style>
     :root {
@@ -13,837 +287,555 @@
         --success-dark: #00a67d;
         --warning: #f0a500;
         --info: #4361ee;
-        --gray-100: #f8f9fa;
-        --gray-200: #e9ecef;
-        --gray-600: #6c757d;
-        --gray-800: #343a40;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 25px -5px rgb(0 0 0 / 0.15);
     }
 
-    /* HERO HEADER */
-    .hero-header {
+    .content-wrapper { background: var(--gray-50) !important; }
+    .content { padding: 0 !important; }
+
+    .pago-detail-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* ===== HERO HEADER ===== */
+    .detail-hero {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
-        padding: 35px 40px;
         border-radius: 16px;
-        margin-bottom: 25px;
-        box-shadow: 0 15px 40px rgba(26, 26, 46, 0.4);
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-lg);
         position: relative;
         overflow: hidden;
     }
-    .hero-header::before {
+    .detail-hero::before {
         content: '';
         position: absolute;
-        top: -80px;
-        right: -80px;
-        width: 250px;
-        height: 250px;
-        background: var(--accent);
+        top: -40px;
+        right: -40px;
+        width: 150px;
+        height: 150px;
+        background: var(--success);
         border-radius: 50%;
         opacity: 0.1;
     }
-    .hero-header::after {
-        content: '';
-        position: absolute;
-        bottom: -60px;
-        left: 30%;
-        width: 180px;
-        height: 180px;
-        background: var(--success);
-        border-radius: 50%;
-        opacity: 0.08;
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
     }
-    .hero-header-content { position: relative; z-index: 1; }
-    .hero-title { 
-        font-size: 2em; 
-        font-weight: 800; 
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-    }
-    .hero-subtitle { 
-        font-size: 1.1em; 
-        opacity: 0.9;
-        font-weight: 400;
-    }
-
-    /* STAT CARDS */
-    .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 22px;
-        border: none;
-        border-left: 5px solid var(--gray-200);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
         transition: all 0.3s ease;
-        margin-bottom: 20px;
-        height: 100%;
     }
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        transform: translateX(-3px);
     }
-    .stat-card.primary { border-left-color: var(--info); }
-    .stat-card.success { border-left-color: var(--success); }
-    .stat-card.warning { border-left-color: var(--warning); }
-    .stat-card.danger { border-left-color: var(--accent); }
-    .stat-card.info { border-left-color: var(--info); }
-    
-    .stat-icon {
+    .hero-info { display: flex; align-items: center; gap: 14px; }
+    .hero-icon {
         width: 50px;
         height: 50px;
+        background: rgba(0, 191, 142, 0.2);
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3em;
-        margin-bottom: 15px;
+        font-size: 1.4em;
+        color: var(--success);
     }
-    .stat-icon.primary { background: rgba(67, 97, 238, 0.12); color: var(--info); }
-    .stat-icon.success { background: rgba(0, 191, 142, 0.12); color: var(--success); }
-    .stat-icon.warning { background: rgba(240, 165, 0, 0.12); color: var(--warning); }
-    .stat-icon.danger { background: rgba(233, 69, 96, 0.12); color: var(--accent); }
-    
-    .stat-label { 
-        font-size: 0.75em; 
-        color: var(--gray-600); 
-        font-weight: 600; 
-        text-transform: uppercase; 
-        letter-spacing: 0.8px;
-        margin-bottom: 6px;
+    .hero-text h1 {
+        color: white;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0;
     }
-    .stat-value { 
-        font-size: 1.7em; 
-        font-weight: 800; 
-        color: var(--gray-800);
+    .hero-text p {
+        color: rgba(255,255,255,0.7);
+        margin: 4px 0 0;
+        font-size: 0.85em;
     }
-    .stat-value.success { color: var(--success); }
-    .stat-value.danger { color: var(--accent); }
-    .stat-value.warning { color: var(--warning); }
-    .stat-value.info { color: var(--info); }
+    .hero-status { position: relative; z-index: 1; }
+    .estado-badge-hero {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85em;
+        text-transform: uppercase;
+    }
+    .estado-badge-hero.pagado { background: rgba(0, 191, 142, 0.2); color: #38ef7d; border: 1px solid rgba(0, 191, 142, 0.4); }
+    .estado-badge-hero.parcial { background: rgba(240, 165, 0, 0.2); color: #ffc107; border: 1px solid rgba(240, 165, 0, 0.4); }
+    .estado-badge-hero.pendiente { background: rgba(233, 69, 96, 0.2); color: #ff6b6b; border: 1px solid rgba(233, 69, 96, 0.4); }
+    .estado-badge-hero.vencido { background: rgba(233, 69, 96, 0.2); color: #ff6b6b; border: 1px solid rgba(233, 69, 96, 0.4); }
 
-    /* INFO CARDS */
+    /* ===== STATS ROW ===== */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: var(--shadow);
+        border-left: 4px solid var(--gray-300);
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1em;
+    }
+    .stat-card .stat-info { display: flex; flex-direction: column; }
+    .stat-card .stat-label { font-size: 0.7em; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .stat-card .stat-number { font-size: 1.3em; font-weight: 800; color: var(--gray-800); }
+    
+    .stat-total { border-left-color: var(--info); }
+    .stat-total .stat-icon { background: rgba(67, 97, 238, 0.12); color: var(--info); }
+    .stat-total .stat-number { color: var(--info); }
+    
+    .stat-abonado { border-left-color: var(--success); }
+    .stat-abonado .stat-icon { background: rgba(0, 191, 142, 0.12); color: var(--success); }
+    .stat-abonado .stat-number { color: var(--success); }
+    
+    .stat-pendiente { border-left-color: var(--accent); }
+    .stat-pendiente .stat-icon { background: rgba(233, 69, 96, 0.12); color: var(--accent); }
+    .stat-pendiente .stat-number { color: var(--accent); }
+    
+    .stat-progress { border-left-color: var(--warning); }
+    .stat-progress .stat-icon { background: rgba(240, 165, 0, 0.12); color: var(--warning); }
+    .stat-progress .stat-number { color: var(--warning); }
+    .mini-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gray-200);
+    }
+    .mini-progress-fill { height: 100%; transition: width 0.5s ease; }
+    .mini-progress-fill.complete { background: var(--success); }
+    .mini-progress-fill.partial { background: var(--warning); }
+
+    /* ===== CONTENT GRID ===== */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+    }
+
+    /* ===== INFO CARDS ===== */
     .info-card {
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        margin-bottom: 20px;
         overflow: hidden;
-        height: 100%;
     }
     .info-card-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        background: var(--primary);
         color: white;
-        padding: 18px 22px;
-        font-weight: 700;
-        font-size: 1em;
+        padding: 14px 18px;
+        font-weight: 600;
+        font-size: 0.95em;
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    .info-card-body {
-        padding: 22px;
+    .info-card-header i { color: var(--accent); }
+    .info-card-body { padding: 18px; }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
     }
     .info-item {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--gray-200);
+        flex-direction: column;
+        gap: 6px;
     }
-    .info-item:last-child { border-bottom: none; }
-    .info-item-label {
-        color: var(--gray-600);
-        font-size: 0.9em;
-        font-weight: 500;
+    .info-label {
+        font-size: 0.75em;
+        color: var(--gray-500);
+        font-weight: 600;
+        text-transform: uppercase;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
-    .info-item-label i {
-        color: var(--info);
-        font-size: 0.9em;
-    }
-    .info-item-value {
-        font-weight: 700;
-        color: var(--gray-800);
-    }
+    .info-label i { color: var(--info); font-size: 0.9em; }
+    .info-value { font-weight: 600; color: var(--gray-800); font-size: 0.95em; }
 
-    /* ESTADO BADGE */
-    .estado-badge {
+    .tipo-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.85em;
+        background: var(--gray-100);
+    }
+    .tipo-badge.mixto { background: rgba(67, 97, 238, 0.1); color: var(--info); }
+    .tipo-badge.completo { background: rgba(0, 191, 142, 0.1); color: var(--success); }
+
+    .metodos-mixtos { display: flex; flex-direction: column; gap: 6px; }
+    .metodo-tag {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 10px 18px;
-        border-radius: 50px;
-        font-weight: 700;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .estado-badge.pagado {
-        background: rgba(0, 191, 142, 0.15);
-        color: var(--success);
-        border: 2px solid var(--success);
-    }
-    .estado-badge.pendiente {
-        background: rgba(240, 165, 0, 0.15);
-        color: var(--warning);
-        border: 2px solid var(--warning);
-    }
-    .estado-badge.parcial {
-        background: rgba(67, 97, 238, 0.15);
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(67, 97, 238, 0.08);
         color: var(--info);
-        border: 2px solid var(--info);
-    }
-    .estado-badge.vencido, .estado-badge.cancelado {
-        background: rgba(233, 69, 96, 0.15);
-        color: var(--accent);
-        border: 2px solid var(--accent);
+        border-radius: 6px;
+        font-size: 0.85em;
+        font-weight: 600;
     }
 
-    /* PROGRESS CONTAINER */
-    .progress-container {
-        background: white;
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-        margin-bottom: 20px;
+    /* ===== OBSERVACIONES ===== */
+    .observaciones-content {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(233, 69, 96, 0.03) 100%);
+        border-left: 4px solid var(--info);
+        border-radius: 8px;
+        padding: 14px 16px;
     }
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    .progress-title {
-        font-weight: 700;
-        color: var(--gray-800);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .progress-title i {
-        color: var(--success);
-    }
-    .progress-percentage {
-        font-size: 1.3em;
-        font-weight: 800;
-        color: var(--success);
-    }
-    .progress-custom {
-        height: 16px;
-        background: var(--gray-200);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .progress-custom .progress-bar {
-        background: linear-gradient(90deg, var(--success) 0%, var(--success-dark) 100%);
-        border-radius: 10px;
-        transition: width 0.6s ease;
-    }
-    .progress-custom .progress-bar.warning {
-        background: linear-gradient(90deg, var(--warning) 0%, #e09000 100%);
-    }
-    .progress-stats {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid var(--gray-200);
-    }
-    .progress-stat {
+    .observaciones-content p { margin: 0; color: var(--gray-700); line-height: 1.6; }
+    .empty-obs {
         text-align: center;
+        padding: 20px;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
-    .progress-stat-value {
-        font-size: 1.4em;
-        font-weight: 800;
-        color: var(--gray-800);
-    }
-    .progress-stat-value.success { color: var(--success); }
-    .progress-stat-value.danger { color: var(--accent); }
-    .progress-stat-label {
-        font-size: 0.75em;
-        color: var(--gray-600);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+    .empty-obs i { font-size: 1.5em; opacity: 0.5; }
 
-    /* CLIENT CARD */
-    .client-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-        padding: 25px;
-        text-align: center;
+    /* ===== MEMBRESÍA DETAIL ===== */
+    .membresia-detail {
+        display: flex;
+        align-items: center;
+        gap: 14px;
     }
-    .client-avatar {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
+    .membresia-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2.2em;
-        font-weight: 800;
-        margin: 0 auto 15px;
-        box-shadow: 0 8px 25px rgba(26, 26, 46, 0.3);
-    }
-    .client-name {
-        font-size: 1.3em;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin-bottom: 5px;
-    }
-    .client-email {
-        color: var(--gray-600);
-        font-size: 0.9em;
-        margin-bottom: 15px;
-    }
-    .client-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: var(--gray-100);
-        color: var(--info);
-        padding: 10px 20px;
-        border-radius: 25px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-    .client-link:hover {
-        background: var(--info);
         color: white;
-        transform: translateY(-2px);
+        font-size: 1.2em;
     }
-
-    /* MODERN CARD */
-    .modern-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-        margin-bottom: 20px;
-        border: none;
-        overflow: hidden;
-    }
-    .modern-card-header {
-        padding: 18px 25px;
-        border-bottom: 1px solid var(--gray-200);
-        font-weight: 700;
-        font-size: 1.05em;
+    .membresia-info { flex: 1; }
+    .membresia-info h4 { margin: 0 0 6px; color: var(--gray-800); font-size: 1em; }
+    .membresia-dates {
+        font-size: 0.8em;
+        color: var(--gray-600);
         display: flex;
         align-items: center;
-        gap: 12px;
-        color: var(--gray-800);
-    }
-    .modern-card-header i {
-        color: var(--accent);
-    }
-    .modern-card-body {
-        padding: 25px;
-    }
-
-    /* OBSERVACIONES */
-    .observaciones-box {
-        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(233, 69, 96, 0.03) 100%);
-        border-radius: 12px;
-        padding: 20px;
-        border-left: 4px solid var(--info);
-    }
-    .observaciones-box p {
-        margin: 0;
-        color: var(--gray-800);
-        line-height: 1.6;
-    }
-    .no-observaciones {
-        color: var(--gray-600);
-        font-style: italic;
-    }
-
-    /* BUTTONS */
-    .btn-custom {
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
         gap: 8px;
+        margin-bottom: 8px;
     }
-    .btn-custom-primary {
+    .membresia-dates .separator { color: var(--gray-400); }
+    .membresia-estado {
+        display: inline-flex;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7em;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .membresia-estado.activa { background: rgba(0, 191, 142, 0.1); color: var(--success); }
+    .membresia-estado.vencida { background: rgba(233, 69, 96, 0.1); color: var(--accent); }
+    .btn-ver-inscripcion {
+        width: 36px;
+        height: 36px;
         background: var(--primary);
         color: white;
-        border: none;
-    }
-    .btn-custom-primary:hover {
-        background: var(--primary-light);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(26, 26, 46, 0.3);
-    }
-    .btn-custom-warning {
-        background: var(--warning);
-        color: white;
-        border: none;
-    }
-    .btn-custom-warning:hover {
-        background: #d99500;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(240, 165, 0, 0.3);
-    }
-    .btn-custom-danger {
-        background: var(--accent);
-        color: white;
-        border: none;
-    }
-    .btn-custom-danger:hover {
-        background: #d73a55;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3);
-    }
-    .btn-custom-outline {
-        background: transparent;
-        border: 2px solid var(--gray-200);
-        color: var(--gray-600);
-    }
-    .btn-custom-outline:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        transform: translateY(-2px);
-    }
-
-    /* ACTIONS BAR */
-    .actions-bar {
-        background: white;
-        border-radius: 16px;
-        padding: 20px 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    /* METODO PAGO BADGE */
-    .metodo-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
         border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.9em;
-    }
-    .metodo-badge.efectivo {
-        background: rgba(0, 191, 142, 0.12);
-        color: var(--success);
-    }
-    .metodo-badge.tarjeta, .metodo-badge.transferencia {
-        background: rgba(67, 97, 238, 0.12);
-        color: var(--info);
-    }
-    .metodo-badge.default {
-        background: rgba(108, 117, 125, 0.12);
-        color: var(--gray-600);
-    }
-
-    /* INSCRIPCION LINK */
-    .inscripcion-link {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 8px;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
-        padding: 10px 18px;
-        border-radius: 10px;
-        font-weight: 600;
+        justify-content: center;
         text-decoration: none;
         transition: all 0.3s ease;
     }
-    .inscripcion-link:hover {
+    .btn-ver-inscripcion:hover {
+        background: var(--primary-light);
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(26, 26, 46, 0.3);
         color: white;
     }
 
-    /* ALERT */
-    .alert-custom {
-        border-radius: 12px;
-        padding: 16px 20px;
-        border: none;
+    /* ===== CLIENT CARD ===== */
+    .client-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 24px;
+        text-align: center;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .client-card.traspaso {
+        border: 2px solid #7c3aed;
+    }
+    .traspaso-banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        color: white;
+        padding: 6px 10px;
+        font-size: 0.75em;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        gap: 6px;
     }
-    .alert-custom.success {
-        background: rgba(0, 191, 142, 0.12);
-        color: var(--success);
+    .client-card.traspaso .client-avatar {
+        margin-top: 20px;
     }
-    .alert-custom.warning {
-        background: rgba(240, 165, 0, 0.12);
-        color: var(--warning);
+    .client-avatar {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5em;
+        font-weight: 800;
+        margin: 0 auto 14px;
+        box-shadow: 0 6px 20px rgba(26, 26, 46, 0.3);
     }
-    .alert-custom.danger {
-        background: rgba(233, 69, 96, 0.12);
-        color: var(--accent);
+    .client-avatar.traspaso {
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+    }
+    .client-name { font-size: 1.1em; font-weight: 700; color: var(--gray-800); margin: 0 0 4px; }
+    .client-email { font-size: 0.85em; color: var(--gray-500); margin: 0 0 6px; }
+    .client-role {
+        display: inline-block;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7em;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+    .client-details { margin-bottom: 16px; }
+    .detail-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 0.85em;
+        color: var(--gray-600);
+    }
+    .detail-item i { color: var(--info); }
+    .btn-ver-cliente {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px;
+        background: var(--gray-100);
+        color: var(--primary);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9em;
+        transition: all 0.3s ease;
+    }
+    .btn-ver-cliente:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Cliente Original Info (Traspaso) */
+    .cliente-original-info {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px dashed var(--gray-200);
+    }
+    .cliente-original-info h5 {
+        font-size: 0.75em;
+        color: var(--gray-500);
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .cliente-original-info h5 i { color: #7c3aed; }
+    .cliente-original-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: var(--gray-50);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+    }
+    .cliente-original-card .nombre {
+        font-size: 0.85em;
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    .btn-ver-original {
+        width: 28px;
+        height: 28px;
+        background: #7c3aed;
+        color: white;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75em;
+        transition: all 0.3s ease;
+    }
+    .btn-ver-original:hover {
+        background: #6d28d9;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    /* ===== QUICK ACTIONS ===== */
+    .quick-actions {
+        background: white;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 18px;
+    }
+    .quick-actions h4 {
+        margin: 0 0 14px;
+        font-size: 0.9em;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .quick-actions h4 i { color: var(--warning); }
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9em;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        margin-bottom: 10px;
+    }
+    .action-btn:last-child { margin-bottom: 0; }
+    .action-btn.edit { background: var(--warning); color: white; }
+    .action-btn.edit:hover { background: #d99400; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(240, 165, 0, 0.3); color: white; }
+    .action-btn.delete { background: var(--accent); color: white; }
+    .action-btn.delete:hover { background: #d63650; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3); }
+    .delete-form { width: 100%; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 992px) {
+        .content-grid { grid-template-columns: 1fr; }
+        .side-column { order: -1; }
+        .client-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+        .client-avatar { margin: 0; }
+        .client-details { display: flex; gap: 16px; margin: 0; }
+    }
+    @media (max-width: 768px) {
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
+        .detail-hero { flex-direction: column; gap: 16px; text-align: center; }
+        .hero-content { flex-direction: column; }
+        .info-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 576px) {
+        .stats-row { grid-template-columns: 1fr; }
+        .pago-detail-container { padding: 12px; }
     }
 </style>
 @stop
 
-@section('content')
-<div class="container-fluid py-4">
-    
-    {{-- HERO HEADER --}}
-    <div class="hero-header">
-        <div class="hero-header-content">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h1 class="hero-title">
-                        <i class="fas fa-receipt me-2"></i>
-                        Pago #{{ substr($pago->uuid, 0, 8) }}
-                    </h1>
-                    <p class="hero-subtitle mb-0">
-                        <i class="fas fa-calendar-alt me-1"></i>
-                        Registrado el {{ $pago->created_at->format('d/m/Y H:i') }}
-                    </p>
-                </div>
-                <div>
-                    @php
-                        $estadoNombre = strtolower($pago->estado->nombre ?? '');
-                        $estadoClass = 'pendiente';
-                        if (str_contains($estadoNombre, 'pagado') || str_contains($estadoNombre, 'completo')) {
-                            $estadoClass = 'pagado';
-                        } elseif (str_contains($estadoNombre, 'parcial')) {
-                            $estadoClass = 'parcial';
-                        } elseif (str_contains($estadoNombre, 'vencid') || str_contains($estadoNombre, 'cancelad')) {
-                            $estadoClass = 'vencido';
-                        }
-                    @endphp
-                    <span class="estado-badge {{ $estadoClass }}">
-                        <i class="fas fa-circle" style="font-size: 0.5em;"></i>
-                        {{ $pago->estado->nombre ?? 'Sin estado' }}
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- STATS CARDS --}}
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-card success">
-                <div class="stat-icon success">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div class="stat-label">Monto Total</div>
-                <div class="stat-value">${{ number_format($pago->monto_total, 0, ',', '.') }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card primary">
-                <div class="stat-icon primary">
-                    <i class="fas fa-hand-holding-usd"></i>
-                </div>
-                <div class="stat-label">Monto Abonado</div>
-                <div class="stat-value info">${{ number_format($pago->monto_abonado, 0, ',', '.') }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card {{ $pago->monto_pendiente > 0 ? 'warning' : 'success' }}">
-                <div class="stat-icon {{ $pago->monto_pendiente > 0 ? 'warning' : 'success' }}">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stat-label">Monto Pendiente</div>
-                <div class="stat-value {{ $pago->monto_pendiente > 0 ? 'warning' : 'success' }}">
-                    ${{ number_format($pago->monto_pendiente, 0, ',', '.') }}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card danger">
-                <div class="stat-icon danger">
-                    <i class="fas fa-calendar"></i>
-                </div>
-                <div class="stat-label">Fecha de Pago</div>
-                <div class="stat-value" style="font-size: 1.3em;">
-                    {{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'No registrada' }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- PROGRESS BAR --}}
-    @php
-        $porcentajePagado = $pago->monto_total > 0 
-            ? min(100, ($pago->monto_abonado / $pago->monto_total) * 100) 
-            : 0;
-    @endphp
-    <div class="progress-container">
-        <div class="progress-header">
-            <div class="progress-title">
-                <i class="fas fa-chart-line"></i>
-                Progreso del Pago
-            </div>
-            <div class="progress-percentage">{{ number_format($porcentajePagado, 1) }}%</div>
-        </div>
-        <div class="progress progress-custom">
-            <div class="progress-bar {{ $porcentajePagado < 100 ? 'warning' : '' }}" 
-                 role="progressbar" 
-                 style="width: {{ $porcentajePagado }}%"></div>
-        </div>
-        <div class="progress-stats">
-            <div class="progress-stat">
-                <div class="progress-stat-value success">${{ number_format($pago->monto_abonado, 0, ',', '.') }}</div>
-                <div class="progress-stat-label">Pagado</div>
-            </div>
-            <div class="progress-stat">
-                <div class="progress-stat-value danger">${{ number_format($pago->monto_pendiente, 0, ',', '.') }}</div>
-                <div class="progress-stat-label">Pendiente</div>
-            </div>
-            <div class="progress-stat">
-                <div class="progress-stat-value">${{ number_format($pago->monto_total, 0, ',', '.') }}</div>
-                <div class="progress-stat-label">Total</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        {{-- INFO PAGO --}}
-        <div class="col-md-8">
-            <div class="info-card mb-4">
-                <div class="info-card-header">
-                    <i class="fas fa-info-circle"></i>
-                    Información del Pago
-                </div>
-                <div class="info-card-body">
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-hashtag"></i>
-                            UUID
-                        </span>
-                        <span class="info-item-value" style="font-family: monospace; font-size: 0.85em;">
-                            {{ $pago->uuid }}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-tag"></i>
-                            Tipo de Pago
-                        </span>
-                        <span class="info-item-value">
-                            {{ ucfirst($pago->tipo_pago ?? 'Normal') }}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-credit-card"></i>
-                            Método de Pago
-                        </span>
-                        @if($pago->tipo_pago === 'mixto')
-                            <div>
-                                @php
-                                    $metodo1Nombre = strtolower($pago->metodoPago->nombre ?? '');
-                                    $metodo1Class = str_contains($metodo1Nombre, 'efectivo') ? 'efectivo' : (str_contains($metodo1Nombre, 'tarjeta') || str_contains($metodo1Nombre, 'transfer') ? 'transferencia' : 'default');
-                                    
-                                    $metodo2Nombre = strtolower($pago->metodoPago2->nombre ?? '');
-                                    $metodo2Class = str_contains($metodo2Nombre, 'efectivo') ? 'efectivo' : (str_contains($metodo2Nombre, 'tarjeta') || str_contains($metodo2Nombre, 'transfer') ? 'transferencia' : 'default');
-                                @endphp
-                                <div class="d-flex flex-column gap-2">
-                                    <span class="metodo-badge {{ $metodo1Class }}">
-                                        <i class="fas fa-{{ $metodo1Class == 'efectivo' ? 'money-bill-wave' : ($metodo1Class == 'transferencia' ? 'university' : 'wallet') }}"></i>
-                                        {{ $pago->metodoPago->nombre ?? '-' }}: 
-                                        <strong>${{ number_format($pago->monto_metodo1, 0, ',', '.') }}</strong>
-                                    </span>
-                                    <span class="metodo-badge {{ $metodo2Class }}">
-                                        <i class="fas fa-{{ $metodo2Class == 'efectivo' ? 'money-bill-wave' : ($metodo2Class == 'transferencia' ? 'university' : 'wallet') }}"></i>
-                                        {{ $pago->metodoPago2->nombre ?? '-' }}: 
-                                        <strong>${{ number_format($pago->monto_metodo2, 0, ',', '.') }}</strong>
-                                    </span>
-                                </div>
-                            </div>
-                        @else
-                            @php
-                                $metodoNombre = strtolower($pago->metodoPago->nombre ?? '');
-                                $metodoClass = 'default';
-                                if (str_contains($metodoNombre, 'efectivo')) {
-                                    $metodoClass = 'efectivo';
-                                } elseif (str_contains($metodoNombre, 'tarjeta') || str_contains($metodoNombre, 'transfer')) {
-                                    $metodoClass = 'transferencia';
-                                }
-                            @endphp
-                            <span class="metodo-badge {{ $metodoClass }}">
-                                <i class="fas fa-{{ $metodoClass == 'efectivo' ? 'money-bill-wave' : ($metodoClass == 'transferencia' ? 'university' : 'wallet') }}"></i>
-                                {{ $pago->metodoPago->nombre ?? 'No especificado' }}
-                            </span>
-                        @endif
-                    </div>
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-barcode"></i>
-                            Referencia
-                        </span>
-                        <span class="info-item-value">
-                            {{ $pago->referencia_pago ?? 'Sin referencia' }}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-file-contract"></i>
-                            Inscripción Asociada
-                        </span>
-                        @if($pago->inscripcion)
-                            <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="inscripcion-link">
-                                <i class="fas fa-external-link-alt"></i>
-                                {{ $pago->inscripcion->membresia->nombre ?? 'Inscripción' }} - 
-                                {{ $pago->inscripcion->cliente->user->name ?? 'Cliente' }}
-                            </a>
-                        @else
-                            <span class="info-item-value text-muted">Sin inscripción asociada</span>
-                        @endif
-                    </div>
-                    <div class="info-item">
-                        <span class="info-item-label">
-                            <i class="fas fa-clock"></i>
-                            Última Actualización
-                        </span>
-                        <span class="info-item-value">
-                            {{ $pago->updated_at->format('d/m/Y H:i') }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- OBSERVACIONES --}}
-            <div class="modern-card">
-                <div class="modern-card-header">
-                    <i class="fas fa-sticky-note"></i>
-                    Observaciones
-                </div>
-                <div class="modern-card-body">
-                    @if($pago->observaciones)
-                        <div class="observaciones-box">
-                            <p>{{ $pago->observaciones }}</p>
-                        </div>
-                    @else
-                        <p class="no-observaciones">No hay observaciones registradas para este pago.</p>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- CLIENTE INFO --}}
-        <div class="col-md-4">
-            @if($pago->inscripcion && $pago->inscripcion->cliente)
-                @php
-                    $cliente = $pago->inscripcion->cliente;
-                    $user = $cliente->user;
-                    $iniciales = '';
-                    if ($user && $user->name) {
-                        $palabras = explode(' ', $user->name);
-                        foreach($palabras as $palabra) {
-                            $iniciales .= strtoupper(substr($palabra, 0, 1));
-                        }
-                        $iniciales = substr($iniciales, 0, 2);
-                    }
-                @endphp
-                <div class="client-card mb-4">
-                    <div class="client-avatar">
-                        {{ $iniciales ?: 'CL' }}
-                    </div>
-                    <h3 class="client-name">{{ $user->name ?? 'Cliente' }}</h3>
-                    <p class="client-email">{{ $user->email ?? 'Sin correo' }}</p>
-                    <a href="{{ route('admin.clientes.show', $cliente) }}" class="client-link">
-                        <i class="fas fa-user"></i>
-                        Ver Perfil del Cliente
-                    </a>
-                </div>
-            @endif
-
-            {{-- MEMBRESÍA INFO --}}
-            @if($pago->inscripcion && $pago->inscripcion->membresia)
-                <div class="info-card">
-                    <div class="info-card-header">
-                        <i class="fas fa-id-card"></i>
-                        Membresía Asociada
-                    </div>
-                    <div class="info-card-body">
-                        <div class="info-item">
-                            <span class="info-item-label">
-                                <i class="fas fa-tag"></i>
-                                Tipo
-                            </span>
-                            <span class="info-item-value">
-                                {{ $pago->inscripcion->membresia->nombre }}
-                            </span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-item-label">
-                                <i class="fas fa-calendar-check"></i>
-                                Vigencia
-                            </span>
-                            <span class="info-item-value">
-                                {{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }} - 
-                                {{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}
-                            </span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-item-label">
-                                <i class="fas fa-check-circle"></i>
-                                Estado
-                            </span>
-                            <span class="info-item-value">
-                                {{ $pago->inscripcion->estado->nombre ?? 'Sin estado' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- ACTIONS BAR --}}
-    <div class="actions-bar mt-4">
-        <div>
-            <a href="{{ route('admin.pagos.index') }}" class="btn btn-custom btn-custom-outline">
-                <i class="fas fa-arrow-left"></i>
-                Volver a la Lista
-            </a>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn btn-custom btn-custom-warning">
-                <i class="fas fa-edit"></i>
-                Editar Pago
-            </a>
-            <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="d-inline" 
-                  onsubmit="return confirm('¿Estás seguro de eliminar este pago?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-custom btn-custom-danger">
-                    <i class="fas fa-trash"></i>
-                    Eliminar
-                </button>
-            </form>
-        </div>
-    </div>
-
-</div>
-@stop
-
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Animación de la barra de progreso al cargar
-    document.addEventListener('DOMContentLoaded', function() {
-        const progressBar = document.querySelector('.progress-bar');
-        if (progressBar) {
-            const width = progressBar.style.width;
-            progressBar.style.width = '0%';
-            setTimeout(() => {
-                progressBar.style.width = width;
-            }, 100);
-        }
+$(document).ready(function() {
+    // Confirmación de eliminación
+    $('.delete-form').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: '¿Eliminar pago?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e94560',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
+
+    // Animación de barras de progreso
+    setTimeout(function() {
+        $('.mini-progress-fill').each(function() {
+            $(this).css('width', $(this).data('width') || $(this).attr('style').match(/width:\s*(\d+)/)?.[1] + '%');
+        });
+    }, 100);
+});
 </script>
 @stop

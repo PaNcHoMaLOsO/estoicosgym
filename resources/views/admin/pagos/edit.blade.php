@@ -302,29 +302,117 @@
         color: var(--gray-600);
         font-size: 0.9em;
     }
+
+    /* NEW CONTAINER */
+    .content-wrapper { background: #f9fafb !important; }
+    .content { padding: 0 !important; }
+    .pago-edit-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* NEW HERO */
+    .edit-hero {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .edit-hero::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 150px;
+        height: 150px;
+        background: var(--warning);
+        border-radius: 50%;
+        opacity: 0.15;
+    }
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        transform: translateX(-3px);
+    }
+    .hero-info { display: flex; align-items: center; gap: 14px; }
+    .hero-icon {
+        width: 50px;
+        height: 50px;
+        background: rgba(240, 165, 0, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4em;
+        color: var(--warning);
+    }
+    .hero-text h1 {
+        color: white;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0;
+    }
+    .hero-text p {
+        color: rgba(255,255,255,0.7);
+        margin: 4px 0 0;
+        font-size: 0.85em;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+        .pago-edit-container { padding: 12px; }
+    }
+    @media (max-width: 768px) {
+        .edit-hero { padding: 16px; }
+        .hero-text h1 { font-size: 1.2em; }
+    }
 </style>
 @stop
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="pago-edit-container">
     
-    {{-- HERO HEADER --}}
-    <div class="hero-header">
-        <div class="hero-header-content">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div>
-                    <h1 class="hero-title">
-                        <i class="fas fa-edit me-2"></i>
-                        Editar Pago #{{ substr($pago->uuid, 0, 8) }}
-                    </h1>
-                    <p class="hero-subtitle mb-0">
-                        Modifica los detalles del pago registrado
-                    </p>
+    <!-- Hero Header -->
+    <div class="edit-hero">
+        <div class="hero-content">
+            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="hero-info">
+                <div class="hero-icon">
+                    <i class="fas fa-edit"></i>
                 </div>
-                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn btn-back">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Volver al Detalle
-                </a>
+                <div class="hero-text">
+                    <h1>Editar Pago #{{ $pago->id }}</h1>
+                    <p>Modifica los detalles del pago registrado</p>
+                </div>
             </div>
         </div>
     </div>

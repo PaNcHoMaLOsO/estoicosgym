@@ -364,29 +364,117 @@
         background: rgba(0, 191, 142, 0.12);
         color: var(--success);
     }
+
+    /* NEW CONTAINER */
+    .content-wrapper { background: #f9fafb !important; }
+    .content { padding: 0 !important; }
+    .pago-create-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* NEW HERO */
+    .create-hero {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .create-hero::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 150px;
+        height: 150px;
+        background: var(--success);
+        border-radius: 50%;
+        opacity: 0.1;
+    }
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        transform: translateX(-3px);
+    }
+    .hero-info { display: flex; align-items: center; gap: 14px; }
+    .hero-icon {
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 191, 142, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4em;
+        color: var(--success);
+    }
+    .hero-text h1 {
+        color: white;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0;
+    }
+    .hero-text p {
+        color: rgba(255,255,255,0.7);
+        margin: 4px 0 0;
+        font-size: 0.85em;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+        .pago-create-container { padding: 12px; }
+    }
+    @media (max-width: 768px) {
+        .create-hero { padding: 16px; }
+        .hero-text h1 { font-size: 1.2em; }
+    }
 </style>
 @stop
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="pago-create-container">
     
-    {{-- HERO HEADER --}}
-    <div class="hero-header">
-        <div class="hero-header-content">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div>
-                    <h1 class="hero-title">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Registrar Nuevo Pago
-                    </h1>
-                    <p class="hero-subtitle mb-0">
-                        Selecciona la inscripción y el tipo de pago a registrar
-                    </p>
+    <!-- Hero Header -->
+    <div class="create-hero">
+        <div class="hero-content">
+            <a href="{{ route('admin.pagos.index') }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="hero-info">
+                <div class="hero-icon">
+                    <i class="fas fa-plus-circle"></i>
                 </div>
-                <a href="{{ route('admin.pagos.index') }}" class="btn btn-back">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Volver a Pagos
-                </a>
+                <div class="hero-text">
+                    <h1>Registrar Nuevo Pago</h1>
+                    <p>Selecciona la inscripción y el tipo de pago</p>
+                </div>
             </div>
         </div>
     </div>
