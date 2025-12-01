@@ -327,6 +327,12 @@ return [
             'icon' => 'fas fa-fw fa-credit-card',
         ],
         [
+            'text' => 'Historial',
+            'url' => 'admin/historial',
+            'icon' => 'fas fa-fw fa-history',
+            'icon_color' => 'purple',
+        ],
+        [
             'text' => 'Pagos',
             'url' => 'admin/pagos',
             'icon' => 'fas fa-fw fa-dollar-sign',

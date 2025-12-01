@@ -279,6 +279,10 @@ Route::middleware('auth')->group(function () {
     // Traspaso de Membresía
     Route::get('inscripciones/{inscripcion}/buscar-clientes-traspaso', [InscripcionController::class, 'buscarClientesTraspaso'])->name('inscripciones.buscar-clientes-traspaso');
     Route::post('inscripciones/{inscripcion}/traspasar', [InscripcionController::class, 'traspasar'])->name('inscripciones.traspasar');
+    
+    // Módulo Historial (traspasos, cambios, etc.)
+    Route::get('historial', [\App\Http\Controllers\Admin\HistorialController::class, 'index'])->name('historial.index');
+    Route::get('historial/traspaso/{traspaso}', [\App\Http\Controllers\Admin\HistorialController::class, 'showTraspaso'])->name('historial.traspaso.show');
 
     // CRUD Pagos
     Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);

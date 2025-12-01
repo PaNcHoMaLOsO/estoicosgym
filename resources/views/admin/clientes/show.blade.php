@@ -7,10 +7,14 @@
 
 @section('content')
 @php
-    // Obtener inscripción activa
+    // Obtener inscripción activa (excluyendo traspasadas - estado 106)
     $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first();
     $inscripcionVencida = $cliente->inscripciones->where('id_estado', 102)->first();
-    $ultimaInscripcion = $inscripcionActiva ?? $inscripcionVencida ?? $cliente->inscripciones->first();
+    // Excluir inscripciones traspasadas de la "última inscripción"
+    $inscripcionesNoTraspasadas = $cliente->inscripciones->whereNotIn('id_estado', [106]);
+    $ultimaInscripcion = $inscripcionActiva ?? $inscripcionVencida ?? $inscripcionesNoTraspasadas->first();
+    // Obtener traspasos donde este cliente cedió membresías
+    $traspasosCedidos = \App\Models\HistorialTraspaso::where('cliente_origen_id', $cliente->id)->with(['clienteDestino', 'membresia'])->get();
 @endphp
 
 <div class="cliente-detail-container">
@@ -122,6 +126,7 @@
                             101 => ['class' => 'pausado', 'text' => 'Pausada'],
                             102 => ['class' => 'vencido', 'text' => 'Vencida'],
                             103 => ['class' => 'cancelado', 'text' => 'Cancelada'],
+                            106 => ['class' => 'traspasado', 'text' => 'Traspasada'],
                             default => ['class' => 'otro', 'text' => 'Otro']
                         };
                     @endphp
@@ -293,6 +298,7 @@
                                         102 => ['class' => 'vencido', 'text' => 'Vencida'],
                                         103 => ['class' => 'cancelado', 'text' => 'Cancelada'],
                                         104 => ['class' => 'suspendido', 'text' => 'Suspendida'],
+                                        106 => ['class' => 'traspasado', 'text' => 'Traspasada'],
                                         default => ['class' => 'otro', 'text' => 'Otro']
                                     };
                                 @endphp
@@ -398,6 +404,63 @@
                     @endif
                 </div>
             </div>
+
+            <!-- Traspasos Cedidos -->
+            @if($traspasosCedidos->count() > 0)
+            <div class="table-card traspasos-card">
+                <div class="table-header" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <div class="header-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        <h3>Traspasos Cedidos</h3>
+                    </div>
+                    <span class="badge-count" style="background: rgba(255,255,255,0.2);">{{ $traspasosCedidos->count() }}</span>
+                </div>
+                <div class="table-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Membresía</th>
+                                    <th>Traspasada a</th>
+                                    <th>Días</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($traspasosCedidos as $traspaso)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $traspaso->fecha_traspaso->format('d/m/Y') }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge-membresia-small">{{ $traspaso->membresia->nombre ?? 'N/A' }}</span>
+                                    </td>
+                                    <td>
+                                        @if($traspaso->clienteDestino)
+                                            <a href="{{ route('admin.clientes.show', $traspaso->clienteDestino) }}" class="link-cliente">
+                                                {{ $traspaso->clienteDestino->nombres }} {{ $traspaso->clienteDestino->apellido_paterno }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">Cliente eliminado</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="dias-badge">{{ $traspaso->dias_restantes_traspasados }} días</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('admin.historial.traspaso.show', $traspaso) }}" class="btn-action" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -689,6 +752,7 @@
     .status-pill.vencido { background: var(--danger); color: #fff; }
     .status-pill.pausado { background: var(--warning); color: #000; }
     .status-pill.cancelado { background: #6c757d; color: #fff; }
+    .status-pill.traspasado { background: #6f42c1; color: #fff; }
 
     .card-body-membership { padding: 20px; }
 
@@ -935,6 +999,42 @@
     .status-badge.pausado, .status-badge.parcial { background: rgba(240,165,0,0.15); color: var(--warning); }
     .status-badge.pendiente { background: rgba(67,97,238,0.15); color: var(--info); }
     .status-badge.cancelado { background: rgba(108,117,125,0.15); color: var(--text-secondary); }
+    .status-badge.traspasado { background: rgba(111,66,193,0.15); color: #6f42c1; }
+
+    /* Estilos para traspasos cedidos */
+    .traspasos-card .table-header {
+        color: white !important;
+    }
+    
+    .badge-membresia-small {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .link-cliente {
+        color: var(--info);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .link-cliente:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+    
+    .dias-badge {
+        background: rgba(111,66,193,0.15);
+        color: #6f42c1;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+    }
 
     .monto { color: var(--success); font-weight: 600; }
 

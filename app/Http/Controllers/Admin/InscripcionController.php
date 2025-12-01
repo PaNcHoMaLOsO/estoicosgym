@@ -11,6 +11,7 @@ use App\Models\Convenio;
 use App\Models\MotivoDescuento;
 use App\Models\MetodoPago;
 use App\Models\Pago;
+use App\Models\HistorialTraspaso;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -1043,6 +1044,23 @@ class InscripcionController extends Controller
                         'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
                     ]);
                 }
+
+                // 4. Registrar en el historial de traspasos
+                HistorialTraspaso::create([
+                    'inscripcion_origen_id' => $inscripcion->id,
+                    'inscripcion_destino_id' => $nuevaInscripcion->id,
+                    'cliente_origen_id' => $inscripcion->id_cliente,
+                    'cliente_destino_id' => $clienteDestino->id,
+                    'membresia_id' => $inscripcion->id_membresia,
+                    'fecha_traspaso' => now(),
+                    'motivo' => $validated['motivo_traspaso'],
+                    'dias_restantes_traspasados' => $infoTraspaso['dias_restantes'],
+                    'fecha_vencimiento_original' => $inscripcion->fecha_vencimiento,
+                    'monto_pagado' => $infoTraspaso['monto_pagado'],
+                    'deuda_transferida' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda) ? $infoTraspaso['monto_pendiente'] : 0,
+                    'se_transfirio_deuda' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda),
+                    'usuario_id' => auth()->id(),
+                ]);
 
                 DB::commit();
 
