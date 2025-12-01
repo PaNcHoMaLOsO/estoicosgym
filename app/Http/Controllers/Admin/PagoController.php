@@ -224,11 +224,9 @@ class PagoController extends Controller
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
-        // Obtener IDs de estados correctos (por codigo, no id)
-        $estadoPagado = Estado::where('codigo', 201)->firstOrFail();
-        $estadoParcial = Estado::where('codigo', 202)->firstOrFail();
+        // Obtener códigos de estados (la FK referencia a codigo, no a id)
         $nuevoSaldoPendiente = $montoPendiente - $montoAbonado;
-        $idEstado = $nuevoSaldoPendiente <= 0 ? $estadoPagado->id : $estadoParcial->id;
+        $idEstado = $nuevoSaldoPendiente <= 0 ? 201 : 202; // 201=Pagado, 202=Parcial
 
         // Crear pago
         $idCliente = $inscripcion->id_cliente;
@@ -349,10 +347,8 @@ class PagoController extends Controller
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
-        // Determinar estado automáticamente según monto
-        $estadoPagado = Estado::where('codigo', 201)->firstOrFail(); // Pagado
-        $estadoParcial = Estado::where('codigo', 202)->firstOrFail(); // Parcial
-        $nuevoIdEstado = $montoAbonado >= $montoTotal ? $estadoPagado->id : $estadoParcial->id;
+        // Determinar estado automáticamente según monto (la FK referencia a codigo)
+        $nuevoIdEstado = $montoAbonado >= $montoTotal ? 201 : 202; // 201=Pagado, 202=Parcial
 
         // Actualizar pago con todos los campos
         $pago->update([
