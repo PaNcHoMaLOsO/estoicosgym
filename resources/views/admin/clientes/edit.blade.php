@@ -1186,8 +1186,180 @@
 
 @push('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #e94560 0%, #c73e55 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos.swal-success .swal2-confirm {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%) !important;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4) !important;
+    }
+    .swal-estoicos.swal-warning .swal2-confirm {
+        background: linear-gradient(135deg, #f0a500 0%, #d99400 100%) !important;
+        box-shadow: 0 4px 15px rgba(240, 165, 0, 0.4) !important;
+    }
+    .swal-estoicos.swal-danger .swal2-confirm {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4) !important;
+    }
+    .swal-estoicos.swal-primary .swal2-confirm {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+        box-shadow: 0 4px 15px rgba(26, 26, 46, 0.4) !important;
+    }
+    .swal-estoicos.swal-info .swal2-confirm {
+        background: linear-gradient(135deg, #4361ee 0%, #3651d4 100%) !important;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4) !important;
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ============================================
+    // FORMATEO AUTOMÁTICO DE RUT CHILENO
+    // ============================================
+    function formatRut(value) {
+        // Eliminar todo excepto números y K/k
+        let rut = value.replace(/[^0-9kK]/g, '').toUpperCase();
+        
+        if (rut.length === 0) return '';
+        
+        // Separar cuerpo y dígito verificador
+        let dv = rut.slice(-1);
+        let cuerpo = rut.slice(0, -1);
+        
+        if (cuerpo.length === 0) return rut;
+        
+        // Formatear con puntos
+        let cuerpoFormateado = '';
+        let contador = 0;
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            cuerpoFormateado = cuerpo[i] + cuerpoFormateado;
+            contador++;
+            if (contador === 3 && i > 0) {
+                cuerpoFormateado = '.' + cuerpoFormateado;
+                contador = 0;
+            }
+        }
+        
+        return cuerpoFormateado + '-' + dv;
+    }
+
+    // Aplicar formateo al campo RUT
+    const rutInput = document.getElementById('run_pasaporte');
+    if (rutInput) {
+        rutInput.addEventListener('input', function() {
+            let cursorPos = this.selectionStart;
+            let valorAnterior = this.value;
+            let valorFormateado = formatRut(valorAnterior);
+            
+            this.value = valorFormateado;
+            
+            // Ajustar posición del cursor
+            let diff = valorFormateado.length - valorAnterior.length;
+            this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+        });
+    }
+
+    // ============================================
+    // FORMATEO AUTOMÁTICO DE TELÉFONO CHILENO
+    // ============================================
+    function formatTelefono(value) {
+        // Eliminar todo excepto números
+        let numeros = value.replace(/\D/g, '');
+        
+        // Si empieza con 56, quitarlo para procesar
+        if (numeros.startsWith('56')) {
+            numeros = numeros.substring(2);
+        }
+        
+        // Si empieza con 9 y tiene 9 dígitos, es celular chileno
+        if (numeros.startsWith('9')) {
+            numeros = numeros.substring(0, 9); // Máximo 9 dígitos
+            
+            // Formatear: +56 9 XXXX XXXX
+            if (numeros.length <= 1) {
+                return '+56 ' + numeros;
+            } else if (numeros.length <= 5) {
+                return '+56 ' + numeros[0] + ' ' + numeros.substring(1);
+            } else {
+                return '+56 ' + numeros[0] + ' ' + numeros.substring(1, 5) + ' ' + numeros.substring(5);
+            }
+        }
+        
+        // Si no empieza con 9, agregar el 9
+        if (numeros.length > 0 && !numeros.startsWith('9')) {
+            numeros = '9' + numeros;
+        }
+        
+        numeros = numeros.substring(0, 9); // Máximo 9 dígitos
+        
+        if (numeros.length === 0) return '+56 9 ';
+        if (numeros.length <= 1) {
+            return '+56 ' + numeros;
+        } else if (numeros.length <= 5) {
+            return '+56 ' + numeros[0] + ' ' + numeros.substring(1);
+        } else {
+            return '+56 ' + numeros[0] + ' ' + numeros.substring(1, 5) + ' ' + numeros.substring(5);
+        }
+    }
+
+    // Aplicar formateo al campo celular
+    const celularInput = document.getElementById('celular');
+    if (celularInput) {
+        celularInput.addEventListener('input', function() {
+            this.value = formatTelefono(this.value);
+        });
+        
+        celularInput.addEventListener('focus', function() {
+            if (!this.value || this.value.trim() === '') {
+                this.value = '+56 9 ';
+            }
+        });
+    }
+
+    // Aplicar formateo al campo teléfono de emergencia
+    const telefonoEmergenciaInput = document.getElementById('telefono_emergencia');
+    if (telefonoEmergenciaInput) {
+        telefonoEmergenciaInput.addEventListener('input', function() {
+            this.value = formatTelefono(this.value);
+        });
+        
+        telefonoEmergenciaInput.addEventListener('focus', function() {
+            if (!this.value || this.value.trim() === '') {
+                this.value = '+56 9 ';
+            }
+        });
+    }
+
     // ===== DETECCIÓN DE CAMBIOS =====
     const form = document.getElementById('editClienteForm');
     const initialData = captureFormData(form);
@@ -1238,18 +1410,25 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         Swal.fire({
             title: '¿Salir sin guardar?',
-            html: '<p style="color: #64748b;">Tienes cambios sin guardar que se perderán.</p>',
-            icon: 'warning',
-            iconColor: '#f0a500',
+            html: `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-exclamation" style="font-size: 1.8rem; color: #b45309;"></i>
+                    </div>
+                    <p style="color: #64748b;">Tienes cambios sin guardar que se perderán.</p>
+                </div>
+            `,
+            icon: null,
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-sign-out-alt"></i> Salir',
             cancelButtonText: '<i class="fas fa-edit"></i> Seguir editando',
-            buttonsStyling: false,
+            reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-danger btn-lg mx-2',
-                cancelButton: 'btn btn-outline-secondary btn-lg mx-2'
+                popup: 'swal-estoicos swal-danger',
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
             },
-            reverseButtons: true
+            buttonsStyling: false
         }).then((result) => {
             if(result.isConfirmed) {
                 hasChanges = false;
@@ -1262,18 +1441,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-restaurar').addEventListener('click', function() {
         Swal.fire({
             title: '¿Restaurar valores?',
-            html: '<p style="color: #64748b;">Todos los campos volverán a sus valores originales.</p>',
-            icon: 'question',
-            iconColor: '#4361ee',
+            html: `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-undo" style="font-size: 1.8rem; color: #0369a1;"></i>
+                    </div>
+                    <p style="color: #64748b;">Todos los campos volverán a sus valores originales.</p>
+                </div>
+            `,
+            icon: null,
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-undo"></i> Restaurar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            buttonsStyling: false,
+            reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-primary btn-lg mx-2',
-                cancelButton: 'btn btn-outline-secondary btn-lg mx-2'
+                popup: 'swal-estoicos swal-info',
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
             },
-            reverseButtons: true
+            buttonsStyling: false
         }).then((result) => {
             if(result.isConfirmed) {
                 form.reset();
@@ -1283,12 +1469,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 Swal.fire({
                     title: '¡Restaurado!',
-                    html: '<p style="color: #64748b;">Los campos han vuelto a sus valores originales.</p>',
-                    icon: 'success',
-                    iconColor: '#00bf8e',
+                    html: `
+                        <div style="text-align: center; padding: 1rem 0;">
+                            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                <i class="fas fa-check" style="font-size: 1.8rem; color: #00bf8e;"></i>
+                            </div>
+                            <p style="color: #64748b;">Los campos han vuelto a sus valores originales.</p>
+                        </div>
+                    `,
+                    icon: null,
                     timer: 2000,
                     timerProgressBar: true,
-                    showConfirmButton: false
+                    showConfirmButton: false,
+                    customClass: { popup: 'swal-estoicos swal-success' }
                 });
             }
         });
@@ -1315,14 +1508,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if(!valid) {
             Swal.fire({
                 title: 'Campos requeridos',
-                html: '<p style="color: #dc3545;">Por favor complete todos los campos obligatorios.</p>',
-                icon: 'error',
-                iconColor: '#dc3545',
+                html: `
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 1.8rem; color: #dc3545;"></i>
+                        </div>
+                        <p style="color: #64748b;">Por favor complete todos los campos obligatorios.</p>
+                    </div>
+                `,
+                icon: null,
                 confirmButtonText: 'Entendido',
-                buttonsStyling: false,
                 customClass: {
-                    confirmButton: 'btn btn-primary btn-lg'
-                }
+                    popup: 'swal-estoicos',
+                    confirmButton: 'swal2-confirm'
+                },
+                buttonsStyling: false
             });
             document.querySelector('.is-invalid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
@@ -1330,25 +1530,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
         Swal.fire({
             title: '¿Guardar cambios?',
-            html: '<p style="color: #64748b;">Se actualizarán los datos del cliente en la base de datos.</p>',
-            icon: 'question',
-            iconColor: '#e94560',
+            html: `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-save" style="font-size: 1.8rem; color: #e94560;"></i>
+                    </div>
+                    <p style="color: #64748b;">Se actualizarán los datos del cliente en la base de datos.</p>
+                </div>
+            `,
+            icon: null,
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-save"></i> Guardar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            buttonsStyling: false,
+            reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-accent btn-lg mx-2',
-                cancelButton: 'btn btn-outline-secondary btn-lg mx-2'
+                popup: 'swal-estoicos',
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
             },
-            reverseButtons: true
+            buttonsStyling: false
         }).then((result) => {
             if(result.isConfirmed) {
                 Swal.fire({
                     title: 'Guardando...',
-                    html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #e94560; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                    html: `
+                        <div style="padding: 1.5rem;">
+                            <div style="width: 60px; height: 60px; border: 4px solid #fee2e2; border-top-color: #e94560; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                        </div>
+                        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                    `,
                     showConfirmButton: false,
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    customClass: { popup: 'swal-estoicos' }
                 });
                 hasChanges = false;
                 form.submit();
@@ -1366,30 +1579,38 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: '¿Desactivar cliente?',
                 html: `
-                    <div style="text-align: center; padding: 1rem;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
-                        <p style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">${nombre}</p>
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-user-slash" style="font-size: 2rem; color: #dc3545;"></i>
+                        </div>
+                        <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${nombre}</p>
                         <p style="color: #64748b;">El cliente perderá el acceso a las instalaciones.</p>
                     </div>
                 `,
-                icon: 'warning',
-                iconColor: '#dc3545',
+                icon: null,
                 showCancelButton: true,
                 confirmButtonText: '<i class="fas fa-user-slash"></i> Desactivar',
                 cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancelar',
-                buttonsStyling: false,
+                reverseButtons: true,
                 customClass: {
-                    confirmButton: 'btn btn-danger btn-lg mx-2',
-                    cancelButton: 'btn btn-outline-secondary btn-lg mx-2'
+                    popup: 'swal-estoicos swal-danger',
+                    confirmButton: 'swal2-confirm',
+                    cancelButton: 'swal2-cancel'
                 },
-                reverseButtons: true
+                buttonsStyling: false
             }).then((result) => {
                 if(result.isConfirmed) {
                     Swal.fire({
                         title: 'Procesando...',
-                        html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                        html: `
+                            <div style="padding: 1.5rem;">
+                                <div style="width: 60px; height: 60px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                            </div>
+                            <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                        `,
                         showConfirmButton: false,
-                        allowOutsideClick: false
+                        allowOutsideClick: false,
+                        customClass: { popup: 'swal-estoicos' }
                     });
                     
                     const form = document.createElement('form');
@@ -1416,30 +1637,38 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: '¿Reactivar cliente?',
                 html: `
-                    <div style="text-align: center; padding: 1rem;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
-                        <p style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">${nombre}</p>
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-user-check" style="font-size: 2rem; color: #00bf8e;"></i>
+                        </div>
+                        <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${nombre}</p>
                         <p style="color: #64748b;">El cliente recuperará el acceso completo.</p>
                     </div>
                 `,
-                icon: 'question',
-                iconColor: '#00bf8e',
+                icon: null,
                 showCancelButton: true,
                 confirmButtonText: '<i class="fas fa-user-check"></i> Reactivar',
                 cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancelar',
-                buttonsStyling: false,
+                reverseButtons: true,
                 customClass: {
-                    confirmButton: 'btn btn-success btn-lg mx-2',
-                    cancelButton: 'btn btn-outline-secondary btn-lg mx-2'
+                    popup: 'swal-estoicos swal-success',
+                    confirmButton: 'swal2-confirm',
+                    cancelButton: 'swal2-cancel'
                 },
-                reverseButtons: true
+                buttonsStyling: false
             }).then((result) => {
                 if(result.isConfirmed) {
                     Swal.fire({
                         title: 'Procesando...',
-                        html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #00bf8e; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                        html: `
+                            <div style="padding: 1.5rem;">
+                                <div style="width: 60px; height: 60px; border: 4px solid #dcfce7; border-top-color: #00bf8e; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                            </div>
+                            <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                        `,
                         showConfirmButton: false,
-                        allowOutsideClick: false
+                        allowOutsideClick: false,
+                        customClass: { popup: 'swal-estoicos' }
                     });
                     
                     const form = document.createElement('form');

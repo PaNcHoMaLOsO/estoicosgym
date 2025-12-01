@@ -817,6 +817,66 @@
 
 @push('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+    .info-card-swal {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 1rem;
+        border: 1px solid #00bf8e;
+        text-align: left;
+    }
+    .info-card-swal h6 {
+        color: #059669;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .info-card-swal ul {
+        color: #166534;
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+    }
+    .info-card-swal li {
+        margin-bottom: 6px;
+    }
+</style>
 <script>
     // Búsqueda en tiempo real
     document.getElementById('searchInput')?.addEventListener('input', function() {
@@ -873,43 +933,50 @@
         Swal.fire({
             title: '¿Reactivar Cliente?',
             html: `
-                <div style="text-align: left;">
-                    <p style="margin-bottom: 1rem;">Estás a punto de <strong>reactivar a ${nombre}</strong>.</p>
-                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 16px; border: 1px solid #10b981;">
-                        <h6 style="color: #059669; font-weight: 700; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-info-circle"></i> ¿Qué sucede al reactivar?
-                        </h6>
-                        <ul style="color: #475569; margin: 0; padding-left: 20px; font-size: 14px;">
-                            <li style="margin-bottom: 6px;">El cliente volverá al estado <strong>ACTIVO</strong></li>
-                            <li style="margin-bottom: 6px;">Aparecerá en el <strong>listado principal</strong></li>
-                            <li style="margin-bottom: 6px;">Todo su <strong>historial se preserva</strong></li>
-                            <li>Podrá crear <strong>nuevas inscripciones</strong></li>
-                        </ul>
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-user-check" style="font-size: 2rem; color: #00bf8e;"></i>
                     </div>
+                    <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${nombre}</p>
+                </div>
+                <div class="info-card-swal">
+                    <h6><i class="fas fa-info-circle"></i> ¿Qué sucede al reactivar?</h6>
+                    <ul>
+                        <li>El cliente volverá al estado <strong>ACTIVO</strong></li>
+                        <li>Aparecerá en el <strong>listado principal</strong></li>
+                        <li>Todo su <strong>historial se preserva</strong></li>
+                        <li>Podrá crear <strong>nuevas inscripciones</strong></li>
+                    </ul>
                 </div>
             `,
-            icon: 'question',
+            icon: null,
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-undo"></i> Sí, Reactivar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#6b7280',
-            allowOutsideClick: false,
-            allowEscapeKey: true,
+            reverseButtons: true,
             customClass: {
-                popup: 'swal-wide'
-            }
+                popup: 'swal-estoicos',
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
+            },
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
                 const actionUrl = "{{ url('admin/clientes') }}/" + clienteId + "/reactivar";
                 document.getElementById('formReactivar').action = actionUrl;
                 
                 Swal.fire({
-                    title: 'Procesando...',
-                    html: '<div style="display: flex; justify-content: center;"><div class="spinner-border text-success" role="status"></div></div>',
+                    title: 'Reactivando...',
+                    html: `
+                        <div style="padding: 1.5rem;">
+                            <div style="width: 60px; height: 60px; border: 4px solid #dcfce7; border-top-color: #00bf8e; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                        </div>
+                        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                    `,
                     allowOutsideClick: false,
                     allowEscapeKey: false,
                     showConfirmButton: false,
+                    customClass: { popup: 'swal-estoicos' },
                     didOpen: () => {
                         document.getElementById('formReactivar').submit();
                     }
@@ -918,10 +985,4 @@
         });
     }
 </script>
-
-<style>
-    .swal-wide {
-        max-width: 450px !important;
-    }
-</style>
 @endpush

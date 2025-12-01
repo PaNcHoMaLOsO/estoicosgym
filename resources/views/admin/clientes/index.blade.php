@@ -71,6 +71,16 @@
                 <span class="stat-label">Pausados</span>
             </div>
         </div>
+        
+        <div class="stat-card stat-sin-membresia">
+            <div class="stat-icon">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number">{{ $clientesSinMembresia }}</span>
+                <span class="stat-label">Sin Membresía</span>
+            </div>
+        </div>
     </div>
 
     <!-- Search and Filters -->
@@ -92,6 +102,9 @@
             <button class="filter-btn" data-filter="pausados">
                 <i class="fas fa-user-minus"></i> Pausados
             </button>
+            <button class="filter-btn" data-filter="sin-membresia">
+                <i class="fas fa-user-slash"></i> Sin Membresía
+            </button>
         </div>
     </div>
 
@@ -112,9 +125,10 @@
                 <tbody id="clientesTableBody">
                     @forelse($clientes as $cliente)
                     @php
-                        // Buscar inscripción activa primero, si no, la más reciente que no esté traspasada
+                        // Buscar inscripción activa primero, si no, la más reciente que no esté:
+                        // 103=Cancelada, 105=Cambiada, 106=Traspasada
                         $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first()
-                            ?? $cliente->inscripciones->whereNotIn('id_estado', [106])->first();
+                            ?? $cliente->inscripciones->whereNotIn('id_estado', [103, 105, 106])->first();
                         $estadoClass = 'sin-membresia';
                         $estadoTexto = 'Sin membresía';
                         $membresiaTexto = '-';
@@ -894,6 +908,54 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #e94560 0%, #c73e55 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+    }
+    .swal-estoicos .swal2-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5) !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+    }
+    .swal-estoicos .swal2-cancel:hover {
+        background: #e2e8f0 !important;
+    }
+    .swal-estoicos.swal-success .swal2-confirm {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%) !important;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4) !important;
+    }
+    .swal-estoicos.swal-primary .swal2-confirm {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+        box-shadow: 0 4px 15px rgba(26, 26, 46, 0.4) !important;
+    }
+</style>
 <script>
 $(document).ready(function() {
     // Search functionality
@@ -920,6 +982,7 @@ $(document).ready(function() {
                 if (activeFilter === 'activos') matchesFilter = estado === 'activo';
                 else if (activeFilter === 'vencidos') matchesFilter = estado === 'vencido';
                 else if (activeFilter === 'pausados') matchesFilter = estado === 'pausado';
+                else if (activeFilter === 'sin-membresia') matchesFilter = estado === 'sin-membresia';
             }
             
             $(this).toggle(matchesSearch && matchesFilter);
@@ -946,6 +1009,7 @@ $(document).ready(function() {
                 if (filter === 'activos') matchesFilter = estado === 'activo';
                 else if (filter === 'vencidos') matchesFilter = estado === 'vencido';
                 else if (filter === 'pausados') matchesFilter = estado === 'pausado';
+                else if (filter === 'sin-membresia') matchesFilter = estado === 'sin-membresia';
             }
             
             const matchesSearch = !searchValue || 
@@ -966,17 +1030,36 @@ $(document).ready(function() {
         
         Swal.fire({
             title: '¿Eliminar cliente?',
-            html: `<p>Estás a punto de eliminar a <strong>${clienteNombre}</strong></p>
-                   <p class="text-muted">Esta acción eliminará también sus inscripciones y pagos.</p>`,
-            icon: 'warning',
+            html: `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-user-times" style="font-size: 2rem; color: #dc3545;"></i>
+                    </div>
+                    <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${clienteNombre}</p>
+                    <p style="color: #64748b; font-size: 0.9rem;">Esta acción eliminará también sus inscripciones y pagos.</p>
+                </div>
+            `,
+            icon: null,
             showCancelButton: true,
-            confirmButtonColor: '#e94560',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            reverseButtons: true
+            confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
+            cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+            reverseButtons: true,
+            customClass: {
+                popup: 'swal-estoicos',
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
+            },
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Eliminando...',
+                    html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    customClass: { popup: 'swal-estoicos' }
+                });
                 form.submit();
             }
         });
@@ -985,21 +1068,45 @@ $(document).ready(function() {
     // Success/Error messages from session
     @if(session('success'))
     Swal.fire({
-        title: '¡Éxito!',
-        text: '{{ session('success') }}',
-        icon: 'success',
-        confirmButtonColor: '#1a1a2e',
-        timer: 3000,
-        timerProgressBar: true
+        title: '¡Operación exitosa!',
+        html: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="fas fa-check" style="font-size: 2rem; color: #00bf8e;"></i>
+                </div>
+                <p style="color: #64748b;">{{ session('success') }}</p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Continuar',
+        timer: 4000,
+        timerProgressBar: true,
+        customClass: {
+            popup: 'swal-estoicos swal-success',
+            confirmButton: 'swal2-confirm'
+        },
+        buttonsStyling: false
     });
     @endif
 
     @if(session('error'))
     Swal.fire({
-        title: 'Error',
-        text: '{{ session('error') }}',
-        icon: 'error',
-        confirmButtonColor: '#e94560'
+        title: '¡Ocurrió un error!',
+        html: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                </div>
+                <p style="color: #64748b;">{{ session('error') }}</p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        customClass: {
+            popup: 'swal-estoicos',
+            confirmButton: 'swal2-confirm'
+        },
+        buttonsStyling: false
     });
     @endif
 });

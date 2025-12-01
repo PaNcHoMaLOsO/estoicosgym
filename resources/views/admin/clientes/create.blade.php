@@ -1557,6 +1557,53 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #e94560 0%, #c73e55 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos.swal-success .swal2-confirm {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%) !important;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4) !important;
+    }
+    .swal-estoicos.swal-warning .swal2-confirm {
+        background: linear-gradient(135deg, #f0a500 0%, #d99400 100%) !important;
+        box-shadow: 0 4px 15px rgba(240, 165, 0, 0.4) !important;
+    }
+    .swal-estoicos.swal-primary .swal2-confirm {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+        box-shadow: 0 4px 15px rgba(26, 26, 46, 0.4) !important;
+    }
+</style>
 <script>
 $(document).ready(function() {
     let currentStep = 1;
@@ -1564,6 +1611,118 @@ $(document).ready(function() {
     let precioFinal = 0;
     let precioNormal = 0;
     let formSubmitting = false; // Flag para prevenir doble submit
+
+    // ============================================
+    // FORMATEO AUTOMÁTICO DE RUT CHILENO
+    // ============================================
+    function formatRut(value) {
+        // Eliminar todo excepto números y K/k
+        let rut = value.replace(/[^0-9kK]/g, '').toUpperCase();
+        
+        if (rut.length === 0) return '';
+        
+        // Separar cuerpo y dígito verificador
+        let dv = rut.slice(-1);
+        let cuerpo = rut.slice(0, -1);
+        
+        if (cuerpo.length === 0) return rut;
+        
+        // Formatear con puntos
+        let cuerpoFormateado = '';
+        let contador = 0;
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            cuerpoFormateado = cuerpo[i] + cuerpoFormateado;
+            contador++;
+            if (contador === 3 && i > 0) {
+                cuerpoFormateado = '.' + cuerpoFormateado;
+                contador = 0;
+            }
+        }
+        
+        return cuerpoFormateado + '-' + dv;
+    }
+
+    // Aplicar formateo al campo RUT
+    $('#run_pasaporte').on('input', function() {
+        let cursorPos = this.selectionStart;
+        let valorAnterior = $(this).val();
+        let valorFormateado = formatRut(valorAnterior);
+        
+        $(this).val(valorFormateado);
+        
+        // Ajustar posición del cursor
+        let diff = valorFormateado.length - valorAnterior.length;
+        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+    });
+
+    // ============================================
+    // FORMATEO AUTOMÁTICO DE TELÉFONO CHILENO
+    // ============================================
+    function formatTelefono(value) {
+        // Eliminar todo excepto números
+        let numeros = value.replace(/\D/g, '');
+        
+        // Si empieza con 56, quitarlo para procesar
+        if (numeros.startsWith('56')) {
+            numeros = numeros.substring(2);
+        }
+        
+        // Si empieza con 9 y tiene 9 dígitos, es celular chileno
+        if (numeros.startsWith('9')) {
+            numeros = numeros.substring(0, 9); // Máximo 9 dígitos
+            
+            // Formatear: +56 9 XXXX XXXX
+            if (numeros.length <= 1) {
+                return '+56 ' + numeros;
+            } else if (numeros.length <= 5) {
+                return '+56 ' + numeros[0] + ' ' + numeros.substring(1);
+            } else {
+                return '+56 ' + numeros[0] + ' ' + numeros.substring(1, 5) + ' ' + numeros.substring(5);
+            }
+        }
+        
+        // Si no empieza con 9, agregar el 9
+        if (numeros.length > 0 && !numeros.startsWith('9')) {
+            numeros = '9' + numeros;
+        }
+        
+        numeros = numeros.substring(0, 9); // Máximo 9 dígitos
+        
+        if (numeros.length === 0) return '+56 9 ';
+        if (numeros.length <= 1) {
+            return '+56 ' + numeros;
+        } else if (numeros.length <= 5) {
+            return '+56 ' + numeros[0] + ' ' + numeros.substring(1);
+        } else {
+            return '+56 ' + numeros[0] + ' ' + numeros.substring(1, 5) + ' ' + numeros.substring(5);
+        }
+    }
+
+    // Aplicar formateo al campo celular
+    $('#celular').on('input', function() {
+        let valorFormateado = formatTelefono($(this).val());
+        $(this).val(valorFormateado);
+    });
+
+    // Al hacer focus en celular, si está vacío, poner prefijo
+    $('#celular').on('focus', function() {
+        if (!$(this).val() || $(this).val().trim() === '') {
+            $(this).val('+56 9 ');
+        }
+    });
+
+    // Aplicar formateo al campo teléfono de emergencia
+    $('#telefono_emergencia').on('input', function() {
+        let valorFormateado = formatTelefono($(this).val());
+        $(this).val(valorFormateado);
+    });
+
+    // Al hacer focus en teléfono emergencia, si está vacío, poner prefijo
+    $('#telefono_emergencia').on('focus', function() {
+        if (!$(this).val() || $(this).val().trim() === '') {
+            $(this).val('+56 9 ');
+        }
+    });
 
     // Prevenir doble submit del formulario
     $('#clienteForm').on('submit', function(e) {
@@ -1578,14 +1737,18 @@ $(document).ready(function() {
         
         // Mostrar indicador de carga
         Swal.fire({
-            title: 'Guardando...',
-            text: 'Por favor espere',
+            title: 'Guardando cliente...',
+            html: `
+                <div style="padding: 1.5rem;">
+                    <div style="width: 60px; height: 60px; border: 4px solid #e2e8f0; border-top-color: #e94560; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    <p style="color: #64748b; margin-top: 1rem;">Por favor espere...</p>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `,
             allowOutsideClick: false,
             allowEscapeKey: false,
             showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
+            customClass: { popup: 'swal-estoicos' }
         });
     });
 
@@ -1643,9 +1806,21 @@ $(document).ready(function() {
             if (!isValid) {
                 Swal.fire({
                     title: 'Campos requeridos',
-                    text: 'Por favor completa todos los campos obligatorios',
-                    icon: 'warning',
-                    confirmButtonColor: '#1a1a2e'
+                    html: `
+                        <div style="text-align: center; padding: 1rem 0;">
+                            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                <i class="fas fa-exclamation" style="font-size: 1.8rem; color: #b45309;"></i>
+                            </div>
+                            <p style="color: #64748b;">Por favor completa todos los campos obligatorios</p>
+                        </div>
+                    `,
+                    icon: null,
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        popup: 'swal-estoicos swal-warning',
+                        confirmButton: 'swal2-confirm'
+                    },
+                    buttonsStyling: false
                 });
             }
         }
@@ -1666,9 +1841,21 @@ $(document).ready(function() {
             if (!isValid) {
                 Swal.fire({
                     title: 'Membresía requerida',
-                    text: 'Debes seleccionar una membresía y fecha de inicio',
-                    icon: 'warning',
-                    confirmButtonColor: '#1a1a2e'
+                    html: `
+                        <div style="text-align: center; padding: 1rem 0;">
+                            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                <i class="fas fa-id-card" style="font-size: 1.8rem; color: #b45309;"></i>
+                            </div>
+                            <p style="color: #64748b;">Debes seleccionar una membresía y fecha de inicio</p>
+                        </div>
+                    `,
+                    icon: null,
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        popup: 'swal-estoicos swal-warning',
+                        confirmButton: 'swal2-confirm'
+                    },
+                    buttonsStyling: false
                 });
             }
         }
@@ -1729,13 +1916,25 @@ $(document).ready(function() {
             $('#flujo_cliente').val('solo_cliente');
             Swal.fire({
                 title: '¿Guardar solo cliente?',
-                text: 'Se registrará el cliente sin membresía ni pago',
-                icon: 'question',
+                html: `
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-user-plus" style="font-size: 1.8rem; color: #0369a1;"></i>
+                        </div>
+                        <p style="color: #64748b;">Se registrará el cliente sin membresía ni pago</p>
+                    </div>
+                `,
+                icon: null,
                 showCancelButton: true,
-                confirmButtonColor: '#1a1a2e',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, guardar',
-                cancelButtonText: 'Cancelar'
+                confirmButtonText: '<i class="fas fa-save"></i> Sí, guardar',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'swal-estoicos swal-primary',
+                    confirmButton: 'swal2-confirm',
+                    cancelButton: 'swal2-cancel'
+                },
+                buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     $('#clienteForm').submit();
@@ -2053,30 +2252,72 @@ $(document).ready(function() {
     // Success/Error messages from session
     @if(session('success'))
     Swal.fire({
-        title: '¡Éxito!',
-        text: '{{ session('success') }}',
-        icon: 'success',
-        confirmButtonColor: '#1a1a2e',
-        timer: 3000,
-        timerProgressBar: true
+        title: '¡Cliente registrado!',
+        html: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="fas fa-check" style="font-size: 2rem; color: #00bf8e;"></i>
+                </div>
+                <p style="color: #64748b;">{{ session('success') }}</p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Continuar',
+        timer: 4000,
+        timerProgressBar: true,
+        customClass: {
+            popup: 'swal-estoicos swal-success',
+            confirmButton: 'swal2-confirm'
+        },
+        buttonsStyling: false
     });
     @endif
 
     @if(session('error'))
     Swal.fire({
-        title: 'Error',
-        text: '{{ session('error') }}',
-        icon: 'error',
-        confirmButtonColor: '#e94560'
+        title: '¡Ocurrió un error!',
+        html: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                </div>
+                <p style="color: #64748b;">{{ session('error') }}</p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        customClass: {
+            popup: 'swal-estoicos',
+            confirmButton: 'swal2-confirm'
+        },
+        buttonsStyling: false
     });
     @endif
 
     @if($errors->any())
     Swal.fire({
         title: 'Errores en el formulario',
-        html: '<ul style="text-align:left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
-        icon: 'error',
-        confirmButtonColor: '#e94560'
+        html: `
+            <div style="text-align: left; padding: 1rem 0;">
+                <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 12px; padding: 16px; border: 1px solid #dc3545;">
+                    <h6 style="color: #b91c1c; font-weight: 700; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-times-circle"></i> Por favor corrige los siguientes errores:
+                    </h6>
+                    <ul style="color: #7f1d1d; margin: 0; padding-left: 20px; font-size: 14px;">
+                        @foreach($errors->all() as $error)
+                        <li style="margin-bottom: 4px;">{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        customClass: {
+            popup: 'swal-estoicos',
+            confirmButton: 'swal2-confirm'
+        },
+        buttonsStyling: false
     });
     @endif
 });

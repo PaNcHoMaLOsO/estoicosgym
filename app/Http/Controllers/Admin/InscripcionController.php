@@ -64,7 +64,14 @@ class InscripcionController extends Controller
     public function index(Request $request)
     {
         /** @var \Illuminate\Database\Eloquent\Builder $query */
-        $query = Inscripcion::with(['cliente', 'estado', 'membresia']);
+        $query = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio']);
+        
+        // Por defecto, excluir inscripciones que ya no están "activas" en el sistema:
+        // 103 = Cancelada, 105 = Cambiada (upgrade/downgrade), 106 = Traspasada
+        // Estas solo se muestran si se filtran específicamente por ese estado
+        if (!$request->filled('estado') || !in_array($request->estado, ['103', '105', '106'])) {
+            $query->whereNotIn('id_estado', [103, 105, 106]);
+        }
         
         // Aplicar filtros
         $this->aplicarFiltros($query, $request);
@@ -74,11 +81,25 @@ class InscripcionController extends Controller
         
         $inscripciones = $query->paginate(20);
         
+        // Estadísticas (excluyendo canceladas, cambiadas y traspasadas)
+        $totalInscripciones = Inscripcion::whereNotIn('id_estado', [103, 105, 106])->count();
+        $activas = Inscripcion::where('id_estado', 100)->count();
+        $vencidas = Inscripcion::where('id_estado', 102)->count();
+        $pausadas = Inscripcion::where('id_estado', 101)->count();
+        
         // Datos para los selects de filtro
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
         
-        return view('admin.inscripciones.index', compact('inscripciones', 'estados', 'membresias'));
+        return view('admin.inscripciones.index', compact(
+            'inscripciones', 
+            'estados', 
+            'membresias',
+            'totalInscripciones',
+            'activas',
+            'vencidas',
+            'pausadas'
+        ));
     }
 
     /**
@@ -440,7 +461,19 @@ class InscripcionController extends Controller
         // Obtener información de traspaso para la sección de traspaso
         $infoTraspaso = $inscripcion->getInfoTraspaso();
         
-        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago', 'infoTraspaso'));
+        // Información de deuda para mejora de plan
+        $infoMejora = [
+            'tiene_deuda' => $inscripcion->monto_pendiente > 0,
+            'monto_pendiente' => $inscripcion->monto_pendiente,
+            'monto_pagado' => $inscripcion->monto_pagado,
+            'precio_final' => $inscripcion->precio_final,
+            'porcentaje_pagado' => $inscripcion->precio_final > 0 
+                ? round(($inscripcion->monto_pagado / $inscripcion->precio_final) * 100) 
+                : 100,
+            'esta_pagada' => $inscripcion->esta_pagada,
+        ];
+        
+        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago', 'infoTraspaso', 'infoMejora'));
     }
 
     /**
@@ -460,10 +493,10 @@ class InscripcionController extends Controller
             'id_cliente' => 'required|exists:clientes,id',
             'id_membresia' => 'required|exists:membresias,id',
             'id_convenio' => 'nullable|exists:convenios,id',
-            'id_estado' => 'required|exists:estados,id',
+            'id_estado' => 'required|exists:estados,codigo',
             'fecha_inicio' => 'required|date',
-            'fecha_vencimiento' => 'required|date|after:fecha_inicio',
-            'precio_base' => 'required|numeric|min:0.01',
+            'fecha_vencimiento' => 'required|date|after_or_equal:fecha_inicio',
+            'precio_base' => 'required|numeric|min:0',
             'descuento_aplicado' => 'nullable|numeric|min:0',
             'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
             'observaciones' => 'nullable|string|max:500',
@@ -679,6 +712,9 @@ class InscripcionController extends Controller
                 'id_metodo_pago' => 'required|exists:metodos_pago,id',
                 'monto_abonado' => 'nullable|numeric|min:0',
                 'aplicar_credito' => 'nullable|boolean', // El admin decide si aplica crédito
+                'tipo_pago' => 'nullable|in:completo,parcial', // Tipo de pago seleccionado
+                'total_a_pagar' => 'nullable|numeric|min:0', // Total calculado
+                'ignorar_deuda' => 'nullable|boolean', // Si se permite mejorar con deuda
             ]);
 
             $inscripcion->load(['cliente', 'membresia', 'pagos']);
@@ -688,6 +724,18 @@ class InscripcionController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Esta inscripción no puede cambiar de plan. Verifique que esté activa y no pausada.',
+                ], 422);
+            }
+            
+            // Verificar que no tiene deuda pendiente del plan actual (a menos que el admin lo ignore)
+            $ignorarDeuda = $request->boolean('ignorar_deuda', false);
+            $deudaAnterior = $inscripcion->monto_pendiente;
+            
+            if ($deudaAnterior > 0 && !$ignorarDeuda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cliente tiene una deuda pendiente de $' . number_format($inscripcion->monto_pendiente, 0, ',', '.') . 
+                                 ' en el plan actual. Debe pagar esta deuda antes de poder mejorar el plan.',
                 ], 422);
             }
 
@@ -719,7 +767,15 @@ class InscripcionController extends Controller
             // El admin decide si aplica el crédito del plan anterior
             $aplicarCredito = $request->boolean('aplicar_credito', false);
             $creditoDisponible = $aplicarCredito ? (float) $inscripcion->monto_pagado : 0;
+            
+            // Calcular diferencia base (nuevo plan - crédito)
             $diferencia = $precioNuevoPlan - $creditoDisponible;
+            
+            // Si se ignoró la deuda, sumarla al total a pagar
+            if ($ignorarDeuda && $deudaAnterior > 0) {
+                $diferencia += $deudaAnterior;
+            }
+            
             $tipoCambio = 'upgrade';
 
             // Calcular nueva fecha de vencimiento
@@ -743,6 +799,11 @@ class InscripcionController extends Controller
                 ]);
 
                 // 2. Crear nueva inscripción con los datos del cambio
+                $observaciones = "Cambio de plan desde: {$inscripcion->membresia->nombre}";
+                if ($ignorarDeuda && $deudaAnterior > 0) {
+                    $observaciones .= ". Incluye deuda anterior de $" . number_format($deudaAnterior, 0, ',', '.');
+                }
+                
                 $nuevaInscripcion = Inscripcion::create([
                     'id_cliente' => $inscripcion->id_cliente,
                     'id_membresia' => $nuevaMembresia->id,
@@ -755,7 +816,7 @@ class InscripcionController extends Controller
                     'descuento_aplicado' => 0,
                     'precio_final' => $precioNuevoPlan,
                     'id_estado' => 100, // Activa
-                    'observaciones' => "Cambio de plan desde: {$inscripcion->membresia->nombre}",
+                    'observaciones' => $observaciones,
                     // Campos de tracking de cambio
                     'id_inscripcion_anterior' => $inscripcion->id,
                     'es_cambio_plan' => true,
@@ -792,18 +853,25 @@ class InscripcionController extends Controller
                 if ($aplicarCredito && $inscripcion->monto_pagado > 0) {
                     $mensajeCredito = " Se aplicó crédito de $" . number_format($inscripcion->monto_pagado, 0, ',', '.') . " del plan anterior.";
                 }
+                
+                // Nota sobre deuda anterior incluida
+                $mensajeDeuda = '';
+                if ($ignorarDeuda && $deudaAnterior > 0) {
+                    $mensajeDeuda = " Se incluyó deuda anterior de $" . number_format($deudaAnterior, 0, ',', '.') . ".";
+                }
 
                 DB::commit();
 
                 return response()->json([
                     'success' => true,
-                    'message' => "Plan cambiado exitosamente de {$inscripcion->membresia->nombre} a {$nuevaMembresia->nombre}." . $mensajeCredito,
+                    'message' => "Plan cambiado exitosamente de {$inscripcion->membresia->nombre} a {$nuevaMembresia->nombre}." . $mensajeCredito . $mensajeDeuda,
                     'nueva_inscripcion' => [
                         'uuid' => $nuevaInscripcion->uuid,
                         'membresia' => $nuevaMembresia->nombre,
                         'fecha_vencimiento' => $fechaVencimiento->format('d/m/Y'),
                         'tipo_cambio' => $tipoCambio,
                         'diferencia' => $diferencia,
+                        'deuda_incluida' => $ignorarDeuda ? $deudaAnterior : 0,
                     ],
                     'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
                 ]);

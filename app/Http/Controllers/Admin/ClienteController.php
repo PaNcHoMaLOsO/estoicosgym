@@ -81,13 +81,19 @@ class ClienteController extends Controller
             ->whereDoesntHave('inscripciones', function($q) {
                 $q->where('id_estado', 100);
             })->count();
+        
+        // Clientes sin ninguna membresía
+        $clientesSinMembresia = Cliente::where('activo', true)
+            ->whereDoesntHave('inscripciones')
+            ->count();
 
         return view('admin.clientes.index', compact(
             'clientes', 
             'totalClientes', 
             'clientesActivos', 
             'clientesVencidos', 
-            'clientesPausados'
+            'clientesPausados',
+            'clientesSinMembresia'
         ));
     }
 

@@ -49,10 +49,19 @@ class Convenio extends Model
         'nombre',
         'tipo',
         'descripcion',
+        'descuento_porcentaje',
+        'descuento_monto',
         'contacto_nombre',
         'contacto_telefono',
         'contacto_email',
+        'id_estado',
         'activo',
+    ];
+
+    protected $casts = [
+        'descuento_porcentaje' => 'decimal:2',
+        'descuento_monto' => 'integer',
+        'activo' => 'boolean',
     ];
 
     protected static function boot()

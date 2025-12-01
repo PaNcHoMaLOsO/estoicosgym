@@ -734,7 +734,7 @@
                         <div class="progress-stat-label">Pagos Realizados</div>
                     </div>
                     <div class="progress-stat">
-                        <div class="progress-stat-value">{{ $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento) }}</div>
+                        <div class="progress-stat-value">{{ (int) $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento) }}</div>
                         <div class="progress-stat-label">Días de Membresía</div>
                     </div>
                     <div class="progress-stat">

@@ -4,9 +4,10 @@
  */
 
 /* ============================================
-   VARIABLES - Colores del Logo
+   VARIABLES - Colores del Logo (SIDEBAR)
    ============================================ */
 :root {
+    /* Colores del Sidebar - Originales */
     --gym-purple: #c140d4;
     --gym-purple-dark: #a035b5;
     --gym-purple-light: #d466e3;
@@ -14,6 +15,25 @@
     --gym-navy: #253a5b;
     --gym-navy-light: #2f4a6f;
     --gym-gray: #434750;
+    
+    /* Colores para Contenido/Módulos */
+    --primary: #1a1a2e;
+    --primary-light: #16213e;
+    --primary-dark: #0f0f1a;
+    --accent: #e94560;
+    --accent-dark: #c73e55;
+    --accent-light: #f06a80;
+    
+    /* Estados */
+    --success: #00bf8e;
+    --warning: #f0a500;
+    --danger: #dc3545;
+    --info: #4361ee;
+    
+    /* Grises */
+    --gray: #6c757d;
+    --gray-dark: #343a40;
+    --cream: #f1e6bf;
 }
 
 /* ============================================
@@ -90,7 +110,7 @@
 .sidebar-collapse .brand-second::before {
     content: 'E';
     font-weight: 600;
-    color: var(--gym-cream);
+    color: var(--cream);
 }
 
 /* ============================================
@@ -217,12 +237,12 @@
 }
 
 .main-header .nav-link {
-    color: var(--gym-gray) !important;
+    color: var(--gray-dark) !important;
     padding: 0.5rem 1rem;
 }
 
 .main-header .nav-link:hover {
-    color: var(--gym-purple) !important;
+    color: var(--accent) !important;
 }
 
 .main-header .nav-link i {
@@ -243,7 +263,7 @@
 .content-header h1 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--gym-navy);
+    color: var(--primary);
 }
 
 /* ============================================
@@ -264,7 +284,7 @@
 }
 
 .card-primary .card-header {
-    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
     color: #fff;
     border: none;
 }
@@ -273,8 +293,8 @@
    BOTONES
    ============================================ */
 .btn-primary {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
     border-radius: 6px;
     padding: 0.5rem 1.2rem;
     font-weight: 500;
@@ -282,27 +302,27 @@
 }
 
 .btn-primary:hover {
-    background: var(--gym-purple-dark);
-    border-color: var(--gym-purple-dark);
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(193, 64, 212, 0.3);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
 }
 
 .btn-info {
-    background: var(--gym-navy);
-    border-color: var(--gym-navy);
+    background: var(--primary);
+    border-color: var(--primary);
 }
 
 .btn-info:hover {
-    background: var(--gym-navy-light);
-    border-color: var(--gym-navy-light);
+    background: var(--primary-light);
+    border-color: var(--primary-light);
 }
 
 /* ============================================
    TABLAS
    ============================================ */
 .table thead th {
-    background: var(--gym-navy);
+    background: var(--primary);
     color: #fff;
     font-weight: 500;
     font-size: 0.82rem;
@@ -313,11 +333,11 @@
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(193, 64, 212, 0.03);
+    background-color: rgba(233, 69, 96, 0.03);
 }
 
 .table-hover tbody tr:hover {
-    background: rgba(193, 64, 212, 0.08);
+    background: rgba(233, 69, 96, 0.08);
 }
 
 /* ============================================
@@ -336,11 +356,11 @@
 
 .small-box.bg-purple,
 .small-box.bg-primary {
-    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%) !important;
 }
 
 .small-box.bg-info {
-    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a2f4a 100%) !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
 }
 
 .small-box.bg-success {
@@ -365,7 +385,7 @@
 }
 
 .info-box-icon.bg-purple {
-    background: var(--gym-purple) !important;
+    background: var(--accent) !important;
 }
 
 /* ============================================
@@ -373,11 +393,11 @@
    ============================================ */
 .badge-primary,
 .badge-purple {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 .badge-info {
-    background: var(--gym-navy);
+    background: var(--primary);
 }
 
 /* ============================================
@@ -391,8 +411,8 @@
 }
 
 .form-control:focus {
-    border-color: var(--gym-purple);
-    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
 }
 
 /* ============================================
@@ -414,7 +434,7 @@
 }
 
 .dark-mode .main-header.navbar {
-    background: var(--gym-gray) !important;
+    background: var(--gray-dark) !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -443,7 +463,7 @@
 }
 
 .user-header {
-    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a2f4a 100%) !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
     padding: 1.5rem;
 }
 
@@ -477,30 +497,30 @@
    PRELOADER
    ============================================ */
 .preloader {
-    background: var(--gym-navy) !important;
+    background: var(--primary) !important;
 }
 
 /* ============================================
    ENLACES
    ============================================ */
 a {
-    color: var(--gym-purple);
+    color: var(--accent);
 }
 
 a:hover {
-    color: var(--gym-purple-dark);
+    color: var(--accent-dark);
 }
 
 .text-primary {
-    color: var(--gym-purple) !important;
+    color: var(--accent) !important;
 }
 
 .bg-primary {
-    background: var(--gym-purple) !important;
+    background: var(--accent) !important;
 }
 
 .bg-purple {
-    background: var(--gym-purple) !important;
+    background: var(--accent) !important;
 }
 
 /* ============================================
@@ -543,192 +563,344 @@ a:hover {
 
 /* ============================================
    ESTILOS GLOBALES PARA MÓDULOS
+   (Solo valores por defecto, las vistas tienen prioridad)
    ============================================ */
 
-/* Hero Headers de módulos */
-.clientes-hero,
-.inscripciones-hero,
-.pagos-hero,
-.membresias-hero,
-.convenios-hero,
-[class*="-hero"] {
-    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%) !important;
-    border-radius: 12px;
+/* Hero Headers de módulos - Solo si no tienen estilos propios */
+.content-wrapper [class*="-hero"]:not([style]) {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 16px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 4px 15px rgba(37, 58, 91, 0.3);
+    box-shadow: 0 4px 15px rgba(26, 26, 46, 0.3);
 }
 
-[class*="-hero"] .hero-icon i,
-[class*="-hero"] .hero-content i {
-    color: var(--gym-purple) !important;
+/* Iconos en headers - Colores visibles */
+.hero-icon i,
+.hero-content .hero-icon i,
+[class*="-hero"] .hero-icon i {
+    color: #fff !important;
+    font-size: 32px;
 }
 
+/* Textos en heroes - legibles */
 [class*="-hero"] h1,
 [class*="-hero"] .hero-text h1 {
-    color: var(--gym-cream) !important;
+    color: #fff;
 }
 
 [class*="-hero"] p,
 [class*="-hero"] .hero-text p {
-    color: rgba(241, 230, 191, 0.7) !important;
+    color: rgba(255, 255, 255, 0.85);
 }
 
-/* Botones de acción en heroes */
-.btn-nuevo-cliente,
-.btn-nueva-inscripcion,
-.btn-nuevo-pago,
-[class*="btn-nuevo"],
-[class*="btn-nueva"] {
-    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
-    border: none !important;
-    color: #fff !important;
-    border-radius: 8px;
-    padding: 0.6rem 1.2rem;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(193, 64, 212, 0.3);
-    transition: all 0.3s ease;
+/* ============================================
+   ICONOS GLOBALES - COLORES MEJORADOS
+   ============================================ */
+
+/* Iconos de contacto - Azul info */
+.contacto-item i,
+.contact-pill i,
+.cliente-contacto i {
+    color: var(--info) !important;
 }
 
-[class*="btn-nuevo"]:hover,
-[class*="btn-nueva"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(193, 64, 212, 0.4);
-    color: #fff !important;
+/* Iconos de acción ver - Azul */
+.btn-view i,
+.btn-action.btn-view i,
+a[href*="show"] i {
+    color: var(--info);
 }
 
-.btn-ver-inactivos,
-[class*="btn-ver"] {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(241, 230, 191, 0.3) !important;
-    color: var(--gym-cream) !important;
-    border-radius: 8px;
+/* Iconos de acción editar - Verde */
+.btn-edit i,
+.btn-action.btn-edit i,
+a[href*="edit"] i {
+    color: var(--success);
 }
 
-[class*="btn-ver"]:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    color: #fff !important;
+/* Iconos de acción eliminar - Rojo */
+.btn-delete i,
+.btn-action.btn-delete i {
+    color: var(--danger);
 }
 
-/* Stat Cards */
+/* ============================================
+   STAT CARDS - COLORES POR TIPO
+   ============================================ */
+
+/* Base stat card */
 .stat-card,
-.stats-grid .stat-card,
-[class*="stat-card"] {
+.stats-grid .stat-card {
     background: #fff;
-    border-radius: 10px;
+    border-radius: 16px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    border-left: 4px solid var(--gym-purple);
     transition: all 0.3s ease;
 }
 
-.stat-card:hover,
-[class*="stat-card"]:hover {
+.stat-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
-.stat-card .stat-icon i,
-[class*="stat-card"] .stat-icon i {
-    color: var(--gym-purple);
+/* Stat card - Total (Azul oscuro) */
+.stat-card.stat-total .stat-icon,
+.stat-total .stat-icon {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
 }
 
-.stat-card.stat-activos,
-.stat-activos {
-    border-left-color: #28a745;
+.stat-card.stat-total .stat-icon i,
+.stat-total .stat-icon i {
+    color: #fff !important;
 }
 
-.stat-card.stat-activos .stat-icon i {
-    color: #28a745;
+/* Stat card - Activos (Verde) */
+.stat-card.stat-activos .stat-icon,
+.stat-activos .stat-icon {
+    background: linear-gradient(135deg, var(--success) 0%, #00a67e 100%) !important;
 }
 
-.stat-card.stat-vencidos,
-.stat-vencidos {
-    border-left-color: #dc3545;
+.stat-card.stat-activos .stat-icon i,
+.stat-activos .stat-icon i {
+    color: #fff !important;
 }
 
-.stat-card.stat-vencidos .stat-icon i {
-    color: #dc3545;
+/* Stat card - Vencidos (Rojo) */
+.stat-card.stat-vencidos .stat-icon,
+.stat-vencidos .stat-icon {
+    background: linear-gradient(135deg, var(--danger) 0%, #c82333 100%) !important;
 }
 
-.stat-card.stat-total,
-.stat-total {
-    border-left-color: var(--gym-navy);
+.stat-card.stat-vencidos .stat-icon i,
+.stat-vencidos .stat-icon i {
+    color: #fff !important;
 }
 
-.stat-card.stat-total .stat-icon i {
-    color: var(--gym-navy);
+/* Stat card - Pausados (Amarillo) */
+.stat-card.stat-pausados .stat-icon,
+.stat-pausados .stat-icon {
+    background: linear-gradient(135deg, var(--warning) 0%, #d69200 100%) !important;
 }
 
-/* Cards de contenido */
-.card-primary:not(.card-outline) .card-header,
-.card-info:not(.card-outline) .card-header {
-    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%) !important;
+.stat-card.stat-pausados .stat-icon i,
+.stat-pausados .stat-icon i {
+    color: #fff !important;
+}
+
+/* Stat card - Sin Membresía (Gris) */
+.stat-card.stat-sin-membresia .stat-icon,
+.stat-sin-membresia .stat-icon {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+}
+
+.stat-card.stat-sin-membresia .stat-icon i,
+.stat-sin-membresia .stat-icon i {
+    color: #fff !important;
+}
+
+/* ============================================
+   BADGES DE ESTADO - COLORES VISIBLES
+   ============================================ */
+
+/* Estado Activo - Verde */
+.estado-activo,
+.badge-activo,
+.status-active,
+.status-activa,
+[class*="estado-activ"],
+[class*="badge-activ"] {
+    background: rgba(0, 191, 142, 0.15) !important;
+    color: #00a67e !important;
+    border: 1px solid rgba(0, 191, 142, 0.3);
+    font-weight: 600;
+}
+
+/* Estado Vencido - Rojo */
+.estado-vencido,
+.badge-vencido,
+.status-vencida,
+[class*="estado-vencid"],
+[class*="badge-vencid"] {
+    background: rgba(220, 53, 69, 0.15) !important;
+    color: #c82333 !important;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    font-weight: 600;
+}
+
+/* Estado Pausado - Amarillo */
+.estado-pausado,
+.badge-pausado,
+.status-pausada,
+[class*="estado-pausad"],
+[class*="badge-pausad"] {
+    background: rgba(240, 165, 0, 0.15) !important;
+    color: #c98600 !important;
+    border: 1px solid rgba(240, 165, 0, 0.3);
+    font-weight: 600;
+}
+
+/* Estado Pendiente - Naranja */
+.estado-pendiente,
+.badge-pendiente,
+.status-pendiente {
+    background: rgba(253, 126, 20, 0.15) !important;
+    color: #d56b10 !important;
+    border: 1px solid rgba(253, 126, 20, 0.3);
+    font-weight: 600;
+}
+
+/* Estado Cancelado/Inactivo - Gris */
+.estado-cancelado,
+.estado-inactivo,
+.badge-cancelado,
+.badge-inactivo,
+.estado-sin-membresia {
+    background: rgba(108, 117, 125, 0.15) !important;
+    color: #5a6268 !important;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+    font-weight: 600;
+}
+
+/* Estado Pagado - Verde */
+.status-pagado,
+.badge-pagado {
+    background: rgba(0, 191, 142, 0.15) !important;
+    color: #00a67e !important;
+    border: 2px solid var(--success);
+    font-weight: 700;
+}
+
+/* ============================================
+   BOTONES DE ACCIÓN EN TABLAS
+   ============================================ */
+
+.btn-action,
+.acciones-btns .btn-action {
+    width: 36px;
+    height: 36px;
     border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
 }
 
-.card-outline.card-primary {
-    border-top-color: var(--gym-purple) !important;
+.btn-action.btn-view,
+.btn-view {
+    background: rgba(67, 97, 238, 0.12);
+    color: var(--info);
 }
 
-.card-outline.card-info {
-    border-top-color: var(--gym-navy) !important;
+.btn-action.btn-view:hover,
+.btn-view:hover {
+    background: var(--info);
+    color: #fff;
+    transform: translateY(-2px);
 }
 
-/* DataTables */
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    background: var(--gym-purple) !important;
-    border-color: var(--gym-purple) !important;
+.btn-action.btn-edit,
+.btn-edit {
+    background: rgba(0, 191, 142, 0.12);
+    color: var(--success);
+}
+
+.btn-action.btn-edit:hover,
+.btn-edit:hover {
+    background: var(--success);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.btn-action.btn-delete,
+.btn-delete {
+    background: rgba(220, 53, 69, 0.12);
+    color: var(--danger);
+}
+
+.btn-action.btn-delete:hover,
+.btn-delete:hover {
+    background: var(--danger);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   MEMBRESÍA BADGES
+   ============================================ */
+
+.membresia-badge,
+.membership-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--info) 0%, #3a53d6 100%);
     color: #fff !important;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-    background: var(--gym-navy) !important;
-    border-color: var(--gym-navy) !important;
+/* ============================================
+   TABLAS - ENCABEZADOS
+   ============================================ */
+
+.table thead,
+.clientes-table thead,
+[class*="-table"] thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.table thead th,
+.clientes-table thead th,
+[class*="-table"] thead th {
     color: #fff !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border: none;
+    padding: 1rem 0.75rem;
 }
 
-.dataTables_wrapper .dataTables_filter input {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 0.4rem 0.8rem;
-}
-
-.dataTables_wrapper .dataTables_filter input:focus {
-    border-color: var(--gym-purple);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
-}
+/* ============================================
+   BADGES BOOTSTRAP - Compatibilidad
+   ============================================ */
 
 /* Badges de estado */
 .badge-success,
 .badge-activo,
 .estado-activa {
-    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+    background: linear-gradient(135deg, var(--success) 0%, #00a67d 100%) !important;
+    color: #fff !important;
 }
 
 .badge-danger,
 .badge-vencido,
 .estado-vencida {
-    background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%) !important;
+    background: linear-gradient(135deg, var(--danger) 0%, #bd2130 100%) !important;
+    color: #fff !important;
 }
 
 .badge-warning,
 .badge-pendiente,
 .estado-pendiente {
-    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%) !important;
+    background: linear-gradient(135deg, var(--warning) 0%, #d99400 100%) !important;
     color: #212529 !important;
 }
 
 .badge-info,
 .badge-pausada,
 .estado-pausada {
-    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%) !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+    color: #fff !important;
 }
 
 .badge-secondary,
 .badge-inactivo {
-    background: linear-gradient(135deg, var(--gym-gray) 0%, #363a42 100%) !important;
+    background: linear-gradient(135deg, var(--gray) 0%, var(--gray-dark) 100%) !important;
+    color: #fff !important;
 }
 
 /* Botones de acción en tablas */
@@ -741,30 +913,30 @@ td .btn {
 }
 
 .btn-outline-primary {
-    color: var(--gym-purple);
-    border-color: var(--gym-purple);
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 .btn-outline-primary:hover {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
     color: #fff;
 }
 
 .btn-outline-info {
-    color: var(--gym-navy);
-    border-color: var(--gym-navy);
+    color: var(--primary);
+    border-color: var(--primary);
 }
 
 .btn-outline-info:hover {
-    background: var(--gym-navy);
-    border-color: var(--gym-navy);
+    background: var(--primary);
+    border-color: var(--primary);
     color: #fff;
 }
 
 /* Modales */
 .modal-header {
-    background: linear-gradient(135deg, var(--gym-navy) 0%, #1a3050 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: #fff;
     border: none;
     border-radius: 0.3rem 0.3rem 0 0;
@@ -782,12 +954,12 @@ td .btn {
 }
 
 .modal-title {
-    color: var(--gym-cream);
+    color: var(--cream);
 }
 
 .modal-footer .btn-primary {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 /* Select2 */
@@ -800,115 +972,115 @@ td .btn {
 
 .select2-container--default .select2-selection--single:focus,
 .select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: var(--gym-purple);
-    box-shadow: 0 0 0 3px rgba(193, 64, 212, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
 }
 
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 /* Tabs/Nav Pills */
 .nav-pills .nav-link.active,
 .nav-pills .show > .nav-link {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 .nav-pills .nav-link {
-    color: var(--gym-purple);
+    color: var(--accent);
     border-radius: 6px;
 }
 
 .nav-pills .nav-link:hover {
-    background: rgba(193, 64, 212, 0.1);
+    background: rgba(233, 69, 96, 0.1);
 }
 
 .nav-tabs .nav-link.active {
-    border-bottom: 3px solid var(--gym-purple);
-    color: var(--gym-purple);
+    border-bottom: 3px solid var(--accent);
+    color: var(--accent);
 }
 
 /* Progress bars */
 .progress-bar {
-    background: linear-gradient(90deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%);
 }
 
 .progress-bar.bg-success {
-    background: linear-gradient(90deg, #28a745 0%, #1e7e34 100%) !important;
+    background: linear-gradient(90deg, var(--success) 0%, #00a67d 100%) !important;
 }
 
 .progress-bar.bg-danger {
-    background: linear-gradient(90deg, #dc3545 0%, #bd2130 100%) !important;
+    background: linear-gradient(90deg, var(--danger) 0%, #bd2130 100%) !important;
 }
 
 /* Alertas */
 .alert-primary {
-    background: rgba(193, 64, 212, 0.1);
-    border-color: var(--gym-purple);
-    color: var(--gym-purple-dark);
+    background: rgba(233, 69, 96, 0.1);
+    border-color: var(--accent);
+    color: var(--accent-dark);
 }
 
 .alert-info {
-    background: rgba(37, 58, 91, 0.1);
-    border-color: var(--gym-navy);
-    color: var(--gym-navy);
+    background: rgba(26, 26, 46, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 /* Breadcrumbs */
 .breadcrumb-item.active {
-    color: var(--gym-purple);
+    color: var(--accent);
 }
 
 .breadcrumb-item a {
-    color: var(--gym-navy);
+    color: var(--primary);
 }
 
 .breadcrumb-item a:hover {
-    color: var(--gym-purple);
+    color: var(--accent);
 }
 
 /* Tooltips */
 .tooltip-inner {
-    background: var(--gym-navy);
+    background: var(--primary);
 }
 
 .bs-tooltip-top .arrow::before,
 .bs-tooltip-auto[x-placement^="top"] .arrow::before {
-    border-top-color: var(--gym-navy);
+    border-top-color: var(--primary);
 }
 
 /* Switch/Toggle */
 .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 /* Checkbox y Radio */
 .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before,
 .custom-radio .custom-control-input:checked ~ .custom-control-label::before {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 /* Loading/Spinner */
 .spinner-border.text-primary {
-    color: var(--gym-purple) !important;
+    color: var(--accent) !important;
 }
 
 /* Calendario/DatePicker */
 .daterangepicker td.active,
 .daterangepicker td.active:hover {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 .daterangepicker .btn-primary {
-    background: var(--gym-purple);
-    border-color: var(--gym-purple);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 /* Timeline */
 .timeline > .time-label > span {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 .timeline > li > .timeline-item {
@@ -918,37 +1090,37 @@ td .btn {
 
 /* Callouts */
 .callout.callout-primary {
-    border-left-color: var(--gym-purple);
+    border-left-color: var(--accent);
 }
 
 .callout.callout-info {
-    border-left-color: var(--gym-navy);
+    border-left-color: var(--primary);
 }
 
 /* Ribbons */
 .ribbon-wrapper .ribbon {
-    background: var(--gym-purple);
+    background: var(--accent);
 }
 
 /* Iconos flotantes */
 .icon-circle {
-    background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
     border-radius: 50%;
     color: #fff;
 }
 
 /* Links en cards */
 .card a:not(.btn) {
-    color: var(--gym-purple);
+    color: var(--accent);
 }
 
 .card a:not(.btn):hover {
-    color: var(--gym-purple-dark);
+    color: var(--accent-dark);
 }
 
 /* Empty state */
 .empty-state i {
-    color: var(--gym-purple);
+    color: var(--accent);
     opacity: 0.5;
 }
 
@@ -960,7 +1132,7 @@ td .btn {
 }
 
 .dark-mode [class*="-hero"] {
-    background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%) !important;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%) !important;
 }
 
 .dark-mode .modal-content {
@@ -969,5 +1141,147 @@ td .btn {
 }
 
 .dark-mode .modal-header {
-    background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+}
+
+/* ============================================
+   ICONOS UNIVERSALES - MEJORA DE VISIBILIDAD
+   ============================================ */
+
+/* Iconos dentro de stat-icons deben ser blancos */
+.stat-icon i,
+.stat-card .stat-icon i,
+[class*="stat-"] .stat-icon i,
+.stats-grid .stat-icon i {
+    color: #fff !important;
+}
+
+/* Iconos de información personal */
+.info-item i,
+.detail-item i,
+.contact-info i {
+    color: var(--info) !important;
+    width: 20px;
+    text-align: center;
+}
+
+/* Iconos en listas de datos */
+.data-list i,
+.list-group-item i,
+.detail-row i {
+    color: var(--primary) !important;
+    margin-right: 8px;
+}
+
+/* Iconos en botones transparentes (header) */
+.header-actions-top .action-btn-top i,
+.btn-volver i {
+    color: #fff !important;
+}
+
+/* Iconos en filtros */
+.filter-btn i,
+.filter-buttons .filter-btn i {
+    color: inherit;
+}
+
+.filter-btn.active i {
+    color: #fff !important;
+}
+
+/* Iconos en headers de sección */
+.section-header i,
+.card-title i,
+h3 i, h4 i, h5 i {
+    color: var(--primary);
+    margin-right: 8px;
+}
+
+/* Iconos de fecha/calendario */
+i.fa-calendar,
+i.fa-calendar-alt,
+i.fa-calendar-check,
+i.fa-clock {
+    color: var(--info);
+}
+
+/* Iconos de dinero/pagos */
+i.fa-dollar-sign,
+i.fa-money-bill,
+i.fa-credit-card,
+i.fa-wallet {
+    color: var(--success);
+}
+
+/* Iconos de alerta/warning */
+i.fa-exclamation-triangle,
+i.fa-exclamation-circle,
+i.fa-bell {
+    color: var(--warning);
+}
+
+/* Iconos de éxito/check */
+i.fa-check,
+i.fa-check-circle,
+i.fa-thumbs-up {
+    color: var(--success);
+}
+
+/* Iconos de peligro/error */
+i.fa-times,
+i.fa-times-circle,
+i.fa-trash,
+i.fa-ban {
+    color: var(--danger);
+}
+
+/* Iconos de usuarios */
+i.fa-user,
+i.fa-user-check,
+i.fa-user-clock,
+i.fa-user-plus,
+i.fa-user-minus,
+i.fa-users {
+    color: var(--primary);
+}
+
+/* ============================================
+   AVATAR COLORS - Coherencia visual
+   ============================================ */
+
+.avatar,
+.cliente-avatar,
+[class*="-avatar"] {
+    background: linear-gradient(145deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+}
+
+.avatar.inactive,
+.cliente-avatar.inactive {
+    background: linear-gradient(145deg, var(--gray) 0%, var(--gray-dark) 100%);
+}
+
+/* ============================================
+   QUICK FIX - Iconos que no heredan color
+   ============================================ */
+
+/* Forzar blanco en fondos oscuros */
+.bg-primary i,
+.bg-dark i,
+.bg-teal i,
+[style*="background: linear-gradient"] i {
+    color: #fff !important;
+}
+
+/* Botones con icono */
+.btn i {
+    margin-right: 5px;
+}
+
+.btn-primary i,
+.btn-danger i,
+.btn-success i,
+.btn-info i,
+.btn-warning i {
+    color: inherit !important;
 }

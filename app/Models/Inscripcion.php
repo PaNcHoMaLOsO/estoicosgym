@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadosCodigo;
+use App\Models\HistorialCambio;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -96,12 +97,12 @@ class Inscripcion extends Model
         'fecha_pausa_fin' => 'date',
         'fecha_cambio_plan' => 'datetime',
         'fecha_traspaso' => 'datetime',
-        'precio_base' => 'decimal:2',
-        'descuento_aplicado' => 'decimal:2',
-        'precio_final' => 'decimal:2',
-        'credito_plan_anterior' => 'decimal:2',
-        'precio_nuevo_plan' => 'decimal:2',
-        'diferencia_a_pagar' => 'decimal:2',
+        'precio_base' => 'integer',
+        'descuento_aplicado' => 'integer',
+        'precio_final' => 'integer',
+        'credito_plan_anterior' => 'integer',
+        'precio_nuevo_plan' => 'integer',
+        'diferencia_a_pagar' => 'integer',
         'pausada' => 'boolean',
         'pausa_indefinida' => 'boolean',
         'es_cambio_plan' => 'boolean',

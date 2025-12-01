@@ -836,6 +836,114 @@
     #resultadosBusquedaTraspaso .cliente-resultado-item:last-child {
         border-bottom: none;
     }
+    
+    /* TOGGLE SWITCH PARA CRÉDITO */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+        cursor: pointer;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255,255,255,0.3);
+        transition: .3s;
+        border-radius: 26px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: rgba(255,255,255,0.5);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+    .toggle-switch input:not(:checked) + .toggle-slider {
+        background-color: rgba(0,0,0,0.2);
+    }
+    
+    /* Card de crédito desactivada */
+    .credito-plan-card.desactivado {
+        background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3) !important;
+    }
+    
+    /* SWEETALERT2 CUSTOM STYLES */
+    .swal2-popup.swal-estoicos {
+        border-radius: 16px;
+        font-family: inherit;
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: var(--primary);
+        font-weight: 700;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: var(--gray-600);
+    }
+    .swal2-popup.swal-estoicos .swal2-confirm {
+        border-radius: 10px !important;
+        font-weight: 600;
+        padding: 12px 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .swal2-popup.swal-estoicos .swal2-cancel {
+        border-radius: 10px !important;
+        font-weight: 600;
+        padding: 12px 24px;
+    }
+    .swal2-popup.swal-estoicos .swal2-icon {
+        border-width: 3px;
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-success {
+        border-color: var(--success);
+        color: var(--success);
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-success [class^="swal2-success-line"] {
+        background-color: var(--success);
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-success .swal2-success-ring {
+        border-color: rgba(0, 191, 142, 0.3);
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-warning {
+        border-color: var(--warning);
+        color: var(--warning);
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-error {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .swal2-popup.swal-estoicos .swal2-icon.swal2-question {
+        border-color: var(--info);
+        color: var(--info);
+    }
+    
+    /* Botón restablecer hover */
+    #btnRestablecer:hover {
+        background: var(--warning) !important;
+        color: white !important;
+        border-color: var(--warning) !important;
+    }
 </style>
 @stop
 
@@ -1020,20 +1128,39 @@
                         <div class="alert-modern warning mb-4" style="border-left: 4px solid var(--warning);">
                             <i class="fas fa-book-open"></i>
                             <div>
-                                <strong class="d-block mb-2">📋 Guía de Edición Simple</strong>
+                                <strong class="d-block mb-2">📋 Guía de Ajustes Permitidos</strong>
                                 <ul class="mb-0 ps-3" style="font-size: 0.85rem; line-height: 1.8;">
-                                    <li><strong>Estado:</strong> Cambiar solo si hay motivo válido (ej: Cancelar por solicitud del cliente, Suspender por mora).</li>
-                                    <li><strong>Fecha de Vencimiento:</strong> Extender únicamente por cortesía, compensación o acuerdo especial. <em>No reducir.</em></li>
-                                    <li><strong>Convenio:</strong> Solo disponible para membresía <strong>Mensual</strong>. Asociar si el cliente pertenece a una empresa con descuento.</li>
-                                    <li><strong>Descuentos:</strong> Aplicar solo con autorización. Seleccionar motivo correspondiente.</li>
-                                    <li><strong>Observaciones:</strong> Documentar SIEMPRE el motivo del cambio para trazabilidad.</li>
+                                    <li><strong>Estado:</strong> Cambiar solo si hay motivo válido:
+                                        <ul class="ps-3 mt-1" style="font-size: 0.82rem; color: var(--gray-600);">
+                                            <li><span style="color: var(--accent);">Cancelar (103):</span> Solicitud del cliente o incumplimiento</li>
+                                            <li><span style="color: var(--warning);">Suspender (104):</span> Mora prolongada o conducta</li>
+                                            <li><span style="color: var(--info);">Pausar:</span> Usar botón de pausa (no cambiar estado manual)</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Fecha de Vencimiento:</strong> Extender únicamente por:
+                                        <ul class="ps-3 mt-1" style="font-size: 0.82rem; color: var(--gray-600);">
+                                            <li>Compensación por cierre del gimnasio</li>
+                                            <li>Cortesía autorizada por gerencia</li>
+                                            <li>Acuerdo especial documentado</li>
+                                        </ul>
+                                        <em style="color: var(--accent);">⚠️ Nunca reducir la fecha de vencimiento.</em>
+                                    </li>
+                                    <li><strong>Convenio:</strong> Solo disponible para membresía <strong>Mensual</strong>. El descuento se calcula automáticamente según el porcentaje configurado del convenio.</li>
+                                    <li><strong>Descuentos Manuales:</strong> Aplicar solo con autorización. Siempre seleccionar el motivo correspondiente para auditoría.</li>
+                                    <li><strong>Observaciones:</strong> <span style="color: var(--accent);">OBLIGATORIO</span> documentar el motivo de cada cambio para trazabilidad.</li>
                                 </ul>
                             </div>
                         </div>
 
                         <div class="alert-modern info mb-4">
                             <i class="fas fa-info-circle"></i>
-                            <small><strong>Nota:</strong> Para mejorar a un plan de mayor valor, usa la pestaña "Mejorar Plan".</small>
+                            <div>
+                                <small><strong>Nota:</strong> Para operaciones especiales, usa las pestañas correspondientes:</small>
+                                <ul class="mb-0 mt-1 ps-3" style="font-size: 0.8rem;">
+                                    <li><strong>Mejorar Plan:</strong> Cambiar a una membresía de mayor valor (upgrade)</li>
+                                    <li><strong>Traspasar:</strong> Transferir la membresía a otro cliente</li>
+                                </ul>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -1104,15 +1231,36 @@
                                     <option value="">-- Sin Convenio --</option>
                                     @foreach($convenios as $convenio)
                                         <option value="{{ $convenio->id }}" 
-                                                data-descuento="{{ $convenio->porcentaje_descuento }}"
+                                                data-descuento="{{ $convenio->descuento_porcentaje }}"
+                                                data-descripcion="{{ $convenio->descripcion }}"
+                                                data-tipo="{{ $convenio->tipo }}"
+                                                data-monto="{{ $convenio->descuento_monto }}"
                                                 {{ old('id_convenio', $inscripcion->id_convenio) == $convenio->id ? 'selected' : '' }}>
-                                            {{ $convenio->nombre }}
+                                            {{ $convenio->nombre }} @if($convenio->descuento_porcentaje > 0)({{ $convenio->descuento_porcentaje }}%)@elseif($convenio->descuento_monto > 0)(${{ number_format($convenio->descuento_monto, 0, ',', '.') }})@endif
                                         </option>
                                     @endforeach
                                 </select>
+                                <!-- Info del convenio seleccionado -->
+                                <div id="convenioInfoBox" class="mt-2 p-2 rounded" style="display: none; background: linear-gradient(135deg, rgba(0,191,142,0.08) 0%, rgba(0,191,142,0.15) 100%); border: 1px solid rgba(0,191,142,0.3); font-size: 0.85rem;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-info-circle text-success"></i>
+                                        <span id="convenioDescripcionText" class="text-muted"></span>
+                                    </div>
+                                    <div class="mt-1" id="convenioDescuentoInfo" style="font-size: 0.8rem;">
+                                        <span class="badge" style="background: var(--success); color: white;">
+                                            <i class="fas fa-percentage me-1"></i>
+                                            <span id="convenioDescuentoValor"></span>
+                                        </span>
+                                    </div>
+                                </div>
                                 @if($inscripcion->convenio)
                                     <small class="text-success mt-1 d-block">
                                         <i class="fas fa-check-circle"></i> Actualmente: {{ $inscripcion->convenio->nombre }}
+                                        @if($inscripcion->convenio->descuento_porcentaje > 0)
+                                            ({{ $inscripcion->convenio->descuento_porcentaje }}% descuento)
+                                        @elseif($inscripcion->convenio->descuento_monto > 0)
+                                            (${{ number_format($inscripcion->convenio->descuento_monto, 0, ',', '.') }} descuento)
+                                        @endif
                                     </small>
                                 @else
                                     <small class="text-muted mt-1 d-block">Busca y selecciona un convenio</small>
@@ -1438,9 +1586,14 @@
         <div class="modern-card">
             <div class="modern-card-body">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <a href="{{ route('admin.inscripciones.index') }}" class="btn-outline-modern">
-                        <i class="fas fa-times me-2"></i> Cancelar
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.inscripciones.index') }}" class="btn-outline-modern">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </a>
+                        <button type="button" class="btn-outline-modern" id="btnRestablecer" style="border-color: var(--warning); color: var(--warning);" onclick="restablecerFormulario()">
+                            <i class="fas fa-undo me-2"></i> Restablecer
+                        </button>
+                    </div>
                     <button type="submit" class="btn-modern primary" style="font-size: 1.1em;">
                         <i class="fas fa-save me-2"></i> Actualizar Inscripción
                     </button>
@@ -1454,6 +1607,15 @@
     <!-- MODO 2: MEJORA DE PLAN (UPGRADE)          -->
     <!-- ========================================== -->
     @if($inscripcion->id_estado == 100 && !$inscripcion->pausada)
+    @php
+        $infoMejora = [
+            'monto_pagado' => $inscripcion->monto_pagado,
+            'monto_pendiente' => $inscripcion->monto_pendiente,
+            'precio_final' => $inscripcion->precio_final,
+            'tiene_deuda' => $inscripcion->monto_pendiente > 0,
+            'porcentaje_pagado' => $inscripcion->precio_final > 0 ? round(($inscripcion->monto_pagado / $inscripcion->precio_final) * 100) : 100,
+        ];
+    @endphp
     <div class="mode-content" id="modo-cambio">
         <div class="row">
             <!-- Columna Principal: Selección de Nuevo Plan -->
@@ -1464,6 +1626,30 @@
                         <span>Mejorar Plan</span>
                     </div>
                     <div class="modern-card-body">
+                        
+                        @if($infoMejora['tiene_deuda'])
+                        <!-- Alerta de Deuda Pendiente -->
+                        <div class="alert-modern danger mb-4" style="border-left: 4px solid var(--accent);">
+                            <i class="fas fa-exclamation-triangle fa-lg"></i>
+                            <div>
+                                <strong>⚠️ Deuda Pendiente en Plan Actual</strong>
+                                <p class="mb-2">Esta inscripción tiene un saldo pendiente de <strong class="text-danger">${{ number_format($infoMejora['monto_pendiente'], 0, ',', '.') }}</strong></p>
+                                <div class="d-flex align-items-center gap-3 mb-2" style="font-size: 0.85rem;">
+                                    <span><i class="fas fa-money-bill-wave me-1"></i> Pagado: ${{ number_format($infoMejora['monto_pagado'], 0, ',', '.') }}</span>
+                                    <span><i class="fas fa-receipt me-1"></i> Total: ${{ number_format($infoMejora['precio_final'], 0, ',', '.') }}</span>
+                                    <span class="badge bg-warning text-dark">{{ $infoMejora['porcentaje_pagado'] }}% pagado</span>
+                                </div>
+                                <div class="form-check mt-2" style="padding: 10px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                                    <input class="form-check-input" type="checkbox" id="ignorarDeudaMejora" onchange="toggleMejoraPlan()">
+                                    <label class="form-check-label fw-bold" for="ignorarDeudaMejora">
+                                        <i class="fas fa-unlock me-1"></i> Permitir mejora de plan aunque exista deuda
+                                    </label>
+                                    <small class="d-block text-muted mt-1">La deuda pendiente se sumará al nuevo plan</small>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
                         <div class="alert-modern info mb-4">
                             <i class="fas fa-info-circle"></i>
                             <div>
@@ -1474,7 +1660,7 @@
 
                         <h6 class="mb-3 fw-bold"><i class="fas fa-list me-2"></i>Planes de Mayor Valor</h6>
                         
-                        <div class="row g-3" id="planesDisponibles">
+                        <div class="row g-3" id="planesDisponibles" @if($infoMejora['tiene_deuda']) style="opacity: 0.5; pointer-events: none;" @endif>
                             <!-- Los planes se cargarán dinámicamente -->
                             <div class="col-12 text-center py-4">
                                 <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
@@ -1511,17 +1697,28 @@
 
                         <!-- Opciones de Pago para Upgrade -->
                         <div id="seccionPagoDiferencia" style="display: none;" class="mt-4">
-                            <!-- Checkbox para aplicar crédito -->
-                            <div class="mb-3">
-                                <div class="form-check" style="padding: 12px; background: rgba(0, 191, 142, 0.1); border-radius: 8px; border: 1px solid rgba(0, 191, 142, 0.3);">
-                                    <input class="form-check-input" type="checkbox" id="aplicarCredito" checked>
-                                    <label class="form-check-label fw-bold" for="aplicarCredito" style="color: var(--success);">
-                                        <i class="fas fa-hand-holding-usd me-1"></i>
-                                        Aplicar crédito del plan anterior
-                                    </label>
-                                    <div class="text-muted" style="font-size: 0.8em; margin-left: 24px;">
-                                        Crédito: $<span id="montoCredito">{{ number_format($inscripcion->monto_pagado, 0, ',', '.') }}</span>
+                            <!-- Tarjeta de Crédito Disponible - DESTACADO -->
+                            <div class="credito-plan-card mb-4" style="background: linear-gradient(135deg, #00bf8e 0%, #00a676 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 15px rgba(0, 191, 142, 0.3);">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-hand-holding-usd fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <small style="opacity: 0.9;">Crédito del Plan Anterior</small>
+                                            <h4 class="mb-0" style="font-weight: 700;">$<span id="montoCredito">{{ number_format($inscripcion->monto_pagado, 0, ',', '.') }}</span></h4>
+                                        </div>
                                     </div>
+                                    <div class="credito-toggle-wrapper">
+                                        <label class="toggle-switch" style="margin: 0;">
+                                            <input type="checkbox" id="aplicarCredito" checked>
+                                            <span class="toggle-slider" style="background: rgba(255,255,255,0.3);"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span id="creditoEstadoTexto">El crédito será aplicado al nuevo plan</span>
                                 </div>
                             </div>
                             
@@ -1537,14 +1734,52 @@
                                 </select>
                             </div>
 
+                            <!-- Tipo de Pago: Completo o Parcial -->
                             <div class="mb-3">
-                                <label class="form-label">Monto a Pagar</label>
+                                <label class="form-label fw-bold">Tipo de Pago <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-2">
+                                    <div class="form-check flex-grow-1" style="padding: 12px; background: rgba(0,191,142,0.08); border: 2px solid var(--success); border-radius: 10px;">
+                                        <input class="form-check-input" type="radio" name="tipoPagoMejora" id="pagoCompleto" value="completo" checked onchange="actualizarTipoPago()">
+                                        <label class="form-check-label fw-bold" for="pagoCompleto" style="color: var(--success);">
+                                            <i class="fas fa-check-circle me-1"></i> Pago Completo
+                                        </label>
+                                        <small class="d-block text-muted mt-1">El cliente paga todo ahora</small>
+                                    </div>
+                                    <div class="form-check flex-grow-1" style="padding: 12px; background: rgba(240,165,0,0.08); border: 2px solid var(--warning); border-radius: 10px;">
+                                        <input class="form-check-input" type="radio" name="tipoPagoMejora" id="pagoParcial" value="parcial" onchange="actualizarTipoPago()">
+                                        <label class="form-check-label fw-bold" for="pagoParcial" style="color: var(--warning);">
+                                            <i class="fas fa-clock me-1"></i> Pago Parcial
+                                        </label>
+                                        <small class="d-block text-muted mt-1">Abono inicial, queda saldo</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <span id="labelMontoPago">Monto a Pagar</span>
+                                    <span class="text-danger">*</span>
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control" id="montoAbonoCambio" 
-                                           min="0" step="1" placeholder="0">
+                                           min="0" step="1" placeholder="0" onchange="validarMontoPago()">
                                 </div>
-                                <small class="text-muted">Total a pagar: $<span id="diferenciaPagar">0</span></small>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">Total a pagar: $<span id="diferenciaPagar">0</span></small>
+                                    <small id="saldoPendienteInfo" class="text-warning" style="display: none;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Quedará saldo: $<span id="saldoPendienteMonto">0</span>
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Advertencia de pago parcial -->
+                            <div id="alertaPagoParcial" class="alert-modern warning mb-3" style="display: none; font-size: 0.85rem;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <strong>Pago Parcial</strong>
+                                    <p class="mb-0">El cliente quedará con un saldo pendiente de $<span id="saldoPendienteAlerta">0</span>. Este monto deberá pagarse antes del vencimiento.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -1845,10 +2080,84 @@ const PRECIO_BASE = {{ $inscripcion->precio_base }};
 let diasPausaSeleccionados = null;
 let esPausaIndefinida = false;
 
+// Valores originales para restablecer
+const VALORES_ORIGINALES = {
+    id_estado: '{{ $inscripcion->id_estado }}',
+    fecha_vencimiento: '{{ $inscripcion->fecha_vencimiento->format("Y-m-d") }}',
+    id_convenio: '{{ $inscripcion->id_convenio ?? "" }}',
+    descuento_aplicado: {{ $inscripcion->descuento_aplicado ?? 0 }},
+    id_motivo_descuento: '{{ $inscripcion->id_motivo_descuento ?? "" }}',
+    observaciones: `{{ addslashes($inscripcion->observaciones ?? '') }}`
+};
+
+// Función para restablecer formulario
+function restablecerFormulario() {
+    Swal.fire({
+        title: '¿Restablecer cambios?',
+        text: 'Se revertirán todos los campos a los valores originales',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f0a500',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-undo me-1"></i> Sí, restablecer',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Restablecer cada campo
+            document.getElementById('id_estado').value = VALORES_ORIGINALES.id_estado;
+            document.getElementById('fecha_vencimiento').value = VALORES_ORIGINALES.fecha_vencimiento;
+            
+            const convenioSelect = document.getElementById('id_convenio');
+            if (convenioSelect) {
+                convenioSelect.value = VALORES_ORIGINALES.id_convenio;
+                // Actualizar Select2 si existe
+                if (typeof $ !== 'undefined' && $.fn.select2) {
+                    $(convenioSelect).trigger('change');
+                }
+            }
+            
+            document.getElementById('descuento_aplicado').value = VALORES_ORIGINALES.descuento_aplicado;
+            
+            const motivoSelect = document.getElementById('id_motivo_descuento');
+            if (motivoSelect) {
+                motivoSelect.value = VALORES_ORIGINALES.id_motivo_descuento;
+            }
+            
+            const observaciones = document.getElementById('observaciones');
+            if (observaciones) {
+                observaciones.value = VALORES_ORIGINALES.observaciones;
+            }
+            
+            // Actualizar precio final
+            const descuentoDisplay = document.getElementById('descuentoDisplay');
+            const precioFinalDisplay = document.getElementById('precioFinalDisplay');
+            if (descuentoDisplay && precioFinalDisplay) {
+                descuentoDisplay.textContent = '$' + formatNumber(VALORES_ORIGINALES.descuento_aplicado);
+                precioFinalDisplay.textContent = '$' + formatNumber(PRECIO_BASE - VALORES_ORIGINALES.descuento_aplicado);
+            }
+            
+            // Ocultar info de convenio
+            const convenioInfoBox = document.getElementById('convenioInfoBox');
+            if (convenioInfoBox) convenioInfoBox.style.display = 'none';
+            
+            Toast.success('Formulario restablecido', 'Los campos han vuelto a sus valores originales');
+        }
+    });
+}
+
 // Función global para formatear números
 function formatNumber(num) {
     return num.toLocaleString('es-CL', { maximumFractionDigits: 0 });
 }
+
+// SweetAlert2 con estilos personalizados para Estoicos
+const SwalEstoicos = Swal.mixin({
+    customClass: {
+        popup: 'swal-estoicos'
+    },
+    buttonsStyling: true
+});
 
 // Inicializar Select2 para convenios
 $(document).ready(function() {
@@ -1951,10 +2260,54 @@ document.addEventListener('DOMContentLoaded', function() {
 let planSeleccionado = null;
 let datosInscripcion = null;
 let planesDisponibles = [];
+let mejoraPlanBloqueada = {{ ($infoMejora['tiene_deuda'] ?? false) ? 'true' : 'false' }};
+
+// Función para habilitar/deshabilitar mejora cuando hay deuda
+function toggleMejoraPlan() {
+    const checkbox = document.getElementById('ignorarDeudaMejora');
+    const planesContainer = document.getElementById('planesDisponibles');
+    const btnConfirmar = document.getElementById('btnConfirmarCambio');
+    
+    if (checkbox && checkbox.checked) {
+        // Permitir mejora - el admin acepta la deuda pendiente
+        mejoraPlanBloqueada = false;
+        if (planesContainer) {
+            planesContainer.style.opacity = '1';
+            planesContainer.style.pointerEvents = 'auto';
+        }
+        // Cargar planes si aún no se han cargado
+        if (!planesDisponibles.length) {
+            cargarPlanesDisponibles();
+        }
+    } else {
+        // Bloquear mejora
+        mejoraPlanBloqueada = true;
+        if (planesContainer) {
+            planesContainer.style.opacity = '0.5';
+            planesContainer.style.pointerEvents = 'none';
+        }
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+        }
+    }
+}
 
 function cargarPlanesDisponibles() {
     const container = document.getElementById('planesDisponibles');
     if (!container) return;
+    
+    // Si hay deuda y no se ha ignorado, no cargar
+    if (mejoraPlanBloqueada) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert-modern warning">
+                    <i class="fas fa-lock"></i>
+                    <span>Debes aceptar la condición de deuda para ver los planes disponibles.</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
     
     // Mostrar loading
     container.innerHTML = `
@@ -2068,6 +2421,90 @@ function seleccionarPlan(planId) {
     }
 }
 
+// Variables globales para tipo de pago
+let tipoPagoMejora = 'completo';
+let totalAPagarGlobal = 0;
+
+function actualizarTipoPago() {
+    tipoPagoMejora = document.querySelector('input[name="tipoPagoMejora"]:checked')?.value || 'completo';
+    
+    // Actualizar estilos de selección
+    const pagoCompletoDiv = document.getElementById('pagoCompleto').closest('.form-check');
+    const pagoParcialDiv = document.getElementById('pagoParcial').closest('.form-check');
+    
+    if (tipoPagoMejora === 'completo') {
+        pagoCompletoDiv.style.borderColor = 'var(--success)';
+        pagoCompletoDiv.style.background = 'rgba(0,191,142,0.12)';
+        pagoParcialDiv.style.borderColor = '#ccc';
+        pagoParcialDiv.style.background = 'rgba(240,165,0,0.03)';
+        
+        // Pago completo: monto = total
+        document.getElementById('montoAbonoCambio').value = totalAPagarGlobal;
+        document.getElementById('labelMontoPago').textContent = 'Monto a Pagar (Total)';
+    } else {
+        pagoCompletoDiv.style.borderColor = '#ccc';
+        pagoCompletoDiv.style.background = 'rgba(0,191,142,0.03)';
+        pagoParcialDiv.style.borderColor = 'var(--warning)';
+        pagoParcialDiv.style.background = 'rgba(240,165,0,0.12)';
+        
+        // Pago parcial: vaciar para que ingrese monto
+        document.getElementById('montoAbonoCambio').value = '';
+        document.getElementById('montoAbonoCambio').placeholder = 'Ingresa el monto del abono';
+        document.getElementById('labelMontoPago').textContent = 'Monto del Abono Inicial';
+    }
+    
+    validarMontoPago();
+}
+
+function validarMontoPago() {
+    const montoInput = document.getElementById('montoAbonoCambio');
+    const saldoInfo = document.getElementById('saldoPendienteInfo');
+    const saldoMonto = document.getElementById('saldoPendienteMonto');
+    const alertaParcial = document.getElementById('alertaPagoParcial');
+    const saldoAlerta = document.getElementById('saldoPendienteAlerta');
+    const btnConfirmar = document.getElementById('btnConfirmarCambio');
+    
+    const montoIngresado = parseFloat(montoInput.value) || 0;
+    const saldoPendiente = totalAPagarGlobal - montoIngresado;
+    
+    // Validaciones
+    if (montoIngresado < 0) {
+        montoInput.value = 0;
+        return validarMontoPago();
+    }
+    
+    if (montoIngresado > totalAPagarGlobal) {
+        montoInput.value = totalAPagarGlobal;
+        return validarMontoPago();
+    }
+    
+    if (tipoPagoMejora === 'parcial') {
+        if (saldoPendiente > 0) {
+            saldoInfo.style.display = 'block';
+            saldoMonto.textContent = formatNumber(saldoPendiente);
+            alertaParcial.style.display = 'flex';
+            saldoAlerta.textContent = formatNumber(saldoPendiente);
+        } else {
+            saldoInfo.style.display = 'none';
+            alertaParcial.style.display = 'none';
+        }
+        
+        // Permitir monto mínimo de $0 para casos especiales, pero advertir si es 0
+        if (montoIngresado === 0 && planSeleccionado) {
+            btnConfirmar.disabled = true;
+        } else if (planSeleccionado) {
+            btnConfirmar.disabled = false;
+        }
+    } else {
+        // Pago completo
+        saldoInfo.style.display = 'none';
+        alertaParcial.style.display = 'none';
+        if (planSeleccionado) {
+            btnConfirmar.disabled = false;
+        }
+    }
+}
+
 function actualizarResumenCambio() {
     const resumenDiv = document.getElementById('resumenCambio');
     const seccionPago = document.getElementById('seccionPagoDiferencia');
@@ -2079,6 +2516,9 @@ function actualizarResumenCambio() {
     const aplicarCredito = document.getElementById('aplicarCredito')?.checked ?? true;
     const creditoAplicado = aplicarCredito ? creditoDisponible : 0;
     const totalAPagar = precioNuevo - creditoAplicado;
+    
+    // Guardar en variable global para las validaciones de pago
+    totalAPagarGlobal = Math.max(0, totalAPagar);
     
     let resumenHTML = `
         <div class="cambio-resumen-row">
@@ -2116,15 +2556,33 @@ function actualizarResumenCambio() {
     
     // Siempre mostrar sección de pago (es upgrade obligatorio)
     seccionPago.style.display = 'block';
-    document.getElementById('diferenciaPagar').textContent = formatNumber(totalAPagar);
-    document.getElementById('montoAbonoCambio').max = totalAPagar;
-    document.getElementById('montoAbonoCambio').value = totalAPagar;
+    document.getElementById('diferenciaPagar').textContent = formatNumber(totalAPagarGlobal);
+    document.getElementById('montoAbonoCambio').max = totalAPagarGlobal;
+    
+    // Actualizar según tipo de pago seleccionado
+    actualizarTipoPago();
 }
 
 // Listener para el checkbox de aplicar crédito
 document.addEventListener('change', function(e) {
     if (e.target.id === 'aplicarCredito') {
         actualizarResumenCambio();
+        
+        // Actualizar apariencia de la tarjeta de crédito
+        const creditoCard = e.target.closest('.credito-plan-card');
+        const estadoTexto = document.getElementById('creditoEstadoTexto');
+        
+        if (e.target.checked) {
+            if (creditoCard) creditoCard.classList.remove('desactivado');
+            if (estadoTexto) {
+                estadoTexto.innerHTML = '<i class="fas fa-check-circle me-1"></i> El crédito será aplicado al nuevo plan';
+            }
+        } else {
+            if (creditoCard) creditoCard.classList.add('desactivado');
+            if (estadoTexto) {
+                estadoTexto.innerHTML = '<i class="fas fa-times-circle me-1"></i> El crédito NO será aplicado';
+            }
+        }
     }
 });
 
@@ -2144,52 +2602,138 @@ function ejecutarCambioPlan() {
     const metodoPago = document.getElementById('metodoPagoCambio').value;
     if (!metodoPago) {
         Toast.warning('Atención', 'Selecciona un método de pago');
+        document.getElementById('metodoPagoCambio').focus();
         return;
     }
     
     const aplicarCredito = document.getElementById('aplicarCredito')?.checked ?? true;
-    const creditoTexto = aplicarCredito ? ' (con crédito aplicado)' : ' (sin aplicar crédito anterior)';
+    const creditoTexto = aplicarCredito ? 'Se aplicará el crédito del plan anterior' : 'NO se aplicará el crédito anterior';
+    const montoAPagar = parseFloat(document.getElementById('montoAbonoCambio').value) || 0;
+    const tipoPago = document.querySelector('input[name="tipoPagoMejora"]:checked')?.value || 'completo';
+    const saldoPendiente = totalAPagarGlobal - montoAPagar;
     
-    // Confirmar
-    if (!confirm(`¿Confirmar mejora de plan a "${planSeleccionado.nombre}"${creditoTexto}?`)) {
+    // Validar monto mínimo en pago parcial
+    if (tipoPago === 'parcial' && montoAPagar <= 0) {
+        Toast.warning('Atención', 'Debes ingresar un monto de abono mayor a $0');
+        document.getElementById('montoAbonoCambio').focus();
         return;
     }
     
-    mostrarLoading(true);
+    // Generar mensaje según tipo de pago
+    let tipoPagoTexto = '';
+    if (tipoPago === 'completo') {
+        tipoPagoTexto = '<p><span class="badge bg-success">PAGO COMPLETO</span></p>';
+    } else {
+        tipoPagoTexto = `
+            <p><span class="badge bg-warning text-dark">PAGO PARCIAL</span></p>
+            <p class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i> 
+            <strong>Saldo pendiente:</strong> $${formatNumber(saldoPendiente)}</p>
+        `;
+    }
+    
+    // Confirmar con SweetAlert2
+    Swal.fire({
+        title: '¿Confirmar Mejora de Plan?',
+        html: `
+            <div style="text-align: left; font-size: 0.95rem;">
+                <p><strong>Plan nuevo:</strong> ${planSeleccionado.nombre}</p>
+                <p><strong>Precio:</strong> $${formatNumber(planSeleccionado.precio)}</p>
+                <p><strong>Crédito:</strong> ${creditoTexto}</p>
+                <p><strong>Total a pagar:</strong> $${formatNumber(totalAPagarGlobal)}</p>
+                ${tipoPagoTexto}
+                <p><strong>Monto a pagar ahora:</strong> $${formatNumber(montoAPagar)}</p>
+            </div>
+            <p class="mt-3 text-muted" style="font-size: 0.85rem;">
+                <i class="fas fa-info-circle me-1"></i>
+                El plan actual quedará marcado como "Mejorado" y no podrá reactivarse.
+            </p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#00bf8e',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-arrow-circle-up me-1"></i> Sí, Mejorar Plan',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        customClass: {
+            popup: 'swal-estoicos'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            procesarMejoraPlan(metodoPago, aplicarCredito, montoAPagar, tipoPago);
+        }
+    });
+}
+
+function procesarMejoraPlan(metodoPago, aplicarCredito, montoAPagar, tipoPago) {
+    // Mostrar loading
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
+    
+    // Verificar si se ignoró la deuda
+    const ignorarDeuda = document.getElementById('ignorarDeudaMejora')?.checked ?? false;
     
     const body = {
         id_membresia_nueva: planSeleccionado.id,
         motivo_cambio: document.getElementById('motivoCambio')?.value || '',
         id_metodo_pago: metodoPago,
-        monto_abonado: parseFloat(document.getElementById('montoAbonoCambio').value) || 0,
+        monto_abonado: montoAPagar,
         aplicar_credito: aplicarCredito,
+        tipo_pago: tipoPago,
+        total_a_pagar: totalAPagarGlobal,
+        ignorar_deuda: ignorarDeuda,
     };
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                      document.querySelector('input[name="_token"]')?.value;
     
     fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/cambiar-plan`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify(body),
     })
-    .then(response => response.json())
-    .then(data => {
-        mostrarLoading(false);
-        if (data.success) {
-            Toast.success('¡Plan Mejorado!', data.message);
-            setTimeout(() => {
-                window.location.href = data.redirect_url || '/admin/inscripciones';
-            }, 1500);
+    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+    .then(result => {
+        if (overlay) overlay.classList.remove('active');
+        
+        if (result.ok && result.data.success) {
+            Swal.fire({
+                title: '¡Plan Mejorado!',
+                html: `
+                    <div style="text-align: center;">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <p>${result.data.message}</p>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonColor: '#00bf8e',
+                confirmButtonText: 'Ver Nueva Inscripción'
+            }).then(() => {
+                window.location.href = result.data.redirect_url || '/admin/inscripciones';
+            });
         } else {
-            Toast.error('Error', data.message || 'No se pudo mejorar el plan');
+            Swal.fire({
+                title: 'Error',
+                text: result.data.message || 'No se pudo mejorar el plan',
+                icon: 'error',
+                confirmButtonColor: '#e94560'
+            });
         }
     })
     .catch(error => {
-        mostrarLoading(false);
+        if (overlay) overlay.classList.remove('active');
         console.error('Error:', error);
-        Toast.error('Error de conexión', 'No se pudo procesar la solicitud');
+        Swal.fire({
+            title: 'Error de Conexión',
+            text: 'No se pudo procesar la solicitud. Intenta nuevamente.',
+            icon: 'error',
+            confirmButtonColor: '#e94560'
+        });
     });
 }
 
@@ -2223,9 +2767,72 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Manejar cambio de convenio (solo para membresías mensuales)
     if (convenioSelect) {
+        // Función para mostrar info del convenio seleccionado
+        function mostrarInfoConvenio(option) {
+            const infoBox = document.getElementById('convenioInfoBox');
+            const descripcionText = document.getElementById('convenioDescripcionText');
+            const descuentoValor = document.getElementById('convenioDescuentoValor');
+            const descuentoInfo = document.getElementById('convenioDescuentoInfo');
+            
+            if (!option || !option.value) {
+                if (infoBox) infoBox.style.display = 'none';
+                return;
+            }
+            
+            const descripcion = option.dataset.descripcion || '';
+            const porcentaje = parseFloat(option.dataset.descuento) || 0;
+            const monto = parseFloat(option.dataset.monto) || 0;
+            const tipo = option.dataset.tipo || '';
+            
+            // Mostrar tipo legible
+            const tiposLegibles = {
+                'institucion_educativa': 'Institución Educativa',
+                'empresa': 'Empresa',
+                'organizacion': 'Organización',
+                'otro': 'Otro'
+            };
+            
+            if (infoBox) {
+                if (descripcion || porcentaje > 0 || monto > 0) {
+                    infoBox.style.display = 'block';
+                    
+                    // Mostrar descripción o tipo
+                    if (descripcion) {
+                        descripcionText.textContent = descripcion;
+                    } else if (tipo) {
+                        descripcionText.textContent = 'Tipo: ' + (tiposLegibles[tipo] || tipo);
+                    } else {
+                        descripcionText.textContent = '';
+                    }
+                    
+                    // Mostrar descuento
+                    if (porcentaje > 0) {
+                        descuentoInfo.style.display = 'block';
+                        descuentoValor.textContent = `${porcentaje}% de descuento`;
+                    } else if (monto > 0) {
+                        descuentoInfo.style.display = 'block';
+                        descuentoValor.textContent = `$${formatNumber(monto)} de descuento`;
+                    } else {
+                        descuentoInfo.style.display = 'none';
+                    }
+                } else {
+                    infoBox.style.display = 'none';
+                }
+            }
+        }
+        
+        // Mostrar info al cargar si ya hay un convenio seleccionado
+        if (convenioSelect.selectedIndex > 0) {
+            mostrarInfoConvenio(convenioSelect.options[convenioSelect.selectedIndex]);
+        }
+        
         convenioSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const porcentajeDescuento = parseFloat(selectedOption.dataset.descuento) || 0;
+            const montoDescuento = parseFloat(selectedOption.dataset.monto) || 0;
+            
+            // Mostrar info del convenio
+            mostrarInfoConvenio(selectedOption);
             
             if (porcentajeDescuento > 0) {
                 // Calcular descuento basado en porcentaje del convenio
@@ -2237,7 +2844,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Convenio Aplicado',
                     `Se aplicó ${porcentajeDescuento}% de descuento = $${formatNumber(descuentoConvenio)}`
                 );
-            } else {
+            } else if (montoDescuento > 0) {
+                // Descuento en monto fijo
+                descuentoInput.value = montoDescuento;
+                
+                Toast.success(
+                    'Convenio Aplicado',
+                    `Se aplicó descuento fijo de $${formatNumber(montoDescuento)}`
+                );
+            } else if (selectedOption.value === '') {
                 // Si se quita el convenio, limpiar descuento
                 descuentoInput.value = 0;
                 Toast.warning('Convenio Removido', 'Se quitó el descuento del convenio');
@@ -2284,130 +2899,169 @@ document.addEventListener('DOMContentLoaded', function() {
         btnConfirmarPausa.disabled = !(tieneSeleccion && razonValida);
     }
 
-    // Mostrar modal de confirmación de pausa
+    // Mostrar confirmación de pausa con SweetAlert2 (más robusto que modal Bootstrap)
     if (btnConfirmarPausa) {
         btnConfirmarPausa.addEventListener('click', function() {
-            const modalHeader = document.getElementById('modalPausaHeader');
-            const resumenModal = document.getElementById('resumenPausaModal');
-
+            const razonTexto = razonInput ? razonInput.value.trim() : '';
+            
+            // Validaciones
+            if (!esPausaIndefinida && !diasPausaSeleccionados) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Debe seleccionar una duración de pausa',
+                    icon: 'error',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+            
+            if (esPausaIndefinida && razonTexto.length < 5) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Para pausa indefinida debe indicar una razón (mínimo 5 caracteres)',
+                    icon: 'error',
+                    confirmButtonColor: '#e94560'
+                });
+                return;
+            }
+            
+            // Construir HTML para SweetAlert según tipo de pausa
+            let htmlContent = '';
             if (esPausaIndefinida) {
-                modalHeader.className = 'modal-header';
-                modalHeader.style.background = 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)';
-                modalHeader.style.color = 'white';
-                
-                resumenModal.innerHTML = `
-                    <div class="text-center mb-4">
-                        <div class="pause-option-icon indefinite mx-auto" style="width: 80px; height: 80px; font-size: 2em;">
+                htmlContent = `
+                    <div style="text-align: center;">
+                        <div style="width: 80px; height: 80px; background: rgba(233, 69, 96, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #e94560; font-size: 2em;">
                             <i class="fas fa-infinity"></i>
                         </div>
-                        <h4 class="mt-3">Congelamiento Indefinido</h4>
+                        <h4>Congelamiento Indefinido</h4>
                         <p class="text-muted">La membresía quedará congelada hasta que se reactive manualmente</p>
-                    </div>
-                    <div class="alert-modern warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <div>
-                            <strong>Motivo:</strong>
-                            <p class="mb-0">${razonInput ? razonInput.value : ''}</p>
+                        <div style="background: rgba(240, 165, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #f0a500; text-align: left; margin-top: 15px;">
+                            <strong><i class="fas fa-comment me-1"></i> Motivo:</strong>
+                            <p style="margin: 5px 0 0 0;">${razonTexto}</p>
                         </div>
                     </div>
                 `;
             } else {
                 const fechaFin = new Date();
                 fechaFin.setDate(fechaFin.getDate() + diasPausaSeleccionados);
-
-                modalHeader.className = 'modal-header';
-                modalHeader.style.background = 'linear-gradient(135deg, var(--warning) 0%, #ffb800 100%)';
-                modalHeader.style.color = 'var(--gray-800)';
-
-                resumenModal.innerHTML = `
-                    <div class="text-center mb-4">
-                        <div class="pause-option-icon days mx-auto" style="width: 80px; height: 80px; font-size: 2em;">
+                
+                htmlContent = `
+                    <div style="text-align: center;">
+                        <div style="width: 80px; height: 80px; background: rgba(240, 165, 0, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #f0a500; font-size: 2em;">
                             <i class="fas fa-snowflake"></i>
                         </div>
-                        <h4 class="mt-3">Congelar por ${diasPausaSeleccionados} días</h4>
-                    </div>
-                    <div class="pause-info-box">
-                        <div class="pause-info-item">
-                            <i class="fas fa-calendar-check"></i>
-                            <div>
-                                <small class="text-muted d-block">Desde</small>
+                        <h4>Congelar por ${diasPausaSeleccionados} días</h4>
+                        <div style="display: flex; justify-content: space-around; margin-top: 20px; gap: 20px;">
+                            <div style="background: rgba(0,0,0,0.03); padding: 15px 25px; border-radius: 10px;">
+                                <i class="fas fa-calendar-check text-success"></i>
+                                <small style="display: block; color: #888;">Desde</small>
                                 <strong>${new Date().toLocaleDateString('es-CL')}</strong>
                             </div>
-                        </div>
-                        <div class="pause-info-item">
-                            <i class="fas fa-calendar-times"></i>
-                            <div>
-                                <small class="text-muted d-block">Hasta</small>
+                            <div style="background: rgba(0,0,0,0.03); padding: 15px 25px; border-radius: 10px;">
+                                <i class="fas fa-calendar-times text-warning"></i>
+                                <small style="display: block; color: #888;">Hasta</small>
                                 <strong>${fechaFin.toLocaleDateString('es-CL')}</strong>
                             </div>
                         </div>
                     </div>
                 `;
             }
-
-            // Mostrar modal
-            if (typeof bootstrap !== 'undefined') {
-                new bootstrap.Modal(document.getElementById('modalConfirmarPausa')).show();
-            } else {
-                $('#modalConfirmarPausa').modal('show');
-            }
+            
+            // Mostrar SweetAlert2 de confirmación
+            Swal.fire({
+                title: '<i class="fas fa-pause-circle me-2"></i> Confirmar Pausa',
+                html: htmlContent,
+                icon: null,
+                showCancelButton: true,
+                confirmButtonColor: '#f0a500',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-pause-circle me-1"></i> Confirmar Pausa',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'swal-estoicos'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    ejecutarPausaInscripcion(razonTexto);
+                }
+            });
         });
     }
+    
+    // Función para ejecutar la pausa
+    function ejecutarPausaInscripcion(razonTexto) {
+        // Mostrar loading
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('active');
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                          document.querySelector('input[name="_token"]')?.value;
 
-    // Ejecutar congelamiento - usando delegación de eventos para mejor compatibilidad
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('#btnEjecutarPausa')) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Obtener valor del input de razón directamente del DOM
-            const razonInputValue = document.getElementById('razonPausaInput');
-            const razonTexto = razonInputValue ? razonInputValue.value : '';
-            
-            console.log('Ejecutando pausa...', { 
-                dias: diasPausaSeleccionados, 
+        console.log('Enviando pausa:', { 
+            dias: diasPausaSeleccionados, 
+            indefinida: esPausaIndefinida,
+            razon: razonTexto,
+            uuid: INSCRIPCION_UUID
+        });
+
+        fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/pausar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({
+                dias: diasPausaSeleccionados,
+                razon: razonTexto,
                 indefinida: esPausaIndefinida,
-                razon: razonTexto 
-            });
+            }),
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json().then(data => ({ ok: response.ok, data }));
+        })
+        .then(result => {
+            if (overlay) overlay.classList.remove('active');
+            console.log('Respuesta pausa:', result);
             
-            // Cerrar modal primero
-            cerrarModales();
-            mostrarLoading(true);
-
-            fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/pausar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                },
-                body: JSON.stringify({
-                    dias: diasPausaSeleccionados,
-                    razon: razonTexto,
-                    indefinida: esPausaIndefinida,
-                }),
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                mostrarLoading(false);
-                console.log('Respuesta pausa:', data);
-                if (data.success) {
-                    Toast.success('¡Membresía Congelada!', data.message || 'La membresía ha sido congelada exitosamente.');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    Toast.error('Error', data.message || 'No se pudo congelar la membresía.');
-                }
-            })
-            .catch(error => {
-                mostrarLoading(false);
-                console.error('Error:', error);
-                Toast.error('Error de conexión', 'No se pudo procesar la solicitud.');
+            if (result.ok && result.data.success) {
+                Swal.fire({
+                    title: '¡Membresía Pausada!',
+                    html: `
+                        <div style="text-align: center;">
+                            <i class="fas fa-pause-circle fa-4x mb-3" style="color: var(--warning);"></i>
+                            <p>${result.data.message || 'La membresía ha sido pausada exitosamente.'}</p>
+                        </div>
+                    `,
+                    icon: 'success',
+                    confirmButtonColor: '#f0a500',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: result.data.message || 'No se pudo pausar la membresía.',
+                    icon: 'error',
+                    confirmButtonColor: '#e94560'
+                });
+            }
+        })
+        .catch(error => {
+            if (overlay) overlay.classList.remove('active');
+            console.error('Error pausa:', error);
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No se pudo procesar la solicitud. Intenta nuevamente.',
+                icon: 'error',
+                confirmButtonColor: '#e94560'
             });
-        }
-    });
+        });
+    }
 
     // Botón reanudar - mostrar modal
     if (btnReanudar) {
@@ -2420,7 +3074,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Ejecutar reactivación - usando delegación de eventos para mejor compatibilidad
+    // Ejecutar reactivación - usando SweetAlert2 para mejor UX
     document.addEventListener('click', function(e) {
         if (e.target.closest('#btnEjecutarReanudar')) {
             e.preventDefault();
@@ -2428,55 +3082,73 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('Ejecutando reactivación...');
             
-            cerrarModales();
-            mostrarLoading(true);
+            // Cerrar modal de Bootstrap
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (typeof bootstrap !== 'undefined') {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                } else if (typeof $ !== 'undefined') {
+                    $(modal).modal('hide');
+                }
+            });
+            
+            // Mostrar loading
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.add('active');
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                              document.querySelector('input[name="_token"]')?.value;
 
             fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/reanudar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
             })
-            .then(response => response.json())
-            .then(data => {
-                mostrarLoading(false);
-                console.log('Respuesta reanudar:', data);
-                if (data.success) {
-                    Toast.success('¡Membresía Reactivada!', data.message || 'La membresía ha sido reactivada exitosamente.');
-                    setTimeout(() => location.reload(), 1500);
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(result => {
+                if (overlay) overlay.classList.remove('active');
+                console.log('Respuesta reanudar:', result);
+                
+                if (result.ok && result.data.success) {
+                    Swal.fire({
+                        title: '¡Membresía Reactivada!',
+                        html: `
+                            <div style="text-align: center;">
+                                <i class="fas fa-play-circle fa-4x mb-3" style="color: var(--success);"></i>
+                                <p>${result.data.message || 'La membresía ha sido reactivada exitosamente.'}</p>
+                            </div>
+                        `,
+                        icon: 'success',
+                        confirmButtonColor: '#00bf8e',
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        location.reload();
+                    });
                 } else {
-                    Toast.error('Error', data.message || 'No se pudo reactivar la membresía.');
+                    Swal.fire({
+                        title: 'Error',
+                        text: result.data.message || 'No se pudo reactivar la membresía.',
+                        icon: 'error',
+                        confirmButtonColor: '#e94560'
+                    });
                 }
             })
             .catch(error => {
-                mostrarLoading(false);
+                if (overlay) overlay.classList.remove('active');
                 console.error('Error:', error);
-                Toast.error('Error de conexión', 'No se pudo procesar la solicitud.');
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'No se pudo procesar la solicitud. Intenta nuevamente.',
+                    icon: 'error',
+                    confirmButtonColor: '#e94560'
+                });
             });
         }
     });
-
-    // Cerrar todos los modales
-    function cerrarModales() {
-        document.querySelectorAll('.modal').forEach(modal => {
-            if (typeof bootstrap !== 'undefined') {
-                const bsModal = bootstrap.Modal.getInstance(modal);
-                if (bsModal) bsModal.hide();
-            } else {
-                $(modal).modal('hide');
-            }
-        });
-    }
-
-    // Loading overlay
-    function mostrarLoading(mostrar) {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.classList.toggle('active', mostrar);
-        }
-    }
 
     // Formateador de precios
     if (typeof PrecioFormatter !== 'undefined') {
