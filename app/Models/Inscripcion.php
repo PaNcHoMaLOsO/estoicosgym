@@ -159,6 +159,14 @@ class Inscripcion extends Model
         return $this->belongsTo(Convenio::class, 'id_convenio');
     }
 
+    /**
+     * Usuario que creó la inscripción
+     */
+    public function creador()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function pagos()
     {
         return $this->hasMany(Pago::class, 'id_inscripcion');

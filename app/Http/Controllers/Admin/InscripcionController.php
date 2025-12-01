@@ -13,6 +13,7 @@ use App\Models\MotivoDescuento;
 use App\Models\MetodoPago;
 use App\Models\Pago;
 use App\Models\HistorialTraspaso;
+use App\Models\HistorialCambio;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -437,9 +438,63 @@ class InscripcionController extends Controller
             // Relaciones de cambio de plan
             'inscripcionAnterior.membresia',
             'inscripcionesPosteriores.membresia',
+            // Relaciones de traspaso
+            'inscripcionOrigen.membresia',
+            'inscripcionOrigen.cliente',
+            'clienteOriginal',
+            'inscripcionesTraspasadas.cliente',
+            'inscripcionesTraspasadas.membresia',
         ]);
+        
         $estadoPago = $inscripcion->obtenerEstadoPago();
-        return view('admin.inscripciones.show', compact('inscripcion', 'estadoPago'));
+        
+        // Obtener historial de cambios para esta inscripción
+        $historialCambios = HistorialCambio::where('inscripcion_id', $inscripcion->id)
+            ->orWhere('entidad_id', $inscripcion->id)
+            ->with(['usuario', 'estadoAnterior', 'estadoNuevo'])
+            ->orderByDesc('fecha_cambio')
+            ->get();
+        
+        // Información de pausas
+        $infoPausa = [
+            'esta_pausada' => $inscripcion->pausada ?? false,
+            'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
+            'max_pausas' => $inscripcion->max_pausas_permitidas ?? 1,
+            'pausas_disponibles' => max(0, ($inscripcion->max_pausas_permitidas ?? 1) - ($inscripcion->pausas_realizadas ?? 0)),
+            'fecha_ultima_pausa' => $inscripcion->fecha_pausa ?? null,
+            'dias_restantes_pausa' => $inscripcion->dias_restantes_pausa ?? 0,
+            'duracion_pausa' => $inscripcion->duracion_pausa_dias ?? 7,
+            'razon_pausa' => $inscripcion->razon_pausa ?? null,
+        ];
+        
+        // Información financiera
+        $totalPagado = $inscripcion->pagos ? $inscripcion->pagos->sum('monto') : 0;
+        $precioFinal = $inscripcion->precio_final ?? 0;
+        $deudaPendiente = max(0, $precioFinal - $totalPagado);
+        
+        $infoFinanciera = [
+            'total_pagado' => $totalPagado,
+            'precio_final' => $precioFinal,
+            'deuda_pendiente' => $deudaPendiente,
+            'cantidad_pagos' => $inscripcion->pagos ? $inscripcion->pagos->count() : 0,
+            'porcentaje_pagado' => $precioFinal > 0 ? round(($totalPagado / $precioFinal) * 100) : 100,
+        ];
+        
+        // Puede editar si está activa, pausada o vencida
+        $canEdit = in_array($inscripcion->id_estado, [100, 101, 102]);
+        
+        // Métodos de pago para posibles acciones
+        $metodosPago = MetodoPago::where('activo', true)->get();
+        
+        return view('admin.inscripciones.show', compact(
+            'inscripcion', 
+            'estadoPago', 
+            'historialCambios',
+            'infoPausa',
+            'infoFinanciera',
+            'canEdit',
+            'metodosPago'
+        ));
     }
 
     /**
