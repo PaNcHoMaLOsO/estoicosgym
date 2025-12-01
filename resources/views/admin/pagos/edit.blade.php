@@ -464,20 +464,12 @@
                         @if($pago->inscripcion && $pago->inscripcion->cliente)
                             @php
                                 $cliente = $pago->inscripcion->cliente;
-                                $user = $cliente->user ?? null;
-                                $iniciales = '';
-                                if ($user && $user->name) {
-                                    $palabras = explode(' ', $user->name);
-                                    foreach($palabras as $palabra) {
-                                        $iniciales .= strtoupper(substr($palabra, 0, 1));
-                                    }
-                                    $iniciales = substr($iniciales, 0, 2);
-                                }
+                                $iniciales = strtoupper(substr($cliente->nombres ?? 'N', 0, 1) . substr($cliente->apellido_paterno ?? 'A', 0, 1));
                             @endphp
                             <div class="client-preview mb-3">
-                                <div class="client-avatar">{{ $iniciales ?: 'CL' }}</div>
+                                <div class="client-avatar">{{ $iniciales }}</div>
                                 <div class="client-info">
-                                    <h5>{{ $user->name ?? 'Cliente' }}</h5>
+                                    <h5>{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</h5>
                                     <p>{{ $pago->inscripcion->membresia->nombre ?? 'Sin membresía' }}</p>
                                 </div>
                             </div>

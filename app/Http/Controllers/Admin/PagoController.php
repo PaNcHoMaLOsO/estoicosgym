@@ -358,7 +358,6 @@ class PagoController extends Controller
         $pago->update([
             'id_inscripcion' => $validated['id_inscripcion'],
             'id_cliente' => $inscripcion->id_cliente,
-            'id_membresia' => $inscripcion->id_membresia,
             'monto_total' => $montoTotal,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => $montoPendiente,
