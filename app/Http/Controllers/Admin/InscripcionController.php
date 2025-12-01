@@ -268,7 +268,10 @@ class InscripcionController extends Controller
         if ($tipoPago === 'mixto') {
             // Pago mixto: crear dos pagos con diferentes métodos
             $this->crearPagoMixto($inscripcion, $validated, $precioFinal);
-        } elseif (!$pagoPendiente && isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
+        } elseif ($pagoPendiente) {
+            // Pago pendiente: crear registro con estado Pendiente (200)
+            $this->crearPagoPendiente($inscripcion, $validated, $precioFinal);
+        } elseif (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
             $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
         }
 
@@ -370,6 +373,32 @@ class InscripcionController extends Controller
     }
 
     /**
+     * Crear pago pendiente cuando el cliente no paga al inscribirse
+     *
+     * @param \App\Models\Inscripcion $inscripcion
+     * @param array $validated
+     * @param float $precioFinal
+     * @return void
+     */
+    protected function crearPagoPendiente(Inscripcion $inscripcion, array $validated, float $precioFinal)
+    {
+        // Estado de PAGO: 200=Pendiente
+        Pago::create([
+            'id_inscripcion' => $inscripcion->id,
+            'id_cliente' => $validated['id_cliente'],
+            'monto_total' => $precioFinal,
+            'monto_abonado' => 0,
+            'monto_pendiente' => $precioFinal,
+            'id_estado' => 200, // Pendiente
+            'id_metodo_pago' => 1, // Efectivo por defecto (se actualizará cuando pague)
+            'fecha_pago' => null,
+            'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
+            'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
+            'observaciones' => 'Pago pendiente - Sin abono al momento de inscripción',
+        ]);
+    }
+
+    /**
      * Crear pagos mixtos (múltiples métodos de pago)
      *
      * @param \App\Models\Inscripcion $inscripcion
@@ -414,7 +443,7 @@ class InscripcionController extends Controller
                     'fecha_pago' => $validated['fecha_pago'],
                     'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
                     'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
-                    'observacion' => 'Pago mixto - ' . $metodoNombre,
+                    'observaciones' => 'Pago mixto - ' . $metodoNombre,
                 ]);
             }
         }

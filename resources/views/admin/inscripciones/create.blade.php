@@ -516,6 +516,51 @@
         .buttons-group .btn { flex: 1; justify-content: center; }
         .resumen-inscripcion .col-md-4 { margin-bottom: 1rem; }
     }
+
+    /* ===== SWEETALERT ESTOICOS THEME ===== */
+    .swal-estoicos {
+        border-radius: 16px !important;
+        border: 2px solid var(--accent) !important;
+    }
+    
+    .swal-estoicos .swal2-title {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    
+    .swal-estoicos .swal2-html-container {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .swal-estoicos .swal2-icon {
+        border-color: var(--accent) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-success {
+        border-color: var(--success) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-success [class^="swal2-success-line"] {
+        background-color: var(--success) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-warning {
+        border-color: var(--warning) !important;
+        color: var(--warning) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-error {
+        border-color: var(--accent) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-error [class^="swal2-x-mark-line"] {
+        background-color: var(--accent) !important;
+    }
+    
+    .swal-estoicos .swal2-icon.swal2-question {
+        border-color: var(--info) !important;
+        color: var(--info) !important;
+    }
 </style>
 @endsection
 
@@ -688,11 +733,19 @@
                                 id="id_membresia" name="id_membresia" required>
                             <option value="">-- Seleccionar Membresía --</option>
                             @foreach($membresias as $membresia)
+                                @php
+                                    $duracionTexto = $membresia->duracion_meses > 0 
+                                        ? ($membresia->duracion_meses == 1 ? '1 mes' : $membresia->duracion_meses . ' meses')
+                                        : $membresia->duracion_dias . ' día' . ($membresia->duracion_dias > 1 ? 's' : '');
+                                    $precio = $membresia->precios->first()->precio_normal ?? 0;
+                                @endphp
                                 <option value="{{ $membresia->id }}" 
                                         data-duracion="{{ $membresia->duracion_dias }}"
-                                        data-precio="{{ $membresia->precios->first()->precio_normal ?? 0 }}"
-                                        data-precio-convenio="{{ $membresia->precios->first()->precio_convenio ?? 0 }}">
-                                    {{ $membresia->nombre }} ({{ $membresia->duracion_dias }} días)
+                                        data-duracion-meses="{{ $membresia->duracion_meses }}"
+                                        data-precio="{{ $precio }}"
+                                        data-precio-convenio="{{ $membresia->precios->first()->precio_convenio ?? 0 }}"
+                                        data-max-pausas="{{ $membresia->max_pausas ?? 2 }}">
+                                    {{ $membresia->nombre }} ({{ $duracionTexto }}) - ${{ number_format($precio, 0, ',', '.') }}
                                 </option>
                             @endforeach
                         </select>
@@ -971,6 +1024,32 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    // Configuración global de SweetAlert2 con colores del tema
+    const SwalEstoicos = Swal.mixin({
+        customClass: {
+            popup: 'swal-estoicos',
+            confirmButton: 'btn btn-success mx-1',
+            cancelButton: 'btn btn-secondary mx-1',
+            denyButton: 'btn btn-danger mx-1'
+        },
+        buttonsStyling: false,
+        confirmButtonColor: '#00bf8e',
+        cancelButtonColor: '#6c757d',
+        background: '#1a1a2e',
+        color: '#ffffff',
+        iconColor: '#e94560'
+    });
+
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: '#1a1a2e',
+        color: '#ffffff'
+    });
+
     let pasoActual = 1;
     let clienteSeleccionadoId = null;
     let clienteSeleccionadoNombre = '';
@@ -1006,14 +1085,10 @@ $(document).ready(function() {
         $('#paso3-cliente-nombre').text(clienteSeleccionadoNombre);
 
         // Efecto visual
-        Swal.fire({
+        Toast.fire({
             icon: 'success',
             title: 'Cliente Seleccionado',
-            text: clienteSeleccionadoNombre,
-            timer: 1500,
-            showConfirmButton: false,
-            toast: true,
-            position: 'top-end'
+            text: clienteSeleccionadoNombre
         });
     });
 
@@ -1176,13 +1251,9 @@ $(document).ready(function() {
     // Botón agregar línea
     $('#btn-agregar-linea').on('click', function() {
         agregarLineaPago();
-        Swal.fire({
+        Toast.fire({
             icon: 'info',
-            title: 'Línea agregada',
-            timer: 800,
-            showConfirmButton: false,
-            toast: true,
-            position: 'top-end'
+            title: 'Línea agregada'
         });
     });
 
@@ -1193,10 +1264,11 @@ $(document).ready(function() {
             fila.remove();
             actualizarResumenMixto();
         } else {
-            Swal.fire({
+            SwalEstoicos.fire({
                 icon: 'warning',
-                title: 'Debe haber al menos una línea',
-                timer: 1500,
+                title: 'Acción no permitida',
+                text: 'Debe haber al menos una línea de pago',
+                timer: 2000,
                 showConfirmButton: false
             });
         }
@@ -1314,31 +1386,31 @@ $(document).ready(function() {
     function validarPaso(paso) {
         if (paso === 1) {
             if (!clienteSeleccionadoId) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'warning',
                     title: 'Cliente requerido',
                     text: 'Por favor, selecciona un cliente de la lista',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
             return true;
         } else if (paso === 2) {
             if (!$('#id_membresia').val()) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'warning',
                     title: 'Membresía requerida',
                     text: 'Por favor, selecciona una membresía',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
             if (!$('#fecha_inicio').val()) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'warning',
                     title: 'Fecha requerida',
                     text: 'Por favor, ingresa la fecha de inicio',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
@@ -1371,22 +1443,22 @@ $(document).ready(function() {
         
         // Validar todos los pasos
         if (!clienteSeleccionadoId) {
-            Swal.fire({
+            SwalEstoicos.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'Error de validación',
                 text: 'Por favor, selecciona un cliente',
-                confirmButtonColor: '#667eea'
+                confirmButtonText: '<i class="fas fa-check"></i> Entendido'
             });
             irAPaso(1);
             return false;
         }
         
         if (!$('#id_membresia').val()) {
-            Swal.fire({
+            SwalEstoicos.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'Error de validación',
                 text: 'Por favor, selecciona una membresía',
-                confirmButtonColor: '#667eea'
+                confirmButtonText: '<i class="fas fa-check"></i> Entendido'
             });
             irAPaso(2);
             return false;
@@ -1395,11 +1467,11 @@ $(document).ready(function() {
         const tipoPago = $('#tipo_pago').val();
         
         if (!tipoPago) {
-            Swal.fire({
+            SwalEstoicos.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'Error de validación',
                 text: 'Por favor, selecciona un tipo de pago',
-                confirmButtonColor: '#667eea'
+                confirmButtonText: '<i class="fas fa-check"></i> Entendido'
             });
             return false;
         }
@@ -1409,11 +1481,11 @@ $(document).ready(function() {
             const detalles = JSON.parse($('#detalle-pagos-mixto').val() || '[]');
             
             if (detalles.length === 0 || totalMixto <= 0) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'error',
                     title: 'Error en pago mixto',
                     text: 'Agregue al menos un método de pago con monto',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
@@ -1427,54 +1499,78 @@ $(document).ready(function() {
             });
             
             if (lineasSinMetodo > 0) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'error',
-                    title: 'Error',
+                    title: 'Error de validación',
                     text: `Seleccione método de pago en ${lineasSinMetodo} línea(s)`,
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
         } 
         else if (tipoPago !== 'pendiente') {
             if (!$('#monto_abonado').val() || parseFloat($('#monto_abonado').val()) <= 0) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'error',
-                    title: 'Error',
+                    title: 'Error de validación',
                     text: 'Por favor, ingresa el monto del pago',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
             if (!$('#id_metodo_pago').val()) {
-                Swal.fire({
+                SwalEstoicos.fire({
                     icon: 'error',
-                    title: 'Error',
+                    title: 'Error de validación',
                     text: 'Por favor, selecciona un método de pago',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
             }
         }
 
+        // Determinar texto de tipo de pago
+        let tipoPagoTexto = '';
+        switch(tipoPago) {
+            case 'completo': tipoPagoTexto = '💵 Pago Completo'; break;
+            case 'abono': tipoPagoTexto = '💰 Pago Parcial'; break;
+            case 'mixto': tipoPagoTexto = '🔀 Pago Mixto'; break;
+            case 'pendiente': tipoPagoTexto = '⏰ Pago Pendiente'; break;
+        }
+
         // Confirmar antes de enviar
-        Swal.fire({
+        SwalEstoicos.fire({
             icon: 'question',
             title: '¿Confirmar inscripción?',
             html: `
-                <p><strong>Cliente:</strong> ${clienteSeleccionadoNombre}</p>
-                <p><strong>Membresía:</strong> ${$('#id_membresia option:selected').text()}</p>
-                <p><strong>Total:</strong> $${precioFinal.toLocaleString('es-CL')}</p>
+                <div style="text-align: left; padding: 10px;">
+                    <p style="margin: 8px 0;"><i class="fas fa-user text-info"></i> <strong>Cliente:</strong> ${clienteSeleccionadoNombre}</p>
+                    <p style="margin: 8px 0;"><i class="fas fa-dumbbell text-warning"></i> <strong>Membresía:</strong> ${$('#id_membresia option:selected').text().split(' - ')[0]}</p>
+                    <p style="margin: 8px 0;"><i class="fas fa-credit-card text-primary"></i> <strong>Tipo Pago:</strong> ${tipoPagoTexto}</p>
+                    <hr style="border-color: rgba(255,255,255,0.2); margin: 12px 0;">
+                    <p style="margin: 8px 0; font-size: 1.2em;"><i class="fas fa-dollar-sign text-success"></i> <strong>Total:</strong> <span style="color: #00bf8e;">$${precioFinal.toLocaleString('es-CL')}</span></p>
+                </div>
             `,
             showCancelButton: true,
-            confirmButtonText: '<i class="fas fa-check"></i> Confirmar',
+            confirmButtonText: '<i class="fas fa-check"></i> Confirmar Inscripción',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#6c757d'
+            reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
+                // Mostrar loading
+                SwalEstoicos.fire({
+                    title: 'Registrando inscripción...',
+                    html: '<i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Por favor espere...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
                 // Desactivar botón para evitar doble envío
-                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Registrando...');
+                $('#btnGuardar').prop('disabled', true);
                 
                 // Enviar formulario
                 this.submit();
