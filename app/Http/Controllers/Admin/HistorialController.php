@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\HistorialTraspaso;
+use App\Models\HistorialCambio;
 use App\Models\Cliente;
 use App\Models\Membresia;
 use Illuminate\Http\Request;
@@ -19,14 +20,17 @@ class HistorialController extends Controller
         // Tab activo (por defecto traspasos)
         $tab = $request->get('tab', 'traspasos');
         
-        // Datos de traspasos
+        // Datos según tab
         $traspasos = $this->getTraspasos($request);
+        $pausas = $this->getPausas($request);
+        $cambiosPlan = $this->getCambiosPlan($request);
         
         $clientes = Cliente::orderBy('nombres')->get();
         $membresias = Membresia::orderBy('nombre')->get();
 
         // Estadísticas generales
         $estadisticas = [
+            // Traspasos
             'total_traspasos' => HistorialTraspaso::count(),
             'traspasos_mes' => HistorialTraspaso::whereMonth('fecha_traspaso', now()->month)
                                                 ->whereYear('fecha_traspaso', now()->year)
@@ -34,10 +38,24 @@ class HistorialController extends Controller
             'con_deuda_transferida' => HistorialTraspaso::where('se_transfirio_deuda', true)->count(),
             'total_deuda_transferida' => HistorialTraspaso::where('se_transfirio_deuda', true)
                                                           ->sum('deuda_transferida'),
+            // Pausas
+            'total_pausas' => HistorialCambio::pausas()->count(),
+            'pausas_mes' => HistorialCambio::pausas()
+                                           ->whereMonth('fecha_cambio', now()->month)
+                                           ->whereYear('fecha_cambio', now()->year)
+                                           ->count(),
+            // Cambios de plan
+            'total_cambios_plan' => HistorialCambio::cambiosPlan()->count(),
+            'cambios_plan_mes' => HistorialCambio::cambiosPlan()
+                                                 ->whereMonth('fecha_cambio', now()->month)
+                                                 ->whereYear('fecha_cambio', now()->year)
+                                                 ->count(),
         ];
 
         return view('admin.historial.index', compact(
             'traspasos',
+            'pausas',
+            'cambiosPlan',
             'clientes',
             'membresias',
             'estadisticas',
@@ -105,5 +123,51 @@ class HistorialController extends Controller
         ]);
 
         return view('admin.historial.traspaso-show', compact('traspaso'));
+    }
+
+    /**
+     * Obtener pausas/reanudaciones con filtros
+     */
+    private function getPausas(Request $request)
+    {
+        $query = HistorialCambio::with(['cliente', 'inscripcion.membresia', 'usuario'])
+            ->pausas();
+
+        if ($request->filled('cliente_id')) {
+            $query->where('cliente_id', $request->cliente_id);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_cambio', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_cambio', '<=', $request->fecha_hasta);
+        }
+
+        return $query->orderBy('fecha_cambio', 'desc')->paginate(20, ['*'], 'pausas_page');
+    }
+
+    /**
+     * Obtener cambios de plan con filtros
+     */
+    private function getCambiosPlan(Request $request)
+    {
+        $query = HistorialCambio::with(['cliente', 'inscripcion.membresia', 'usuario'])
+            ->cambiosPlan();
+
+        if ($request->filled('cliente_id')) {
+            $query->where('cliente_id', $request->cliente_id);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_cambio', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_cambio', '<=', $request->fecha_hasta);
+        }
+
+        return $query->orderBy('fecha_cambio', 'desc')->paginate(20, ['*'], 'cambios_page');
     }
 }

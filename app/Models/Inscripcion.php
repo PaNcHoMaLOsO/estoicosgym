@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadosCodigo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -261,7 +262,19 @@ class Inscripcion extends Model
         // Estado 101 = Pausada (NO confundir con 102 = Vencida)
         $this->id_estado = 101;
 
-        return $this->save();
+        $resultado = $this->save();
+
+        // Registrar en historial
+        if ($resultado) {
+            HistorialCambio::registrarPausa($this, [
+                'dias' => $dias,
+                'razon' => $razon,
+                'indefinida' => $indefinida,
+                'fecha_fin' => $this->fecha_pausa_fin?->format('Y-m-d'),
+            ]);
+        }
+
+        return $resultado;
     }
 
     /**
@@ -282,9 +295,11 @@ class Inscripcion extends Model
             : 0;
 
         // Extender fecha de vencimiento
+        $diasCompensados = 0;
         if ($diasEnPausa > 0 && $this->fecha_vencimiento) {
             $this->fecha_vencimiento = $this->fecha_vencimiento->addDays($diasEnPausa);
             $this->dias_compensacion = $this->dias_compensacion + $diasEnPausa;
+            $diasCompensados = $diasEnPausa;
         }
 
         $this->pausada = false;
@@ -295,7 +310,14 @@ class Inscripcion extends Model
         $this->pausa_indefinida = false;
         $this->id_estado = 100; // Estado Activa
 
-        return $this->save();
+        $resultado = $this->save();
+
+        // Registrar en historial
+        if ($resultado) {
+            HistorialCambio::registrarReanudacion($this, $diasEnPausa, $diasCompensados);
+        }
+
+        return $resultado;
     }
 
     /**
