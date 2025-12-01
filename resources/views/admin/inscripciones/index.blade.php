@@ -119,7 +119,7 @@
                     <tr class="inscripcion-row" 
                         data-estado="{{ $estadoClass }}"
                         data-cliente="{{ strtolower(($inscripcion->cliente?->nombres ?? '') . ' ' . ($inscripcion->cliente?->apellido_paterno ?? '')) }}"
-                        data-rut="{{ strtolower($inscripcion->cliente?->rut ?? '') }}"
+                        data-rut="{{ strtolower($inscripcion->cliente?->run_pasaporte ?? '') }}"
                         data-membresia="{{ strtolower($inscripcion->membresia?->nombre ?? '') }}">
                         <td>
                             <div class="cliente-membresia-info">
@@ -132,7 +132,7 @@
                                         {{ $inscripcion->cliente?->apellido_paterno ?? '' }}
                                     </span>
                                     <span class="cliente-rut">
-                                        <i class="fas fa-id-card"></i> {{ $inscripcion->cliente?->rut ?? 'Sin RUT' }}
+                                        <i class="fas fa-id-card"></i> {{ $inscripcion->cliente?->run_pasaporte ?? 'Sin RUT' }}
                                     </span>
                                     <span class="membresia-nombre">
                                         <i class="fas fa-dumbbell"></i> {{ $inscripcion->membresia?->nombre ?? 'Sin membresía' }}
@@ -229,19 +229,21 @@
                         <td>
                             <div class="acciones-btns">
                                 <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" 
-                                   class="btn-action btn-view" title="Ver detalles">
+                                   class="btn-action btn-view" 
+                                   data-tooltip="Ver Detalles">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" 
-                                   class="btn-action btn-edit" title="Editar">
-                                    <i class="fas fa-edit"></i>
+                                   class="btn-action btn-edit"
+                                   data-tooltip="Editar">
+                                    <i class="fas fa-pen"></i>
                                 </a>
                                 @if($inscripcion->estaPausada())
                                 <button type="button" 
                                         class="btn-action btn-resume btn-reanudar" 
                                         data-id="{{ $inscripcion->id }}"
                                         data-cliente="{{ $inscripcion->cliente?->nombres }} {{ $inscripcion->cliente?->apellido_paterno }}"
-                                        title="Reanudar Inscripción">
+                                        data-tooltip="Reanudar">
                                     <i class="fas fa-play"></i>
                                 </button>
                                 @elseif($estadoClass === 'activa')
@@ -251,14 +253,17 @@
                                         data-cliente="{{ $inscripcion->cliente?->nombres }} {{ $inscripcion->cliente?->apellido_paterno }}"
                                         data-pausas-usadas="{{ $inscripcion->pausas_realizadas ?? 0 }}"
                                         data-pausas-max="{{ $inscripcion->max_pausas_permitidas ?? 2 }}"
-                                        title="Pausar Inscripción">
+                                        data-tooltip="Pausar">
                                     <i class="fas fa-pause"></i>
                                 </button>
                                 @endif
+                                @if($estadoPago['estado'] !== 'pagado')
                                 <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]) }}" 
-                                   class="btn-action btn-pay" title="Registrar Pago">
+                                   class="btn-action btn-pay"
+                                   data-tooltip="Registrar Pago">
                                     <i class="fas fa-dollar-sign"></i>
                                 </a>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -545,23 +550,40 @@
         overflow: hidden;
     }
 
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .inscripciones-table {
         width: 100%;
         border-collapse: collapse;
+        min-width: 900px;
     }
 
     .inscripciones-table thead {
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     }
 
     .inscripciones-table thead th {
         color: #fff;
-        font-weight: 600;
-        padding: 16px 20px;
+        font-weight: 700;
+        padding: 18px 16px;
         text-align: left;
-        font-size: 13px;
+        font-size: 12px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        white-space: nowrap;
+    }
+
+    .inscripciones-table thead th:first-child {
+        padding-left: 24px;
+        border-radius: 0;
+    }
+
+    .inscripciones-table thead th:last-child {
+        padding-right: 24px;
+        text-align: center;
     }
 
     .inscripciones-table tbody tr {
@@ -570,12 +592,24 @@
     }
 
     .inscripciones-table tbody tr:hover {
-        background: rgba(233, 69, 96, 0.03);
+        background: linear-gradient(90deg, rgba(233, 69, 96, 0.04) 0%, rgba(67, 97, 238, 0.02) 100%);
+    }
+
+    .inscripciones-table tbody tr:last-child {
+        border-bottom: none;
     }
 
     .inscripciones-table tbody td {
-        padding: 16px 20px;
+        padding: 14px 16px;
         vertical-align: middle;
+    }
+
+    .inscripciones-table tbody td:first-child {
+        padding-left: 24px;
+    }
+
+    .inscripciones-table tbody td:last-child {
+        padding-right: 24px;
     }
 
     /* Cliente / Membresía Info */
@@ -821,80 +855,143 @@
     /* Acciones */
     .acciones-btns {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         justify-content: center;
+        flex-wrap: nowrap;
     }
 
     .btn-action {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.3s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         text-decoration: none;
-        border: none;
+        border: 2px solid transparent;
         cursor: pointer;
+        position: relative;
     }
 
     .btn-action i {
-        font-size: 14px;
+        font-size: 15px;
+        transition: transform 0.2s ease;
+    }
+
+    .btn-action:hover i {
+        transform: scale(1.15);
+    }
+
+    /* Tooltip personalizado */
+    .btn-action[data-tooltip]::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%) translateY(5px);
+        padding: 6px 12px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 6px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        z-index: 100;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-action[data-tooltip]::after {
+        content: '';
+        position: absolute;
+        bottom: calc(100% + 2px);
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: var(--primary);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action[data-tooltip]:hover::before,
+    .btn-action[data-tooltip]:hover::after {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
     }
 
     .btn-view {
-        background: rgba(67, 97, 238, 0.1);
+        background: rgba(67, 97, 238, 0.15);
         color: var(--info);
+        border-color: rgba(67, 97, 238, 0.3);
     }
 
     .btn-view:hover {
         background: var(--info);
         color: #fff;
-        transform: translateY(-2px);
+        border-color: var(--info);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
     }
 
     .btn-edit {
-        background: rgba(240, 165, 0, 0.1);
+        background: rgba(240, 165, 0, 0.15);
         color: var(--warning);
+        border-color: rgba(240, 165, 0, 0.3);
     }
 
     .btn-edit:hover {
         background: var(--warning);
         color: #fff;
-        transform: translateY(-2px);
+        border-color: var(--warning);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(240, 165, 0, 0.4);
     }
 
     .btn-pay {
-        background: rgba(0, 191, 142, 0.1);
+        background: rgba(0, 191, 142, 0.15);
         color: var(--success);
+        border-color: rgba(0, 191, 142, 0.3);
     }
 
     .btn-pay:hover {
         background: var(--success);
         color: #fff;
-        transform: translateY(-2px);
+        border-color: var(--success);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 191, 142, 0.4);
     }
 
     .btn-pause {
-        background: rgba(240, 165, 0, 0.1);
-        color: var(--warning);
+        background: rgba(240, 165, 0, 0.15);
+        color: #d97706;
+        border-color: rgba(240, 165, 0, 0.3);
     }
 
     .btn-pause:hover {
-        background: var(--warning);
+        background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
         color: #fff;
-        transform: translateY(-2px);
+        border-color: var(--warning);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(240, 165, 0, 0.4);
     }
 
     .btn-resume {
-        background: rgba(0, 191, 142, 0.1);
-        color: var(--success);
+        background: rgba(0, 191, 142, 0.15);
+        color: #059669;
+        border-color: rgba(0, 191, 142, 0.3);
     }
 
     .btn-resume:hover {
-        background: var(--success);
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
         color: #fff;
-        transform: translateY(-2px);
+        border-color: var(--success);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 191, 142, 0.4);
     }
 
     /* Empty State */
@@ -986,31 +1083,78 @@
         }
     }
 
-    /* SweetAlert Estoicos */
+    /* SweetAlert Estoicos - Diseño Mejorado */
     .swal-estoicos {
-        border-radius: 20px !important;
+        border-radius: 24px !important;
         padding: 0 !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
     }
+    
     .swal-estoicos .swal2-popup {
-        border-radius: 20px;
+        border-radius: 24px;
+        padding: 2rem 2rem 1.5rem;
     }
+    
     .swal-estoicos .swal2-title {
         color: var(--primary);
-        font-weight: 700;
+        font-weight: 800;
+        font-size: 1.4rem;
+        padding: 0 0 0.5rem 0;
     }
+    
+    .swal-estoicos .swal2-html-container {
+        margin: 0;
+        padding: 0.5rem 0;
+    }
+    
+    .swal-estoicos .swal2-actions {
+        margin-top: 1.5rem;
+        gap: 12px;
+    }
+    
     .swal-estoicos .swal2-confirm {
         background: linear-gradient(135deg, var(--accent) 0%, #ff6b8a 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 32px !important;
-        font-weight: 600 !important;
+        border-radius: 12px !important;
+        padding: 14px 36px !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
         border: none !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+        transition: all 0.3s ease !important;
     }
+    
+    .swal-estoicos .swal2-confirm:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(233, 69, 96, 0.5) !important;
+    }
+    
     .swal-estoicos .swal2-cancel {
-        background: #6c757d !important;
-        border-radius: 10px !important;
-        padding: 12px 32px !important;
-        font-weight: 600 !important;
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+        border-radius: 12px !important;
+        padding: 14px 36px !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
         border: none !important;
+        box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .swal-estoicos .swal2-cancel:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(100, 116, 139, 0.4) !important;
+    }
+    
+    .swal-estoicos .swal2-validation-message {
+        background: rgba(233, 69, 96, 0.1) !important;
+        color: var(--accent) !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        font-weight: 600 !important;
+        margin: 1rem 0 0 0 !important;
+    }
+    
+    .swal-estoicos .swal2-validation-message::before {
+        color: var(--accent) !important;
     }
 </style>
 @stop
