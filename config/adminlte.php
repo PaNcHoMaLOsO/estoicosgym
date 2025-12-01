@@ -381,14 +381,34 @@ return [
             'icon' => 'fas fa-fw fa-chart-bar',
             'submenu' => [
                 [
+                    'text' => 'Centro de Reportes',
+                    'url' => 'admin/reportes',
+                    'icon' => 'fas fa-fw fa-tachometer-alt',
+                ],
+                [
+                    'text' => 'Constructor Dinámico',
+                    'url' => 'admin/reportes/builder',
+                    'icon' => 'fas fa-fw fa-tools',
+                ],
+                [
+                    'text' => 'Resumen General',
+                    'url' => 'admin/reportes/predefinido/resumen-general',
+                    'icon' => 'fas fa-fw fa-chart-pie',
+                ],
+                [
                     'text' => 'Ingresos Mensuales',
-                    'url' => '#',
+                    'url' => 'admin/reportes/predefinido/ingresos-mensuales',
                     'icon' => 'fas fa-fw fa-chart-line',
                 ],
                 [
                     'text' => 'Membresías Activas',
-                    'url' => '#',
-                    'icon' => 'fas fa-fw fa-chart-pie',
+                    'url' => 'admin/reportes/predefinido/membresias-activas',
+                    'icon' => 'fas fa-fw fa-id-card',
+                ],
+                [
+                    'text' => 'Pagos Pendientes',
+                    'url' => 'admin/reportes/predefinido/pagos-pendientes',
+                    'icon' => 'fas fa-fw fa-exclamation-circle',
                 ],
             ],
         ],

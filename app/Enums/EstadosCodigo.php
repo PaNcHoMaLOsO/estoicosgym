@@ -60,6 +60,9 @@ class EstadosCodigo
     
     /** Pago cancelado */
     public const PAGO_CANCELADO = 204;
+    
+    /** Pago traspasado a otra inscripción */
+    public const PAGO_TRASPASADO = 205;
 
     // ========================================
     // ESTADOS DE CONVENIO (300-302)
@@ -180,6 +183,7 @@ class EstadosCodigo
             self::PAGO_PARCIAL => 'Parcial',
             self::PAGO_VENCIDO => 'Vencido',
             self::PAGO_CANCELADO => 'Cancelado',
+            self::PAGO_TRASPASADO => 'Traspasado',
             self::CONVENIO_ACTIVO => 'Activo',
             self::CONVENIO_SUSPENDIDO => 'Suspendido',
             self::CONVENIO_CANCELADO => 'Cancelado',
@@ -212,6 +216,7 @@ class EstadosCodigo
             self::INSCRIPCION_TRASPASADA => 'purple',
             
             self::PAGO_PENDIENTE => 'warning',
+            self::PAGO_TRASPASADO => 'purple',
             
             default => 'secondary',
         };

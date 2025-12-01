@@ -495,6 +495,7 @@
                                         202 => ['class' => 'parcial', 'text' => 'Parcial'],
                                         203 => ['class' => 'vencido', 'text' => 'Vencido'],
                                         204 => ['class' => 'cancelado', 'text' => 'Cancelado'],
+                                        205 => ['class' => 'traspasado', 'text' => 'Traspasado'],
                                         default => ['class' => 'otro', 'text' => 'Otro']
                                     };
                                 @endphp

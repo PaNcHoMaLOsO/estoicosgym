@@ -98,8 +98,9 @@
     .form-label {
         font-weight: 600;
         color: var(--gray-800);
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 0.9em;
+        display: block;
     }
     .form-control, .form-select {
         border: 2px solid var(--gray-200);
@@ -107,6 +108,8 @@
         padding: 12px 16px;
         font-size: 0.95em;
         transition: all 0.3s ease;
+        height: auto;
+        min-height: 48px;
     }
     .form-control:focus, .form-select:focus {
         border-color: var(--info);
@@ -610,7 +613,7 @@
                         {{-- MONTO ABONO --}}
                         <div id="seccionAbono" class="mt-4 section-visible">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-6 mb-4">
                                     <label for="monto_abonado" class="form-label">
                                         Monto a Abonar <span class="text-danger">*</span>
                                     </label>
@@ -626,7 +629,7 @@
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6 mb-4">
                                     <label for="id_metodo_pago" class="form-label">
                                         Método de Pago <span class="text-danger">*</span>
                                     </label>
@@ -870,7 +873,8 @@ $(document).ready(function() {
         } else if (tipo === 'completo') {
             $('#seccionAbono').removeClass('section-hidden').addClass('section-visible');
             $('#id_metodo_pago').prop('required', true);
-            $('#monto_abonado').val('');
+            // Llenar automáticamente con el monto pendiente al seleccionar pago completo
+            $('#monto_abonado').val(montoPendiente);
         } else if (tipo === 'mixto') {
             $('#seccionMixto').removeClass('section-hidden').addClass('section-visible');
             $('#id_metodo_pago').prop('required', false);

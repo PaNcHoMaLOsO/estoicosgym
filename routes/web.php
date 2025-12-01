@@ -284,6 +284,15 @@ Route::middleware('auth')->group(function () {
     Route::get('historial', [\App\Http\Controllers\Admin\HistorialController::class, 'index'])->name('historial.index');
     Route::get('historial/traspaso/{traspaso}', [\App\Http\Controllers\Admin\HistorialController::class, 'showTraspaso'])->name('historial.traspaso.show');
 
+    // Módulo Reportes
+    Route::prefix('reportes')->name('reportes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ReporteController::class, 'index'])->name('index');
+        Route::get('/builder', [\App\Http\Controllers\Admin\ReporteController::class, 'builder'])->name('builder');
+        Route::match(['get', 'post'], '/generar', [\App\Http\Controllers\Admin\ReporteController::class, 'generar'])->name('generar');
+        Route::get('/predefinido/{tipo}', [\App\Http\Controllers\Admin\ReporteController::class, 'predefinido'])->name('predefinido');
+        Route::get('/campos/{modulo}', [\App\Http\Controllers\Admin\ReporteController::class, 'getCamposModulo'])->name('campos');
+    });
+
     // CRUD Pagos
     Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
     Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');

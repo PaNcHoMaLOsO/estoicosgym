@@ -1139,6 +1139,18 @@ class InscripcionController extends Controller
                     'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') . $observacionTraspaso,
                 ]);
 
+                // 1.5 Marcar todos los pagos de la inscripción original como "Traspasados" (estado 205)
+                foreach ($inscripcion->pagos as $pago) {
+                    $observacionPagoOriginal = $pago->observaciones ?? '';
+                    $observacionPagoOriginal .= ($observacionPagoOriginal ? "\n" : '') 
+                        . "[" . now()->format('d/m/Y H:i') . "] Traspasado a: {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
+                    
+                    $pago->update([
+                        'id_estado' => 205, // Estado: Traspasado
+                        'observaciones' => $observacionPagoOriginal,
+                    ]);
+                }
+
                 // 2. Crear nueva inscripción para el cliente destino
                 $nuevaInscripcion = Inscripcion::create([
                     'id_cliente' => $clienteDestino->id,

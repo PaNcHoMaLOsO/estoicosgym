@@ -39,7 +39,7 @@
         height: 250px;
         background: var(--warning);
         border-radius: 50%;
-        opacity: 0.1;
+        opacity: 0.3;
     }
     .hero-header-content { position: relative; z-index: 1; }
     .hero-title { 
@@ -123,21 +123,115 @@
 
     /* INFO BOX */
     .info-box {
-        background: linear-gradient(135deg, rgba(67, 97, 238, 0.08) 0%, rgba(0, 191, 142, 0.05) 100%);
-        border-radius: 12px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 14px;
         padding: 20px;
-        border-left: 4px solid var(--info);
+        border: 1px solid var(--gray-200);
         margin-bottom: 20px;
     }
     .info-box-title {
         font-weight: 700;
         color: var(--primary);
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed var(--gray-300);
         display: flex;
         align-items: center;
         gap: 10px;
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .info-box-title i { color: var(--info); }
+    
+    /* FINANCE CARDS GRID */
+    .finance-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    .finance-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 12px;
+        border-radius: 12px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .finance-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 12px 12px 0 0;
+    }
+    .finance-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .finance-card.total {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+        border: 1px solid rgba(67, 97, 238, 0.25);
+    }
+    .finance-card.total::before { background: var(--info); }
+    .finance-card.total .finance-icon { color: var(--info); }
+    .finance-card.total .finance-value { color: var(--info); }
+    
+    .finance-card.pagado {
+        background: linear-gradient(135deg, rgba(0, 191, 142, 0.1) 0%, rgba(0, 191, 142, 0.05) 100%);
+        border: 1px solid rgba(0, 191, 142, 0.25);
+    }
+    .finance-card.pagado::before { background: var(--success); }
+    .finance-card.pagado .finance-icon { color: var(--success); }
+    .finance-card.pagado .finance-value { color: var(--success); }
+    
+    .finance-card.pendiente.tiene-deuda {
+        background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(233, 69, 96, 0.05) 100%);
+        border: 1px solid rgba(233, 69, 96, 0.25);
+    }
+    .finance-card.pendiente.tiene-deuda::before { background: var(--accent); }
+    .finance-card.pendiente.tiene-deuda .finance-icon { color: var(--accent); }
+    .finance-card.pendiente.tiene-deuda .finance-value { color: var(--accent); }
+    
+    .finance-card.pendiente.sin-deuda {
+        background: linear-gradient(135deg, rgba(0, 191, 142, 0.1) 0%, rgba(0, 191, 142, 0.05) 100%);
+        border: 1px solid rgba(0, 191, 142, 0.25);
+    }
+    .finance-card.pendiente.sin-deuda::before { background: var(--success); }
+    .finance-card.pendiente.sin-deuda .finance-icon { color: var(--success); }
+    .finance-card.pendiente.sin-deuda .finance-value { color: var(--success); }
+    
+    .finance-icon {
+        font-size: 1.4em;
+        margin-bottom: 8px;
+    }
+    .finance-label {
+        font-size: 0.68em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .finance-value {
+        font-size: 1.2em;
+        font-weight: 800;
+    }
+    
+    @media (max-width: 576px) {
+        .finance-cards-grid { grid-template-columns: 1fr; gap: 10px; }
+        .finance-card { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 16px; }
+        .finance-icon { margin-bottom: 0; }
+        .finance-card > div { text-align: left; }
+    }
+    
+    /* Legacy info-row styles */
     .info-row {
         display: flex;
         justify-content: space-between;
@@ -361,6 +455,28 @@
         color: white;
         transform: translateX(-3px);
     }
+    .btn-tabla {
+        width: 40px;
+        height: 40px;
+        background: rgba(67, 97, 238, 0.3);
+        border: 2px solid rgba(67, 97, 238, 0.5);
+        border-radius: 10px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .btn-tabla:hover {
+        background: rgba(67, 97, 238, 0.5);
+        color: white;
+        transform: scale(1.05);
+    }
+    .hero-nav-buttons {
+        display: flex;
+        gap: 8px;
+    }
     .hero-info { display: flex; align-items: center; gap: 14px; }
     .hero-icon {
         width: 50px;
@@ -402,9 +518,14 @@
     <!-- Hero Header -->
     <div class="edit-hero">
         <div class="hero-content">
-            <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-back">
-                <i class="fas fa-arrow-left"></i>
-            </a>
+            <div class="hero-nav-buttons">
+                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-back" title="Ver Pago">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <a href="{{ route('admin.pagos.index') }}" class="btn-tabla" title="Ir a Lista de Pagos">
+                    <i class="fas fa-table"></i>
+                </a>
+            </div>
             <div class="hero-info">
                 <div class="hero-icon">
                     <i class="fas fa-edit"></i>
@@ -477,27 +598,36 @@
 
                         <div class="info-box">
                             <div class="info-box-title">
-                                <i class="fas fa-info-circle"></i>
-                                Información de la Inscripción
+                                <i class="fas fa-chart-pie"></i>
+                                Resumen Financiero
                             </div>
                             @php
                                 $montoTotal = $pago->inscripcion->precio_final ?? $pago->inscripcion->precio_base ?? 0;
                                 $totalPagado = $pago->inscripcion->pagos()->sum('monto_abonado') ?? 0;
-                                $saldoPendiente = $montoTotal - $totalPagado;
+                                $saldoPendiente = max(0, $montoTotal - $totalPagado);
                             @endphp
-                            <div class="info-row">
-                                <span class="info-label">Monto Total Inscripción:</span>
-                                <span class="info-value">${{ number_format($montoTotal, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Total Pagado (todos los pagos):</span>
-                                <span class="info-value success">${{ number_format($totalPagado, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Saldo Pendiente:</span>
-                                <span class="info-value {{ $saldoPendiente > 0 ? 'danger' : 'success' }}">
-                                    ${{ number_format($saldoPendiente, 0, ',', '.') }}
-                                </span>
+                            <div class="finance-cards-grid">
+                                <div class="finance-card total">
+                                    <i class="fas fa-file-invoice-dollar finance-icon"></i>
+                                    <div>
+                                        <span class="finance-label">Monto Total</span>
+                                        <span class="finance-value">${{ number_format($montoTotal, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                                <div class="finance-card pagado">
+                                    <i class="fas fa-check-circle finance-icon"></i>
+                                    <div>
+                                        <span class="finance-label">Total Pagado</span>
+                                        <span class="finance-value">${{ number_format($totalPagado, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                                <div class="finance-card pendiente {{ $saldoPendiente > 0 ? 'tiene-deuda' : 'sin-deuda' }}">
+                                    <i class="fas fa-{{ $saldoPendiente > 0 ? 'exclamation-triangle' : 'check-double' }} finance-icon"></i>
+                                    <div>
+                                        <span class="finance-label">Saldo Pendiente</span>
+                                        <span class="finance-value">${{ number_format($saldoPendiente, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

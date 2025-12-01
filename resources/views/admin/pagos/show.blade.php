@@ -163,32 +163,117 @@
                 </div>
             </div>
 
-            <!-- Membresía Asociada -->
-            @if($pago->inscripcion && $pago->inscripcion->membresia)
-            <div class="info-card">
+            <!-- Información de la Inscripción -->
+            @if($pago->inscripcion)
+            <div class="info-card inscripcion-card">
                 <div class="info-card-header">
                     <i class="fas fa-id-card"></i>
-                    <span>Membresía Asociada</span>
+                    <span>Inscripción Asociada</span>
+                    <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn-ver-mas" title="Ver detalles">
+                        <i class="fas fa-external-link-alt"></i> Ver
+                    </a>
                 </div>
                 <div class="info-card-body">
-                    <div class="membresia-detail">
-                        <div class="membresia-icon">
+                    <!-- Membresía -->
+                    <div class="inscripcion-membresia">
+                        <div class="membresia-badge">
                             <i class="fas fa-dumbbell"></i>
                         </div>
-                        <div class="membresia-info">
-                            <h4>{{ $pago->inscripcion->membresia->nombre }}</h4>
-                            <div class="membresia-dates">
-                                <span><i class="fas fa-play"></i> {{ $pago->inscripcion->fecha_inicio->format('d/m/Y') }}</span>
-                                <span class="separator">→</span>
-                                <span><i class="fas fa-stop"></i> {{ $pago->inscripcion->fecha_vencimiento->format('d/m/Y') }}</span>
-                            </div>
-                            <span class="membresia-estado {{ strtolower($pago->inscripcion->estado->nombre ?? '') }}">
-                                {{ $pago->inscripcion->estado->nombre ?? 'Sin estado' }}
-                            </span>
+                        <div class="membresia-datos">
+                            <span class="membresia-nombre">{{ $pago->inscripcion->membresia->nombre ?? 'Sin membresía' }}</span>
+                            <span class="inscripcion-numero">Inscripción #{{ $pago->inscripcion->id }}</span>
                         </div>
-                        <a href="{{ route('admin.inscripciones.show', $pago->inscripcion) }}" class="btn-ver-inscripcion">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>
+                        @php
+                            $estadoInscripcion = strtolower($pago->inscripcion->estado->nombre ?? '');
+                            $estadoClass = 'default';
+                            if (str_contains($estadoInscripcion, 'activ')) $estadoClass = 'activa';
+                            elseif (str_contains($estadoInscripcion, 'vencid')) $estadoClass = 'vencida';
+                            elseif (str_contains($estadoInscripcion, 'pausa')) $estadoClass = 'pausada';
+                            elseif (str_contains($estadoInscripcion, 'cancel')) $estadoClass = 'cancelada';
+                            elseif (str_contains($estadoInscripcion, 'traspas')) $estadoClass = 'traspasada';
+                        @endphp
+                        <span class="estado-tag {{ $estadoClass }}">{{ $pago->inscripcion->estado->nombre ?? 'N/A' }}</span>
+                    </div>
+                    
+                    <!-- Fechas y Días -->
+                    <div class="inscripcion-fechas">
+                        <div class="fecha-item">
+                            <i class="fas fa-calendar-plus"></i>
+                            <div>
+                                <small>Inicio</small>
+                                <strong>{{ $pago->inscripcion->fecha_inicio?->format('d/m/Y') ?? 'N/A' }}</strong>
+                            </div>
+                        </div>
+                        <div class="fecha-separador">→</div>
+                        <div class="fecha-item">
+                            <i class="fas fa-calendar-times"></i>
+                            <div>
+                                <small>Vencimiento</small>
+                                <strong>{{ $pago->inscripcion->fecha_vencimiento?->format('d/m/Y') ?? 'N/A' }}</strong>
+                            </div>
+                        </div>
+                        @php
+                            $diasRestantes = $pago->inscripcion->fecha_vencimiento 
+                                ? (int) now()->diffInDays($pago->inscripcion->fecha_vencimiento, false) 
+                                : 0;
+                            $diasClass = $diasRestantes < 0 ? 'vencido' : ($diasRestantes <= 7 ? 'proximo' : 'ok');
+                        @endphp
+                        <div class="dias-restantes {{ $diasClass }}">
+                            <span class="dias-num">{{ abs($diasRestantes) }}</span>
+                            <span class="dias-text">{{ $diasRestantes < 0 ? 'días vencida' : 'días restantes' }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumen Financiero de la Inscripción -->
+                    @php
+                        $montoTotalInscripcion = $pago->inscripcion->precio_final ?? 0;
+                        $totalPagadoInscripcion = $pago->inscripcion->pagos->sum('monto_abonado') ?? 0;
+                        $saldoPendiente = max(0, $montoTotalInscripcion - $totalPagadoInscripcion);
+                        $porcentajePagado = $montoTotalInscripcion > 0 ? min(100, ($totalPagadoInscripcion / $montoTotalInscripcion) * 100) : 0;
+                    @endphp
+                    <div class="financiero-inscripcion">
+                        <div class="financiero-header">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Resumen Financiero</span>
+                        </div>
+                        <div class="financiero-cards">
+                            <div class="financiero-card total-card">
+                                <div class="financiero-card-icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <div class="financiero-card-content">
+                                    <span class="financiero-card-label">Monto Total</span>
+                                    <span class="financiero-card-value">${{ number_format($montoTotalInscripcion, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                            <div class="financiero-card pagado-card">
+                                <div class="financiero-card-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="financiero-card-content">
+                                    <span class="financiero-card-label">Total Pagado</span>
+                                    <span class="financiero-card-value">${{ number_format($totalPagadoInscripcion, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                            <div class="financiero-card pendiente-card {{ $saldoPendiente > 0 ? 'tiene-deuda' : 'sin-deuda' }}">
+                                <div class="financiero-card-icon">
+                                    <i class="fas fa-{{ $saldoPendiente > 0 ? 'exclamation-triangle' : 'check-double' }}"></i>
+                                </div>
+                                <div class="financiero-card-content">
+                                    <span class="financiero-card-label">Saldo Pendiente</span>
+                                    <span class="financiero-card-value">${{ number_format($saldoPendiente, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="financiero-progress">
+                            <div class="progress-info">
+                                <span>Progreso de pago</span>
+                                <span class="progress-percent">{{ number_format($porcentajePagado, 0) }}%</span>
+                            </div>
+                            <div class="progress-bar-full">
+                                <div class="progress-bar-fill {{ $porcentajePagado >= 100 ? 'complete' : ($porcentajePagado >= 50 ? 'medio' : 'bajo') }}" style="width: {{ $porcentajePagado }}%"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,7 +415,7 @@
         height: 150px;
         background: var(--success);
         border-radius: 50%;
-        opacity: 0.1;
+        opacity: 0.3;
     }
     .hero-content {
         display: flex;
@@ -429,19 +514,23 @@
     .stat-card .stat-number { font-size: 1.3em; font-weight: 800; color: var(--gray-800); }
     
     .stat-total { border-left-color: var(--info); }
-    .stat-total .stat-icon { background: rgba(67, 97, 238, 0.12); color: var(--info); }
+    .stat-total .stat-icon { background: rgba(67, 97, 238, 0.2); color: #2541b2; }
+    .stat-total .stat-icon i { color: #2541b2 !important; }
     .stat-total .stat-number { color: var(--info); }
     
     .stat-abonado { border-left-color: var(--success); }
-    .stat-abonado .stat-icon { background: rgba(0, 191, 142, 0.12); color: var(--success); }
+    .stat-abonado .stat-icon { background: rgba(0, 191, 142, 0.2); color: #00896b; }
+    .stat-abonado .stat-icon i { color: #00896b !important; }
     .stat-abonado .stat-number { color: var(--success); }
     
     .stat-pendiente { border-left-color: var(--accent); }
-    .stat-pendiente .stat-icon { background: rgba(233, 69, 96, 0.12); color: var(--accent); }
+    .stat-pendiente .stat-icon { background: rgba(233, 69, 96, 0.2); color: #c9304c; }
+    .stat-pendiente .stat-icon i { color: #c9304c !important; }
     .stat-pendiente .stat-number { color: var(--accent); }
     
     .stat-progress { border-left-color: var(--warning); }
-    .stat-progress .stat-icon { background: rgba(240, 165, 0, 0.12); color: var(--warning); }
+    .stat-progress .stat-icon { background: rgba(240, 165, 0, 0.2); color: #c78500; }
+    .stat-progress .stat-icon i { color: #c78500 !important; }
     .stat-progress .stat-number { color: var(--warning); }
     .mini-progress {
         position: absolute;
@@ -547,44 +636,304 @@
     }
     .empty-obs i { font-size: 1.5em; opacity: 0.5; }
 
-    /* ===== MEMBRESÍA DETAIL ===== */
-    .membresia-detail {
+    /* ===== INSCRIPCIÓN CARD ===== */
+    .inscripcion-card .info-card-header {
         display: flex;
         align-items: center;
-        gap: 14px;
+        justify-content: space-between;
     }
-    .membresia-icon {
-        width: 50px;
-        height: 50px;
+    .btn-ver-mas {
+        font-size: 0.75em;
+        padding: 4px 10px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s ease;
+    }
+    .btn-ver-mas:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+    
+    .inscripcion-membresia {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed var(--gray-200);
+        margin-bottom: 12px;
+    }
+    .membresia-badge {
+        width: 44px;
+        height: 44px;
         background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-        border-radius: 12px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.2em;
+        font-size: 1.1em;
     }
-    .membresia-info { flex: 1; }
-    .membresia-info h4 { margin: 0 0 6px; color: var(--gray-800); font-size: 1em; }
-    .membresia-dates {
-        font-size: 0.8em;
-        color: var(--gray-600);
+    .membresia-datos {
+        flex: 1;
         display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+        flex-direction: column;
+        gap: 2px;
     }
-    .membresia-dates .separator { color: var(--gray-400); }
-    .membresia-estado {
-        display: inline-flex;
+    .membresia-datos .membresia-nombre {
+        font-weight: 700;
+        color: var(--gray-800);
+        font-size: 1em;
+    }
+    .membresia-datos .inscripcion-numero {
+        font-size: 0.75em;
+        color: var(--gray-500);
+    }
+    .estado-tag {
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 0.7em;
         font-weight: 700;
         text-transform: uppercase;
     }
-    .membresia-estado.activa { background: rgba(0, 191, 142, 0.1); color: var(--success); }
-    .membresia-estado.vencida { background: rgba(233, 69, 96, 0.1); color: var(--accent); }
+    .estado-tag.activa { background: rgba(0, 191, 142, 0.15); color: var(--success); }
+    .estado-tag.vencida { background: rgba(233, 69, 96, 0.15); color: var(--accent); }
+    .estado-tag.pausada { background: rgba(240, 165, 0, 0.15); color: var(--warning); }
+    .estado-tag.cancelada { background: rgba(108, 117, 125, 0.15); color: var(--gray-600); }
+    .estado-tag.traspasada { background: rgba(124, 58, 237, 0.15); color: #7c3aed; }
+    .estado-tag.default { background: var(--gray-100); color: var(--gray-600); }
+    
+    .inscripcion-fechas {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: var(--gray-50);
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+    }
+    .fecha-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .fecha-item i {
+        color: var(--primary);
+        font-size: 1em;
+    }
+    .fecha-item div {
+        display: flex;
+        flex-direction: column;
+    }
+    .fecha-item small {
+        font-size: 0.65em;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+    .fecha-item strong {
+        font-size: 0.85em;
+        color: var(--gray-800);
+    }
+    .fecha-separador {
+        color: var(--gray-400);
+        font-size: 1.2em;
+    }
+    .dias-restantes {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        min-width: 70px;
+    }
+    .dias-restantes.ok { background: rgba(0, 191, 142, 0.1); }
+    .dias-restantes.proximo { background: rgba(240, 165, 0, 0.1); }
+    .dias-restantes.vencido { background: rgba(233, 69, 96, 0.1); }
+    .dias-restantes .dias-num {
+        font-size: 1.3em;
+        font-weight: 800;
+    }
+    .dias-restantes.ok .dias-num { color: var(--success); }
+    .dias-restantes.proximo .dias-num { color: var(--warning); }
+    .dias-restantes.vencido .dias-num { color: var(--accent); }
+    .dias-restantes .dias-text {
+        font-size: 0.6em;
+        text-transform: uppercase;
+        color: var(--gray-600);
+    }
+    
+    .inscripcion-resumen {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px 0;
+        border-top: 1px dashed var(--gray-200);
+    }
+    .resumen-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    .resumen-item span {
+        font-size: 0.65em;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+    .resumen-item strong {
+        font-size: 0.95em;
+        color: var(--gray-700);
+    }
+    .resumen-item.descuento strong { color: var(--success); }
+    .resumen-item.total strong { color: var(--primary); font-size: 1.1em; }
+    
+    /* ===== FINANCIERO INSCRIPCIÓN ===== */
+    .financiero-inscripcion {
+        margin-top: 16px;
+        padding: 16px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        border: 1px solid var(--gray-200);
+    }
+    .financiero-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed var(--gray-300);
+    }
+    .financiero-header i {
+        color: var(--primary);
+        font-size: 1em;
+    }
+    .financiero-header span {
+        font-weight: 700;
+        font-size: 0.85em;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .financiero-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .financiero-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 10px;
+        border-radius: 10px;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .financiero-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 10px 10px 0 0;
+    }
+    .financiero-card.total-card {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.08) 0%, rgba(67, 97, 238, 0.04) 100%);
+        border: 1px solid rgba(67, 97, 238, 0.2);
+    }
+    .financiero-card.total-card::before { background: var(--info); }
+    .financiero-card.total-card .financiero-card-icon { color: var(--info); }
+    .financiero-card.total-card .financiero-card-value { color: var(--info); }
+    
+    .financiero-card.pagado-card {
+        background: linear-gradient(135deg, rgba(0, 191, 142, 0.08) 0%, rgba(0, 191, 142, 0.04) 100%);
+        border: 1px solid rgba(0, 191, 142, 0.2);
+    }
+    .financiero-card.pagado-card::before { background: var(--success); }
+    .financiero-card.pagado-card .financiero-card-icon { color: var(--success); }
+    .financiero-card.pagado-card .financiero-card-value { color: var(--success); }
+    
+    .financiero-card.pendiente-card.tiene-deuda {
+        background: linear-gradient(135deg, rgba(233, 69, 96, 0.08) 0%, rgba(233, 69, 96, 0.04) 100%);
+        border: 1px solid rgba(233, 69, 96, 0.2);
+    }
+    .financiero-card.pendiente-card.tiene-deuda::before { background: var(--accent); }
+    .financiero-card.pendiente-card.tiene-deuda .financiero-card-icon { color: var(--accent); }
+    .financiero-card.pendiente-card.tiene-deuda .financiero-card-value { color: var(--accent); }
+    
+    .financiero-card.pendiente-card.sin-deuda {
+        background: linear-gradient(135deg, rgba(0, 191, 142, 0.08) 0%, rgba(0, 191, 142, 0.04) 100%);
+        border: 1px solid rgba(0, 191, 142, 0.2);
+    }
+    .financiero-card.pendiente-card.sin-deuda::before { background: var(--success); }
+    .financiero-card.pendiente-card.sin-deuda .financiero-card-icon { color: var(--success); }
+    .financiero-card.pendiente-card.sin-deuda .financiero-card-value { color: var(--success); }
+    
+    .financiero-card-icon {
+        font-size: 1.3em;
+        margin-bottom: 6px;
+    }
+    .financiero-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .financiero-card-label {
+        font-size: 0.65em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+    }
+    .financiero-card-value {
+        font-size: 1.1em;
+        font-weight: 800;
+    }
+    
+    .financiero-progress {
+        padding-top: 10px;
+        border-top: 1px dashed var(--gray-300);
+    }
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .progress-info span {
+        font-size: 0.7em;
+        color: var(--gray-500);
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .progress-percent {
+        font-weight: 800 !important;
+        color: var(--gray-700) !important;
+    }
+    .progress-bar-full {
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+    .progress-bar-fill.complete { background: linear-gradient(90deg, var(--success), #2dd4bf); }
+    .progress-bar-fill.medio { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+    .progress-bar-fill.bajo { background: linear-gradient(90deg, var(--accent), #f472b6); }
+    
     .btn-ver-inscripcion {
         width: 36px;
         height: 36px;
@@ -596,6 +945,7 @@
         justify-content: center;
         text-decoration: none;
         transition: all 0.3s ease;
+        flex-shrink: 0;
     }
     .btn-ver-inscripcion:hover {
         background: var(--primary-light);
@@ -797,10 +1147,20 @@
         .detail-hero { flex-direction: column; gap: 16px; text-align: center; }
         .hero-content { flex-direction: column; }
         .info-grid { grid-template-columns: 1fr; }
+        .inscripcion-fechas { flex-wrap: wrap; justify-content: center; }
+        .fecha-separador { display: none; }
+        .dias-restantes { width: 100%; margin-top: 8px; }
+        .financiero-cards { grid-template-columns: 1fr; gap: 10px; }
+        .financiero-card { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; }
+        .financiero-card-icon { margin-bottom: 0; }
+        .financiero-card-content { align-items: flex-start; text-align: left; }
     }
     @media (max-width: 576px) {
         .stats-row { grid-template-columns: 1fr; }
         .pago-detail-container { padding: 12px; }
+        .inscripcion-membresia { flex-wrap: wrap; }
+        .inscripcion-resumen { flex-wrap: wrap; gap: 16px; }
+        .financiero-inscripcion { padding: 12px; }
     }
 </style>
 @stop

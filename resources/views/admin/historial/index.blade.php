@@ -113,6 +113,7 @@
         .summary-card.success { border-left-color: var(--success); }
         .summary-card.warning { border-left-color: var(--warning); }
         .summary-card.danger { border-left-color: var(--accent); }
+        .summary-card.info { border-left-color: var(--info); }
 
         .summary-icon {
             width: 50px;
@@ -130,6 +131,7 @@
         .summary-card.success .summary-icon { background: rgba(0,191,142,0.1); color: var(--success); }
         .summary-card.warning .summary-icon { background: rgba(240,165,0,0.1); color: var(--warning); }
         .summary-card.danger .summary-icon { background: rgba(233,69,96,0.1); color: var(--accent); }
+        .summary-card.info .summary-icon { background: rgba(67,97,238,0.1); color: var(--info); }
 
         .summary-info h4 {
             font-size: 1.5rem;
@@ -231,23 +233,23 @@
 
         .timeline {
             position: relative;
-            padding: 1.5rem;
+            padding: 1.5rem 1.5rem 1.5rem 100px;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 40px;
+            left: 100px;
             top: 0;
             bottom: 0;
-            width: 3px;
+            width: 4px;
             background: linear-gradient(to bottom, var(--purple), var(--info), var(--success));
-            border-radius: 3px;
+            border-radius: 4px;
         }
 
         .timeline-item {
             position: relative;
-            padding-left: 80px;
+            padding-left: 50px;
             padding-bottom: 2rem;
             margin-left: 0;
         }
@@ -258,54 +260,69 @@
 
         .timeline-marker {
             position: absolute;
-            left: 28px;
-            width: 28px;
-            height: 28px;
+            left: -16px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: white;
             border: 4px solid var(--purple);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.85rem;
             color: var(--purple);
             z-index: 1;
-            box-shadow: 0 2px 8px rgba(111,66,193,0.2);
+            box-shadow: 0 3px 10px rgba(111,66,193,0.25);
         }
 
-        .timeline-marker.traspaso { border-color: var(--purple); color: var(--purple); }
-        .timeline-marker.pausa { border-color: var(--warning); color: var(--warning); }
-        .timeline-marker.cambio { border-color: var(--info); color: var(--info); }
+        .timeline-marker.traspaso { border-color: #7c3aed; color: #7c3aed; background: #f5f3ff; }
+        .timeline-marker.pausa { border-color: #f59e0b; color: #f59e0b; box-shadow: 0 3px 10px rgba(240,165,0,0.3); background: #fffbeb; }
+        .timeline-marker.reanudacion { border-color: #10b981; color: #10b981; box-shadow: 0 3px 10px rgba(0,191,142,0.3); background: #ecfdf5; }
+        .timeline-marker.cambio { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+        .timeline-marker.cambio-plan { border-color: #3b82f6; color: #3b82f6; box-shadow: 0 3px 10px rgba(67,97,238,0.3); background: #eff6ff; }
+        .timeline-marker.pago { border-color: #10b981; color: #10b981; background: #ecfdf5; }
+        .timeline-marker.pago.pagado { border-color: #10b981; color: #10b981; box-shadow: 0 3px 10px rgba(0,191,142,0.35); background: #ecfdf5; }
+        .timeline-marker.pago.parcial { border-color: #f59e0b; color: #f59e0b; box-shadow: 0 3px 10px rgba(240,165,0,0.35); background: #fffbeb; }
+        .timeline-marker.pago.pendiente { border-color: #ef4444; color: #ef4444; box-shadow: 0 3px 10px rgba(233,69,96,0.35); background: #fef2f2; }
 
         .timeline-date {
             position: absolute;
-            left: -15px;
+            left: -95px;
             top: 0;
-            width: 50px;
-            text-align: right;
-            font-size: 0.7rem;
-            color: var(--gray-600);
+            width: 75px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #4b5563;
             line-height: 1.2;
+            font-weight: 500;
+            background: #f8fafc;
+            padding: 0.5rem 0.25rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
         .timeline-date .dia {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--primary);
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: #1e293b;
             display: block;
+            line-height: 1;
+            margin-bottom: 2px;
         }
 
         .timeline-content {
-            background: var(--gray-100);
-            border-radius: 14px;
-            padding: 1.25rem;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 1.5rem;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
 
         .timeline-content:hover {
             border-color: var(--purple);
-            box-shadow: 0 5px 20px rgba(111,66,193,0.1);
+            box-shadow: 0 8px 25px rgba(111,66,193,0.15);
+            transform: translateY(-2px);
         }
 
         .timeline-content-header {
@@ -337,6 +354,31 @@
         .timeline-type.pausa {
             background: linear-gradient(135deg, var(--warning), #ffcc00);
             color: #333;
+        }
+
+        .timeline-type.reanudacion {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+        }
+
+        .timeline-type.cambio {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+        }
+
+        .timeline-type.pago {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+        }
+
+        .timeline-type.pago.parcial {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #333;
+        }
+
+        .timeline-type.pago.pendiente {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            color: white;
         }
 
         .timeline-time {
@@ -585,22 +627,39 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
+            .timeline {
+                padding-left: 30px;
+            }
+
             .timeline::before {
-                left: 20px;
+                left: 30px;
             }
             
             .timeline-item {
-                padding-left: 50px;
+                padding-left: 40px;
             }
             
             .timeline-marker {
-                left: 8px;
+                left: -12px;
                 width: 24px;
                 height: 24px;
+                font-size: 0.7rem;
             }
             
             .timeline-date {
-                display: none;
+                position: relative;
+                left: 0;
+                margin-bottom: 0.5rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                width: auto;
+                padding: 0.3rem 0.6rem;
+            }
+
+            .timeline-date .dia {
+                font-size: 1rem;
+                margin-bottom: 0;
             }
             
             .timeline-details {
@@ -649,25 +708,28 @@
             Traspasos
             <span class="badge-count">{{ $estadisticas['total_traspasos'] }}</span>
         </a>
-        {{-- Tabs futuros - ya preparados --}}
-        <a href="#" class="historial-tab disabled" style="opacity: 0.5; pointer-events: none;">
+        <a href="{{ route('admin.historial.index', ['tab' => 'pausas']) }}" 
+           class="historial-tab {{ $tab == 'pausas' ? 'active' : '' }}">
             <i class="fas fa-pause-circle"></i>
             Pausas
-            <span class="badge-count">0</span>
+            <span class="badge-count">{{ $estadisticas['total_pausas'] }}</span>
         </a>
-        <a href="#" class="historial-tab disabled" style="opacity: 0.5; pointer-events: none;">
+        <a href="{{ route('admin.historial.index', ['tab' => 'cambios']) }}" 
+           class="historial-tab {{ $tab == 'cambios' ? 'active' : '' }}">
             <i class="fas fa-level-up-alt"></i>
             Cambios de Plan
-            <span class="badge-count">0</span>
+            <span class="badge-count">{{ $estadisticas['total_cambios_plan'] }}</span>
         </a>
-        <a href="#" class="historial-tab disabled" style="opacity: 0.5; pointer-events: none;">
+        <a href="{{ route('admin.historial.index', ['tab' => 'pagos']) }}" 
+           class="historial-tab {{ $tab == 'pagos' ? 'active' : '' }}">
             <i class="fas fa-dollar-sign"></i>
             Pagos
-            <span class="badge-count">0</span>
+            <span class="badge-count">{{ $estadisticas['total_pagos'] }}</span>
         </a>
     </div>
 
     <!-- Resumen -->
+    @if($tab == 'traspasos')
     <div class="summary-row">
         <div class="summary-card purple">
             <div class="summary-icon">
@@ -706,11 +768,93 @@
             </div>
         </div>
     </div>
+    @elseif($tab == 'pausas')
+    <div class="summary-row">
+        <div class="summary-card warning">
+            <div class="summary-icon">
+                <i class="fas fa-pause-circle"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['total_pausas'] }}</h4>
+                <span>Total Pausas</span>
+            </div>
+        </div>
+        <div class="summary-card success">
+            <div class="summary-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['pausas_mes'] }}</h4>
+                <span>Este Mes</span>
+            </div>
+        </div>
+    </div>
+    @elseif($tab == 'cambios')
+    <div class="summary-row">
+        <div class="summary-card info">
+            <div class="summary-icon">
+                <i class="fas fa-level-up-alt"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['total_cambios_plan'] }}</h4>
+                <span>Total Cambios</span>
+            </div>
+        </div>
+        <div class="summary-card success">
+            <div class="summary-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['cambios_plan_mes'] }}</h4>
+                <span>Este Mes</span>
+            </div>
+        </div>
+    </div>
+    @elseif($tab == 'pagos')
+    <div class="summary-row">
+        <div class="summary-card success">
+            <div class="summary-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['total_pagos'] }}</h4>
+                <span>Total Pagos</span>
+            </div>
+        </div>
+        <div class="summary-card purple">
+            <div class="summary-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="summary-info">
+                <h4>{{ $estadisticas['pagos_mes'] }}</h4>
+                <span>Este Mes</span>
+            </div>
+        </div>
+        <div class="summary-card warning">
+            <div class="summary-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="summary-info">
+                <h4>${{ number_format($estadisticas['total_recaudado'], 0, ',', '.') }}</h4>
+                <span>Total Recaudado</span>
+            </div>
+        </div>
+        <div class="summary-card info">
+            <div class="summary-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="summary-info">
+                <h4>${{ number_format($estadisticas['recaudado_mes'], 0, ',', '.') }}</h4>
+                <span>Recaudado Mes</span>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Filtros -->
     <div class="filter-card">
         <form method="GET" action="{{ route('admin.historial.index') }}" class="row align-items-end g-2">
-            <input type="hidden" name="tab" value="traspasos">
+            <input type="hidden" name="tab" value="{{ $tab }}">
             <div class="col-md-3 col-sm-6">
                 <label class="small text-muted fw-bold mb-1">Cliente</label>
                 <select name="cliente_id" class="form-control">
@@ -722,6 +866,7 @@
                     @endforeach
                 </select>
             </div>
+            @if($tab == 'traspasos')
             <div class="col-md-2 col-sm-6">
                 <label class="small text-muted fw-bold mb-1">Membresía</label>
                 <select name="membresia_id" class="form-control">
@@ -733,6 +878,7 @@
                     @endforeach
                 </select>
             </div>
+            @endif
             <div class="col-md-2 col-sm-6">
                 <label class="small text-muted fw-bold mb-1">Desde</label>
                 <input type="date" name="fecha_desde" class="form-control" value="{{ request('fecha_desde') }}">
@@ -741,12 +887,14 @@
                 <label class="small text-muted fw-bold mb-1">Hasta</label>
                 <input type="date" name="fecha_hasta" class="form-control" value="{{ request('fecha_hasta') }}">
             </div>
+            @if($tab == 'traspasos')
             <div class="col-md-2 col-sm-6">
                 <div class="form-check mt-3">
                     <input type="checkbox" class="form-check-input" id="con_deuda" name="con_deuda" value="1" {{ request('con_deuda') ? 'checked' : '' }}>
                     <label class="form-check-label small" for="con_deuda">Solo con deuda</label>
                 </div>
             </div>
+            @endif
             <div class="col-md-1 col-sm-6 d-flex gap-2">
                 <button type="submit" class="btn btn-filter flex-grow-1">
                     <i class="fas fa-search"></i>
@@ -758,20 +906,22 @@
         </form>
     </div>
 
-    <!-- Timeline de Traspasos -->
+    <!-- Timeline según tab activo -->
+    @if($tab == 'traspasos')
+    {{-- TIMELINE DE TRASPASOS --}}
     <div class="timeline-container">
         <div class="timeline-header">
             <h5>
                 <i class="fas fa-stream mr-2"></i>
-                Línea de Tiempo
+                Línea de Tiempo - Traspasos
             </h5>
             <span class="badge bg-light text-dark">{{ $traspasos->total() }} registros</span>
         </div>
         <div class="timeline-body">
             @if($traspasos->isEmpty())
                 <div class="empty-state">
-                    <i class="fas fa-history"></i>
-                    <h5>Sin registros</h5>
+                    <i class="fas fa-exchange-alt"></i>
+                    <h5>Sin traspasos</h5>
                     <p>No hay traspasos registrados que coincidan con los filtros.</p>
                 </div>
             @else
@@ -901,4 +1051,374 @@
         </div>
         @endif
     </div>
+
+    @elseif($tab == 'pausas')
+    {{-- TIMELINE DE PAUSAS --}}
+    <div class="timeline-container">
+        <div class="timeline-header">
+            <h5>
+                <i class="fas fa-stream mr-2"></i>
+                Línea de Tiempo - Pausas y Reanudaciones
+            </h5>
+            <span class="badge bg-light text-dark">{{ $pausas->total() }} registros</span>
+        </div>
+        <div class="timeline-body">
+            @if($pausas->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-pause-circle"></i>
+                    <h5>Sin pausas</h5>
+                    <p>No hay pausas ni reanudaciones registradas que coincidan con los filtros.</p>
+                </div>
+            @else
+                <div class="timeline">
+                    @foreach($pausas as $pausa)
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            <span class="dia">{{ $pausa->fecha_cambio->format('d') }}</span>
+                            {{ $pausa->fecha_cambio->translatedFormat('M') }}
+                        </div>
+                        <div class="timeline-marker {{ $pausa->tipo_cambio == 'pausa' ? 'pausa' : 'reanudacion' }}">
+                            <i class="fas fa-{{ $pausa->tipo_cambio == 'pausa' ? 'pause' : 'play' }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-content-header">
+                                <span class="timeline-type pausa">
+                                    <i class="fas fa-{{ $pausa->tipo_cambio == 'pausa' ? 'pause-circle' : 'play-circle' }}"></i>
+                                    {{ $pausa->tipo_cambio == 'pausa' ? 'Pausa' : 'Reanudación' }}
+                                </span>
+                                <span class="timeline-time">
+                                    <i class="fas fa-clock"></i>
+                                    {{ $pausa->created_at->format('H:i') }} hrs
+                                </span>
+                            </div>
+                            
+                            <div class="timeline-details" style="display: block;">
+                                <div class="timeline-person" style="margin-bottom: 1rem;">
+                                    <div class="timeline-person-avatar origen">
+                                        @if($pausa->cliente)
+                                            {{ strtoupper(substr($pausa->cliente->nombres, 0, 1)) }}{{ strtoupper(substr($pausa->cliente->apellido_paterno, 0, 1)) }}
+                                        @else
+                                            ??
+                                        @endif
+                                    </div>
+                                    <div class="timeline-person-info">
+                                        <h6>
+                                            @if($pausa->cliente)
+                                                {{ $pausa->cliente->nombres }} {{ $pausa->cliente->apellido_paterno }}
+                                            @else
+                                                Cliente eliminado
+                                            @endif
+                                        </h6>
+                                        <span>Cliente</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-meta">
+                                @if($pausa->inscripcion && $pausa->inscripcion->membresia)
+                                <span class="timeline-meta-item membresia">
+                                    <i class="fas fa-dumbbell"></i>
+                                    {{ $pausa->inscripcion->membresia->nombre }}
+                                </span>
+                                @endif
+                                @if($pausa->detalles && isset($pausa->detalles['dias_pausa']))
+                                <span class="timeline-meta-item dias">
+                                    <i class="fas fa-calendar-day"></i>
+                                    {{ $pausa->detalles['dias_pausa'] }} días de pausa
+                                </span>
+                                @endif
+                                @if($pausa->detalles && isset($pausa->detalles['indefinida']) && $pausa->detalles['indefinida'])
+                                <span class="timeline-meta-item deuda">
+                                    <i class="fas fa-infinity"></i>
+                                    Pausa indefinida
+                                </span>
+                                @endif
+                            </div>
+                            
+                            @if($pausa->motivo)
+                            <div class="timeline-motivo">
+                                <div class="timeline-motivo-label">
+                                    <i class="fas fa-comment-alt"></i> Motivo
+                                </div>
+                                <p class="timeline-motivo-text">"{{ $pausa->motivo }}"</p>
+                            </div>
+                            @endif
+                            
+                            <div class="timeline-footer">
+                                <div class="timeline-user">
+                                    <i class="fas fa-user-shield"></i>
+                                    @if($pausa->usuario)
+                                        Realizado por: <strong>{{ $pausa->usuario->name }}</strong>
+                                    @else
+                                        Sistema
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        
+        @if($pausas->hasPages())
+        <div class="pagination-wrapper">
+            {{ $pausas->withQueryString()->links() }}
+        </div>
+        @endif
+    </div>
+
+    @elseif($tab == 'cambios')
+    {{-- TIMELINE DE CAMBIOS DE PLAN --}}
+    <div class="timeline-container">
+        <div class="timeline-header">
+            <h5>
+                <i class="fas fa-stream mr-2"></i>
+                Línea de Tiempo - Cambios de Plan
+            </h5>
+            <span class="badge bg-light text-dark">{{ $cambiosPlan->total() }} registros</span>
+        </div>
+        <div class="timeline-body">
+            @if($cambiosPlan->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-level-up-alt"></i>
+                    <h5>Sin cambios de plan</h5>
+                    <p>No hay cambios de plan registrados que coincidan con los filtros.</p>
+                </div>
+            @else
+                <div class="timeline">
+                    @foreach($cambiosPlan as $cambio)
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            <span class="dia">{{ $cambio->fecha_cambio->format('d') }}</span>
+                            {{ $cambio->fecha_cambio->translatedFormat('M') }}
+                        </div>
+                        <div class="timeline-marker cambio-plan">
+                            <i class="fas fa-level-up-alt"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-content-header">
+                                <span class="timeline-type" style="background: linear-gradient(135deg, var(--info), #60a5fa); color: white;">
+                                    <i class="fas fa-level-up-alt"></i>
+                                    Cambio de Plan
+                                </span>
+                                <span class="timeline-time">
+                                    <i class="fas fa-clock"></i>
+                                    {{ $cambio->created_at->format('H:i') }} hrs
+                                </span>
+                            </div>
+                            
+                            <div class="timeline-details" style="display: block;">
+                                <div class="timeline-person" style="margin-bottom: 1rem;">
+                                    <div class="timeline-person-avatar origen">
+                                        @if($cambio->cliente)
+                                            {{ strtoupper(substr($cambio->cliente->nombres, 0, 1)) }}{{ strtoupper(substr($cambio->cliente->apellido_paterno, 0, 1)) }}
+                                        @else
+                                            ??
+                                        @endif
+                                    </div>
+                                    <div class="timeline-person-info">
+                                        <h6>
+                                            @if($cambio->cliente)
+                                                {{ $cambio->cliente->nombres }} {{ $cambio->cliente->apellido_paterno }}
+                                            @else
+                                                Cliente eliminado
+                                            @endif
+                                        </h6>
+                                        <span>Cliente</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-meta">
+                                @if($cambio->detalles && isset($cambio->detalles['membresia_anterior']))
+                                <span class="timeline-meta-item" style="background: rgba(233,69,96,0.1); color: var(--accent);">
+                                    <i class="fas fa-arrow-left"></i>
+                                    {{ $cambio->detalles['membresia_anterior'] }}
+                                </span>
+                                <span style="margin: 0 0.5rem; color: var(--gray-500);">→</span>
+                                @endif
+                                @if($cambio->detalles && isset($cambio->detalles['membresia_nueva']))
+                                <span class="timeline-meta-item" style="background: rgba(0,191,142,0.1); color: var(--success);">
+                                    <i class="fas fa-arrow-right"></i>
+                                    {{ $cambio->detalles['membresia_nueva'] }}
+                                </span>
+                                @elseif($cambio->inscripcion && $cambio->inscripcion->membresia)
+                                <span class="timeline-meta-item membresia">
+                                    <i class="fas fa-dumbbell"></i>
+                                    {{ $cambio->inscripcion->membresia->nombre }}
+                                </span>
+                                @endif
+                                @if($cambio->detalles && isset($cambio->detalles['diferencia_precio']))
+                                <span class="timeline-meta-item {{ $cambio->detalles['diferencia_precio'] > 0 ? 'deuda' : 'pagado' }}">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    {{ $cambio->detalles['diferencia_precio'] > 0 ? '+' : '' }}${{ number_format($cambio->detalles['diferencia_precio'], 0, ',', '.') }}
+                                </span>
+                                @endif
+                            </div>
+                            
+                            @if($cambio->motivo)
+                            <div class="timeline-motivo">
+                                <div class="timeline-motivo-label">
+                                    <i class="fas fa-comment-alt"></i> Motivo
+                                </div>
+                                <p class="timeline-motivo-text">"{{ $cambio->motivo }}"</p>
+                            </div>
+                            @endif
+                            
+                            <div class="timeline-footer">
+                                <div class="timeline-user">
+                                    <i class="fas fa-user-shield"></i>
+                                    @if($cambio->usuario)
+                                        Realizado por: <strong>{{ $cambio->usuario->name }}</strong>
+                                    @else
+                                        Sistema
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        
+        @if($cambiosPlan->hasPages())
+        <div class="pagination-wrapper">
+            {{ $cambiosPlan->withQueryString()->links() }}
+        </div>
+        @endif
+    </div>
+
+    @elseif($tab == 'pagos')
+    {{-- TIMELINE DE PAGOS --}}
+    <div class="timeline-container">
+        <div class="timeline-header">
+            <h5>
+                <i class="fas fa-stream mr-2"></i>
+                Línea de Tiempo - Pagos
+            </h5>
+            <span class="badge bg-light text-dark">{{ $pagos->total() }} registros</span>
+        </div>
+        <div class="timeline-body">
+            @if($pagos->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-dollar-sign"></i>
+                    <h5>Sin pagos</h5>
+                    <p>No hay pagos registrados que coincidan con los filtros.</p>
+                </div>
+            @else
+                <div class="timeline">
+                    @foreach($pagos as $pago)
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            <span class="dia">{{ $pago->fecha_pago ? $pago->fecha_pago->format('d') : $pago->created_at->format('d') }}</span>
+                            {{ $pago->fecha_pago ? $pago->fecha_pago->translatedFormat('M') : $pago->created_at->translatedFormat('M') }}
+                        </div>
+                        <div class="timeline-marker pago {{ $pago->id_estado == 201 ? 'pagado' : ($pago->id_estado == 202 ? 'parcial' : 'pendiente') }}">
+                            <i class="fas fa-{{ $pago->id_estado == 201 ? 'check' : ($pago->id_estado == 202 ? 'clock' : 'hourglass-half') }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-content-header">
+                                @php
+                                    $estadoClass = match($pago->id_estado) {
+                                        201 => 'background: linear-gradient(135deg, var(--success), #2dd4bf); color: white;',
+                                        202 => 'background: linear-gradient(135deg, var(--warning), #fbbf24); color: #333;',
+                                        200 => 'background: linear-gradient(135deg, var(--accent), #f472b6); color: white;',
+                                        default => 'background: var(--gray-500); color: white;'
+                                    };
+                                    $estadoNombre = match($pago->id_estado) {
+                                        201 => 'Pagado',
+                                        202 => 'Parcial',
+                                        200 => 'Pendiente',
+                                        203 => 'Vencido',
+                                        204 => 'Cancelado',
+                                        205 => 'Traspasado',
+                                        default => 'Desconocido'
+                                    };
+                                @endphp
+                                <span class="timeline-type" style="{{ $estadoClass }}">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    {{ $estadoNombre }}
+                                </span>
+                                <span class="timeline-time">
+                                    <i class="fas fa-clock"></i>
+                                    {{ $pago->created_at->format('H:i') }} hrs
+                                </span>
+                            </div>
+                            
+                            <div class="timeline-details" style="display: block;">
+                                <div class="timeline-person" style="margin-bottom: 1rem;">
+                                    <div class="timeline-person-avatar origen">
+                                        @if($pago->cliente)
+                                            {{ strtoupper(substr($pago->cliente->nombres, 0, 1)) }}{{ strtoupper(substr($pago->cliente->apellido_paterno, 0, 1)) }}
+                                        @else
+                                            ??
+                                        @endif
+                                    </div>
+                                    <div class="timeline-person-info">
+                                        <h6>
+                                            @if($pago->cliente)
+                                                {{ $pago->cliente->nombres }} {{ $pago->cliente->apellido_paterno }}
+                                            @else
+                                                Cliente eliminado
+                                            @endif
+                                        </h6>
+                                        <span>Cliente</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-meta">
+                                <span class="timeline-meta-item pagado">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    ${{ number_format($pago->monto_abonado, 0, ',', '.') }}
+                                </span>
+                                @if($pago->metodoPago)
+                                <span class="timeline-meta-item" style="background: rgba(67,97,238,0.1); color: var(--info);">
+                                    <i class="fas fa-credit-card"></i>
+                                    {{ $pago->metodoPago->nombre }}
+                                </span>
+                                @endif
+                                @if($pago->inscripcion && $pago->inscripcion->membresia)
+                                <span class="timeline-meta-item membresia">
+                                    <i class="fas fa-dumbbell"></i>
+                                    {{ $pago->inscripcion->membresia->nombre }}
+                                </span>
+                                @endif
+                            </div>
+                            
+                            @if($pago->observaciones)
+                            <div class="timeline-motivo">
+                                <div class="timeline-motivo-label">
+                                    <i class="fas fa-comment-alt"></i> Observaciones
+                                </div>
+                                <p class="timeline-motivo-text">"{{ $pago->observaciones }}"</p>
+                            </div>
+                            @endif
+                            
+                            <div class="timeline-footer">
+                                <div class="timeline-user">
+                                    <i class="fas fa-hashtag"></i>
+                                    Pago #{{ $pago->id }}
+                                </div>
+                                <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-ver-detalle">
+                                    <i class="fas fa-eye"></i>
+                                    Ver detalle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        
+        @if($pagos->hasPages())
+        <div class="pagination-wrapper">
+            {{ $pagos->withQueryString()->links() }}
+        </div>
+        @endif
+    </div>
+    @endif
 @endsection

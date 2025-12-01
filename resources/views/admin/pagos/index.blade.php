@@ -139,7 +139,14 @@
                             $abonado = $pago->monto_abonado ?? 0;
                             $pendiente = $pago->monto_pendiente ?? 0;
                             $porcentaje = $total > 0 ? ($abonado / $total) * 100 : 0;
-                            $estadoPago = $pago->estado?->codigo == 201 ? 'pagado' : 'parcial';
+                            $estadoCodigo = $pago->estado?->codigo ?? 200;
+                            $estadoPago = match($estadoCodigo) {
+                                201 => 'pagado',
+                                205 => 'traspasado',
+                                203 => 'vencido',
+                                204 => 'cancelado',
+                                default => 'parcial'
+                            };
                             
                             // Cliente actual de la inscripción (dueño actual de la membresía)
                             $clienteActual = $pago->inscripcion?->cliente;
@@ -155,7 +162,7 @@
                             data-cliente="{{ strtolower(($clienteMostrar?->nombres ?? '') . ' ' . ($clienteMostrar?->apellido_paterno ?? '')) }}"
                             data-membresia="{{ strtolower($pago->inscripcion?->membresia?->nombre ?? '') }}"
                             data-referencia="{{ strtolower($pago->referencia_pago ?? '') }}">
-                            <td>
+                            <td data-label="Cliente / Membresía">
                                 <div class="cliente-pago-info">
                                     <div class="cliente-avatar {{ $esTraspaso ? 'traspaso' : '' }}">
                                         {{ strtoupper(substr($clienteMostrar?->nombres ?? 'N', 0, 1) . substr($clienteMostrar?->apellido_paterno ?? 'A', 0, 1)) }}
@@ -184,7 +191,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Fecha">
                                 <div class="fecha-info">
                                     <span class="fecha-principal">
                                         <i class="fas fa-calendar-alt"></i> 
@@ -197,7 +204,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Montos">
                                 <div class="montos-info">
                                     <span class="monto-total">
                                         ${{ number_format($total, 0, ',', '.') }}
@@ -216,10 +223,22 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Estado">
                                 @if($estadoPago === 'pagado')
                                     <span class="estado-badge pagado">
                                         <i class="fas fa-check-circle"></i> Pagado
+                                    </span>
+                                @elseif($estadoPago === 'traspasado')
+                                    <span class="estado-badge traspasado">
+                                        <i class="fas fa-exchange-alt"></i> Traspasado
+                                    </span>
+                                @elseif($estadoPago === 'vencido')
+                                    <span class="estado-badge vencido">
+                                        <i class="fas fa-exclamation-circle"></i> Vencido
+                                    </span>
+                                @elseif($estadoPago === 'cancelado')
+                                    <span class="estado-badge cancelado">
+                                        <i class="fas fa-times-circle"></i> Cancelado
                                     </span>
                                 @else
                                     <span class="estado-badge parcial">
@@ -227,7 +246,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td>
+                            <td data-label="Método">
                                 <span class="metodo-badge">
                                     @switch($pago->metodoPago?->codigo ?? '')
                                         @case('efectivo')
@@ -245,7 +264,7 @@
                                     {{ $pago->metodoPago?->nombre ?? 'N/A' }}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Acciones">
                                 <div class="action-buttons">
                                     <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-action btn-view" title="Ver detalles">
                                         <i class="fas fa-eye"></i>
@@ -345,7 +364,7 @@
         height: 180px;
         background: var(--success);
         border-radius: 50%;
-        opacity: 0.1;
+        opacity: 0.3;
     }
     .pagos-hero::after {
         content: '';
@@ -356,7 +375,7 @@
         height: 120px;
         background: var(--accent);
         border-radius: 50%;
-        opacity: 0.08;
+        opacity: 0.3;
     }
     .hero-content {
         display: flex;
@@ -490,19 +509,23 @@
     .stat-card .stat-label { font-size: 0.75em; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     
     .stat-total { border-left-color: var(--info); }
-    .stat-total .stat-icon { background: rgba(67, 97, 238, 0.12); color: var(--info); }
+    .stat-total .stat-icon { background: rgba(67, 97, 238, 0.2); color: #2541b2; }
+    .stat-total .stat-icon i { color: #2541b2 !important; }
     .stat-total .stat-number { color: var(--info); }
     
     .stat-recaudado { border-left-color: var(--success); }
-    .stat-recaudado .stat-icon { background: rgba(0, 191, 142, 0.12); color: var(--success); }
+    .stat-recaudado .stat-icon { background: rgba(0, 191, 142, 0.2); color: #00896b; }
+    .stat-recaudado .stat-icon i { color: #00896b !important; }
     .stat-recaudado .stat-number { color: var(--success); }
     
     .stat-completados { border-left-color: var(--warning); }
-    .stat-completados .stat-icon { background: rgba(240, 165, 0, 0.12); color: var(--warning); }
+    .stat-completados .stat-icon { background: rgba(240, 165, 0, 0.2); color: #c78500; }
+    .stat-completados .stat-icon i { color: #c78500 !important; }
     .stat-completados .stat-number { color: var(--warning); }
     
     .stat-pendientes { border-left-color: var(--accent); }
-    .stat-pendientes .stat-icon { background: rgba(233, 69, 96, 0.12); color: var(--accent); }
+    .stat-pendientes .stat-icon { background: rgba(233, 69, 96, 0.2); color: #c9304c; }
+    .stat-pendientes .stat-icon i { color: #c9304c !important; }
     .stat-pendientes .stat-number { color: var(--accent); }
 
     /* ===== FILTERS SECTION ===== */
@@ -599,17 +622,29 @@
         border-collapse: collapse;
     }
     .pagos-table thead {
-        background: var(--gray-50);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        display: table-header-group !important;
+        visibility: visible !important;
+    }
+    .pagos-table thead tr {
+        display: table-row !important;
     }
     .pagos-table thead th {
-        padding: 12px 16px;
+        padding: 14px 16px;
         text-align: left;
-        font-size: 0.75em;
+        font-size: 0.8em;
         font-weight: 700;
-        color: var(--gray-600);
+        color: white;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 2px solid var(--gray-200);
+        border-bottom: none;
+        display: table-cell !important;
+    }
+    .pagos-table thead th:first-child {
+        border-radius: 10px 0 0 0;
+    }
+    .pagos-table thead th:last-child {
+        border-radius: 0 10px 0 0;
     }
     .pagos-table tbody tr {
         border-bottom: 1px solid var(--gray-100);
@@ -722,6 +757,21 @@
         color: var(--warning);
         border: 1px solid rgba(240, 165, 0, 0.3);
     }
+    .estado-badge.traspasado {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
+        border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+    .estado-badge.vencido {
+        background: rgba(220, 53, 69, 0.12);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    .estado-badge.cancelado {
+        background: rgba(108, 117, 125, 0.12);
+        color: #6c757d;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
     .metodo-badge {
         display: inline-flex;
         align-items: center;
@@ -824,7 +874,7 @@
     @media (max-width: 768px) {
         .stats-grid { grid-template-columns: 1fr; }
         .pagos-container { padding: 12px; }
-        .pagos-table thead { display: none; }
+        .pagos-table thead { display: none !important; }
         .pagos-table tbody tr {
             display: block;
             margin-bottom: 12px;

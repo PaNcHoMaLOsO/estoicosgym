@@ -7,6 +7,7 @@ use App\Models\HistorialTraspaso;
 use App\Models\HistorialCambio;
 use App\Models\Cliente;
 use App\Models\Membresia;
+use App\Models\Pago;
 use Illuminate\Http\Request;
 
 class HistorialController extends Controller
@@ -24,6 +25,7 @@ class HistorialController extends Controller
         $traspasos = $this->getTraspasos($request);
         $pausas = $this->getPausas($request);
         $cambiosPlan = $this->getCambiosPlan($request);
+        $pagos = $this->getPagos($request);
         
         $clientes = Cliente::orderBy('nombres')->get();
         $membresias = Membresia::orderBy('nombre')->get();
@@ -50,12 +52,22 @@ class HistorialController extends Controller
                                                  ->whereMonth('fecha_cambio', now()->month)
                                                  ->whereYear('fecha_cambio', now()->year)
                                                  ->count(),
+            // Pagos
+            'total_pagos' => Pago::count(),
+            'pagos_mes' => Pago::whereMonth('fecha_pago', now()->month)
+                               ->whereYear('fecha_pago', now()->year)
+                               ->count(),
+            'total_recaudado' => Pago::sum('monto_abonado'),
+            'recaudado_mes' => Pago::whereMonth('fecha_pago', now()->month)
+                                   ->whereYear('fecha_pago', now()->year)
+                                   ->sum('monto_abonado'),
         ];
 
         return view('admin.historial.index', compact(
             'traspasos',
             'pausas',
             'cambiosPlan',
+            'pagos',
             'clientes',
             'membresias',
             'estadisticas',
@@ -169,5 +181,33 @@ class HistorialController extends Controller
         }
 
         return $query->orderBy('fecha_cambio', 'desc')->paginate(20, ['*'], 'cambios_page');
+    }
+
+    /**
+     * Obtener pagos con filtros
+     */
+    private function getPagos(Request $request)
+    {
+        $query = Pago::with(['cliente', 'inscripcion.membresia', 'metodoPago', 'estado']);
+
+        if ($request->filled('cliente_id')) {
+            $query->where('id_cliente', $request->cliente_id);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_pago', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_pago', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('estado_pago')) {
+            $query->where('id_estado', $request->estado_pago);
+        }
+
+        return $query->orderBy('fecha_pago', 'desc')
+                     ->orderBy('created_at', 'desc')
+                     ->paginate(20, ['*'], 'pagos_page');
     }
 }
