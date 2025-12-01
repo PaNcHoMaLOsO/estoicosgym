@@ -23,30 +23,28 @@
         </div>
     </div>
 
-    <!-- Wizard Steps -->
-    <div class="wizard-steps">
-        <div class="step active" data-step="1">
-            <div class="step-number">1</div>
-            <div class="step-info">
-                <span class="step-title">Datos Personales</span>
-                <span class="step-desc">Información del cliente</span>
-            </div>
+    <!-- Wizard Container con Stepper -->
+    <div class="wizard-container">
+        <div class="wizard-header">
+            <h2><i class="fas fa-list-ol"></i> Proceso de Registro</h2>
+            <p>Sigue los pasos para completar el registro del cliente</p>
         </div>
-        <div class="step-connector"></div>
-        <div class="step" data-step="2">
-            <div class="step-number">2</div>
-            <div class="step-info">
-                <span class="step-title">Membresía</span>
-                <span class="step-desc">Plan y convenio</span>
-            </div>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step" data-step="3">
-            <div class="step-number">3</div>
-            <div class="step-info">
-                <span class="step-title">Pago</span>
-                <span class="step-desc">Forma de pago</span>
-            </div>
+        <div class="steps-nav">
+            <button type="button" class="step-btn active" data-step="1">
+                <div class="step-number"><span>1</span></div>
+                <i class="fas fa-user step-icon"></i>
+                <span class="step-label">Datos Personales</span>
+            </button>
+            <button type="button" class="step-btn" data-step="2">
+                <div class="step-number"><span>2</span></div>
+                <i class="fas fa-id-card step-icon"></i>
+                <span class="step-label">Membresía</span>
+            </button>
+            <button type="button" class="step-btn" data-step="3">
+                <div class="step-number"><span>3</span></div>
+                <i class="fas fa-credit-card step-icon"></i>
+                <span class="step-label">Pago</span>
+            </button>
         </div>
     </div>
 
@@ -753,89 +751,155 @@
         font-size: 15px;
     }
 
-    /* Wizard Steps */
-    .wizard-steps {
+    /* Wizard Container */
+    .wizard-container {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .wizard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .wizard-header h2 {
+        color: white;
+        font-weight: 800;
+        font-size: 1.5rem;
+        margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fff;
+        gap: 0.75rem;
+    }
+
+    .wizard-header h2 i {
+        color: var(--accent);
+        font-size: 1.75rem;
+    }
+
+    .wizard-header p {
+        color: rgba(255,255,255,0.7);
+        margin: 0.5rem 0 0 0;
+        font-size: 0.95rem;
+    }
+
+    .steps-nav { 
+        display: flex; 
+        gap: 1rem;
+        position: relative;
+        padding: 0;
+        background: transparent;
+    }
+    
+    .step-btn {
+        flex: 1;
+        padding: 1.25rem 1rem;
+        text-align: center;
         border-radius: 16px;
-        padding: 24px 40px;
-        margin-bottom: 30px;
-        box-shadow: var(--shadow);
-    }
-
-    .step {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        opacity: 0.5;
-        transition: all 0.3s ease;
-    }
-
-    .step.active, .step.completed {
-        opacity: 1;
-    }
-
-    .step-number {
-        width: 45px;
-        height: 45px;
-        background: var(--border-color);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.2);
+        cursor: pointer;
         font-weight: 700;
-        font-size: 18px;
-        color: var(--text-secondary);
-        transition: all 0.3s ease;
-    }
-
-    .step.active .step-number {
-        background: var(--primary);
-        color: #fff;
-    }
-
-    .step.completed .step-number {
-        background: var(--success);
-        color: #fff;
-    }
-
-    .step-info {
+        font-size: 0.85rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: rgba(255,255,255,0.5);
+        position: relative;
+        z-index: 1;
         display: flex;
         flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .step-title {
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 15px;
-    }
-
-    .step-desc {
-        font-size: 12px;
-        color: var(--text-secondary);
-    }
-
-    .step-connector {
-        width: 60px;
-        height: 3px;
-        background: var(--border-color);
-        margin: 0 20px;
-        border-radius: 2px;
+    .step-btn .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 800;
         transition: all 0.3s ease;
+        border: 2px solid transparent;
     }
 
-    .step.completed + .step-connector {
+    .step-btn .step-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .step-btn .step-icon {
+        font-size: 1.2rem;
+    }
+    
+    .step-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        color: rgba(255,255,255,0.9);
+    }
+    
+    /* PASO ACTIVO - Color accent destacado */
+    .step-btn.active {
+        background: white !important;
+        color: var(--primary) !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 8px 30px rgba(233, 69, 96, 0.5);
+        transform: translateY(-2px);
+        opacity: 1 !important;
+    }
+
+    .step-btn.active .step-number {
+        background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 100%);
+        color: white;
+        border-color: var(--accent);
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.5);
+    }
+
+    .step-btn.active .step-icon {
+        color: var(--accent);
+    }
+
+    /* PASO COMPLETADO - Color success */
+    .step-btn.completed {
+        background: rgba(0, 191, 142, 0.2) !important;
+        color: white !important;
+        border-color: var(--success) !important;
+        opacity: 1 !important;
+    }
+
+    .step-btn.completed .step-number {
         background: var(--success);
+        color: white;
+        border-color: var(--success);
     }
 
-    /* Form Container */
+    .step-btn.completed .step-number::after {
+        content: '✓';
+        font-weight: 900;
+        font-size: 1.2rem;
+    }
+
+    .step-btn.completed .step-number span {
+        display: none;
+    }
+
+    /* Form Container - Card Principal */
     .form-container {
         background: #fff;
         border-radius: 20px;
-        padding: 30px;
-        box-shadow: var(--shadow);
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        border: none;
     }
 
     .step-content {
@@ -852,37 +916,65 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Section Cards */
+    /* Section Cards - Diseño mejorado */
     .section-card {
         background: #fff;
-        border: 1px solid var(--border-color);
+        border: 2px solid var(--border-color);
         border-radius: 16px;
-        margin-bottom: 24px;
+        margin-bottom: 1.5rem;
         overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .section-card:hover {
+        border-color: rgba(233, 69, 96, 0.3);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
     .section-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        padding: 16px 24px;
+        padding: 1rem 1.5rem;
         display: flex;
         align-items: center;
         gap: 12px;
+        position: relative;
+    }
+
+    .section-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), transparent);
     }
 
     .section-header i {
-        font-size: 20px;
+        font-size: 1.25rem;
         color: #fff;
+        width: 36px;
+        height: 36px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .section-header h3 {
         color: #fff;
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 700;
         margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .section-body {
-        padding: 24px;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, white 100%);
     }
 
     /* Form Elements */
@@ -914,69 +1006,115 @@
 
     .required {
         color: var(--accent);
+        font-weight: 700;
     }
 
     .form-control {
         border: 2px solid var(--border-color);
-        border-radius: 10px;
-        padding: 12px 16px;
-        font-size: 14px;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
         transition: all 0.3s ease;
-        background-color: #fff;
+        background-color: var(--bg-light);
         color: var(--text-primary);
     }
 
     .form-control:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(233, 69, 96, 0.1);
         outline: none;
+        background-color: #fff;
     }
 
     .form-control.is-invalid {
         border-color: var(--danger);
+        background-color: rgba(220, 53, 69, 0.05);
     }
 
     .form-hint {
-        font-size: 12px;
+        font-size: 0.75rem;
         color: var(--text-secondary);
-        margin-top: 6px;
-        display: block;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .form-hint::before {
+        content: '💡';
+        font-size: 0.7rem;
     }
 
     .invalid-feedback {
         color: var(--danger);
-        font-size: 12px;
-        margin-top: 6px;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    /* Precio Display */
+    .invalid-feedback::before {
+        content: '⚠️';
+        font-size: 0.75rem;
+    }
+
+    /* ============================================
+       PRECIO DISPLAY - MEJORADO
+       ============================================ */
     .precio-display {
-        background: linear-gradient(135deg, rgba(26,26,46,0.03) 0%, rgba(26,26,46,0.06) 100%);
+        background: linear-gradient(135deg, rgba(26,26,46,0.02) 0%, rgba(26,26,46,0.05) 100%);
         border: 2px solid var(--primary);
-        border-radius: 14px;
+        border-radius: 16px;
         overflow: hidden;
-        margin-top: 20px;
+        margin-top: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    .precio-display::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
     }
 
     .precio-header {
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         color: #fff;
-        padding: 12px 20px;
+        padding: 1rem 1.25rem;
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 600;
+        gap: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+
+    .precio-header i {
+        width: 32px;
+        height: 32px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .precio-body {
-        padding: 20px;
+        padding: 1.25rem;
+        background: linear-gradient(180deg, white 0%, rgba(248,249,250,0.5) 100%);
     }
 
     .precio-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 0.75rem 0;
         border-bottom: 1px dashed var(--border-color);
     }
 
@@ -985,58 +1123,106 @@
     }
 
     .precio-row.total {
-        padding-top: 16px;
-        margin-top: 10px;
-        border-top: 2px solid var(--primary);
+        padding-top: 1rem;
+        margin-top: 0.75rem;
+        border-top: 2px dashed var(--success);
         border-bottom: none;
+        background: rgba(0, 191, 142, 0.05);
+        margin-left: -1.25rem;
+        margin-right: -1.25rem;
+        margin-bottom: -1.25rem;
+        padding: 1rem 1.25rem;
+        border-radius: 0 0 14px 14px;
     }
 
     .precio-label {
-        font-weight: 500;
+        font-weight: 600;
         color: var(--text-secondary);
+        font-size: 0.9rem;
     }
 
     .precio-row.total .precio-label {
         font-weight: 700;
         color: var(--text-primary);
-        font-size: 16px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .precio-row.total .precio-label::before {
+        content: '✨';
     }
 
     .precio-value {
         font-weight: 700;
         color: var(--text-primary);
-        font-size: 16px;
+        font-size: 1rem;
     }
 
     .precio-row.total .precio-value {
-        font-size: 24px;
+        font-size: 1.75rem;
         color: var(--success);
+        font-weight: 800;
     }
 
     .text-success {
         color: var(--success) !important;
     }
 
-    /* Pago Resumen */
+    /* ============================================
+       PAGO RESUMEN CARD - MEJORADO
+       ============================================ */
     .pago-resumen {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(26, 26, 46, 0.3);
+    }
+
+    .pago-resumen::before {
+        content: '';
+        position: absolute;
+        top: -30%;
+        right: -10%;
+        width: 120px;
+        height: 120px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+    }
+
+    .pago-resumen::after {
+        content: '';
+        position: absolute;
+        bottom: -20%;
+        left: -5%;
+        width: 80px;
+        height: 80px;
+        background: rgba(233, 69, 96, 0.1);
+        border-radius: 50%;
     }
 
     .resumen-label {
-        color: rgba(255,255,255,0.8);
-        font-size: 14px;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        position: relative;
     }
 
     .resumen-value {
         color: #fff;
-        font-size: 32px;
-        font-weight: 700;
+        font-size: 2.25rem;
+        font-weight: 800;
+        position: relative;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
     /* Mixto Separator */
@@ -1064,19 +1250,23 @@
         font-weight: 500;
     }
 
-    /* Wizard Navigation */
+    /* ============================================
+       WIZARD NAVIGATION - MEJORADO
+       ============================================ */
     .wizard-navigation {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 24px 0 0;
-        border-top: 1px solid var(--border-color);
-        margin-top: 30px;
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-radius: 16px;
+        margin-top: 2rem;
+        box-shadow: 0 10px 40px rgba(26, 26, 46, 0.3);
     }
 
     .nav-left, .nav-right {
         display: flex;
-        gap: 12px;
+        gap: 0.75rem;
     }
 
     .nav-center {
@@ -1087,60 +1277,114 @@
     .btn-nav {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 14px 28px;
+        gap: 0.5rem;
+        padding: 0.875rem 1.75rem;
         border: none;
         border-radius: 12px;
-        font-weight: 600;
-        font-size: 15px;
+        font-weight: 700;
+        font-size: 0.9rem;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-nav:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    }
+
+    .btn-nav:active {
+        transform: translateY(-1px);
     }
 
     .btn-prev {
-        background: var(--border-color);
-        color: var(--text-primary);
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        border: 2px solid rgba(255,255,255,0.3);
+        backdrop-filter: blur(10px);
     }
 
     .btn-prev:hover {
-        background: #dee2e6;
+        background: rgba(255,255,255,0.25);
+        border-color: rgba(255,255,255,0.5);
+        transform: translateX(-5px);
+    }
+
+    .btn-prev i {
+        transition: transform 0.3s ease;
+    }
+
+    .btn-prev:hover i {
         transform: translateX(-3px);
     }
 
     .btn-next {
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--accent) 0%, #c73e55 100%);
         color: #fff;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
     }
 
     .btn-next:hover {
-        background: var(--primary-light);
+        box-shadow: 0 8px 25px rgba(233, 69, 96, 0.5);
+        transform: translateX(5px);
+    }
+
+    .btn-next i {
+        transition: transform 0.3s ease;
+    }
+
+    .btn-next:hover i {
         transform: translateX(3px);
     }
 
     .btn-submit {
-        background: var(--success);
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
         color: #fff;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-submit::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-submit:hover::before {
+        left: 100%;
     }
 
     .btn-submit:hover {
-        background: #00a67e;
-        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 191, 142, 0.5);
+        transform: translateY(-3px);
     }
 
     .btn-save-only {
-        background: transparent;
+        background: rgba(67, 97, 238, 0.15);
         border: 2px solid var(--info);
-        color: var(--info);
-        padding: 12px 24px;
-        border-radius: 10px;
-        font-weight: 600;
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.3s ease;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .btn-save-only:hover {
         background: var(--info);
         color: #fff;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+        transform: translateY(-2px);
     }
 
     /* Responsive */
@@ -1161,25 +1405,35 @@
             flex-direction: column;
         }
 
-        .wizard-steps {
-            flex-direction: column;
-            gap: 16px;
-            padding: 20px;
+        .wizard-container {
+            padding: 1.5rem;
         }
 
-        .step-connector {
-            width: 3px;
-            height: 30px;
-            margin: 0;
+        .steps-nav {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .step-btn {
+            flex-direction: row;
+            justify-content: flex-start;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        .step-btn .step-number {
+            width: 36px;
+            height: 36px;
         }
 
         .form-container {
-            padding: 20px;
+            padding: 1.25rem;
         }
 
         .wizard-navigation {
             flex-direction: column;
-            gap: 16px;
+            gap: 1rem;
+            padding: 1.25rem;
         }
 
         .nav-left, .nav-center, .nav-right {
@@ -1187,8 +1441,19 @@
             justify-content: center;
         }
 
+        .nav-right {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
         .btn-nav {
             flex: 1;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-save-only {
+            width: 100%;
             justify-content: center;
         }
     }
@@ -1238,45 +1503,66 @@
     }
 
     /* ============================================
-       FICHA RESUMEN DE INSCRIPCIÓN
+       FICHA RESUMEN DE INSCRIPCIÓN - MEJORADA
        ============================================ */
     .resumen-ficha {
         background: #fff;
         border: 2px solid var(--primary);
-        border-radius: 16px;
+        border-radius: 20px;
         overflow: hidden;
-        margin-bottom: 24px;
-        box-shadow: var(--shadow);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        position: relative;
+    }
+
+    .resumen-ficha::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--info), var(--success));
     }
 
     .ficha-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        padding: 16px 24px;
+        padding: 1.25rem 1.5rem;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 1rem;
     }
 
     .ficha-header i {
-        font-size: 22px;
+        font-size: 1.5rem;
         color: #fff;
+        width: 44px;
+        height: 44px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .ficha-header h3 {
         color: #fff;
-        font-size: 18px;
+        font-size: 1.15rem;
         font-weight: 700;
         margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .ficha-body {
-        padding: 24px;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, white 100%);
     }
 
     .ficha-row {
         display: flex;
-        gap: 24px;
-        margin-bottom: 16px;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .ficha-row:last-child {
@@ -1287,7 +1573,17 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 0.35rem;
+        padding: 0.75rem;
+        background: rgba(26, 26, 46, 0.02);
+        border-radius: 10px;
+        border: 1px solid rgba(26, 26, 46, 0.06);
+        transition: all 0.3s ease;
+    }
+
+    .ficha-item:hover {
+        background: rgba(233, 69, 96, 0.03);
+        border-color: rgba(233, 69, 96, 0.1);
     }
 
     .ficha-item.full {
@@ -1295,34 +1591,35 @@
     }
 
     .ficha-label {
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 0.7rem;
+        font-weight: 700;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.75px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 0.4rem;
     }
 
     .ficha-label i {
-        font-size: 12px;
-        color: var(--primary);
+        font-size: 0.7rem;
+        color: var(--accent);
     }
 
     .ficha-value {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 700;
         color: var(--text-primary);
     }
 
     .ficha-value.ficha-convenio {
         color: var(--info);
         background: rgba(67, 97, 238, 0.1);
-        padding: 4px 12px;
+        padding: 0.25rem 0.75rem;
         border-radius: 20px;
         display: inline-block;
         width: fit-content;
+        font-size: 0.9rem;
     }
 
     .ficha-value.ficha-descuento {
@@ -1330,58 +1627,93 @@
     }
 
     .ficha-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-        margin: 20px 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        margin: 1.25rem 0;
+        opacity: 0.3;
     }
 
     .ficha-total {
         background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-        margin: 20px -24px -24px -24px;
-        padding: 20px 24px;
+        margin: 1.25rem -1.5rem -1.5rem -1.5rem;
+        padding: 1.25rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ficha-total::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 150px;
+        height: 150px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
     }
 
     .ficha-total-label {
-        color: rgba(255,255,255,0.9);
-        font-size: 14px;
-        font-weight: 600;
+        color: rgba(255,255,255,0.95);
+        font-size: 0.85rem;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ficha-total-label::before {
+        content: '💰';
     }
 
     .ficha-total-value {
         color: #fff;
-        font-size: 32px;
+        font-size: 2rem;
         font-weight: 800;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
     /* ============================================
-       MONTO PENDIENTE BOX
+       MONTO PENDIENTE BOX - MEJORADO
        ============================================ */
     .monto-pendiente-box {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         border: 2px solid var(--warning);
-        border-radius: 12px;
-        padding: 16px 20px;
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        margin-top: 28px;
+        gap: 0.35rem;
+        margin-top: 1.75rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .monto-pendiente-box::before {
+        content: '⏳';
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2rem;
+        opacity: 0.2;
     }
 
     .monto-pendiente-label {
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 0.7rem;
+        font-weight: 700;
         color: #92400e;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .monto-pendiente-value {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 800;
         color: #b45309;
     }
 
@@ -1390,19 +1722,20 @@
        ============================================ */
     .tipo-pago-info {
         background: rgba(67, 97, 238, 0.1);
-        border: 1px solid var(--info);
-        border-radius: 10px;
-        padding: 12px 16px;
-        margin-top: 12px;
-        font-size: 13px;
+        border: 2px solid var(--info);
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
         color: var(--info);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.5rem;
+        font-weight: 600;
     }
 
     .tipo-pago-info i {
-        font-size: 16px;
+        font-size: 1rem;
     }
 
     /* ============================================
@@ -1414,35 +1747,44 @@
     }
 
     /* ============================================
-       PAGO MIXTO STYLES
+       PAGO MIXTO STYLES - MEJORADO
        ============================================ */
     .mixto-header {
         background: linear-gradient(135deg, var(--info) 0%, #3730a3 100%);
         color: #fff;
-        padding: 14px 20px;
-        border-radius: 12px 12px 0 0;
-        margin: 20px 0 0 0;
+        padding: 1rem 1.25rem;
+        border-radius: 14px 14px 0 0;
+        margin: 1.25rem 0 0 0;
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        font-size: 15px;
+        gap: 0.75rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .mixto-header i {
-        font-size: 18px;
+        font-size: 1.1rem;
+        width: 32px;
+        height: 32px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     #pagoMixtoSection .form-row {
-        background: #f8f9ff;
-        padding: 16px 20px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+        padding: 1rem 1.25rem;
         margin: 0;
         border-left: 2px solid var(--info);
         border-right: 2px solid var(--info);
     }
 
     #pagoMixtoSection .form-row:first-of-type {
-        padding-top: 20px;
+        padding-top: 1.25rem;
         border-top: none;
     }
 
@@ -1459,7 +1801,7 @@
 
     #pagoMixtoSection .form-control:focus {
         border-color: var(--info);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
     }
 
     #pagoMixtoSection .form-control option {
@@ -1471,28 +1813,29 @@
         background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
         border: 2px solid var(--info);
         border-top: none;
-        border-radius: 0 0 12px 12px;
-        padding: 16px 20px;
+        border-radius: 0 0 14px 14px;
+        padding: 1rem 1.25rem;
     }
 
     .mixto-total-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0;
-        font-size: 14px;
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
         color: #4338ca;
+        font-weight: 500;
     }
 
     .mixto-total-row span:last-child {
         font-weight: 700;
-        font-size: 16px;
+        font-size: 1rem;
     }
 
     .mixto-total-row.diferencia {
-        border-top: 1px dashed #818cf8;
-        margin-top: 8px;
-        padding-top: 12px;
+        border-top: 2px dashed #818cf8;
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
         color: var(--danger);
     }
 
@@ -1521,27 +1864,6 @@
 
         .ficha-total-value {
             font-size: 26px;
-        }
-
-        .wizard-steps {
-            gap: 8px;
-        }
-
-        .step {
-            flex-direction: column;
-            padding: 10px 8px;
-        }
-
-        .step-number {
-            margin-bottom: 4px;
-        }
-
-        .step-info {
-            text-align: center;
-        }
-
-        .step-desc {
-            font-size: 10px;
         }
 
         .monto-pendiente-box {
@@ -1724,6 +2046,21 @@ $(document).ready(function() {
         }
     });
 
+    // ============================================
+    // NAVEGACIÓN POR STEPPER (click en pasos)
+    // ============================================
+    $('.step-btn').on('click', function() {
+        const stepNumber = parseInt($(this).data('step'));
+        if (stepNumber && stepNumber !== currentStep) {
+            // Solo permitir ir a pasos anteriores o al siguiente si el actual está validado
+            if (stepNumber < currentStep) {
+                goToStep(stepNumber);
+            } else if (stepNumber === currentStep + 1) {
+                goToStep(stepNumber);
+            }
+        }
+    });
+
     // Prevenir doble submit del formulario
     $('#clienteForm').on('submit', function(e) {
         if (formSubmitting) {
@@ -1761,15 +2098,15 @@ $(document).ready(function() {
 
         // Marcar paso anterior como completado
         if (step > currentStep) {
-            $(`.step[data-step="${currentStep}"]`).addClass('completed').removeClass('active');
+            $(`.step-btn[data-step="${currentStep}"]`).addClass('completed').removeClass('active');
         }
 
         // Actualizar paso actual
         currentStep = step;
 
         // Actualizar UI de pasos
-        $('.step').removeClass('active');
-        $(`.step[data-step="${step}"]`).addClass('active');
+        $('.step-btn').removeClass('active');
+        $(`.step-btn[data-step="${step}"]`).addClass('active');
 
         // Mostrar contenido del paso
         $('.step-content').removeClass('active');
