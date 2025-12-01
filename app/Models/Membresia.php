@@ -47,12 +47,14 @@ class Membresia extends Model
         'nombre',
         'duracion_meses',
         'duracion_dias',
+        'max_pausas',
         'descripcion',
         'activo',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
+        'max_pausas' => 'integer',
     ];
 
     protected static function boot()

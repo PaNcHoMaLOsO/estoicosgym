@@ -258,6 +258,7 @@ class InscripcionController extends Controller
         $validated['fecha_inscripcion'] = now()->format('Y-m-d');
         $validated['fecha_vencimiento'] = $fechaVencimiento->format('Y-m-d');
         $validated['id_precio_acordado'] = 1;
+        $validated['max_pausas_permitidas'] = $membresia->max_pausas ?? 2;
 
         $inscripcion = Inscripcion::create($validated);
 
@@ -872,6 +873,7 @@ class InscripcionController extends Controller
                     'precio_final' => $precioNuevoPlan,
                     'id_estado' => 100, // Activa
                     'observaciones' => $observaciones,
+                    'max_pausas_permitidas' => $nuevaMembresia->max_pausas ?? 2,
                     // Campos de tracking de cambio
                     'id_inscripcion_anterior' => $inscripcion->id,
                     'es_cambio_plan' => true,
@@ -1122,6 +1124,7 @@ class InscripcionController extends Controller
                     'precio_final' => $inscripcion->precio_final,
                     'id_estado' => 100, // Activa
                     'observaciones' => "Traspaso recibido de: {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
+                    'max_pausas_permitidas' => $inscripcion->membresia->max_pausas ?? 2,
                     // Campos de tracking de traspaso
                     'es_traspaso' => true,
                     'id_inscripcion_origen' => $inscripcion->id,
