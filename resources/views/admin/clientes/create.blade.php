@@ -754,42 +754,42 @@
     /* Wizard Container */
     .wizard-container {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.15);
     }
 
     .wizard-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
     }
 
     .wizard-header h2 {
         color: white;
         font-weight: 800;
-        font-size: 1.5rem;
+        font-size: 1.1rem;
         margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .wizard-header h2 i {
         color: var(--accent);
-        font-size: 1.75rem;
+        font-size: 1.25rem;
     }
 
     .wizard-header p {
         color: rgba(255,255,255,0.7);
-        margin: 0.5rem 0 0 0;
-        font-size: 0.95rem;
+        margin: 0.25rem 0 0 0;
+        font-size: 0.8rem;
     }
 
     .steps-nav { 
         display: flex; 
-        gap: 1rem;
+        gap: 0.75rem;
         position: relative;
         padding: 0;
         background: transparent;
@@ -797,15 +797,15 @@
     
     .step-btn {
         flex: 1;
-        padding: 1.25rem 1rem;
+        padding: 0.6rem 0.5rem;
         text-align: center;
-        border-radius: 16px;
+        border-radius: 12px;
         background: rgba(255,255,255,0.1);
         backdrop-filter: blur(10px);
         border: 2px solid rgba(255,255,255,0.2);
         cursor: pointer;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         color: rgba(255,255,255,0.5);
         position: relative;
@@ -813,31 +813,31 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
     }
 
     .step-btn .step-number {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: rgba(255,255,255,0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
         font-weight: 800;
         transition: all 0.3s ease;
         border: 2px solid transparent;
     }
 
     .step-btn .step-label {
-        font-size: 0.85rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
 
     .step-btn .step-icon {
-        font-size: 1.2rem;
+        font-size: 0.95rem;
     }
     
     .step-btn:hover:not(:disabled) {
@@ -896,9 +896,9 @@
     /* Form Container - Card Principal */
     .form-container {
         background: #fff;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         border: none;
     }
 
@@ -916,12 +916,12 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Section Cards - Diseño mejorado */
+    /* Section Cards - Diseño compacto */
     .section-card {
         background: #fff;
         border: 2px solid var(--border-color);
-        border-radius: 16px;
-        margin-bottom: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
         overflow: hidden;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -929,15 +929,15 @@
 
     .section-card:hover {
         border-color: rgba(233, 69, 96, 0.3);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     .section-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        padding: 1rem 1.5rem;
+        padding: 0.65rem 1rem;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         position: relative;
     }
 
@@ -947,17 +947,17 @@
         bottom: 0;
         left: 0;
         right: 0;
-        height: 3px;
+        height: 2px;
         background: linear-gradient(90deg, var(--accent), transparent);
     }
 
     .section-header i {
-        font-size: 1.25rem;
+        font-size: 1rem;
         color: #fff;
-        width: 36px;
-        height: 36px;
+        width: 28px;
+        height: 28px;
         background: rgba(255,255,255,0.15);
-        border-radius: 10px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -965,7 +965,7 @@
 
     .section-header h3 {
         color: #fff;
-        font-size: 1rem;
+        font-size: 0.85rem;
         font-weight: 700;
         margin: 0;
         text-transform: uppercase;
@@ -973,7 +973,7 @@
     }
 
     .section-body {
-        padding: 1.5rem;
+        padding: 1rem;
         background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, white 100%);
     }
 
@@ -981,27 +981,27 @@
     .form-row {
         display: flex;
         flex-wrap: wrap;
-        margin: 0 -10px;
+        margin: 0 -8px;
     }
 
     .form-group {
-        padding: 0 10px;
-        margin-bottom: 20px;
+        padding: 0 8px;
+        margin-bottom: 12px;
     }
 
     .form-group label {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 8px;
-        font-size: 14px;
+        margin-bottom: 6px;
+        font-size: 13px;
     }
 
     .form-group label i {
         color: var(--primary);
-        font-size: 14px;
+        font-size: 12px;
     }
 
     .required {
@@ -1011,9 +1011,9 @@
 
     .form-control {
         border: 2px solid var(--border-color);
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
+        border-radius: 10px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.9rem;
         transition: all 0.3s ease;
         background-color: var(--bg-light);
         color: var(--text-primary);
@@ -1503,15 +1503,15 @@
     }
 
     /* ============================================
-       FICHA RESUMEN DE INSCRIPCIÓN - MEJORADA
+       FICHA RESUMEN DE INSCRIPCIÓN - COMPACTA
        ============================================ */
     .resumen-ficha {
         background: #fff;
         border: 2px solid var(--primary);
-        border-radius: 20px;
+        border-radius: 14px;
         overflow: hidden;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         position: relative;
     }
 
@@ -1521,25 +1521,25 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 4px;
+        height: 3px;
         background: linear-gradient(90deg, var(--accent), var(--info), var(--success));
     }
 
     .ficha-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        padding: 1.25rem 1.5rem;
+        padding: 0.75rem 1rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .ficha-header i {
-        font-size: 1.5rem;
+        font-size: 1.1rem;
         color: #fff;
-        width: 44px;
-        height: 44px;
+        width: 32px;
+        height: 32px;
         background: rgba(255,255,255,0.15);
-        border-radius: 12px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1547,7 +1547,7 @@
 
     .ficha-header h3 {
         color: #fff;
-        font-size: 1.15rem;
+        font-size: 0.9rem;
         font-weight: 700;
         margin: 0;
         text-transform: uppercase;
@@ -1555,14 +1555,14 @@
     }
 
     .ficha-body {
-        padding: 1.5rem;
+        padding: 0.75rem 1rem;
         background: linear-gradient(135deg, rgba(248,249,250,0.5) 0%, white 100%);
     }
 
     .ficha-row {
         display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .ficha-row:last-child {
@@ -1573,10 +1573,10 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        padding: 0.75rem;
+        gap: 0.15rem;
+        padding: 0.4rem 0.6rem;
         background: rgba(26, 26, 46, 0.02);
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid rgba(26, 26, 46, 0.06);
         transition: all 0.3s ease;
     }
@@ -1591,24 +1591,24 @@
     }
 
     .ficha-label {
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.65rem;
+        font-weight: 600;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.75px;
+        letter-spacing: 0.5px;
         display: flex;
         align-items: center;
-        gap: 0.4rem;
+        gap: 0.25rem;
     }
 
     .ficha-label i {
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         color: var(--accent);
     }
 
     .ficha-value {
-        font-size: 1rem;
-        font-weight: 700;
+        font-size: 0.85rem;
+        font-weight: 600;
         color: var(--text-primary);
     }
 
@@ -1627,16 +1627,16 @@
     }
 
     .ficha-divider {
-        height: 2px;
+        height: 1px;
         background: linear-gradient(90deg, transparent, var(--accent), transparent);
-        margin: 1.25rem 0;
+        margin: 0.5rem 0;
         opacity: 0.3;
     }
 
     .ficha-total {
         background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-        margin: 1.25rem -1.5rem -1.5rem -1.5rem;
-        padding: 1.25rem 1.5rem;
+        margin: 0.5rem -1rem -0.75rem -1rem;
+        padding: 0.75rem 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -1649,32 +1649,33 @@
         position: absolute;
         top: -50%;
         right: -10%;
-        width: 150px;
-        height: 150px;
+        width: 80px;
+        height: 80px;
         background: rgba(255,255,255,0.1);
         border-radius: 50%;
     }
 
     .ficha-total-label {
         color: rgba(255,255,255,0.95);
-        font-size: 0.85rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
     }
 
     .ficha-total-label::before {
         content: '💰';
+        font-size: 0.9rem;
     }
 
     .ficha-total-value {
         color: #fff;
-        font-size: 2rem;
+        font-size: 1.4rem;
         font-weight: 800;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        text-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     /* ============================================
@@ -2461,8 +2462,8 @@ $(document).ready(function() {
         const nombreCompleto = `${nombres} ${apPaterno} ${apMaterno}`.trim();
         $('#fichaCliente').text(nombreCompleto || 'Sin nombre');
 
-        // RUT del cliente
-        const rut = $('#rut').val() || '-';
+        // RUT del cliente - CORREGIDO: usar run_pasaporte
+        const rut = $('#run_pasaporte').val() || 'No ingresado';
         $('#fichaRut').text(rut);
 
         // Datos de membresía
