@@ -50,6 +50,31 @@ Route::middleware('guest')->group(function () {
         ]);
         
         if (Auth::attempt($credentials, request()->boolean('remember'))) {
+            $user = Auth::user();
+            
+            // Verificar si tiene 2FA habilitado
+            if ($user->two_factor_enabled && $user->phone) {
+                // Cerrar sesión temporalmente
+                Auth::logout();
+                
+                // Guardar usuario en sesión temporal
+                session(['2fa_user_id' => $user->id]);
+                session(['2fa_remember' => request()->boolean('remember')]);
+                
+                // Enviar código de verificación
+                $twoFactorService = new \App\Services\TwoFactorService();
+                $result = $twoFactorService->sendVerificationCode($user, 'login');
+                
+                if ($result['success']) {
+                    return redirect()->route('2fa.show')->with('status', $result['message']);
+                } else {
+                    // Si falla el envío, permitir login sin 2FA
+                    Auth::login($user, request()->boolean('remember'));
+                    request()->session()->regenerate();
+                    return redirect()->intended('dashboard');
+                }
+            }
+            
             request()->session()->regenerate();
             return redirect()->intended('dashboard');
         }
@@ -58,6 +83,81 @@ Route::middleware('guest')->group(function () {
             'email' => 'Las credenciales no coinciden con nuestros registros.',
         ])->onlyInput('email');
     });
+    
+    // ===== 2FA - Verificación de dos factores =====
+    Route::get('/verify-2fa', function () {
+        $userId = session('2fa_user_id');
+        if (!$userId) {
+            return redirect()->route('login');
+        }
+        
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
+        $twoFactorService = new \App\Services\TwoFactorService();
+        
+        return view('auth.verify-2fa', [
+            'userId' => $user->id,
+            'maskedPhone' => substr($user->phone, 0, 3) . '****' . substr($user->phone, -3),
+            'channel' => $user->two_factor_channel ?? 'whatsapp',
+            'type' => 'login',
+            'expiresIn' => 600, // 10 minutos
+        ]);
+    })->name('2fa.show');
+    
+    Route::post('/verify-2fa', function () {
+        $userId = session('2fa_user_id');
+        $remember = session('2fa_remember', false);
+        
+        if (!$userId) {
+            return redirect()->route('login')->withErrors(['code' => 'Sesión expirada. Inicia sesión nuevamente.']);
+        }
+        
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
+        request()->validate([
+            'code' => 'required|string|size:6',
+        ]);
+        
+        $twoFactorService = new \App\Services\TwoFactorService();
+        $result = $twoFactorService->verifyCode($user, request('code'), 'login');
+        
+        if ($result['success']) {
+            // Limpiar sesión temporal
+            session()->forget(['2fa_user_id', '2fa_remember']);
+            
+            // Login exitoso
+            Auth::login($user, $remember);
+            request()->session()->regenerate();
+            
+            return redirect()->intended('dashboard');
+        }
+        
+        return back()->withErrors(['code' => $result['message']]);
+    })->name('2fa.verify');
+    
+    Route::post('/resend-2fa', function () {
+        $userId = request('user_id') ?: session('2fa_user_id');
+        
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'Sesión expirada']);
+        }
+        
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado']);
+        }
+        
+        $twoFactorService = new \App\Services\TwoFactorService();
+        $result = $twoFactorService->sendVerificationCode($user, request('type', 'login'));
+        
+        return response()->json($result);
+    })->name('2fa.resend');
     
     // Recuperar contraseña - Solicitar enlace
     Route::get('/forgot-password', function () {

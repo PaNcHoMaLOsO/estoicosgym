@@ -7,140 +7,246 @@
     <title>Restablecer Contraseña | Estoicos Gym</title>
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Philosopher:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
             --gym-purple: #c140d4;
-            --gym-purple-dark: #a035b5;
+            --gym-purple-dark: #9a32a8;
             --gym-purple-light: #d466e3;
             --gym-cream: #f1e6bf;
+            --gym-cream-light: #f7f0d8;
+            --gym-cream-dark: #d4c99a;
             --gym-navy: #253a5b;
-            --gym-navy-dark: #1a2a3f;
-            --gym-navy-light: #2f4a6f;
+            --gym-navy-dark: #1a2940;
+            --gym-navy-light: #344d6e;
             --gym-gray: #434750;
-            
-            --primary-dark: #1a2a3f;
-            --primary-medium: #253a5b;
-            --primary-light: #2f4a6f;
-            --accent: #c140d4;
-            --accent-light: #d466e3;
-            --accent-dark: #a035b5;
-            --text-light: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.7);
-            --text-cream: #f1e6bf;
-            --success: #28a745;
-            --error: #dc3545;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Philosopher', serif;
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, var(--primary-light) 100%);
+            background: var(--gym-navy-dark);
+            overflow-x: hidden;
+        }
+
+        /* Panel izquierdo */
+        .agora-panel {
+            flex: 1;
+            background: linear-gradient(135deg, var(--gym-navy-dark) 0%, var(--gym-navy) 50%, var(--gym-navy-light) 100%);
             position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
             overflow: hidden;
         }
 
-        .bg-shapes {
+        /* Cielo nocturno */
+        .night-sky {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0; left: 0; right: 0; bottom: 0;
             overflow: hidden;
-            z-index: 0;
+            pointer-events: none;
         }
 
-        .bg-shapes .shape {
+        .moon {
             position: absolute;
+            top: 8%; right: 12%;
+            width: 60px; height: 60px;
+            background: radial-gradient(circle at 35% 35%, #f1e6bf 0%, #d4c99a 50%, #c9bc8e 100%);
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-            opacity: 0.1;
-            animation: float 20s infinite ease-in-out;
+            box-shadow: 0 0 20px rgba(241, 230, 191, 0.4), 0 0 40px rgba(241, 230, 191, 0.2);
+            animation: moonGlow 4s ease-in-out infinite;
         }
 
-        .bg-shapes .shape:nth-child(1) { width: 300px; height: 300px; top: -100px; left: -100px; animation-delay: 0s; }
-        .bg-shapes .shape:nth-child(2) { width: 200px; height: 200px; bottom: -50px; right: -50px; animation-delay: -5s; }
-        .bg-shapes .shape:nth-child(3) { width: 150px; height: 150px; top: 50%; right: 10%; animation-delay: -10s; }
-        .bg-shapes .shape:nth-child(4) { width: 100px; height: 100px; bottom: 20%; left: 10%; animation-delay: -15s; }
+        @keyframes moonGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(241, 230, 191, 0.4), 0 0 40px rgba(241, 230, 191, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(241, 230, 191, 0.6), 0 0 50px rgba(241, 230, 191, 0.3); }
+        }
+
+        .star {
+            position: absolute;
+            background: #f1e6bf;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .star-1 { width: 4px; height: 4px; top: 5%; left: 10%; animation-delay: 0s; }
+        .star-2 { width: 3px; height: 3px; top: 12%; left: 25%; animation-delay: 0.5s; }
+        .star-3 { width: 5px; height: 5px; top: 8%; left: 45%; animation-delay: 1s; }
+        .star-4 { width: 3px; height: 3px; top: 15%; left: 60%; animation-delay: 1.5s; }
+        .star-5 { width: 4px; height: 4px; top: 20%; left: 8%; animation-delay: 0.3s; }
+        .star-6 { width: 3px; height: 3px; top: 25%; left: 35%; animation-delay: 0.8s; }
+        .star-7 { width: 5px; height: 5px; top: 18%; left: 55%; animation-delay: 1.3s; }
+        .star-8 { width: 4px; height: 4px; top: 30%; left: 15%; animation-delay: 0.2s; }
+        .star-9 { width: 3px; height: 3px; top: 35%; left: 5%; animation-delay: 1.8s; }
+        .star-10 { width: 4px; height: 4px; top: 28%; left: 75%; animation-delay: 0.6s; }
+
+        /* Meteoros */
+        .meteor {
+            position: absolute;
+            width: 2px; height: 80px;
+            background: linear-gradient(180deg, transparent, rgba(241, 230, 191, 0.3), rgba(241, 230, 191, 0.9));
+            transform: rotate(35deg);
+            opacity: 0;
+            animation: meteorFall 3s linear infinite;
+        }
+
+        @keyframes meteorFall {
+            0% { opacity: 0; transform: rotate(35deg) translateY(-100px); }
+            5% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: rotate(35deg) translateY(1200px); }
+        }
+
+        .meteor-1 { left: 20%; top: -100px; animation-delay: 0s; animation-duration: 2.5s; }
+        .meteor-2 { left: 50%; top: -100px; animation-delay: 1.5s; animation-duration: 3s; }
+        .meteor-3 { left: 80%; top: -100px; animation-delay: 0.7s; animation-duration: 2.8s; }
+
+        /* Contenido central */
+        .agora-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .agora-logo {
+            width: 180px; height: 180px;
+            filter: drop-shadow(0 15px 50px rgba(193, 64, 212, 0.8));
+            animation: float 6s ease-in-out infinite;
+        }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-20px) rotate(5deg); }
-            50% { transform: translateY(0) rotate(0deg); }
-            75% { transform: translateY(20px) rotate(-5deg); }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
         }
 
-        .reset-container {
-            position: relative;
-            z-index: 1;
+        .agora-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--gym-cream);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 5px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .agora-title span {
+            color: var(--gym-purple);
+            display: block;
+            font-size: 2.8rem;
+            letter-spacing: 12px;
+        }
+
+        .agora-subtitle {
+            font-family: 'Philosopher', serif;
+            font-size: 1rem;
+            color: var(--gym-cream);
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        /* Templo */
+        .temple-scene {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 40%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .temple-svg {
             width: 100%;
-            max-width: 450px;
-            padding: 20px;
+            max-width: 500px;
+            height: 100%;
+            opacity: 0.12;
         }
 
-        .reset-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 50px 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        /* Panel derecho */
+        .form-panel {
+            width: 520px;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--gym-cream-light) 0%, var(--gym-cream) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 50px;
+            position: relative;
         }
 
-        .header-section {
+        .form-panel::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 8px;
+            background: linear-gradient(180deg, var(--gym-purple) 0%, var(--gym-navy) 50%, var(--gym-purple) 100%);
+        }
+
+        .form-header {
             text-align: center;
             margin-bottom: 35px;
         }
 
-        .header-section .icon-circle {
-            width: 80px;
-            height: 80px;
+        .form-header .icon-circle {
+            width: 80px; height: 80px;
             background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 25px;
-            box-shadow: 0 10px 30px rgba(193, 64, 212, 0.4);
+            box-shadow: 0 10px 30px rgba(193, 64, 212, 0.3);
         }
 
-        .header-section .icon-circle i {
-            font-size: 35px;
+        .form-header .icon-circle i {
+            font-size: 32px;
             color: white;
         }
 
-        .header-section h1 {
-            color: var(--text-cream);
-            font-size: 24px;
+        .form-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.7rem;
             font-weight: 700;
-            letter-spacing: 1px;
+            color: var(--gym-navy);
+            letter-spacing: 3px;
             margin-bottom: 10px;
         }
 
-        .header-section p {
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.6;
+        .form-header p {
+            font-family: 'Philosopher', serif;
+            color: var(--gym-gray);
+            font-size: 0.95rem;
         }
 
+        /* Formulario */
         .form-group {
-            margin-bottom: 20px;
-            position: relative;
+            margin-bottom: 22px;
         }
 
         .form-group label {
             display: block;
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gym-navy);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .input-wrapper {
@@ -152,290 +258,306 @@
             left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-muted);
+            color: var(--gym-gray);
             font-size: 18px;
-            transition: color 0.3s ease;
-            pointer-events: none;
         }
 
         .form-control {
             width: 100%;
-            padding: 16px 50px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 50px;
+            background: white;
+            border: 2px solid var(--gym-cream-dark);
             border-radius: 12px;
-            color: var(--text-light);
+            color: var(--gym-navy);
             font-size: 15px;
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
         }
 
-        .form-control::placeholder { color: rgba(255, 255, 255, 0.4); }
-
         .form-control:focus {
             outline: none;
-            border-color: var(--accent);
-            background: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 0 20px rgba(193, 64, 212, 0.2);
+            border-color: var(--gym-purple);
+            box-shadow: 0 0 0 4px rgba(193, 64, 212, 0.1);
         }
 
-        .form-control:focus ~ i.input-icon { color: var(--accent); }
-        .form-control.is-invalid { border-color: var(--error); }
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
 
-        .password-toggle {
+        .toggle-password {
             position: absolute;
-            right: 18px;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: var(--gym-gray);
             cursor: pointer;
-            font-size: 18px;
-            transition: color 0.3s ease;
             padding: 5px;
         }
 
-        .password-toggle:hover { color: var(--accent); }
+        .toggle-password:hover {
+            color: var(--gym-purple);
+        }
 
+        /* Botones */
         .btn-submit {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            background: linear-gradient(135deg, var(--gym-purple) 0%, var(--gym-purple-dark) 100%);
             border: none;
             border-radius: 12px;
             color: white;
-            font-size: 16px;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
             font-weight: 600;
-            font-family: 'Poppins', sans-serif;
+            letter-spacing: 2px;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 2px;
             margin-top: 10px;
-        }
-
-        .btn-submit::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
+            margin-bottom: 15px;
         }
 
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(193, 64, 212, 0.5);
+            box-shadow: 0 10px 30px rgba(193, 64, 212, 0.4);
         }
 
-        .btn-submit:hover::before { left: 100%; }
-        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-back {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 2px solid var(--gym-navy);
+            border-radius: 12px;
+            color: var(--gym-navy);
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
 
+        .btn-back:hover {
+            background: var(--gym-navy);
+            color: var(--gym-cream);
+        }
+
+        /* Alertas */
         .alert {
             padding: 15px 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 12px;
+            font-family: 'Philosopher', serif;
         }
 
         .alert-danger {
-            background: rgba(220, 53, 69, 0.15);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: #ff6b7a;
+            background: rgba(220, 53, 69, 0.1);
+            border: 2px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
         }
 
-        .alert i { font-size: 18px; }
-
         .invalid-feedback {
-            color: var(--error);
-            font-size: 12px;
+            color: #dc3545;
+            font-size: 0.85rem;
             margin-top: 8px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .dumbbell-decoration {
-            position: absolute;
-            font-size: 150px;
-            color: rgba(193, 64, 212, 0.05);
-            z-index: 0;
-        }
-
-        .dumbbell-decoration.top-right { top: 5%; right: 5%; transform: rotate(45deg); }
-        .dumbbell-decoration.bottom-left { bottom: 5%; left: 5%; transform: rotate(-45deg); }
-
-        .password-requirements {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .password-requirements h4 {
-            color: var(--text-cream);
-            font-size: 13px;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        .password-requirements ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .password-requirements li {
-            color: var(--text-muted);
-            font-size: 12px;
-            padding: 3px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .password-requirements li i {
-            font-size: 10px;
-            color: var(--gym-purple);
-        }
-
-        .btn-submit .spinner { display: none; }
-        .btn-submit.loading .btn-text { display: none; }
-        .btn-submit.loading .spinner { display: inline-block; }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        /* Spinner */
         .spinner {
-            width: 20px;
-            height: 20px;
+            display: none;
+            width: 20px; height: 20px;
             border: 2px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
+        .btn-submit.loading .btn-text { display: none; }
+        .btn-submit.loading .spinner { display: inline-block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer */
+        .form-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gym-cream-dark);
+        }
+
+        .form-footer p {
+            font-family: 'Philosopher', serif;
+            color: var(--gym-gray);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .agora-panel { display: none; }
+            .form-panel { width: 100%; min-height: 100vh; }
+        }
+
         @media (max-width: 480px) {
-            .reset-card { padding: 40px 25px; }
-            .header-section h1 { font-size: 20px; }
+            .form-panel { padding: 30px 20px; }
+            .form-header h2 { font-size: 1.4rem; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-shapes">
-        <div class="shape"></div>
-        <div class="shape"></div>
-        <div class="shape"></div>
-        <div class="shape"></div>
+    <!-- Panel Izquierdo -->
+    <div class="agora-panel">
+        <!-- Cielo Nocturno -->
+        <div class="night-sky">
+            <div class="moon"></div>
+            <div class="star star-1"></div>
+            <div class="star star-2"></div>
+            <div class="star star-3"></div>
+            <div class="star star-4"></div>
+            <div class="star star-5"></div>
+            <div class="star star-6"></div>
+            <div class="star star-7"></div>
+            <div class="star star-8"></div>
+            <div class="star star-9"></div>
+            <div class="star star-10"></div>
+            <div class="meteor meteor-1"></div>
+            <div class="meteor meteor-2"></div>
+            <div class="meteor meteor-3"></div>
+        </div>
+
+        <!-- Templo -->
+        <div class="temple-scene">
+            <svg class="temple-svg" viewBox="0 0 500 300" preserveAspectRatio="xMidYMax meet">
+                <rect x="20" y="285" width="460" height="15" fill="#f1e6bf"/>
+                <rect x="30" y="275" width="440" height="12" fill="#d4c99a"/>
+                <rect x="40" y="265" width="420" height="12" fill="#f1e6bf"/>
+                <rect x="55" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="120" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="185" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="280" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="345" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="410" y="95" width="35" height="170" fill="#f1e6bf"/>
+                <rect x="35" y="75" width="430" height="22" fill="#f1e6bf"/>
+                <polygon points="250,15 35,75 465,75" fill="#f1e6bf"/>
+            </svg>
+        </div>
+
+        <!-- Contenido -->
+        <div class="agora-content">
+            <img src="{{ asset('vendor/adminlte/dist/img/Logo_Estoicos_Gym.svg') }}" alt="Estoicos Gym" class="agora-logo">
+            <h1 class="agora-title">
+                ESTOICOS
+                <span>GYM</span>
+            </h1>
+            <p class="agora-subtitle">Fortaleza del Cuerpo y la Mente</p>
+        </div>
     </div>
 
-    <i class="fas fa-dumbbell dumbbell-decoration top-right"></i>
-    <i class="fas fa-dumbbell dumbbell-decoration bottom-left"></i>
+    <!-- Panel Derecho -->
+    <div class="form-panel">
+        <div class="form-header">
+            <div class="icon-circle">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2>Nueva Contraseña</h2>
+            <p>Ingresa tu nueva contraseña para acceder a tu cuenta</p>
+        </div>
 
-    <div class="reset-container">
-        <div class="reset-card">
-            <div class="header-section">
-                <div class="icon-circle">
-                    <i class="fas fa-key"></i>
+        <!-- Alertas -->
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ $errors->first() }}</span>
+            </div>
+        @endif
+
+        <!-- Formulario -->
+        <form method="POST" action="{{ route('password.update') }}" id="resetForm">
+            @csrf
+            <input type="hidden" name="token" value="{{ $token }}">
+
+            <div class="form-group">
+                <label for="email">Correo Electrónico</label>
+                <div class="input-wrapper">
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           class="form-control @error('email') is-invalid @enderror" 
+                           value="{{ old('email', $email ?? '') }}"
+                           placeholder="tu@correo.com"
+                           required>
+                    <i class="fas fa-envelope input-icon"></i>
                 </div>
-                <h1>Nueva Contraseña</h1>
-                <p>Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.</p>
+                @error('email')
+                    <div class="invalid-feedback">
+                        <i class="fas fa-exclamation-triangle"></i> {{ $message }}
+                    </div>
+                @enderror
             </div>
 
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span>{{ $errors->first() }}</span>
+            <div class="form-group">
+                <label for="password">Nueva Contraseña</label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-control @error('password') is-invalid @enderror" 
+                           placeholder="Mínimo 8 caracteres"
+                           required>
+                    <i class="fas fa-lock input-icon"></i>
+                    <button type="button" class="toggle-password" onclick="togglePassword('password', 'toggleIcon1')">
+                        <i class="fas fa-eye" id="toggleIcon1"></i>
+                    </button>
                 </div>
-            @endif
-
-            <form method="POST" action="{{ route('password.update') }}" id="resetForm">
-                @csrf
-                <input type="hidden" name="token" value="{{ $token }}">
-
-                <div class="form-group">
-                    <label for="email">Correo Electrónico</label>
-                    <div class="input-wrapper">
-                        <input type="email" 
-                               id="email" 
-                               name="email" 
-                               class="form-control @error('email') is-invalid @enderror" 
-                               value="{{ $email ?? old('email') }}"
-                               required 
-                               autofocus>
-                        <i class="fas fa-envelope input-icon"></i>
+                @error('password')
+                    <div class="invalid-feedback">
+                        <i class="fas fa-exclamation-triangle"></i> {{ $message }}
                     </div>
-                    @error('email')
-                        <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            {{ $message }}
-                        </div>
-                    @enderror
-                </div>
+                @enderror
+            </div>
 
-                <div class="form-group">
-                    <label for="password">Nueva Contraseña</label>
-                    <div class="input-wrapper">
-                        <input type="password" 
-                               id="password" 
-                               name="password" 
-                               class="form-control @error('password') is-invalid @enderror" 
-                               placeholder="••••••••"
-                               required>
-                        <i class="fas fa-lock input-icon"></i>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password', 'toggleIcon1')">
-                            <i class="fas fa-eye" id="toggleIcon1"></i>
-                        </button>
-                    </div>
-                    @error('password')
-                        <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            {{ $message }}
-                        </div>
-                    @enderror
+            <div class="form-group">
+                <label for="password_confirmation">Confirmar Contraseña</label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                           id="password_confirmation" 
+                           name="password_confirmation" 
+                           class="form-control" 
+                           placeholder="Repite la contraseña"
+                           required>
+                    <i class="fas fa-lock input-icon"></i>
+                    <button type="button" class="toggle-password" onclick="togglePassword('password_confirmation', 'toggleIcon2')">
+                        <i class="fas fa-eye" id="toggleIcon2"></i>
+                    </button>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label for="password_confirmation">Confirmar Contraseña</label>
-                    <div class="input-wrapper">
-                        <input type="password" 
-                               id="password_confirmation" 
-                               name="password_confirmation" 
-                               class="form-control" 
-                               placeholder="••••••••"
-                               required>
-                        <i class="fas fa-lock input-icon"></i>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password_confirmation', 'toggleIcon2')">
-                            <i class="fas fa-eye" id="toggleIcon2"></i>
-                        </button>
-                    </div>
-                </div>
+            <button type="submit" class="btn-submit" id="btnSubmit">
+                <span class="btn-text">
+                    <i class="fas fa-save"></i> Guardar Contraseña
+                </span>
+                <div class="spinner"></div>
+            </button>
 
-                <div class="password-requirements">
-                    <h4><i class="fas fa-shield-alt"></i> Requisitos de contraseña:</h4>
-                    <ul>
-                        <li><i class="fas fa-circle"></i> Mínimo 8 caracteres</li>
-                        <li><i class="fas fa-circle"></i> Al menos una letra mayúscula</li>
-                        <li><i class="fas fa-circle"></i> Al menos un número</li>
-                    </ul>
-                </div>
+            <a href="{{ route('login') }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Ágora
+            </a>
+        </form>
 
-                <button type="submit" class="btn-submit" id="btnSubmit">
-                    <span class="btn-text">
-                        <i class="fas fa-save"></i> Restablecer Contraseña
-                    </span>
-                    <div class="spinner"></div>
-                </button>
-            </form>
+        <div class="form-footer">
+            <p>© {{ date('Y') }} Estoicos Gym. Forjando guerreros.</p>
         </div>
     </div>
 
@@ -443,7 +565,6 @@
         function togglePassword(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
-            
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');

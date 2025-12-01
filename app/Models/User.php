@@ -50,6 +50,9 @@ class User extends Authenticatable
         'email',
         'password',
         'id_rol',
+        'phone',
+        'two_factor_enabled',
+        'two_factor_channel',
     ];
 
     /**
