@@ -126,6 +126,8 @@
                             101 => ['class' => 'pausado', 'text' => 'Pausada'],
                             102 => ['class' => 'vencido', 'text' => 'Vencida'],
                             103 => ['class' => 'cancelado', 'text' => 'Cancelada'],
+                            104 => ['class' => 'suspendido', 'text' => 'Suspendida'],
+                            105 => ['class' => 'cambiado', 'text' => 'Cambiada'],
                             106 => ['class' => 'traspasado', 'text' => 'Traspasada'],
                             default => ['class' => 'otro', 'text' => 'Otro']
                         };
@@ -137,6 +139,23 @@
                         <i class="fas fa-dumbbell"></i>
                         {{ $ultimaInscripcion->membresia->nombre ?? 'N/A' }}
                     </div>
+                    
+                    {{-- Alerta de pausa si está pausada --}}
+                    @if($ultimaInscripcion->id_estado == 101)
+                    <div class="pause-alert">
+                        <i class="fas fa-pause-circle"></i>
+                        <div class="pause-info">
+                            <strong>Membresía Pausada</strong>
+                            @if($ultimaInscripcion->fecha_pausa_inicio)
+                            <span>Desde: {{ $ultimaInscripcion->fecha_pausa_inicio->format('d/m/Y') }}</span>
+                            @endif
+                            @if($ultimaInscripcion->dias_restantes_al_pausar)
+                            <span>Días guardados: {{ $ultimaInscripcion->dias_restantes_al_pausar }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="membership-dates">
                         <div class="date-item">
                             <span class="date-label">Inicio</span>
@@ -152,9 +171,42 @@
                             </span>
                         </div>
                     </div>
+
+                    {{-- Días restantes (solo para activas) --}}
+                    @if($ultimaInscripcion->id_estado == 100)
+                    @php
+                        $diasRestantes = now()->diffInDays($ultimaInscripcion->fecha_vencimiento, false);
+                    @endphp
+                    <div class="dias-restantes {{ $diasRestantes <= 7 ? 'warning' : ($diasRestantes <= 3 ? 'danger' : '') }}">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>{{ $diasRestantes > 0 ? $diasRestantes . ' días restantes' : 'Vence hoy' }}</span>
+                    </div>
+                    @endif
+
+                    {{-- Descuentos aplicados --}}
+                    @if($ultimaInscripcion->descuento_aplicado > 0)
+                    <div class="descuentos-aplicados">
+                        <div class="descuento-item">
+                            <i class="fas fa-tag"></i>
+                            <span>Descuento: ${{ number_format($ultimaInscripcion->descuento_aplicado, 0, ',', '.') }}</span>
+                            @if($ultimaInscripcion->convenio)
+                            <small>({{ $ultimaInscripcion->convenio->nombre }})</small>
+                            @elseif($ultimaInscripcion->motivoDescuento)
+                            <small>({{ $ultimaInscripcion->motivoDescuento->nombre }})</small>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="membership-price">
+                        @if($ultimaInscripcion->descuento_aplicado > 0)
                         <div class="price-info">
-                            <span class="price-label">Precio</span>
+                            <span class="price-label">Precio Base</span>
+                            <span class="price-value strikethrough">${{ number_format($ultimaInscripcion->precio_base ?? 0, 0, ',', '.') }}</span>
+                        </div>
+                        @endif
+                        <div class="price-info">
+                            <span class="price-label">{{ $ultimaInscripcion->descuento_aplicado > 0 ? 'Precio Final' : 'Precio' }}</span>
                             <span class="price-value">${{ number_format($ultimaInscripcion->precio_final ?? 0, 0, ',', '.') }}</span>
                         </div>
                         <div class="price-info">
@@ -298,6 +350,7 @@
                                         102 => ['class' => 'vencido', 'text' => 'Vencida'],
                                         103 => ['class' => 'cancelado', 'text' => 'Cancelada'],
                                         104 => ['class' => 'suspendido', 'text' => 'Suspendida'],
+                                        105 => ['class' => 'cambiado', 'text' => 'Cambiada'],
                                         106 => ['class' => 'traspasado', 'text' => 'Traspasada'],
                                         default => ['class' => 'otro', 'text' => 'Otro']
                                     };
@@ -366,6 +419,8 @@
                                         200 => ['class' => 'pendiente', 'text' => 'Pendiente'],
                                         201 => ['class' => 'pagado', 'text' => 'Pagado'],
                                         202 => ['class' => 'parcial', 'text' => 'Parcial'],
+                                        203 => ['class' => 'vencido', 'text' => 'Vencido'],
+                                        204 => ['class' => 'cancelado', 'text' => 'Cancelado'],
                                         default => ['class' => 'otro', 'text' => 'Otro']
                                     };
                                 @endphp
@@ -764,6 +819,8 @@
     .status-pill.vencido { background: var(--danger); color: #fff; }
     .status-pill.pausado { background: var(--warning); color: #000; }
     .status-pill.cancelado { background: #6c757d; color: #fff; }
+    .status-pill.suspendido { background: #dc3545; color: #fff; }
+    .status-pill.cambiado { background: #17a2b8; color: #fff; }
     .status-pill.traspasado { background: #6f42c1; color: #fff; }
 
     .card-body-membership { padding: 20px; }
@@ -779,6 +836,73 @@
     }
 
     .membership-name i { color: var(--accent); }
+
+    /* Alerta de pausa */
+    .pause-alert {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border: 1px solid #f0a500;
+        border-radius: 10px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .pause-alert i { font-size: 24px; color: #f0a500; }
+    .pause-alert .pause-info { display: flex; flex-direction: column; gap: 2px; }
+    .pause-alert .pause-info strong { color: #856404; }
+    .pause-alert .pause-info span { font-size: 13px; color: #856404; }
+
+    /* Días restantes */
+    .dias-restantes {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border: 1px solid var(--success);
+        border-radius: 10px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        font-weight: 600;
+        color: #155724;
+    }
+    .dias-restantes i { color: var(--success); }
+    .dias-restantes.warning { 
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border-color: var(--warning);
+        color: #856404;
+    }
+    .dias-restantes.warning i { color: var(--warning); }
+    .dias-restantes.danger { 
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        border-color: var(--danger);
+        color: #721c24;
+    }
+    .dias-restantes.danger i { color: var(--danger); }
+
+    /* Descuentos aplicados */
+    .descuentos-aplicados {
+        background: linear-gradient(135deg, #e7f1ff, #cce5ff);
+        border: 1px solid var(--info);
+        border-radius: 10px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+    }
+    .descuento-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #004085;
+        font-weight: 500;
+    }
+    .descuento-item i { color: var(--info); }
+    .descuento-item small { color: #0056b3; font-weight: 400; }
+
+    /* Precio tachado */
+    .price-value.strikethrough {
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
 
     .membership-dates {
         display: flex;
@@ -1011,6 +1135,8 @@
     .status-badge.pausado, .status-badge.parcial { background: rgba(240,165,0,0.15); color: var(--warning); }
     .status-badge.pendiente { background: rgba(67,97,238,0.15); color: var(--info); }
     .status-badge.cancelado { background: rgba(108,117,125,0.15); color: var(--text-secondary); }
+    .status-badge.suspendido { background: rgba(220,53,69,0.2); color: #c82333; }
+    .status-badge.cambiado { background: rgba(23,162,184,0.15); color: #17a2b8; }
     .status-badge.traspasado { background: rgba(111,66,193,0.15); color: #6f42c1; }
 
     /* Estilos para traspasos cedidos */
