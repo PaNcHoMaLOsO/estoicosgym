@@ -112,7 +112,9 @@
                 <tbody id="clientesTableBody">
                     @forelse($clientes as $cliente)
                     @php
-                        $inscripcionActiva = $cliente->inscripciones->first();
+                        // Buscar inscripción activa primero, si no, la más reciente que no esté traspasada
+                        $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first()
+                            ?? $cliente->inscripciones->whereNotIn('id_estado', [106])->first();
                         $estadoClass = 'sin-membresia';
                         $estadoTexto = 'Sin membresía';
                         $membresiaTexto = '-';
@@ -120,7 +122,9 @@
                         
                         if ($inscripcionActiva) {
                             $membresiaTexto = $inscripcionActiva->membresia->nombre ?? '-';
-                            $vencimientoTexto = $inscripcionActiva->fecha_fin ? \Carbon\Carbon::parse($inscripcionActiva->fecha_fin)->format('d/m/Y') : '-';
+                            $vencimientoTexto = $inscripcionActiva->fecha_vencimiento 
+                                ? \Carbon\Carbon::parse($inscripcionActiva->fecha_vencimiento)->format('d/m/Y') 
+                                : '-';
                             
                             switch($inscripcionActiva->id_estado) {
                                 case 100: // Activa
@@ -142,6 +146,10 @@
                                 case 104: // Suspendida
                                     $estadoClass = 'suspendido';
                                     $estadoTexto = 'Suspendido';
+                                    break;
+                                case 105: // Cambiada
+                                    $estadoClass = 'cambiado';
+                                    $estadoTexto = 'Cambiado';
                                     break;
                                 default:
                                     $estadoClass = 'sin-membresia';
