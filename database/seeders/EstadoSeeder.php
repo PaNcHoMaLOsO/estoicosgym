@@ -9,9 +9,10 @@ class EstadoSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('estados')->insert([
+        // Usar insertOrIgnore para evitar errores si los estados ya existen
+        DB::table('estados')->insertOrIgnore([
             // ===== RANGO 100-199: ESTADOS DE MEMBRESÍAS =====
-            // Códigos: 100=Activa, 101=Pausada, 102=Vencida, 103=Cancelada, 104=Suspendida
+            // Códigos: 100=Activa, 101=Pausada, 102=Vencida, 103=Cancelada, 104=Suspendida, 105=Cambiada, 106=Traspasada
             
             [
                 'codigo' => 100,

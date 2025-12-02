@@ -9,7 +9,12 @@ class PlantillaFestivosSeeder extends Seeder
 {
     public function run(): void
     {
-        $plantillaHtml = <<<'HTML'
+        // Obtener URL base de la app para las imágenes
+        $appUrl = rtrim(config('app.url'), '/');
+        $logoGym = $appUrl . '/images/estoicos_gym_logo.png';
+        $logoSuplementos = $appUrl . '/images/estoicos_splementos_logo.png';
+        
+        $plantillaHtml = <<<HTML
 <!DOCTYPE html>
 <html>
 <head>
@@ -49,7 +54,7 @@ class PlantillaFestivosSeeder extends Seeder
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://estoicosgym.cl/images/estoicos_gym_logo.png" alt="Estoicos Gym">
+            <img src="{$logoGym}" alt="Estoicos Gym">
         </div>
         
         <div class="festivo-banner">
@@ -90,7 +95,7 @@ class PlantillaFestivosSeeder extends Seeder
         </div>
         
         <div class="footer">
-            <img src="https://estoicosgym.cl/images/estoicos_splementos_logo.png" alt="Estoicos Suplementos" style="max-width: 120px; margin-bottom: 15px;">
+            <img src="{$logoSuplementos}" alt="Estoicos Suplementos" style="max-width: 120px; margin-bottom: 15px;">
             <p>Estoicos Gym - Tu templo del fitness</p>
             <p>📍 Dirección del gimnasio</p>
             <p>📞 +56 9 XXXX XXXX</p>
