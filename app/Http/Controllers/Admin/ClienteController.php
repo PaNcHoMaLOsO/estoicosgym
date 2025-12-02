@@ -23,14 +23,21 @@ class ClienteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Mostrar solo clientes activos
+        // Para peticiones AJAX (lazy loading)
+        if ($request->ajax()) {
+            return $this->getClientesJson($request);
+        }
+        
+        // Carga inicial: primeros 100 clientes
         $clientes = Cliente::where('activo', true)
             ->with(['inscripciones' => function ($q) {
                 $q->orderBy('fecha_vencimiento', 'desc');
             }, 'inscripciones.membresia'])
-            ->paginate(20);
+            ->orderBy('id', 'asc')
+            ->limit(100)
+            ->get();
 
         // Estadísticas
         $totalClientes = Cliente::where('activo', true)->count();
@@ -73,14 +80,93 @@ class ClienteController extends Controller
             })
             ->count();
 
+        // Preparar datos de clientes para JavaScript
+        $clientesData = $this->prepareClientesData($clientes);
+
         return view('admin.clientes.index', compact(
-            'clientes', 
+            'clientes',
+            'clientesData',
             'totalClientes', 
             'clientesActivos', 
             'clientesVencidos', 
             'clientesPausados',
             'clientesSinMembresia'
         ));
+    }
+
+    /**
+     * Obtener clientes en formato JSON para lazy loading
+     */
+    private function getClientesJson(Request $request)
+    {
+        $offset = $request->input('offset', 0);
+        $limit = 100;
+
+        $clientes = Cliente::where('activo', true)
+            ->with(['inscripciones' => function ($q) {
+                $q->orderBy('fecha_vencimiento', 'desc');
+            }, 'inscripciones.membresia'])
+            ->orderBy('id', 'asc')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        $hasMore = Cliente::where('activo', true)->count() > ($offset + $limit);
+
+        return response()->json([
+            'clientes' => $this->prepareClientesData($clientes),
+            'hasMore' => $hasMore,
+            'nextOffset' => $offset + $limit
+        ]);
+    }
+
+    /**
+     * Preparar datos de clientes para el frontend
+     */
+    private function prepareClientesData($clientes)
+    {
+        return $clientes->map(function($cliente) {
+            $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first()
+                ?? $cliente->inscripciones->whereNotIn('id_estado', [103, 105, 106])->first();
+            
+            $estadoClass = 'sin-membresia';
+            $estadoTexto = 'Sin membresía';
+            $membresiaTexto = '-';
+            $vencimientoTexto = '-';
+            
+            if ($inscripcionActiva) {
+                $membresiaTexto = $inscripcionActiva->membresia->nombre ?? '-';
+                $vencimientoTexto = $inscripcionActiva->fecha_vencimiento 
+                    ? Carbon::parse($inscripcionActiva->fecha_vencimiento)->format('d/m/Y') 
+                    : '-';
+                
+                switch($inscripcionActiva->id_estado) {
+                    case 100: $estadoClass = 'activo'; $estadoTexto = 'Activo'; break;
+                    case 101: $estadoClass = 'pausado'; $estadoTexto = 'Pausado'; break;
+                    case 102: $estadoClass = 'vencido'; $estadoTexto = 'Vencido'; break;
+                    case 103: $estadoClass = 'cancelado'; $estadoTexto = 'Cancelado'; break;
+                    case 104: $estadoClass = 'suspendido'; $estadoTexto = 'Suspendido'; break;
+                    case 105: $estadoClass = 'cambiado'; $estadoTexto = 'Cambiado'; break;
+                    default: $estadoClass = 'sin-membresia'; $estadoTexto = 'Sin membresía';
+                }
+            }
+            
+            return [
+                'id' => $cliente->id,
+                'nombres' => $cliente->nombres,
+                'apellido_paterno' => $cliente->apellido_paterno,
+                'run_pasaporte' => $cliente->run_pasaporte,
+                'email' => $cliente->email,
+                'celular' => $cliente->celular,
+                'estadoClass' => $estadoClass,
+                'estadoTexto' => $estadoTexto,
+                'membresiaTexto' => $membresiaTexto,
+                'vencimientoTexto' => $vencimientoTexto,
+                'showUrl' => route('admin.clientes.show', $cliente),
+                'editUrl' => route('admin.clientes.edit', $cliente),
+                'deleteUrl' => route('admin.clientes.destroy', $cliente),
+            ];
+        })->values()->toArray();
     }
 
     /**

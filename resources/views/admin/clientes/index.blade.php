@@ -123,140 +123,46 @@
                     </tr>
                 </thead>
                 <tbody id="clientesTableBody">
-                    @forelse($clientes as $cliente)
-                    @php
-                        // Buscar inscripción activa primero, si no, la más reciente que no esté:
-                        // 103=Cancelada, 105=Cambiada, 106=Traspasada
-                        $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first()
-                            ?? $cliente->inscripciones->whereNotIn('id_estado', [103, 105, 106])->first();
-                        $estadoClass = 'sin-membresia';
-                        $estadoTexto = 'Sin membresía';
-                        $membresiaTexto = '-';
-                        $vencimientoTexto = '-';
-                        
-                        if ($inscripcionActiva) {
-                            $membresiaTexto = $inscripcionActiva->membresia->nombre ?? '-';
-                            $vencimientoTexto = $inscripcionActiva->fecha_vencimiento 
-                                ? \Carbon\Carbon::parse($inscripcionActiva->fecha_vencimiento)->format('d/m/Y') 
-                                : '-';
-                            
-                            switch($inscripcionActiva->id_estado) {
-                                case 100: // Activa
-                                    $estadoClass = 'activo';
-                                    $estadoTexto = 'Activo';
-                                    break;
-                                case 101: // Pausada
-                                    $estadoClass = 'pausado';
-                                    $estadoTexto = 'Pausado';
-                                    break;
-                                case 102: // Vencida
-                                    $estadoClass = 'vencido';
-                                    $estadoTexto = 'Vencido';
-                                    break;
-                                case 103: // Cancelada
-                                    $estadoClass = 'cancelado';
-                                    $estadoTexto = 'Cancelado';
-                                    break;
-                                case 104: // Suspendida
-                                    $estadoClass = 'suspendido';
-                                    $estadoTexto = 'Suspendido';
-                                    break;
-                                case 105: // Cambiada
-                                    $estadoClass = 'cambiado';
-                                    $estadoTexto = 'Cambiado';
-                                    break;
-                                default:
-                                    $estadoClass = 'sin-membresia';
-                                    $estadoTexto = 'Sin membresía';
-                            }
-                        }
-                    @endphp
-                    <tr class="cliente-row" 
-                        data-estado="{{ $estadoClass }}"
-                        data-nombre="{{ strtolower($cliente->nombres . ' ' . $cliente->apellido_paterno) }}"
-                        data-rut="{{ strtolower($cliente->run_pasaporte ?? '') }}"
-                        data-email="{{ strtolower($cliente->email ?? '') }}"
-                        data-telefono="{{ $cliente->celular ?? '' }}">
-                        <td>
-                            <div class="cliente-info">
-                                <div class="cliente-avatar">
-                                    {{ strtoupper(substr($cliente->nombres, 0, 1) . substr($cliente->apellido_paterno, 0, 1)) }}
-                                </div>
-                                <div class="cliente-details">
-                                    <span class="cliente-nombre">{{ $cliente->nombres }} {{ $cliente->apellido_paterno }}</span>
-                                    <span class="cliente-rut">{{ $cliente->run_pasaporte ?? 'Sin RUT' }}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="contacto-info">
-                                @if($cliente->email)
-                                <span class="contacto-item">
-                                    <i class="fas fa-envelope"></i> {{ $cliente->email }}
-                                </span>
-                                @endif
-                                @if($cliente->celular)
-                                <span class="contacto-item">
-                                    <i class="fas fa-phone"></i> {{ $cliente->celular }}
-                                </span>
-                                @endif
-                            </div>
-                        </td>
-                        <td>
-                            <span class="membresia-badge">{{ $membresiaTexto }}</span>
-                        </td>
-                        <td>
-                            <span class="estado-badge estado-{{ $estadoClass }}">
-                                {{ $estadoTexto }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="vencimiento-text {{ $estadoClass === 'vencido' ? 'text-danger' : '' }}">
-                                {{ $vencimientoTexto }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="acciones-btns">
-                                <a href="{{ route('admin.clientes.show', $cliente) }}" class="btn-action btn-view" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.clientes.edit', $cliente) }}" class="btn-action btn-edit" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST" class="d-inline form-delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-action btn-delete" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <div class="empty-content">
-                                <i class="fas fa-users-slash"></i>
-                                <h3>No hay clientes registrados</h3>
-                                <p>Comienza agregando tu primer cliente</p>
-                                <a href="{{ route('admin.clientes.create') }}" class="btn-nuevo-cliente-inline">
-                                    <i class="fas fa-user-plus"></i> Agregar Cliente
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
+                    <!-- Los datos se cargan dinámicamente con JavaScript -->
                 </tbody>
             </table>
         </div>
 
-        <!-- Pagination -->
-        @if($clientes->hasPages())
-        <div class="pagination-section">
-            {{ $clientes->withQueryString()->links() }}
+        <!-- Indicador de carga -->
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Cargando más clientes...
         </div>
-        @endif
+
+        <!-- Paginación JavaScript -->
+        <div class="pagination-section" id="paginationSection">
+            <div class="pagination-info">
+                Mostrando <span id="showingFrom">0</span> - <span id="showingTo">0</span> de <span id="totalFiltered">0</span> clientes
+            </div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" id="btnFirst" title="Primera página">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="pagination-btn" id="btnPrev" title="Anterior">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <span class="pagination-pages" id="paginationPages"></span>
+                <button class="pagination-btn" id="btnNext" title="Siguiente">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="pagination-btn" id="btnLast" title="Última página">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            </div>
+            <div class="pagination-per-page">
+                <label>Por página:</label>
+                <select id="perPageSelect">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
     </div>
 </div>
 @stop
@@ -813,35 +719,117 @@
         transform: translateY(-2px);
     }
 
-    /* Pagination */
+    /* Pagination - Nueva versión */
     .pagination-section {
         padding: 20px;
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
+        align-items: center;
         border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 15px;
     }
 
-    .pagination-section .pagination {
+    .pagination-info {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .pagination-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: #f8f9fa;
+        color: var(--text-primary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .pagination-pages {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0 10px;
+    }
+
+    .pagination-num {
+        min-width: 36px;
+        height: 36px;
+        border: none;
+        background: #f8f9fa;
+        color: var(--text-primary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .pagination-num:hover {
+        background: var(--primary-light);
+        color: #fff;
+    }
+
+    .pagination-num.active {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .pagination-ellipsis {
+        padding: 0 8px;
+        color: var(--text-secondary);
+    }
+
+    .pagination-per-page {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pagination-per-page label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
         margin: 0;
     }
 
-    .pagination-section .page-link {
-        border: none;
-        color: var(--text-primary);
-        padding: 10px 16px;
-        margin: 0 4px;
+    .pagination-per-page select {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
         border-radius: 8px;
-        transition: all 0.3s ease;
+        background: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
     }
 
-    .pagination-section .page-link:hover {
-        background: var(--primary);
-        color: #fff;
+    /* Loading indicator */
+    .loading-indicator {
+        text-align: center;
+        padding: 20px;
+        color: var(--text-secondary);
     }
 
-    .pagination-section .page-item.active .page-link {
-        background: var(--primary);
-        color: #fff;
+    .loading-indicator i {
+        margin-right: 8px;
+        color: var(--primary);
     }
 
     /* Responsive */
@@ -991,112 +979,326 @@
 </style>
 <script>
 $(document).ready(function() {
-    // Search functionality
-    $('#searchInput').on('keyup', function() {
-        const searchValue = $(this).val().toLowerCase();
-        
-        $('.cliente-row').each(function() {
-            const nombre = $(this).data('nombre');
-            const rut = $(this).data('rut');
-            const email = $(this).data('email');
-            const telefono = $(this).data('telefono');
-            
-            const matchesSearch = nombre.includes(searchValue) || 
-                                  rut.includes(searchValue) || 
-                                  email.includes(searchValue) || 
-                                  telefono.includes(searchValue);
-            
-            // Check current filter
-            const activeFilter = $('.filter-btn.active').data('filter');
-            const estado = $(this).data('estado');
-            
+    // ============================================
+    // SISTEMA DE LAZY LOADING CON PAGINACIÓN LOCAL
+    // ============================================
+    
+    // Datos globales
+    let allClientes = @json($clientesData);  // Primeros 100 cargados con la página
+    let hasMoreData = {{ $totalClientes > 100 ? 'true' : 'false' }};
+    let nextOffset = 100;
+    let isLoading = false;
+    
+    // Estado de la paginación
+    let currentPage = 1;
+    let perPage = 20;
+    let currentFilter = 'todos';
+    let currentSearch = '';
+    
+    // CSRF token para peticiones AJAX
+    const csrfToken = '{{ csrf_token() }}';
+    
+    /**
+     * Obtener clientes filtrados
+     */
+    function getFilteredClientes() {
+        return allClientes.filter(cliente => {
+            // Filtro por estado
             let matchesFilter = true;
-            if (activeFilter !== 'todos') {
-                if (activeFilter === 'activos') matchesFilter = estado === 'activo';
-                else if (activeFilter === 'vencidos') matchesFilter = estado === 'vencido';
-                else if (activeFilter === 'pausados') matchesFilter = estado === 'pausado';
-                else if (activeFilter === 'sin-membresia') matchesFilter = estado === 'sin-membresia';
+            if (currentFilter !== 'todos') {
+                if (currentFilter === 'activos') matchesFilter = cliente.estadoClass === 'activo';
+                else if (currentFilter === 'vencidos') matchesFilter = cliente.estadoClass === 'vencido';
+                else if (currentFilter === 'pausados') matchesFilter = cliente.estadoClass === 'pausado';
+                else if (currentFilter === 'sin-membresia') matchesFilter = cliente.estadoClass === 'sin-membresia';
             }
             
-            $(this).toggle(matchesSearch && matchesFilter);
+            // Filtro por búsqueda
+            let matchesSearch = true;
+            if (currentSearch) {
+                const searchLower = currentSearch.toLowerCase();
+                const nombre = ((cliente.nombres || '') + ' ' + (cliente.apellido_paterno || '')).toLowerCase();
+                const rut = (cliente.run_pasaporte || '').toLowerCase();
+                const email = (cliente.email || '').toLowerCase();
+                const telefono = (cliente.celular || '').toLowerCase();
+                
+                matchesSearch = nombre.includes(searchLower) || 
+                               rut.includes(searchLower) || 
+                               email.includes(searchLower) || 
+                               telefono.includes(searchLower);
+            }
+            
+            return matchesFilter && matchesSearch;
         });
+    }
+    
+    /**
+     * Renderizar una fila de cliente
+     */
+    function renderClienteRow(cliente) {
+        const initials = ((cliente.nombres || '?')[0] + (cliente.apellido_paterno || '?')[0]).toUpperCase();
+        const nombreCompleto = (cliente.nombres || '') + ' ' + (cliente.apellido_paterno || '');
+        
+        return `
+            <tr class="cliente-row" data-id="${cliente.id}">
+                <td>
+                    <div class="cliente-info">
+                        <div class="cliente-avatar">${initials}</div>
+                        <div class="cliente-details">
+                            <span class="cliente-nombre">${nombreCompleto}</span>
+                            <span class="cliente-rut">${cliente.run_pasaporte || 'Sin RUT'}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="contacto-info">
+                        ${cliente.email ? `<span class="contacto-item"><i class="fas fa-envelope"></i> ${cliente.email}</span>` : ''}
+                        ${cliente.celular ? `<span class="contacto-item"><i class="fas fa-phone"></i> ${cliente.celular}</span>` : ''}
+                    </div>
+                </td>
+                <td><span class="membresia-badge">${cliente.membresiaTexto}</span></td>
+                <td><span class="estado-badge estado-${cliente.estadoClass}">${cliente.estadoTexto}</span></td>
+                <td><span class="vencimiento-text ${cliente.estadoClass === 'vencido' ? 'text-danger' : ''}">${cliente.vencimientoTexto}</span></td>
+                <td>
+                    <div class="acciones-btns">
+                        <a href="${cliente.showUrl}" class="btn-action btn-view" title="Ver detalles"><i class="fas fa-eye"></i></a>
+                        <a href="${cliente.editUrl}" class="btn-action btn-edit" title="Editar"><i class="fas fa-edit"></i></a>
+                        <form action="${cliente.deleteUrl}" method="POST" class="d-inline form-delete">
+                            <input type="hidden" name="_token" value="${csrfToken}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="btn-action btn-delete" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    /**
+     * Renderizar tabla con paginación
+     */
+    function renderTable() {
+        const filtered = getFilteredClientes();
+        const totalFiltered = filtered.length;
+        const totalPages = Math.ceil(totalFiltered / perPage);
+        
+        // Ajustar página actual si es necesario
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        
+        // Calcular índices
+        const startIndex = (currentPage - 1) * perPage;
+        const endIndex = Math.min(startIndex + perPage, totalFiltered);
+        const pageClientes = filtered.slice(startIndex, endIndex);
+        
+        // Renderizar filas
+        const tbody = $('#clientesTableBody');
+        if (pageClientes.length === 0) {
+            tbody.html(`
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-content">
+                            <i class="fas fa-search"></i>
+                            <h3>No se encontraron clientes</h3>
+                            <p>Intenta con otros filtros o términos de búsqueda</p>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        } else {
+            tbody.html(pageClientes.map(renderClienteRow).join(''));
+        }
+        
+        // Actualizar información de paginación
+        $('#showingFrom').text(totalFiltered > 0 ? startIndex + 1 : 0);
+        $('#showingTo').text(endIndex);
+        $('#totalFiltered').text(totalFiltered);
+        
+        // Renderizar números de página
+        renderPaginationNumbers(totalPages);
+        
+        // Habilitar/deshabilitar botones
+        $('#btnFirst, #btnPrev').prop('disabled', currentPage <= 1);
+        $('#btnNext, #btnLast').prop('disabled', currentPage >= totalPages);
+        
+        // Verificar si necesitamos cargar más datos
+        checkAndLoadMore();
+        
+        // Re-vincular eventos de eliminación
+        bindDeleteEvents();
+    }
+    
+    /**
+     * Renderizar números de página
+     */
+    function renderPaginationNumbers(totalPages) {
+        const container = $('#paginationPages');
+        let html = '';
+        
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        
+        if (end - start < maxVisible - 1) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+        
+        if (start > 1) {
+            html += `<button class="pagination-num" data-page="1">1</button>`;
+            if (start > 2) html += `<span class="pagination-ellipsis">...</span>`;
+        }
+        
+        for (let i = start; i <= end; i++) {
+            html += `<button class="pagination-num ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        
+        if (end < totalPages) {
+            if (end < totalPages - 1) html += `<span class="pagination-ellipsis">...</span>`;
+            html += `<button class="pagination-num" data-page="${totalPages}">${totalPages}</button>`;
+        }
+        
+        container.html(html);
+    }
+    
+    /**
+     * Verificar y cargar más datos si es necesario (lazy loading)
+     */
+    function checkAndLoadMore() {
+        const filtered = getFilteredClientes();
+        const totalPages = Math.ceil(filtered.length / perPage);
+        
+        // Si estamos en la página 5+ del bloque actual y hay más datos
+        if (hasMoreData && !isLoading && currentPage >= 5 && (currentPage * perPage) > (allClientes.length - 50)) {
+            loadMoreClientes();
+        }
+    }
+    
+    /**
+     * Cargar más clientes via AJAX
+     */
+    function loadMoreClientes() {
+        if (isLoading || !hasMoreData) return;
+        
+        isLoading = true;
+        $('#loadingIndicator').show();
+        
+        $.ajax({
+            url: '{{ route("admin.clientes.index") }}',
+            method: 'GET',
+            data: { offset: nextOffset },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(response) {
+                if (response.clientes && response.clientes.length > 0) {
+                    allClientes = allClientes.concat(response.clientes);
+                    hasMoreData = response.hasMore;
+                    nextOffset = response.nextOffset;
+                    
+                    console.log(`Cargados ${response.clientes.length} clientes más. Total: ${allClientes.length}`);
+                    
+                    // Re-renderizar para actualizar conteos
+                    renderTable();
+                } else {
+                    hasMoreData = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error cargando más clientes:', error);
+            },
+            complete: function() {
+                isLoading = false;
+                $('#loadingIndicator').hide();
+            }
+        });
+    }
+    
+    /**
+     * Vincular eventos de eliminación
+     */
+    function bindDeleteEvents() {
+        $('.form-delete').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const clienteNombre = $(this).closest('tr').find('.cliente-nombre').text();
+            
+            Swal.fire({
+                title: '¿Eliminar cliente?',
+                html: `
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-user-times" style="font-size: 2rem; color: #dc3545;"></i>
+                        </div>
+                        <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${clienteNombre}</p>
+                        <p style="color: #64748b; font-size: 0.9rem;">Esta acción eliminará también sus inscripciones y pagos.</p>
+                    </div>
+                `,
+                icon: null,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                reverseButtons: true,
+                customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        customClass: { popup: 'swal-estoicos' }
+                    });
+                    form.submit();
+                }
+            });
+        });
+    }
+    
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    
+    // Búsqueda
+    let searchTimeout;
+    $('#searchInput').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentSearch = $(this).val();
+            currentPage = 1;
+            renderTable();
+        }, 300);
     });
-
-    // Filter functionality
+    
+    // Filtros
     $('.filter-btn').on('click', function() {
         $('.filter-btn').removeClass('active');
         $(this).addClass('active');
-        
-        const filter = $(this).data('filter');
-        const searchValue = $('#searchInput').val().toLowerCase();
-        
-        $('.cliente-row').each(function() {
-            const estado = $(this).data('estado');
-            const nombre = $(this).data('nombre');
-            const rut = $(this).data('rut');
-            const email = $(this).data('email');
-            const telefono = $(this).data('telefono');
-            
-            let matchesFilter = true;
-            if (filter !== 'todos') {
-                if (filter === 'activos') matchesFilter = estado === 'activo';
-                else if (filter === 'vencidos') matchesFilter = estado === 'vencido';
-                else if (filter === 'pausados') matchesFilter = estado === 'pausado';
-                else if (filter === 'sin-membresia') matchesFilter = estado === 'sin-membresia';
-            }
-            
-            const matchesSearch = !searchValue || 
-                                  nombre.includes(searchValue) || 
-                                  rut.includes(searchValue) || 
-                                  email.includes(searchValue) || 
-                                  telefono.includes(searchValue);
-            
-            $(this).toggle(matchesSearch && matchesFilter);
-        });
+        currentFilter = $(this).data('filter');
+        currentPage = 1;
+        renderTable();
     });
-
-    // Delete confirmation
-    $('.form-delete').on('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-        const clienteNombre = $(this).closest('tr').find('.cliente-nombre').text();
-        
-        Swal.fire({
-            title: '¿Eliminar cliente?',
-            html: `
-                <div style="text-align: center; padding: 1rem 0;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                        <i class="fas fa-user-times" style="font-size: 2rem; color: #dc3545;"></i>
-                    </div>
-                    <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${clienteNombre}</p>
-                    <p style="color: #64748b; font-size: 0.9rem;">Esta acción eliminará también sus inscripciones y pagos.</p>
-                </div>
-            `,
-            icon: null,
-            showCancelButton: true,
-            confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
-            cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            reverseButtons: true,
-            customClass: {
-                popup: 'swal-estoicos',
-                confirmButton: 'swal2-confirm',
-                cancelButton: 'swal2-cancel'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Mostrar loading
-                Swal.fire({
-                    title: 'Eliminando...',
-                    html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    customClass: { popup: 'swal-estoicos' }
-                });
-                form.submit();
-            }
-        });
+    
+    // Navegación de páginas
+    $('#btnFirst').on('click', () => { currentPage = 1; renderTable(); });
+    $('#btnPrev').on('click', () => { currentPage--; renderTable(); });
+    $('#btnNext').on('click', () => { currentPage++; renderTable(); });
+    $('#btnLast').on('click', () => { 
+        const filtered = getFilteredClientes();
+        currentPage = Math.ceil(filtered.length / perPage); 
+        renderTable(); 
     });
+    
+    $(document).on('click', '.pagination-num', function() {
+        currentPage = parseInt($(this).data('page'));
+        renderTable();
+    });
+    
+    // Cambiar cantidad por página
+    $('#perPageSelect').on('change', function() {
+        perPage = parseInt($(this).val());
+        currentPage = 1;
+        renderTable();
+    });
+    
+    // Renderizar tabla inicial
+    renderTable();
 
     // Success/Error messages from session
     @if(session('success'))
