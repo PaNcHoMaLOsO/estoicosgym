@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadosCodigo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -54,7 +55,8 @@ use Illuminate\Support\Str;
  */
 class Cliente extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
     protected $table = 'clientes';
     protected $primaryKey = 'id';
     public $incrementing = true;
