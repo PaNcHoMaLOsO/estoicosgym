@@ -71,7 +71,7 @@ class EstadoSeeder extends Seeder
             ],
             
             // ===== RANGO 200-299: ESTADOS DE PAGOS =====
-            // Códigos: 200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado
+            // Códigos: 200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado, 205=Traspasado
             
             [
                 'codigo' => 200,
@@ -111,6 +111,14 @@ class EstadoSeeder extends Seeder
                 'descripcion' => 'Pago cancelado',
                 'categoria' => 'pago',
                 'color' => 'secondary',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 205,
+                'nombre' => 'Traspasado',
+                'descripcion' => 'Pago traspasado a otra inscripción',
+                'categoria' => 'pago',
+                'color' => 'purple',
                 'activo' => true,
             ],
             
@@ -212,6 +220,42 @@ class EstadoSeeder extends Seeder
                 'descripcion' => 'Recurso vencido',
                 'categoria' => 'generico',
                 'color' => 'danger',
+                'activo' => true,
+            ],
+            
+            // ===== RANGO 600-603: ESTADOS DE NOTIFICACIONES =====
+            // Códigos: 600=Pendiente, 601=Enviada, 602=Fallida, 603=Cancelada
+            
+            [
+                'codigo' => 600,
+                'nombre' => 'Pendiente',
+                'descripcion' => 'Notificación programada pendiente de envío',
+                'categoria' => 'notificacion',
+                'color' => 'warning',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 601,
+                'nombre' => 'Enviada',
+                'descripcion' => 'Notificación enviada exitosamente',
+                'categoria' => 'notificacion',
+                'color' => 'success',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 602,
+                'nombre' => 'Fallida',
+                'descripcion' => 'Error al enviar la notificación',
+                'categoria' => 'notificacion',
+                'color' => 'danger',
+                'activo' => true,
+            ],
+            [
+                'codigo' => 603,
+                'nombre' => 'Cancelada',
+                'descripcion' => 'Notificación cancelada manualmente',
+                'categoria' => 'notificacion',
+                'color' => 'secondary',
                 'activo' => true,
             ],
         ]);

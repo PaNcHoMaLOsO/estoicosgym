@@ -43,7 +43,7 @@ class EstadosCodigo
     public const INSCRIPCION_TRASPASADA = 106;
 
     // ========================================
-    // ESTADOS DE PAGO (200-204)
+    // ESTADOS DE PAGO (200-205)
     // ========================================
     
     /** Pago pendiente de realizar */
