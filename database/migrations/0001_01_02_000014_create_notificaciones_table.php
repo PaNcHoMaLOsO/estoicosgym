@@ -58,6 +58,7 @@ return new class extends Migration
             $table->index('fecha_programada');
             $table->index(['id_estado', 'fecha_programada']);
             $table->index('id_tipo_notificacion');
+            $table->index(['fecha_programada', 'id_estado'], 'idx_notificaciones_programadas');
         });
 
         // Tabla de log de envíos (historial detallado)

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->unsignedInteger('id_estado')->nullable()->comment('Rango 400-402: estados del cliente');
             $table->text('observaciones')->nullable();
             $table->boolean('activo')->default(true);
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');

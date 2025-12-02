@@ -57,6 +57,7 @@ return new class extends Migration
             $table->timestamp('fecha_traspaso')->nullable();
             $table->text('motivo_traspaso')->nullable();
             
+            $table->softDeletes();
             $table->timestamps();
 
             // Foreign keys
@@ -76,6 +77,7 @@ return new class extends Migration
             $table->index('es_traspaso');
             $table->index('id_cliente_original');
             $table->index(['fecha_inicio', 'fecha_vencimiento']);
+            $table->index(['id_cliente', 'id_estado'], 'idx_inscripciones_cliente_estado');
         });
     }
 

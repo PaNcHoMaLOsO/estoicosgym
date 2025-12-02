@@ -53,6 +53,7 @@ return new class extends Migration
             $table->index('fecha_pago');
             $table->index('id_estado');
             $table->index('referencia_pago');
+            $table->index(['id_inscripcion', 'id_estado'], 'idx_pagos_inscripcion_estado');
         });
     }
 
