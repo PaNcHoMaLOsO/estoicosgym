@@ -100,12 +100,12 @@ class Inscripcion extends Model
         'fecha_pausa_fin' => 'date',
         'fecha_cambio_plan' => 'datetime',
         'fecha_traspaso' => 'datetime',
-        'precio_base' => 'integer',
-        'descuento_aplicado' => 'integer',
-        'precio_final' => 'integer',
-        'credito_plan_anterior' => 'integer',
-        'precio_nuevo_plan' => 'integer',
-        'diferencia_a_pagar' => 'integer',
+        'precio_base' => 'decimal:2',
+        'descuento_aplicado' => 'decimal:2',
+        'precio_final' => 'decimal:2',
+        'credito_plan_anterior' => 'decimal:2',
+        'precio_nuevo_plan' => 'decimal:2',
+        'diferencia_a_pagar' => 'decimal:2',
         'pausada' => 'boolean',
         'pausa_indefinida' => 'boolean',
         'es_cambio_plan' => 'boolean',
@@ -160,14 +160,6 @@ class Inscripcion extends Model
     public function convenio()
     {
         return $this->belongsTo(Convenio::class, 'id_convenio');
-    }
-
-    /**
-     * Usuario que creó la inscripción
-     */
-    public function creador()
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function pagos()
