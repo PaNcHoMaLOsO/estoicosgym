@@ -115,9 +115,17 @@ class DatosRealistasSeeder extends Seeder
                 $membresia = $membresias->random();
                 $convenio = fake()->boolean(30) && $convenios->isNotEmpty() ? $convenios->random() : null;
                 
-                // Calcular fechas
-                $fechaInicio = $fechaBase->copy()->addMonths($j * $membresia->duracion_meses);
-                $fechaVencimiento = $fechaInicio->copy()->addMonths($membresia->duracion_meses);
+                // Calcular fechas - las inscripciones van hacia el PASADO, no futuro
+                // La primera inscripción (j=0) es la más antigua
+                $mesesAtras = ($numInscripciones - 1 - $j) * ($membresia->duracion_meses ?: 1);
+                $fechaInicio = $fechaBase->copy()->subMonths($mesesAtras);
+                $fechaVencimiento = $fechaInicio->copy()->addMonths($membresia->duracion_meses ?: 0)->addDays($membresia->duracion_dias ?: 0);
+                
+                // Limitar fecha de vencimiento a máximo 1 año en el futuro
+                $maxFechaVencimiento = Carbon::now()->addYear();
+                if ($fechaVencimiento->gt($maxFechaVencimiento)) {
+                    $fechaVencimiento = $maxFechaVencimiento;
+                }
                 
                 // Determinar estado según fechas y tipo
                 $estado = $this->determinarEstadoInscripcion($fechaVencimiento, $tipoCliente, $j, $numInscripciones);
