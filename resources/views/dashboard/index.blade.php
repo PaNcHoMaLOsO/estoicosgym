@@ -815,13 +815,13 @@
                     <div class="comparison-item {{ $variacionIngresos >= 0 ? 'positive' : 'negative' }}">
                         <div class="comparison-label">Ingresos</div>
                         <div class="comparison-value">
-                            @if($variacionIngresos >= 0) ↑ @else ↓ @endif {{ abs(number_format($variacionIngresos, 1)) }}%
+                            @if($variacionIngresos >= 0) ↑ @else ↓ @endif {{ number_format(abs($variacionIngresos), 1) }}%
                         </div>
                     </div>
                     <div class="comparison-item {{ $variacionClientes >= 0 ? 'positive' : 'negative' }}">
                         <div class="comparison-label">Clientes Nuevos</div>
                         <div class="comparison-value">
-                            @if($variacionClientes >= 0) ↑ @else ↓ @endif {{ abs(number_format($variacionClientes, 1)) }}%
+                            @if($variacionClientes >= 0) ↑ @else ↓ @endif {{ number_format(abs($variacionClientes), 1) }}%
                         </div>
                     </div>
                 </div>

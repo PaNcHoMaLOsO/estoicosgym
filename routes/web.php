@@ -317,6 +317,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [NotificacionController::class, 'index'])->name('index');
         Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
         
+        // Crear notificación masiva
+        Route::get('/crear', [NotificacionController::class, 'crear'])->name('crear');
+        Route::get('/obtener-destinatarios', [NotificacionController::class, 'obtenerDestinatarios'])->name('obtener-destinatarios');
+        Route::post('/enviar-masivo', [NotificacionController::class, 'enviarMasivo'])->name('enviar-masivo');
+        
         // Plantillas (rutas específicas)
         Route::get('/plantillas', [NotificacionController::class, 'plantillas'])->name('plantillas');
         Route::get('/plantillas/{tipoNotificacion}/editar', [NotificacionController::class, 'editarPlantilla'])->name('plantillas.editar');

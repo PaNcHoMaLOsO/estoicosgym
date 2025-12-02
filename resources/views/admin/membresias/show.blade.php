@@ -707,7 +707,7 @@
                         @if ($historialPrecios->hasPages())
                             <div class="card-footer">
                                 <div class="d-flex justify-content-center">
-                                    {{ $historialPrecios->links('pagination::bootstrap-4') }}
+                                    {{ $historialPrecios->withQueryString()->links('pagination::bootstrap-4') }}
                                 </div>
                             </div>
                         @endif

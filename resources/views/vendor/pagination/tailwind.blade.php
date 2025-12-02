@@ -1,5 +1,5 @@
 @if ($paginator->hasPages())
-    <nav role="navigation" aria-label="Navegación de páginas" class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <nav role="navigation" aria-label="Navegación de páginas" class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
         {{-- Información de resultados --}}
         <div class="pagination-info text-muted small">
             Mostrando {{ $paginator->firstItem() ?? 0 }} - {{ $paginator->lastItem() ?? 0 }} de {{ $paginator->total() }} resultados

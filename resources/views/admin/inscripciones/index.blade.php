@@ -288,7 +288,7 @@
         <!-- Pagination -->
         @if($inscripciones->hasPages())
         <div class="pagination-section">
-            {{ $inscripciones->links() }}
+            {{ $inscripciones->withQueryString()->links() }}
         </div>
         @endif
     </div>

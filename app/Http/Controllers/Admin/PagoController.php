@@ -10,6 +10,7 @@ use App\Models\MetodoPago;
 use App\Models\Estado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PagoController extends Controller
@@ -379,13 +380,67 @@ class PagoController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * Incluye validaciones para proteger la integridad de datos.
      */
     public function destroy(Pago $pago)
     {
-        $pago->delete();
+        // Cargar inscripción relacionada
+        $pago->load('inscripcion');
+        
+        // Validar que el pago no sea de una inscripción traspasada (estado 205 = Traspasado)
+        if ($pago->id_estado == 205) {
+            return redirect()->route('admin.pagos.show', $pago)
+                ->with('error', 'No se puede eliminar un pago que fue traspasado. Este registro es parte del historial de traspaso.');
+        }
+        
+        // Validar que no sea el único pago de una inscripción activa
+        if ($pago->inscripcion && $pago->inscripcion->id_estado == 100) { // Inscripción Activa
+            $totalPagos = $pago->inscripcion->pagos()->count();
+            if ($totalPagos <= 1) {
+                return redirect()->route('admin.pagos.show', $pago)
+                    ->with('error', 'No se puede eliminar el único pago de una inscripción activa. Esto dejaría la inscripción sin registro de pago.');
+            }
+        }
+        
+        // Guardar info para el mensaje
+        $inscripcionId = $pago->id_inscripcion;
+        $montoEliminado = $pago->monto_abonado;
+        $inscripcion = $pago->inscripcion;
+        
+        // Usar transacción para asegurar consistencia
+        DB::transaction(function() use ($pago, $inscripcion) {
+            $pago->delete();
+            
+            // Recalcular estado de los pagos restantes de la inscripción
+            if ($inscripcion) {
+                $pagosRestantes = $inscripcion->pagos()->get();
+                $totalAbonado = $pagosRestantes->sum('monto_abonado');
+                $precioFinal = $inscripcion->precio_final;
+                
+                // Actualizar monto_pendiente en cada pago restante
+                foreach ($pagosRestantes as $pagoRestante) {
+                    $nuevoPendiente = max(0, $precioFinal - $totalAbonado);
+                    
+                    // Determinar nuevo estado del pago
+                    if ($totalAbonado >= $precioFinal) {
+                        $nuevoEstado = 201; // Pagado
+                        $nuevoPendiente = 0;
+                    } elseif ($totalAbonado > 0) {
+                        $nuevoEstado = 202; // Parcial
+                    } else {
+                        $nuevoEstado = 200; // Pendiente
+                    }
+                    
+                    $pagoRestante->update([
+                        'monto_pendiente' => $nuevoPendiente,
+                        'id_estado' => $nuevoEstado,
+                    ]);
+                }
+            }
+        });
 
         return redirect()->route('admin.pagos.index')
-            ->with('success', 'Pago eliminado exitosamente');
+            ->with('success', "Pago de \${$montoEliminado} eliminado exitosamente. Inscripción #{$inscripcionId}. Los pagos restantes han sido actualizados.");
     }
 
     /**

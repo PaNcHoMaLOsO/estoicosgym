@@ -400,15 +400,17 @@
 
     {{-- Barra de Acciones --}}
     <div class="action-bar">
-        <div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('admin.notificaciones.crear') }}" class="btn btn-success" style="background: linear-gradient(135deg, #00bf8e, #00a67d); border: none; border-radius: 10px; padding: 12px 25px; font-weight: 600;">
+                <i class="fas fa-plus"></i> Nueva Notificación
+            </a>
             <form action="{{ route('admin.notificaciones.ejecutar') }}" method="POST" class="d-inline">
                 @csrf
                 <input type="hidden" name="accion" value="todo">
                 <button type="submit" class="btn btn-execute">
-                    <i class="fas fa-play"></i> Ejecutar Ahora
+                    <i class="fas fa-play"></i> Ejecutar Automáticas
                 </button>
             </form>
-            <small class="text-muted ml-3">Programa y envía notificaciones pendientes</small>
         </div>
         <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn btn-plantillas">
             <i class="fas fa-file-alt"></i> Gestionar Plantillas
@@ -570,7 +572,7 @@
                 </table>
 
                 <div class="p-3">
-                    {{ $notificaciones->links() }}
+                    {{ $notificaciones->withQueryString()->links() }}
                 </div>
             @else
                 <div class="empty-state">

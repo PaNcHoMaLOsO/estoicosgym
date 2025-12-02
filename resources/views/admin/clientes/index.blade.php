@@ -254,7 +254,7 @@
         <!-- Pagination -->
         @if($clientes->hasPages())
         <div class="pagination-section">
-            {{ $clientes->links() }}
+            {{ $clientes->withQueryString()->links() }}
         </div>
         @endif
     </div>

@@ -598,16 +598,31 @@ class InscripcionController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * Solo permite eliminar inscripciones canceladas, vencidas o sin pagos.
      * 
      * @param \App\Models\Inscripcion $inscripcion
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Inscripcion $inscripcion)
     {
+        // Validar que no sea una inscripción activa o pausada
+        if (in_array($inscripcion->id_estado, [100, 101])) { // Activa o Pausada
+            return redirect()->route('admin.inscripciones.show', $inscripcion)
+                ->with('error', 'No se puede eliminar una inscripción activa o pausada. Primero debe cancelarla o esperar a que venza.');
+        }
+        
+        // Validar que no tenga pagos asociados
+        if ($inscripcion->pagos()->count() > 0) {
+            return redirect()->route('admin.inscripciones.show', $inscripcion)
+                ->with('error', 'No se puede eliminar esta inscripción porque tiene ' . $inscripcion->pagos()->count() . ' pago(s) asociado(s). Elimine los pagos primero o considere cancelar la inscripción en lugar de eliminarla.');
+        }
+        
+        // Solo eliminar si pasó todas las validaciones
+        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
         $inscripcion->delete();
 
         return redirect()->route('admin.inscripciones.index')
-            ->with('success', 'Inscripción eliminada exitosamente');
+            ->with('success', "Inscripción de {$clienteNombre} eliminada exitosamente.");
     }
 
     /**
@@ -877,8 +892,10 @@ class InscripcionController extends Controller
 
             try {
                 // 1. Marcar inscripción anterior como "Cambiada" (estado 105)
+                // FIX: Ajustar fecha_vencimiento al cambiar de plan
                 $inscripcion->update([
                     'id_estado' => 105, // Estado: Cambiada a otro plan
+                    'fecha_vencimiento' => now()->format('Y-m-d'), // FIX: La inscripción ya no está activa
                     'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') 
                         . "[" . now()->format('d/m/Y H:i') . "] Cambio de plan a: {$nuevaMembresia->nombre}",
                 ]);
@@ -1115,6 +1132,14 @@ class InscripcionController extends Controller
             // Verificar que el cliente destino puede recibir el traspaso
             $clienteDestino = Cliente::findOrFail($validated['id_cliente_destino']);
             
+            // FIX: Validar que el cliente destino esté activo
+            if (!$clienteDestino->activo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede traspasar a un cliente inactivo.',
+                ], 422);
+            }
+            
             if (!Inscripcion::clientePuedeRecibirTraspaso($clienteDestino->id)) {
                 return response()->json([
                     'success' => false,
@@ -1134,19 +1159,26 @@ class InscripcionController extends Controller
                     $observacionTraspaso .= " | Deuda transferida: $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.');
                 }
                 
+                // FIX: Cuando se traspasa, la inscripción ya no está activa, así que ajustar fecha_vencimiento
                 $inscripcion->update([
                     'id_estado' => 106, // Estado: Traspasada
+                    'fecha_vencimiento' => now()->format('Y-m-d'), // FIX: Ajustar fecha al traspasar
                     'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') . $observacionTraspaso,
                 ]);
 
                 // 1.5 Marcar todos los pagos de la inscripción original como "Traspasados" (estado 205)
+                // FIX: También actualizar montos para que no quede saldo pendiente visible
                 foreach ($inscripcion->pagos as $pago) {
                     $observacionPagoOriginal = $pago->observaciones ?? '';
                     $observacionPagoOriginal .= ($observacionPagoOriginal ? "\n" : '') 
                         . "[" . now()->format('d/m/Y H:i') . "] Traspasado a: {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
                     
+                    // FIX: Al traspasar, el monto pendiente se considera "regularizado" por el traspaso
+                    // El monto_abonado se ajusta al total para indicar que la deuda fue transferida
                     $pago->update([
                         'id_estado' => 205, // Estado: Traspasado
+                        'monto_abonado' => $pago->monto_total, // FIX: Marcar como totalmente regularizado
+                        'monto_pendiente' => 0, // FIX: Sin saldo pendiente
                         'observaciones' => $observacionPagoOriginal,
                     ]);
                 }
@@ -1208,18 +1240,23 @@ class InscripcionController extends Controller
                     }
                 } else {
                     // Sin deuda o ignorando deuda sin transferir
-                    Pago::create([
-                        'id_inscripcion' => $nuevaInscripcion->id,
-                        'id_cliente' => $clienteDestino->id,
-                        'monto_total' => $infoTraspaso['monto_pagado'], // Solo lo pagado
-                        'monto_abonado' => $infoTraspaso['monto_pagado'],
-                        'monto_pendiente' => 0,
-                        'id_estado' => 201, // Pagado
-                        'id_metodo_pago' => 1,
-                        'fecha_pago' => now()->format('Y-m-d'),
-                        'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
-                        'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
-                    ]);
+                    // FIX: Solo crear pago si hay monto pagado > 0
+                    if ($infoTraspaso['monto_pagado'] > 0) {
+                        Pago::create([
+                            'id_inscripcion' => $nuevaInscripcion->id,
+                            'id_cliente' => $clienteDestino->id,
+                            'monto_total' => $infoTraspaso['monto_pagado'], // Solo lo pagado
+                            'monto_abonado' => $infoTraspaso['monto_pagado'],
+                            'monto_pendiente' => 0,
+                            'id_estado' => 201, // Pagado
+                            'id_metodo_pago' => 1,
+                            'fecha_pago' => now()->format('Y-m-d'),
+                            'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
+                            'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
+                        ]);
+                    }
+                    // FIX: Si no hay monto pagado, no se crea pago vacío
+                    // El nuevo cliente deberá realizar su primer pago
                 }
 
                 // 4. Registrar en el historial de traspasos

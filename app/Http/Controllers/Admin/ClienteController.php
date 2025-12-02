@@ -121,6 +121,11 @@ class ClienteController extends Controller
      */
     public function store(Request $request)
     {
+        // Validar que no sea doble envío PRIMERO
+        if (!$this->validateFormToken($request, 'cliente_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         // Determinar qué tipo de flujo es
         $flujoCliente = $request->input('flujo_cliente', 'completo');
 
@@ -144,13 +149,6 @@ class ClienteController extends Controller
             ...$validatedCliente,
             'activo' => true,
         ]);
-
-        // Validar que no sea doble envío DESPUÉS de validar datos
-        // Si es doble envío, eliminar el cliente creado
-        if (!$this->validateFormToken($request, 'cliente_create')) {
-            $cliente->delete();
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
 
         // ========== CASO 1: SOLO CLIENTE ==========
         if ($flujoCliente === 'solo_cliente') {

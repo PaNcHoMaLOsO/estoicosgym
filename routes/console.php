@@ -10,17 +10,20 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // ============ SCHEDULER ============
-Schedule::command('clientes:desactivar-vencidos')
-    ->dailyAt('03:00')
+
+// Actualizar estados de inscripciones vencidas (ejecutar primero)
+Schedule::command('inscripciones:actualizar-estados')
+    ->dailyAt('01:00')
     ->withoutOverlapping()
-    ->name('desactivar-clientes-vencidos')
+    ->name('actualizar-estados-inscripciones')
     ->onSuccess(function () {
-        Log::info('✅ Clientes vencidos desactivados automáticamente');
+        Log::info('✅ Estados de inscripciones actualizados automáticamente');
     })
     ->onFailure(function () {
-        Log::error('❌ Error al desactivar clientes vencidos');
+        Log::error('❌ Error al actualizar estados de inscripciones');
     });
 
+// Sincronizar estados de pagos
 Schedule::command('pagos:sincronizar-estados')
     ->dailyAt('02:00')
     ->withoutOverlapping()
@@ -30,4 +33,16 @@ Schedule::command('pagos:sincronizar-estados')
     })
     ->onFailure(function () {
         Log::error('❌ Error al sincronizar estados de pagos');
+    });
+
+// Desactivar clientes con membresías vencidas
+Schedule::command('clientes:desactivar-vencidos')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->name('desactivar-clientes-vencidos')
+    ->onSuccess(function () {
+        Log::info('✅ Clientes vencidos desactivados automáticamente');
+    })
+    ->onFailure(function () {
+        Log::error('❌ Error al desactivar clientes vencidos');
     });

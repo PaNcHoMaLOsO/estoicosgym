@@ -653,7 +653,7 @@
         @if ($membresias->hasPages())
             <div class="card-footer">
                 <div class="d-flex justify-content-center">
-                    {{ $membresias->links('pagination::bootstrap-4') }}
+                    {{ $membresias->withQueryString()->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         @endif
