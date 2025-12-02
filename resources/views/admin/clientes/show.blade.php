@@ -32,7 +32,7 @@
     // Calcular días restantes
     $diasRestantes = null;
     if ($inscripcionActiva && $inscripcionActiva->fecha_vencimiento) {
-        $diasRestantes = now()->diffInDays($inscripcionActiva->fecha_vencimiento, false);
+        $diasRestantes = (int) now()->diffInDays($inscripcionActiva->fecha_vencimiento, false);
     }
     
     // Calcular edad
@@ -249,7 +249,7 @@
                     {{-- Días restantes (solo para activas) --}}
                     @if($ultimaInscripcion->id_estado == 100)
                     @php
-                        $diasRestantes = now()->diffInDays($ultimaInscripcion->fecha_vencimiento, false);
+                        $diasRestantes = (int) now()->diffInDays($ultimaInscripcion->fecha_vencimiento, false);
                     @endphp
                     <div class="dias-restantes {{ $diasRestantes <= 7 ? 'warning' : ($diasRestantes <= 3 ? 'danger' : '') }}">
                         <i class="fas fa-hourglass-half"></i>
