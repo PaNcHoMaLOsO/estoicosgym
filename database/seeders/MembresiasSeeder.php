@@ -13,6 +13,7 @@ class MembresiasSeeder extends Seeder
             'nombre' => 'Anual',
             'duracion_meses' => 12,
             'duracion_dias' => 365,
+            'max_pausas' => 3,
             'descripcion' => 'Membresía válida por 12 meses',
             'activo' => true,
         ]);
@@ -21,6 +22,7 @@ class MembresiasSeeder extends Seeder
             'nombre' => 'Semestral',
             'duracion_meses' => 6,
             'duracion_dias' => 180,
+            'max_pausas' => 2,
             'descripcion' => 'Membresía válida por 6 meses',
             'activo' => true,
         ]);
@@ -29,6 +31,7 @@ class MembresiasSeeder extends Seeder
             'nombre' => 'Trimestral',
             'duracion_meses' => 3,
             'duracion_dias' => 90,
+            'max_pausas' => 1,
             'descripcion' => 'Membresía válida por 3 meses',
             'activo' => true,
         ]);
@@ -37,6 +40,7 @@ class MembresiasSeeder extends Seeder
             'nombre' => 'Mensual',
             'duracion_meses' => 1,
             'duracion_dias' => 30,
+            'max_pausas' => 1,
             'descripcion' => 'Membresía válida por 1 mes',
             'activo' => true,
         ]);
@@ -45,6 +49,7 @@ class MembresiasSeeder extends Seeder
             'nombre' => 'Pase Diario',
             'duracion_meses' => 0,
             'duracion_dias' => 1,
+            'max_pausas' => 0,
             'descripcion' => 'Acceso por un solo día',
             'activo' => true,
         ]);

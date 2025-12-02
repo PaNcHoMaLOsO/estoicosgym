@@ -14,6 +14,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phone', 20)->nullable();
+            $table->boolean('two_factor_enabled')->default(false);
+            $table->enum('two_factor_channel', ['sms', 'whatsapp'])->default('whatsapp');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -32,12 +35,31 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+        
+        // Tabla para códigos de verificación 2FA
+        Schema::create('verification_codes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('code', 6);
+            $table->enum('type', ['login', 'password_reset', 'phone_verify'])->default('login');
+            $table->enum('channel', ['sms', 'whatsapp', 'email'])->default('whatsapp');
+            $table->string('phone', 20)->nullable();
+            $table->boolean('is_used')->default(false);
+            $table->timestamp('expires_at');
+            $table->timestamp('verified_at')->nullable();
+            $table->timestamps();
+            
+            $table->index(['user_id', 'type', 'is_used']);
+            $table->index('code');
+            $table->index('expires_at');
+        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('verification_codes');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };
