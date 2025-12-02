@@ -59,9 +59,18 @@ class ClienteController extends Controller
                 $q->where('id_estado', 100);
             })->count();
         
-        // Clientes sin ninguna membresía
+        // Clientes sin membresía vigente (sin inscripciones O solo con canceladas/suspendidas)
         $clientesSinMembresia = Cliente::where('activo', true)
-            ->whereDoesntHave('inscripciones')
+            ->where(function($query) {
+                // Sin ninguna inscripción
+                $query->whereDoesntHave('inscripciones')
+                    // O solo con inscripciones canceladas/suspendidas (sin activa, pausada o vencida)
+                    ->orWhere(function($q) {
+                        $q->whereDoesntHave('inscripciones', function($sub) {
+                            $sub->whereIn('id_estado', [100, 101, 102]); // Activa, Pausada, Vencida
+                        });
+                    });
+            })
             ->count();
 
         return view('admin.clientes.index', compact(
