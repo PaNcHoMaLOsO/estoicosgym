@@ -8,35 +8,14 @@ use App\Models\Pago;
 use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Estado;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PagoController extends Controller
 {
-    /**
-     * Validar token de formulario para prevenir envío duplicado
-     */
-    private function validateFormToken(Request $request, string $action): bool
-    {
-        $token = $request->input('form_submit_token');
-        
-        if (!$token) {
-            return false;
-        }
-        
-        $userId = optional(auth('web')->user())->id ?? session()->getId();
-        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
-        
-        if (Cache::has($cacheKey)) {
-            return false;
-        }
-        
-        Cache::put($cacheKey, true, 10);
-        
-        return true;
-    }
+    use ValidatesFormToken;
 
     /**
      * Display a listing of the resource.

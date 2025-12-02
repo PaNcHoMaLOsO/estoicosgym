@@ -16,45 +16,20 @@ use App\Models\HistorialTraspaso;
 use App\Models\HistorialCambio;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class InscripcionController extends Controller
 {
+    use ValidatesFormToken;
+
     // Campos permitidos para ordenamiento
     protected $camposValidos = [
         'id', 'id_cliente', 'id_membresia', 'id_estado', 
         'fecha_inicio', 'fecha_vencimiento', 'precio_base', 
         'precio_final', 'created_at'
     ];
-
-    /**
-     * Validar token de formulario para prevenir envíos duplicados
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param string $action
-     * @return bool
-     */
-    private function validateFormToken(Request $request, string $action): bool
-    {
-        $token = $request->input('form_submit_token');
-        
-        if (!$token) {
-            return false;
-        }
-        
-        $userId = optional(auth('web')->user())->id ?? session()->getId();
-        $cacheKey = 'form_submit_' . $userId . '_' . $action . '_' . substr($token, 0, 20);
-        
-        if (Cache::has($cacheKey)) {
-            return false;
-        }
-        
-        Cache::put($cacheKey, true, 10);
-        
-        return true;
-    }
 
     /**
      * Display a listing of the resource.
