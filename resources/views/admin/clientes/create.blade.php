@@ -72,7 +72,7 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control @error('run_pasaporte') is-invalid @enderror" 
                                            id="run_pasaporte" name="run_pasaporte" 
-                                           placeholder="Ej: 12.345.678-9 o 12.345.678-0 o 12.345.678-K"
+                                           placeholder="Ingrese RUT"
                                            value="{{ old('run_pasaporte') }}">
                                     <div class="input-group-append">
                                         <span class="input-group-text" id="rut-status" style="min-width: 45px;">
@@ -80,7 +80,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <small class="form-hint" id="rut-hint">Campo opcional - Formato chileno (incluye dígitos 0 y K)</small>
+                                <small class="form-hint" id="rut-hint">Si ingresa RUT, se validará automáticamente</small>
                                 <div id="rut-feedback" class="mt-1" style="display: none;"></div>
                                 @error('run_pasaporte')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -92,7 +92,9 @@
                                 </label>
                                 <input type="date" class="form-control @error('fecha_nacimiento') is-invalid @enderror" 
                                        id="fecha_nacimiento" name="fecha_nacimiento"
-                                       value="{{ old('fecha_nacimiento') }}">
+                                       value="{{ old('fecha_nacimiento') }}"
+                                       max="{{ now()->subYears(10)->format('Y-m-d') }}">
+                                <small class="form-hint" id="edad-info">Edad mínima: 10 años</small>
                                 @error('fecha_nacimiento')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -100,6 +102,130 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ===== SECCIÓN APODERADO (Solo para menores de edad) ===== -->
+                <div class="section-card" id="seccion-apoderado" style="display: none;">
+                    <div class="section-header apoderado-header">
+                        <i class="fas fa-user-shield"></i>
+                        <h3>Autorización de Apoderado/Tutor</h3>
+                        <span class="badge badge-warning ml-2">
+                            <i class="fas fa-exclamation-triangle"></i> Cliente menor de edad
+                        </span>
+                    </div>
+                    <div class="section-body">
+                        <!-- Alerta informativa -->
+                        <div class="alert alert-warning alert-menor mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-child fa-2x mr-3"></i>
+                                <div>
+                                    <strong>⚠️ Este cliente es menor de 18 años</strong>
+                                    <p class="mb-0 mt-1">Para inscribir a un menor de edad, se requiere la autorización de un apoderado o tutor legal. Complete los siguientes datos obligatorios.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox de consentimiento -->
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox checkbox-apoderado">
+                                <input type="checkbox" class="custom-control-input @error('consentimiento_apoderado') is-invalid @enderror" 
+                                       id="consentimiento_apoderado" name="consentimiento_apoderado" value="1"
+                                       {{ old('consentimiento_apoderado') ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="consentimiento_apoderado">
+                                    <strong>Confirmo que el apoderado/tutor ha autorizado la inscripción del menor</strong>
+                                </label>
+                            </div>
+                            @error('consentimiento_apoderado')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Campos del apoderado -->
+                        <div id="campos-apoderado" class="mt-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="apoderado_nombre">
+                                        <i class="fas fa-user"></i> Nombre Completo del Apoderado <span class="required">*</span>
+                                    </label>
+                                    <input type="text" class="form-control campo-apoderado @error('apoderado_nombre') is-invalid @enderror" 
+                                           id="apoderado_nombre" name="apoderado_nombre"
+                                           placeholder="Ej: María González Pérez"
+                                           value="{{ old('apoderado_nombre') }}">
+                                    @error('apoderado_nombre')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="apoderado_rut">
+                                        <i class="fas fa-id-card"></i> RUT del Apoderado <span class="required">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control campo-apoderado @error('apoderado_rut') is-invalid @enderror" 
+                                               id="apoderado_rut" name="apoderado_rut"
+                                               placeholder="Ej: 12.345.678-9"
+                                               value="{{ old('apoderado_rut') }}">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" id="apoderado-rut-status">
+                                                <i class="fas fa-question-circle text-muted" id="apoderado-rut-icon"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @error('apoderado_rut')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="apoderado_telefono">
+                                        <i class="fas fa-phone"></i> Teléfono del Apoderado <span class="required">*</span>
+                                    </label>
+                                    <input type="text" class="form-control campo-apoderado @error('apoderado_telefono') is-invalid @enderror" 
+                                           id="apoderado_telefono" name="apoderado_telefono"
+                                           placeholder="+56 9 1234 5678"
+                                           value="{{ old('apoderado_telefono') }}">
+                                    @error('apoderado_telefono')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="apoderado_parentesco">
+                                        <i class="fas fa-users"></i> Parentesco <span class="required">*</span>
+                                    </label>
+                                    <select class="form-control campo-apoderado @error('apoderado_parentesco') is-invalid @enderror" 
+                                            id="apoderado_parentesco" name="apoderado_parentesco">
+                                        <option value="">Seleccione parentesco...</option>
+                                        <option value="Padre" {{ old('apoderado_parentesco') == 'Padre' ? 'selected' : '' }}>Padre</option>
+                                        <option value="Madre" {{ old('apoderado_parentesco') == 'Madre' ? 'selected' : '' }}>Madre</option>
+                                        <option value="Tutor Legal" {{ old('apoderado_parentesco') == 'Tutor Legal' ? 'selected' : '' }}>Tutor Legal</option>
+                                        <option value="Abuelo/a" {{ old('apoderado_parentesco') == 'Abuelo/a' ? 'selected' : '' }}>Abuelo/a</option>
+                                        <option value="Tío/a" {{ old('apoderado_parentesco') == 'Tío/a' ? 'selected' : '' }}>Tío/a</option>
+                                        <option value="Hermano/a Mayor" {{ old('apoderado_parentesco') == 'Hermano/a Mayor' ? 'selected' : '' }}>Hermano/a Mayor</option>
+                                        <option value="Otro" {{ old('apoderado_parentesco') == 'Otro' ? 'selected' : '' }}>Otro</option>
+                                    </select>
+                                    @error('apoderado_parentesco')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-12">
+                                    <label for="apoderado_observaciones">
+                                        <i class="fas fa-sticky-note"></i> Observaciones de la Autorización
+                                    </label>
+                                    <textarea class="form-control @error('apoderado_observaciones') is-invalid @enderror" 
+                                              id="apoderado_observaciones" name="apoderado_observaciones"
+                                              rows="2"
+                                              placeholder="Ej: Autorización presentada en persona el día...">{{ old('apoderado_observaciones') }}</textarea>
+                                    @error('apoderado_observaciones')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Campo oculto para es_menor_edad -->
+                <input type="hidden" id="es_menor_edad" name="es_menor_edad" value="{{ old('es_menor_edad', '0') }}">
 
                 <div class="section-card">
                     <div class="section-header">
@@ -1883,6 +2009,104 @@
             font-size: 16px;
         }
     }
+
+    /* ===== ESTILOS SECCIÓN APODERADO (Menores de edad) ===== */
+    #seccion-apoderado {
+        border: 2px solid var(--warning);
+        animation: fadeInApoderado 0.4s ease-out;
+    }
+
+    @keyframes fadeInApoderado {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #seccion-apoderado .section-header {
+        background: linear-gradient(135deg, #f0a500 0%, #e67e22 100%);
+    }
+
+    #seccion-apoderado .section-header h3 {
+        color: #fff;
+    }
+
+    #seccion-apoderado .section-header i {
+        color: #fff;
+    }
+
+    .apoderado-header .badge {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    .alert-menor {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+        border: none;
+        border-left: 4px solid var(--warning);
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .alert-menor i {
+        color: var(--warning);
+    }
+
+    .checkbox-apoderado {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px dashed var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .checkbox-apoderado:hover {
+        border-color: var(--warning);
+    }
+
+    .checkbox-apoderado .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: var(--warning);
+        border-color: var(--warning);
+    }
+
+    .checkbox-apoderado .custom-control-label {
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .campo-apoderado {
+        border-color: #ffc107;
+    }
+
+    .campo-apoderado:focus {
+        border-color: #e67e22;
+        box-shadow: 0 0 0 0.2rem rgba(240, 165, 0, 0.25);
+    }
+
+    #campos-apoderado {
+        border-top: 1px dashed var(--border-color);
+        padding-top: 20px;
+    }
+
+    /* Info de edad */
+    #edad-info {
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    #edad-info.menor {
+        color: var(--warning);
+    }
+
+    #edad-info.mayor {
+        color: var(--success);
+    }
 </style>
 @stop
 
@@ -1942,6 +2166,296 @@ $(document).ready(function() {
     let precioFinal = 0;
     let precioNormal = 0;
     let formSubmitting = false; // Flag para prevenir doble submit
+    let esMenorEdad = false; // Flag para menores de edad
+
+    // ============================================
+    // AUTOTAB - Saltar al siguiente campo automáticamente
+    // ============================================
+    function setupAutoTab() {
+        // Definir orden de campos para cada paso
+        const camposOrden = [
+            // Paso 1 - Datos del cliente
+            'run_pasaporte',
+            'fecha_nacimiento',
+            'apoderado_nombre',
+            'apoderado_rut',
+            'apoderado_telefono',
+            'apoderado_parentesco',
+            'nombres',
+            'apellido_paterno',
+            'apellido_materno',
+            'celular',
+            'email',
+            'direccion',
+            'contacto_emergencia',
+            'telefono_emergencia',
+            'id_convenio',
+            'observaciones'
+        ];
+
+        // Función para ir al siguiente campo
+        function irAlSiguienteCampo(campoActual) {
+            const indexActual = camposOrden.indexOf(campoActual);
+            if (indexActual === -1) return;
+
+            // Buscar siguiente campo visible y habilitado
+            for (let i = indexActual + 1; i < camposOrden.length; i++) {
+                const $siguiente = $('#' + camposOrden[i]);
+                if ($siguiente.length && $siguiente.is(':visible') && !$siguiente.prop('disabled')) {
+                    $siguiente.focus();
+                    return;
+                }
+            }
+        }
+
+        // RUT - Saltar cuando tenga formato completo (XX.XXX.XXX-X)
+        $('#run_pasaporte').on('input', function() {
+            const valor = $(this).val();
+            // Formato completo: 12.345.678-9 (12 caracteres)
+            if (valor.length >= 11 && valor.includes('-')) {
+                const partes = valor.split('-');
+                if (partes.length === 2 && partes[1].length === 1) {
+                    irAlSiguienteCampo('run_pasaporte');
+                }
+            }
+        });
+
+        // Fecha de nacimiento - Solo saltar con Enter (NO con change porque salta al perder foco)
+        $('#fecha_nacimiento').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                setTimeout(() => {
+                    if (esMenorEdad && $('#seccion-apoderado').is(':visible')) {
+                        $('#apoderado_nombre').focus();
+                    } else {
+                        $('#nombres').focus();
+                    }
+                }, 50);
+            }
+        });
+
+        // Campos de texto - Saltar con Enter
+        const camposTexto = [
+            'apoderado_nombre', 'apoderado_telefono',
+            'nombres', 'apellido_paterno', 'apellido_materno',
+            'celular', 'email', 'direccion',
+            'contacto_emergencia', 'telefono_emergencia'
+        ];
+
+        camposTexto.forEach(campo => {
+            $('#' + campo).on('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    irAlSiguienteCampo(campo);
+                }
+            });
+        });
+
+        // RUT del apoderado - Saltar cuando tenga formato completo
+        $('#apoderado_rut').on('input', function() {
+            const valor = $(this).val();
+            if (valor.length >= 11 && valor.includes('-')) {
+                const partes = valor.split('-');
+                if (partes.length === 2 && partes[1].length === 1) {
+                    irAlSiguienteCampo('apoderado_rut');
+                }
+            }
+        });
+
+        // Selects - Saltar al cambiar selección
+        $('#apoderado_parentesco, #id_convenio').on('change', function() {
+            const campo = $(this).attr('id');
+            if ($(this).val()) {
+                irAlSiguienteCampo(campo);
+            }
+        });
+
+        // Teléfonos - Saltar cuando tengan 9 dígitos después del +56
+        $('#celular, #telefono_emergencia, #apoderado_telefono').on('input', function() {
+            const valor = $(this).val().replace(/\D/g, '');
+            // +56 9 XXXX XXXX = 11 dígitos
+            if (valor.length >= 11) {
+                irAlSiguienteCampo($(this).attr('id'));
+            }
+        });
+    }
+
+    // Inicializar AutoTab
+    setupAutoTab();
+
+    // ============================================
+    // DETECCIÓN DE EDAD Y MANEJO DE APODERADO
+    // ============================================
+    function calcularEdad(fechaNacimiento) {
+        if (!fechaNacimiento) return null;
+        
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        
+        return edad;
+    }
+
+    function verificarEdad() {
+        const fechaNacimiento = $('#fecha_nacimiento').val();
+        const $infoEdad = $('#edad-info');
+        const $seccionApoderado = $('#seccion-apoderado');
+        const $esMenorInput = $('#es_menor_edad');
+        
+        if (!fechaNacimiento) {
+            $infoEdad.text('').removeClass('menor mayor');
+            $seccionApoderado.slideUp(300);
+            $esMenorInput.val('0');
+            esMenorEdad = false;
+            limpiarCamposApoderado();
+            return;
+        }
+        
+        const edad = calcularEdad(fechaNacimiento);
+        
+        if (edad === null || edad < 0) {
+            $infoEdad.text('Fecha inválida').removeClass('menor mayor').addClass('text-danger');
+            return;
+        }
+        
+        if (edad < 18) {
+            // MENOR DE EDAD
+            esMenorEdad = true;
+            $esMenorInput.val('1');
+            $infoEdad.html(`<i class="fas fa-exclamation-triangle"></i> ${edad} años - <strong>Menor de edad</strong>`)
+                     .removeClass('mayor').addClass('menor');
+            $seccionApoderado.slideDown(400);
+            
+            // Hacer campos obligatorios
+            $('.campo-apoderado').prop('required', true);
+        } else {
+            // MAYOR DE EDAD
+            esMenorEdad = false;
+            $esMenorInput.val('0');
+            $infoEdad.html(`<i class="fas fa-check-circle"></i> ${edad} años`)
+                     .removeClass('menor').addClass('mayor');
+            $seccionApoderado.slideUp(300);
+            
+            // Quitar obligatoriedad y limpiar campos
+            $('.campo-apoderado').prop('required', false);
+            limpiarCamposApoderado();
+        }
+    }
+
+    function limpiarCamposApoderado() {
+        $('#consentimiento_apoderado').prop('checked', false);
+        $('#apoderado_nombre').val('');
+        $('#apoderado_rut').val('');
+        $('#apoderado_telefono').val('');
+        $('#apoderado_parentesco').val('');
+        $('#apoderado_observaciones').val('');
+    }
+
+    // Evento al cambiar fecha de nacimiento
+    $('#fecha_nacimiento').on('change', verificarEdad);
+    
+    // Verificar al cargar si hay valor previo (por old())
+    if ($('#fecha_nacimiento').val()) {
+        verificarEdad();
+    }
+
+    // Formatear RUT del apoderado
+    $('#apoderado_rut').on('input', function() {
+        let cursorPos = this.selectionStart;
+        let valorAnterior = $(this).val();
+        let valorFormateado = formatRut(valorAnterior);
+        
+        $(this).val(valorFormateado);
+        
+        let diff = valorFormateado.length - valorAnterior.length;
+        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+        
+        // Validar RUT del apoderado
+        if (valorFormateado.length >= 9) {
+            let resultado = validarRutChileno(valorFormateado);
+            actualizarUIValidacionRutApoderado(resultado);
+        } else {
+            actualizarUIValidacionRutApoderado({ valid: null });
+        }
+    });
+
+    // Formatear teléfono del apoderado
+    $('#apoderado_telefono').on('input', function() {
+        let valorFormateado = formatTelefono($(this).val());
+        $(this).val(valorFormateado);
+    });
+
+    $('#apoderado_telefono').on('focus', function() {
+        if (!$(this).val() || $(this).val().trim() === '') {
+            $(this).val('+56 9 ');
+        }
+    });
+
+    function actualizarUIValidacionRutApoderado(resultado) {
+        const $input = $('#apoderado_rut');
+        const $icon = $('#apoderado-rut-icon');
+        const $status = $('#apoderado-rut-status');
+        
+        $input.removeClass('is-valid is-invalid');
+        $status.removeClass('bg-success bg-danger');
+        
+        if (resultado.valid === null) {
+            $icon.attr('class', 'fas fa-question-circle text-muted');
+        } else if (resultado.valid) {
+            $input.addClass('is-valid');
+            $icon.attr('class', 'fas fa-check-circle text-success');
+            $status.addClass('bg-success').css('border-color', '#28a745');
+        } else {
+            $input.addClass('is-invalid');
+            $icon.attr('class', 'fas fa-times-circle text-danger');
+            $status.addClass('bg-danger').css('border-color', '#dc3545');
+        }
+    }
+
+    // Validación antes de enviar formulario
+    function validarApoderado() {
+        if (!esMenorEdad) return true;
+        
+        let errores = [];
+        
+        if (!$('#consentimiento_apoderado').is(':checked')) {
+            errores.push('Debe confirmar la autorización del apoderado');
+        }
+        if (!$('#apoderado_nombre').val().trim()) {
+            errores.push('Nombre del apoderado es obligatorio');
+        }
+        if (!$('#apoderado_rut').val().trim()) {
+            errores.push('RUT del apoderado es obligatorio');
+        } else {
+            let resultado = validarRutChileno($('#apoderado_rut').val());
+            if (!resultado.valid) {
+                errores.push('RUT del apoderado no es válido');
+            }
+        }
+        if (!$('#apoderado_telefono').val().trim() || $('#apoderado_telefono').val().length < 10) {
+            errores.push('Teléfono del apoderado es obligatorio');
+        }
+        if (!$('#apoderado_parentesco').val()) {
+            errores.push('Debe seleccionar el parentesco');
+        }
+        
+        if (errores.length > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Datos de Apoderado Incompletos',
+                html: '<ul class="text-left">' + errores.map(e => `<li>${e}</li>`).join('') + '</ul>',
+                customClass: { popup: 'swal-estoicos' }
+            });
+            return false;
+        }
+        
+        return true;
+    }
 
     // ============================================
     // FORMATEO AUTOMÁTICO DE RUT CHILENO
@@ -2183,6 +2697,13 @@ $(document).ready(function() {
             e.preventDefault();
             return false;
         }
+        
+        // VALIDAR DATOS DE APODERADO SI ES MENOR DE EDAD
+        if (!validarApoderado()) {
+            e.preventDefault();
+            return false;
+        }
+        
         formSubmitting = true;
         
         // Deshabilitar botones de submit

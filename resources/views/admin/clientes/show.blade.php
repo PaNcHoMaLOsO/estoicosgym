@@ -139,6 +139,12 @@
                 {{ $cambiosPlan->count() }} Cambio(s) Plan
             </span>
             @endif
+            @if($cliente->es_menor_edad)
+            <span class="badge badge-menor" title="Cliente menor de 18 años - Requiere apoderado">
+                <i class="fas fa-child"></i>
+                Menor de Edad
+            </span>
+            @endif
         </div>
     </div>
 
@@ -372,6 +378,65 @@
                             <span class="info-label">Teléfono</span>
                             <a href="tel:{{ $cliente->telefono_emergencia }}" class="info-value link">{{ $cliente->telefono_emergencia }}</a>
                         </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Datos del Apoderado (Solo para menores de edad) -->
+            @if($cliente->es_menor_edad && $cliente->apoderado_nombre)
+            <div class="info-card apoderado">
+                <div class="info-header">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>Apoderado / Tutor Legal</h3>
+                    <span class="badge-menor-edad">
+                        <i class="fas fa-child"></i> Menor de Edad
+                    </span>
+                </div>
+                <div class="info-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-user"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Nombre Completo</span>
+                            <span class="info-value">{{ $cliente->apoderado_nombre }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-id-card"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">RUT</span>
+                            <span class="info-value">{{ $cliente->apoderado_rut ?? 'No registrado' }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Teléfono</span>
+                            <a href="tel:{{ $cliente->apoderado_telefono }}" class="info-value link">{{ $cliente->apoderado_telefono ?? 'No registrado' }}</a>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-users"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Parentesco</span>
+                            <span class="info-value">{{ $cliente->apoderado_parentesco ?? 'No especificado' }}</span>
+                        </div>
+                    </div>
+                    @if($cliente->apoderado_observaciones)
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-sticky-note"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Observaciones</span>
+                            <span class="info-value">{{ $cliente->apoderado_observaciones }}</span>
+                        </div>
+                    </div>
+                    @endif
+                    <div class="consentimiento-badge {{ $cliente->consentimiento_apoderado ? 'aprobado' : 'pendiente' }}">
+                        @if($cliente->consentimiento_apoderado)
+                            <i class="fas fa-check-circle"></i> Consentimiento Aprobado
+                        @else
+                            <i class="fas fa-exclamation-triangle"></i> Consentimiento Pendiente
+                        @endif
                     </div>
                 </div>
             </div>
@@ -955,6 +1020,7 @@
     .badge-sin { background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); color: #6c757d; }
     .badge-traspasos { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); color: #7c3aed; }
     .badge-upgrade { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0369a1; }
+    .badge-menor { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; border: 2px solid #f59e0b; }
 
     /* ============================================
        STATS GRID
@@ -1424,6 +1490,62 @@
 
     .info-card.emergency .info-icon i {
         color: #e94560;
+    }
+
+    /* Apoderado card (menores de edad) */
+    .info-card.apoderado {
+        border: 2px solid #f0a500;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .info-card.apoderado .info-header {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    }
+
+    .info-card.apoderado .info-header i {
+        color: #d97706;
+    }
+
+    .info-card.apoderado .info-icon {
+        background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+    }
+
+    .info-card.apoderado .info-icon i {
+        color: #d97706;
+    }
+
+    .badge-menor-edad {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        margin-left: 10px;
+    }
+
+    .consentimiento-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+
+    .consentimiento-badge.aprobado {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
+    }
+
+    .consentimiento-badge.pendiente {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
     }
 
     /* Observaciones */

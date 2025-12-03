@@ -24,6 +24,16 @@ return new class extends Migration
             $table->unsignedBigInteger('id_convenio')->nullable()->comment('Convenio asociado al cliente');
             $table->unsignedInteger('id_estado')->nullable()->comment('Rango 400-402: estados del cliente');
             $table->text('observaciones')->nullable();
+            
+            // ===== CAMPOS PARA MENORES DE EDAD (Apoderado/Tutor) =====
+            $table->boolean('es_menor_edad')->default(false)->comment('True si el cliente es menor de 18 años');
+            $table->boolean('consentimiento_apoderado')->default(false)->comment('Checkbox de autorización firmada');
+            $table->string('apoderado_nombre', 100)->nullable()->comment('Nombre completo del apoderado/tutor');
+            $table->string('apoderado_rut', 20)->nullable()->comment('RUT del apoderado');
+            $table->string('apoderado_telefono', 20)->nullable()->comment('Teléfono del apoderado');
+            $table->string('apoderado_parentesco', 50)->nullable()->comment('Relación: Padre, Madre, Tutor, etc.');
+            $table->text('apoderado_observaciones')->nullable()->comment('Notas adicionales sobre la autorización');
+            
             $table->boolean('activo')->default(true);
             $table->softDeletes();
             $table->timestamps();

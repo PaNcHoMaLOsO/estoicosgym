@@ -518,6 +518,11 @@
         font-size: 14px;
     }
 
+    .cliente-avatar.avatar-menor {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+    }
+
     .cliente-details {
         display: flex;
         flex-direction: column;
@@ -527,6 +532,29 @@
         font-weight: 600;
         color: var(--text-primary);
         font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .badge-menor-tabla {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 1px solid #f59e0b;
+    }
+
+    .badge-menor-tabla i {
+        font-size: 9px;
     }
 
     .cliente-rut {
@@ -1037,14 +1065,15 @@ $(document).ready(function() {
     function renderClienteRow(cliente) {
         const initials = ((cliente.nombres || '?')[0] + (cliente.apellido_paterno || '?')[0]).toUpperCase();
         const nombreCompleto = (cliente.nombres || '') + ' ' + (cliente.apellido_paterno || '');
+        const menorBadge = cliente.es_menor_edad ? '<span class="badge-menor-tabla"><i class="fas fa-child"></i> Menor</span>' : '';
         
         return `
             <tr class="cliente-row" data-id="${cliente.id}">
                 <td>
                     <div class="cliente-info">
-                        <div class="cliente-avatar">${initials}</div>
+                        <div class="cliente-avatar ${cliente.es_menor_edad ? 'avatar-menor' : ''}">${initials}</div>
                         <div class="cliente-details">
-                            <span class="cliente-nombre">${nombreCompleto}</span>
+                            <span class="cliente-nombre">${nombreCompleto} ${menorBadge}</span>
                             <span class="cliente-rut">${cliente.run_pasaporte || 'Sin RUT'}</span>
                         </div>
                     </div>

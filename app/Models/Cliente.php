@@ -79,6 +79,14 @@ class Cliente extends Model
         'id_estado',
         'observaciones',
         'activo',
+        // Campos para menores de edad
+        'es_menor_edad',
+        'consentimiento_apoderado',
+        'apoderado_nombre',
+        'apoderado_rut',
+        'apoderado_telefono',
+        'apoderado_parentesco',
+        'apoderado_observaciones',
     ];
 
     protected $dates = [
@@ -88,6 +96,8 @@ class Cliente extends Model
     protected $casts = [
         'fecha_nacimiento' => 'date',
         'activo' => 'boolean',
+        'es_menor_edad' => 'boolean',
+        'consentimiento_apoderado' => 'boolean',
     ];
 
     protected static function boot()
@@ -132,7 +142,40 @@ class Cliente extends Model
         return $this->hasMany(Pago::class, 'id_cliente');
     }
 
+    // ===== MÉTODOS PARA MANEJO DE MENORES DE EDAD =====
 
+    /**
+     * Calcular la edad del cliente
+     */
+    public function getEdadAttribute(): ?int
+    {
+        if (!$this->fecha_nacimiento) {
+            return null;
+        }
+        return $this->fecha_nacimiento->age;
+    }
+
+    /**
+     * Verificar si el cliente es menor de edad (< 18 años)
+     */
+    public function getEsMenorAttribute(): bool
+    {
+        $edad = $this->edad;
+        return $edad !== null && $edad < 18;
+    }
+
+    /**
+     * Verificar si tiene datos de apoderado completos
+     */
+    public function getTieneApoderadoCompletoAttribute(): bool
+    {
+        return $this->es_menor_edad 
+            && $this->consentimiento_apoderado
+            && !empty($this->apoderado_nombre)
+            && !empty($this->apoderado_rut)
+            && !empty($this->apoderado_telefono)
+            && !empty($this->apoderado_parentesco);
+    }
 
     public function getNombreCompletoAttribute()
     {

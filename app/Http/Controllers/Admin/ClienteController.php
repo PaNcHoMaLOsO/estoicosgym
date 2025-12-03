@@ -158,6 +158,7 @@ class ClienteController extends Controller
                 'run_pasaporte' => $cliente->run_pasaporte,
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
+                'es_menor_edad' => (bool) $cliente->es_menor_edad,
                 'estadoClass' => $estadoClass,
                 'estadoTexto' => $estadoTexto,
                 'membresiaTexto' => $membresiaTexto,
@@ -208,17 +209,51 @@ class ClienteController extends Controller
             'apellido_paterno' => 'required|string|max:255',
             'apellido_materno' => 'nullable|string|max:255',
             'celular' => 'required|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
-            'email' => 'required|email|unique:clientes',
+            'email' => 'required|email|unique:clientes,email',
             'direccion' => 'nullable|string|max:500',
-            'fecha_nacimiento' => 'nullable|date|before:today',
+            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(10)->format('Y-m-d'),
             'contacto_emergencia' => 'nullable|string|max:100',
             'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
             'observaciones' => 'nullable|string|max:500',
+            // Campos de apoderado (se validan condicionalmente)
+            'es_menor_edad' => 'nullable|boolean',
+            'consentimiento_apoderado' => 'nullable|boolean',
+            'apoderado_nombre' => 'nullable|string|max:100',
+            'apoderado_rut' => ['nullable', new RutValido()],
+            'apoderado_telefono' => 'nullable|string|max:20',
+            'apoderado_parentesco' => 'nullable|string|max:50',
+            'apoderado_observaciones' => 'nullable|string|max:500',
         ]);
+
+        // VALIDACIÓN ESPECIAL: Si es menor de edad, campos de apoderado son obligatorios
+        $esMenorEdad = $request->boolean('es_menor_edad');
+        
+        if ($esMenorEdad) {
+            $request->validate([
+                'consentimiento_apoderado' => 'accepted',
+                'apoderado_nombre' => 'required|string|max:100',
+                'apoderado_rut' => ['required', new RutValido()],
+                'apoderado_telefono' => 'required|string|max:20',
+                'apoderado_parentesco' => 'required|string|max:50',
+            ], [
+                'consentimiento_apoderado.accepted' => 'Debe confirmar la autorización del apoderado para menores de edad.',
+                'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio para menores de edad.',
+                'apoderado_rut.required' => 'El RUT del apoderado es obligatorio para menores de edad.',
+                'apoderado_telefono.required' => 'El teléfono del apoderado es obligatorio para menores de edad.',
+                'apoderado_parentesco.required' => 'El parentesco es obligatorio para menores de edad.',
+            ]);
+        }
 
         // Crear cliente (PASO 1 - Siempre se crea)
         $cliente = Cliente::create([
             ...$validatedCliente,
+            'es_menor_edad' => $esMenorEdad,
+            'consentimiento_apoderado' => $esMenorEdad ? $request->boolean('consentimiento_apoderado') : false,
+            'apoderado_nombre' => $esMenorEdad ? $request->input('apoderado_nombre') : null,
+            'apoderado_rut' => $esMenorEdad ? $request->input('apoderado_rut') : null,
+            'apoderado_telefono' => $esMenorEdad ? $request->input('apoderado_telefono') : null,
+            'apoderado_parentesco' => $esMenorEdad ? $request->input('apoderado_parentesco') : null,
+            'apoderado_observaciones' => $esMenorEdad ? $request->input('apoderado_observaciones') : null,
             'activo' => true,
         ]);
 
@@ -399,7 +434,8 @@ class ClienteController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        $validated = $request->validate([
+        // Reglas de validación base
+        $rules = [
             'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
             'nombres' => 'required|string|max:255',
             'apellido_paterno' => 'required|string|max:255',
@@ -407,13 +443,55 @@ class ClienteController extends Controller
             'celular' => 'required|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
             'email' => 'required|email|unique:clientes,email,' . $cliente->id,
             'direccion' => 'nullable|string|max:500',
-            'fecha_nacimiento' => 'nullable|date|before:today',
+            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(10)->format('Y-m-d'),
             'contacto_emergencia' => 'nullable|string|max:100',
             'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
             'id_convenio' => 'nullable|exists:convenios,id',
             'observaciones' => 'nullable|string|max:500',
             'activo' => 'boolean',
-        ]);
+            // Campos de apoderado (opcionales por defecto)
+            'es_menor_edad' => 'nullable|boolean',
+            'consentimiento_apoderado' => 'nullable',
+            'apoderado_nombre' => 'nullable|string|max:255',
+            'apoderado_rut' => ['nullable', new RutValido()],
+            'apoderado_telefono' => 'nullable|string|max:20',
+            'apoderado_parentesco' => 'nullable|string|max:100',
+            'apoderado_observaciones' => 'nullable|string|max:500',
+        ];
+
+        // Mensajes personalizados
+        $messages = [
+            'consentimiento_apoderado.accepted' => 'Debe aceptar el consentimiento del apoderado para clientes menores de edad.',
+            'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio para clientes menores de edad.',
+            'apoderado_rut.required' => 'El RUT del apoderado es obligatorio para clientes menores de edad.',
+            'apoderado_telefono.required' => 'El teléfono del apoderado es obligatorio para clientes menores de edad.',
+            'apoderado_parentesco.required' => 'El parentesco del apoderado es obligatorio para clientes menores de edad.',
+        ];
+
+        // Si es menor de edad, hacer obligatorios los campos del apoderado
+        if ($request->boolean('es_menor_edad')) {
+            $rules['consentimiento_apoderado'] = 'accepted';
+            $rules['apoderado_nombre'] = 'required|string|max:255';
+            $rules['apoderado_rut'] = ['required', new RutValido()];
+            $rules['apoderado_telefono'] = 'required|string|max:20';
+            $rules['apoderado_parentesco'] = 'required|string|max:100';
+        }
+
+        $validated = $request->validate($rules, $messages);
+
+        // Asegurar que es_menor_edad tenga un valor booleano
+        $validated['es_menor_edad'] = $request->boolean('es_menor_edad');
+        $validated['consentimiento_apoderado'] = $request->boolean('consentimiento_apoderado');
+
+        // Si no es menor de edad, limpiar campos de apoderado
+        if (!$validated['es_menor_edad']) {
+            $validated['consentimiento_apoderado'] = false;
+            $validated['apoderado_nombre'] = null;
+            $validated['apoderado_rut'] = null;
+            $validated['apoderado_telefono'] = null;
+            $validated['apoderado_parentesco'] = null;
+            $validated['apoderado_observaciones'] = null;
+        }
 
         $cliente->update($validated);
 

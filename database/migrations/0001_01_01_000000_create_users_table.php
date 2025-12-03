@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('phone', 20)->nullable();
             $table->boolean('two_factor_enabled')->default(false);
             $table->enum('two_factor_channel', ['sms', 'whatsapp'])->default('whatsapp');
+            $table->boolean('activo')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
