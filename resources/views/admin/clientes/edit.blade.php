@@ -789,15 +789,23 @@
                                 <label for="run_pasaporte" class="form-label">
                                     <i class="fas fa-fingerprint"></i> RUT/Pasaporte
                                 </label>
-                                <input type="text" 
-                                       class="form-control @error('run_pasaporte') is-invalid @enderror" 
-                                       id="run_pasaporte" 
-                                       name="run_pasaporte" 
-                                       placeholder="Ej: 12.345.678-9" 
-                                       value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}">
-                                <small class="form-text">
-                                    <i class="fas fa-info-circle"></i> Formato chileno o pasaporte extranjero
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control @error('run_pasaporte') is-invalid @enderror" 
+                                           id="run_pasaporte" 
+                                           name="run_pasaporte" 
+                                           placeholder="Ej: 12.345.678-9 o 12.345.678-0 o 12.345.678-K" 
+                                           value="{{ old('run_pasaporte', $cliente->run_pasaporte) }}">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text" id="rut-status" style="min-width: 45px;">
+                                            <i class="fas fa-question-circle text-muted" id="rut-icon"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <small class="form-text" id="rut-hint">
+                                    <i class="fas fa-info-circle"></i> Formato chileno (incluye dígitos 0 y K)
                                 </small>
+                                <div id="rut-feedback" class="mt-1" style="display: none;"></div>
                                 @error('run_pasaporte')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -1273,6 +1281,98 @@ document.addEventListener('DOMContentLoaded', function() {
         return cuerpoFormateado + '-' + dv;
     }
 
+    // ============================================
+    // VALIDACIÓN DE DÍGITO VERIFICADOR RUT (Módulo 11)
+    // Soporta dígitos: 0, 1-9, K
+    // ============================================
+    function validarRutChileno(rut) {
+        // Limpiar RUT
+        let rutLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+        
+        // Si está vacío o muy corto, no validar aún
+        if (rutLimpio.length < 8) {
+            return { valid: null, message: 'Ingresa el RUT completo' };
+        }
+        
+        // Separar cuerpo y dígito verificador
+        let dv = rutLimpio.slice(-1);
+        let cuerpo = rutLimpio.slice(0, -1);
+        
+        // El cuerpo debe ser solo números
+        if (!/^\d+$/.test(cuerpo)) {
+            return { valid: false, message: 'Formato de RUT inválido' };
+        }
+        
+        // Calcular dígito verificador con Módulo 11
+        let suma = 0;
+        let multiplicador = 2;
+        
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            suma += parseInt(cuerpo[i]) * multiplicador;
+            multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+        }
+        
+        let resto = suma % 11;
+        let dvCalculado = 11 - resto;
+        
+        // Convertir a caracter
+        let dvEsperado;
+        if (dvCalculado === 11) {
+            dvEsperado = '0';  // ✅ Soporta dígito verificador 0
+        } else if (dvCalculado === 10) {
+            dvEsperado = 'K';  // ✅ Soporta dígito verificador K
+        } else {
+            dvEsperado = dvCalculado.toString();
+        }
+        
+        // Comparar
+        if (dv === dvEsperado) {
+            return { valid: true, message: 'RUT válido ✓', dv: dvEsperado };
+        } else {
+            return { valid: false, message: `Dígito verificador incorrecto. Debería ser: ${dvEsperado}`, dv: dvEsperado };
+        }
+    }
+    
+    // Actualizar UI de validación de RUT
+    function actualizarUIValidacionRut(resultado) {
+        const input = document.getElementById('run_pasaporte');
+        const icon = document.getElementById('rut-icon');
+        const status = document.getElementById('rut-status');
+        const hint = document.getElementById('rut-hint');
+        const feedback = document.getElementById('rut-feedback');
+        
+        if (!input || !icon || !status || !hint || !feedback) return;
+        
+        // Limpiar clases previas
+        input.classList.remove('is-valid', 'is-invalid');
+        status.classList.remove('bg-success', 'bg-danger');
+        status.style.borderColor = '';
+        
+        if (resultado.valid === null) {
+            // Estado neutral - aún escribiendo
+            icon.className = 'fas fa-question-circle text-muted';
+            hint.innerHTML = '<i class="fas fa-info-circle"></i> Formato chileno (incluye dígitos 0 y K)';
+            feedback.style.display = 'none';
+        } else if (resultado.valid) {
+            // ✅ RUT válido
+            input.classList.add('is-valid');
+            icon.className = 'fas fa-check-circle text-success';
+            status.classList.add('bg-success');
+            status.style.borderColor = '#28a745';
+            hint.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> ' + resultado.message + '</span>';
+            feedback.style.display = 'none';
+        } else {
+            // ❌ RUT inválido
+            input.classList.add('is-invalid');
+            icon.className = 'fas fa-times-circle text-danger';
+            status.classList.add('bg-danger');
+            status.style.borderColor = '#dc3545';
+            hint.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ' + resultado.message + '</span>';
+            feedback.innerHTML = '<small class="text-danger">' + resultado.message + '</small>';
+            feedback.style.display = 'block';
+        }
+    }
+
     // Aplicar formateo al campo RUT
     const rutInput = document.getElementById('run_pasaporte');
     if (rutInput) {
@@ -1286,7 +1386,32 @@ document.addEventListener('DOMContentLoaded', function() {
             // Ajustar posición del cursor
             let diff = valorFormateado.length - valorAnterior.length;
             this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            
+            // Validar RUT en tiempo real
+            if (valorFormateado.length >= 9) {
+                let resultado = validarRutChileno(valorFormateado);
+                actualizarUIValidacionRut(resultado);
+            } else if (valorFormateado.length === 0) {
+                actualizarUIValidacionRut({ valid: null });
+            } else {
+                actualizarUIValidacionRut({ valid: null, message: 'Ingresa el RUT completo' });
+            }
         });
+        
+        // Validar también al perder foco
+        rutInput.addEventListener('blur', function() {
+            let valor = this.value.trim();
+            if (valor.length > 0 && valor.length >= 9) {
+                let resultado = validarRutChileno(valor);
+                actualizarUIValidacionRut(resultado);
+            }
+        });
+        
+        // Validar al cargar si ya tiene valor
+        if (rutInput.value.length >= 9) {
+            let resultado = validarRutChileno(rutInput.value);
+            actualizarUIValidacionRut(resultado);
+        }
     }
 
     // ============================================
