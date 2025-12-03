@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
 use App\Http\Controllers\Admin\PagoController;
@@ -31,9 +32,10 @@ Route::model('cliente', Cliente::class);
 Route::model('membresia', Membresia::class);
 Route::model('convenio', Convenio::class);
 
-// ===== RUTAS PÚBLICAS =====
-Route::get('/', function () {
-    return redirect()->route('login');
+// ===== LANDING PAGE PÚBLICA (con headers de seguridad) =====
+Route::middleware('security.headers')->group(function () {
+    Route::get('/', [LandingController::class, 'index'])->name('landing');
+    Route::post('/contacto', [LandingController::class, 'contacto'])->name('landing.contacto');
 });
 
 // ===== AUTENTICACIÓN =====
