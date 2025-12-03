@@ -14,9 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Agregar middleware de no-cache para rutas autenticadas
         $middleware->appendToGroup('web', \App\Http\Middleware\NoCacheMiddleware::class);
         
-        // Alias para middleware de seguridad (landing page)
+        // Alias para middlewares personalizados
         $middleware->alias([
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
+            'verify.session' => \App\Http\Middleware\VerifyActiveSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

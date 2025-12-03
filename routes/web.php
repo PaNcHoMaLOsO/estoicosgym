@@ -244,7 +244,7 @@ Route::post('/logout', function () {
 })->middleware('auth')->name('logout');
 
 // ===== RUTAS PROTEGIDAS (Requieren autenticación) =====
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verify.session'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
