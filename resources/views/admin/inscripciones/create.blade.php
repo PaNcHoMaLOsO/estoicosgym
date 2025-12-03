@@ -1038,7 +1038,7 @@
                         @php
                             // Verificar si tiene inscripción activa
                             $inscripcionActiva = $cliente->inscripciones()
-                                ->whereIn('id_estado', [1, 100]) // Estados activos
+                                ->where('id_estado', 100) // Estado Activa
                                 ->where('fecha_vencimiento', '>=', now())
                                 ->first();
                             
