@@ -36,6 +36,7 @@ Route::model('convenio', Convenio::class);
 Route::middleware('security.headers')->group(function () {
     Route::get('/', [LandingController::class, 'index'])->name('landing');
     Route::post('/contacto', [LandingController::class, 'contacto'])->name('landing.contacto');
+    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->name('landing.consultar-membresia');
 });
 
 // ===== AUTENTICACIÓN =====

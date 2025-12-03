@@ -28,7 +28,7 @@
                     <a href="#inicio" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Inicio</a>
                     <a href="#servicios" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Servicios</a>
                     <a href="#planes" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Planes</a>
-                    <a href="#testimonios" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Testimonios</a>
+                    <a href="#consulta" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Mi Membresía</a>
                     <a href="#contacto" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors font-modern text-sm">Contacto</a>
                     <a href="{{ route('login') }}" class="bg-gradient-to-r from-gym-purple to-gym-purple-dark hover:from-gym-purple-dark hover:to-gym-purple text-white font-semibold px-6 py-2.5 rounded-lg transition-all btn-glow font-modern text-sm">
                         Acceder
@@ -47,7 +47,7 @@
                     <a href="#inicio" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Inicio</a>
                     <a href="#servicios" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Servicios</a>
                     <a href="#planes" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Planes</a>
-                    <a href="#testimonios" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Testimonios</a>
+                    <a href="#consulta" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Mi Membresía</a>
                     <a href="#contacto" class="text-gym-cream/80 hover:text-gym-purple-light transition-colors py-2">Contacto</a>
                     <a href="{{ route('login') }}" class="bg-gradient-to-r from-gym-purple to-gym-purple-dark text-white font-semibold px-6 py-3 rounded-lg text-center transition-all">
                         Acceder
@@ -494,6 +494,173 @@
             </div>
         </section>
 
+        <!-- ===== CONSULTA MEMBRESÍA SECTION ===== -->
+        <section id="consulta" class="py-24 bg-gym-navy relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gym-purple/30 to-transparent"></div>
+            
+            <!-- Glow decorativo -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gym-purple/10 rounded-full blur-3xl"></div>
+            
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center mb-12 animate-on-scroll">
+                    <span class="text-gym-purple-light font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
+                    <h2 class="font-display text-4xl md:text-5xl mt-4 text-gym-cream">CONSULTA TU MEMBRESÍA</h2>
+                    <p class="text-gym-cream/60 mt-4 max-w-2xl mx-auto font-modern">
+                        Ingresa tu RUT para ver el estado de tu membresía, días restantes y pagos.
+                    </p>
+                </div>
+                
+                <!-- Formulario de consulta -->
+                <div class="max-w-md mx-auto animate-on-scroll">
+                    <div class="bg-gym-navy-dark/50 border border-gym-cream/10 rounded-2xl p-8">
+                        <!-- Tabs de consulta -->
+                        <div class="flex mb-6 bg-gym-navy/50 rounded-lg p-1">
+                            <button type="button" id="tab-rut" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all bg-gym-purple text-white">
+                                <i class="fas fa-id-card mr-1"></i> Con RUT
+                            </button>
+                            <button type="button" id="tab-celular" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all text-gym-cream/60 hover:text-gym-cream">
+                                <i class="fas fa-mobile-alt mr-1"></i> Con Celular
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Honeypot anti-bot (oculto) -->
+                            <div class="hp-field" aria-hidden="true">
+                                <input type="text" name="website" id="consulta-website" tabindex="-1" autocomplete="off">
+                            </div>
+                            
+                            <!-- Formulario RUT -->
+                            <div id="form-rut" class="space-y-4">
+                                <div>
+                                    <label for="rut-consulta" class="block text-sm font-medium mb-2 text-gym-cream font-modern">
+                                        <i class="fas fa-id-card mr-2 text-gym-purple-light"></i>RUT
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="rut-consulta" 
+                                        placeholder="12.345.678-9"
+                                        maxlength="12"
+                                        class="w-full bg-gym-navy-dark border border-gym-cream/20 focus:border-gym-purple rounded-lg px-4 py-3 text-gym-cream placeholder-gym-cream/30 transition-colors focus:outline-none focus:ring-2 focus:ring-gym-purple/20 font-modern text-center text-lg tracking-wider"
+                                    >
+                                </div>
+                            </div>
+                            
+                            <!-- Formulario Celular (oculto inicialmente) -->
+                            <div id="form-celular" class="space-y-4 hidden">
+                                <div>
+                                    <label for="celular-consulta" class="block text-sm font-medium mb-2 text-gym-cream font-modern">
+                                        <i class="fas fa-mobile-alt mr-2 text-gym-purple-light"></i>Celular
+                                    </label>
+                                    <input 
+                                        type="tel" 
+                                        id="celular-consulta" 
+                                        placeholder="9 1234 5678"
+                                        maxlength="12"
+                                        class="w-full bg-gym-navy-dark border border-gym-cream/20 focus:border-gym-purple rounded-lg px-4 py-3 text-gym-cream placeholder-gym-cream/30 transition-colors focus:outline-none focus:ring-2 focus:ring-gym-purple/20 font-modern text-center text-lg tracking-wider"
+                                    >
+                                </div>
+                                <div>
+                                    <label for="nombre-consulta" class="block text-sm font-medium mb-2 text-gym-cream font-modern">
+                                        <i class="fas fa-user mr-2 text-gym-purple-light"></i>Primer Nombre
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="nombre-consulta" 
+                                        placeholder="Tu nombre"
+                                        maxlength="50"
+                                        class="w-full bg-gym-navy-dark border border-gym-cream/20 focus:border-gym-purple rounded-lg px-4 py-3 text-gym-cream placeholder-gym-cream/30 transition-colors focus:outline-none focus:ring-2 focus:ring-gym-purple/20 font-modern text-center"
+                                    >
+                                    <p class="text-gym-cream/40 text-xs mt-1 font-modern text-center">Para verificar tu identidad</p>
+                                </div>
+                            </div>
+                            
+                            <button 
+                                type="button"
+                                id="btn-consultar"
+                                class="w-full bg-gradient-to-r from-gym-purple to-gym-purple-dark hover:from-gym-purple-dark hover:to-gym-purple text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                            >
+                                <i class="fas fa-search mr-2"></i>
+                                Consultar
+                            </button>
+                        </div>
+                        
+                        <p class="text-gym-cream/40 text-xs text-center mt-4 font-modern">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Consulta protegida • Máximo 3 consultas cada 5 min
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Resultado de la consulta (oculto inicialmente) -->
+                <div id="resultado-consulta" class="hidden mt-8 max-w-2xl mx-auto animate-on-scroll">
+                    <div class="bg-gym-navy-dark/50 border border-gym-purple/30 rounded-2xl p-8">
+                        <!-- Header con nombre -->
+                        <div class="text-center mb-6 pb-6 border-b border-gym-cream/10">
+                            <div class="w-16 h-16 bg-gradient-to-br from-gym-purple/30 to-gym-purple-dark/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-user text-gym-purple-light text-2xl"></i>
+                            </div>
+                            <h3 id="resultado-nombre" class="font-display text-2xl text-gym-cream">-</h3>
+                        </div>
+                        
+                        <!-- Estado de membresía -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-gym-navy/50 rounded-xl p-4">
+                                <div class="text-gym-cream/50 text-sm font-modern mb-1">Membresía</div>
+                                <div id="resultado-membresia" class="text-gym-cream font-semibold">-</div>
+                            </div>
+                            <div class="bg-gym-navy/50 rounded-xl p-4">
+                                <div class="text-gym-cream/50 text-sm font-modern mb-1">Estado</div>
+                                <div id="resultado-estado" class="font-semibold">-</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fechas y días restantes -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-gym-navy/50 rounded-xl p-4 text-center">
+                                <div class="text-gym-cream/50 text-xs font-modern mb-1">Inicio</div>
+                                <div id="resultado-inicio" class="text-gym-cream font-modern">-</div>
+                            </div>
+                            <div class="bg-gym-navy/50 rounded-xl p-4 text-center">
+                                <div class="text-gym-cream/50 text-xs font-modern mb-1">Vencimiento</div>
+                                <div id="resultado-fin" class="text-gym-cream font-modern">-</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-gym-purple/20 to-gym-purple-dark/20 border border-gym-purple/30 rounded-xl p-4 text-center">
+                                <div class="text-gym-purple-light text-xs font-modern mb-1">Días Restantes</div>
+                                <div id="resultado-dias" class="text-3xl font-bold text-gym-purple-light">-</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Últimos pagos -->
+                        <div class="border-t border-gym-cream/10 pt-6">
+                            <h4 class="text-gym-cream font-semibold mb-4 font-modern">
+                                <i class="fas fa-receipt mr-2 text-gym-purple-light"></i>Últimos Pagos
+                            </h4>
+                            <div id="resultado-pagos" class="space-y-2">
+                                <!-- Pagos se insertan aquí -->
+                            </div>
+                        </div>
+                        
+                        <!-- Botón cerrar -->
+                        <button 
+                            type="button"
+                            id="btn-cerrar-resultado"
+                            class="w-full mt-6 border border-gym-cream/20 hover:border-gym-purple text-gym-cream/60 hover:text-gym-cream py-3 rounded-lg transition-all font-modern text-sm"
+                        >
+                            <i class="fas fa-times mr-2"></i>Cerrar consulta
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Error message -->
+                <div id="error-consulta" class="hidden mt-6 max-w-md mx-auto">
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
+                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
+                        <span id="error-mensaje" class="text-red-400 font-modern"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ===== FOOTER ===== -->
         <footer class="bg-gym-navy border-t border-gym-cream/5">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -546,4 +713,237 @@
             </div>
         </footer>
     </main>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos
+    const btnConsultar = document.getElementById('btn-consultar');
+    const btnCerrar = document.getElementById('btn-cerrar-resultado');
+    const inputRut = document.getElementById('rut-consulta');
+    const inputCelular = document.getElementById('celular-consulta');
+    const inputNombre = document.getElementById('nombre-consulta');
+    const resultadoDiv = document.getElementById('resultado-consulta');
+    const errorDiv = document.getElementById('error-consulta');
+    
+    // Tabs
+    const tabRut = document.getElementById('tab-rut');
+    const tabCelular = document.getElementById('tab-celular');
+    const formRut = document.getElementById('form-rut');
+    const formCelular = document.getElementById('form-celular');
+    
+    let modoConsulta = 'rut'; // 'rut' o 'celular'
+    
+    // Cambiar tabs
+    tabRut.addEventListener('click', function() {
+        modoConsulta = 'rut';
+        tabRut.classList.add('bg-gym-purple', 'text-white');
+        tabRut.classList.remove('text-gym-cream/60');
+        tabCelular.classList.remove('bg-gym-purple', 'text-white');
+        tabCelular.classList.add('text-gym-cream/60');
+        formRut.classList.remove('hidden');
+        formCelular.classList.add('hidden');
+        ocultarError();
+    });
+    
+    tabCelular.addEventListener('click', function() {
+        modoConsulta = 'celular';
+        tabCelular.classList.add('bg-gym-purple', 'text-white');
+        tabCelular.classList.remove('text-gym-cream/60');
+        tabRut.classList.remove('bg-gym-purple', 'text-white');
+        tabRut.classList.add('text-gym-cream/60');
+        formCelular.classList.remove('hidden');
+        formRut.classList.add('hidden');
+        ocultarError();
+    });
+    
+    // Formatear RUT mientras escribe
+    inputRut.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9kK]/g, '');
+        if (value.length > 1) {
+            let body = value.slice(0, -1);
+            let dv = value.slice(-1).toUpperCase();
+            body = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            e.target.value = body + '-' + dv;
+        }
+    });
+    
+    // Formatear celular mientras escribe
+    inputCelular.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length > 9) value = value.slice(0, 9);
+        if (value.length > 1) {
+            e.target.value = value.slice(0,1) + ' ' + value.slice(1,5) + ' ' + value.slice(5);
+        } else {
+            e.target.value = value;
+        }
+    });
+    
+    // Consultar al hacer click
+    btnConsultar.addEventListener('click', consultarMembresia);
+    
+    // Consultar con Enter
+    inputRut.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') consultarMembresia();
+    });
+    inputCelular.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') consultarMembresia();
+    });
+    inputNombre.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') consultarMembresia();
+    });
+    
+    // Cerrar resultado
+    btnCerrar.addEventListener('click', function() {
+        resultadoDiv.classList.add('hidden');
+        inputRut.value = '';
+        inputCelular.value = '';
+        inputNombre.value = '';
+        if (modoConsulta === 'rut') {
+            inputRut.focus();
+        } else {
+            inputCelular.focus();
+        }
+    });
+    
+    async function consultarMembresia() {
+        let payload = {};
+        
+        if (modoConsulta === 'rut') {
+            const rut = inputRut.value.trim();
+            if (!rut || rut.length < 7) {
+                mostrarError('Ingresa un RUT válido');
+                return;
+            }
+            payload = { tipo: 'rut', rut: rut };
+        } else {
+            const celular = inputCelular.value.replace(/\s/g, '').trim();
+            const nombre = inputNombre.value.trim();
+            
+            if (!celular || celular.length < 8) {
+                mostrarError('Ingresa un celular válido');
+                return;
+            }
+            if (!nombre || nombre.length < 2) {
+                mostrarError('Ingresa tu nombre para verificar');
+                return;
+            }
+            payload = { tipo: 'celular', celular: celular, nombre: nombre };
+        }
+        
+        // Mostrar loading
+        btnConsultar.disabled = true;
+        btnConsultar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Consultando...';
+        ocultarError();
+        resultadoDiv.classList.add('hidden');
+        
+        try {
+            // Incluir honeypot en la consulta
+            const honeypot = document.getElementById('consulta-website')?.value || '';
+            payload.website = honeypot;
+            
+            const response = await fetch('{{ route("landing.consultar-membresia") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': window.csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                mostrarResultado(data.data);
+            } else {
+                // Mostrar mensaje especial si está bloqueado
+                if (data.blocked) {
+                    mostrarError(data.message, true);
+                } else {
+                    mostrarError(data.message || 'No se encontró tu membresía');
+                }
+            }
+        } catch (error) {
+            mostrarError('Error de conexión. Intenta nuevamente.');
+            console.error('Error:', error);
+        } finally {
+            btnConsultar.disabled = false;
+            btnConsultar.innerHTML = '<i class="fas fa-search mr-2"></i>Consultar';
+        }
+    }
+    
+    function mostrarResultado(data) {
+        document.getElementById('resultado-nombre').textContent = data.nombre || 'Cliente';
+        document.getElementById('resultado-membresia').textContent = data.membresia || 'Sin membresía';
+        
+        // Estado con color
+        const estadoEl = document.getElementById('resultado-estado');
+        estadoEl.textContent = data.estado || 'Sin estado';
+        estadoEl.className = 'font-semibold ' + getColorEstado(data.estado);
+        
+        document.getElementById('resultado-inicio').textContent = data.fecha_inicio || '-';
+        document.getElementById('resultado-fin').textContent = data.fecha_fin || '-';
+        document.getElementById('resultado-dias').textContent = data.dias_restantes !== null ? data.dias_restantes : '-';
+        
+        // Pagos
+        const pagosContainer = document.getElementById('resultado-pagos');
+        pagosContainer.innerHTML = '';
+        
+        if (data.pagos && data.pagos.length > 0) {
+            data.pagos.forEach(pago => {
+                const pagoEl = document.createElement('div');
+                pagoEl.className = 'flex items-center justify-between bg-gym-navy/50 rounded-lg px-4 py-2';
+                pagoEl.innerHTML = `
+                    <span class="text-gym-cream/60 font-modern text-sm">${pago.fecha}</span>
+                    <span class="text-${pago.color}-400 font-modern text-sm font-semibold">${pago.estado}</span>
+                `;
+                pagosContainer.appendChild(pagoEl);
+            });
+        } else {
+            pagosContainer.innerHTML = '<p class="text-gym-cream/40 text-sm font-modern">Sin pagos registrados</p>';
+        }
+        
+        resultadoDiv.classList.remove('hidden');
+        resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    function getColorEstado(estado) {
+        if (!estado) return 'text-gym-cream';
+        const lower = estado.toLowerCase();
+        if (lower.includes('activa')) return 'text-green-400';
+        if (lower.includes('vence hoy')) return 'text-yellow-400';
+        if (lower.includes('vencida')) return 'text-red-400';
+        return 'text-gym-cream';
+    }
+    
+    function mostrarError(mensaje, bloqueado = false) {
+        const errorMensaje = document.getElementById('error-mensaje');
+        const errorContainer = errorDiv.querySelector('div');
+        
+        errorMensaje.textContent = mensaje;
+        
+        if (bloqueado) {
+            errorContainer.className = 'bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 text-center';
+            errorMensaje.className = 'text-orange-400 font-modern';
+            // Deshabilitar botón temporalmente
+            btnConsultar.disabled = true;
+            btnConsultar.innerHTML = '<i class="fas fa-ban mr-2"></i>Bloqueado temporalmente';
+            btnConsultar.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            errorContainer.className = 'bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center';
+            errorMensaje.className = 'text-red-400 font-modern';
+        }
+        
+        errorDiv.classList.remove('hidden');
+    }
+    
+    function ocultarError() {
+        errorDiv.classList.add('hidden');
+        // Restaurar botón
+        btnConsultar.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+});
+</script>
 @endsection
