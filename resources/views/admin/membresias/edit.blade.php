@@ -1057,6 +1057,33 @@
                                         @enderror
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern" for="max_pausas">
+                                            <i class="fas fa-pause-circle"></i>
+                                            Máximo de Pausas Permitidas
+                                            <span class="required">*</span>
+                                        </label>
+                                        <div class="input-group-modern">
+                                            <input type="number" 
+                                                   class="form-control-modern @error('max_pausas') is-invalid @enderror" 
+                                                   id="max_pausas" 
+                                                   name="max_pausas"
+                                                   value="{{ old('max_pausas', $membresia->max_pausas ?? 1) }}"
+                                                   min="0" 
+                                                   max="12"
+                                                   required>
+                                            <span class="input-addon"><i class="fas fa-pause-circle"></i></span>
+                                        </div>
+                                        <div class="form-help">
+                                            <i class="fas fa-info-circle"></i>
+                                            Cantidad de veces que el cliente puede pausar su membresía
+                                        </div>
+                                        @error('max_pausas')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -23,7 +23,16 @@
             </div>
         </div>
         <div class="hero-actions">
-            {{-- Los pagos no tienen papelera - no se pueden eliminar por auditoría --}}
+            @if(isset($totalEliminados) && $totalEliminados > 0)
+            <a href="{{ route('admin.pagos.trashed') }}" class="btn-ver-papelera">
+                <i class="fas fa-trash-alt"></i>
+                <span>Papelera ({{ $totalEliminados }})</span>
+            </a>
+            @endif
+            <a href="{{ route('admin.inscripciones.index') }}" class="btn-ver-inscripciones">
+                <i class="fas fa-id-card"></i>
+                <span>Ver Inscripciones</span>
+            </a>
             <a href="{{ route('admin.pagos.create') }}" class="btn-nuevo-pago">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nuevo Pago</span>
@@ -46,13 +55,6 @@
         </div>
     @endif
 
-    @php
-        $totalPagos = $pagos->total();
-        $totalRecaudado = $pagos->sum('monto_abonado');
-        $pagosCompletados = $pagos->filter(fn($p) => $p->estado?->codigo == 201)->count();
-        $pagosPendientes = $pagos->filter(fn($p) => $p->estado?->codigo != 201)->count();
-    @endphp
-
     <!-- Stats Cards -->
     <div class="stats-grid">
         <div class="stat-card stat-total">
@@ -60,7 +62,7 @@
                 <i class="fas fa-receipt"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number">{{ $totalPagos }}</span>
+                <span class="stat-number" id="statTotalPagos">{{ $totalPagos ?? 0 }}</span>
                 <span class="stat-label">Total Pagos</span>
             </div>
         </div>
@@ -70,7 +72,7 @@
                 <i class="fas fa-coins"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number">${{ number_format($totalRecaudado, 0, ',', '.') }}</span>
+                <span class="stat-number" id="statRecaudado">$0</span>
                 <span class="stat-label">Recaudado</span>
             </div>
         </div>
@@ -80,7 +82,7 @@
                 <i class="fas fa-check-double"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number">{{ $pagosCompletados }}</span>
+                <span class="stat-number" id="statCompletados">0</span>
                 <span class="stat-label">Completados</span>
             </div>
         </div>
@@ -90,7 +92,7 @@
                 <i class="fas fa-hourglass-half"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number">{{ $pagosPendientes }}</span>
+                <span class="stat-number" id="statParciales">0</span>
                 <span class="stat-label">Parciales</span>
             </div>
         </div>
@@ -119,7 +121,7 @@
     <div class="table-section">
         <div class="table-header">
             <h3><i class="fas fa-list-alt"></i> Listado de Pagos</h3>
-            <span class="results-count" id="resultCount">{{ $pagos->count() }} de {{ $pagos->total() }}</span>
+            <span class="results-count" id="resultCount">0 de {{ $totalPagos ?? 0 }}</span>
         </div>
         <div class="table-responsive">
             <table class="pagos-table">
@@ -134,172 +136,47 @@
                     </tr>
                 </thead>
                 <tbody id="pagosTableBody">
-                    @forelse($pagos as $pago)
-                        @php
-                            $total = $pago->monto_total ?? 0;
-                            $abonado = $pago->monto_abonado ?? 0;
-                            $pendiente = $pago->monto_pendiente ?? 0;
-                            $porcentaje = $total > 0 ? ($abonado / $total) * 100 : 0;
-                            $estadoCodigo = $pago->estado?->codigo ?? 200;
-                            $estadoPago = match($estadoCodigo) {
-                                201 => 'pagado',
-                                205 => 'traspasado',
-                                203 => 'vencido',
-                                204 => 'cancelado',
-                                default => 'parcial'
-                            };
-                            
-                            // Cliente actual de la inscripción (dueño actual de la membresía)
-                            $clienteActual = $pago->inscripcion?->cliente;
-                            // Cliente original que pagó (puede ser diferente si hubo traspaso)
-                            $clienteOriginal = $pago->cliente;
-                            // Detectar si es un traspaso (cliente actual diferente al que pagó)
-                            $esTraspaso = $clienteActual && $clienteOriginal && $clienteActual->id !== $clienteOriginal->id;
-                            // Usar cliente actual si existe, sino el original
-                            $clienteMostrar = $clienteActual ?? $clienteOriginal;
-                        @endphp
-                        <tr class="pago-row" 
-                            data-estado="{{ $estadoPago }}"
-                            data-cliente="{{ strtolower(($clienteMostrar?->nombres ?? '') . ' ' . ($clienteMostrar?->apellido_paterno ?? '')) }}"
-                            data-membresia="{{ strtolower($pago->inscripcion?->membresia?->nombre ?? '') }}"
-                            data-referencia="{{ strtolower($pago->referencia_pago ?? '') }}">
-                            <td data-label="Cliente / Membresía">
-                                <div class="cliente-pago-info">
-                                    <div class="cliente-avatar {{ $esTraspaso ? 'traspaso' : '' }}">
-                                        {{ strtoupper(substr($clienteMostrar?->nombres ?? 'N', 0, 1) . substr($clienteMostrar?->apellido_paterno ?? 'A', 0, 1)) }}
-                                        @if($esTraspaso)
-                                        <span class="traspaso-indicator" title="Membresía traspasada">
-                                            <i class="fas fa-exchange-alt"></i>
-                                        </span>
-                                        @endif
-                                    </div>
-                                    <div class="cliente-details">
-                                        <span class="cliente-nombre">
-                                            {{ $clienteMostrar?->nombres ?? 'Sin cliente' }} 
-                                            {{ $clienteMostrar?->apellido_paterno ?? '' }}
-                                            @if($esTraspaso)
-                                            <span class="badge-traspaso" title="Pagado originalmente por {{ $clienteOriginal->nombres }} {{ $clienteOriginal->apellido_paterno }}">
-                                                <i class="fas fa-exchange-alt"></i> Traspaso
-                                            </span>
-                                            @endif
-                                        </span>
-                                        <span class="pago-id">
-                                            <i class="fas fa-hashtag"></i> Pago #{{ $pago->id }}
-                                        </span>
-                                        <span class="membresia-nombre">
-                                            <i class="fas fa-dumbbell"></i> {{ $pago->inscripcion?->membresia?->nombre ?? 'Sin membresía' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Fecha">
-                                <div class="fecha-info">
-                                    <span class="fecha-principal">
-                                        <i class="fas fa-calendar-alt"></i> 
-                                        {{ $pago->fecha_pago?->format('d/m/Y') ?? 'N/A' }}
-                                    </span>
-                                    @if($pago->referencia_pago)
-                                    <span class="referencia">
-                                        <i class="fas fa-file-invoice"></i> {{ $pago->referencia_pago }}
-                                    </span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td data-label="Montos">
-                                <div class="montos-info">
-                                    <span class="monto-total">
-                                        ${{ number_format($total, 0, ',', '.') }}
-                                    </span>
-                                    <span class="monto-abonado">
-                                        <i class="fas fa-check"></i> ${{ number_format($abonado, 0, ',', '.') }}
-                                    </span>
-                                    @if($pendiente > 0)
-                                    <span class="monto-pendiente">
-                                        <i class="fas fa-clock"></i> ${{ number_format($pendiente, 0, ',', '.') }}
-                                    </span>
-                                    @endif
-                                    <div class="progress-bar-mini">
-                                        <div class="progress-fill {{ $porcentaje >= 100 ? 'complete' : 'partial' }}" 
-                                             style="width: {{ min($porcentaje, 100) }}%"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Estado">
-                                @if($estadoPago === 'pagado')
-                                    <span class="estado-badge pagado">
-                                        <i class="fas fa-check-circle"></i> Pagado
-                                    </span>
-                                @elseif($estadoPago === 'traspasado')
-                                    <span class="estado-badge traspasado">
-                                        <i class="fas fa-exchange-alt"></i> Traspasado
-                                    </span>
-                                @elseif($estadoPago === 'vencido')
-                                    <span class="estado-badge vencido">
-                                        <i class="fas fa-exclamation-circle"></i> Vencido
-                                    </span>
-                                @elseif($estadoPago === 'cancelado')
-                                    <span class="estado-badge cancelado">
-                                        <i class="fas fa-times-circle"></i> Cancelado
-                                    </span>
-                                @else
-                                    <span class="estado-badge parcial">
-                                        <i class="fas fa-hourglass-half"></i> Parcial
-                                    </span>
-                                @endif
-                            </td>
-                            <td data-label="Método">
-                                <span class="metodo-badge">
-                                    @switch($pago->metodoPago?->codigo ?? '')
-                                        @case('efectivo')
-                                            <i class="fas fa-money-bill-wave"></i>
-                                            @break
-                                        @case('tarjeta')
-                                            <i class="fas fa-credit-card"></i>
-                                            @break
-                                        @case('transferencia')
-                                            <i class="fas fa-university"></i>
-                                            @break
-                                        @default
-                                            <i class="fas fa-wallet"></i>
-                                    @endswitch
-                                    {{ $pago->metodoPago?->nombre ?? 'N/A' }}
-                                </span>
-                            </td>
-                            <td data-label="Acciones">
-                                <div class="action-buttons">
-                                    <a href="{{ route('admin.pagos.show', $pago) }}" class="btn-action btn-view" title="Ver detalles">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn-action btn-edit" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    {{-- Los pagos NO se pueden eliminar por razones de auditoría financiera --}}
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="empty-state">
-                                <div class="empty-icon">
-                                    <i class="fas fa-inbox"></i>
-                                </div>
-                                <h4>No hay pagos registrados</h4>
-                                <p>Crea un nuevo pago para comenzar</p>
-                                <a href="{{ route('admin.pagos.create') }}" class="btn-nuevo-pago-inline">
-                                    <i class="fas fa-plus"></i> Nuevo Pago
-                                </a>
-                            </td>
-                        </tr>
-                    @endforelse
+                    <!-- Renderizado por JavaScript -->
                 </tbody>
             </table>
         </div>
         
-        @if($pagos->hasPages())
-            <div class="pagination-section">
-                {{ $pagos->appends(request()->query())->links('pagination::bootstrap-4') }}
+        <!-- Pagination Controls -->
+        <div class="pagination-section" id="paginationSection">
+            <div class="pagination-info">
+                <span id="paginationInfo">Mostrando 0 de 0 pagos</span>
             </div>
-        @endif
+            <div class="pagination-controls">
+                <button class="pagination-btn" id="btnFirst" onclick="goToPage(1)" disabled>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="pagination-btn" id="btnPrev" onclick="goToPage(currentPage - 1)" disabled>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <span class="pagination-pages" id="paginationPages"></span>
+                <button class="pagination-btn" id="btnNext" onclick="goToPage(currentPage + 1)" disabled>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="pagination-btn" id="btnLast" onclick="goToPage(totalPages)" disabled>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            </div>
+            <div class="pagination-per-page">
+                <label>Mostrar:</label>
+                <select id="perPageSelect" onchange="changePerPage(this.value)">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading-more" id="loadingMore" style="display: none;">
+            <div class="spinner"></div>
+            <span>Cargando más pagos...</span>
+        </div>
     </div>
 </div>
 @stop
@@ -403,25 +280,46 @@
     }
     .hero-actions { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
     .btn-ver-papelera {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
         border: none;
-        padding: 12px 16px;
+        padding: 12px 20px;
         border-radius: 10px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 8px;
         text-decoration: none;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
     }
     .btn-ver-papelera:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         color: white;
         text-decoration: none;
-        background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    }
+    .btn-ver-inscripciones {
+        background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+    .btn-ver-inscripciones:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        color: white;
+        text-decoration: none;
+        background: linear-gradient(135deg, #3a0ca3 0%, #4361ee 100%);
     }
     .btn-nuevo-pago {
         background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
@@ -813,6 +711,7 @@
         cursor: pointer;
         transition: all 0.3s ease;
         font-size: 0.85em;
+        text-decoration: none;
     }
     .btn-action:hover { transform: translateY(-2px); }
     .btn-view { background: var(--primary); color: white; }
@@ -822,6 +721,45 @@
     .btn-delete { background: var(--accent); color: white; }
     .btn-delete:hover { background: #d63650; color: white; box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3); }
     .delete-form { display: inline; }
+
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #e94560 0%, #c73e55 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+    }
+    .swal-estoicos .swal2-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5) !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+    }
+    .swal-estoicos .swal2-cancel:hover {
+        background: #e2e8f0 !important;
+    }
 
     /* ===== EMPTY STATE ===== */
     .empty-state {
@@ -860,20 +798,112 @@
         padding: 16px 20px;
         border-top: 1px solid var(--gray-200);
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
     }
-    .pagination { margin: 0; }
-    .page-link {
-        border: none;
+    .pagination-info {
+        font-size: 0.85em;
         color: var(--gray-600);
-        padding: 8px 14px;
-        margin: 0 2px;
-        border-radius: 8px;
     }
-    .page-link:hover { background: var(--gray-100); color: var(--accent); }
-    .page-item.active .page-link {
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pagination-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--gray-200);
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: var(--gray-600);
+    }
+    .pagination-btn:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .pagination-btn.active {
         background: var(--accent);
+        border-color: var(--accent);
         color: white;
+    }
+    .pagination-pages {
+        display: flex;
+        gap: 4px;
+    }
+    .page-num {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--gray-200);
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 600;
+        color: var(--gray-600);
+        transition: all 0.2s ease;
+    }
+    .page-num:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .page-num.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+    .pagination-per-page {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85em;
+        color: var(--gray-600);
+    }
+    .pagination-per-page select {
+        padding: 6px 10px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 0.9em;
+        cursor: pointer;
+    }
+    .pagination-per-page select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    /* ===== LOADING ===== */
+    .loading-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 20px;
+        color: var(--gray-500);
+    }
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid var(--gray-200);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     /* ===== RESPONSIVE ===== */
@@ -886,6 +916,7 @@
         .filters-section { flex-direction: column; }
         .search-box { width: 100%; }
         .filter-buttons { justify-content: center; }
+        .pagination-section { justify-content: center; }
     }
     @media (max-width: 768px) {
         .stats-grid { grid-template-columns: 1fr; }
@@ -921,66 +952,398 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    // Filtro de búsqueda
-    function filterTable() {
-        var searchText = $('#searchInput').val().toLowerCase();
-        var activeFilter = $('.filter-btn.active').data('filter');
-        var visibleCount = 0;
+    // =====================================================
+    // VARIABLES Y DATOS
+    // =====================================================
+    let allPagos = @json($pagosData ?? []);
+    let filteredPagos = [...allPagos];
+    let currentPage = 1;
+    let perPage = 50;
+    let totalPages = 1;
+    let totalPagos = {{ $totalPagos ?? 0 }};
+    let isLoading = false;
+    let hasMoreData = true;
+    let currentLoadedPage = 1;
 
-        $('.pago-row').each(function() {
-            var row = $(this);
-            var cliente = row.data('cliente');
-            var membresia = row.data('membresia');
-            var referencia = row.data('referencia');
-            var estado = row.data('estado');
-            
-            var matchesSearch = cliente.includes(searchText) || 
-                                membresia.includes(searchText) || 
-                                referencia.includes(searchText);
-            var matchesFilter = activeFilter === 'todos' || estado === activeFilter;
-
-            if (matchesSearch && matchesFilter) {
-                row.show();
-                visibleCount++;
-            } else {
-                row.hide();
-            }
+    // =====================================================
+    // FUNCIONES DE RENDERIZADO
+    // =====================================================
+    function renderTable() {
+        const startIndex = (currentPage - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        const pagosToShow = filteredPagos.slice(startIndex, endIndex);
+        
+        const tbody = $('#pagosTableBody');
+        tbody.empty();
+        
+        if (pagosToShow.length === 0) {
+            tbody.html(`
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <h4>No hay pagos registrados</h4>
+                        <p>Crea un nuevo pago para comenzar</p>
+                        <a href="{{ route('admin.pagos.create') }}" class="btn-nuevo-pago-inline">
+                            <i class="fas fa-plus"></i> Nuevo Pago
+                        </a>
+                    </td>
+                </tr>
+            `);
+            return;
+        }
+        
+        pagosToShow.forEach(pago => {
+            tbody.append(renderPagoRow(pago));
         });
-
-        $('#resultCount').text(visibleCount + ' de {{ $pagos->total() }}');
+        
+        updatePaginationInfo();
+        updatePaginationControls();
+        updateStats();
+        
+        // Check if we need to load more data
+        checkAndLoadMore();
     }
 
-    $('#searchInput').on('keyup', filterTable);
-    
+    function renderPagoRow(pago) {
+        const traspasoClass = pago.es_traspaso ? 'traspaso' : '';
+        const traspasoIndicator = pago.es_traspaso ? `
+            <span class="traspaso-indicator" title="Membresía traspasada">
+                <i class="fas fa-exchange-alt"></i>
+            </span>
+        ` : '';
+        const traspasoBadge = pago.es_traspaso ? `
+            <span class="badge-traspaso" title="Pagado originalmente por ${pago.cliente_original_nombre}">
+                <i class="fas fa-exchange-alt"></i> Traspaso
+            </span>
+        ` : '';
+        
+        const referenciaHtml = pago.referencia_pago ? `
+            <span class="referencia">
+                <i class="fas fa-file-invoice"></i> ${pago.referencia_pago}
+            </span>
+        ` : '';
+        
+        const montoPendienteHtml = pago.monto_pendiente > 0 ? `
+            <span class="monto-pendiente">
+                <i class="fas fa-clock"></i> ${pago.monto_pendiente_formatted}
+            </span>
+        ` : '';
+        
+        const progressClass = pago.porcentaje >= 100 ? 'complete' : 'partial';
+        
+        return `
+            <tr class="pago-row" 
+                data-estado="${pago.estado_pago}"
+                data-cliente="${pago.cliente_nombre.toLowerCase()}"
+                data-membresia="${pago.membresia_nombre.toLowerCase()}"
+                data-referencia="${(pago.referencia_pago || '').toLowerCase()}">
+                <td data-label="Cliente / Membresía">
+                    <div class="cliente-pago-info">
+                        <div class="cliente-avatar ${traspasoClass}">
+                            ${pago.cliente_iniciales}
+                            ${traspasoIndicator}
+                        </div>
+                        <div class="cliente-details">
+                            <span class="cliente-nombre">
+                                ${pago.cliente_nombre}
+                                ${traspasoBadge}
+                            </span>
+                            <span class="pago-id">
+                                <i class="fas fa-hashtag"></i> Pago #${pago.id}
+                            </span>
+                            <span class="membresia-nombre">
+                                <i class="fas fa-dumbbell"></i> ${pago.membresia_nombre}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Fecha">
+                    <div class="fecha-info">
+                        <span class="fecha-principal">
+                            <i class="fas fa-calendar-alt"></i> ${pago.fecha_pago}
+                        </span>
+                        ${referenciaHtml}
+                    </div>
+                </td>
+                <td data-label="Montos">
+                    <div class="montos-info">
+                        <span class="monto-total">${pago.monto_total_formatted}</span>
+                        <span class="monto-abonado">
+                            <i class="fas fa-check"></i> ${pago.monto_abonado_formatted}
+                        </span>
+                        ${montoPendienteHtml}
+                        <div class="progress-bar-mini">
+                            <div class="progress-fill ${progressClass}" style="width: ${Math.min(pago.porcentaje, 100)}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Estado">
+                    <span class="estado-badge ${pago.estado_pago}">
+                        <i class="fas ${pago.estado_icono}"></i> ${pago.estado_texto}
+                    </span>
+                </td>
+                <td data-label="Método">
+                    <span class="metodo-badge">
+                        <i class="fas ${pago.metodo_icono}"></i> ${pago.metodo_nombre}
+                    </span>
+                </td>
+                <td data-label="Acciones">
+                    <div class="action-buttons">
+                        <a href="${pago.show_url}" class="btn-action btn-view" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="${pago.edit_url}" class="btn-action btn-edit" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn-action btn-delete" 
+                                onclick="confirmDelete('${pago.delete_url}', '${pago.cliente_nombre}', '${pago.monto_abonado_formatted}')" 
+                                title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // =====================================================
+    // ESTADÍSTICAS
+    // =====================================================
+    function updateStats() {
+        let totalRecaudado = 0;
+        let completados = 0;
+        let parciales = 0;
+        
+        filteredPagos.forEach(pago => {
+            totalRecaudado += pago.monto_abonado;
+            if (pago.estado_pago === 'pagado') {
+                completados++;
+            } else if (pago.estado_pago === 'parcial') {
+                parciales++;
+            }
+        });
+        
+        $('#statTotalPagos').text(filteredPagos.length);
+        $('#statRecaudado').text('$' + totalRecaudado.toLocaleString('es-CL'));
+        $('#statCompletados').text(completados);
+        $('#statParciales').text(parciales);
+    }
+
+    // =====================================================
+    // PAGINACIÓN
+    // =====================================================
+    function updatePaginationInfo() {
+        totalPages = Math.ceil(filteredPagos.length / perPage);
+        const startItem = filteredPagos.length === 0 ? 0 : (currentPage - 1) * perPage + 1;
+        const endItem = Math.min(currentPage * perPage, filteredPagos.length);
+        
+        $('#paginationInfo').text(`Mostrando ${startItem} - ${endItem} de ${filteredPagos.length} pagos`);
+        $('#resultCount').text(`${filteredPagos.length} de ${totalPagos}`);
+    }
+
+    function updatePaginationControls() {
+        totalPages = Math.ceil(filteredPagos.length / perPage);
+        
+        $('#btnFirst, #btnPrev').prop('disabled', currentPage <= 1);
+        $('#btnNext, #btnLast').prop('disabled', currentPage >= totalPages);
+        
+        // Render page numbers
+        let pagesHtml = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            pagesHtml += `<span class="page-num ${activeClass}" onclick="goToPage(${i})">${i}</span>`;
+        }
+        
+        $('#paginationPages').html(pagesHtml);
+    }
+
+    window.goToPage = function(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderTable();
+        
+        // Scroll to top of table
+        $('.table-section')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.changePerPage = function(value) {
+        perPage = parseInt(value);
+        currentPage = 1;
+        renderTable();
+    };
+
+    // =====================================================
+    // LAZY LOADING
+    // =====================================================
+    function checkAndLoadMore() {
+        const totalLoadedFromServer = allPagos.length;
+        const remainingPages = Math.ceil(filteredPagos.length / perPage) - currentPage;
+        
+        // Load more if we're getting close to the end and there's more data
+        if (remainingPages <= 2 && hasMoreData && !isLoading && totalLoadedFromServer < totalPagos) {
+            loadMorePagos();
+        }
+    }
+
+    function loadMorePagos() {
+        if (isLoading || !hasMoreData) return;
+        
+        isLoading = true;
+        currentLoadedPage++;
+        $('#loadingMore').show();
+        
+        $.ajax({
+            url: '{{ route("admin.pagos.json") }}',
+            method: 'GET',
+            data: {
+                page: currentLoadedPage,
+                per_page: 50
+            },
+            success: function(response) {
+                if (response.pagos && response.pagos.length > 0) {
+                    // Add new pagos avoiding duplicates
+                    const existingIds = new Set(allPagos.map(p => p.id));
+                    const newPagos = response.pagos.filter(p => !existingIds.has(p.id));
+                    
+                    allPagos = [...allPagos, ...newPagos];
+                    applyFilters();
+                    
+                    // Check if there's more data
+                    hasMoreData = response.pagination.current_page < response.pagination.last_page;
+                } else {
+                    hasMoreData = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading more pagos:', error);
+                hasMoreData = false;
+            },
+            complete: function() {
+                isLoading = false;
+                $('#loadingMore').hide();
+            }
+        });
+    }
+
+    // =====================================================
+    // FILTROS Y BÚSQUEDA
+    // =====================================================
+    function applyFilters() {
+        const searchText = $('#searchInput').val().toLowerCase();
+        const activeFilter = $('.filter-btn.active').data('filter');
+        
+        filteredPagos = allPagos.filter(pago => {
+            // Search filter
+            const matchesSearch = !searchText || 
+                pago.cliente_nombre.toLowerCase().includes(searchText) ||
+                pago.membresia_nombre.toLowerCase().includes(searchText) ||
+                (pago.referencia_pago || '').toLowerCase().includes(searchText);
+            
+            // Status filter
+            const matchesFilter = activeFilter === 'todos' || pago.estado_pago === activeFilter;
+            
+            return matchesSearch && matchesFilter;
+        });
+        
+        currentPage = 1;
+        renderTable();
+    }
+
+    // Search input with debounce
+    let searchTimeout;
+    $('#searchInput').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 300);
+    });
+
+    // Filter buttons
     $('.filter-btn').on('click', function() {
         $('.filter-btn').removeClass('active');
         $(this).addClass('active');
-        filterTable();
+        applyFilters();
     });
 
-    // Confirmación de eliminación con SweetAlert2
-    $('.delete-form').on('submit', function(e) {
-        e.preventDefault();
-        var form = this;
-        
+    // =====================================================
+    // CONFIRMACIÓN DE ELIMINACIÓN
+    // =====================================================
+    window.confirmDelete = function(deleteUrl, clienteNombre, monto) {
         Swal.fire({
             title: '¿Eliminar pago?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
+            html: `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-money-bill-wave" style="font-size: 2rem; color: #dc3545;"></i>
+                    </div>
+                    <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${clienteNombre}</p>
+                    <p style="color: #64748b; font-size: 0.9rem;">Monto: ${monto}</p>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">El pago se moverá a la papelera y podrás restaurarlo después.</p>
+                </div>
+            `,
+            icon: null,
             showCancelButton: true,
-            confirmButtonColor: '#e94560',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            customClass: {
-                popup: 'swal-estoicos'
-            }
+            confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
+            cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+            reverseButtons: true,
+            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Eliminando...',
+                    html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    customClass: { popup: 'swal-estoicos' }
+                });
+                
+                // Create and submit form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = deleteUrl;
+                form.innerHTML = `
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                `;
+                document.body.appendChild(form);
                 form.submit();
             }
         });
+    };
+
+    // =====================================================
+    // INICIALIZACIÓN
+    // =====================================================
+    renderTable();
+    
+    // Session success message
+    @if(session('success'))
+    Swal.fire({
+        title: '¡Operación exitosa!',
+        html: `
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-check" style="font-size: 1.8rem; color: #22c55e;"></i>
+                </div>
+                <p style="color: #1e293b; font-size: 1rem;">{{ session('success') }}</p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
+        buttonsStyling: false
     });
+    @endif
 });
 </script>
 @stop

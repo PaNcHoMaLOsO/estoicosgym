@@ -92,6 +92,9 @@ class PausaApiController extends Controller
                 ], 422);
             }
 
+            // Obtener los días guardados antes de reanudar
+            $diasRestantesGuardados = $inscripcion->dias_restantes_al_pausar ?? 0;
+            
             // Calcular días que estuvo pausada para mostrar en la respuesta
             $diasEnPausa = $inscripcion->fecha_pausa_inicio 
                 ? $inscripcion->fecha_pausa_inicio->diffInDays(now()) 
@@ -101,15 +104,15 @@ class PausaApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Membresía reanudada exitosamente. Se agregaron {$diasEnPausa} días al vencimiento.",
+                'message' => "Membresía reanudada. Se restauraron {$diasRestantesGuardados} días de membresía.",
                 'data' => [
                     'id' => $inscripcion->id,
                     'cliente' => $inscripcion->cliente->nombres . ' ' . $inscripcion->cliente->apellido_paterno,
                     'pausada' => $inscripcion->pausada,
                     'estado' => $inscripcion->estado?->nombre,
                     'fecha_vencimiento' => $inscripcion->fecha_vencimiento?->format('d/m/Y') ?? null,
-                    'dias_compensados' => $diasEnPausa,
-                    'dias_compensacion_total' => $inscripcion->dias_compensacion,
+                    'dias_en_pausa' => $diasEnPausa,
+                    'dias_restaurados' => $diasRestantesGuardados,
                     'pausas_usadas' => $inscripcion->pausas_realizadas,
                     'pausas_disponibles' => ($inscripcion->max_pausas_permitidas ?? 2) - $inscripcion->pausas_realizadas,
                 ]

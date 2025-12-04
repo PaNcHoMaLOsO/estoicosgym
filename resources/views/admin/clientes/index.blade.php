@@ -19,9 +19,12 @@
             </div>
         </div>
         <div class="hero-actions">
+            @if(isset($totalEliminados) && $totalEliminados > 0)
             <a href="{{ route('admin.clientes.trashed') }}" class="btn-ver-papelera" title="Ver clientes eliminados">
                 <i class="fas fa-trash-alt"></i>
+                <span>Papelera ({{ $totalEliminados }})</span>
             </a>
+            @endif
             <a href="{{ route('admin.clientes.inactive') }}" class="btn-ver-inactivos">
                 <i class="fas fa-user-slash"></i>
                 <span>Ver Inactivos</span>

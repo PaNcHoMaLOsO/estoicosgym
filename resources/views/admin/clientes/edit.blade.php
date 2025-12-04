@@ -771,6 +771,103 @@
             animation: pulseWarning 1.5s ease-in-out 3;
         }
 
+        /* =====================================================
+           AUTOCOMPLETE DIRECCIÓN - API Photon
+        ===================================================== */
+        .direccion-container {
+            position: relative;
+            overflow: visible;
+        }
+
+        #direccion-dropdown {
+            position: fixed;
+            background: #fff;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 99999;
+            display: none;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+            width: auto;
+            min-width: 300px;
+        }
+
+        #direccion-dropdown.visible {
+            display: block;
+        }
+
+        .dir-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: all 0.15s ease;
+        }
+
+        .dir-item:last-child {
+            border-bottom: none;
+        }
+
+        .dir-item:hover,
+        .dir-item.active {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+
+        .dir-item-main {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dir-item-main i {
+            color: var(--accent);
+            font-size: 12px;
+        }
+
+        .dir-item-sub {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+            padding-left: 20px;
+        }
+
+        .dir-loading {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .dir-loading i {
+            animation: dirSpin 1s linear infinite;
+            margin-right: 8px;
+            color: var(--accent);
+        }
+
+        @keyframes dirSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .dir-empty {
+            padding: 16px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .dir-empty i {
+            color: var(--success);
+            margin-right: 5px;
+        }
+
+        #direccion:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.15);
+        }
+
         /* ============================================
            RESPONSIVE
            ============================================ */
@@ -911,7 +1008,7 @@
                                     </div>
                                 </div>
                                 <small class="form-text" id="rut-hint">
-                                    <i class="fas fa-info-circle"></i> Si ingresa RUT, se validará automáticamente
+                                    <small class="form-hint" id="rut-hint">Campo opcional</small>
                                 </small>
                                 <div id="rut-feedback" class="mt-1" style="display: none;"></div>
                                 @error('run_pasaporte')
@@ -1233,7 +1330,7 @@
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <div class="form-group">
+                            <div class="form-group col-md-12 direccion-container">
                                 <label for="direccion" class="form-label">
                                     <i class="fas fa-map-marker-alt"></i> Dirección Completa
                                 </label>
@@ -1241,8 +1338,13 @@
                                        class="form-control @error('direccion') is-invalid @enderror" 
                                        id="direccion" 
                                        name="direccion" 
-                                       placeholder="Ej: Av. Providencia 1234, Depto 501, Providencia" 
-                                       value="{{ old('direccion', $cliente->direccion) }}">
+                                       placeholder="Ej: Colón 500, Pje Pacífico 09, Villagrán 123..." 
+                                       value="{{ old('direccion', $cliente->direccion) }}"
+                                       autocomplete="off">
+                                <div id="direccion-dropdown"></div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Escribe el nombre de la calle para ver sugerencias
+                                </small>
                                 @error('direccion')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -1554,6 +1656,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return { valid: false, message: 'Formato de RUT inválido' };
         }
         
+        // Validar máximo 9 dígitos totales (8 dígitos de cuerpo + 1 DV)
+        if (cuerpo.length > 8) {
+            return { valid: false, message: 'RUT inválido (máximo 8 dígitos + DV)' };
+        }
+        
         // Calcular dígito verificador con Módulo 11
         let suma = 0;
         let multiplicador = 2;
@@ -1580,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (dv === dvEsperado) {
             return { valid: true, message: 'RUT válido ✓', dv: dvEsperado };
         } else {
-            return { valid: false, message: `Dígito verificador incorrecto. Debería ser: ${dvEsperado}`, dv: dvEsperado };
+            return { valid: false, message: 'RUT inválido', dv: dvEsperado };
         }
     }
     
@@ -1602,15 +1709,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (resultado.valid === null) {
             // Estado neutral - aún escribiendo
             icon.className = 'fas fa-question-circle text-muted';
-            hint.innerHTML = '<i class="fas fa-info-circle"></i> Formato chileno (incluye dígitos 0 y K)';
+            hint.textContent = 'Campo opcional';
             feedback.style.display = 'none';
         } else if (resultado.valid) {
-            // ✅ RUT válido
+            // ✅ RUT válido - solo mostrar ícono verde, sin texto adicional
             input.classList.add('is-valid');
             icon.className = 'fas fa-check-circle text-success';
             status.classList.add('bg-success');
             status.style.borderColor = '#28a745';
-            hint.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> ' + resultado.message + '</span>';
+            hint.textContent = ''; // Sin mensaje
             feedback.style.display = 'none';
         } else {
             // ❌ RUT inválido
@@ -1619,8 +1726,7 @@ document.addEventListener('DOMContentLoaded', function() {
             status.classList.add('bg-danger');
             status.style.borderColor = '#dc3545';
             hint.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ' + resultado.message + '</span>';
-            feedback.innerHTML = '<small class="text-danger">' + resultado.message + '</small>';
-            feedback.style.display = 'block';
+            feedback.style.display = 'none'; // No duplicar mensaje
         }
     }
 
@@ -2369,6 +2475,139 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // =====================================================
+    // AUTOCOMPLETE DIRECCIÓN - Lista Local de Calles
+    // Rápido y sin dependencias externas
+    // =====================================================
+    (function initDireccionAutocomplete() {
+        const input = document.getElementById('direccion');
+        const dropdown = document.getElementById('direccion-dropdown');
+        
+        if (!input || !dropdown) return;
+        
+        let activeIndex = -1;
+        let callesFiltradas = [];
+        
+        // Lista de calles de Los Ángeles, Biobío
+        const calles = [
+            'Av. Alemania', 'Av. Ricardo Vicuña', 'Av. Bernardo O\'Higgins', 'Av. Los Carrera',
+            'Av. Ercilla', 'Av. Gabriela Mistral', 'Av. Orompello', 'Colón', 'Valdivia',
+            'Caupolicán', 'Lautaro', 'Colo Colo', 'Tucapel', 'Rengo', 'Villagrán',
+            'Mendoza', 'Almagro', 'Manuel Rodríguez', 'Janequeo', 'Sargento Aldea',
+            'Lord Cochrane', 'Chacabuco', 'Maipú', 'Arturo Prat', 'San Martín',
+            'Riquelme', 'Castellón', 'General Cruz', 'Freire', 'Bulnes', 'Orompello',
+            'Los Copihues', 'Las Violetas', 'Los Aromos', 'El Roble', 'Los Alerces',
+            'Los Cipreses', 'Temuco', 'Angol', 'Talca', 'Concepción', 'Santiago',
+            'Mulchén', 'Nacimiento', 'Negrete', 'Pje. Pacífico', 'Pje. Atlántico',
+            'Pje. Los Pinos', 'Pje. Las Rosas', 'Pje. Los Olivos', 'Pje. El Sol',
+            'Pje. La Luna', 'Pje. Las Estrellas', 'Pje. Los Naranjos', 'Pje. Los Cerezos',
+            'Pje. Tilao', 'Tilao', 'Pob. Los Acacios', 'Pob. Villa Los Ríos',
+            'Pob. Santa María', 'Pob. Sor Vicenta', 'Pob. Bicentenario', 'Pob. Las Vegas',
+            'Villa Los Héroes', 'Villa Cordillera', 'Villa España', 'Villa Italia', 'Villa Galilea'
+        ];
+        
+        function normalizar(str) {
+            return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        
+        function posicionarDropdown() {
+            const rect = input.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+        }
+        
+        function buscar(query) {
+            const q = normalizar(query);
+            if (q.length < 2) {
+                ocultar();
+                return;
+            }
+            
+            callesFiltradas = calles.filter(c => normalizar(c).includes(q)).slice(0, 8);
+            mostrarResultados();
+        }
+        
+        function mostrarResultados() {
+            posicionarDropdown();
+            
+            if (callesFiltradas.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="dir-empty">
+                        <i class="fas fa-edit"></i> Escribe la dirección manualmente
+                    </div>
+                `;
+            } else {
+                dropdown.innerHTML = callesFiltradas.map((calle, i) => `
+                    <div class="dir-item" data-index="${i}">
+                        <div class="dir-item-main">
+                            <i class="fas fa-map-marker-alt"></i> ${calle}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            dropdown.classList.add('visible');
+            activeIndex = -1;
+        }
+        
+        function ocultar() {
+            dropdown.classList.remove('visible');
+            activeIndex = -1;
+        }
+        
+        function seleccionar(index) {
+            if (index < 0 || index >= callesFiltradas.length) return;
+            
+            // Conservar número si ya escribió uno
+            const numMatch = input.value.match(/\d+/);
+            const num = numMatch ? ' ' + numMatch[0] : '';
+            
+            input.value = callesFiltradas[index] + num;
+            ocultar();
+            input.focus();
+        }
+        
+        input.addEventListener('input', () => buscar(input.value.trim()));
+        
+        input.addEventListener('keydown', function(e) {
+            if (!dropdown.classList.contains('visible')) return;
+            
+            const items = dropdown.querySelectorAll('.dir-item');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                seleccionar(activeIndex);
+                return;
+            } else if (e.key === 'Escape') {
+                ocultar();
+                return;
+            }
+            
+            items.forEach((item, i) => item.classList.toggle('active', i === activeIndex));
+        });
+        
+        dropdown.addEventListener('click', function(e) {
+            const item = e.target.closest('.dir-item');
+            if (item) seleccionar(parseInt(item.dataset.index));
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) ocultar();
+        });
+        
+        input.addEventListener('focus', () => {
+            if (input.value.length >= 2) buscar(input.value.trim());
+        });
+    })();
 });
 </script>
 @endpush

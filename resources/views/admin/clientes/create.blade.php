@@ -80,7 +80,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <small class="form-hint" id="rut-hint">Si ingresa RUT, se validará automáticamente</small>
+                                <small class="form-hint" id="rut-hint">Campo opcional</small>
                                 <div id="rut-feedback" class="mt-1" style="display: none;"></div>
                                 @error('run_pasaporte')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -307,14 +307,19 @@
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group col-md-12">
+                            <div class="form-group col-md-12 direccion-container">
                                 <label for="direccion">
                                     <i class="fas fa-map-marker-alt"></i> Dirección
                                 </label>
                                 <input type="text" class="form-control @error('direccion') is-invalid @enderror" 
                                        id="direccion" name="direccion"
-                                       placeholder="Ej: Av. Principal 123, Santiago"
-                                       value="{{ old('direccion') }}">
+                                       placeholder="Escribe una dirección... Ej: Colón 500, Los Ángeles"
+                                       value="{{ old('direccion') }}"
+                                       autocomplete="off">
+                                <div id="direccion-dropdown"></div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Busca direcciones en Chile o escribe manualmente
+                                </small>
                                 @error('direccion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -442,7 +447,9 @@
                                 </label>
                                 <input type="date" class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                        id="fecha_inicio" name="fecha_inicio"
-                                       value="{{ old('fecha_inicio', date('Y-m-d')) }}">
+                                       value="{{ old('fecha_inicio', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d') }}">
+                                <small class="form-hint">Debe ser hoy o fecha futura</small>
                                 @error('fecha_inicio')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -1501,24 +1508,33 @@
     }
 
     .btn-save-only {
-        background: rgba(67, 97, 238, 0.15);
-        border: 2px solid var(--info);
+        background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+        border: none;
         color: #fff;
-        padding: 0.75rem 1.5rem;
+        padding: 0.85rem 1.75rem;
         border-radius: 12px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-save-only:hover {
-        background: var(--info);
+        background: linear-gradient(135deg, #3a0ca3 0%, #4361ee 100%);
         color: #fff;
-        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
-        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.5);
+        transform: translateY(-3px);
+    }
+
+    .btn-save-only:active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4);
     }
 
     /* Responsive */
@@ -2107,6 +2123,103 @@
     #edad-info.mayor {
         color: var(--success);
     }
+
+    /* =====================================================
+       AUTOCOMPLETE DIRECCIÓN - API Photon
+    ===================================================== */
+    .direccion-container {
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    #direccion-dropdown {
+        position: fixed;
+        background: #fff;
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 99999;
+        display: none;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        width: auto;
+        min-width: 300px;
+    }
+
+    #direccion-dropdown.visible {
+        display: block;
+    }
+
+    .dir-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        transition: all 0.15s ease;
+    }
+
+    .dir-item:last-child {
+        border-bottom: none;
+    }
+
+    .dir-item:hover,
+    .dir-item.active {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    }
+
+    .dir-item-main {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dir-item-main i {
+        color: var(--accent);
+        font-size: 12px;
+    }
+
+    .dir-item-sub {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+        padding-left: 20px;
+    }
+
+    .dir-loading {
+        padding: 20px;
+        text-align: center;
+        color: #666;
+    }
+
+    .dir-loading i {
+        animation: dirSpin 1s linear infinite;
+        margin-right: 8px;
+        color: var(--accent);
+    }
+
+    @keyframes dirSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .dir-empty {
+        padding: 16px;
+        text-align: center;
+        color: #666;
+        font-size: 13px;
+    }
+
+    .dir-empty i {
+        color: var(--success);
+        margin-right: 5px;
+    }
+
+    #direccion:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.15);
+    }
 </style>
 @stop
 
@@ -2509,6 +2622,11 @@ $(document).ready(function() {
             return { valid: false, message: 'Formato de RUT inválido' };
         }
         
+        // Validar máximo 9 dígitos totales (8 dígitos de cuerpo + 1 DV)
+        if (cuerpo.length > 8) {
+            return { valid: false, message: 'RUT inválido (máximo 8 dígitos + DV)' };
+        }
+        
         // Calcular dígito verificador con Módulo 11
         let suma = 0;
         let multiplicador = 2;
@@ -2535,7 +2653,7 @@ $(document).ready(function() {
         if (dv === dvEsperado) {
             return { valid: true, message: 'RUT válido ✓', dv: dvEsperado };
         } else {
-            return { valid: false, message: `Dígito verificador incorrecto. Debería ser: ${dvEsperado}`, dv: dvEsperado };
+            return { valid: false, message: 'RUT inválido', dv: dvEsperado };
         }
     }
     
@@ -2554,14 +2672,14 @@ $(document).ready(function() {
         if (resultado.valid === null) {
             // Estado neutral - aún escribiendo
             $icon.attr('class', 'fas fa-question-circle text-muted');
-            $hint.text('Campo opcional - Formato chileno (incluye dígitos 0 y K)');
+            $hint.text('Campo opcional');
             $feedback.hide();
         } else if (resultado.valid) {
-            // ✅ RUT válido
+            // ✅ RUT válido - solo mostrar ícono verde, sin texto adicional
             $input.addClass('is-valid');
             $icon.attr('class', 'fas fa-check-circle text-success');
             $status.addClass('bg-success').css('border-color', '#28a745');
-            $hint.html('<span class="text-success"><i class="fas fa-check"></i> ' + resultado.message + '</span>');
+            $hint.text(''); // Sin mensaje
             $feedback.hide();
         } else {
             // ❌ RUT inválido
@@ -2569,7 +2687,7 @@ $(document).ready(function() {
             $icon.attr('class', 'fas fa-times-circle text-danger');
             $status.addClass('bg-danger').css('border-color', '#dc3545');
             $hint.html('<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ' + resultado.message + '</span>');
-            $feedback.html('<small class="text-danger">' + resultado.message + '</small>').show();
+            $feedback.hide(); // No duplicar mensaje
         }
     }
 
@@ -2859,29 +2977,129 @@ $(document).ready(function() {
 
     function validateStep(step) {
         let isValid = true;
+        let errores = [];
         
         if (step === 1) {
-            // Validar campos requeridos del paso 1
-            const campos = ['nombres', 'apellido_paterno', 'celular', 'email'];
-            campos.forEach(campo => {
-                const input = $(`#${campo}`);
+            // Limpiar estados previos
+            $('#nombres, #apellido_paterno, #celular, #email, #fecha_nacimiento, #run_pasaporte').removeClass('is-invalid');
+            
+            // 1. Validar campos requeridos
+            const camposRequeridos = [
+                { id: 'nombres', nombre: 'Nombres' },
+                { id: 'apellido_paterno', nombre: 'Apellido Paterno' },
+                { id: 'celular', nombre: 'Celular' },
+                { id: 'email', nombre: 'Email' }
+            ];
+            
+            camposRequeridos.forEach(campo => {
+                const input = $(`#${campo.id}`);
                 if (!input.val().trim()) {
                     input.addClass('is-invalid');
+                    errores.push(`${campo.nombre} es requerido`);
                     isValid = false;
-                } else {
-                    input.removeClass('is-invalid');
                 }
             });
+            
+            // 2. Validar formato de nombres (solo letras)
+            const regexNombres = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+            ['nombres', 'apellido_paterno', 'apellido_materno'].forEach(campo => {
+                const input = $(`#${campo}`);
+                const valor = input.val().trim();
+                if (valor && !regexNombres.test(valor)) {
+                    input.addClass('is-invalid');
+                    errores.push(`${campo === 'nombres' ? 'Nombres' : (campo === 'apellido_paterno' ? 'Apellido Paterno' : 'Apellido Materno')} solo debe contener letras`);
+                    isValid = false;
+                }
+            });
+            
+            // 3. Validar formato de email
+            const email = $('#email').val().trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(email)) {
+                $('#email').addClass('is-invalid');
+                errores.push('El formato del email no es válido');
+                isValid = false;
+            }
+            
+            // 4. Validar formato de celular chileno
+            const celular = $('#celular').val().trim();
+            const celularRegex = /^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/;
+            if (celular && !celularRegex.test(celular)) {
+                $('#celular').addClass('is-invalid');
+                errores.push('El formato del celular no es válido (+56 9 XXXX XXXX)');
+                isValid = false;
+            }
+            
+            // 5. Validar edad si hay fecha de nacimiento
+            const fechaNac = $('#fecha_nacimiento').val();
+            if (fechaNac && fechaNac.length === 10) {
+                const fecha = new Date(fechaNac);
+                const hoy = new Date();
+                let edad = hoy.getFullYear() - fecha.getFullYear();
+                const m = hoy.getMonth() - fecha.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) {
+                    edad--;
+                }
+                
+                if (edad < 14) {
+                    $('#fecha_nacimiento').addClass('is-invalid');
+                    errores.push('El cliente debe tener al menos 14 años');
+                    isValid = false;
+                } else if (edad > 110) {
+                    $('#fecha_nacimiento').addClass('is-invalid');
+                    errores.push('Verifique la fecha de nacimiento');
+                    isValid = false;
+                }
+            }
+            
+            // 6. Validar RUT si fue ingresado
+            const rut = $('#run_pasaporte').val().trim();
+            if (rut && rut.length >= 9) {
+                const resultadoRut = validarRutChileno(rut);
+                if (resultadoRut.valid === false) {
+                    $('#run_pasaporte').addClass('is-invalid');
+                    errores.push('El RUT ingresado no es válido');
+                    isValid = false;
+                }
+            }
+            
+            // 7. Validar apoderado si es menor de edad
+            if ($('#es_menor_edad').val() === '1') {
+                if (!$('#consentimiento_apoderado').is(':checked')) {
+                    errores.push('Debe confirmar la autorización del apoderado');
+                    isValid = false;
+                }
+                
+                const camposApoderado = [
+                    { id: 'apoderado_nombre', nombre: 'Nombre del apoderado' },
+                    { id: 'apoderado_rut', nombre: 'RUT del apoderado' },
+                    { id: 'apoderado_telefono', nombre: 'Teléfono del apoderado' },
+                    { id: 'apoderado_parentesco', nombre: 'Parentesco' }
+                ];
+                
+                camposApoderado.forEach(campo => {
+                    const input = $(`#${campo.id}`);
+                    if (!input.val().trim()) {
+                        input.addClass('is-invalid');
+                        errores.push(`${campo.nombre} es requerido`);
+                        isValid = false;
+                    }
+                });
+            }
 
             if (!isValid) {
+                const listaErrores = errores.slice(0, 5).map(e => `<li>${e}</li>`).join('');
+                const masErrores = errores.length > 5 ? `<li>...y ${errores.length - 5} más</li>` : '';
+                
                 Swal.fire({
-                    title: 'Campos requeridos',
+                    title: 'Verifica los datos',
                     html: `
-                        <div style="text-align: center; padding: 1rem 0;">
-                            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                                <i class="fas fa-exclamation" style="font-size: 1.8rem; color: #b45309;"></i>
+                        <div style="text-align: left; padding: 1rem 0;">
+                            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 16px; border: 1px solid #f59e0b;">
+                                <ul style="color: #92400e; margin: 0; padding-left: 20px; font-size: 14px;">
+                                    ${listaErrores}${masErrores}
+                                </ul>
                             </div>
-                            <p style="color: #64748b;">Por favor completa todos los campos obligatorios</p>
                         </div>
                     `,
                     icon: null,
@@ -3019,8 +3237,29 @@ $(document).ready(function() {
         calcularFechaTermino();
     });
 
-    // Calcular fecha de término al cambiar fecha de inicio
+    // Calcular fecha de término al cambiar fecha de inicio + validar fecha no pasada
     $('#fecha_inicio').on('change', function() {
+        const fechaSeleccionada = new Date(this.value);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        fechaSeleccionada.setHours(0, 0, 0, 0);
+        
+        if (fechaSeleccionada < hoy) {
+            Swal.fire({
+                title: 'Fecha no válida',
+                text: 'La fecha de inicio no puede ser anterior a hoy.',
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    popup: 'swal-estoicos',
+                    confirmButton: 'swal2-confirm'
+                },
+                buttonsStyling: false
+            });
+            // Resetear a hoy
+            const today = new Date().toISOString().split('T')[0];
+            this.value = today;
+        }
         calcularFechaTermino();
     });
 
@@ -3053,17 +3292,45 @@ $(document).ready(function() {
             precioNormal = parseInt(membresiaOption.data('precio-normal')) || 0;
             const precioConvenioBase = parseInt(membresiaOption.data('precio-convenio')) || precioNormal;
             
-            // Calcular descuento convenio
+            // Calcular descuento convenio y precio base para descuento
             let descuentoConvenio = 0;
+            let precioParaDescuento = precioNormal; // Precio máximo que se puede descontar
+            
             if (convenioId && precioConvenioBase < precioNormal) {
                 descuentoConvenio = precioNormal - precioConvenioBase;
                 precioFinal = precioConvenioBase;
+                precioParaDescuento = precioConvenioBase;
             } else {
                 precioFinal = precioNormal;
+                precioParaDescuento = precioNormal;
             }
 
+            // Validar y limitar descuento manual al precio disponible
+            let descuentoManual = parseInt($('#descuento_manual').val()) || 0;
+            
+            // Si el descuento supera el precio disponible, limitarlo
+            if (descuentoManual > precioParaDescuento) {
+                descuentoManual = precioParaDescuento;
+                $('#descuento_manual').val(descuentoManual);
+                
+                // Mostrar advertencia
+                Swal.fire({
+                    title: 'Descuento limitado',
+                    html: `<p>El descuento no puede superar el precio de la membresía.</p><p>Descuento máximo permitido: <strong>${formatCurrency(precioParaDescuento)}</strong></p>`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        popup: 'swal-estoicos swal-warning',
+                        confirmButton: 'swal2-confirm'
+                    },
+                    buttonsStyling: false
+                });
+            }
+            
+            // Actualizar el máximo del input
+            $('#descuento_manual').attr('max', precioParaDescuento);
+            
             // Aplicar descuento manual
-            const descuentoManual = parseInt($('#descuento_manual').val()) || 0;
             precioFinal = Math.max(0, precioFinal - descuentoManual);
 
             // Actualizar display
@@ -3091,6 +3358,7 @@ $(document).ready(function() {
             $('#precioDisplay').hide();
             precioNormal = 0;
             precioFinal = 0;
+            $('#descuento_manual').attr('max', '');
         }
     }
 
@@ -3365,6 +3633,40 @@ $(document).ready(function() {
     @endif
 
     @if($errors->any())
+    // Determinar en qué paso está el error
+    (function() {
+        const camposPaso1 = ['run_pasaporte', 'fecha_nacimiento', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'direccion', 'contacto_emergencia', 'telefono_emergencia', 'observaciones', 'apoderado_nombre', 'apoderado_rut', 'apoderado_telefono', 'apoderado_parentesco', 'consentimiento_apoderado'];
+        const camposPaso2 = ['id_membresia', 'id_convenio', 'fecha_inicio', 'descuento_manual', 'id_motivo_descuento'];
+        const camposPaso3 = ['tipo_pago', 'id_metodo_pago', 'monto_abonado'];
+        
+        const erroresArray = @json($errors->keys());
+        let pasoConError = 1;
+        
+        for (let campo of erroresArray) {
+            if (camposPaso3.includes(campo)) {
+                pasoConError = 3;
+                break;
+            } else if (camposPaso2.includes(campo)) {
+                pasoConError = Math.max(pasoConError, 2);
+            }
+        }
+        
+        // Navegar al paso con error
+        if (pasoConError !== currentStep) {
+            currentStep = pasoConError;
+            $('.step-btn').removeClass('active');
+            $(`.step-btn[data-step="${pasoConError}"]`).addClass('active');
+            $('.step-content').removeClass('active');
+            $(`#step-${pasoConError}`).addClass('active');
+            updateNavButtons();
+        }
+        
+        // Marcar campos con error
+        erroresArray.forEach(campo => {
+            $(`#${campo}`).addClass('is-invalid');
+        });
+    })();
+    
     Swal.fire({
         title: 'Errores en el formulario',
         html: `
@@ -3390,6 +3692,139 @@ $(document).ready(function() {
         buttonsStyling: false
     });
     @endif
+
+    // =====================================================
+    // AUTOCOMPLETE DIRECCIÓN - Lista Local de Calles
+    // Rápido y sin dependencias externas
+    // =====================================================
+    (function initDireccionAutocomplete() {
+        const input = document.getElementById('direccion');
+        const dropdown = document.getElementById('direccion-dropdown');
+        
+        if (!input || !dropdown) return;
+        
+        let activeIndex = -1;
+        let callesFiltradas = [];
+        
+        // Lista de calles de Los Ángeles, Biobío
+        const calles = [
+            'Av. Alemania', 'Av. Ricardo Vicuña', 'Av. Bernardo O\'Higgins', 'Av. Los Carrera',
+            'Av. Ercilla', 'Av. Gabriela Mistral', 'Av. Orompello', 'Colón', 'Valdivia',
+            'Caupolicán', 'Lautaro', 'Colo Colo', 'Tucapel', 'Rengo', 'Villagrán',
+            'Mendoza', 'Almagro', 'Manuel Rodríguez', 'Janequeo', 'Sargento Aldea',
+            'Lord Cochrane', 'Chacabuco', 'Maipú', 'Arturo Prat', 'San Martín',
+            'Riquelme', 'Castellón', 'General Cruz', 'Freire', 'Bulnes', 'Orompello',
+            'Los Copihues', 'Las Violetas', 'Los Aromos', 'El Roble', 'Los Alerces',
+            'Los Cipreses', 'Temuco', 'Angol', 'Talca', 'Concepción', 'Santiago',
+            'Mulchén', 'Nacimiento', 'Negrete', 'Pje. Pacífico', 'Pje. Atlántico',
+            'Pje. Los Pinos', 'Pje. Las Rosas', 'Pje. Los Olivos', 'Pje. El Sol',
+            'Pje. La Luna', 'Pje. Las Estrellas', 'Pje. Los Naranjos', 'Pje. Los Cerezos',
+            'Pje. Tilao', 'Tilao', 'Pob. Los Acacios', 'Pob. Villa Los Ríos',
+            'Pob. Santa María', 'Pob. Sor Vicenta', 'Pob. Bicentenario', 'Pob. Las Vegas',
+            'Villa Los Héroes', 'Villa Cordillera', 'Villa España', 'Villa Italia', 'Villa Galilea'
+        ];
+        
+        function normalizar(str) {
+            return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        
+        function posicionarDropdown() {
+            const rect = input.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+        }
+        
+        function buscar(query) {
+            const q = normalizar(query);
+            if (q.length < 2) {
+                ocultar();
+                return;
+            }
+            
+            callesFiltradas = calles.filter(c => normalizar(c).includes(q)).slice(0, 8);
+            mostrarResultados();
+        }
+        
+        function mostrarResultados() {
+            posicionarDropdown();
+            
+            if (callesFiltradas.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="dir-empty">
+                        <i class="fas fa-edit"></i> Escribe la dirección manualmente
+                    </div>
+                `;
+            } else {
+                dropdown.innerHTML = callesFiltradas.map((calle, i) => `
+                    <div class="dir-item" data-index="${i}">
+                        <div class="dir-item-main">
+                            <i class="fas fa-map-marker-alt"></i> ${calle}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            dropdown.classList.add('visible');
+            activeIndex = -1;
+        }
+        
+        function ocultar() {
+            dropdown.classList.remove('visible');
+            activeIndex = -1;
+        }
+        
+        function seleccionar(index) {
+            if (index < 0 || index >= callesFiltradas.length) return;
+            
+            // Conservar número si ya escribió uno
+            const numMatch = input.value.match(/\d+/);
+            const num = numMatch ? ' ' + numMatch[0] : '';
+            
+            input.value = callesFiltradas[index] + num;
+            ocultar();
+            input.focus();
+        }
+        
+        input.addEventListener('input', () => buscar(input.value.trim()));
+        
+        input.addEventListener('keydown', function(e) {
+            if (!dropdown.classList.contains('visible')) return;
+            
+            const items = dropdown.querySelectorAll('.dir-item');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                seleccionar(activeIndex);
+                return;
+            } else if (e.key === 'Escape') {
+                ocultar();
+                return;
+            }
+            
+            items.forEach((item, i) => item.classList.toggle('active', i === activeIndex));
+        });
+        
+        dropdown.addEventListener('click', function(e) {
+            const item = e.target.closest('.dir-item');
+            if (item) seleccionar(parseInt(item.dataset.index));
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) ocultar();
+        });
+        
+        input.addEventListener('focus', () => {
+            if (input.value.length >= 2) buscar(input.value.trim());
+        });
+    })();
 });
 </script>
 @stop

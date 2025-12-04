@@ -533,12 +533,13 @@
                     <thead>
                         <tr>
                             <th style="width: 5%;">ID</th>
-                            <th style="width: 22%;">Nombre</th>
-                            <th style="width: 12%;">Duración</th>
-                            <th style="width: 18%;">Precio</th>
-                            <th style="width: 12%;">Inscripciones</th>
-                            <th style="width: 12%;">Estado</th>
-                            <th style="width: 19%; text-align: center;">Acciones</th>
+                            <th style="width: 20%;">Nombre</th>
+                            <th style="width: 10%;">Duración</th>
+                            <th style="width: 8%;">Pausas</th>
+                            <th style="width: 15%;">Precio</th>
+                            <th style="width: 10%;">Inscripciones</th>
+                            <th style="width: 10%;">Estado</th>
+                            <th style="width: 17%; text-align: center;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -570,6 +571,11 @@
                                             ({{ $membresia->duracion_meses }} {{ $membresia->duracion_meses == 1 ? 'mes' : 'meses' }})
                                         </div>
                                     @endif
+                                </td>
+                                <td>
+                                    <span class="duration-badge" style="background: rgba(233, 69, 96, 0.15); color: var(--accent);">
+                                        <i class="fas fa-pause-circle"></i> {{ $membresia->max_pausas ?? 0 }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if ($precioActual)
@@ -626,6 +632,7 @@
                                                 <input type="hidden" name="nombre" value="{{ $membresia->nombre }}">
                                                 <input type="hidden" name="duracion_meses" value="{{ $membresia->duracion_meses }}">
                                                 <input type="hidden" name="duracion_dias" value="{{ $membresia->duracion_dias }}">
+                                                <input type="hidden" name="max_pausas" value="{{ $membresia->max_pausas ?? 1 }}">
                                                 @if ($precioActual)
                                                     <input type="hidden" name="precio_normal" value="{{ $precioActual->precio_normal }}">
                                                     @if ($precioActual->precio_convenio)

@@ -23,7 +23,16 @@
             </div>
         </div>
         <div class="hero-actions">
-            {{-- Las inscripciones no tienen papelera - solo se gestionan por estados --}}
+            @if(isset($totalEliminadas) && $totalEliminadas > 0)
+            <a href="{{ route('admin.inscripciones.trashed') }}" class="btn-ver-papelera">
+                <i class="fas fa-trash-alt"></i>
+                <span>Papelera ({{ $totalEliminadas }})</span>
+            </a>
+            @endif
+            <a href="{{ route('admin.pagos.index') }}" class="btn-ver-pagos">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Ver Pagos</span>
+            </a>
             <a href="{{ route('admin.inscripciones.create') }}" class="btn-nueva-inscripcion">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Inscripción</span>
@@ -111,187 +120,39 @@
                     </tr>
                 </thead>
                 <tbody id="inscripcionesTableBody">
-                    @forelse($inscripciones as $inscripcion)
-                    @php
-                        $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
-                        $estadoClass = strtolower($inscripcion->estado?->nombre ?? 'pendiente');
-                        $estadoPago = $inscripcion->obtenerEstadoPago();
-                    @endphp
-                    <tr class="inscripcion-row" 
-                        data-estado="{{ $estadoClass }}"
-                        data-cliente="{{ strtolower(($inscripcion->cliente?->nombres ?? '') . ' ' . ($inscripcion->cliente?->apellido_paterno ?? '')) }}"
-                        data-rut="{{ strtolower($inscripcion->cliente?->run_pasaporte ?? '') }}"
-                        data-membresia="{{ strtolower($inscripcion->membresia?->nombre ?? '') }}">
-                        <td>
-                            <div class="cliente-membresia-info">
-                                <div class="cliente-avatar">
-                                    {{ strtoupper(substr($inscripcion->cliente?->nombres ?? 'N', 0, 1) . substr($inscripcion->cliente?->apellido_paterno ?? 'A', 0, 1)) }}
-                                </div>
-                                <div class="cliente-details">
-                                    <span class="cliente-nombre">
-                                        {{ $inscripcion->cliente?->nombres ?? 'Sin cliente' }} 
-                                        {{ $inscripcion->cliente?->apellido_paterno ?? '' }}
-                                    </span>
-                                    <span class="cliente-rut">
-                                        <i class="fas fa-id-card"></i> {{ $inscripcion->cliente?->run_pasaporte ?? 'Sin RUT' }}
-                                    </span>
-                                    <span class="membresia-nombre">
-                                        <i class="fas fa-dumbbell"></i> {{ $inscripcion->membresia?->nombre ?? 'Sin membresía' }}
-                                    </span>
-                                    @if($inscripcion->convenio)
-                                    <span class="convenio-badge">
-                                        <i class="fas fa-handshake"></i> {{ $inscripcion->convenio->nombre }}
-                                    </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="periodo-info">
-                                <div class="fechas">
-                                    <span class="fecha-item">
-                                        <i class="fas fa-calendar-plus"></i>
-                                        {{ $inscripcion->fecha_inicio?->format('d/m/Y') ?? 'N/A' }}
-                                    </span>
-                                    <span class="fecha-item">
-                                        <i class="fas fa-calendar-times"></i>
-                                        {{ $inscripcion->fecha_vencimiento?->format('d/m/Y') ?? 'N/A' }}
-                                    </span>
-                                </div>
-                                <div class="dias-restantes {{ $diasRestantes > 30 ? 'dias-ok' : ($diasRestantes > 7 ? 'dias-warning' : ($diasRestantes > 0 ? 'dias-danger' : 'dias-vencido')) }}">
-                                    @if($diasRestantes > 0)
-                                        <i class="fas fa-hourglass-half"></i> {{ $diasRestantes }} días
-                                    @elseif($diasRestantes == 0)
-                                        <i class="fas fa-exclamation-triangle"></i> Vence hoy
-                                    @else
-                                        <i class="fas fa-times-circle"></i> Vencida hace {{ abs($diasRestantes) }}d
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="precio-info">
-                                @if($inscripcion->descuento_aplicado > 0)
-                                <span class="precio-base-tachado">
-                                    ${{ number_format($inscripcion->precio_base ?? 0, 0, ',', '.') }}
-                                </span>
-                                <span class="descuento-tag">
-                                    <i class="fas fa-tag"></i> -${{ number_format($inscripcion->descuento_aplicado, 0, ',', '.') }}
-                                </span>
-                                @endif
-                                <span class="precio-final">
-                                    ${{ number_format($inscripcion->precio_final ?? $inscripcion->precio_base ?? 0, 0, ',', '.') }}
-                                </span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="estado-pago-info">
-                                @if($estadoPago['estado'] === 'pagado')
-                                    <span class="pago-badge pago-completo">
-                                        <i class="fas fa-check-circle"></i> Pagado
-                                    </span>
-                                @elseif($estadoPago['estado'] === 'parcial')
-                                    <span class="pago-badge pago-parcial">
-                                        <i class="fas fa-hourglass-half"></i> Parcial
-                                    </span>
-                                    <span class="pago-detalle">
-                                        ${{ number_format($estadoPago['total_abonado'], 0, ',', '.') }} / ${{ number_format($estadoPago['total_abonado'] + $estadoPago['pendiente'], 0, ',', '.') }}
-                                    </span>
-                                @else
-                                    <span class="pago-badge pago-pendiente">
-                                        <i class="fas fa-exclamation-circle"></i> Pendiente
-                                    </span>
-                                @endif
-                                <div class="pago-progress">
-                                    <div class="pago-progress-bar {{ $estadoPago['porcentaje_pagado'] >= 100 ? 'completo' : ($estadoPago['porcentaje_pagado'] >= 50 ? 'parcial' : 'pendiente') }}" 
-                                         style="width: {{ min($estadoPago['porcentaje_pagado'], 100) }}%"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="estado-badge estado-{{ $estadoClass }}">
-                                @if($estadoClass === 'activa')
-                                    <i class="fas fa-check-circle"></i>
-                                @elseif($estadoClass === 'pausada')
-                                    <i class="fas fa-pause-circle"></i>
-                                @elseif($estadoClass === 'vencida')
-                                    <i class="fas fa-clock"></i>
-                                @else
-                                    <i class="fas fa-info-circle"></i>
-                                @endif
-                                {{ $inscripcion->estado?->nombre ?? 'Sin estado' }}
-                            </span>
-                            @if($inscripcion->estaPausada())
-                            <span class="pausa-info">
-                                <i class="fas fa-calendar-day"></i> {{ $inscripcion->dias_pausa }}d
-                            </span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="acciones-btns">
-                                <a href="{{ route('admin.inscripciones.show', $inscripcion) }}" 
-                                   class="btn-action btn-view" 
-                                   data-tooltip="Ver Detalles">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" 
-                                   class="btn-action btn-edit"
-                                   data-tooltip="Editar">
-                                    <i class="fas fa-pen"></i>
-                                </a>
-                                @if($inscripcion->estaPausada())
-                                <button type="button" 
-                                        class="btn-action btn-resume btn-reanudar" 
-                                        data-id="{{ $inscripcion->id }}"
-                                        data-cliente="{{ $inscripcion->cliente?->nombres }} {{ $inscripcion->cliente?->apellido_paterno }}"
-                                        data-tooltip="Reanudar">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                                @elseif($estadoClass === 'activa')
-                                <button type="button" 
-                                        class="btn-action btn-pause btn-pausar" 
-                                        data-id="{{ $inscripcion->id }}"
-                                        data-cliente="{{ $inscripcion->cliente?->nombres }} {{ $inscripcion->cliente?->apellido_paterno }}"
-                                        data-pausas-usadas="{{ $inscripcion->pausas_realizadas ?? 0 }}"
-                                        data-pausas-max="{{ $inscripcion->max_pausas_permitidas ?? 2 }}"
-                                        data-tooltip="Pausar">
-                                    <i class="fas fa-pause"></i>
-                                </button>
-                                @endif
-                                @if($estadoPago['estado'] !== 'pagado')
-                                <a href="{{ route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]) }}" 
-                                   class="btn-action btn-pay"
-                                   data-tooltip="Registrar Pago">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </a>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <div class="empty-content">
-                                <i class="fas fa-id-card"></i>
-                                <h3>No hay inscripciones registradas</h3>
-                                <p>Comienza creando una nueva inscripción</p>
-                                <a href="{{ route('admin.inscripciones.create') }}" class="btn-nueva-inscripcion-inline">
-                                    <i class="fas fa-plus-circle"></i> Nueva Inscripción
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
+                    <!-- Se llena con JavaScript -->
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
-        @if($inscripciones->hasPages())
         <div class="pagination-section">
-            {{ $inscripciones->withQueryString()->links() }}
+            <div class="pagination-info">
+                Mostrando <span id="showingFrom">0</span> - <span id="showingTo">0</span> de <span id="totalFiltered">0</span> inscripciones
+            </div>
+            <div class="pagination-controls">
+                <button id="btnFirst" class="pagination-btn" title="Primera página"><i class="fas fa-angle-double-left"></i></button>
+                <button id="btnPrev" class="pagination-btn" title="Anterior"><i class="fas fa-angle-left"></i></button>
+                <div id="paginationPages" class="pagination-pages"></div>
+                <button id="btnNext" class="pagination-btn" title="Siguiente"><i class="fas fa-angle-right"></i></button>
+                <button id="btnLast" class="pagination-btn" title="Última página"><i class="fas fa-angle-double-right"></i></button>
+            </div>
+            <div class="per-page-selector">
+                <select id="perPageSelect">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>por página</span>
+            </div>
         </div>
-        @endif
+
+        <!-- Loading indicator -->
+        <div id="loadingIndicator" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--accent);"></i>
+            <p style="margin-top: 10px; color: var(--text-secondary);">Cargando más inscripciones...</p>
+        </div>
     </div>
 </div>
 @stop
@@ -379,14 +240,14 @@
     .btn-ver-papelera {
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
+        gap: 8px;
+        padding: 12px 20px;
         background: rgba(239, 68, 68, 0.2);
         color: #fff;
         border: 2px solid rgba(239, 68, 68, 0.4);
         border-radius: 12px;
-        font-size: 18px;
+        font-size: 14px;
+        font-weight: 600;
         text-decoration: none;
         transition: all 0.3s ease;
     }
@@ -394,6 +255,28 @@
     .btn-ver-papelera:hover {
         background: rgba(239, 68, 68, 0.4);
         border-color: rgba(239, 68, 68, 0.6);
+        transform: translateY(-2px);
+        color: #fff;
+    }
+
+    .btn-ver-pagos {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(0, 191, 142, 0.2);
+        color: #fff;
+        border: 2px solid rgba(0, 191, 142, 0.4);
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ver-pagos:hover {
+        background: rgba(0, 191, 142, 0.4);
+        border-color: rgba(0, 191, 142, 0.6);
         transform: translateY(-2px);
         color: #fff;
     }
@@ -1018,6 +901,20 @@
         box-shadow: 0 6px 20px rgba(0, 191, 142, 0.4);
     }
 
+    .btn-delete {
+        background: rgba(233, 69, 96, 0.15);
+        color: var(--accent);
+        border-color: rgba(233, 69, 96, 0.3);
+    }
+
+    .btn-delete:hover {
+        background: linear-gradient(135deg, var(--accent) 0%, #dc2626 100%);
+        color: #fff;
+        border-color: var(--accent);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+    }
+
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -1153,19 +1050,18 @@
     }
     
     .swal-estoicos .swal2-cancel {
-        background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
         border-radius: 12px !important;
         padding: 14px 36px !important;
-        font-weight: 700 !important;
-        font-size: 0.95rem !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3) !important;
+        font-weight: 600 !important;
         transition: all 0.3s ease !important;
     }
     
     .swal-estoicos .swal2-cancel:hover {
+        background: #e2e8f0 !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 20px rgba(100, 116, 139, 0.4) !important;
     }
     
     .swal-estoicos .swal2-validation-message {
@@ -1180,6 +1076,128 @@
     .swal-estoicos .swal2-validation-message::before {
         color: var(--accent) !important;
     }
+
+    /* ===== PAGINATION STYLES ===== */
+    .pagination-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 25px;
+        background: #f8fafc;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .pagination-info {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .pagination-info span {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .pagination-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination-pages {
+        display: flex;
+        gap: 5px;
+    }
+
+    .pagination-num {
+        min-width: 36px;
+        height: 36px;
+        border: none;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 600;
+        color: var(--text-secondary);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .pagination-num:hover {
+        background: var(--accent);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .pagination-num.active {
+        background: var(--accent);
+        color: white;
+    }
+
+    .pagination-ellipsis {
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        color: var(--text-secondary);
+    }
+
+    .per-page-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .per-page-selector select {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .per-page-selector select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+        .pagination-section {
+            flex-direction: column;
+            gap: 15px;
+        }
+        .pagination-controls {
+            order: -1;
+        }
+    }
 </style>
 @stop
 
@@ -1187,225 +1205,476 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    // CSRF Token
+    // ============================================
+    // SISTEMA DE LAZY LOADING CON PAGINACIÓN LOCAL
+    // ============================================
+    
+    // Datos globales
+    let allInscripciones = @json($inscripcionesData);
+    let hasMoreData = {{ $totalInscripciones > 100 ? 'true' : 'false' }};
+    let nextOffset = 100;
+    let isLoading = false;
+    
+    // Estado de la paginación
+    let currentPage = 1;
+    let perPage = 20;
+    let currentFilter = 'todos';
+    let currentSearch = '';
+    
+    // CSRF token
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
-    // Filtro en tiempo real
-    function filterTable() {
-        var searchText = $('#searchInput').val().toLowerCase();
-        var activeFilter = $('.filter-btn.active').data('filter');
-        var visibleCount = 0;
-        var totalCount = $('#inscripcionesTableBody tr.inscripcion-row').length;
+    /**
+     * Formatear número con separador de miles
+     */
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
 
-        $('#inscripcionesTableBody tr.inscripcion-row').each(function() {
-            var row = $(this);
-            var cliente = row.data('cliente') || '';
-            var rut = row.data('rut') || '';
-            var membresia = row.data('membresia') || '';
-            var estado = row.data('estado') || '';
+    /**
+     * Obtener inscripciones filtradas
+     */
+    function getFilteredInscripciones() {
+        return allInscripciones.filter(insc => {
+            // Filtro por estado
+            let matchesFilter = true;
+            if (currentFilter !== 'todos') {
+                matchesFilter = insc.estado_class === currentFilter;
+            }
             
-            var matchesSearch = cliente.includes(searchText) || rut.includes(searchText) || membresia.includes(searchText);
-            var matchesFilter = activeFilter === 'todos' || estado === activeFilter;
+            // Filtro por búsqueda
+            let matchesSearch = true;
+            if (currentSearch) {
+                const searchLower = currentSearch.toLowerCase();
+                const nombre = ((insc.cliente_nombres || '') + ' ' + (insc.cliente_apellido || '')).toLowerCase();
+                const rut = (insc.cliente_rut || '').toLowerCase();
+                const membresia = (insc.membresia_nombre || '').toLowerCase();
+                
+                matchesSearch = nombre.includes(searchLower) || 
+                               rut.includes(searchLower) || 
+                               membresia.includes(searchLower);
+            }
+            
+            return matchesFilter && matchesSearch;
+        });
+    }
 
-            if (matchesSearch && matchesFilter) {
-                row.show();
-                visibleCount++;
-            } else {
-                row.hide();
+    /**
+     * Renderizar una fila de inscripción
+     */
+    function renderInscripcionRow(insc) {
+        // Determinar clase de días restantes
+        let diasClass = 'dias-ok';
+        if (insc.dias_restantes <= 0) diasClass = 'dias-vencido';
+        else if (insc.dias_restantes <= 7) diasClass = 'dias-danger';
+        else if (insc.dias_restantes <= 30) diasClass = 'dias-warning';
+
+        // Texto de días restantes
+        let diasTexto = '';
+        if (insc.dias_restantes > 0) {
+            diasTexto = `<i class="fas fa-hourglass-half"></i> ${insc.dias_restantes} días`;
+        } else if (insc.dias_restantes === 0) {
+            diasTexto = `<i class="fas fa-exclamation-triangle"></i> Vence hoy`;
+        } else {
+            diasTexto = `<i class="fas fa-times-circle"></i> Vencida hace ${Math.abs(insc.dias_restantes)}d`;
+        }
+
+        // Estado pago badge
+        let pagoBadge = '';
+        if (insc.estado_pago === 'pagado') {
+            pagoBadge = `<span class="pago-badge pago-completo"><i class="fas fa-check-circle"></i> Pagado</span>`;
+        } else if (insc.estado_pago === 'parcial') {
+            pagoBadge = `
+                <span class="pago-badge pago-parcial"><i class="fas fa-hourglass-half"></i> Parcial</span>
+                <span class="pago-detalle">$${formatNumber(insc.total_abonado)} / $${formatNumber(insc.total_abonado + insc.pago_pendiente)}</span>
+            `;
+        } else {
+            pagoBadge = `<span class="pago-badge pago-pendiente"><i class="fas fa-exclamation-circle"></i> Pendiente</span>`;
+        }
+
+        // Progress bar class
+        let progressClass = 'pendiente';
+        if (insc.porcentaje_pagado >= 100) progressClass = 'completo';
+        else if (insc.porcentaje_pagado >= 50) progressClass = 'parcial';
+
+        // Estado icon
+        let estadoIcon = '<i class="fas fa-info-circle"></i>';
+        if (insc.estado_class === 'activa') estadoIcon = '<i class="fas fa-check-circle"></i>';
+        else if (insc.estado_class === 'pausada') estadoIcon = '<i class="fas fa-pause-circle"></i>';
+        else if (insc.estado_class === 'vencida') estadoIcon = '<i class="fas fa-clock"></i>';
+
+        // Botones de acción
+        let actionButtons = `
+            <a href="${insc.showUrl}" class="btn-action btn-view" data-tooltip="Ver Detalles"><i class="fas fa-eye"></i></a>
+            <a href="${insc.editUrl}" class="btn-action btn-edit" data-tooltip="Editar"><i class="fas fa-pen"></i></a>
+        `;
+
+        if (insc.esta_pausada) {
+            actionButtons += `
+                <button type="button" class="btn-action btn-resume btn-reanudar" 
+                    data-id="${insc.id}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
+                    data-tooltip="Reanudar"><i class="fas fa-play"></i></button>
+            `;
+        } else if (insc.estado_class === 'activa') {
+            actionButtons += `
+                <button type="button" class="btn-action btn-pause btn-pausar" 
+                    data-id="${insc.id}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
+                    data-pausas-usadas="${insc.pausas_realizadas}" data-pausas-max="${insc.max_pausas_permitidas}"
+                    data-tooltip="Pausar"><i class="fas fa-pause"></i></button>
+            `;
+        }
+
+        if (insc.estado_pago !== 'pagado') {
+            actionButtons += `
+                <a href="${insc.pagoUrl}" class="btn-action btn-pay" data-tooltip="Registrar Pago"><i class="fas fa-dollar-sign"></i></a>
+            `;
+        }
+
+        actionButtons += `
+            <form action="${insc.deleteUrl}" method="POST" class="d-inline form-delete">
+                <input type="hidden" name="_token" value="${csrfToken}">
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" class="btn-action btn-delete" data-tooltip="Eliminar"><i class="fas fa-trash"></i></button>
+            </form>
+        `;
+
+        return `
+            <tr class="inscripcion-row" data-id="${insc.id}">
+                <td>
+                    <div class="cliente-membresia-info">
+                        <div class="cliente-avatar">${insc.cliente_initials}</div>
+                        <div class="cliente-details">
+                            <span class="cliente-nombre">${insc.cliente_nombres} ${insc.cliente_apellido}</span>
+                            <span class="cliente-rut"><i class="fas fa-id-card"></i> ${insc.cliente_rut}</span>
+                            <span class="membresia-nombre"><i class="fas fa-dumbbell"></i> ${insc.membresia_nombre}</span>
+                            ${insc.convenio_nombre ? `<span class="convenio-badge"><i class="fas fa-handshake"></i> ${insc.convenio_nombre}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="periodo-info">
+                        <div class="fechas">
+                            <span class="fecha-item"><i class="fas fa-calendar-plus"></i> ${insc.fecha_inicio}</span>
+                            <span class="fecha-item"><i class="fas fa-calendar-times"></i> ${insc.fecha_vencimiento}</span>
+                        </div>
+                        <div class="dias-restantes ${diasClass}">${diasTexto}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="precio-info">
+                        ${insc.descuento_aplicado > 0 ? `
+                            <span class="precio-base-tachado">$${formatNumber(insc.precio_base)}</span>
+                            <span class="descuento-tag"><i class="fas fa-tag"></i> -$${formatNumber(insc.descuento_aplicado)}</span>
+                        ` : ''}
+                        <span class="precio-final">$${formatNumber(insc.precio_final)}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="estado-pago-info">
+                        ${pagoBadge}
+                        <div class="pago-progress">
+                            <div class="pago-progress-bar ${progressClass}" style="width: ${Math.min(insc.porcentaje_pagado, 100)}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="estado-badge estado-${insc.estado_class}">
+                        ${estadoIcon} ${insc.estado_nombre}
+                    </span>
+                    ${insc.esta_pausada ? `<span class="pausa-info"><i class="fas fa-calendar-day"></i> ${insc.dias_pausa}d</span>` : ''}
+                </td>
+                <td>
+                    <div class="acciones-btns">${actionButtons}</div>
+                </td>
+            </tr>
+        `;
+    }
+
+    /**
+     * Renderizar tabla con paginación
+     */
+    function renderTable() {
+        const filtered = getFilteredInscripciones();
+        const totalFiltered = filtered.length;
+        const totalPages = Math.ceil(totalFiltered / perPage);
+        
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        
+        const startIndex = (currentPage - 1) * perPage;
+        const endIndex = Math.min(startIndex + perPage, totalFiltered);
+        const pageInscripciones = filtered.slice(startIndex, endIndex);
+        
+        const tbody = $('#inscripcionesTableBody');
+        if (pageInscripciones.length === 0) {
+            tbody.html(`
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-content">
+                            <i class="fas fa-id-card"></i>
+                            <h3>No se encontraron inscripciones</h3>
+                            <p>Intenta con otros filtros o términos de búsqueda</p>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        } else {
+            tbody.html(pageInscripciones.map(renderInscripcionRow).join(''));
+        }
+        
+        // Actualizar info
+        $('#showingFrom').text(totalFiltered > 0 ? startIndex + 1 : 0);
+        $('#showingTo').text(endIndex);
+        $('#totalFiltered').text(totalFiltered);
+        
+        renderPaginationNumbers(totalPages);
+        
+        $('#btnFirst, #btnPrev').prop('disabled', currentPage <= 1);
+        $('#btnNext, #btnLast').prop('disabled', currentPage >= totalPages);
+        
+        checkAndLoadMore();
+        bindDeleteEvents();
+    }
+
+    /**
+     * Renderizar números de página
+     */
+    function renderPaginationNumbers(totalPages) {
+        const container = $('#paginationPages');
+        let html = '';
+        
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        
+        if (end - start < maxVisible - 1) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+        
+        if (start > 1) {
+            html += `<button class="pagination-num" data-page="1">1</button>`;
+            if (start > 2) html += `<span class="pagination-ellipsis">...</span>`;
+        }
+        
+        for (let i = start; i <= end; i++) {
+            html += `<button class="pagination-num ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        
+        if (end < totalPages) {
+            if (end < totalPages - 1) html += `<span class="pagination-ellipsis">...</span>`;
+            html += `<button class="pagination-num" data-page="${totalPages}">${totalPages}</button>`;
+        }
+        
+        container.html(html);
+    }
+
+    /**
+     * Verificar y cargar más datos si es necesario
+     */
+    function checkAndLoadMore() {
+        if (hasMoreData && !isLoading && currentPage >= 5 && (currentPage * perPage) > (allInscripciones.length - 50)) {
+            loadMoreInscripciones();
+        }
+    }
+
+    /**
+     * Cargar más inscripciones via AJAX
+     */
+    function loadMoreInscripciones() {
+        if (isLoading || !hasMoreData) return;
+        
+        isLoading = true;
+        $('#loadingIndicator').show();
+        
+        $.ajax({
+            url: '{{ route("admin.inscripciones.index") }}',
+            method: 'GET',
+            data: { offset: nextOffset },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(response) {
+                if (response.inscripciones && response.inscripciones.length > 0) {
+                    allInscripciones = allInscripciones.concat(response.inscripciones);
+                    hasMoreData = response.hasMore;
+                    nextOffset = response.nextOffset;
+                    renderTable();
+                } else {
+                    hasMoreData = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error cargando más inscripciones:', error);
+            },
+            complete: function() {
+                isLoading = false;
+                $('#loadingIndicator').hide();
             }
         });
     }
 
-    $('#searchInput').on('keyup', filterTable);
+    /**
+     * Vincular eventos de eliminación
+     */
+    function bindDeleteEvents() {
+        $('.form-delete').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const clienteNombre = $(this).closest('tr').find('.cliente-nombre').text();
+            
+            Swal.fire({
+                title: '¿Eliminar inscripción?',
+                html: `
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-id-card" style="font-size: 2rem; color: #dc3545;"></i>
+                        </div>
+                        <p style="font-weight: 600; color: #1e293b; font-size: 1.1rem; margin-bottom: 0.5rem;">${clienteNombre}</p>
+                        <p style="color: #64748b; font-size: 0.9rem;">La inscripción se moverá a la papelera y podrás restaurarla después.</p>
+                    </div>
+                `,
+                icon: null,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                reverseButtons: true,
+                customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        html: '<div style="padding: 2rem;"><div style="width: 50px; height: 50px; border: 4px solid #fee2e2; border-top-color: #dc3545; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        customClass: { popup: 'swal-estoicos' }
+                    });
+                    form.submit();
+                }
+            });
+        });
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
     
+    // Búsqueda
+    let searchTimeout;
+    $('#searchInput').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentSearch = $(this).val();
+            currentPage = 1;
+            renderTable();
+        }, 300);
+    });
+    
+    // Filtros
     $('.filter-btn').on('click', function() {
         $('.filter-btn').removeClass('active');
         $(this).addClass('active');
-        filterTable();
+        currentFilter = $(this).data('filter');
+        currentPage = 1;
+        renderTable();
+    });
+    
+    // Navegación de páginas
+    $('#btnFirst').on('click', () => { currentPage = 1; renderTable(); });
+    $('#btnPrev').on('click', () => { currentPage--; renderTable(); });
+    $('#btnNext').on('click', () => { currentPage++; renderTable(); });
+    $('#btnLast').on('click', () => { 
+        const filtered = getFilteredInscripciones();
+        currentPage = Math.ceil(filtered.length / perPage); 
+        renderTable(); 
+    });
+    
+    $(document).on('click', '.pagination-num', function() {
+        currentPage = parseInt($(this).data('page'));
+        renderTable();
+    });
+    
+    // Cambiar cantidad por página
+    $('#perPageSelect').on('change', function() {
+        perPage = parseInt($(this).val());
+        currentPage = 1;
+        renderTable();
     });
 
-    // ======== PAUSAR INSCRIPCIÓN ========
+    // ============================================
+    // PAUSAR / REANUDAR INSCRIPCIÓN
+    // ============================================
+    
     $(document).on('click', '.btn-pausar', function() {
         const id = $(this).data('id');
         const cliente = $(this).data('cliente');
         const pausasUsadas = parseInt($(this).data('pausas-usadas')) || 0;
         const pausasMax = parseInt($(this).data('pausas-max')) || 2;
-        const pausasDisponibles = pausasMax - pausasUsadas;
-
+        
+        if (pausasUsadas >= pausasMax) {
+            Swal.fire({
+                title: 'Límite de pausas alcanzado',
+                html: `<p>Esta inscripción ya ha utilizado todas sus pausas permitidas (${pausasMax}/${pausasMax}).</p>`,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
+                buttonsStyling: false
+            });
+            return;
+        }
+        
         Swal.fire({
-            title: '<i class="fas fa-pause-circle" style="color: #f0a500;"></i> Pausar Membresía',
+            title: 'Pausar Inscripción',
             html: `
-                <div style="text-align: left; padding: 1rem 0;">
-                    <p style="color: #64748b; margin-bottom: 1rem;">
-                        <strong>Cliente:</strong> ${cliente}
-                    </p>
-                    
-                    <!-- Contador de pausas -->
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border-radius: 12px; margin-bottom: 1.5rem;">
-                        <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #4361ee 0%, #6366f1 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; font-weight: 800;">${pausasDisponibles}</div>
-                        <div>
-                            <div style="font-weight: 600; color: #1e293b;">Pausas Disponibles</div>
-                            <small style="color: #64748b;">de ${pausasMax} permitidas</small>
-                        </div>
-                    </div>
-                    
-                    <h6 style="font-weight: 700; color: #1e293b; margin-bottom: 1rem;"><i class="fas fa-clock" style="margin-right: 8px; color: #f0a500;"></i>Selecciona duración</h6>
-                    
-                    <!-- Opciones de días -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem;">
-                        <div class="pause-option-swal" data-dias="7" style="padding: 16px 10px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <i class="fas fa-hourglass-start" style="font-size: 1.5rem; color: #f0a500; display: block; margin-bottom: 8px;"></i>
-                            <div style="font-size: 1.3rem; font-weight: 800; color: #1e293b;">7</div>
-                            <div style="font-size: 0.75rem; color: #64748b;">días</div>
-                        </div>
-                        <div class="pause-option-swal" data-dias="14" style="padding: 16px 10px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <i class="fas fa-hourglass-half" style="font-size: 1.5rem; color: #f0a500; display: block; margin-bottom: 8px;"></i>
-                            <div style="font-size: 1.3rem; font-weight: 800; color: #1e293b;">14</div>
-                            <div style="font-size: 0.75rem; color: #64748b;">días</div>
-                        </div>
-                        <div class="pause-option-swal" data-dias="30" style="padding: 16px 10px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                            <i class="fas fa-hourglass-end" style="font-size: 1.5rem; color: #f0a500; display: block; margin-bottom: 8px;"></i>
-                            <div style="font-size: 1.3rem; font-weight: 800; color: #1e293b;">30</div>
-                            <div style="font-size: 0.75rem; color: #64748b;">días</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Opción indefinida -->
-                    <div class="pause-option-swal pause-indefinida-option" data-dias="indefinida" style="padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
-                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #e94560 0%, #ff6b8a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-infinity" style="color: white; font-size: 1rem;"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 700; color: #1e293b;">Hasta Nuevo Aviso</div>
-                            <div style="font-size: 0.75rem; color: #64748b;">Pausa indefinida (requiere descripción)</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Campo de razón (oculto por defecto) -->
-                    <div id="razon-container" style="display: none;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155;">
-                            <i class="fas fa-comment-alt" style="margin-right: 6px;"></i>Descripción / Razón <span style="color: #e94560;">*</span>
-                        </label>
-                        <textarea id="swal-razon-pausa" class="swal2-textarea" placeholder="Describa el motivo de la pausa indefinida (obligatorio)..." style="width: 100%; margin: 0; min-height: 80px; border-radius: 10px;"></textarea>
-                        <small style="color: #64748b;">Esta descripción es obligatoria para pausas indefinidas.</small>
-                    </div>
-                    
-                    <input type="hidden" id="swal-dias-pausa" value="">
-                    <input type="hidden" id="swal-indefinida" value="false">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <p><strong>${cliente}</strong></p>
+                    <p class="text-muted">Pausas utilizadas: ${pausasUsadas}/${pausasMax}</p>
+                </div>
+                <div class="form-group">
+                    <label>Días de pausa:</label>
+                    <input type="number" id="diasPausa" class="swal2-input" value="7" min="1" max="30" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label>Motivo:</label>
+                    <textarea id="razonPausa" class="swal2-textarea" placeholder="Razón de la pausa..." style="width: 100%;"></textarea>
                 </div>
             `,
             showCancelButton: true,
-            confirmButtonText: '<i class="fas fa-pause"></i> Confirmar Pausa',
+            confirmButtonText: '<i class="fas fa-pause"></i> Pausar',
             cancelButtonText: 'Cancelar',
-            customClass: {
-                popup: 'swal-estoicos',
-                confirmButton: 'swal2-confirm',
-                cancelButton: 'swal2-cancel'
-            },
+            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
             buttonsStyling: false,
-            didOpen: () => {
-                // Manejar selección de opciones
-                $('.pause-option-swal').on('click', function() {
-                    const dias = $(this).data('dias');
-                    
-                    // Remover selección anterior
-                    $('.pause-option-swal').css({
-                        'border-color': '#e2e8f0',
-                        'background': 'transparent'
-                    });
-                    
-                    // Marcar seleccionada
-                    $(this).css({
-                        'border-color': dias === 'indefinida' ? '#e94560' : '#f0a500',
-                        'background': dias === 'indefinida' ? 'rgba(233, 69, 96, 0.08)' : 'rgba(240, 165, 0, 0.08)'
-                    });
-                    
-                    if (dias === 'indefinida') {
-                        $('#swal-dias-pausa').val('');
-                        $('#swal-indefinida').val('true');
-                        $('#razon-container').slideDown(200);
-                    } else {
-                        $('#swal-dias-pausa').val(dias);
-                        $('#swal-indefinida').val('false');
-                        $('#razon-container').slideUp(200);
-                    }
-                });
-            },
             preConfirm: () => {
-                const dias = $('#swal-dias-pausa').val();
-                const indefinida = $('#swal-indefinida').val() === 'true';
-                const razon = $('#swal-razon-pausa').val();
-                
-                if (!dias && !indefinida) {
-                    Swal.showValidationMessage('Debe seleccionar una duración para la pausa');
+                const dias = document.getElementById('diasPausa').value;
+                const razon = document.getElementById('razonPausa').value;
+                if (!dias || dias < 1) {
+                    Swal.showValidationMessage('Ingresa los días de pausa');
                     return false;
                 }
-                
-                if (indefinida && (!razon || razon.length < 5)) {
-                    Swal.showValidationMessage('Para pausas indefinidas, debe indicar una razón (mínimo 5 caracteres)');
-                    return false;
-                }
-                
-                return {
-                    dias: dias,
-                    razon: razon || '',
-                    indefinida: indefinida
-                };
+                return { dias, razon };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Enviar petición al servidor como JSON
                 $.ajax({
-                    url: `/api/pausas/${id}/pausar`,
+                    url: `/admin/inscripciones/${id}/pausar`,
                     method: 'POST',
-                    contentType: 'application/json',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
+                    data: {
+                        _token: csrfToken,
+                        dias_pausa: result.value.dias,
+                        razon_pausa: result.value.razon
                     },
-                    data: JSON.stringify(result.value),
                     success: function(response) {
                         Swal.fire({
-                            title: '¡Membresía Pausada!',
-                            html: `
-                                <div style="text-align: center; padding: 1rem 0;">
-                                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                                        <i class="fas fa-pause" style="font-size: 1.8rem; color: #b45309;"></i>
-                                    </div>
-                                    <p style="color: #64748b; font-size: 1rem;">
-                                        ${response.data.pausa_indefinida ? 'La membresía ha sido pausada indefinidamente' : 'La membresía se reanudará el <strong>' + response.data.fecha_pausa_fin + '</strong>'}
-                                    </p>
-                                </div>
-                            `,
-                            icon: null,
-                            confirmButtonText: 'Entendido',
-                            customClass: {
-                                popup: 'swal-estoicos',
-                                confirmButton: 'swal2-confirm'
-                            },
+                            title: '¡Pausada!',
+                            text: response.message || 'La inscripción ha sido pausada correctamente.',
+                            icon: 'success',
+                            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false
-                        }).then(() => {
-                            location.reload();
-                        });
+                        }).then(() => location.reload());
                     },
                     error: function(xhr) {
-                        const errorMsg = xhr.responseJSON?.message || 'No se pudo pausar la membresía';
                         Swal.fire({
                             title: 'Error',
-                            html: `
-                                <div style="text-align: center; padding: 1rem 0;">
-                                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                                        <i class="fas fa-times" style="font-size: 1.8rem; color: #b91c1c;"></i>
-                                    </div>
-                                    <p style="color: #64748b; font-size: 1rem;">${errorMsg}</p>
-                                </div>
-                            `,
-                            icon: null,
-                            confirmButtonText: 'Entendido',
-                            customClass: {
-                                popup: 'swal-estoicos',
-                                confirmButton: 'swal2-confirm'
-                            },
+                            text: xhr.responseJSON?.error || 'No se pudo pausar la inscripción',
+                            icon: 'error',
+                            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false
                         });
                     }
@@ -1414,85 +1683,40 @@ $(document).ready(function() {
         });
     });
 
-    // ======== REANUDAR INSCRIPCIÓN ========
     $(document).on('click', '.btn-reanudar', function() {
         const id = $(this).data('id');
         const cliente = $(this).data('cliente');
-
+        
         Swal.fire({
-            title: '<i class="fas fa-play-circle" style="color: var(--success);"></i> Reanudar Membresía',
-            html: `
-                <div style="text-align: center; padding: 1rem 0;">
-                    <p style="color: #64748b; margin-bottom: 1rem;">
-                        ¿Deseas reanudar la membresía de <strong>${cliente}</strong>?
-                    </p>
-                    <p style="color: #94a3b8; font-size: 0.9rem;">
-                        <i class="fas fa-info-circle"></i> Se extenderá la fecha de vencimiento por los días que estuvo pausada.
-                    </p>
-                </div>
-            `,
+            title: '¿Reanudar inscripción?',
+            html: `<p>Se reanudará la inscripción de <strong>${cliente}</strong></p>`,
+            icon: 'question',
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-play"></i> Reanudar',
             cancelButtonText: 'Cancelar',
-            customClass: {
-                popup: 'swal-estoicos',
-                confirmButton: 'swal2-confirm',
-                cancelButton: 'swal2-cancel'
-            },
+            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/api/pausas/${id}/reanudar`,
+                    url: `/admin/inscripciones/${id}/reanudar`,
                     method: 'POST',
-                    contentType: 'application/json',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
+                    data: { _token: csrfToken },
                     success: function(response) {
                         Swal.fire({
-                            title: '¡Membresía Reanudada!',
-                            html: `
-                                <div style="text-align: center; padding: 1rem 0;">
-                                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                                        <i class="fas fa-play" style="font-size: 1.8rem; color: #047857;"></i>
-                                    </div>
-                                    <p style="color: #64748b; font-size: 1rem;">
-                                        La membresía está activa nuevamente.<br>
-                                        Nueva fecha de vencimiento: <strong>${response.data.nueva_fecha_vencimiento}</strong>
-                                    </p>
-                                </div>
-                            `,
-                            icon: null,
-                            confirmButtonText: 'Entendido',
-                            customClass: {
-                                popup: 'swal-estoicos',
-                                confirmButton: 'swal2-confirm'
-                            },
+                            title: '¡Reanudada!',
+                            text: response.message || 'La inscripción ha sido reanudada.',
+                            icon: 'success',
+                            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false
-                        }).then(() => {
-                            location.reload();
-                        });
+                        }).then(() => location.reload());
                     },
                     error: function(xhr) {
-                        const errorMsg = xhr.responseJSON?.message || 'No se pudo reanudar la membresía';
                         Swal.fire({
                             title: 'Error',
-                            html: `
-                                <div style="text-align: center; padding: 1rem 0;">
-                                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                                        <i class="fas fa-times" style="font-size: 1.8rem; color: #b91c1c;"></i>
-                                    </div>
-                                    <p style="color: #64748b; font-size: 1rem;">${errorMsg}</p>
-                                </div>
-                            `,
-                            icon: null,
-                            confirmButtonText: 'Entendido',
-                            customClass: {
-                                popup: 'swal-estoicos',
-                                confirmButton: 'swal2-confirm'
-                            },
+                            text: xhr.responseJSON?.error || 'No se pudo reanudar la inscripción',
+                            icon: 'error',
+                            customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false
                         });
                     }
@@ -1500,6 +1724,9 @@ $(document).ready(function() {
             }
         });
     });
+
+    // Renderizar tabla inicial
+    renderTable();
 
     // Mensajes de sesión
     @if(session('success'))
@@ -1515,10 +1742,7 @@ $(document).ready(function() {
         `,
         icon: null,
         confirmButtonText: 'Continuar',
-        customClass: {
-            popup: 'swal-estoicos',
-            confirmButton: 'swal2-confirm'
-        },
+        customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
         buttonsStyling: false
     });
     @endif
@@ -1536,10 +1760,7 @@ $(document).ready(function() {
         `,
         icon: null,
         confirmButtonText: 'Entendido',
-        customClass: {
-            popup: 'swal-estoicos',
-            confirmButton: 'swal2-confirm'
-        },
+        customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
         buttonsStyling: false
     });
     @endif

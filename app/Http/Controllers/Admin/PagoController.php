@@ -67,11 +67,156 @@ class PagoController extends Controller
         
         $query->orderBy($ordenar, $direccion);
         
-        $pagos = $query->paginate(20);
+        // Paginación con límite inicial
+        $perPage = $request->get('per_page', 50);
+        $pagos = $query->paginate($perPage);
+        
+        // Si es petición AJAX, devolver JSON
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'pagos' => $this->preparePagosData($pagos->items()),
+                'pagination' => [
+                    'current_page' => $pagos->currentPage(),
+                    'last_page' => $pagos->lastPage(),
+                    'per_page' => $pagos->perPage(),
+                    'total' => $pagos->total(),
+                    'from' => $pagos->firstItem(),
+                    'to' => $pagos->lastItem(),
+                ]
+            ]);
+        }
+        
         $metodos_pago = MetodoPago::all();
         $estados = Estado::where('categoria', 'pago')->get();
+        $totalEliminados = Pago::onlyTrashed()->count();
         
-        return view('admin.pagos.index', compact('pagos', 'metodos_pago', 'estados'));
+        // Preparar datos iniciales para JavaScript
+        $pagosData = $this->preparePagosData($pagos->items());
+        $totalPagos = $pagos->total();
+        
+        return view('admin.pagos.index', compact('pagos', 'pagosData', 'totalPagos', 'metodos_pago', 'estados', 'totalEliminados'));
+    }
+
+    /**
+     * Obtener pagos en formato JSON para lazy loading
+     */
+    public function getPagosJson(Request $request)
+    {
+        $query = Pago::with(['cliente', 'inscripcion.cliente', 'inscripcion.membresia', 'metodoPago', 'estado']);
+        
+        // Filtro por inscripción
+        if ($request->filled('id_inscripcion')) {
+            $query->where('id_inscripcion', $request->id_inscripcion);
+        }
+        
+        // Ordenamiento
+        $ordenar = $request->get('ordenar', 'fecha_pago');
+        $direccion = $request->get('direccion', 'desc');
+        
+        $camposValidos = ['id', 'id_inscripcion', 'id_cliente', 'monto_total', 'monto_abonado', 'fecha_pago', 'id_metodo_pago', 'id_estado', 'created_at'];
+        if (!in_array($ordenar, $camposValidos)) {
+            $ordenar = 'fecha_pago';
+        }
+        
+        $query->orderBy($ordenar, $direccion);
+        
+        $perPage = $request->get('per_page', 50);
+        $pagos = $query->paginate($perPage);
+        
+        return response()->json([
+            'pagos' => $this->preparePagosData($pagos->items()),
+            'pagination' => [
+                'current_page' => $pagos->currentPage(),
+                'last_page' => $pagos->lastPage(),
+                'per_page' => $pagos->perPage(),
+                'total' => $pagos->total(),
+                'from' => $pagos->firstItem(),
+                'to' => $pagos->lastItem(),
+            ]
+        ]);
+    }
+
+    /**
+     * Preparar datos de pagos para JavaScript
+     */
+    private function preparePagosData($pagos)
+    {
+        return collect($pagos)->map(function($pago) {
+            $total = $pago->monto_total ?? 0;
+            $abonado = $pago->monto_abonado ?? 0;
+            $pendiente = $pago->monto_pendiente ?? 0;
+            $porcentaje = $total > 0 ? ($abonado / $total) * 100 : 0;
+            
+            $estadoCodigo = $pago->estado?->codigo ?? 200;
+            $estadoPago = match($estadoCodigo) {
+                201 => 'pagado',
+                205 => 'traspasado',
+                203 => 'vencido',
+                204 => 'cancelado',
+                default => 'parcial'
+            };
+            
+            $estadoTexto = match($estadoCodigo) {
+                201 => 'Pagado',
+                205 => 'Traspasado',
+                203 => 'Vencido',
+                204 => 'Cancelado',
+                default => 'Parcial'
+            };
+            
+            $estadoIcono = match($estadoCodigo) {
+                201 => 'fa-check-circle',
+                205 => 'fa-exchange-alt',
+                203 => 'fa-exclamation-circle',
+                204 => 'fa-times-circle',
+                default => 'fa-hourglass-half'
+            };
+            
+            // Cliente actual de la inscripción (dueño actual de la membresía)
+            $clienteActual = $pago->inscripcion?->cliente;
+            // Cliente original que pagó (puede ser diferente si hubo traspaso)
+            $clienteOriginal = $pago->cliente;
+            // Detectar si es un traspaso
+            $esTraspaso = $clienteActual && $clienteOriginal && $clienteActual->id !== $clienteOriginal->id;
+            // Usar cliente actual si existe, sino el original
+            $clienteMostrar = $clienteActual ?? $clienteOriginal;
+            
+            // Método de pago icono
+            $metodoCodigo = $pago->metodoPago?->codigo ?? '';
+            $metodoIcono = match($metodoCodigo) {
+                'efectivo' => 'fa-money-bill-wave',
+                'tarjeta' => 'fa-credit-card',
+                'transferencia' => 'fa-university',
+                default => 'fa-wallet'
+            };
+            
+            return [
+                'id' => $pago->id,
+                'uuid' => $pago->uuid ?? $pago->id,
+                'cliente_nombre' => $clienteMostrar ? ($clienteMostrar->nombres . ' ' . $clienteMostrar->apellido_paterno) : 'Sin cliente',
+                'cliente_iniciales' => strtoupper(substr($clienteMostrar?->nombres ?? 'N', 0, 1) . substr($clienteMostrar?->apellido_paterno ?? 'A', 0, 1)),
+                'cliente_original_nombre' => $clienteOriginal ? ($clienteOriginal->nombres . ' ' . $clienteOriginal->apellido_paterno) : '',
+                'es_traspaso' => $esTraspaso,
+                'membresia_nombre' => $pago->inscripcion?->membresia?->nombre ?? 'Sin membresía',
+                'fecha_pago' => $pago->fecha_pago?->format('d/m/Y') ?? 'N/A',
+                'referencia_pago' => $pago->referencia_pago ?? '',
+                'monto_total' => $total,
+                'monto_total_formatted' => '$' . number_format($total, 0, ',', '.'),
+                'monto_abonado' => $abonado,
+                'monto_abonado_formatted' => '$' . number_format($abonado, 0, ',', '.'),
+                'monto_pendiente' => $pendiente,
+                'monto_pendiente_formatted' => '$' . number_format($pendiente, 0, ',', '.'),
+                'porcentaje' => round($porcentaje, 1),
+                'estado_pago' => $estadoPago,
+                'estado_texto' => $estadoTexto,
+                'estado_icono' => $estadoIcono,
+                'metodo_nombre' => $pago->metodoPago?->nombre ?? 'N/A',
+                'metodo_icono' => $metodoIcono,
+                'show_url' => route('admin.pagos.show', $pago->uuid ?? $pago->id),
+                'edit_url' => route('admin.pagos.edit', $pago->uuid ?? $pago->id),
+                'delete_url' => route('admin.pagos.destroy', $pago->uuid ?? $pago->id),
+            ];
+        })->values()->toArray();
     }
 
     /**
@@ -359,14 +504,27 @@ class PagoController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Los pagos NO se pueden eliminar por razones de auditoría financiera.
+     * Usa SoftDelete - el pago va a la papelera y puede restaurarse.
      */
     public function destroy(Pago $pago)
     {
-        // Los pagos NUNCA se pueden eliminar por razones de auditoría financiera
-        // Todos los movimientos de dinero deben quedar registrados
-        return redirect()->back()
-            ->with('error', 'Los pagos no se pueden eliminar por razones de auditoría financiera. Si hay un error, registre un ajuste o contacte al administrador.');
+        try {
+            // Cargar relaciones necesarias para el mensaje
+            $pago->load(['inscripcion.cliente', 'metodoPago']);
+            
+            $clienteNombre = $pago->inscripcion->cliente->nombre_completo ?? 'Cliente';
+            $monto = number_format($pago->monto_abonado, 0, ',', '.');
+            
+            // Soft delete - el pago va a la papelera
+            $pago->delete();
+            
+            return redirect()->route('admin.pagos.index')
+                ->with('success', "Pago de \${$monto} de {$clienteNombre} enviado a la papelera.");
+                
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al eliminar el pago: ' . $e->getMessage());
+        }
     }
 
     /**

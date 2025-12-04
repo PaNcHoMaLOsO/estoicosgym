@@ -1530,16 +1530,6 @@
                                         </div>
                                     @endif
                                 @endif
-
-                                @if(($inscripcion->dias_compensacion ?? 0) > 0)
-                                    <div class="alert-modern info mt-3">
-                                        <i class="fas fa-calendar-plus"></i>
-                                        <div>
-                                            <strong>Días compensados</strong>
-                                            <small class="d-block">Se han agregado {{ $inscripcion->dias_compensacion }} días por pausas anteriores.</small>
-                                        </div>
-                                    </div>
-                                @endif
                             </div>
                         @endif
                     </div>

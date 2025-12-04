@@ -400,6 +400,46 @@
     }
     .btn-success-estoicos i { margin-right: 0.5rem; }
 
+    .btn-info-estoicos {
+        background: linear-gradient(135deg, var(--info) 0%, #5a7dee 100%);
+        border: none;
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-info-estoicos:hover {
+        background: linear-gradient(135deg, #5a7dee 0%, var(--info) 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(67,97,238,0.4);
+    }
+    .btn-info-estoicos i { margin-right: 0.5rem; }
+
+    .btn-danger-estoicos {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-danger-estoicos:hover {
+        background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220,53,69,0.4);
+    }
+    .btn-danger-estoicos i { margin-right: 0.5rem; }
+
     /* ========== Pagos Badge ========== */
     .pago-badge {
         padding: 0.3rem 0.7rem;
@@ -502,6 +542,67 @@
         color: var(--muted);
         margin: 0;
     }
+
+    /* SweetAlert2 Custom Theme - EstoicosGym */
+    .swal2-popup.swal-estoicos {
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .swal2-popup.swal-estoicos .swal2-title {
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .swal2-popup.swal-estoicos .swal2-html-container {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    .swal-estoicos .swal2-confirm {
+        background: linear-gradient(135deg, #e94560 0%, #c73e55 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos .swal2-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5) !important;
+    }
+    .swal-estoicos .swal2-cancel {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+    .swal-estoicos .swal2-cancel:hover {
+        background: #e2e8f0 !important;
+    }
+    .swal-estoicos.swal-danger .swal2-confirm {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4) !important;
+    }
+    .swal-estoicos.swal-success .swal2-confirm {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%) !important;
+        box-shadow: 0 4px 15px rgba(0, 191, 142, 0.4) !important;
+    }
+    .swal-estoicos.swal-warning .swal2-confirm {
+        background: linear-gradient(135deg, #f0a500 0%, #d99400 100%) !important;
+        box-shadow: 0 4px 15px rgba(240, 165, 0, 0.4) !important;
+    }
+    .swal-estoicos.swal-primary .swal2-confirm {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+        box-shadow: 0 4px 15px rgba(26, 26, 46, 0.4) !important;
+    }
+    .swal-estoicos.swal-info .swal2-confirm {
+        background: linear-gradient(135deg, #4361ee 0%, #5a7dee 100%) !important;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4) !important;
+    }
 </style>
 @endpush
 
@@ -548,10 +649,17 @@
                 <div class="text-right mt-3 mt-md-0">
                     <div class="btn-group">
                         @if($canEdit)
-                            <a href="{{ route('admin.inscripciones.edit', $inscripcion->id) }}" class="btn-estoicos">
+                            <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn-estoicos">
                                 <i class="fas fa-edit"></i>Editar
                             </a>
                         @endif
+                        <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" class="d-inline form-eliminar-inscripcion">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn-danger-estoicos ml-2">
+                                <i class="fas fa-trash-alt"></i>Eliminar
+                            </button>
+                        </form>
                         <a href="{{ route('admin.inscripciones.index') }}" class="btn-secondary-estoicos ml-2">
                             <i class="fas fa-arrow-left"></i>Volver
                         </a>
@@ -807,9 +915,17 @@
                                                 <i class="far fa-user mr-1"></i>{{ $cambio->usuario->name ?? 'Sistema' }}
                                             @endif
                                         </div>
-                                        @if($cambio->descripcion || $cambio->observaciones)
+                                        @if($cambio->motivo || (is_array($cambio->detalles) && !empty($cambio->detalles)))
                                             <div class="timeline-detail">
-                                                {{ $cambio->descripcion ?? $cambio->observaciones }}
+                                                @if($cambio->motivo)
+                                                    {{ $cambio->motivo }}
+                                                @elseif(is_array($cambio->detalles))
+                                                    @if(isset($cambio->detalles['razon']))
+                                                        {{ $cambio->detalles['razon'] }}
+                                                    @elseif(isset($cambio->detalles['descripcion']))
+                                                        {{ $cambio->detalles['descripcion'] }}
+                                                    @endif
+                                                @endif
                                             </div>
                                         @endif
                                         @if($cambio->estadoAnterior || $cambio->estadoNuevo)
@@ -859,7 +975,7 @@
                                         <tr>
                                             <td><strong>{{ $index + 1 }}</strong></td>
                                             <td>{{ $pago->fecha_pago ? \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') : 'N/A' }}</td>
-                                            <td><strong class="text-success">${{ number_format($pago->monto ?? 0, 0, ',', '.') }}</strong></td>
+                                            <td><strong class="text-success">${{ number_format($pago->monto_abonado ?? 0, 0, ',', '.') }}</strong></td>
                                             <td>
                                                 <span class="badge badge-light">
                                                     <i class="fas fa-credit-card mr-1"></i>
@@ -883,7 +999,7 @@
                                                 <span class="pago-badge {{ $clasePago }}">{{ $estadoPagoNombre }}</span>
                                             </td>
                                             <td>
-                                                <small class="text-muted">{{ $pago->observacion ?? '-' }}</small>
+                                                <small class="text-muted">{{ $pago->observaciones ?? '-' }}</small>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -1086,17 +1202,24 @@
                 </div>
                 <div class="card-body-custom">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('admin.inscripciones.edit', $inscripcion->id) }}" class="btn btn-block btn-estoicos mb-2">
+                        <a href="{{ route('admin.inscripciones.edit', $inscripcion) }}" class="btn btn-block btn-estoicos mb-2">
                             <i class="fas fa-edit"></i>Editar Inscripción
                         </a>
                         @if($inscripcion->id_estado == 100)
-                            <a href="{{ route('admin.inscripciones.edit', ['inscripcion' => $inscripcion->id, 'mode' => 'mejorar']) }}" class="btn btn-block btn-success-estoicos mb-2">
+                            <a href="{{ route('admin.inscripciones.edit', ['inscripcion' => $inscripcion, 'mode' => 'mejorar']) }}" class="btn btn-block btn-info-estoicos mb-2">
                                 <i class="fas fa-level-up-alt"></i>Mejorar Plan
                             </a>
                         @endif
-                        <a href="{{ route('admin.clientes.show', $inscripcion->id_cliente) }}" class="btn btn-block btn-secondary-estoicos">
+                        <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}" class="btn btn-block btn-secondary-estoicos mb-2">
                             <i class="fas fa-user"></i>Ver Cliente
                         </a>
+                        <form action="{{ route('admin.inscripciones.destroy', $inscripcion) }}" method="POST" class="form-eliminar-inscripcion">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-block btn-danger-estoicos">
+                                <i class="fas fa-trash-alt"></i>Eliminar Inscripción
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1141,6 +1264,39 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButton: 'btn btn-secondary-estoicos mx-1'
         },
         buttonsStyling: false
+    });
+
+    // Confirmación de eliminación
+    document.querySelectorAll('.form-eliminar-inscripcion').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Eliminar inscripción?',
+                html: `
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 1.8rem; color: #dc2626;"></i>
+                        </div>
+                        <p style="color: #64748b;">La inscripción será enviada a la papelera.<br>Podrás restaurarla desde allí si es necesario.</p>
+                    </div>
+                `,
+                icon: null,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, eliminar',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'swal-estoicos swal-danger',
+                    confirmButton: 'swal2-confirm swal2-danger',
+                    cancelButton: 'swal2-cancel'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
     });
 
     // Animación de entrada para las cards

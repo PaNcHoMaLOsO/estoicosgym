@@ -35,47 +35,125 @@ class InscripcionController extends Controller
      * Display a listing of the resource.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
-        /** @var \Illuminate\Database\Eloquent\Builder $query */
-        $query = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio']);
-        
-        // Por defecto, excluir inscripciones que ya no están "activas" en el sistema:
-        // 103 = Cancelada, 105 = Cambiada (upgrade/downgrade), 106 = Traspasada
-        // Estas solo se muestran si se filtran específicamente por ese estado
-        if (!$request->filled('estado') || !in_array($request->estado, ['103', '105', '106'])) {
-            $query->whereNotIn('id_estado', [103, 105, 106]);
+        // Si es una petición AJAX, devolver JSON para lazy loading
+        if ($request->ajax()) {
+            return $this->getInscripcionesJson($request);
         }
-        
-        // Aplicar filtros
-        $this->aplicarFiltros($query, $request);
-        
-        // Aplicar ordenamiento
-        $this->aplicarOrdenamiento($query, $request);
-        
-        $inscripciones = $query->paginate(20);
+
+        // Cargar primeras 100 inscripciones para la vista inicial
+        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio', 'pagos'])
+            ->whereNotIn('id_estado', [103, 105, 106])
+            ->orderBy('fecha_inicio', 'desc')
+            ->take(100)
+            ->get();
         
         // Estadísticas (excluyendo canceladas, cambiadas y traspasadas)
         $totalInscripciones = Inscripcion::whereNotIn('id_estado', [103, 105, 106])->count();
         $activas = Inscripcion::where('id_estado', 100)->count();
         $vencidas = Inscripcion::where('id_estado', 102)->count();
         $pausadas = Inscripcion::where('id_estado', 101)->count();
+        $totalEliminadas = Inscripcion::onlyTrashed()->count();
         
         // Datos para los selects de filtro
         $estados = Estado::where('categoria', 'membresia')->get();
         $membresias = Membresia::all();
+
+        // Preparar datos para JavaScript
+        $inscripcionesData = $this->prepareInscripcionesData($inscripciones);
         
         return view('admin.inscripciones.index', compact(
-            'inscripciones', 
+            'inscripcionesData',
             'estados', 
             'membresias',
             'totalInscripciones',
             'activas',
             'vencidas',
-            'pausadas'
+            'pausadas',
+            'totalEliminadas'
         ));
+    }
+
+    /**
+     * Obtener inscripciones en formato JSON para lazy loading
+     */
+    private function getInscripcionesJson(Request $request)
+    {
+        $offset = $request->input('offset', 0);
+        $limit = 100;
+
+        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio', 'pagos'])
+            ->whereNotIn('id_estado', [103, 105, 106])
+            ->orderBy('fecha_inicio', 'desc')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        $total = Inscripcion::whereNotIn('id_estado', [103, 105, 106])->count();
+        $hasMore = $total > ($offset + $limit);
+
+        return response()->json([
+            'inscripciones' => $this->prepareInscripcionesData($inscripciones),
+            'hasMore' => $hasMore,
+            'nextOffset' => $offset + $limit
+        ]);
+    }
+
+    /**
+     * Preparar datos de inscripciones para el frontend
+     */
+    private function prepareInscripcionesData($inscripciones)
+    {
+        return $inscripciones->map(function($inscripcion) {
+            $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
+            $estadoPago = $inscripcion->obtenerEstadoPago();
+            $estadoClass = strtolower($inscripcion->estado?->nombre ?? 'pendiente');
+            
+            return [
+                'id' => $inscripcion->id,
+                'uuid' => $inscripcion->uuid,
+                // Cliente
+                'cliente_id' => $inscripcion->cliente?->id,
+                'cliente_nombres' => $inscripcion->cliente?->nombres ?? 'Sin cliente',
+                'cliente_apellido' => $inscripcion->cliente?->apellido_paterno ?? '',
+                'cliente_rut' => $inscripcion->cliente?->run_pasaporte ?? 'Sin RUT',
+                'cliente_initials' => strtoupper(
+                    substr($inscripcion->cliente?->nombres ?? 'N', 0, 1) . 
+                    substr($inscripcion->cliente?->apellido_paterno ?? 'A', 0, 1)
+                ),
+                // Membresía
+                'membresia_nombre' => $inscripcion->membresia?->nombre ?? 'Sin membresía',
+                'convenio_nombre' => $inscripcion->convenio?->nombre ?? null,
+                // Fechas
+                'fecha_inicio' => $inscripcion->fecha_inicio?->format('d/m/Y') ?? 'N/A',
+                'fecha_vencimiento' => $inscripcion->fecha_vencimiento?->format('d/m/Y') ?? 'N/A',
+                'dias_restantes' => $diasRestantes,
+                // Precios
+                'precio_base' => $inscripcion->precio_base ?? 0,
+                'precio_final' => $inscripcion->precio_final ?? $inscripcion->precio_base ?? 0,
+                'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
+                // Estado pago
+                'estado_pago' => $estadoPago['estado'],
+                'total_abonado' => $estadoPago['total_abonado'],
+                'pago_pendiente' => $estadoPago['pendiente'],
+                'porcentaje_pagado' => $estadoPago['porcentaje_pagado'],
+                // Estado inscripción
+                'estado_nombre' => $inscripcion->estado?->nombre ?? 'Sin estado',
+                'estado_class' => $estadoClass,
+                'esta_pausada' => $inscripcion->estaPausada(),
+                'dias_pausa' => $inscripcion->dias_pausa ?? 0,
+                'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
+                'max_pausas_permitidas' => $inscripcion->max_pausas_permitidas ?? 2,
+                // URLs
+                'showUrl' => route('admin.inscripciones.show', $inscripcion),
+                'editUrl' => route('admin.inscripciones.edit', $inscripcion),
+                'deleteUrl' => route('admin.inscripciones.destroy', $inscripcion),
+                'pagoUrl' => route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]),
+            ];
+        })->values()->toArray();
     }
 
     /**
@@ -496,7 +574,7 @@ class InscripcionController extends Controller
         ];
         
         // Información financiera
-        $totalPagado = $inscripcion->pagos ? $inscripcion->pagos->sum('monto') : 0;
+        $totalPagado = $inscripcion->pagos ? $inscripcion->pagos->sum('monto_abonado') : 0;
         $precioFinal = $inscripcion->precio_final ?? 0;
         $deudaPendiente = max(0, $precioFinal - $totalPagado);
         
@@ -603,10 +681,23 @@ class InscripcionController extends Controller
      */
     public function destroy(Inscripcion $inscripcion)
     {
-        // Las inscripciones NO se pueden eliminar por razones de auditoría e historial
-        // Solo se puede cambiar su estado (cancelar, vencer, etc.)
-        return redirect()->back()
-            ->with('error', 'Las inscripciones no se pueden eliminar. Use las opciones de cambio de estado (cancelar, pausar, etc.) para gestionar inscripciones.');
+        try {
+            // Cargar relaciones necesarias para el mensaje
+            $inscripcion->load(['cliente', 'membresia']);
+            
+            $clienteNombre = $inscripcion->cliente->nombre_completo ?? 'Cliente';
+            $membresiaNombre = $inscripcion->membresia->nombre ?? 'Membresía';
+            
+            // Soft delete - la inscripción va a la papelera
+            $inscripcion->delete();
+            
+            return redirect()->route('admin.inscripciones.index')
+                ->with('success', "Inscripción de {$clienteNombre} ({$membresiaNombre}) enviada a la papelera.");
+                
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al eliminar la inscripción: ' . $e->getMessage());
+        }
     }
 
     /**

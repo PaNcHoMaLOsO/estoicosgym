@@ -243,6 +243,23 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="max_pausas" class="form-label">Máximo de Pausas Permitidas <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control @error('max_pausas') is-invalid @enderror" 
+                                       id="max_pausas" name="max_pausas" 
+                                       value="{{ old('max_pausas', 1) }}" min="0" max="12" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><i class="fas fa-pause-circle"></i></span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted"><i class="fas fa-info-circle"></i> Cantidad de veces que el cliente puede pausar su membresía</small>
+                            @error('max_pausas')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sección Descripción -->

@@ -307,6 +307,7 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     });
 
     // CRUD Pagos
+    Route::get('pagos/json', [PagoController::class, 'getPagosJson'])->name('pagos.json');
     Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
     Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');
     

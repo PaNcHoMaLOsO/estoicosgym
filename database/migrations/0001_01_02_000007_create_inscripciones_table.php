@@ -42,6 +42,7 @@ return new class extends Migration
             // Campos para sistema de pausas
             $table->boolean('pausada')->default(false);
             $table->unsignedSmallInteger('dias_pausa')->nullable();
+            $table->integer('dias_restantes_al_pausar')->nullable()->comment('Días restantes guardados al pausar');
             $table->date('fecha_pausa_inicio')->nullable();
             $table->date('fecha_pausa_fin')->nullable();
             $table->text('razon_pausa')->nullable();

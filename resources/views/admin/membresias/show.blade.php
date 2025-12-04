@@ -491,6 +491,19 @@
             </div>
         </div>
         <div class="col-md-3 mb-3">
+            <div class="card stat-card danger">
+                <div class="card-body text-center">
+                    <i class="fas fa-pause-circle stat-icon"></i>
+                    <div class="stat-number">{{ $membresia->max_pausas ?? 0 }}</div>
+                    <div class="stat-label">Máx. Pausas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Segunda fila de stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
             <div class="card stat-card warning">
                 <div class="card-body text-center">
                     <i class="fas fa-users stat-icon"></i>
@@ -551,6 +564,17 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box-custom" style="border-left-color: var(--accent);">
+                                <div class="info-box-icon-custom bg-accent">
+                                    <i class="fas fa-pause-circle"></i>
+                                </div>
+                                <div class="info-box-content-custom">
+                                    <span class="info-box-text-custom">Máximo de Pausas</span>
+                                    <span class="info-box-number-custom">{{ $membresia->max_pausas ?? 0 }} pausas permitidas</span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="info-box-custom success">
                                 <div class="info-box-icon-custom bg-success">

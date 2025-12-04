@@ -258,21 +258,22 @@ class Inscripcion extends Model
             return false;
         }
 
-        // Guardar los días restantes al momento de pausar
+        // Calcular los días restantes REALES de la membresía al momento de pausar
+        // Esto es lo único que importa: cuántos días le quedaban
         $diasRestantes = 0;
         if ($this->fecha_vencimiento) {
-            $diasRestantes = max(0, (int) now()->diffInDays($this->fecha_vencimiento, false));
+            $diasRestantes = max(0, (int) now()->startOfDay()->diffInDays($this->fecha_vencimiento->startOfDay(), false));
         }
         
         $this->pausada = true;
-        $this->dias_pausa = $indefinida ? null : $dias;
-        $this->dias_restantes_al_pausar = $diasRestantes;
-        $this->fecha_pausa_inicio = now();
-        $this->fecha_pausa_fin = $indefinida ? null : now()->addDays($dias);
+        $this->dias_pausa = $indefinida ? null : $dias; // Solo informativo: cuántos días pidió pausar
+        $this->dias_restantes_al_pausar = $diasRestantes; // CRÍTICO: los días que le quedaban
+        $this->fecha_pausa_inicio = now()->startOfDay();
+        $this->fecha_pausa_fin = $indefinida ? null : now()->addDays($dias)->startOfDay();
         $this->razon_pausa = $razon;
         $this->pausa_indefinida = $indefinida;
         $this->pausas_realizadas = $this->pausas_realizadas + 1;
-        // Estado 101 = Pausada (NO confundir con 102 = Vencida)
+        // Estado 101 = Pausada
         $this->id_estado = 101;
 
         $resultado = $this->save();
@@ -280,11 +281,11 @@ class Inscripcion extends Model
         // Registrar en historial
         if ($resultado) {
             HistorialCambio::registrarPausa($this, [
-                'dias' => $dias,
-                'dias_restantes' => $diasRestantes,
+                'dias_solicitados' => $dias,
+                'dias_restantes_guardados' => $diasRestantes,
                 'razon' => $razon,
                 'indefinida' => $indefinida,
-                'fecha_fin' => $this->fecha_pausa_fin?->format('Y-m-d'),
+                'fecha_fin_pausa' => $this->fecha_pausa_fin?->format('Y-m-d'),
             ]);
         }
 
@@ -293,7 +294,11 @@ class Inscripcion extends Model
 
     /**
      * Reanudar la membresía pausada
-     * Recalcula la fecha de vencimiento usando los días restantes guardados
+     * 
+     * LÓGICA CORRECTA:
+     * - Al pausar se guardaron los días que le quedaban (dias_restantes_al_pausar)
+     * - Al reanudar: nueva_fecha_vencimiento = HOY + dias_restantes_al_pausar
+     * - NO importa cuántos días estuvo pausado, solo importa cuántos días le quedaban
      * 
      * @return bool
      */
@@ -303,24 +308,25 @@ class Inscripcion extends Model
             return false;
         }
 
-        // Calcular días transcurridos en pausa (para historial)
-        $diasEnPausa = $this->fecha_pausa_inicio 
-            ? $this->fecha_pausa_inicio->diffInDays(now()) 
-            : 0;
-
-        // NUEVA LÓGICA: Usar los días restantes guardados para calcular nueva fecha de vencimiento
-        // Esto es más preciso que agregar los días de pausa a la fecha anterior
-        $diasRestantes = $this->dias_restantes_al_pausar ?? 0;
-        
-        // La nueva fecha de vencimiento es HOY + los días que le quedaban
-        if ($diasRestantes > 0) {
-            $this->fecha_vencimiento = now()->addDays($diasRestantes);
-            $this->dias_compensacion = ($this->dias_compensacion ?? 0) + $diasEnPausa;
+        // Calcular días que estuvo pausado (solo para información/historial)
+        $diasEnPausa = 0;
+        if ($this->fecha_pausa_inicio) {
+            $diasEnPausa = (int) $this->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay());
         }
 
+        // Los días que tenía guardados al momento de pausar
+        $diasRestantesGuardados = $this->dias_restantes_al_pausar ?? 0;
+        
+        // NUEVA FECHA DE VENCIMIENTO = HOY + días que le quedaban
+        // Esto es todo lo que importa. No sumamos días de pausa ni nada extra.
+        if ($diasRestantesGuardados > 0) {
+            $this->fecha_vencimiento = now()->startOfDay()->addDays($diasRestantesGuardados);
+        }
+
+        // Limpiar todos los campos de pausa
         $this->pausada = false;
         $this->dias_pausa = null;
-        $this->dias_restantes_al_pausar = null; // Limpiar después de usar
+        $this->dias_restantes_al_pausar = null;
         $this->fecha_pausa_inicio = null;
         $this->fecha_pausa_fin = null;
         $this->razon_pausa = null;
@@ -331,7 +337,7 @@ class Inscripcion extends Model
 
         // Registrar en historial
         if ($resultado) {
-            HistorialCambio::registrarReanudacion($this, $diasEnPausa, $diasRestantes);
+            HistorialCambio::registrarReanudacion($this, $diasEnPausa, $diasRestantesGuardados);
         }
 
         return $resultado;
