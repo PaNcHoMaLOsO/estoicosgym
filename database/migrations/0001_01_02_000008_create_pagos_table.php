@@ -39,6 +39,7 @@ return new class extends Migration
             
             $table->text('observaciones')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Foreign keys
             $table->foreign('id_inscripcion')->references('id')->on('inscripciones')->onDelete('restrict');

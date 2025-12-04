@@ -23,6 +23,7 @@
             </div>
         </div>
         <div class="hero-actions">
+            {{-- Las inscripciones no tienen papelera - solo se gestionan por estados --}}
             <a href="{{ route('admin.inscripciones.create') }}" class="btn-nueva-inscripcion">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Inscripción</span>
@@ -372,6 +373,29 @@
     .hero-actions {
         display: flex;
         gap: 12px;
+        align-items: center;
+    }
+
+    .btn-ver-papelera {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: rgba(239, 68, 68, 0.2);
+        color: #fff;
+        border: 2px solid rgba(239, 68, 68, 0.4);
+        border-radius: 12px;
+        font-size: 18px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ver-papelera:hover {
+        background: rgba(239, 68, 68, 0.4);
+        border-color: rgba(239, 68, 68, 0.6);
+        transform: translateY(-2px);
+        color: #fff;
     }
 
     .btn-nueva-inscripcion {

@@ -275,6 +275,25 @@
         border-radius: 16px;
     }
 
+    /* ===== BUTTON PAPELERA ===== */
+    .btn-papelera {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+    }
+
+    .btn-papelera:hover {
+        background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+    }
+
     /* ===== BUTTON NEW ===== */
     .btn-new-membresia {
         background: var(--success);
@@ -398,6 +417,9 @@
                 <small>Administra los planes y precios del gimnasio</small>
             </div>
             <div class="col-sm-4 text-right">
+                <a href="{{ route('admin.membresias.trashed') }}" class="btn btn-papelera" title="Ver papelera">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
                 <a href="{{ route('admin.membresias.create') }}" class="btn btn-new-membresia">
                     <i class="fas fa-plus"></i> Nueva Membresía
                 </a>

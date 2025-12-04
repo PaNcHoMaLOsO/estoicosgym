@@ -2269,6 +2269,106 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ============================================
+    // SANITIZACIÓN DE CAMPOS DE TEXTO
+    // ============================================
+    
+    // Limpiar espacios dobles y capitalizar nombres al salir del campo
+    ['nombres', 'apellido_paterno', 'apellido_materno', 'apoderado_nombre', 'contacto_emergencia'].forEach(function(campo) {
+        const input = document.getElementById(campo);
+        if (input) {
+            input.addEventListener('blur', function() {
+                let valor = this.value;
+                if (valor) {
+                    // Eliminar espacios múltiples y trim
+                    valor = valor.replace(/\s+/g, ' ').trim();
+                    // Capitalizar cada palabra
+                    valor = valor.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+                    this.value = valor;
+                }
+            });
+            
+            // Validar que solo contenga letras y espacios
+            input.addEventListener('input', function() {
+                let valor = this.value;
+                // Remover caracteres no permitidos (números, símbolos)
+                valor = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                this.value = valor;
+            });
+        }
+    });
+
+    // Validar formato de email
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.addEventListener('blur', function() {
+            let valor = this.value;
+            if (valor) {
+                // Convertir a minúsculas y trim
+                valor = valor.toLowerCase().trim();
+                this.value = valor;
+                
+                // Validar formato básico
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(valor)) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            }
+        });
+    }
+
+    // Validar edad al cambiar fecha
+    const fechaNacInput = document.getElementById('fecha_nacimiento');
+    if (fechaNacInput) {
+        fechaNacInput.addEventListener('change', function() {
+            const fechaNac = new Date(this.value);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - fechaNac.getFullYear();
+            const m = hoy.getMonth() - fechaNac.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+                edad--;
+            }
+            
+            if (edad < 14) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Edad no válida',
+                    text: 'El cliente debe tener al menos 14 años.',
+                    confirmButtonColor: '#e94560'
+                });
+                this.value = '';
+            } else if (edad > 110) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fecha no válida',
+                    text: 'Verifique la fecha de nacimiento ingresada.',
+                    confirmButtonColor: '#e94560'
+                });
+                this.value = '';
+            }
+        });
+    }
+
+    // Formatear celular al salir del campo
+    const celularInput = document.getElementById('celular');
+    if (celularInput) {
+        celularInput.addEventListener('blur', function() {
+            let valor = this.value.replace(/[^0-9]/g, '');
+            // Si empieza con 56, quitarlo
+            if (valor.startsWith('56')) {
+                valor = valor.substring(2);
+            }
+            // Validar formato chileno (9 dígitos empezando con 9)
+            if (valor.length === 9 && valor.startsWith('9')) {
+                this.classList.remove('is-invalid');
+            } else if (valor.length > 0) {
+                this.classList.add('is-invalid');
+            }
+        });
+    }
 });
 </script>
 @endpush

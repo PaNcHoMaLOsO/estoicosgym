@@ -68,6 +68,7 @@ class Inscripcion extends Model
         // Campos de sistema de pausas
         'pausada',
         'dias_pausa',
+        'dias_restantes_al_pausar',
         'fecha_pausa_inicio',
         'fecha_pausa_fin',
         'razon_pausa',
@@ -111,6 +112,7 @@ class Inscripcion extends Model
         'es_cambio_plan' => 'boolean',
         'es_traspaso' => 'boolean',
         'dias_pausa' => 'integer',
+        'dias_restantes_al_pausar' => 'integer',
         'pausas_realizadas' => 'integer',
         'max_pausas_permitidas' => 'integer',
         'dias_compensacion' => 'integer',
@@ -256,8 +258,15 @@ class Inscripcion extends Model
             return false;
         }
 
+        // Guardar los días restantes al momento de pausar
+        $diasRestantes = 0;
+        if ($this->fecha_vencimiento) {
+            $diasRestantes = max(0, (int) now()->diffInDays($this->fecha_vencimiento, false));
+        }
+        
         $this->pausada = true;
         $this->dias_pausa = $indefinida ? null : $dias;
+        $this->dias_restantes_al_pausar = $diasRestantes;
         $this->fecha_pausa_inicio = now();
         $this->fecha_pausa_fin = $indefinida ? null : now()->addDays($dias);
         $this->razon_pausa = $razon;
@@ -272,6 +281,7 @@ class Inscripcion extends Model
         if ($resultado) {
             HistorialCambio::registrarPausa($this, [
                 'dias' => $dias,
+                'dias_restantes' => $diasRestantes,
                 'razon' => $razon,
                 'indefinida' => $indefinida,
                 'fecha_fin' => $this->fecha_pausa_fin?->format('Y-m-d'),
@@ -283,7 +293,7 @@ class Inscripcion extends Model
 
     /**
      * Reanudar la membresía pausada
-     * Extiende la fecha de vencimiento por los días que estuvo pausada
+     * Recalcula la fecha de vencimiento usando los días restantes guardados
      * 
      * @return bool
      */
@@ -293,21 +303,24 @@ class Inscripcion extends Model
             return false;
         }
 
-        // Calcular días transcurridos en pausa
+        // Calcular días transcurridos en pausa (para historial)
         $diasEnPausa = $this->fecha_pausa_inicio 
             ? $this->fecha_pausa_inicio->diffInDays(now()) 
             : 0;
 
-        // Extender fecha de vencimiento
-        $diasCompensados = 0;
-        if ($diasEnPausa > 0 && $this->fecha_vencimiento) {
-            $this->fecha_vencimiento = $this->fecha_vencimiento->addDays($diasEnPausa);
-            $this->dias_compensacion = $this->dias_compensacion + $diasEnPausa;
-            $diasCompensados = $diasEnPausa;
+        // NUEVA LÓGICA: Usar los días restantes guardados para calcular nueva fecha de vencimiento
+        // Esto es más preciso que agregar los días de pausa a la fecha anterior
+        $diasRestantes = $this->dias_restantes_al_pausar ?? 0;
+        
+        // La nueva fecha de vencimiento es HOY + los días que le quedaban
+        if ($diasRestantes > 0) {
+            $this->fecha_vencimiento = now()->addDays($diasRestantes);
+            $this->dias_compensacion = ($this->dias_compensacion ?? 0) + $diasEnPausa;
         }
 
         $this->pausada = false;
         $this->dias_pausa = null;
+        $this->dias_restantes_al_pausar = null; // Limpiar después de usar
         $this->fecha_pausa_inicio = null;
         $this->fecha_pausa_fin = null;
         $this->razon_pausa = null;
@@ -318,7 +331,7 @@ class Inscripcion extends Model
 
         // Registrar en historial
         if ($resultado) {
-            HistorialCambio::registrarReanudacion($this, $diasEnPausa, $diasCompensados);
+            HistorialCambio::registrarReanudacion($this, $diasEnPausa, $diasRestantes);
         }
 
         return $resultado;

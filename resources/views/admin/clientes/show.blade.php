@@ -33,6 +33,9 @@
     $diasRestantes = null;
     if ($inscripcionActiva && $inscripcionActiva->fecha_vencimiento) {
         $diasRestantes = (int) now()->diffInDays($inscripcionActiva->fecha_vencimiento, false);
+    } elseif ($inscripcionPausada && $inscripcionPausada->dias_restantes_al_pausar) {
+        // Si está pausada, mostrar los días guardados
+        $diasRestantes = $inscripcionPausada->dias_restantes_al_pausar;
     }
     
     // Calcular edad
@@ -177,13 +180,21 @@
                 <span class="stat-label">Pendiente</span>
             </div>
         </div>
-        <div class="stat-card {{ $diasRestantes !== null && $diasRestantes <= 7 ? 'has-alert' : '' }}">
-            <div class="stat-icon {{ $diasRestantes === null ? 'bg-slate' : ($diasRestantes <= 3 ? 'bg-rose' : ($diasRestantes <= 7 ? 'bg-amber' : 'bg-sky')) }}">
-                <i class="fas fa-hourglass-half"></i>
+        <div class="stat-card {{ $diasRestantes !== null && $diasRestantes <= 7 && !$inscripcionPausada ? 'has-alert' : '' }}">
+            <div class="stat-icon {{ $diasRestantes === null ? 'bg-slate' : ($inscripcionPausada ? 'bg-warning' : ($diasRestantes <= 3 ? 'bg-rose' : ($diasRestantes <= 7 ? 'bg-amber' : 'bg-sky'))) }}">
+                <i class="fas {{ $inscripcionPausada ? 'fa-pause-circle' : 'fa-hourglass-half' }}"></i>
             </div>
             <div class="stat-content">
                 <span class="stat-value">{{ $diasRestantes !== null ? ($diasRestantes > 0 ? $diasRestantes : '¡Hoy!') : '-' }}</span>
-                <span class="stat-label">{{ $diasRestantes !== null ? 'Días Restantes' : 'Sin membresía' }}</span>
+                <span class="stat-label">
+                    @if($inscripcionPausada)
+                        Días Guardados (Pausado)
+                    @elseif($diasRestantes !== null)
+                        Días Restantes
+                    @else
+                        Sin membresía
+                    @endif
+                </span>
             </div>
         </div>
     </div>
@@ -229,8 +240,16 @@
                             @if($ultimaInscripcion->fecha_pausa_inicio)
                             <span>Desde: {{ $ultimaInscripcion->fecha_pausa_inicio->format('d/m/Y') }}</span>
                             @endif
+                            @if($ultimaInscripcion->pausa_indefinida)
+                            <span class="text-warning"><i class="fas fa-infinity"></i> Pausa indefinida</span>
+                            @elseif($ultimaInscripcion->fecha_pausa_fin)
+                            <span>Hasta: {{ $ultimaInscripcion->fecha_pausa_fin->format('d/m/Y') }}</span>
+                            @endif
                             @if($ultimaInscripcion->dias_restantes_al_pausar)
-                            <span>Días guardados: {{ $ultimaInscripcion->dias_restantes_al_pausar }}</span>
+                            <span><strong>{{ $ultimaInscripcion->dias_restantes_al_pausar }}</strong> días guardados</span>
+                            @endif
+                            @if($ultimaInscripcion->razon_pausa)
+                            <span class="pause-reason"><i class="fas fa-comment"></i> {{ $ultimaInscripcion->razon_pausa }}</span>
                             @endif
                         </div>
                     </div>
@@ -1655,6 +1674,19 @@
     .pause-alert .pause-info span {
         font-size: 13px;
         color: #a16207;
+        display: block;
+        margin-top: 3px;
+    }
+
+    .pause-alert .pause-info .pause-reason {
+        font-style: italic;
+        opacity: 0.85;
+        margin-top: 6px;
+    }
+
+    .pause-alert .pause-info .pause-reason i {
+        font-size: 12px;
+        margin-right: 4px;
     }
 
     /* Descuentos */

@@ -19,6 +19,9 @@
             </div>
         </div>
         <div class="hero-actions">
+            <a href="{{ route('admin.clientes.trashed') }}" class="btn-ver-papelera" title="Ver clientes eliminados">
+                <i class="fas fa-trash-alt"></i>
+            </a>
             <a href="{{ route('admin.clientes.inactive') }}" class="btn-ver-inactivos">
                 <i class="fas fa-user-slash"></i>
                 <span>Ver Inactivos</span>
@@ -245,6 +248,30 @@
         display: flex;
         gap: 12px;
         align-items: center;
+    }
+
+    .btn-ver-papelera {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: rgba(239, 68, 68, 0.2);
+        color: #fff;
+        border: 2px solid rgba(239, 68, 68, 0.4);
+        border-radius: 12px;
+        font-size: 18px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .btn-ver-papelera:hover {
+        background: rgba(239, 68, 68, 0.4);
+        border-color: rgba(239, 68, 68, 0.6);
+        transform: translateY(-2px);
+        color: #fff;
+        text-decoration: none;
     }
 
     .btn-ver-inactivos {

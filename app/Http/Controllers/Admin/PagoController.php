@@ -359,29 +359,38 @@ class PagoController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Incluye validaciones para proteger la integridad de datos.
+     * Los pagos NO se pueden eliminar por razones de auditoría financiera.
      */
     public function destroy(Pago $pago)
     {
-        // Cargar inscripción relacionada
+        // Los pagos NUNCA se pueden eliminar por razones de auditoría financiera
+        // Todos los movimientos de dinero deben quedar registrados
+        return redirect()->back()
+            ->with('error', 'Los pagos no se pueden eliminar por razones de auditoría financiera. Si hay un error, registre un ajuste o contacte al administrador.');
+    }
+
+    /**
+     * Método legacy - deshabilitado
+     * Se mantiene comentado por referencia histórica
+     */
+    /*
+    private function destroyLegacy(Pago $pago)
+    {
         $pago->load('inscripcion');
         
-        // Validar que el pago no sea de una inscripción traspasada (estado 205 = Traspasado)
         if ($pago->id_estado == 205) {
             return redirect()->route('admin.pagos.show', $pago)
-                ->with('error', 'No se puede eliminar un pago que fue traspasado. Este registro es parte del historial de traspaso.');
+                ->with('error', 'No se puede eliminar un pago traspasado.');
         }
         
-        // Validar que no sea el único pago de una inscripción activa
-        if ($pago->inscripcion && $pago->inscripcion->id_estado == 100) { // Inscripción Activa
+        if ($pago->inscripcion && $pago->inscripcion->id_estado == 100) {
             $totalPagos = $pago->inscripcion->pagos()->count();
             if ($totalPagos <= 1) {
                 return redirect()->route('admin.pagos.show', $pago)
-                    ->with('error', 'No se puede eliminar el único pago de una inscripción activa. Esto dejaría la inscripción sin registro de pago.');
+                    ->with('error', 'No se puede eliminar el único pago de una inscripción activa.');
             }
         }
         
-        // Guardar info para el mensaje
         $inscripcionId = $pago->id_inscripcion;
         $montoEliminado = $pago->monto_abonado;
         $inscripcion = $pago->inscripcion;
@@ -434,5 +443,56 @@ class PagoController extends Controller
             ->get();
 
         return response()->json(['pagos' => $pagos]);
+    }
+
+    // ==========================================
+    // PAPELERA (SoftDeletes)
+    // ==========================================
+
+    /**
+     * Mostrar pagos eliminados (papelera)
+     */
+    public function trashed()
+    {
+        $pagos = Pago::onlyTrashed()
+            ->with(['cliente', 'inscripcion', 'metodoPago', 'estado'])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20);
+
+        $totalEliminados = Pago::onlyTrashed()->count();
+
+        return view('admin.pagos.trashed', compact('pagos', 'totalEliminados'));
+    }
+
+    /**
+     * Restaurar un pago eliminado
+     */
+    public function restore($id)
+    {
+        $pago = Pago::onlyTrashed()->findOrFail($id);
+        
+        // Verificar que la inscripción no esté eliminada
+        if ($pago->inscripcion && $pago->inscripcion->trashed()) {
+            return redirect()->route('admin.pagos.trashed')
+                ->with('error', 'No se puede restaurar el pago porque la inscripción está eliminada. Restaure primero la inscripción.');
+        }
+
+        $pago->restore();
+
+        return redirect()->route('admin.pagos.trashed')
+            ->with('success', "Pago de \${$pago->monto_abonado} restaurado exitosamente.");
+    }
+
+    /**
+     * Eliminar permanentemente un pago
+     */
+    public function forceDelete($id)
+    {
+        $pago = Pago::onlyTrashed()->findOrFail($id);
+        $monto = $pago->monto_abonado;
+        $pago->forceDelete();
+
+        return redirect()->route('admin.pagos.trashed')
+            ->with('success', "Pago de \${$monto} eliminado permanentemente.");
     }
 }

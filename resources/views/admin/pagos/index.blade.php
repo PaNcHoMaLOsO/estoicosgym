@@ -23,6 +23,7 @@
             </div>
         </div>
         <div class="hero-actions">
+            {{-- Los pagos no tienen papelera - no se pueden eliminar por auditoría --}}
             <a href="{{ route('admin.pagos.create') }}" class="btn-nuevo-pago">
                 <i class="fas fa-plus-circle"></i>
                 <span>Nuevo Pago</span>
@@ -272,13 +273,7 @@
                                     <a href="{{ route('admin.pagos.edit', $pago) }}" class="btn-action btn-edit" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.pagos.destroy', $pago) }}" method="POST" class="delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn-action btn-delete" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    {{-- Los pagos NO se pueden eliminar por razones de auditoría financiera --}}
                                 </div>
                             </td>
                         </tr>
@@ -406,7 +401,28 @@
         margin: 4px 0 0;
         font-size: 0.9em;
     }
-    .hero-actions { position: relative; z-index: 1; }
+    .hero-actions { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    .btn-ver-papelera {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    }
+    .btn-ver-papelera:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        color: white;
+        text-decoration: none;
+        background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+    }
     .btn-nuevo-pago {
         background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
         color: white;

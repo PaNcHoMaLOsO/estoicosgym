@@ -238,10 +238,10 @@ class MembresiaController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * Las membresías solo se desactivan, no se eliminan (son catálogos)
      */
     public function destroy(Membresia $membresia)
     {
-        $forceDelete = request()->input('force_delete') === '1';
         $nombreMembresia = $membresia->nombre;
         
         // Verificar si hay inscripciones activas
@@ -249,38 +249,86 @@ class MembresiaController extends Controller
             ->whereNotIn('id_estado', [102, 103]) // Excluyendo vencida (102) y cancelada (103)
             ->count();
 
-        // Si hay inscripciones activas y no es eliminación forzada, solo desactivar
-        if ($inscripcionesActivas > 0 && !$forceDelete) {
-            // Desactivar la membresía
-            $membresia->update(['activo' => false]);
-            
-            Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
-            
-            return redirect()->route('admin.membresias.index')
-                ->with('success', "Membresía '{$nombreMembresia}' desactivada exitosamente. " .
-                    "Tiene {$inscripcionesActivas} inscripción(es) activa(s) que se mantendrán hasta su vencimiento.");
-        }
-
-        // Si force_delete = true, eliminar completamente
-        if ($forceDelete) {
-            $inscripcionesTotales = $membresia->inscripciones()->count();
-            
-            Log::warning("Membresía ELIMINADA: {$nombreMembresia}. Total de inscripciones asociadas: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
-            
-            $membresia->delete();
-            
-            return redirect()->route('admin.membresias.index')
-                ->with('success', "Membresía '{$nombreMembresia}' eliminada completamente. Se registraron {$inscripcionesTotales} inscripción(es) histórica(s).");
-        }
-
-        // Si no hay inscripciones activas, eliminar directamente
-        $inscripcionesTotales = $membresia->inscripciones()->count();
+        // Desactivar la membresía (no eliminar)
+        $membresia->update(['activo' => false]);
         
-        Log::info("Membresía eliminada: {$nombreMembresia}. Total de inscripciones: {$inscripcionesTotales}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
+        Log::info("Membresía desactivada: {$nombreMembresia}. Inscripciones activas: {$inscripcionesActivas}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
         
-        $membresia->delete();
+        $mensaje = "Membresía '{$nombreMembresia}' desactivada exitosamente.";
+        if ($inscripcionesActivas > 0) {
+            $mensaje .= " Tiene {$inscripcionesActivas} inscripción(es) activa(s) que se mantendrán hasta su vencimiento.";
+        }
         
         return redirect()->route('admin.membresias.index')
-            ->with('success', "Membresía '{$nombreMembresia}' eliminada exitosamente. Se registraron {$inscripcionesTotales} inscripción(es) histórica(s).");
+            ->with('success', $mensaje);
+    }
+
+    /**
+     * Activar una membresía desactivada
+     */
+    public function activate(Membresia $membresia)
+    {
+        $membresia->update(['activo' => true]);
+        
+        Log::info("Membresía activada: {$membresia->nombre}. Usuario: " . (Auth::user()?->name ?? 'Sistema'));
+        
+        return redirect()->back()
+            ->with('success', "Membresía '{$membresia->nombre}' activada exitosamente.");
+    }
+
+    // ==========================================
+    // PAPELERA (SoftDeletes)
+    // ==========================================
+
+    /**
+     * Mostrar membresías eliminadas (papelera)
+     */
+    public function trashed()
+    {
+        $membresias = Membresia::onlyTrashed()
+            ->withCount(['inscripciones' => function($q) {
+                $q->withTrashed();
+            }])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20);
+
+        $totalEliminadas = Membresia::onlyTrashed()->count();
+
+        return view('admin.membresias.trashed', compact('membresias', 'totalEliminadas'));
+    }
+
+    /**
+     * Restaurar una membresía eliminada
+     */
+    public function restore($id)
+    {
+        $membresia = Membresia::onlyTrashed()->findOrFail($id);
+        $membresia->restore();
+
+        return redirect()->route('admin.membresias.trashed')
+            ->with('success', "Membresía '{$membresia->nombre}' restaurada exitosamente.");
+    }
+
+    /**
+     * Eliminar permanentemente una membresía
+     */
+    public function forceDelete($id)
+    {
+        $membresia = Membresia::onlyTrashed()->findOrFail($id);
+        
+        // Verificar que no tenga inscripciones
+        if ($membresia->inscripciones()->withTrashed()->exists()) {
+            return redirect()->route('admin.membresias.trashed')
+                ->with('error', 'No se puede eliminar permanentemente. La membresía tiene inscripciones asociadas.');
+        }
+
+        $nombreMembresia = $membresia->nombre;
+        
+        // Eliminar precios relacionados
+        $membresia->precios()->delete();
+        $membresia->forceDelete();
+
+        return redirect()->route('admin.membresias.trashed')
+            ->with('success', "Membresía '{$nombreMembresia}' eliminada permanentemente.");
     }
 }

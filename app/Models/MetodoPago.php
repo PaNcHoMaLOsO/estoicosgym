@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class MetodoPago extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     
     protected $table = 'metodos_pago';
     protected $primaryKey = 'id';

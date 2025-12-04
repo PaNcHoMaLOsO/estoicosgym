@@ -100,6 +100,89 @@ class Cliente extends Model
         'consentimiento_apoderado' => 'boolean',
     ];
 
+    // ===== MUTATORS PARA SANITIZACIÓN DE DATOS =====
+
+    /**
+     * Sanitizar y capitalizar nombres
+     */
+    public function setNombresAttribute($value)
+    {
+        // Eliminar espacios extras y capitalizar cada palabra
+        $this->attributes['nombres'] = $value 
+            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            : null;
+    }
+
+    /**
+     * Sanitizar y capitalizar apellido paterno
+     */
+    public function setApellidoPaternoAttribute($value)
+    {
+        $this->attributes['apellido_paterno'] = $value 
+            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            : null;
+    }
+
+    /**
+     * Sanitizar y capitalizar apellido materno
+     */
+    public function setApellidoMaternoAttribute($value)
+    {
+        $this->attributes['apellido_materno'] = $value 
+            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            : null;
+    }
+
+    /**
+     * Normalizar email a minúsculas
+     */
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email'] = $value ? strtolower(trim($value)) : null;
+    }
+
+    /**
+     * Limpiar y normalizar celular (formato chileno)
+     */
+    public function setCelularAttribute($value)
+    {
+        if (!$value) {
+            $this->attributes['celular'] = null;
+            return;
+        }
+        
+        // Eliminar todo excepto dígitos
+        $celular = preg_replace('/[^0-9]/', '', $value);
+        
+        // Si empieza con 56 (código Chile), quitarlo
+        if (strlen($celular) === 11 && substr($celular, 0, 2) === '56') {
+            $celular = substr($celular, 2);
+        }
+        
+        // Guardar solo los 9 dígitos
+        $this->attributes['celular'] = $celular;
+    }
+
+    /**
+     * Sanitizar nombre de apoderado
+     */
+    public function setApoderadoNombreAttribute($value)
+    {
+        $this->attributes['apoderado_nombre'] = $value 
+            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            : null;
+    }
+
+    /**
+     * Sanitizar contacto de emergencia
+     */
+    public function setContactoEmergenciaAttribute($value)
+    {
+        $this->attributes['contacto_emergencia'] = $value 
+            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            : null;
+    }
+
     protected static function boot()
     {
         parent::boot();

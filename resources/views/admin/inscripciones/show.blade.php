@@ -636,8 +636,13 @@
             <p class="mb-0 mt-1">
                 Esta inscripción se encuentra pausada desde el 
                 <strong>{{ $infoPausa['fecha_ultima_pausa'] ? \Carbon\Carbon::parse($infoPausa['fecha_ultima_pausa'])->format('d/m/Y') : 'N/A' }}</strong>.
-                @if($infoPausa['dias_restantes_pausa'] > 0)
+                @if($infoPausa['pausa_indefinida'])
+                    <span class="text-warning"><i class="fas fa-infinity"></i> Pausa indefinida hasta nuevo aviso.</span>
+                @elseif($infoPausa['dias_restantes_pausa'] > 0)
                     Quedan <strong>{{ $infoPausa['dias_restantes_pausa'] }} días</strong> de pausa.
+                @endif
+                @if($infoPausa['dias_restantes_al_pausar'] > 0)
+                    <br><small><i class="fas fa-save"></i> Tiene <strong>{{ $infoPausa['dias_restantes_al_pausar'] }} días</strong> de membresía guardados.</small>
                 @endif
             </p>
         </div>
@@ -966,13 +971,24 @@
                     <span class="label">Fecha de Pausa:</span>
                     <span class="value">{{ $infoPausa['fecha_ultima_pausa'] ? \Carbon\Carbon::parse($infoPausa['fecha_ultima_pausa'])->format('d/m/Y') : 'N/A' }}</span>
                 </div>
+                @if($infoPausa['pausa_indefinida'])
                 <div class="info-row">
-                    <span class="label">Días de Pausa:</span>
-                    <span class="value">{{ $infoPausa['duracion_pausa'] ?? 7 }} días</span>
+                    <span class="label">Tipo de Pausa:</span>
+                    <span class="value text-warning"><i class="fas fa-infinity"></i> Indefinida</span>
+                </div>
+                @elseif($infoPausa['fecha_fin_pausa'])
+                <div class="info-row">
+                    <span class="label">Fecha Fin Pausa:</span>
+                    <span class="value">{{ \Carbon\Carbon::parse($infoPausa['fecha_fin_pausa'])->format('d/m/Y') }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="label">Días Restantes:</span>
-                    <span class="value font-weight-bold text-warning">{{ $infoPausa['dias_restantes_pausa'] ?? 0 }} días</span>
+                    <span class="label">Días Restantes de Pausa:</span>
+                    <span class="value text-warning">{{ $infoPausa['dias_restantes_pausa'] }} días</span>
+                </div>
+                @endif
+                <div class="info-row">
+                    <span class="label">Días de Membresía Guardados:</span>
+                    <span class="value font-weight-bold text-success">{{ $infoPausa['dias_restantes_al_pausar'] ?? 0 }} días</span>
                 </div>
                 @if($infoPausa['razon_pausa'])
                 <div class="info-row">

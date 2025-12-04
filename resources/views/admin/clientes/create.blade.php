@@ -2677,6 +2677,102 @@ $(document).ready(function() {
     });
 
     // ============================================
+    // SANITIZACIÓN DE CAMPOS DE TEXTO
+    // ============================================
+    
+    // Limpiar espacios dobles y capitalizar nombres al salir del campo
+    ['nombres', 'apellido_paterno', 'apellido_materno', 'apoderado_nombre', 'contacto_emergencia'].forEach(function(campo) {
+        const $input = $('#' + campo);
+        if ($input.length) {
+            $input.on('blur', function() {
+                let valor = $(this).val();
+                if (valor) {
+                    // Eliminar espacios múltiples y trim
+                    valor = valor.replace(/\s+/g, ' ').trim();
+                    // Capitalizar cada palabra
+                    valor = valor.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+                    $(this).val(valor);
+                }
+            });
+            
+            // Validar que solo contenga letras y espacios
+            $input.on('input', function() {
+                let valor = $(this).val();
+                // Remover caracteres no permitidos (números, símbolos)
+                valor = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                $(this).val(valor);
+            });
+        }
+    });
+
+    // Validar formato de email
+    $('#email').on('blur', function() {
+        let valor = $(this).val();
+        if (valor) {
+            // Convertir a minúsculas y trim
+            valor = valor.toLowerCase().trim();
+            $(this).val(valor);
+            
+            // Validar formato básico
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(valor)) {
+                $(this).addClass('is-invalid');
+                if (!$(this).next('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">Ingrese un correo electrónico válido</div>');
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
+            }
+        }
+    });
+
+    // Validar edad al cambiar fecha (además de mostrar info)
+    // Solo validar si la fecha está completa (año con 4 dígitos)
+    $('#fecha_nacimiento').on('change', function() {
+        const valor = this.value;
+        
+        // Verificar que la fecha esté completa (formato YYYY-MM-DD)
+        if (!valor || valor.length < 10) {
+            return; // No validar fechas incompletas
+        }
+        
+        // Verificar que el año tenga 4 dígitos y sea razonable (> 1900)
+        const año = parseInt(valor.split('-')[0]);
+        if (año < 1900 || año > new Date().getFullYear()) {
+            return; // No validar años incompletos o futuros
+        }
+        
+        const fechaNac = new Date(valor);
+        const hoy = new Date();
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const m = hoy.getMonth() - fechaNac.getMonth();
+        if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edad--;
+        }
+        
+        if (edad < 14) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Edad no válida',
+                text: 'El cliente debe tener al menos 14 años para registrarse.',
+                confirmButtonColor: '#e94560'
+            });
+            this.value = '';
+            $('#edad-info').text('').removeClass('menor mayor');
+        } else if (edad > 110) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fecha no válida',
+                text: 'Verifique la fecha de nacimiento ingresada.',
+                confirmButtonColor: '#e94560'
+            });
+            this.value = '';
+            $('#edad-info').text('').removeClass('menor mayor');
+        }
+    });
+
+    // ============================================
     // NAVEGACIÓN POR STEPPER (click en pasos)
     // ============================================
     $('.step-btn').on('click', function() {

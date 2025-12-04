@@ -15,6 +15,7 @@ use App\Http\Controllers\Traits\ValidatesFormToken;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ClienteController extends Controller
 {
@@ -202,20 +203,73 @@ class ClienteController extends Controller
         // Determinar qué tipo de flujo es
         $flujoCliente = $request->input('flujo_cliente', 'completo');
 
-        // PASO 1: Validar datos básicos del cliente (siempre requerido)
-        $validatedCliente = $request->validate([
+        // PASO 1: Validar datos básicos del cliente con reglas mejoradas
+        $rules = [
+            // RUT con validación personalizada
             'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte', new RutValido()],
-            'nombres' => 'required|string|max:255',
-            'apellido_paterno' => 'required|string|max:255',
-            'apellido_materno' => 'nullable|string|max:255',
-            'celular' => 'required|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
-            'email' => 'required|email|unique:clientes,email',
+            
+            // NOMBRES - Solo letras, sin espacios dobles, máx 50 caracteres
+            'nombres' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+                function ($attribute, $value, $fail) {
+                    if (preg_match('/\s{2,}/', $value)) {
+                        $fail('El nombre no debe tener espacios dobles.');
+                    }
+                },
+            ],
+            
+            'apellido_paterno' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+                function ($attribute, $value, $fail) {
+                    if (preg_match('/\s{2,}/', $value)) {
+                        $fail('El apellido no debe tener espacios dobles.');
+                    }
+                },
+            ],
+            
+            'apellido_materno' => [
+                'nullable',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/',
+            ],
+            
+            // CELULAR - Formato chileno (9 dígitos empezando con 9, permite espacios)
+            'celular' => [
+                'required',
+                'string',
+                'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/',
+            ],
+            
+            // EMAIL - Formato válido, único
+            'email' => [
+                'required',
+                'email:rfc',
+                'max:255',
+                Rule::unique('clientes', 'email'),
+            ],
+            
             'direccion' => 'nullable|string|max:500',
-            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(10)->format('Y-m-d'),
+            
+            // FECHA NACIMIENTO - Mínimo 14 años, máximo 110 años
+            'fecha_nacimiento' => [
+                'nullable',
+                'date',
+                'before_or_equal:' . now()->subYears(14)->format('Y-m-d'),
+                'after_or_equal:' . now()->subYears(110)->format('Y-m-d'),
+            ],
+            
             'contacto_emergencia' => 'nullable|string|max:100',
-            'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
+            'telefono_emergencia' => ['nullable', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
             'observaciones' => 'nullable|string|max:500',
-            // Campos de apoderado (se validan condicionalmente)
+            
+            // Campos de apoderado
             'es_menor_edad' => 'nullable|boolean',
             'consentimiento_apoderado' => 'nullable|boolean',
             'apoderado_nombre' => 'nullable|string|max:100',
@@ -223,7 +277,23 @@ class ClienteController extends Controller
             'apoderado_telefono' => 'nullable|string|max:20',
             'apoderado_parentesco' => 'nullable|string|max:50',
             'apoderado_observaciones' => 'nullable|string|max:500',
-        ]);
+        ];
+
+        $messages = [
+            'nombres.regex' => 'El nombre solo debe contener letras y espacios.',
+            'nombres.max' => 'El nombre no debe exceder 50 caracteres.',
+            'apellido_paterno.regex' => 'El apellido solo debe contener letras y espacios.',
+            'apellido_paterno.max' => 'El apellido no debe exceder 50 caracteres.',
+            'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
+            'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
+            'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida (máximo 110 años).',
+            'email.email' => 'Ingrese un correo electrónico válido.',
+            'email.unique' => 'Este correo electrónico ya está registrado.',
+            'celular.regex' => 'Formato de celular inválido. Use: 912345678 o +56912345678',
+            'telefono_emergencia.regex' => 'Formato de teléfono de emergencia inválido.',
+        ];
+
+        $validatedCliente = $request->validate($rules, $messages);
 
         // VALIDACIÓN ESPECIAL: Si es menor de edad, campos de apoderado son obligatorios
         $esMenorEdad = $request->boolean('es_menor_edad');
@@ -434,21 +504,74 @@ class ClienteController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        // Reglas de validación base
+        // Reglas de validación mejoradas
         $rules = [
-            'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte,' . $cliente->id, new RutValido()],
-            'nombres' => 'required|string|max:255',
-            'apellido_paterno' => 'required|string|max:255',
-            'apellido_materno' => 'nullable|string|max:255',
-            'celular' => 'required|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
-            'email' => 'required|email|unique:clientes,email,' . $cliente->id,
+            // RUT con validación personalizada
+            'run_pasaporte' => ['nullable', Rule::unique('clientes', 'run_pasaporte')->ignore($cliente->id), new RutValido()],
+            
+            // NOMBRES - Solo letras, sin espacios dobles, máx 50 caracteres
+            'nombres' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+                function ($attribute, $value, $fail) {
+                    if (preg_match('/\s{2,}/', $value)) {
+                        $fail('El nombre no debe tener espacios dobles.');
+                    }
+                },
+            ],
+            
+            'apellido_paterno' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+                function ($attribute, $value, $fail) {
+                    if (preg_match('/\s{2,}/', $value)) {
+                        $fail('El apellido no debe tener espacios dobles.');
+                    }
+                },
+            ],
+            
+            'apellido_materno' => [
+                'nullable',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/',
+            ],
+            
+            // CELULAR - Formato chileno (9 dígitos empezando con 9, permite espacios)
+            'celular' => [
+                'required',
+                'string',
+                'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/',
+            ],
+            
+            // EMAIL - Formato válido, único excepto el actual
+            'email' => [
+                'required',
+                'email:rfc',
+                'max:255',
+                Rule::unique('clientes', 'email')->ignore($cliente->id),
+            ],
+            
             'direccion' => 'nullable|string|max:500',
-            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(10)->format('Y-m-d'),
+            
+            // FECHA NACIMIENTO - Mínimo 14 años, máximo 110 años
+            'fecha_nacimiento' => [
+                'nullable',
+                'date',
+                'before_or_equal:' . now()->subYears(14)->format('Y-m-d'),
+                'after_or_equal:' . now()->subYears(110)->format('Y-m-d'),
+            ],
+            
             'contacto_emergencia' => 'nullable|string|max:100',
-            'telefono_emergencia' => 'nullable|string|max:20|regex:/^\+?[\d\s\-()]{9,}$/',
+            'telefono_emergencia' => ['nullable', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
             'id_convenio' => 'nullable|exists:convenios,id',
             'observaciones' => 'nullable|string|max:500',
             'activo' => 'boolean',
+            
             // Campos de apoderado (opcionales por defecto)
             'es_menor_edad' => 'nullable|boolean',
             'consentimiento_apoderado' => 'nullable',
@@ -461,6 +584,17 @@ class ClienteController extends Controller
 
         // Mensajes personalizados
         $messages = [
+            'nombres.regex' => 'El nombre solo debe contener letras y espacios.',
+            'nombres.max' => 'El nombre no debe exceder 50 caracteres.',
+            'apellido_paterno.regex' => 'El apellido solo debe contener letras y espacios.',
+            'apellido_paterno.max' => 'El apellido no debe exceder 50 caracteres.',
+            'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
+            'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
+            'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida (máximo 110 años).',
+            'email.email' => 'Ingrese un correo electrónico válido.',
+            'email.unique' => 'Este correo electrónico ya está registrado.',
+            'celular.regex' => 'Formato de celular inválido. Use: 912345678 o +56912345678',
+            'telefono_emergencia.regex' => 'Formato de teléfono de emergencia inválido.',
             'consentimiento_apoderado.accepted' => 'Debe aceptar el consentimiento del apoderado para clientes menores de edad.',
             'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio para clientes menores de edad.',
             'apoderado_rut.required' => 'El RUT del apoderado es obligatorio para clientes menores de edad.',
@@ -501,30 +635,31 @@ class ClienteController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Implementa soft delete: marca el cliente como inactivo en lugar de eliminarlo
+     * Implementa SoftDelete: envía el cliente a la papelera
      */
     public function destroy(Cliente $cliente)
     {
         // Validar que no tenga inscripciones activas o pausadas 
-        // (estados que requieren cliente activo según EstadosCodigo)
         $estadosReqClienteActivo = EstadosCodigo::INSCRIPCION_REQUIERE_CLIENTE_ACTIVO;
         if ($cliente->inscripciones()->whereIn('id_estado', $estadosReqClienteActivo)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
-                ->with('error', 'No se puede desactivar este cliente. Tiene inscripciones activas o pausadas. Por favor, venza o cancele estas inscripciones primero.');
+                ->with('error', 'No se puede eliminar este cliente. Tiene inscripciones activas o pausadas. Por favor, venza o cancele estas inscripciones primero.');
         }
 
         // Validar que no tenga pagos pendientes o parciales
         $estadosPagoPendientes = EstadosCodigo::PAGO_PENDIENTES_COBRO;
         if ($cliente->pagos()->whereIn('id_estado', $estadosPagoPendientes)->exists()) {
             return redirect()->route('admin.clientes.show', $cliente)
-                ->with('error', 'No se puede desactivar este cliente. Tiene pagos pendientes. Por favor, procese estos pagos primero.');
+                ->with('error', 'No se puede eliminar este cliente. Tiene pagos pendientes. Por favor, procese estos pagos primero.');
         }
 
-        // Soft delete: marcar como inactivo (id_estado se actualiza automáticamente en boot())
-        $cliente->update(['activo' => false]);
+        $nombreCliente = $cliente->nombres . ' ' . $cliente->apellido_paterno;
+        
+        // SoftDelete: enviar a papelera
+        $cliente->delete();
 
         return redirect()->route('admin.clientes.index')
-            ->with('success', 'Cliente desactivado exitosamente. Su registro y toda su información histórica se conservan en el sistema.');
+            ->with('success', "Cliente '{$nombreCliente}' enviado a la papelera. Puede restaurarlo desde la papelera si lo necesita.");
     }
 
     /**
@@ -627,5 +762,58 @@ class ClienteController extends Controller
             'duracion_dias' => (int) $membresia->duracion_dias,
             'nombre' => $membresia->nombre
         ]);
+    }
+
+    // ==========================================
+    // PAPELERA (SoftDeletes)
+    // ==========================================
+
+    /**
+     * Mostrar clientes eliminados (papelera)
+     */
+    public function trashed()
+    {
+        $clientes = Cliente::onlyTrashed()
+            ->with(['inscripciones' => function ($q) {
+                $q->withTrashed();
+            }])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20);
+
+        $totalEliminados = Cliente::onlyTrashed()->count();
+
+        return view('admin.clientes.trashed', compact('clientes', 'totalEliminados'));
+    }
+
+    /**
+     * Restaurar un cliente eliminado
+     */
+    public function restore($id)
+    {
+        $cliente = Cliente::onlyTrashed()->findOrFail($id);
+        $cliente->restore();
+
+        return redirect()->route('admin.clientes.trashed')
+            ->with('success', "Cliente '{$cliente->nombres} {$cliente->apellido_paterno}' restaurado exitosamente.");
+    }
+
+    /**
+     * Eliminar permanentemente un cliente
+     */
+    public function forceDelete($id)
+    {
+        $cliente = Cliente::onlyTrashed()->findOrFail($id);
+        
+        // Verificar que no tenga inscripciones (ni eliminadas)
+        if ($cliente->inscripciones()->withTrashed()->exists()) {
+            return redirect()->route('admin.clientes.trashed')
+                ->with('error', 'No se puede eliminar permanentemente. El cliente tiene inscripciones asociadas. Elimine primero las inscripciones.');
+        }
+
+        $nombreCliente = "{$cliente->nombres} {$cliente->apellido_paterno}";
+        $cliente->forceDelete();
+
+        return redirect()->route('admin.clientes.trashed')
+            ->with('success', "Cliente '{$nombreCliente}' eliminado permanentemente.");
     }
 }

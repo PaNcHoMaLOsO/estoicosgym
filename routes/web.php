@@ -257,6 +257,11 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
     Route::patch('clientes/{cliente}/desactivar', [ClienteController::class, 'deactivate'])->name('clientes.deactivate');
     
+    // Papelera de clientes (SoftDeletes)
+    Route::get('clientes/papelera', [ClienteController::class, 'trashed'])->name('clientes.trashed');
+    Route::patch('clientes/{id}/restaurar', [ClienteController::class, 'restore'])->name('clientes.restore');
+    Route::delete('clientes/{id}/eliminar-permanente', [ClienteController::class, 'forceDelete'])->name('clientes.force-delete');
+    
     // RUTA SIMPLE DE DEBUG
     Route::get('clientes/create-simple', function() {
         $convenios = \App\Models\Convenio::where('activo', true)->get();
@@ -270,6 +275,11 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
 
     // CRUD Inscripciones
     Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
+    
+    // Papelera de inscripciones (SoftDeletes)
+    Route::get('inscripciones-papelera', [InscripcionController::class, 'trashed'])->name('inscripciones.trashed');
+    Route::patch('inscripciones/{id}/restaurar', [InscripcionController::class, 'restore'])->name('inscripciones.restore');
+    Route::delete('inscripciones/{id}/eliminar-permanente', [InscripcionController::class, 'forceDelete'])->name('inscripciones.force-delete');
     
     // Pausar y Reanudar inscripciones
     Route::post('inscripciones/{inscripcion}/pausar', [InscripcionController::class, 'pausar'])->name('inscripciones.pausar');
@@ -299,14 +309,32 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     // CRUD Pagos
     Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
     Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');
+    
+    // Papelera de pagos (SoftDeletes)
+    Route::get('pagos-papelera', [PagoController::class, 'trashed'])->name('pagos.trashed');
+    Route::patch('pagos/{id}/restaurar', [PagoController::class, 'restore'])->name('pagos.restore');
+    Route::delete('pagos/{id}/eliminar-permanente', [PagoController::class, 'forceDelete'])->name('pagos.force-delete');
 
     // ===== CONFIGURACIÓN (Sección inferior) =====
     
     // CRUD Convenios
     Route::resource('convenios', ConvenioController::class);
+    Route::patch('convenios/{convenio}/desactivar', [ConvenioController::class, 'deactivate'])->name('convenios.deactivate');
+    Route::patch('convenios/{convenio}/activar', [ConvenioController::class, 'activate'])->name('convenios.activate');
+    
+    // Papelera de convenios (SoftDeletes)
+    Route::get('convenios-papelera', [ConvenioController::class, 'trashed'])->name('convenios.trashed');
+    Route::patch('convenios/{id}/restaurar', [ConvenioController::class, 'restore'])->name('convenios.restore');
+    Route::delete('convenios/{id}/eliminar-permanente', [ConvenioController::class, 'forceDelete'])->name('convenios.force-delete');
 
     // CRUD Membresias (configuración)
     Route::resource('membresias', MembresiaController::class);
+    Route::patch('membresias/{membresia}/activar', [MembresiaController::class, 'activate'])->name('membresias.activate');
+    
+    // Papelera de membresías (SoftDeletes) - Nota: Las membresías solo se desactivan, no van a papelera
+    Route::get('membresias-papelera', [MembresiaController::class, 'trashed'])->name('membresias.trashed');
+    Route::patch('membresias/{id}/restaurar', [MembresiaController::class, 'restore'])->name('membresias.restore');
+    Route::delete('membresias/{id}/eliminar-permanente', [MembresiaController::class, 'forceDelete'])->name('membresias.force-delete');
 
     // CRUD Métodos de Pago
     Route::resource('metodos-pago', MetodoPagoController::class);

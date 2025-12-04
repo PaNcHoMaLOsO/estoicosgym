@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -28,6 +29,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class MotivoDescuento extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'motivos_descuento';
     protected $primaryKey = 'id';
     public $incrementing = false;

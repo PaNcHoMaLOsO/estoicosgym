@@ -97,13 +97,96 @@ class ConvenioController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * Implementa SoftDelete: envía el convenio a la papelera
      */
     public function destroy(Convenio $convenio)
     {
+        // Verificar si tiene clientes activos asociados
+        $clientesActivos = $convenio->clientes()->where('activo', true)->count();
+        
+        if ($clientesActivos > 0) {
+            return redirect()->back()
+                ->with('error', "No se puede eliminar el convenio '{$convenio->nombre}'. Tiene {$clientesActivos} cliente(s) activo(s) asociado(s).");
+        }
+
+        $nombreConvenio = $convenio->nombre;
+        
+        // SoftDelete: enviar a papelera
         $convenio->delete();
 
         return redirect()->route('admin.convenios.index')
-            ->with('success', 'Convenio eliminado exitosamente');
+            ->with('success', "Convenio '{$nombreConvenio}' enviado a la papelera.");
     }
 
+    /**
+     * Desactivar un convenio (cambio de estado, NO eliminación)
+     */
+    public function deactivate(Convenio $convenio)
+    {
+        $convenio->update(['activo' => false]);
+
+        return redirect()->back()
+            ->with('success', "Convenio '{$convenio->nombre}' desactivado exitosamente.");
+    }
+
+    /**
+     * Activar un convenio
+     */
+    public function activate(Convenio $convenio)
+    {
+        $convenio->update(['activo' => true]);
+
+        return redirect()->back()
+            ->with('success', "Convenio '{$convenio->nombre}' activado exitosamente.");
+    }
+
+    // ==========================================
+    // PAPELERA (SoftDeletes)
+    // ==========================================
+
+    /**
+     * Mostrar convenios eliminados (papelera)
+     */
+    public function trashed()
+    {
+        $convenios = Convenio::onlyTrashed()
+            ->withCount(['clientes' => function($q) { $q->withTrashed(); }])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20);
+
+        $totalEliminados = Convenio::onlyTrashed()->count();
+
+        return view('admin.convenios.trashed', compact('convenios', 'totalEliminados'));
+    }
+
+    /**
+     * Restaurar un convenio eliminado
+     */
+    public function restore($id)
+    {
+        $convenio = Convenio::onlyTrashed()->findOrFail($id);
+        $convenio->restore();
+
+        return redirect()->route('admin.convenios.trashed')
+            ->with('success', "Convenio '{$convenio->nombre}' restaurado exitosamente.");
+    }
+
+    /**
+     * Eliminar permanentemente un convenio
+     */
+    public function forceDelete($id)
+    {
+        $convenio = Convenio::onlyTrashed()->findOrFail($id);
+        
+        if ($convenio->clientes()->withTrashed()->exists()) {
+            return redirect()->route('admin.convenios.trashed')
+                ->with('error', 'No se puede eliminar. El convenio tiene clientes asociados.');
+        }
+
+        $nombreConvenio = $convenio->nombre;
+        $convenio->forceDelete();
+
+        return redirect()->route('admin.convenios.trashed')
+            ->with('success', "Convenio '{$nombreConvenio}' eliminado permanentemente.");
+    }
 }

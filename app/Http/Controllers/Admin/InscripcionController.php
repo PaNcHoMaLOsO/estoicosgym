@@ -219,8 +219,27 @@ class InscripcionController extends Controller
         // Obtener datos de membresía y calcular precios
         $membresia = Membresia::findOrFail($validated['id_membresia']);
         $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
+        
+        // VALIDACIÓN: El descuento no puede superar el precio base
+        $descuentoAplicado = (float) ($validated['descuento_aplicado'] ?? 0);
+        if ($descuentoAplicado > $precioBase) {
+            return back()->withErrors([
+                'descuento_aplicado' => 'El descuento ($' . number_format($descuentoAplicado, 0, ',', '.') . ') no puede superar el precio base ($' . number_format($precioBase, 0, ',', '.') . ').'
+            ])->withInput();
+        }
+        
         $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
         $precioFinal = max(0, $precioBase - $descuentoTotal);
+        
+        // VALIDACIÓN: El monto abonado no puede superar el precio final
+        if (!$pagoPendiente && !$pagoMixto && isset($validated['monto_abonado'])) {
+            $montoAbonado = (float) $validated['monto_abonado'];
+            if ($montoAbonado > $precioFinal) {
+                return back()->withErrors([
+                    'monto_abonado' => 'El monto a pagar ($' . number_format($montoAbonado, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
+                ])->withInput();
+            }
+        }
 
         // Calcular fecha de vencimiento
         $fechaInicio = Carbon::parse($validated['fecha_inicio']);
@@ -466,9 +485,13 @@ class InscripcionController extends Controller
             'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
             'max_pausas' => $inscripcion->max_pausas_permitidas ?? 1,
             'pausas_disponibles' => max(0, ($inscripcion->max_pausas_permitidas ?? 1) - ($inscripcion->pausas_realizadas ?? 0)),
-            'fecha_ultima_pausa' => $inscripcion->fecha_pausa ?? null,
-            'dias_restantes_pausa' => $inscripcion->dias_restantes_pausa ?? 0,
-            'duracion_pausa' => $inscripcion->duracion_pausa_dias ?? 7,
+            'fecha_ultima_pausa' => $inscripcion->fecha_pausa_inicio ?? null,
+            'fecha_fin_pausa' => $inscripcion->fecha_pausa_fin ?? null,
+            'dias_restantes_pausa' => $inscripcion->fecha_pausa_fin 
+                ? max(0, (int) now()->diffInDays($inscripcion->fecha_pausa_fin, false)) 
+                : 0,
+            'dias_restantes_al_pausar' => $inscripcion->dias_restantes_al_pausar ?? 0,
+            'pausa_indefinida' => $inscripcion->pausa_indefinida ?? false,
             'razon_pausa' => $inscripcion->razon_pausa ?? null,
         ];
         
@@ -580,24 +603,10 @@ class InscripcionController extends Controller
      */
     public function destroy(Inscripcion $inscripcion)
     {
-        // Validar que no sea una inscripción activa o pausada
-        if (in_array($inscripcion->id_estado, [100, 101])) { // Activa o Pausada
-            return redirect()->route('admin.inscripciones.show', $inscripcion)
-                ->with('error', 'No se puede eliminar una inscripción activa o pausada. Primero debe cancelarla o esperar a que venza.');
-        }
-        
-        // Validar que no tenga pagos asociados
-        if ($inscripcion->pagos()->count() > 0) {
-            return redirect()->route('admin.inscripciones.show', $inscripcion)
-                ->with('error', 'No se puede eliminar esta inscripción porque tiene ' . $inscripcion->pagos()->count() . ' pago(s) asociado(s). Elimine los pagos primero o considere cancelar la inscripción en lugar de eliminarla.');
-        }
-        
-        // Solo eliminar si pasó todas las validaciones
-        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
-        $inscripcion->delete();
-
-        return redirect()->route('admin.inscripciones.index')
-            ->with('success', "Inscripción de {$clienteNombre} eliminada exitosamente.");
+        // Las inscripciones NO se pueden eliminar por razones de auditoría e historial
+        // Solo se puede cambiar su estado (cancelar, vencer, etc.)
+        return redirect()->back()
+            ->with('error', 'Las inscripciones no se pueden eliminar. Use las opciones de cambio de estado (cancelar, pausar, etc.) para gestionar inscripciones.');
     }
 
     /**
@@ -684,12 +693,15 @@ class InscripcionController extends Controller
             $diasEnPausa = $inscripcion->fecha_pausa_inicio 
                 ? $inscripcion->fecha_pausa_inicio->diffInDays(now()) 
                 : 0;
+                
+            // Obtener días restantes guardados antes de reanudar
+            $diasGuardados = $inscripcion->dias_restantes_al_pausar ?? 0;
 
             $inscripcion->reanudar();
 
             return response()->json([
                 'success' => true,
-                'message' => "Membresía reanudada. Se agregaron {$diasEnPausa} días al vencimiento.",
+                'message' => "Membresía reanudada. Estuvo pausada {$diasEnPausa} días. Se restauraron {$diasGuardados} días de membresía.",
             ]);
         } catch (\Exception $e) {
             Log::error('Error al reanudar inscripción: ' . $e->getMessage());
@@ -1289,5 +1301,64 @@ class InscripcionController extends Controller
                 'message' => 'Error al procesar el traspaso: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    // ==========================================
+    // PAPELERA (SoftDeletes)
+    // ==========================================
+
+    /**
+     * Mostrar inscripciones eliminadas (papelera)
+     */
+    public function trashed()
+    {
+        $inscripciones = Inscripcion::onlyTrashed()
+            ->with(['cliente', 'membresia', 'estado'])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20);
+
+        $totalEliminadas = Inscripcion::onlyTrashed()->count();
+
+        return view('admin.inscripciones.trashed', compact('inscripciones', 'totalEliminadas'));
+    }
+
+    /**
+     * Restaurar una inscripción eliminada
+     */
+    public function restore($id)
+    {
+        $inscripcion = Inscripcion::onlyTrashed()->findOrFail($id);
+        
+        // Verificar que el cliente no esté eliminado
+        if ($inscripcion->cliente && $inscripcion->cliente->trashed()) {
+            return redirect()->route('admin.inscripciones.trashed')
+                ->with('error', 'No se puede restaurar la inscripción porque el cliente está eliminado. Restaure primero al cliente.');
+        }
+
+        $inscripcion->restore();
+
+        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
+        return redirect()->route('admin.inscripciones.trashed')
+            ->with('success', "Inscripción de {$clienteNombre} restaurada exitosamente.");
+    }
+
+    /**
+     * Eliminar permanentemente una inscripción
+     */
+    public function forceDelete($id)
+    {
+        $inscripcion = Inscripcion::onlyTrashed()->findOrFail($id);
+        
+        // Verificar que no tenga pagos
+        if ($inscripcion->pagos()->withTrashed()->exists()) {
+            return redirect()->route('admin.inscripciones.trashed')
+                ->with('error', 'No se puede eliminar permanentemente. La inscripción tiene pagos asociados. Elimine primero los pagos.');
+        }
+
+        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
+        $inscripcion->forceDelete();
+
+        return redirect()->route('admin.inscripciones.trashed')
+            ->with('success', "Inscripción de {$clienteNombre} eliminada permanentemente.");
     }
 }

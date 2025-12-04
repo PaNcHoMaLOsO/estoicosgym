@@ -15,6 +15,7 @@ return new class extends Migration
             $table->boolean('requiere_comprobante')->default(false)->comment('Para futuro: pago online');
             $table->boolean('activo')->default(true);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('activo');
         });

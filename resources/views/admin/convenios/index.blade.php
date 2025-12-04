@@ -7,8 +7,11 @@
         <div class="col-sm-6">
             <h1>Convenios</h1>
         </div>
-        <div class="col-sm-6">
-            <a href="{{ route('admin.convenios.create') }}" class="btn btn-primary float-right">
+        <div class="col-sm-6 text-right">
+            <a href="{{ route('admin.convenios.trashed') }}" class="btn btn-secondary" title="Ver papelera">
+                <i class="fas fa-trash-alt"></i>
+            </a>
+            <a href="{{ route('admin.convenios.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Nuevo Convenio
             </a>
         </div>
