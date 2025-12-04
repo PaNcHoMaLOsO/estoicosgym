@@ -1672,7 +1672,7 @@ $(document).ready(function() {
                     error: function(xhr) {
                         Swal.fire({
                             title: 'Error',
-                            text: xhr.responseJSON?.error || 'No se pudo pausar la inscripción',
+                            text: xhr.responseJSON?.message || xhr.responseJSON?.error || 'No se pudo pausar la inscripción',
                             icon: 'error',
                             customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false
@@ -1714,7 +1714,7 @@ $(document).ready(function() {
                     error: function(xhr) {
                         Swal.fire({
                             title: 'Error',
-                            text: xhr.responseJSON?.error || 'No se pudo reanudar la inscripción',
+                            text: xhr.responseJSON?.message || xhr.responseJSON?.error || 'No se pudo reanudar la inscripción',
                             icon: 'error',
                             customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm' },
                             buttonsStyling: false

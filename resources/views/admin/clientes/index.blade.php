@@ -256,14 +256,14 @@
     .btn-ver-papelera {
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
+        gap: 8px;
+        padding: 12px 20px;
         background: rgba(239, 68, 68, 0.2);
         color: #fff;
         border: 2px solid rgba(239, 68, 68, 0.4);
         border-radius: 12px;
-        font-size: 18px;
+        font-size: 14px;
+        font-weight: 600;
         text-decoration: none;
         transition: all 0.3s ease;
         backdrop-filter: blur(5px);

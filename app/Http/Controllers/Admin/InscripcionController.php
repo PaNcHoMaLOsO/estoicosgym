@@ -712,6 +712,16 @@ class InscripcionController extends Controller
     {
         $indefinida = $request->boolean('indefinida', false);
         
+        // Aceptar tanto 'dias' como 'dias_pausa' para compatibilidad
+        $diasInput = $request->input('dias_pausa') ?? $request->input('dias');
+        $razonInput = $request->input('razon_pausa') ?? $request->input('razon');
+        
+        // Merge para validación
+        $request->merge([
+            'dias' => $diasInput,
+            'razon' => $razonInput
+        ]);
+        
         $rules = [
             'razon' => 'nullable|string|max:500',
             'indefinida' => 'nullable|boolean',
@@ -719,7 +729,7 @@ class InscripcionController extends Controller
         
         // Si no es indefinida, días es requerido
         if (!$indefinida) {
-            $rules['dias'] = 'required|in:7,14,30';
+            $rules['dias'] = 'required|integer|min:1|max:90';
         } else {
             // Para pausa indefinida, la razón es obligatoria
             $rules['razon'] = 'required|string|min:5|max:500';
