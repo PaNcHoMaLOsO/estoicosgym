@@ -347,6 +347,9 @@ class InscripcionController extends Controller
             $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
         }
 
+        // Invalidar token para prevenir doble envío
+        $this->invalidateFormToken($request, 'inscripcion_create');
+
         return redirect()->route('admin.inscripciones.show', $inscripcion)
             ->with('success', 'Inscripción creada exitosamente' . ($pagoPendiente ? ' - Pago pendiente de registrar' : ' con pago registrado'));
     }
@@ -667,6 +670,9 @@ class InscripcionController extends Controller
         $validated['precio_final'] = $validated['precio_base'] - ($validated['descuento_aplicado'] ?? 0);
 
         $inscripcion->update($validated);
+
+        // Invalidar token para prevenir doble envío
+        $this->invalidateFormToken($request, 'inscripcion_update_' . $inscripcion->id);
 
         return redirect()->route('admin.inscripciones.show', $inscripcion)
             ->with('success', 'Inscripción actualizada exitosamente');

@@ -427,6 +427,9 @@ class PagoController extends Controller
         
         $pago = Pago::create($datosPago);
 
+        // Invalidar token para prevenir doble envío
+        $this->invalidateFormToken($request, 'pago_create');
+
         return redirect()->route('admin.pagos.show', $pago->uuid)
             ->with('success', "Pago registrado exitosamente ({$tipoPago}). Verifica los detalles abajo.");
     }
@@ -532,6 +535,9 @@ class PagoController extends Controller
 
         // Recargar relaciones para mostrar datos actualizados
         $pago->refresh();
+
+        // Invalidar token para prevenir doble envío
+        $this->invalidateFormToken($request, 'pago_update_' . $pago->id);
 
         return redirect()->route('admin.pagos.show', $pago)
             ->with('success', 'Pago actualizado exitosamente. El estado se asignó automáticamente: ' . $pago->estado->nombre);

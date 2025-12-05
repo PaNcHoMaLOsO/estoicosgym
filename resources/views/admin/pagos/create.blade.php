@@ -1148,6 +1148,9 @@ $(document).ready(function() {
                     }
                 });
                 
+                // Desactivar botón para evitar doble envío
+                $('#btnRegistrar').prop('disabled', true);
+                
                 // Enviar formulario
                 this.submit();
             }
