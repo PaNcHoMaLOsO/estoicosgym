@@ -610,22 +610,46 @@
                     </div>
                     <div class="section-body">
 
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="tipo_pago">
-                                    <i class="fas fa-money-check-alt"></i> Tipo de Pago <span class="required">*</span>
+                        <!-- Tipos de pago visuales -->
+                        <div class="tipo-pago-grid">
+                            <div class="tipo-pago-card">
+                                <input type="radio" name="tipo_pago" id="tipo_completo" value="completo" {{ old('tipo_pago', 'completo') == 'completo' ? 'checked' : '' }}>
+                                <label for="tipo_completo">
+                                    <div class="tipo-pago-icono"><i class="fas fa-check-circle"></i></div>
+                                    <span class="tipo-pago-nombre">Pago Completo</span>
+                                    <span class="tipo-pago-desc">100% del total</span>
                                 </label>
-                                <select class="form-control @error('tipo_pago') is-invalid @enderror" 
-                                        id="tipo_pago" name="tipo_pago" required>
-                                    <option value="completo" {{ old('tipo_pago', 'completo') == 'completo' ? 'selected' : '' }}>Pago Completo</option>
-                                    <option value="parcial" {{ old('tipo_pago') == 'parcial' ? 'selected' : '' }}>Abono Parcial</option>
-                                    <option value="pendiente" {{ old('tipo_pago') == 'pendiente' ? 'selected' : '' }}>Dejar Pendiente</option>
-                                    <option value="mixto" {{ old('tipo_pago') == 'mixto' ? 'selected' : '' }}>Pago Mixto</option>
-                                </select>
-                                @error('tipo_pago')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
                             </div>
+                            <div class="tipo-pago-card">
+                                <input type="radio" name="tipo_pago" id="tipo_parcial" value="parcial" {{ old('tipo_pago') == 'parcial' ? 'checked' : '' }}>
+                                <label for="tipo_parcial">
+                                    <div class="tipo-pago-icono"><i class="fas fa-coins"></i></div>
+                                    <span class="tipo-pago-nombre">Pago Parcial</span>
+                                    <span class="tipo-pago-desc">Abono inicial</span>
+                                </label>
+                            </div>
+                            <div class="tipo-pago-card">
+                                <input type="radio" name="tipo_pago" id="tipo_mixto" value="mixto" {{ old('tipo_pago') == 'mixto' ? 'checked' : '' }}>
+                                <label for="tipo_mixto">
+                                    <div class="tipo-pago-icono"><i class="fas fa-random"></i></div>
+                                    <span class="tipo-pago-nombre">Pago Mixto</span>
+                                    <span class="tipo-pago-desc">2 métodos</span>
+                                </label>
+                            </div>
+                            <div class="tipo-pago-card">
+                                <input type="radio" name="tipo_pago" id="tipo_pendiente" value="pendiente" {{ old('tipo_pago') == 'pendiente' ? 'checked' : '' }}>
+                                <label for="tipo_pendiente">
+                                    <div class="tipo-pago-icono"><i class="fas fa-clock"></i></div>
+                                    <span class="tipo-pago-nombre">Pendiente</span>
+                                    <span class="tipo-pago-desc">Pagar después</span>
+                                </label>
+                            </div>
+                        </div>
+                        @error('tipo_pago')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+
+                        <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="fecha_pago">
                                     <i class="fas fa-calendar-check"></i> Fecha de Pago <span class="required">*</span>
@@ -1992,6 +2016,101 @@
 
     .mixto-total-row.diferencia.ok {
         color: var(--success);
+    }
+
+    /* ============================================
+       TIPOS DE PAGO - DISEÑO VISUAL
+       ============================================ */
+    .tipo-pago-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 992px) {
+        .tipo-pago-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .tipo-pago-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .tipo-pago-card {
+        position: relative;
+    }
+
+    .tipo-pago-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .tipo-pago-card label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 0.75rem;
+        text-align: center;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        background: var(--bg-light);
+        min-height: 110px;
+    }
+
+    .tipo-pago-card label:hover {
+        border-color: var(--primary);
+        background: rgba(26, 26, 46, 0.03);
+        transform: translateY(-2px);
+    }
+
+    .tipo-pago-card input[type="radio"]:checked + label {
+        border-color: var(--accent);
+        background: linear-gradient(135deg, rgba(233, 69, 96, 0.08) 0%, rgba(233, 69, 96, 0.03) 100%);
+        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.15);
+    }
+
+    .tipo-pago-card input[type="radio"]:checked + label .tipo-pago-icono {
+        background: var(--accent);
+        color: #fff;
+        transform: scale(1.1);
+    }
+
+    .tipo-pago-icono {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.25s ease;
+    }
+
+    .tipo-pago-nombre {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .tipo-pago-desc {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        line-height: 1.3;
     }
 
     /* ============================================
@@ -3367,8 +3486,8 @@ $(document).ready(function() {
         calcularPrecios();
     });
 
-    // Tipo de pago
-    $('#tipo_pago').on('change', function() {
+    // Tipo de pago - Usando radio buttons
+    $('input[name="tipo_pago"]').on('change', function() {
         const tipo = $(this).val();
         
         if (tipo === 'parcial') {
@@ -3538,7 +3657,7 @@ $(document).ready(function() {
 
     // Actualizar monto pendiente en la ficha
     function updateFichaPendiente() {
-        const tipoPago = $('#tipo_pago').val();
+        const tipoPago = $('input[name="tipo_pago"]:checked').val();
         const montoAbonado = parseInt($('#monto_abonado').val()) || 0;
 
         if (tipoPago === 'completo') {
@@ -3566,9 +3685,9 @@ $(document).ready(function() {
         }
         
         // Restaurar tipo de pago y sus campos
-        const tipoPagoGuardado = $('#tipo_pago').val();
+        const tipoPagoGuardado = $('input[name="tipo_pago"]:checked').val();
         if (tipoPagoGuardado) {
-            $('#tipo_pago').trigger('change');
+            $('input[name="tipo_pago"]:checked').trigger('change');
             
             // Si es mixto, actualizar la suma
             if (tipoPagoGuardado === 'mixto') {
