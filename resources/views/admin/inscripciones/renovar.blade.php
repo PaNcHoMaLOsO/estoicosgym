@@ -178,8 +178,9 @@
         border-radius: var(--radius-md);
         padding: 0.75rem 1rem;
         transition: all 0.2s;
-        font-size: 0.95rem;
+        font-size: 1rem;
         background-color: #fff;
+        color: var(--gray-800);
     }
 
     .form-control:focus {
@@ -195,11 +196,15 @@
         background-repeat: no-repeat;
         background-size: 1.5em 1.5em;
         padding-right: 2.5rem;
+        font-size: 1rem;
+        line-height: 1.4;
+        min-height: 48px;
     }
 
     select.form-control option {
-        padding: 10px;
-        font-size: 0.95rem;
+        padding: 12px;
+        font-size: 1rem;
+        color: var(--gray-800);
     }
 
     .precio-box {
