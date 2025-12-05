@@ -1301,7 +1301,8 @@
                     <div class="col-md-6 mb-3">
                         <label for="fecha_pago">Fecha de Pago <span class="text-danger">*</span></label>
                         <input type="date" class="form-control form-control-lg" id="fecha_pago" name="fecha_pago" 
-                               value="{{ now()->format('Y-m-d') }}">
+                               value="{{ now()->format('Y-m-d') }}" readonly
+                               style="background-color: #f8f9fa; cursor: not-allowed;">
                     </div>
                 </div>
 

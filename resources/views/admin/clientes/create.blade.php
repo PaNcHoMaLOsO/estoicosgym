@@ -655,8 +655,9 @@
                                     <i class="fas fa-calendar-check"></i> Fecha de Pago <span class="required">*</span>
                                 </label>
                                 <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
-                                       id="fecha_pago" name="fecha_pago" required
-                                       value="{{ old('fecha_pago', date('Y-m-d')) }}">
+                                       id="fecha_pago" name="fecha_pago" required readonly
+                                       value="{{ old('fecha_pago', date('Y-m-d')) }}"
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
                                 @error('fecha_pago')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

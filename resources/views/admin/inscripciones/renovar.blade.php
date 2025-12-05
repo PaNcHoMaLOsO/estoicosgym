@@ -449,11 +449,17 @@
                         <label><i class="fas fa-dumbbell"></i> Membresía</label>
                         <select name="id_membresia" id="id_membresia" class="form-control" required>
                             @foreach($membresias as $membresia)
+                            @php
+                                $precioActivo = $membresia->precios->where('activo', true)->first();
+                                $precioNormal = $precioActivo->precio_normal ?? 0;
+                                $precioConvenio = $precioActivo->precio_convenio ?? null;
+                            @endphp
                             <option value="{{ $membresia->id }}" 
-                                data-precio="{{ $membresia->precios->where('activo', true)->first()->precio_normal ?? 0 }}"
+                                data-precio="{{ $precioNormal }}"
+                                data-precio-convenio="{{ $precioConvenio ?? '' }}"
                                 data-duracion="{{ $membresia->duracion_dias }}"
                                 {{ $inscripcion->id_membresia == $membresia->id ? 'selected' : '' }}>
-                                {{ $membresia->nombre }} - ${{ number_format($membresia->precios->where('activo', true)->first()->precio_normal ?? 0, 0, ',', '.') }}
+                                {{ $membresia->nombre }} - ${{ number_format($precioNormal, 0, ',', '.') }}@if($precioConvenio) (Conv: ${{ number_format($precioConvenio, 0, ',', '.') }})@endif
                             </option>
                             @endforeach
                         </select>
@@ -504,12 +510,16 @@
                 <!-- Resumen de Precios -->
                 <div class="precio-box">
                     <h5><i class="fas fa-calculator"></i> Resumen de Pago</h5>
+                    <div class="precio-row" id="row-convenio-aplicado" style="display: none;">
+                        <span class="precio-label"><i class="fas fa-handshake text-success"></i> Precio Convenio Aplicado</span>
+                        <span class="precio-valor text-success" id="display-precio-convenio-badge">✓</span>
+                    </div>
                     <div class="precio-row">
                         <span class="precio-label">Precio Base</span>
                         <span class="precio-valor" id="display-precio-base">$0</span>
                     </div>
                     <div class="precio-row" id="row-descuento" style="display: none;">
-                        <span class="precio-label">Descuento</span>
+                        <span class="precio-label">Descuento Adicional</span>
                         <span class="precio-valor text-danger" id="display-descuento">-$0</span>
                     </div>
                     <div class="precio-row precio-total">
@@ -572,7 +582,7 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-calendar"></i> Fecha de Pago</label>
-                            <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ date('Y-m-d') }}">
+                            <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ date('Y-m-d') }}" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                         </div>
                     </div>
                 </div>
@@ -614,7 +624,7 @@
                     <div class="form-row-grid" style="margin-top: 1rem;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label><i class="fas fa-calendar"></i> Fecha de Pago</label>
-                            <input type="date" name="fecha_pago_mixto" id="fecha_pago_mixto" class="form-control" value="{{ date('Y-m-d') }}">
+                            <input type="date" name="fecha_pago_mixto" id="fecha_pago_mixto" class="form-control" value="{{ date('Y-m-d') }}" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label><i class="fas fa-calculator"></i> Total Mixto</label>
@@ -659,7 +669,23 @@ $(document).ready(function() {
     // Calcular precios
     function calcularPrecios() {
         const membresiaOption = $('#id_membresia option:selected');
-        precioBase = parseFloat(membresiaOption.data('precio')) || 0;
+        const tieneConvenio = $('#id_convenio').val() !== '';
+        const precioNormal = parseFloat(membresiaOption.data('precio')) || 0;
+        const precioConvenio = membresiaOption.data('precio-convenio');
+        
+        // Si tiene convenio y existe precio_convenio, usar ese precio
+        if (tieneConvenio && precioConvenio && precioConvenio !== '') {
+            precioBase = parseFloat(precioConvenio);
+        } else {
+            precioBase = precioNormal;
+        }
+        
+        // Mostrar/ocultar indicador de precio convenio
+        if (tieneConvenio && precioConvenio && precioConvenio !== '') {
+            $('#row-convenio-aplicado').show();
+        } else {
+            $('#row-convenio-aplicado').hide();
+        }
         
         let descuento = parseFloat($('#descuento_aplicado').val()) || 0;
         
@@ -717,7 +743,7 @@ $(document).ready(function() {
     }
 
     // Eventos
-    $('#id_membresia, #descuento_aplicado').on('change input', calcularPrecios);
+    $('#id_membresia, #descuento_aplicado, #id_convenio').on('change input', calcularPrecios);
     $('#fecha_inicio').on('change', calcularFechaTermino);
 
     // Calcular total mixto

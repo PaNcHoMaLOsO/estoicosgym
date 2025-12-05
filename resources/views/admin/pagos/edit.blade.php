@@ -682,7 +682,8 @@
                                 <input type="date" class="form-control @error('fecha_pago') is-invalid @enderror" 
                                        name="fecha_pago" id="fecha_pago"
                                        value="{{ old('fecha_pago', $pago->fecha_pago ? $pago->fecha_pago->format('Y-m-d') : '') }}" 
-                                       max="{{ date('Y-m-d') }}" required>
+                                       max="{{ date('Y-m-d') }}" required readonly
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
                                 @error('fecha_pago')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
