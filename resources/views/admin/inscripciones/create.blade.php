@@ -1556,6 +1556,11 @@ $(document).ready(function() {
     let precioBase = 0;
     let precioFinal = 0;
 
+    // Función global para formatear números (siempre enteros)
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    }
+
     // ========== BUSCAR CLIENTE ==========
     $('#buscarCliente').on('keyup', function() {
         const busqueda = $(this).val().toLowerCase();
@@ -1604,7 +1609,7 @@ $(document).ready(function() {
         if ($('#id_convenio').val() && precioConvenio > 0) {
             descuentoConvenio = precioBase - precioConvenio;
             $('#row-descuento-convenio').show();
-            $('#display-descuento-convenio').text('-$' + descuentoConvenio.toLocaleString('es-CL'));
+            $('#display-descuento-convenio').text('-$' + formatNumber(descuentoConvenio));
         } else {
             $('#row-descuento-convenio').hide();
             descuentoConvenio = 0;
@@ -1613,21 +1618,21 @@ $(document).ready(function() {
         // Descuento manual
         if (descuentoManual > 0) {
             $('#row-descuento-manual').show();
-            $('#display-descuento-manual').text('-$' + descuentoManual.toLocaleString('es-CL'));
+            $('#display-descuento-manual').text('-$' + formatNumber(descuentoManual));
         } else {
             $('#row-descuento-manual').hide();
         }
 
         precioFinal = Math.max(0, precioBase - descuentoConvenio - descuentoManual);
 
-        $('#display-precio-base').text('$' + precioBase.toLocaleString('es-CL'));
-        $('#display-precio-final').text('$' + precioFinal.toLocaleString('es-CL'));
+        $('#display-precio-base').text('$' + formatNumber(precioBase));
+        $('#display-precio-final').text('$' + formatNumber(precioFinal));
         
         // Actualizar paso 3
-        $('#paso3-precio-total').text('$' + precioFinal.toLocaleString('es-CL'));
-        $('#mixto-total-pagar').text('$' + precioFinal.toLocaleString('es-CL'));
-        $('#total-pendiente-display').text('$' + precioFinal.toLocaleString('es-CL'));
-        $('#monto_abonado').val(precioFinal);
+        $('#paso3-precio-total').text('$' + formatNumber(precioFinal));
+        $('#mixto-total-pagar').text('$' + formatNumber(precioFinal));
+        $('#total-pendiente-display').text('$' + formatNumber(precioFinal));
+        $('#monto_abonado').val(Math.round(precioFinal));
     }
 
     // ========== CALCULAR FECHA TÉRMINO ==========
@@ -1673,9 +1678,9 @@ $(document).ready(function() {
             $('#pago_pendiente').val('0');
             $('#label-monto').text('Monto Total');
             $('#hint-monto').text('');
-            $('#monto_abonado').val(precioFinal);
+            $('#monto_abonado').val(Math.round(precioFinal));
             $('#seccion-restante').hide();
-            mostrarInfoPago('success', '<i class="fas fa-check-circle"></i> Pago completo - Total: $' + precioFinal.toLocaleString('es-CL'));
+            mostrarInfoPago('success', '<i class="fas fa-check-circle"></i> Pago completo - Total: $' + formatNumber(precioFinal));
         } 
         else if (tipo === 'abono') {
             $('#seccion-pago-simple').show();
@@ -1684,7 +1689,7 @@ $(document).ready(function() {
             $('#hint-monto').text('Ingrese el monto que abona el cliente');
             $('#monto_abonado').val('');
             $('#seccion-restante').show();
-            mostrarInfoPago('info', '<i class="fas fa-info-circle"></i> Pago parcial - Total a cubrir: $' + precioFinal.toLocaleString('es-CL'));
+            mostrarInfoPago('info', '<i class="fas fa-info-circle"></i> Pago parcial - Total a cubrir: $' + formatNumber(precioFinal));
         } 
         else if (tipo === 'pendiente') {
             $('#seccion-pendiente').show();
@@ -1747,8 +1752,8 @@ $(document).ready(function() {
         }
 
         // Actualizar displays
-        $('#mixto-total-pagar').text('$' + precioFinal.toLocaleString('es-CL'));
-        $('#mixto-total-ingresado').text('$' + totalIngresado.toLocaleString('es-CL'));
+        $('#mixto-total-pagar').text('$' + formatNumber(precioFinal));
+        $('#mixto-total-ingresado').text('$' + formatNumber(totalIngresado));
         
         const boxDiferencia = $('#mixto-diferencia-box');
         boxDiferencia.removeClass('ok error');
@@ -1757,13 +1762,13 @@ $(document).ready(function() {
             $('#mixto-diferencia').text('$0 ✓').css('color', 'var(--success)');
             boxDiferencia.addClass('ok');
         } else if (diferencia > 0) {
-            $('#mixto-diferencia').text('-$' + diferencia.toLocaleString('es-CL')).css('color', 'var(--warning)');
+            $('#mixto-diferencia').text('-$' + formatNumber(diferencia)).css('color', 'var(--warning)');
         } else {
-            $('#mixto-diferencia').text('+$' + Math.abs(diferencia).toLocaleString('es-CL')).css('color', 'var(--accent)');
+            $('#mixto-diferencia').text('+$' + formatNumber(Math.abs(diferencia))).css('color', 'var(--accent)');
         }
 
         // Guardar en hidden fields
-        $('#total-mixto').val(totalIngresado);
+        $('#total-mixto').val(Math.round(totalIngresado));
         $('#detalle-pagos-mixto').val(JSON.stringify(detalles));
     }
 
@@ -1773,16 +1778,16 @@ $(document).ready(function() {
         
         // No permitir más del precio final
         if (monto > precioFinal) {
-            monto = precioFinal;
-            $(this).val(precioFinal);
+            monto = Math.round(precioFinal);
+            $(this).val(monto);
         }
         
         const restante = Math.max(0, precioFinal - monto);
-        $('#monto-restante-display').text('$' + restante.toLocaleString('es-CL'));
+        $('#monto-restante-display').text('$' + formatNumber(restante));
         
         // Actualizar alerta
         if (monto > 0 && monto < precioFinal) {
-            mostrarInfoPago('info', `<i class="fas fa-coins"></i> Abono: $${monto.toLocaleString('es-CL')} | Restante: $${restante.toLocaleString('es-CL')}`);
+            mostrarInfoPago('info', `<i class="fas fa-coins"></i> Abono: $${formatNumber(monto)} | Restante: $${formatNumber(restante)}`);
         } else if (monto >= precioFinal) {
             mostrarInfoPago('success', '<i class="fas fa-check-circle"></i> El monto cubre el total');
         }
@@ -1955,11 +1960,11 @@ $(document).ready(function() {
             }
 
             // Verificar que la suma sea igual al total
-            if (totalMixto !== precioFinal) {
+            if (totalMixto !== Math.round(precioFinal)) {
                 SwalEstoicos.fire({
                     icon: 'warning',
                     title: 'Montos no coinciden',
-                    text: `La suma ($${totalMixto.toLocaleString('es-CL')}) debe ser igual al total ($${precioFinal.toLocaleString('es-CL')})`,
+                    text: `La suma ($${formatNumber(totalMixto)}) debe ser igual al total ($${formatNumber(precioFinal)})`,
                     confirmButtonText: '<i class="fas fa-check"></i> Entendido'
                 });
                 return false;
@@ -2005,7 +2010,7 @@ $(document).ready(function() {
                     <p style="margin: 8px 0;"><i class="fas fa-dumbbell text-warning"></i> <strong>Membresía:</strong> ${$('#id_membresia option:selected').text().split(' - ')[0]}</p>
                     <p style="margin: 8px 0;"><i class="fas fa-credit-card text-primary"></i> <strong>Tipo Pago:</strong> ${tipoPagoTexto}</p>
                     <hr style="border-color: rgba(255,255,255,0.2); margin: 12px 0;">
-                    <p style="margin: 8px 0; font-size: 1.2em;"><i class="fas fa-dollar-sign text-success"></i> <strong>Total:</strong> <span style="color: #00bf8e;">$${precioFinal.toLocaleString('es-CL')}</span></p>
+                    <p style="margin: 8px 0; font-size: 1.2em;"><i class="fas fa-dollar-sign text-success"></i> <strong>Total:</strong> <span style="color: #00bf8e;">$${formatNumber(precioFinal)}</span></p>
                 </div>
             `,
             showCancelButton: true,

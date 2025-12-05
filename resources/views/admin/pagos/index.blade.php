@@ -57,43 +57,43 @@
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card stat-total">
-            <div class="stat-icon">
-                <i class="fas fa-receipt"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-number" id="statTotalPagos">{{ $totalPagos ?? 0 }}</span>
-                <span class="stat-label">Total Pagos</span>
-            </div>
-        </div>
-        
-        <div class="stat-card stat-recaudado">
-            <div class="stat-icon">
-                <i class="fas fa-coins"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-number" id="statRecaudado">${{ number_format($estadisticas['total_recaudado'] ?? 0, 0, ',', '.') }}</span>
-                <span class="stat-label">Recaudado</span>
-            </div>
-        </div>
-        
         <div class="stat-card stat-completados">
             <div class="stat-icon">
                 <i class="fas fa-check-double"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="statCompletados">{{ $estadisticas['completados'] ?? 0 }}</span>
-                <span class="stat-label">Completados</span>
+                <span class="stat-number" id="statCompletados">{{ $estadisticas['pagados'] ?? 0 }}</span>
+                <span class="stat-label">Pagados</span>
+            </div>
+        </div>
+        
+        <div class="stat-card stat-parciales">
+            <div class="stat-icon">
+                <i class="fas fa-adjust"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number" id="statParciales">{{ $estadisticas['parciales'] ?? 0 }}</span>
+                <span class="stat-label">Parciales</span>
             </div>
         </div>
         
         <div class="stat-card stat-pendientes">
             <div class="stat-icon">
-                <i class="fas fa-hourglass-half"></i>
+                <i class="fas fa-clock"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="statParciales">{{ $estadisticas['parciales'] ?? 0 }}</span>
-                <span class="stat-label">Parciales</span>
+                <span class="stat-number" id="statPendientes">{{ $estadisticas['pendientes'] ?? 0 }}</span>
+                <span class="stat-label">Pendientes</span>
+            </div>
+        </div>
+        
+        <div class="stat-card stat-vencidos">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number" id="statVencidos">{{ $estadisticas['vencidos'] ?? 0 }}</span>
+                <span class="stat-label">Vencidos</span>
             </div>
         </div>
     </div>
@@ -112,7 +112,13 @@
                 <i class="fas fa-check-circle"></i> Pagados
             </button>
             <button class="filter-btn" data-filter="parcial">
-                <i class="fas fa-hourglass-half"></i> Parciales
+                <i class="fas fa-adjust"></i> Parciales
+            </button>
+            <button class="filter-btn" data-filter="pendiente">
+                <i class="fas fa-clock"></i> Pendientes
+            </button>
+            <button class="filter-btn" data-filter="vencido">
+                <i class="fas fa-exclamation-triangle"></i> Vencidos
             </button>
         </div>
     </div>
@@ -432,15 +438,29 @@
     .stat-recaudado .stat-icon i { color: #00896b !important; }
     .stat-recaudado .stat-number { color: var(--success); }
     
-    .stat-completados { border-left-color: var(--warning); }
-    .stat-completados .stat-icon { background: rgba(240, 165, 0, 0.2); color: #c78500; }
-    .stat-completados .stat-icon i { color: #c78500 !important; }
-    .stat-completados .stat-number { color: var(--warning); }
+    /* Pagados - Verde */
+    .stat-completados { border-left-color: #22c55e; }
+    .stat-completados .stat-icon { background: rgba(34, 197, 94, 0.2); color: #15803d; }
+    .stat-completados .stat-icon i { color: #15803d !important; }
+    .stat-completados .stat-number { color: #22c55e; }
     
-    .stat-pendientes { border-left-color: var(--accent); }
-    .stat-pendientes .stat-icon { background: rgba(233, 69, 96, 0.2); color: #c9304c; }
-    .stat-pendientes .stat-icon i { color: #c9304c !important; }
-    .stat-pendientes .stat-number { color: var(--accent); }
+    /* Parciales - Amarillo */
+    .stat-parciales { border-left-color: #eab308; }
+    .stat-parciales .stat-icon { background: rgba(234, 179, 8, 0.2); color: #a16207; }
+    .stat-parciales .stat-icon i { color: #a16207 !important; }
+    .stat-parciales .stat-number { color: #ca8a04; }
+    
+    /* Pendientes - Naranja */
+    .stat-pendientes { border-left-color: #f97316; }
+    .stat-pendientes .stat-icon { background: rgba(249, 115, 22, 0.2); color: #c2410c; }
+    .stat-pendientes .stat-icon i { color: #c2410c !important; }
+    .stat-pendientes .stat-number { color: #ea580c; }
+    
+    /* Vencidos - Rojo */
+    .stat-vencidos { border-left-color: #ef4444; }
+    .stat-vencidos .stat-icon { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }
+    .stat-vencidos .stat-icon i { color: #b91c1c !important; }
+    .stat-vencidos .stat-number { color: #dc2626; }
 
     /* ===== FILTERS SECTION ===== */
     .filters-section {
@@ -662,14 +682,19 @@
         text-transform: uppercase;
     }
     .estado-badge.pagado {
-        background: rgba(0, 191, 142, 0.12);
-        color: var(--success);
-        border: 1px solid rgba(0, 191, 142, 0.3);
+        background: rgba(34, 197, 94, 0.12);
+        color: #15803d;
+        border: 1px solid rgba(34, 197, 94, 0.3);
     }
     .estado-badge.parcial {
-        background: rgba(240, 165, 0, 0.12);
-        color: var(--warning);
-        border: 1px solid rgba(240, 165, 0, 0.3);
+        background: rgba(234, 179, 8, 0.12);
+        color: #a16207;
+        border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+    .estado-badge.pendiente {
+        background: rgba(249, 115, 22, 0.12);
+        color: #c2410c;
+        border: 1px solid rgba(249, 115, 22, 0.3);
     }
     .estado-badge.traspasado {
         background: rgba(124, 58, 237, 0.12);
@@ -677,9 +702,9 @@
         border: 1px solid rgba(124, 58, 237, 0.3);
     }
     .estado-badge.vencido {
-        background: rgba(220, 53, 69, 0.12);
-        color: #dc3545;
-        border: 1px solid rgba(220, 53, 69, 0.3);
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
     .estado-badge.cancelado {
         background: rgba(108, 117, 125, 0.12);
@@ -967,10 +992,10 @@ $(document).ready(function() {
     
     // Estadísticas del servidor (valores reales totales)
     const serverStats = {
-        totalPagos: {{ $totalPagos ?? 0 }},
-        totalRecaudado: {{ $estadisticas['total_recaudado'] ?? 0 }},
-        completados: {{ $estadisticas['completados'] ?? 0 }},
-        parciales: {{ $estadisticas['parciales'] ?? 0 }}
+        pagados: {{ $estadisticas['pagados'] ?? 0 }},
+        parciales: {{ $estadisticas['parciales'] ?? 0 }},
+        pendientes: {{ $estadisticas['pendientes'] ?? 0 }},
+        vencidos: {{ $estadisticas['vencidos'] ?? 0 }}
     };
     
     // Flag para saber si hay filtros activos
@@ -1123,34 +1148,34 @@ $(document).ready(function() {
     // ESTADÍSTICAS
     // =====================================================
     function updateStats() {
-        // Si no hay filtros activos y no se han cargado todos los datos,
-        // mostrar estadísticas del servidor (valores totales reales)
+        // Si no hay filtros activos, mostrar estadísticas del servidor
         if (!hasActiveFilters) {
-            $('#statTotalPagos').text(serverStats.totalPagos.toLocaleString('es-CL'));
-            $('#statRecaudado').text('$' + serverStats.totalRecaudado.toLocaleString('es-CL'));
-            $('#statCompletados').text(serverStats.completados.toLocaleString('es-CL'));
+            $('#statCompletados').text(serverStats.pagados.toLocaleString('es-CL'));
             $('#statParciales').text(serverStats.parciales.toLocaleString('es-CL'));
+            $('#statPendientes').text(serverStats.pendientes.toLocaleString('es-CL'));
+            $('#statVencidos').text(serverStats.vencidos.toLocaleString('es-CL'));
             return;
         }
         
         // Si hay filtros activos, calcular desde los datos filtrados
-        let totalRecaudado = 0;
-        let completados = 0;
+        let pagados = 0;
         let parciales = 0;
+        let pendientes = 0;
+        let vencidos = 0;
         
         filteredPagos.forEach(pago => {
-            totalRecaudado += pago.monto_abonado;
-            if (pago.estado_pago === 'pagado') {
-                completados++;
-            } else if (pago.estado_pago === 'parcial') {
-                parciales++;
+            switch(pago.estado_pago) {
+                case 'pagado': pagados++; break;
+                case 'parcial': parciales++; break;
+                case 'pendiente': pendientes++; break;
+                case 'vencido': vencidos++; break;
             }
         });
         
-        $('#statTotalPagos').text(filteredPagos.length.toLocaleString('es-CL'));
-        $('#statRecaudado').text('$' + totalRecaudado.toLocaleString('es-CL'));
-        $('#statCompletados').text(completados.toLocaleString('es-CL'));
+        $('#statCompletados').text(pagados.toLocaleString('es-CL'));
         $('#statParciales').text(parciales.toLocaleString('es-CL'));
+        $('#statPendientes').text(pendientes.toLocaleString('es-CL'));
+        $('#statVencidos').text(vencidos.toLocaleString('es-CL'));
     }
 
     // =====================================================

@@ -64,7 +64,7 @@
         
         <div class="stat-card stat-vencidos">
             <div class="stat-icon">
-                <i class="fas fa-clock"></i>
+                <i class="fas fa-calendar-times"></i>
             </div>
             <div class="stat-info">
                 <span class="stat-number">{{ $vencidas }}</span>
@@ -79,6 +79,16 @@
             <div class="stat-info">
                 <span class="stat-number">{{ $pausadas }}</span>
                 <span class="stat-label">Pausadas</span>
+            </div>
+        </div>
+        
+        <div class="stat-card stat-cancelados">
+            <div class="stat-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number">{{ $canceladas }}</span>
+                <span class="stat-label">Canceladas</span>
             </div>
         </div>
     </div>
@@ -97,10 +107,16 @@
                 <i class="fas fa-check-circle"></i> Activas
             </button>
             <button class="filter-btn" data-filter="vencida">
-                <i class="fas fa-clock"></i> Vencidas
+                <i class="fas fa-calendar-times"></i> Vencidas
             </button>
             <button class="filter-btn" data-filter="pausada">
                 <i class="fas fa-pause-circle"></i> Pausadas
+            </button>
+            <button class="filter-btn" data-filter="cancelada">
+                <i class="fas fa-ban"></i> Canceladas
+            </button>
+            <button class="filter-btn" data-filter="suspendida">
+                <i class="fas fa-exclamation-triangle"></i> Suspendidas
             </button>
         </div>
     </div>
@@ -304,38 +320,39 @@
     /* Stats Grid */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
     }
 
     .stat-card {
         background: #fff;
-        border-radius: 16px;
-        padding: 24px;
+        border-radius: 12px;
+        padding: 14px 16px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         box-shadow: var(--shadow);
         transition: all 0.3s ease;
     }
 
     .stat-card:hover {
-        transform: translateY(-4px);
+        transform: translateY(-2px);
         box-shadow: var(--shadow-hover);
     }
 
     .stat-card .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .stat-card .stat-icon i {
-        font-size: 24px;
+        font-size: 18px;
         color: #fff;
     }
 
@@ -355,23 +372,33 @@
         background: linear-gradient(135deg, var(--warning) 0%, #d69200 100%);
     }
 
+    .stat-card.stat-cancelados .stat-icon {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .stat-card.stat-suspendidos .stat-icon {
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+    }
+
     .stat-info {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     .stat-number {
-        font-size: 32px;
-        font-weight: 800;
+        font-size: 22px;
+        font-weight: 700;
         color: var(--text-primary);
         line-height: 1;
     }
 
     .stat-label {
-        font-size: 14px;
+        font-size: 12px;
         color: var(--text-secondary);
         font-weight: 500;
-        margin-top: 4px;
+        margin-top: 2px;
+        white-space: nowrap;
     }
 
     /* Filters Section */
@@ -752,11 +779,57 @@
         color: var(--accent);
     }
 
+    .estado-cancelada {
+        background: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+    }
+
+    .estado-suspendida {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    .estado-cambiada {
+        background: rgba(23, 162, 184, 0.15);
+        color: #17a2b8;
+    }
+
+    .estado-traspasada {
+        background: rgba(102, 16, 242, 0.15);
+        color: #6610f2;
+    }
+
     .pausa-info {
         display: block;
         font-size: 11px;
         color: var(--text-secondary);
         margin-top: 4px;
+    }
+
+    /* Estado Container para estados combinados */
+    .estado-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .estado-secundario {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        background: rgba(240, 165, 0, 0.08);
+        color: var(--warning);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .estado-secundario i {
+        font-size: 9px;
     }
 
     /* Acciones */
@@ -1225,10 +1298,10 @@ $(document).ready(function() {
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
     /**
-     * Formatear número con separador de miles
+     * Formatear número con separador de miles (siempre entero)
      */
     function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
     /**
@@ -1297,11 +1370,8 @@ $(document).ready(function() {
         if (insc.porcentaje_pagado >= 100) progressClass = 'completo';
         else if (insc.porcentaje_pagado >= 50) progressClass = 'parcial';
 
-        // Estado icon
-        let estadoIcon = '<i class="fas fa-info-circle"></i>';
-        if (insc.estado_class === 'activa') estadoIcon = '<i class="fas fa-check-circle"></i>';
-        else if (insc.estado_class === 'pausada') estadoIcon = '<i class="fas fa-pause-circle"></i>';
-        else if (insc.estado_class === 'vencida') estadoIcon = '<i class="fas fa-clock"></i>';
+        // Estado icon - usar el que viene del servidor
+        let estadoIcon = `<i class="fas ${insc.estado_icon}"></i>`;
 
         // Botones de acción
         let actionButtons = `
@@ -1312,13 +1382,13 @@ $(document).ready(function() {
         if (insc.esta_pausada) {
             actionButtons += `
                 <button type="button" class="btn-action btn-resume btn-reanudar" 
-                    data-id="${insc.id}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
+                    data-uuid="${insc.uuid}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
                     data-tooltip="Reanudar"><i class="fas fa-play"></i></button>
             `;
         } else if (insc.estado_class === 'activa') {
             actionButtons += `
                 <button type="button" class="btn-action btn-pause btn-pausar" 
-                    data-id="${insc.id}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
+                    data-uuid="${insc.uuid}" data-cliente="${insc.cliente_nombres} ${insc.cliente_apellido}"
                     data-pausas-usadas="${insc.pausas_realizadas}" data-pausas-max="${insc.max_pausas_permitidas}"
                     data-tooltip="Pausar"><i class="fas fa-pause"></i></button>
             `;
@@ -1378,10 +1448,12 @@ $(document).ready(function() {
                     </div>
                 </td>
                 <td>
-                    <span class="estado-badge estado-${insc.estado_class}">
-                        ${estadoIcon} ${insc.estado_nombre}
-                    </span>
-                    ${insc.esta_pausada ? `<span class="pausa-info"><i class="fas fa-calendar-day"></i> ${insc.dias_pausa}d</span>` : ''}
+                    <div class="estado-container">
+                        <span class="estado-badge estado-${insc.estado_class}">
+                            ${estadoIcon} ${insc.estado_display}
+                        </span>
+                        ${insc.estado_secundario ? `<span class="estado-secundario"><i class="fas fa-clock"></i> ${insc.estado_secundario}</span>` : ''}
+                    </div>
                 </td>
                 <td>
                     <div class="acciones-btns">${actionButtons}</div>
@@ -1603,7 +1675,7 @@ $(document).ready(function() {
     // ============================================
     
     $(document).on('click', '.btn-pausar', function() {
-        const id = $(this).data('id');
+        const uuid = $(this).data('uuid');
         const cliente = $(this).data('cliente');
         const pausasUsadas = parseInt($(this).data('pausas-usadas')) || 0;
         const pausasMax = parseInt($(this).data('pausas-max')) || 2;
@@ -1624,36 +1696,82 @@ $(document).ready(function() {
             title: 'Pausar Inscripción',
             html: `
                 <div style="text-align: center; margin-bottom: 1rem;">
-                    <p><strong>${cliente}</strong></p>
-                    <p class="text-muted">Pausas utilizadas: ${pausasUsadas}/${pausasMax}</p>
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;"><strong>${cliente}</strong></p>
+                    <p style="color: #6c757d; font-size: 0.9rem;">Pausas utilizadas: ${pausasUsadas}/${pausasMax}</p>
                 </div>
-                <div class="form-group">
-                    <label>Días de pausa:</label>
-                    <input type="number" id="diasPausa" class="swal2-input" value="7" min="1" max="30" style="width: 100%;">
+                <p style="font-weight: 600; margin-bottom: 0.75rem;">Selecciona la duración:</p>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem;">
+                    <div class="pause-option-swal" data-dias="7" style="cursor: pointer; padding: 15px 10px; border: 2px solid #dee2e6; border-radius: 12px; text-align: center; transition: all 0.2s;">
+                        <i class="fas fa-hourglass-start" style="font-size: 1.5rem; color: #f0a500; margin-bottom: 5px; display: block;"></i>
+                        <div style="font-size: 1.2rem; font-weight: 700;">7</div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">días</div>
+                    </div>
+                    <div class="pause-option-swal" data-dias="14" style="cursor: pointer; padding: 15px 10px; border: 2px solid #dee2e6; border-radius: 12px; text-align: center; transition: all 0.2s;">
+                        <i class="fas fa-hourglass-half" style="font-size: 1.5rem; color: #f0a500; margin-bottom: 5px; display: block;"></i>
+                        <div style="font-size: 1.2rem; font-weight: 700;">14</div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">días</div>
+                    </div>
+                    <div class="pause-option-swal" data-dias="30" style="cursor: pointer; padding: 15px 10px; border: 2px solid #dee2e6; border-radius: 12px; text-align: center; transition: all 0.2s;">
+                        <i class="fas fa-hourglass-end" style="font-size: 1.5rem; color: #f0a500; margin-bottom: 5px; display: block;"></i>
+                        <div style="font-size: 1.2rem; font-weight: 700;">30</div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">días</div>
+                    </div>
+                    <div class="pause-option-swal" data-dias="indefinida" style="cursor: pointer; padding: 15px 10px; border: 2px solid #dee2e6; border-radius: 12px; text-align: center; transition: all 0.2s;">
+                        <i class="fas fa-infinity" style="font-size: 1.5rem; color: #6610f2; margin-bottom: 5px; display: block;"></i>
+                        <div style="font-size: 0.85rem; font-weight: 700;">Hasta</div>
+                        <div style="font-size: 0.7rem; color: #6c757d;">nuevo aviso</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Motivo:</label>
-                    <textarea id="razonPausa" class="swal2-textarea" placeholder="Razón de la pausa..." style="width: 100%;"></textarea>
+                <div id="razonPausaContainer" style="display: none;">
+                    <label style="font-weight: 500; display: block; margin-bottom: 5px;">Motivo (requerido para indefinida):</label>
+                    <textarea id="razonPausa" class="swal2-textarea" placeholder="Describe el motivo de la pausa..." style="width: 100%; margin: 0;"></textarea>
                 </div>
+                <input type="hidden" id="diasPausaSeleccionados" value="">
             `,
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-pause"></i> Pausar',
             cancelButtonText: 'Cancelar',
             customClass: { popup: 'swal-estoicos', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
             buttonsStyling: false,
+            didOpen: () => {
+                // Agregar eventos a las opciones de pausa
+                document.querySelectorAll('.pause-option-swal').forEach(opt => {
+                    opt.addEventListener('click', function() {
+                        document.querySelectorAll('.pause-option-swal').forEach(o => {
+                            o.style.borderColor = '#dee2e6';
+                            o.style.background = 'white';
+                        });
+                        this.style.borderColor = '#4361ee';
+                        this.style.background = 'rgba(67, 97, 238, 0.08)';
+                        document.getElementById('diasPausaSeleccionados').value = this.dataset.dias;
+                        
+                        // Mostrar/ocultar razón
+                        const razonContainer = document.getElementById('razonPausaContainer');
+                        if (this.dataset.dias === 'indefinida') {
+                            razonContainer.style.display = 'block';
+                        } else {
+                            razonContainer.style.display = 'none';
+                        }
+                    });
+                });
+            },
             preConfirm: () => {
-                const dias = document.getElementById('diasPausa').value;
-                const razon = document.getElementById('razonPausa').value;
-                if (!dias || dias < 1) {
-                    Swal.showValidationMessage('Ingresa los días de pausa');
+                const dias = document.getElementById('diasPausaSeleccionados').value;
+                const razon = document.getElementById('razonPausa')?.value || '';
+                if (!dias) {
+                    Swal.showValidationMessage('Selecciona una duración de pausa');
                     return false;
                 }
-                return { dias, razon };
+                if (dias === 'indefinida' && !razon.trim()) {
+                    Swal.showValidationMessage('La pausa indefinida requiere un motivo');
+                    return false;
+                }
+                return { dias: dias === 'indefinida' ? 0 : dias, razon, esIndefinida: dias === 'indefinida' };
             }
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/admin/inscripciones/${id}/pausar`,
+                    url: `/admin/inscripciones/${uuid}/pausar`,
                     method: 'POST',
                     data: {
                         _token: csrfToken,
@@ -1684,7 +1802,7 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.btn-reanudar', function() {
-        const id = $(this).data('id');
+        const uuid = $(this).data('uuid');
         const cliente = $(this).data('cliente');
         
         Swal.fire({
@@ -1699,7 +1817,7 @@ $(document).ready(function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/admin/inscripciones/${id}/reanudar`,
+                    url: `/admin/inscripciones/${uuid}/reanudar`,
                     method: 'POST',
                     data: { _token: csrfToken },
                     success: function(response) {

@@ -44,18 +44,19 @@ class InscripcionController extends Controller
             return $this->getInscripcionesJson($request);
         }
 
-        // Cargar primeras 100 inscripciones para la vista inicial
+        // Cargar primeras 100 inscripciones para la vista inicial (todas, no excluir ninguna)
         $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio', 'pagos'])
-            ->whereNotIn('id_estado', [103, 105, 106])
             ->orderBy('fecha_inicio', 'desc')
             ->take(100)
             ->get();
         
-        // Estadísticas (excluyendo canceladas, cambiadas y traspasadas)
-        $totalInscripciones = Inscripcion::whereNotIn('id_estado', [103, 105, 106])->count();
+        // Estadísticas por estado
+        $totalInscripciones = Inscripcion::count();
         $activas = Inscripcion::where('id_estado', 100)->count();
         $vencidas = Inscripcion::where('id_estado', 102)->count();
         $pausadas = Inscripcion::where('id_estado', 101)->count();
+        $canceladas = Inscripcion::where('id_estado', 103)->count();
+        $suspendidas = Inscripcion::where('id_estado', 104)->count();
         $totalEliminadas = Inscripcion::onlyTrashed()->count();
         
         // Datos para los selects de filtro
@@ -73,6 +74,8 @@ class InscripcionController extends Controller
             'activas',
             'vencidas',
             'pausadas',
+            'canceladas',
+            'suspendidas',
             'totalEliminadas'
         ));
     }
@@ -110,7 +113,58 @@ class InscripcionController extends Controller
         return $inscripciones->map(function($inscripcion) {
             $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
             $estadoPago = $inscripcion->obtenerEstadoPago();
-            $estadoClass = strtolower($inscripcion->estado?->nombre ?? 'pendiente');
+            
+            // Estado base para filtros (el código del estado)
+            $estadoBase = $inscripcion->id_estado;
+            $estadoNombre = $inscripcion->estado?->nombre ?? 'Sin estado';
+            
+            // Estado visual compuesto para mostrar
+            $estadoDisplay = $estadoNombre;
+            $estadoClass = strtolower($estadoNombre);
+            $estadoIcon = 'fa-info-circle';
+            $estadoSecundario = null; // Para mostrar estado combinado
+            
+            // Determinar estado visual combinado
+            if ($inscripcion->estaPausada()) {
+                // Mostrar como estado combinado: "Activa / Pausada"
+                $estadoDisplay = 'Activa / Pausada';
+                $estadoSecundario = $inscripcion->pausa_indefinida ? 'Indefinida' : ($inscripcion->dias_pausa . ' días');
+                $estadoClass = 'pausada';
+                $estadoIcon = 'fa-pause-circle';
+            } else {
+                switch ($estadoBase) {
+                    case 100: // Activa
+                        $estadoDisplay = 'Activa';
+                        $estadoClass = 'activa';
+                        $estadoIcon = 'fa-check-circle';
+                        break;
+                    case 102: // Vencida
+                        $estadoDisplay = 'Vencida';
+                        $estadoClass = 'vencida';
+                        $estadoIcon = 'fa-clock';
+                        break;
+                    case 103: // Cancelada
+                        $estadoDisplay = 'Cancelada';
+                        $estadoClass = 'cancelada';
+                        $estadoIcon = 'fa-times-circle';
+                        break;
+                    case 104: // Suspendida
+                        $estadoDisplay = 'Suspendida';
+                        $estadoClass = 'suspendida';
+                        $estadoIcon = 'fa-ban';
+                        break;
+                    case 105: // Cambiada (upgrade)
+                        $estadoDisplay = 'Mejorada';
+                        $estadoClass = 'cambiada';
+                        $estadoIcon = 'fa-exchange-alt';
+                        break;
+                    case 106: // Traspasada
+                        $estadoDisplay = 'Traspasada';
+                        $estadoClass = 'traspasada';
+                        $estadoIcon = 'fa-share';
+                        break;
+                }
+            }
             
             return [
                 'id' => $inscripcion->id,
@@ -141,9 +195,14 @@ class InscripcionController extends Controller
                 'pago_pendiente' => $estadoPago['pendiente'],
                 'porcentaje_pagado' => $estadoPago['porcentaje_pagado'],
                 // Estado inscripción
-                'estado_nombre' => $inscripcion->estado?->nombre ?? 'Sin estado',
-                'estado_class' => $estadoClass,
+                'id_estado' => $estadoBase,                    // Código para filtrar (100, 101, 102, etc.)
+                'estado_nombre' => $estadoNombre,              // Nombre del estado en BD
+                'estado_display' => $estadoDisplay,            // Texto a mostrar (puede ser combinado)
+                'estado_secundario' => $estadoSecundario,      // Info adicional (ej: "14 días" para pausada)
+                'estado_class' => $estadoClass,                // Clase CSS para el badge
+                'estado_icon' => $estadoIcon,                  // Icono FontAwesome
                 'esta_pausada' => $inscripcion->estaPausada(),
+                'pausa_indefinida' => $inscripcion->pausa_indefinida ?? false,
                 'dias_pausa' => $inscripcion->dias_pausa ?? 0,
                 'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
                 'max_pausas_permitidas' => $inscripcion->max_pausas_permitidas ?? 2,
@@ -1177,7 +1236,7 @@ class InscripcionController extends Controller
      */
     public function traspasar(Request $request, Inscripcion $inscripcion)
     {
-        Log::info('=== INICIO TRASPASAR ===', [
+        Log::info('=== INICIO TRASPASAR (TRANSFERENCIA) ===', [
             'inscripcion_id' => $inscripcion->id,
             'inscripcion_uuid' => $inscripcion->uuid,
             'request_data' => $request->all()
@@ -1202,7 +1261,6 @@ class InscripcionController extends Controller
             }
 
             $ignorarDeuda = $request->boolean('ignorar_deuda', false);
-            $transferirDeuda = $request->boolean('transferir_deuda', false);
 
             // Verificar que la inscripción puede ser traspasada
             if (!$inscripcion->puedeTraspasarse($ignorarDeuda)) {
@@ -1226,7 +1284,7 @@ class InscripcionController extends Controller
             // Verificar que el cliente destino puede recibir el traspaso
             $clienteDestino = Cliente::findOrFail($validated['id_cliente_destino']);
             
-            // FIX: Validar que el cliente destino esté activo
+            // Validar que el cliente destino esté activo
             if (!$clienteDestino->activo) {
                 return response()->json([
                     'success' => false,
@@ -1243,121 +1301,29 @@ class InscripcionController extends Controller
 
             $inscripcion->load(['cliente', 'membresia', 'pagos']);
             $infoTraspaso = $inscripcion->getInfoTraspaso();
+            
+            // Guardar datos del cliente origen antes de modificar
+            $clienteOrigen = $inscripcion->cliente;
+            $clienteOrigenId = $inscripcion->id_cliente;
+            $clienteOrigenNombre = $clienteOrigen->nombres . ' ' . $clienteOrigen->apellido_paterno;
 
             DB::beginTransaction();
 
             try {
-                // 1. Marcar inscripción original como "Traspasada" (estado 106)
-                $observacionTraspaso = "[" . now()->format('d/m/Y H:i') . "] Traspasada a: {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
-                if ($infoTraspaso['tiene_deuda'] && $ignorarDeuda) {
-                    $observacionTraspaso .= " | Deuda transferida: $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.');
-                }
-                
-                // FIX: Cuando se traspasa, la inscripción ya no está activa, así que ajustar fecha_vencimiento
-                $inscripcion->update([
-                    'id_estado' => 106, // Estado: Traspasada
-                    'fecha_vencimiento' => now()->format('Y-m-d'), // FIX: Ajustar fecha al traspasar
-                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') . $observacionTraspaso,
-                ]);
+                // ================================================================
+                // NUEVA LÓGICA: TRANSFERIR en lugar de COPIAR
+                // - La inscripción cambia de dueño (id_cliente)
+                // - Los pagos cambian de dueño (id_cliente)
+                // - NO se crean nuevos registros
+                // - Se guarda historial del traspaso
+                // ================================================================
 
-                // 1.5 Marcar todos los pagos de la inscripción original como "Traspasados" (estado 205)
-                // FIX: También actualizar montos para que no quede saldo pendiente visible
-                foreach ($inscripcion->pagos as $pago) {
-                    $observacionPagoOriginal = $pago->observaciones ?? '';
-                    $observacionPagoOriginal .= ($observacionPagoOriginal ? "\n" : '') 
-                        . "[" . now()->format('d/m/Y H:i') . "] Traspasado a: {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
-                    
-                    // FIX: Al traspasar, el monto pendiente se considera "regularizado" por el traspaso
-                    // El monto_abonado se ajusta al total para indicar que la deuda fue transferida
-                    $pago->update([
-                        'id_estado' => 205, // Estado: Traspasado
-                        'monto_abonado' => $pago->monto_total, // FIX: Marcar como totalmente regularizado
-                        'monto_pendiente' => 0, // FIX: Sin saldo pendiente
-                        'observaciones' => $observacionPagoOriginal,
-                    ]);
-                }
-
-                // 2. Crear nueva inscripción para el cliente destino
-                $nuevaInscripcion = Inscripcion::create([
-                    'id_cliente' => $clienteDestino->id,
-                    'id_membresia' => $inscripcion->id_membresia,
-                    'id_convenio' => null, // Los convenios no se traspasan
-                    'id_precio_acordado' => $inscripcion->id_precio_acordado,
-                    'fecha_inscripcion' => now()->format('Y-m-d'),
-                    'fecha_inicio' => now()->format('Y-m-d'),
-                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
-                    'precio_base' => $inscripcion->precio_base,
-                    'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
-                    'precio_final' => $inscripcion->precio_final,
-                    'id_estado' => 100, // Activa
-                    'observaciones' => "Traspaso recibido de: {$inscripcion->cliente->nombres} {$inscripcion->cliente->apellido_paterno}",
-                    'max_pausas_permitidas' => $inscripcion->membresia->max_pausas ?? 2,
-                    // Campos de tracking de traspaso
-                    'es_traspaso' => true,
-                    'id_inscripcion_origen' => $inscripcion->id,
-                    'id_cliente_original' => $inscripcion->id_cliente,
-                    'fecha_traspaso' => now(),
-                    'motivo_traspaso' => $validated['motivo_traspaso'],
-                ]);
-
-                // 3. Crear pago(s) para la nueva inscripción
-                // Si se transfiere la deuda, creamos un pago con lo que se había abonado y otro pendiente
-                if ($infoTraspaso['tiene_deuda'] && $transferirDeuda) {
-                    // Pago por el monto ya abonado
-                    if ($infoTraspaso['monto_pagado'] > 0) {
-                        Pago::create([
-                            'id_inscripcion' => $nuevaInscripcion->id,
-                            'id_cliente' => $clienteDestino->id,
-                            'monto_total' => $infoTraspaso['monto_total'],
-                            'monto_abonado' => $infoTraspaso['monto_pagado'],
-                            'monto_pendiente' => $infoTraspaso['monto_pendiente'],
-                            'id_estado' => 200, // Pendiente (parcialmente pagado)
-                            'id_metodo_pago' => 1,
-                            'fecha_pago' => now()->format('Y-m-d'),
-                            'observaciones' => "Pago transferido por traspaso (incluye deuda) desde inscripción #{$inscripcion->id}",
-                            'referencia_pago' => 'TRASPASO-DEUDA-' . $inscripcion->id,
-                        ]);
-                    } else {
-                        // Solo deuda, sin abono previo
-                        Pago::create([
-                            'id_inscripcion' => $nuevaInscripcion->id,
-                            'id_cliente' => $clienteDestino->id,
-                            'monto_total' => $infoTraspaso['monto_total'],
-                            'monto_abonado' => 0,
-                            'monto_pendiente' => $infoTraspaso['monto_pendiente'],
-                            'id_estado' => 200, // Pendiente
-                            'id_metodo_pago' => 1,
-                            'fecha_pago' => now()->format('Y-m-d'),
-                            'observaciones' => "Deuda transferida por traspaso desde inscripción #{$inscripcion->id}",
-                            'referencia_pago' => 'TRASPASO-DEUDA-' . $inscripcion->id,
-                        ]);
-                    }
-                } else {
-                    // Sin deuda o ignorando deuda sin transferir
-                    // FIX: Solo crear pago si hay monto pagado > 0
-                    if ($infoTraspaso['monto_pagado'] > 0) {
-                        Pago::create([
-                            'id_inscripcion' => $nuevaInscripcion->id,
-                            'id_cliente' => $clienteDestino->id,
-                            'monto_total' => $infoTraspaso['monto_pagado'], // Solo lo pagado
-                            'monto_abonado' => $infoTraspaso['monto_pagado'],
-                            'monto_pendiente' => 0,
-                            'id_estado' => 201, // Pagado
-                            'id_metodo_pago' => 1,
-                            'fecha_pago' => now()->format('Y-m-d'),
-                            'observaciones' => "Pago transferido por traspaso desde inscripción #{$inscripcion->id}",
-                            'referencia_pago' => 'TRASPASO-' . $inscripcion->id,
-                        ]);
-                    }
-                    // FIX: Si no hay monto pagado, no se crea pago vacío
-                    // El nuevo cliente deberá realizar su primer pago
-                }
-
-                // 4. Registrar en el historial de traspasos
-                HistorialTraspaso::create([
+                // 1. Registrar en el historial de traspasos ANTES de modificar
+                // (Guardamos inscripcion_destino_id como la misma inscripción porque no se crea nueva)
+                $historial = HistorialTraspaso::create([
                     'inscripcion_origen_id' => $inscripcion->id,
-                    'inscripcion_destino_id' => $nuevaInscripcion->id,
-                    'cliente_origen_id' => $inscripcion->id_cliente,
+                    'inscripcion_destino_id' => $inscripcion->id, // Misma inscripción, diferente dueño
+                    'cliente_origen_id' => $clienteOrigenId,
                     'cliente_destino_id' => $clienteDestino->id,
                     'membresia_id' => $inscripcion->id_membresia,
                     'fecha_traspaso' => now(),
@@ -1365,30 +1331,56 @@ class InscripcionController extends Controller
                     'dias_restantes_traspasados' => $infoTraspaso['dias_restantes'],
                     'fecha_vencimiento_original' => $inscripcion->fecha_vencimiento,
                     'monto_pagado' => $infoTraspaso['monto_pagado'],
-                    'deuda_transferida' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda) ? $infoTraspaso['monto_pendiente'] : 0,
-                    'se_transfirio_deuda' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda),
+                    'deuda_transferida' => $infoTraspaso['monto_pendiente'],
+                    'se_transfirio_deuda' => $infoTraspaso['tiene_deuda'],
                     'usuario_id' => auth()->id(),
                 ]);
 
+                // 2. Actualizar la inscripción: cambiar el cliente dueño
+                $observacionTraspaso = "[" . now()->format('d/m/Y H:i') . "] Traspaso de: {$clienteOrigenNombre} → {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}. Motivo: {$validated['motivo_traspaso']}";
+                
+                $inscripcion->update([
+                    'id_cliente' => $clienteDestino->id, // Nuevo dueño
+                    // Marcar como traspaso para tracking
+                    'es_traspaso' => true,
+                    'id_cliente_original' => $clienteOrigenId, // Guardamos quién era el dueño original
+                    'fecha_traspaso' => now(),
+                    'motivo_traspaso' => $validated['motivo_traspaso'],
+                    'observaciones' => ($inscripcion->observaciones ? $inscripcion->observaciones . "\n" : '') . $observacionTraspaso,
+                ]);
+
+                // 3. Transferir todos los pagos al nuevo cliente
+                foreach ($inscripcion->pagos as $pago) {
+                    $observacionPago = $pago->observaciones ?? '';
+                    $observacionPago .= ($observacionPago ? "\n" : '') 
+                        . "[" . now()->format('d/m/Y H:i') . "] Transferido de: {$clienteOrigenNombre} → {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}";
+                    
+                    $pago->update([
+                        'id_cliente' => $clienteDestino->id, // Nuevo dueño del pago
+                        'observaciones' => $observacionPago,
+                    ]);
+                }
+
                 DB::commit();
 
-                $mensajeExito = "Membresía traspasada exitosamente a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}.";
-                if ($infoTraspaso['tiene_deuda'] && $transferirDeuda) {
-                    $mensajeExito .= " Se transfirió una deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.');
+                $mensajeExito = "Membresía transferida exitosamente a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}.";
+                if ($infoTraspaso['tiene_deuda']) {
+                    $mensajeExito .= " La deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . " fue transferida al nuevo titular.";
                 }
 
                 return response()->json([
                     'success' => true,
                     'message' => $mensajeExito,
                     'nueva_inscripcion' => [
-                        'uuid' => $nuevaInscripcion->uuid,
+                        'uuid' => $inscripcion->uuid, // Misma inscripción
                         'cliente' => $clienteDestino->nombres . ' ' . $clienteDestino->apellido_paterno,
+                        'cliente_anterior' => $clienteOrigenNombre,
                         'membresia' => $inscripcion->membresia->nombre,
                         'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-                        'dias_restantes' => $nuevaInscripcion->dias_restantes,
-                        'deuda_transferida' => ($infoTraspaso['tiene_deuda'] && $transferirDeuda) ? $infoTraspaso['monto_pendiente'] : 0,
+                        'dias_restantes' => $infoTraspaso['dias_restantes'],
+                        'deuda_transferida' => $infoTraspaso['monto_pendiente'],
                     ],
-                    'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
+                    'redirect_url' => route('admin.inscripciones.show', $inscripcion),
                 ]);
 
             } catch (\Exception $e) {

@@ -1823,17 +1823,7 @@
                                     <label class="form-check-label fw-bold" for="ignorarDeudaCheck">
                                         <i class="fas fa-unlock me-1"></i> Ignorar requisito de pago completo
                                     </label>
-                                    <small class="d-block text-muted">Permite traspasar aunque exista deuda pendiente</small>
-                                </div>
-                                
-                                <div id="opcionTransferirDeuda" style="display: none; margin-left: 24px; padding-top: 8px; border-top: 1px dashed #d97706;">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="transferirDeudaCheck" checked>
-                                        <label class="form-check-label" for="transferirDeudaCheck">
-                                            <i class="fas fa-exchange-alt me-1"></i> Transferir deuda al nuevo cliente
-                                        </label>
-                                        <small class="d-block text-muted">El nuevo cliente asumirá la deuda de ${{ number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') }}</small>
-                                    </div>
+                                    <small class="d-block text-muted">Permite traspasar aunque exista deuda pendiente. La deuda se transferirá al nuevo titular.</small>
                                 </div>
                             </div>
                         </div>
@@ -1851,7 +1841,7 @@
                             <i class="fas fa-exclamation-triangle"></i>
                             <div>
                                 <strong>⚠️ Acción Irreversible</strong>
-                                <p class="mb-0" style="font-size: 0.85em;">El traspaso transferirá la membresía y los días restantes a otro cliente. Esta acción no se puede deshacer.</p>
+                                <p class="mb-0" style="font-size: 0.85em;">El traspaso transferirá la titularidad de la membresía y sus pagos a otro cliente. El cliente original quedará sin membresía.</p>
                             </div>
                         </div>
 
@@ -1860,10 +1850,11 @@
                             <div>
                                 <strong>¿Cómo funciona el traspaso?</strong>
                                 <ul class="mb-0 ps-3" style="font-size: 0.85em;">
+                                    <li>La membresía cambia de titular (no se crea una nueva)</li>
+                                    <li>Los pagos existentes se transfieren al nuevo cliente</li>
                                     <li>El cliente actual perderá acceso inmediatamente</li>
                                     <li>El nuevo cliente recibirá los <strong>{{ $inscripcion->dias_restantes }} días</strong> restantes</li>
-                                    <li>Solo clientes sin membresía activa pueden recibir traspaso</li>
-                                    <li>Se mantendrá registro para auditoría</li>
+                                    <li>Se mantiene historial completo para auditoría</li>
                                 </ul>
                             </div>
                         </div>
@@ -2018,44 +2009,6 @@
         </div>
     </div>
 
-    <!-- Modal Confirmar Reanudación -->
-    <div class="modal fade modal-modern" id="modalConfirmarReanudar" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%); color: white;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-play-circle me-2"></i>Reactivar Membresía
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" data-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <div class="pause-option-icon days mx-auto" style="width: 80px; height: 80px; font-size: 2em; background: rgba(0, 191, 142, 0.12); color: var(--success);">
-                            <i class="fas fa-play"></i>
-                        </div>
-                        <h4 class="mt-3">¿Reactivar esta membresía?</h4>
-                        <p class="text-muted">La membresía volverá a estar activa inmediatamente.</p>
-                    </div>
-                    <div class="alert-modern info">
-                        <i class="fas fa-calendar-plus"></i>
-                        <div>
-                            <strong>Compensación automática</strong>
-                            <p class="mb-0">La fecha de vencimiento se extenderá por los días que estuvo congelada.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-outline-modern" data-bs-dismiss="modal" data-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn-modern success" id="btnEjecutarReanudar">
-                        <i class="fas fa-play-circle me-1"></i> Reactivar Ahora
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 <!-- Dropdown de resultados de búsqueda - FUERA de cualquier contenedor para máximo z-index -->
 <div id="resultadosBusquedaTraspaso" style="display: none;"></div>
 
@@ -2136,9 +2089,9 @@ function restablecerFormulario() {
     });
 }
 
-// Función global para formatear números
+// Función global para formatear números (siempre enteros)
 function formatNumber(num) {
-    return num.toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    return Math.round(num).toLocaleString('es-CL', { maximumFractionDigits: 0 });
 }
 
 // SweetAlert2 con estilos personalizados para Estoicos
@@ -3053,92 +3006,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Botón reanudar - mostrar modal
+    // Botón reanudar - usar SweetAlert2 directamente
     if (btnReanudar) {
         btnReanudar.addEventListener('click', function() {
-            if (typeof bootstrap !== 'undefined') {
-                new bootstrap.Modal(document.getElementById('modalConfirmarReanudar')).show();
-            } else {
-                $('#modalConfirmarReanudar').modal('show');
-            }
+            Swal.fire({
+                title: '¿Reactivar Membresía?',
+                html: `
+                    <div style="text-align: center;">
+                        <i class="fas fa-play-circle fa-4x mb-3" style="color: var(--success);"></i>
+                        <p>La membresía volverá a estar activa inmediatamente.</p>
+                        <div class="alert alert-info" style="text-align: left; font-size: 0.9rem;">
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            <strong>Compensación automática:</strong> La fecha de vencimiento se extenderá por los días que estuvo congelada.
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-play-circle"></i> Reactivar Ahora',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#00bf8e',
+                cancelButtonColor: '#6c757d',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading
+                    const overlay = document.getElementById('loadingOverlay');
+                    if (overlay) overlay.classList.add('active');
+                    
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                                      document.querySelector('input[name="_token"]')?.value;
+
+                    fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/reanudar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    })
+                    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                    .then(result => {
+                        if (overlay) overlay.classList.remove('active');
+                        
+                        if (result.ok && result.data.success) {
+                            Swal.fire({
+                                title: '¡Membresía Reactivada!',
+                                text: result.data.message || 'La membresía ha sido reactivada exitosamente.',
+                                icon: 'success',
+                                confirmButtonColor: '#00bf8e',
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: result.data.message || 'No se pudo reactivar la membresía.',
+                                icon: 'error',
+                                confirmButtonColor: '#e94560'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        if (overlay) overlay.classList.remove('active');
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error de Conexión',
+                            text: 'No se pudo procesar la solicitud. Intenta nuevamente.',
+                            icon: 'error',
+                            confirmButtonColor: '#e94560'
+                        });
+                    });
+                }
+            });
         });
     }
-
-    // Ejecutar reactivación - usando SweetAlert2 para mejor UX
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('#btnEjecutarReanudar')) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            console.log('Ejecutando reactivación...');
-            
-            // Cerrar modal de Bootstrap
-            document.querySelectorAll('.modal').forEach(modal => {
-                if (typeof bootstrap !== 'undefined') {
-                    const bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) bsModal.hide();
-                } else if (typeof $ !== 'undefined') {
-                    $(modal).modal('hide');
-                }
-            });
-            
-            // Mostrar loading
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.classList.add('active');
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
-                              document.querySelector('input[name="_token"]')?.value;
-
-            fetch(`/admin/inscripciones/${INSCRIPCION_UUID}/reanudar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            })
-            .then(response => response.json().then(data => ({ ok: response.ok, data })))
-            .then(result => {
-                if (overlay) overlay.classList.remove('active');
-                console.log('Respuesta reanudar:', result);
-                
-                if (result.ok && result.data.success) {
-                    Swal.fire({
-                        title: '¡Membresía Reactivada!',
-                        html: `
-                            <div style="text-align: center;">
-                                <i class="fas fa-play-circle fa-4x mb-3" style="color: var(--success);"></i>
-                                <p>${result.data.message || 'La membresía ha sido reactivada exitosamente.'}</p>
-                            </div>
-                        `,
-                        icon: 'success',
-                        confirmButtonColor: '#00bf8e',
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: result.data.message || 'No se pudo reactivar la membresía.',
-                        icon: 'error',
-                        confirmButtonColor: '#e94560'
-                    });
-                }
-            })
-            .catch(error => {
-                if (overlay) overlay.classList.remove('active');
-                console.error('Error:', error);
-                Swal.fire({
-                    title: 'Error de Conexión',
-                    text: 'No se pudo procesar la solicitud. Intenta nuevamente.',
-                    icon: 'error',
-                    confirmButtonColor: '#e94560'
-                });
-            });
-        }
-    });
 
     // Formateador de precios
     if (typeof PrecioFormatter !== 'undefined') {
@@ -3157,8 +3098,6 @@ let timeoutBusqueda = null;
 const inputBusqueda = document.getElementById('buscarClienteTraspaso');
 const resultadosContainer = document.getElementById('resultadosBusquedaTraspaso');
 const ignorarDeudaCheck = document.getElementById('ignorarDeudaCheck');
-const transferirDeudaCheck = document.getElementById('transferirDeudaCheck');
-const opcionTransferirDeuda = document.getElementById('opcionTransferirDeuda');
 const resumenDeudaTransferida = document.getElementById('resumenDeudaTransferida');
 
 // Función para toggle de opciones de deuda
@@ -3166,11 +3105,6 @@ function toggleOpcionesDeuda() {
     if (!ignorarDeudaCheck) return;
     
     const isChecked = ignorarDeudaCheck.checked;
-    
-    // Mostrar/ocultar opción de transferir deuda
-    if (opcionTransferirDeuda) {
-        opcionTransferirDeuda.style.display = isChecked ? 'block' : 'none';
-    }
     
     // Habilitar/deshabilitar el buscador de clientes
     if (inputBusqueda) {
@@ -3189,16 +3123,10 @@ function toggleOpcionesDeuda() {
 function actualizarResumenDeuda() {
     if (!resumenDeudaTransferida) return;
     
-    const mostrarDeuda = ignorarDeudaCheck && ignorarDeudaCheck.checked && 
-                         transferirDeudaCheck && transferirDeudaCheck.checked &&
-                         clienteDestinoSeleccionado;
+    // Mostrar deuda solo si hay deuda, se ignora el requisito, y hay cliente seleccionado
+    const mostrarDeuda = ignorarDeudaCheck && ignorarDeudaCheck.checked && clienteDestinoSeleccionado;
     
     resumenDeudaTransferida.style.display = mostrarDeuda ? 'block' : 'none';
-}
-
-// Listener para el checkbox de transferir deuda
-if (transferirDeudaCheck) {
-    transferirDeudaCheck.addEventListener('change', actualizarResumenDeuda);
 }
 
 // Función para posicionar el dropdown - detecta espacio disponible
@@ -3451,49 +3379,45 @@ function ejecutarTraspaso() {
         return;
     }
     
-    // Determinar si se ignora la deuda y si se transfiere
+    // Determinar si se ignora la deuda (la deuda siempre se transfiere con los pagos)
     const ignorarDeuda = ignorarDeudaCheck ? ignorarDeudaCheck.checked : false;
-    const transferirDeuda = transferirDeudaCheck ? transferirDeudaCheck.checked : false;
     
     // Construir mensaje de confirmación
-    let mensajeConfirmacion = `¿Confirmar traspaso de membresía a "${clienteDestinoSeleccionado.nombre_completo}"?`;
-    let textoAdicional = '';
+    let mensajeConfirmacion = `¿Confirmar transferencia de membresía a "${clienteDestinoSeleccionado.nombre_completo}"?`;
+    let textoAdicional = '<small>La membresía y todos sus pagos serán transferidos al nuevo titular.</small>';
     
-    if (ignorarDeuda && transferirDeuda) {
-        textoAdicional = '⚠️ La deuda pendiente se transferirá al nuevo cliente.';
-    } else if (ignorarDeuda && !transferirDeuda) {
-        textoAdicional = '⚠️ La deuda pendiente se condonará.';
+    if (ignorarDeuda) {
+        textoAdicional += '<br><br><span style="color: #d97706;">⚠️ La deuda pendiente será asumida por el nuevo titular.</span>';
     }
     
     // Guardar valores en variables locales para usar en el callback
     const clienteId = clienteDestinoSeleccionado.id;
     const motivoTraspaso = motivo;
     const ignDeuda = ignorarDeuda;
-    const transfDeuda = transferirDeuda;
     
-    console.log('Datos a enviar:', { clienteId, motivoTraspaso, ignDeuda, transfDeuda });
+    console.log('Datos a enviar:', { clienteId, motivoTraspaso, ignDeuda });
     
     // Confirmar con SweetAlert
     Swal.fire({
         title: '¿Confirmar traspaso?',
-        html: `${mensajeConfirmacion}${textoAdicional ? '<br><br>' + textoAdicional : ''}<br><br><strong>Esta acción no se puede deshacer.</strong>`,
+        html: `${mensajeConfirmacion}<br><br>${textoAdicional}<br><br><strong>Esta acción no se puede deshacer.</strong>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, traspasar',
+        confirmButtonText: 'Sí, transferir',
         cancelButtonText: 'Cancelar',
         reverseButtons: true
     }).then(function(result) {
         console.log('SweetAlert result:', result);
         if (result.isConfirmed) {
             console.log('=== CONFIRMADO - ENVIANDO FETCH ===');
-            enviarTraspaso(clienteId, motivoTraspaso, ignDeuda, transfDeuda);
+            enviarTraspaso(clienteId, motivoTraspaso, ignDeuda);
         }
     });
 }
 
-function enviarTraspaso(clienteId, motivo, ignorarDeuda, transferirDeuda) {
+function enviarTraspaso(clienteId, motivo, ignorarDeuda) {
     console.log('=== ENVIANDO TRASPASO AL SERVIDOR ===');
     
     // Mostrar loading
@@ -3515,7 +3439,6 @@ function enviarTraspaso(clienteId, motivo, ignorarDeuda, transferirDeuda) {
         id_cliente_destino: clienteId,
         motivo_traspaso: motivo,
         ignorar_deuda: ignorarDeuda,
-        transferir_deuda: transferirDeuda,
     };
     
     console.log('URL:', url);

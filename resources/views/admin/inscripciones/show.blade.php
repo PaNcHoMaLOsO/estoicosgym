@@ -184,7 +184,9 @@
     .estado-pausada { background: rgba(240,165,0,0.15); color: var(--warning); }
     .estado-vencida { background: rgba(108,117,125,0.15); color: #6c757d; }
     .estado-cancelada { background: rgba(233,69,96,0.15); color: var(--accent); }
+    .estado-suspendida { background: rgba(220,53,69,0.15); color: #dc3545; }
     .estado-cambiada { background: rgba(67,97,238,0.15); color: var(--info); }
+    .estado-traspasada { background: rgba(102,16,242,0.15); color: #6610f2; }
 
     /* ========== Progress Bar ========== */
     .progress-container {
@@ -630,14 +632,20 @@
                             100 => 'activa',
                             101 => 'pausada',
                             102 => 'vencida',
-                            103, 104 => 'cancelada',
+                            103 => 'cancelada',
+                            104 => 'suspendida',
+                            105 => 'cambiada',
+                            106 => 'traspasada',
                             default => 'vencida'
                         };
                         $estadoIcono = match($inscripcion->id_estado) {
                             100 => 'fa-check-circle',
                             101 => 'fa-pause-circle',
                             102 => 'fa-clock',
-                            103, 104 => 'fa-times-circle',
+                            103 => 'fa-times-circle',
+                            104 => 'fa-ban',
+                            105 => 'fa-exchange-alt',
+                            106 => 'fa-share',
                             default => 'fa-question-circle'
                         };
                     @endphp
@@ -1032,9 +1040,10 @@
                                 100 => ['fa-check-circle', 'text-success'],
                                 101 => ['fa-pause-circle', 'text-warning'],
                                 102 => ['fa-clock', 'text-secondary'],
-                                103, 104 => ['fa-times-circle', 'text-danger'],
+                                103 => ['fa-times-circle', 'text-secondary'],
+                                104 => ['fa-ban', 'text-danger'],
                                 105 => ['fa-exchange-alt', 'text-info'],
-                                106 => ['fa-users', 'text-info'],
+                                106 => ['fa-share', 'text-info'],
                                 default => ['fa-question-circle', 'text-muted']
                             };
                         @endphp
@@ -1173,23 +1182,79 @@
             @endif
 
             <!-- Información de Traspaso (si aplica) -->
-            @if($inscripcion->es_traspaso || $inscripcion->traspaso_origen_id)
+            @if($inscripcion->es_traspaso || $inscripcion->id_cliente_original)
+            @php
+                // Buscar historial de traspasos de esta inscripción
+                $historialTraspasos = \App\Models\HistorialTraspaso::where('inscripcion_origen_id', $inscripcion->id)
+                    ->orWhere('inscripcion_destino_id', $inscripcion->id)
+                    ->with(['clienteOrigen', 'clienteDestino', 'usuario'])
+                    ->orderBy('fecha_traspaso', 'desc')
+                    ->get();
+                    
+                // Cliente original (si fue traspasada)
+                $clienteOriginal = $inscripcion->id_cliente_original 
+                    ? \App\Models\Cliente::find($inscripcion->id_cliente_original) 
+                    : null;
+            @endphp
             <div class="info-card">
                 <div class="card-header-custom" style="background: linear-gradient(135deg, #6f42c1 0%, #9561e2 100%);">
-                    <i class="fas fa-exchange-alt"></i>Información de Traspaso
+                    <i class="fas fa-exchange-alt"></i>Historial de Traspaso
                 </div>
                 <div class="card-body-custom">
-                    <div class="alert-box info mb-0" style="background: linear-gradient(135deg, rgba(111,66,193,0.1) 0%, rgba(149,97,226,0.1) 100%); border-color: rgba(111,66,193,0.3); color: #563d7c;">
-                        <i class="fas fa-users"></i>
+                    @if($clienteOriginal)
+                    <div class="alert-box info mb-3" style="background: linear-gradient(135deg, rgba(111,66,193,0.1) 0%, rgba(149,97,226,0.1) 100%); border-color: rgba(111,66,193,0.3); color: #563d7c;">
+                        <i class="fas fa-user-clock"></i>
                         <div>
-                            <strong>Inscripción Traspasada</strong>
-                            @if($inscripcion->inscripcionOrigen && $inscripcion->inscripcionOrigen->cliente)
-                                <p class="mb-0 small">
-                                    Cliente origen: <strong>{{ $inscripcion->inscripcionOrigen->cliente->nombres ?? 'N/A' }} {{ $inscripcion->inscripcionOrigen->cliente->apellido_paterno ?? '' }}</strong>
-                                </p>
-                            @endif
+                            <strong>Titular Original</strong>
+                            <p class="mb-0 small">
+                                {{ $clienteOriginal->nombres }} {{ $clienteOriginal->apellido_paterno }}
+                                <span class="text-muted">({{ $clienteOriginal->rut }})</span>
+                            </p>
                         </div>
                     </div>
+                    @endif
+                    
+                    @if($historialTraspasos->isNotEmpty())
+                    <div class="timeline-traspasos">
+                        @foreach($historialTraspasos as $traspaso)
+                        <div class="traspaso-item mb-3 p-2" style="border-left: 3px solid #6f42c1; background: rgba(111,66,193,0.05); border-radius: 0 8px 8px 0;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block">{{ $traspaso->fecha_traspaso->format('d/m/Y H:i') }}</small>
+                                    <strong style="font-size: 0.9em;">
+                                        {{ $traspaso->clienteOrigen->nombres ?? 'N/A' }} {{ $traspaso->clienteOrigen->apellido_paterno ?? '' }}
+                                        <i class="fas fa-arrow-right mx-1" style="color: #6f42c1;"></i>
+                                        {{ $traspaso->clienteDestino->nombres ?? 'N/A' }} {{ $traspaso->clienteDestino->apellido_paterno ?? '' }}
+                                    </strong>
+                                </div>
+                                <span class="badge" style="background: #6f42c1; color: white; font-size: 0.7em;">
+                                    {{ $traspaso->dias_restantes_traspasados }} días
+                                </span>
+                            </div>
+                            @if($traspaso->motivo)
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-comment"></i> {{ Str::limit($traspaso->motivo, 60) }}
+                            </small>
+                            @endif
+                            @if($traspaso->deuda_transferida > 0)
+                            <small class="text-warning d-block mt-1">
+                                <i class="fas fa-exclamation-triangle"></i> Deuda transferida: ${{ number_format($traspaso->deuda_transferida, 0, ',', '.') }}
+                            </small>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-info-circle"></i> Esta membresía fue transferida desde otro titular.
+                        @if($inscripcion->motivo_traspaso)
+                        <br><strong>Motivo:</strong> {{ $inscripcion->motivo_traspaso }}
+                        @endif
+                        @if($inscripcion->fecha_traspaso)
+                        <br><strong>Fecha:</strong> {{ $inscripcion->fecha_traspaso->format('d/m/Y H:i') }}
+                        @endif
+                    </p>
+                    @endif
                 </div>
             </div>
             @endif

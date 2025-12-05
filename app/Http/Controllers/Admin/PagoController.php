@@ -150,29 +150,37 @@ class PagoController extends Controller
             $pendiente = $pago->monto_pendiente ?? 0;
             $porcentaje = $total > 0 ? ($abonado / $total) * 100 : 0;
             
-            $estadoCodigo = $pago->estado?->codigo ?? 200;
+            // NOTA: id_estado contiene directamente el código del estado (200, 201, etc.)
+            // en lugar del id de la tabla estados
+            $estadoCodigo = $pago->id_estado ?? 200;
             $estadoPago = match($estadoCodigo) {
+                200 => 'pendiente',
                 201 => 'pagado',
-                205 => 'traspasado',
+                202 => 'parcial',
                 203 => 'vencido',
                 204 => 'cancelado',
-                default => 'parcial'
+                205 => 'traspasado',
+                default => 'pendiente'
             };
             
             $estadoTexto = match($estadoCodigo) {
+                200 => 'Pendiente',
                 201 => 'Pagado',
-                205 => 'Traspasado',
+                202 => 'Parcial',
                 203 => 'Vencido',
                 204 => 'Cancelado',
-                default => 'Parcial'
+                205 => 'Traspasado',
+                default => 'Pendiente'
             };
             
             $estadoIcono = match($estadoCodigo) {
+                200 => 'fa-clock',
                 201 => 'fa-check-circle',
-                205 => 'fa-exchange-alt',
-                203 => 'fa-exclamation-circle',
+                202 => 'fa-adjust',
+                203 => 'fa-exclamation-triangle',
                 204 => 'fa-times-circle',
-                default => 'fa-hourglass-half'
+                205 => 'fa-exchange-alt',
+                default => 'fa-clock'
             };
             
             // Cliente actual de la inscripción (dueño actual de la membresía)
@@ -227,30 +235,14 @@ class PagoController extends Controller
      */
     private function calcularEstadisticas(): array
     {
-        // Total recaudado (suma de todos los monto_abonado)
-        $totalRecaudado = Pago::sum('monto_abonado');
-        
-        // Obtener IDs de estados
-        $estadoPagado = Estado::where('codigo', EstadosCodigo::PAGO_PAGADO)->first();
-        $estadoParcial = Estado::where('codigo', EstadosCodigo::PAGO_PARCIAL)->first();
-        $estadoPendiente = Estado::where('codigo', EstadosCodigo::PAGO_PENDIENTE)->first();
-        
-        // Contar pagos por estado
-        $completados = $estadoPagado ? Pago::where('id_estado', $estadoPagado->id)->count() : 0;
-        
-        // Parciales incluye tanto PAGO_PARCIAL (202) como PAGO_PENDIENTE (200)
-        $parcialesCount = 0;
-        if ($estadoParcial) {
-            $parcialesCount += Pago::where('id_estado', $estadoParcial->id)->count();
-        }
-        if ($estadoPendiente) {
-            $parcialesCount += Pago::where('id_estado', $estadoPendiente->id)->count();
-        }
+        // NOTA: Los pagos usan el código del estado directamente en id_estado
+        // (200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado, 205=Traspasado)
         
         return [
-            'total_recaudado' => $totalRecaudado,
-            'completados' => $completados,
-            'parciales' => $parcialesCount,
+            'pagados' => Pago::where('id_estado', 201)->count(),
+            'parciales' => Pago::where('id_estado', 202)->count(),
+            'pendientes' => Pago::where('id_estado', 200)->count(),
+            'vencidos' => Pago::where('id_estado', 203)->count(),
         ];
     }
 

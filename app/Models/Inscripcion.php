@@ -361,6 +361,86 @@ class Inscripcion extends Model
             : 'Pausada';
     }
 
+    /**
+     * Verificar si la pausa ha expirado y reanudar automáticamente
+     * 
+     * Este método es llamado por el CRON para verificar pausas expiradas.
+     * Solo aplica a pausas con fecha de fin definida (NO indefinidas).
+     * 
+     * @return bool true si se reanudó, false si no
+     */
+    public function verificarPausaExpirada()
+    {
+        // Solo verificar si está pausada y NO es indefinida
+        if (!$this->pausada || $this->pausa_indefinida) {
+            return false;
+        }
+
+        // Si no tiene fecha de fin, no hay nada que verificar
+        if (!$this->fecha_pausa_fin) {
+            return false;
+        }
+
+        // Si la fecha de fin ya pasó, reanudar automáticamente
+        if ($this->fecha_pausa_fin->startOfDay()->lte(now()->startOfDay())) {
+            $this->reanudar();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Alias de puedeRealizarPausa para compatibilidad
+     * @return bool
+     */
+    public function puedePausarse()
+    {
+        return $this->puedeRealizarPausa();
+    }
+
+    /**
+     * Obtener información completa de la pausa actual
+     * @return array
+     */
+    public function obtenerInfoPausa()
+    {
+        if (!$this->pausada) {
+            return [
+                'pausada' => false,
+                'puede_pausarse' => $this->puedeRealizarPausa(),
+                'pausas_realizadas' => $this->pausas_realizadas,
+                'pausas_disponibles' => $this->pausas_disponibles,
+                'max_pausas' => $this->max_pausas_permitidas,
+            ];
+        }
+
+        $diasEnPausa = $this->fecha_pausa_inicio 
+            ? (int) $this->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay())
+            : 0;
+
+        $diasRestantesPausa = null;
+        if ($this->fecha_pausa_fin && !$this->pausa_indefinida) {
+            $diasRestantesPausa = max(0, (int) now()->startOfDay()->diffInDays($this->fecha_pausa_fin->startOfDay(), false));
+        }
+
+        return [
+            'pausada' => true,
+            'indefinida' => $this->pausa_indefinida,
+            'dias_solicitados' => $this->dias_pausa,
+            'dias_en_pausa' => $diasEnPausa,
+            'dias_restantes_pausa' => $diasRestantesPausa,
+            'dias_membresia_guardados' => $this->dias_restantes_al_pausar,
+            'fecha_inicio' => $this->fecha_pausa_inicio?->format('Y-m-d'),
+            'fecha_fin' => $this->fecha_pausa_fin?->format('Y-m-d'),
+            'razon' => $this->razon_pausa,
+            'pausas_realizadas' => $this->pausas_realizadas,
+            'pausas_disponibles' => $this->pausas_disponibles,
+            'max_pausas' => $this->max_pausas_permitidas,
+            'descripcion' => $this->estado_pausa_descripcion,
+        ];
+    }
+
     // ============================================
     // MÉTODOS DE CAMBIO DE PLAN (UPGRADE/DOWNGRADE)
     // ============================================
