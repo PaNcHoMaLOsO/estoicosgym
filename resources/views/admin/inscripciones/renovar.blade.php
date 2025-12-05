@@ -24,16 +24,16 @@
     }
 
     .renovacion-container {
-        max-width: 900px;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 1rem;
+        padding: 1.5rem;
     }
 
     .header-renovacion {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         border-radius: var(--radius-lg);
-        padding: 2rem;
-        margin-bottom: 2rem;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
         color: white;
         text-align: center;
     }
@@ -57,7 +57,7 @@
         background: white;
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-md);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
         overflow: hidden;
     }
 
@@ -73,13 +73,25 @@
     }
 
     .info-card-body {
-        padding: 1.5rem;
+        padding: 1.25rem;
     }
 
     .inscripcion-anterior {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
+    }
+
+    @media (max-width: 992px) {
+        .inscripcion-anterior {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .inscripcion-anterior {
+            grid-template-columns: 1fr;
+        }
     }
 
     .info-item {
@@ -123,11 +135,30 @@
     }
 
     .form-card-body {
-        padding: 1.5rem;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+
+    .form-row-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-row-grid,
+        .form-row-grid-3 {
+            grid-template-columns: 1fr;
+        }
     }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .form-group label {
@@ -158,8 +189,8 @@
         background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
         border: 2px solid var(--success);
         border-radius: var(--radius-lg);
-        padding: 1.5rem;
-        margin-top: 1.5rem;
+        padding: 1.25rem;
+        margin-top: 1rem;
     }
 
     .precio-box h5 {
@@ -234,16 +265,22 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 2rem;
-        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
         border-top: 2px solid var(--gray-100);
     }
 
     .tipo-pago-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
         margin-bottom: 1rem;
+    }
+
+    @media (max-width: 576px) {
+        .tipo-pago-container {
+            grid-template-columns: 1fr;
+        }
     }
 
     .tipo-pago-option {
@@ -379,72 +416,60 @@
                 <i class="fas fa-edit"></i> Nueva Membresía
             </div>
             <div class="form-card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-dumbbell"></i> Membresía</label>
-                            <select name="id_membresia" id="id_membresia" class="form-control" required>
-                                @foreach($membresias as $membresia)
-                                <option value="{{ $membresia->id }}" 
-                                    data-precio="{{ $membresia->precios->where('activo', true)->first()->precio_normal ?? 0 }}"
-                                    data-duracion="{{ $membresia->duracion_dias }}"
-                                    {{ $inscripcion->id_membresia == $membresia->id ? 'selected' : '' }}>
-                                    {{ $membresia->nombre }} - ${{ number_format($membresia->precios->where('activo', true)->first()->precio_normal ?? 0, 0, ',', '.') }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-dumbbell"></i> Membresía</label>
+                        <select name="id_membresia" id="id_membresia" class="form-control" required>
+                            @foreach($membresias as $membresia)
+                            <option value="{{ $membresia->id }}" 
+                                data-precio="{{ $membresia->precios->where('activo', true)->first()->precio_normal ?? 0 }}"
+                                data-duracion="{{ $membresia->duracion_dias }}"
+                                {{ $inscripcion->id_membresia == $membresia->id ? 'selected' : '' }}>
+                                {{ $membresia->nombre }} - ${{ number_format($membresia->precios->where('activo', true)->first()->precio_normal ?? 0, 0, ',', '.') }}
+                            </option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-handshake"></i> Convenio (opcional)</label>
-                            <select name="id_convenio" id="id_convenio" class="form-control">
-                                <option value="">Sin convenio</option>
-                                @foreach($convenios as $convenio)
-                                <option value="{{ $convenio->id }}" {{ $inscripcion->id_convenio == $convenio->id ? 'selected' : '' }}>
-                                    {{ $convenio->nombre }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-handshake"></i> Convenio (opcional)</label>
+                        <select name="id_convenio" id="id_convenio" class="form-control">
+                            <option value="">Sin convenio</option>
+                            @foreach($convenios as $convenio)
+                            <option value="{{ $convenio->id }}" {{ $inscripcion->id_convenio == $convenio->id ? 'selected' : '' }}>
+                                {{ $convenio->nombre }}
+                            </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-calendar-alt"></i> Fecha de Inicio</label>
-                            <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" 
-                                   value="{{ $datosRenovacion['fecha_inicio_sugerida'] }}" required>
-                            <small class="text-muted">Sugerencia: día siguiente al vencimiento</small>
-                        </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Fecha de Inicio</label>
+                        <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" 
+                               value="{{ $datosRenovacion['fecha_inicio_sugerida'] }}" required>
+                        <small class="text-muted">Sugerencia: día siguiente al vencimiento</small>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-calendar-check"></i> Fecha de Término (calculada)</label>
-                            <input type="text" id="fecha_termino_display" class="form-control" readonly>
-                        </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-check"></i> Fecha de Término (calculada)</label>
+                        <input type="text" id="fecha_termino_display" class="form-control" readonly>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-percent"></i> Descuento Adicional ($)</label>
-                            <input type="number" name="descuento_aplicado" id="descuento_aplicado" class="form-control" 
-                                   value="0" min="0" step="1000">
-                        </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-percent"></i> Descuento Adicional ($)</label>
+                        <input type="number" name="descuento_aplicado" id="descuento_aplicado" class="form-control" 
+                               value="0" min="0" step="1000">
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><i class="fas fa-question-circle"></i> Motivo del Descuento</label>
-                            <select name="id_motivo_descuento" id="id_motivo_descuento" class="form-control">
-                                <option value="">Seleccionar motivo...</option>
-                                @foreach($motivos as $motivo)
-                                <option value="{{ $motivo->id }}">{{ $motivo->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-question-circle"></i> Motivo del Descuento</label>
+                        <select name="id_motivo_descuento" id="id_motivo_descuento" class="form-control">
+                            <option value="">Seleccionar motivo...</option>
+                            @foreach($motivos as $motivo)
+                            <option value="{{ $motivo->id }}">{{ $motivo->nombre }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -466,7 +491,7 @@
                 </div>
 
                 <!-- Tipo de Pago -->
-                <h5 style="margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-credit-card"></i> Forma de Pago</h5>
+                <h5 style="margin-top: 1.5rem; margin-bottom: 0.75rem;"><i class="fas fa-credit-card"></i> Forma de Pago</h5>
                 <div class="tipo-pago-container">
                     <div class="tipo-pago-option">
                         <input type="radio" name="tipo_pago" id="tipo_completo" value="completo" checked>
@@ -493,33 +518,27 @@
 
                 <!-- Sección de pago (para completo y abono) -->
                 <div class="seccion-pago active" id="seccion-pago">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Monto a Pagar</label>
-                                <input type="number" name="monto_abonado" id="monto_abonado" class="form-control" min="0" step="1000">
-                            </div>
+                    <div class="form-row-grid-3">
+                        <div class="form-group">
+                            <label>Monto a Pagar</label>
+                            <input type="number" name="monto_abonado" id="monto_abonado" class="form-control" min="0" step="1000">
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Método de Pago</label>
-                                <select name="id_metodo_pago" id="id_metodo_pago" class="form-control">
-                                    @foreach($metodosPago as $metodo)
-                                    <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="form-group">
+                            <label>Método de Pago</label>
+                            <select name="id_metodo_pago" id="id_metodo_pago" class="form-control">
+                                @foreach($metodosPago as $metodo)
+                                <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Fecha de Pago</label>
-                                <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ date('Y-m-d') }}">
-                            </div>
+                        <div class="form-group">
+                            <label>Fecha de Pago</label>
+                            <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ date('Y-m-d') }}">
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-top: 1.5rem;">
+                <div class="form-group" style="margin-top: 1rem;">
                     <label><i class="fas fa-sticky-note"></i> Observaciones</label>
                     <textarea name="observaciones" id="observaciones" class="form-control" rows="2" 
                               placeholder="Notas adicionales sobre la renovación..."></textarea>
