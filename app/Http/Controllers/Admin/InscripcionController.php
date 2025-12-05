@@ -1542,6 +1542,15 @@ class InscripcionController extends Controller
         
         // Calcular precios
         $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
+        
+        // VALIDACIÓN: El descuento no puede superar el precio base
+        $descuentoAplicado = (float) ($validated['descuento_aplicado'] ?? 0);
+        if ($descuentoAplicado > $precioBase) {
+            return back()->withErrors([
+                'descuento_aplicado' => 'El descuento ($' . number_format($descuentoAplicado, 0, ',', '.') . ') no puede superar el precio base ($' . number_format($precioBase, 0, ',', '.') . ').'
+            ])->withInput();
+        }
+        
         $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
         $precioFinal = max(0, $precioBase - $descuentoTotal);
 

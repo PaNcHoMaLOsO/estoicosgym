@@ -409,7 +409,7 @@
     <!-- Formulario de renovación -->
     <form action="{{ route('admin.inscripciones.renovar.store', $inscripcion) }}" method="POST" id="formRenovacion">
         @csrf
-        <input type="hidden" name="form_token" value="{{ Str::random(40) }}">
+        <input type="hidden" name="form_submit_token" value="{{ Str::random(40) }}">
 
         <div class="form-card">
             <div class="form-card-header">
@@ -576,7 +576,24 @@ $(document).ready(function() {
         const membresiaOption = $('#id_membresia option:selected');
         precioBase = parseFloat(membresiaOption.data('precio')) || 0;
         
-        const descuento = parseFloat($('#descuento_aplicado').val()) || 0;
+        let descuento = parseFloat($('#descuento_aplicado').val()) || 0;
+        
+        // Validar que el descuento no supere el precio base
+        if (descuento > precioBase) {
+            descuento = precioBase;
+            $('#descuento_aplicado').val(descuento);
+            
+            Swal.fire({
+                title: 'Descuento limitado',
+                html: `<p>El descuento no puede superar el precio de la membresía.</p><p>Descuento máximo permitido: <strong>$${formatNumber(precioBase)}</strong></p>`,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f0a500'
+            });
+        }
+        
+        // Actualizar el máximo del input
+        $('#descuento_aplicado').attr('max', precioBase);
         
         precioFinal = Math.max(0, precioBase - descuento);
         
