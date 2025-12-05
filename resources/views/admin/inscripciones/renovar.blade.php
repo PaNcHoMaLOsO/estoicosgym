@@ -178,11 +178,28 @@
         border-radius: var(--radius-md);
         padding: 0.75rem 1rem;
         transition: all 0.2s;
+        font-size: 0.95rem;
+        background-color: #fff;
     }
 
     .form-control:focus {
         border-color: var(--info);
         box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    select.form-control option {
+        padding: 10px;
+        font-size: 0.95rem;
     }
 
     .precio-box {
@@ -272,12 +289,18 @@
 
     .tipo-pago-container {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 0.75rem;
         margin-bottom: 1rem;
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 768px) {
+        .tipo-pago-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
         .tipo-pago-container {
             grid-template-columns: 1fr;
         }
@@ -498,13 +521,23 @@
                         <label for="tipo_completo">
                             <div class="tipo-pago-icon"><i class="fas fa-check-circle"></i></div>
                             <strong>Pago Completo</strong>
+                            <small style="display:block;color:var(--gray-600);font-size:0.75rem;margin-top:0.25rem;">100% del total</small>
                         </label>
                     </div>
                     <div class="tipo-pago-option">
                         <input type="radio" name="tipo_pago" id="tipo_abono" value="abono">
                         <label for="tipo_abono">
                             <div class="tipo-pago-icon"><i class="fas fa-coins"></i></div>
-                            <strong>Abono</strong>
+                            <strong>Pago Parcial</strong>
+                            <small style="display:block;color:var(--gray-600);font-size:0.75rem;margin-top:0.25rem;">Abono inicial</small>
+                        </label>
+                    </div>
+                    <div class="tipo-pago-option">
+                        <input type="radio" name="tipo_pago" id="tipo_mixto" value="mixto">
+                        <label for="tipo_mixto">
+                            <div class="tipo-pago-icon"><i class="fas fa-random"></i></div>
+                            <strong>Pago Mixto</strong>
+                            <small style="display:block;color:var(--gray-600);font-size:0.75rem;margin-top:0.25rem;">2 métodos</small>
                         </label>
                     </div>
                     <div class="tipo-pago-option">
@@ -512,19 +545,20 @@
                         <label for="tipo_pendiente">
                             <div class="tipo-pago-icon"><i class="fas fa-clock"></i></div>
                             <strong>Pendiente</strong>
+                            <small style="display:block;color:var(--gray-600);font-size:0.75rem;margin-top:0.25rem;">Pagar después</small>
                         </label>
                     </div>
                 </div>
 
-                <!-- Sección de pago (para completo y abono) -->
-                <div class="seccion-pago active" id="seccion-pago">
+                <!-- Sección de pago simple (completo y parcial) -->
+                <div class="seccion-pago active" id="seccion-pago-simple">
                     <div class="form-row-grid-3">
                         <div class="form-group">
-                            <label>Monto a Pagar</label>
-                            <input type="number" name="monto_abonado" id="monto_abonado" class="form-control" min="0" step="1000">
+                            <label><i class="fas fa-dollar-sign"></i> Monto a Pagar</label>
+                            <input type="number" name="monto_abonado" id="monto_abonado" class="form-control" min="0" step="1000" placeholder="$0">
                         </div>
                         <div class="form-group">
-                            <label>Método de Pago</label>
+                            <label><i class="fas fa-credit-card"></i> Método de Pago</label>
                             <select name="id_metodo_pago" id="id_metodo_pago" class="form-control">
                                 @foreach($metodosPago as $metodo)
                                 <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
@@ -532,8 +566,54 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Fecha de Pago</label>
+                            <label><i class="fas fa-calendar"></i> Fecha de Pago</label>
                             <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ date('Y-m-d') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de pago mixto -->
+                <div class="seccion-pago" id="seccion-pago-mixto">
+                    <div class="form-row-grid">
+                        <div style="background: rgba(67,97,238,0.05); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(67,97,238,0.2);">
+                            <h6 style="color: var(--info); margin-bottom: 0.75rem;"><i class="fas fa-credit-card"></i> Método 1</h6>
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select name="id_metodo_pago1" id="id_metodo_pago1" class="form-control">
+                                    @foreach($metodosPago as $metodo)
+                                    <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Monto</label>
+                                <input type="number" name="monto_metodo1" id="monto_metodo1" class="form-control" min="0" step="1000" placeholder="$0">
+                            </div>
+                        </div>
+                        <div style="background: rgba(0,191,142,0.05); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(0,191,142,0.2);">
+                            <h6 style="color: var(--success); margin-bottom: 0.75rem;"><i class="fas fa-credit-card"></i> Método 2</h6>
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select name="id_metodo_pago2" id="id_metodo_pago2" class="form-control">
+                                    @foreach($metodosPago as $metodo)
+                                    <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Monto</label>
+                                <input type="number" name="monto_metodo2" id="monto_metodo2" class="form-control" min="0" step="1000" placeholder="$0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row-grid" style="margin-top: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label><i class="fas fa-calendar"></i> Fecha de Pago</label>
+                            <input type="date" name="fecha_pago_mixto" id="fecha_pago_mixto" class="form-control" value="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label><i class="fas fa-calculator"></i> Total Mixto</label>
+                            <input type="text" id="total_mixto_display" class="form-control" readonly style="background: var(--gray-100); font-weight: 600;">
                         </div>
                     </div>
                 </div>
@@ -635,19 +715,50 @@ $(document).ready(function() {
     $('#id_membresia, #descuento_aplicado').on('change input', calcularPrecios);
     $('#fecha_inicio').on('change', calcularFechaTermino);
 
+    // Calcular total mixto
+    function calcularTotalMixto() {
+        const monto1 = parseFloat($('#monto_metodo1').val()) || 0;
+        const monto2 = parseFloat($('#monto_metodo2').val()) || 0;
+        const total = monto1 + monto2;
+        $('#total_mixto_display').val('$' + formatNumber(total));
+        
+        // Cambiar color si coincide con precio final
+        if (total === precioFinal) {
+            $('#total_mixto_display').css({'color': 'var(--success)', 'border-color': 'var(--success)'});
+        } else {
+            $('#total_mixto_display').css({'color': 'var(--accent)', 'border-color': 'var(--accent)'});
+        }
+    }
+
+    $('#monto_metodo1, #monto_metodo2').on('input', calcularTotalMixto);
+
     // Tipo de pago
     $('input[name="tipo_pago"]').on('change', function() {
         const tipo = $(this).val();
         
+        // Ocultar todas las secciones
+        $('#seccion-pago-simple').removeClass('active');
+        $('#seccion-pago-mixto').removeClass('active');
+        
         if (tipo === 'pendiente') {
-            $('#seccion-pago').removeClass('active');
+            // No mostrar ninguna sección de pago
             $('#monto_abonado').val(0);
+        } else if (tipo === 'mixto') {
+            // Mostrar sección de pago mixto
+            $('#seccion-pago-mixto').addClass('active');
+            // Precargar valores sugeridos (50% cada uno)
+            const mitad = Math.round(precioFinal / 2);
+            $('#monto_metodo1').val(mitad);
+            $('#monto_metodo2').val(precioFinal - mitad);
+            calcularTotalMixto();
         } else {
-            $('#seccion-pago').addClass('active');
+            // Mostrar sección de pago simple
+            $('#seccion-pago-simple').addClass('active');
             
             if (tipo === 'completo') {
                 $('#monto_abonado').val(Math.round(precioFinal));
             } else {
+                // Abono/Parcial
                 $('#monto_abonado').val('');
             }
         }
@@ -657,7 +768,7 @@ $(document).ready(function() {
     $('#formRenovacion').on('submit', function(e) {
         const tipo = $('input[name="tipo_pago"]:checked').val();
         
-        if (tipo !== 'pendiente') {
+        if (tipo === 'completo' || tipo === 'abono') {
             const monto = parseFloat($('#monto_abonado').val()) || 0;
             const metodo = $('#id_metodo_pago').val();
             
@@ -672,11 +783,61 @@ $(document).ready(function() {
                 return false;
             }
             
+            if (tipo === 'abono' && monto >= precioFinal) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Monto incorrecto',
+                    html: `Para pago parcial, el monto debe ser menor al total.<br>Total: <strong>$${formatNumber(precioFinal)}</strong>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#4361ee'
+                });
+                return false;
+            }
+            
             if (!metodo) {
                 e.preventDefault();
                 Swal.fire({
                     title: 'Método de pago requerido',
                     text: 'Selecciona un método de pago.',
+                    icon: 'warning',
+                    confirmButtonColor: '#4361ee'
+                });
+                return false;
+            }
+        } else if (tipo === 'mixto') {
+            const monto1 = parseFloat($('#monto_metodo1').val()) || 0;
+            const monto2 = parseFloat($('#monto_metodo2').val()) || 0;
+            const totalMixto = monto1 + monto2;
+            const metodo1 = $('#id_metodo_pago1').val();
+            const metodo2 = $('#id_metodo_pago2').val();
+            
+            if (monto1 <= 0 || monto2 <= 0) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Montos requeridos',
+                    text: 'Ambos métodos de pago deben tener un monto mayor a $0.',
+                    icon: 'warning',
+                    confirmButtonColor: '#4361ee'
+                });
+                return false;
+            }
+            
+            if (totalMixto !== precioFinal) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Montos no coinciden',
+                    html: `La suma de los montos debe ser igual al total.<br>Total esperado: <strong>$${formatNumber(precioFinal)}</strong><br>Total ingresado: <strong>$${formatNumber(totalMixto)}</strong>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#4361ee'
+                });
+                return false;
+            }
+            
+            if (metodo1 === metodo2) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Métodos iguales',
+                    text: 'Los métodos de pago deben ser diferentes.',
                     icon: 'warning',
                     confirmButtonColor: '#4361ee'
                 });
