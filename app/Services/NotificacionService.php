@@ -267,4 +267,137 @@ class NotificacionService
             'total' => Notificacion::count(),
         ];
     }
+
+    /**
+     * Envía notificación de renovación exitosa
+     * 
+     * @param Inscripcion $inscripcion La nueva inscripción (renovada)
+     * @return Notificacion|null
+     */
+    public function enviarNotificacionRenovacion(Inscripcion $inscripcion): ?Notificacion
+    {
+        $tipoNotificacion = TipoNotificacion::where('codigo', TipoNotificacion::RENOVACION_EXITOSA)
+            ->where('activo', true)
+            ->first();
+
+        if (!$tipoNotificacion || !$inscripcion->cliente->email) {
+            return null;
+        }
+
+        $cliente = $inscripcion->cliente;
+        $membresia = $inscripcion->membresia;
+
+        $datos = [
+            'nombre' => $cliente->nombre_completo,
+            'membresia' => $membresia->nombre,
+            'fecha_inicio' => $inscripcion->fecha_inicio->format('d/m/Y'),
+            'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+            'dias_vigencia' => $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento),
+            'precio' => number_format($inscripcion->precio_final, 0, ',', '.'),
+        ];
+
+        $renderizado = $tipoNotificacion->renderizar($datos);
+
+        $notificacion = Notificacion::create([
+            'id_tipo_notificacion' => $tipoNotificacion->id,
+            'id_cliente' => $cliente->id,
+            'id_inscripcion' => $inscripcion->id,
+            'email_destino' => $cliente->email,
+            'asunto' => $renderizado['asunto'],
+            'contenido' => $renderizado['contenido'],
+            'id_estado' => Notificacion::ESTADO_PENDIENTE,
+            'fecha_programada' => Carbon::today(),
+        ]);
+
+        $notificacion->registrarLog('programada', 'Notificación de renovación programada');
+
+        // Intentar enviar inmediatamente
+        try {
+            Mail::html($notificacion->contenido, function ($message) use ($notificacion) {
+                $message->to($notificacion->email_destino)
+                        ->subject($notificacion->asunto);
+            });
+            $notificacion->marcarComoEnviada();
+        } catch (\Exception $e) {
+            Log::warning('Notificación de renovación quedó pendiente: ' . $e->getMessage());
+        }
+
+        return $notificacion;
+    }
+
+    /**
+     * Programa notificaciones de pago pendiente
+     * 
+     * @param int $diasVencimiento Días desde que venció el pago
+     * @return array
+     */
+    public function programarNotificacionesPagoPendiente(int $diasVencimiento = 7): array
+    {
+        $tipoNotificacion = TipoNotificacion::where('codigo', TipoNotificacion::PAGO_PENDIENTE)
+            ->where('activo', true)
+            ->first();
+
+        if (!$tipoNotificacion) {
+            return ['programadas' => 0, 'mensaje' => 'Tipo de notificación no encontrado'];
+        }
+
+        // Buscar inscripciones activas con pagos pendientes hace X días
+        $inscripciones = Inscripcion::with(['cliente', 'membresia', 'pagos'])
+            ->where('id_estado', 100) // Activa
+            ->whereHas('cliente', function ($q) {
+                $q->where('activo', true)
+                  ->whereNotNull('email')
+                  ->where('email', '!=', '');
+            })
+            ->get()
+            ->filter(function ($inscripcion) {
+                $estadoPago = $inscripcion->obtenerEstadoPago();
+                return $estadoPago['estado'] !== 'Pagado' && $estadoPago['pendiente'] > 0;
+            });
+
+        $programadas = 0;
+
+        foreach ($inscripciones as $inscripcion) {
+            // Verificar si ya se envió notificación reciente
+            $existe = Notificacion::where('id_inscripcion', $inscripcion->id)
+                ->where('id_tipo_notificacion', $tipoNotificacion->id)
+                ->where('fecha_programada', '>=', Carbon::today()->subDays($diasVencimiento))
+                ->exists();
+
+            if ($existe) {
+                continue;
+            }
+
+            $cliente = $inscripcion->cliente;
+            $estadoPago = $inscripcion->obtenerEstadoPago();
+
+            $datos = [
+                'nombre' => $cliente->nombre_completo,
+                'membresia' => $inscripcion->membresia->nombre,
+                'monto_pendiente' => number_format($estadoPago['pendiente'], 0, ',', '.'),
+                'monto_total' => number_format($inscripcion->precio_final, 0, ',', '.'),
+                'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+            ];
+
+            $renderizado = $tipoNotificacion->renderizar($datos);
+
+            Notificacion::create([
+                'id_tipo_notificacion' => $tipoNotificacion->id,
+                'id_cliente' => $cliente->id,
+                'id_inscripcion' => $inscripcion->id,
+                'email_destino' => $cliente->email,
+                'asunto' => $renderizado['asunto'],
+                'contenido' => $renderizado['contenido'],
+                'id_estado' => Notificacion::ESTADO_PENDIENTE,
+                'fecha_programada' => Carbon::today(),
+            ]);
+
+            $programadas++;
+        }
+
+        return [
+            'programadas' => $programadas,
+            'mensaje' => "Se programaron {$programadas} notificaciones de pago pendiente"
+        ];
+    }
 }

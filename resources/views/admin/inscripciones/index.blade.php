@@ -988,6 +988,20 @@
         box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
     }
 
+    .btn-renew {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-renew:hover {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+        border-color: #10b981;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -1397,6 +1411,13 @@ $(document).ready(function() {
         if (insc.estado_pago !== 'pagado') {
             actionButtons += `
                 <a href="${insc.pagoUrl}" class="btn-action btn-pay" data-tooltip="Registrar Pago"><i class="fas fa-dollar-sign"></i></a>
+            `;
+        }
+
+        // Botón de renovar para vencidas o próximas a vencer (30 días o menos)
+        if (insc.estado_class === 'vencida' || (insc.dias_restantes !== null && insc.dias_restantes <= 30)) {
+            actionButtons += `
+                <a href="${insc.renovarUrl}" class="btn-action btn-renew" data-tooltip="Renovar"><i class="fas fa-sync-alt"></i></a>
             `;
         }
 

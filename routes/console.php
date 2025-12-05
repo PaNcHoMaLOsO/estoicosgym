@@ -46,3 +46,29 @@ Schedule::command('clientes:desactivar-vencidos')
     ->onFailure(function () {
         Log::error('❌ Error al desactivar clientes vencidos');
     });
+
+// ============ NOTIFICACIONES ============
+
+// Programar y enviar notificaciones de membresías por vencer/vencidas
+Schedule::command('notificaciones:enviar --todo')
+    ->dailyAt('08:00')
+    ->withoutOverlapping()
+    ->name('enviar-notificaciones-diarias')
+    ->onSuccess(function () {
+        Log::info('✅ Notificaciones enviadas exitosamente');
+    })
+    ->onFailure(function () {
+        Log::error('❌ Error al enviar notificaciones');
+    });
+
+// Reintentar notificaciones fallidas (segunda oportunidad por la tarde)
+Schedule::command('notificaciones:enviar --reintentar')
+    ->dailyAt('14:00')
+    ->withoutOverlapping()
+    ->name('reintentar-notificaciones')
+    ->onSuccess(function () {
+        Log::info('✅ Reintento de notificaciones completado');
+    })
+    ->onFailure(function () {
+        Log::error('❌ Error al reintentar notificaciones');
+    });

@@ -211,6 +211,8 @@ class InscripcionController extends Controller
                 'editUrl' => route('admin.inscripciones.edit', $inscripcion),
                 'deleteUrl' => route('admin.inscripciones.destroy', $inscripcion),
                 'pagoUrl' => route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]),
+                'renovarUrl' => route('admin.inscripciones.renovar', $inscripcion),
+                'dias_restantes' => $inscripcion->dias_restantes,
             ];
         })->values()->toArray();
     }
@@ -1459,5 +1461,165 @@ class InscripcionController extends Controller
 
         return redirect()->route('admin.inscripciones.trashed')
             ->with('success', "Inscripción de {$clienteNombre} eliminada permanentemente.");
+    }
+
+    // ==========================================
+    // RENOVACIÓN DE MEMBRESÍA
+    // ==========================================
+
+    /**
+     * Mostrar formulario de renovación pre-poblado
+     * 
+     * @param Inscripcion $inscripcion La inscripción vencida o por vencer a renovar
+     * @return \Illuminate\View\View
+     */
+    public function showRenovar(Inscripcion $inscripcion)
+    {
+        // Verificar que la inscripción sea renovable (vencida o próxima a vencer)
+        $diasRestantes = $inscripcion->dias_restantes;
+        
+        // Permitir renovar si: vencida, o le quedan 30 días o menos
+        if ($diasRestantes > 30 && $inscripcion->id_estado == 100) {
+            return redirect()->route('admin.inscripciones.show', $inscripcion)
+                ->with('warning', 'Esta inscripción aún tiene más de 30 días de vigencia. No es necesario renovar.');
+        }
+
+        $clientes = Cliente::where('activo', true)->orderBy('nombres')->get();
+        $membresias = Membresia::where('activo', true)->orderBy('nombre')->get();
+        $convenios = Convenio::where('activo', true)->get();
+        $motivos = MotivoDescuento::where('activo', true)->get();
+        $metodosPago = MetodoPago::where('activo', true)->get();
+        $estados = Estado::where('categoria', 'inscripcion')->get();
+        $estadoActiva = Estado::where('codigo', EstadosCodigo::INSCRIPCION_ACTIVA)->first();
+
+        // Pre-cargar datos de la inscripción anterior
+        $datosRenovacion = [
+            'inscripcion_anterior' => $inscripcion,
+            'cliente' => $inscripcion->cliente,
+            'membresia' => $inscripcion->membresia,
+            'convenio' => $inscripcion->convenio,
+            'precio_anterior' => $inscripcion->precio_final,
+            'fecha_inicio_sugerida' => $inscripcion->fecha_vencimiento->addDay()->format('Y-m-d'),
+        ];
+
+        return view('admin.inscripciones.renovar', compact(
+            'inscripcion', 'clientes', 'membresias', 'convenios', 
+            'motivos', 'metodosPago', 'estados', 'estadoActiva', 'datosRenovacion'
+        ));
+    }
+
+    /**
+     * Procesar la renovación de una membresía
+     * 
+     * Crea una nueva inscripción basada en la anterior y la marca como renovación.
+     * 
+     * @param Request $request
+     * @param Inscripcion $inscripcionAnterior La inscripción que se está renovando
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function renovar(Request $request, Inscripcion $inscripcionAnterior)
+    {
+        if (!$this->validateFormToken($request, 'inscripcion_renovar')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
+        // Validación
+        $validated = $request->validate([
+            'id_membresia' => 'required|exists:membresias,id',
+            'id_convenio' => 'nullable|exists:convenios,id',
+            'fecha_inicio' => 'required|date',
+            'descuento_aplicado' => 'nullable|numeric|min:0',
+            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
+            'observaciones' => 'nullable|string|max:500',
+            'tipo_pago' => 'required|in:completo,abono,mixto,pendiente',
+            'monto_abonado' => 'nullable|numeric|min:0',
+            'id_metodo_pago' => 'nullable|exists:metodos_pago,id',
+            'fecha_pago' => 'nullable|date',
+        ]);
+
+        $cliente = $inscripcionAnterior->cliente;
+        $membresia = Membresia::findOrFail($validated['id_membresia']);
+        
+        // Calcular precios
+        $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
+        $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
+        $precioFinal = max(0, $precioBase - $descuentoTotal);
+
+        // Calcular fecha de vencimiento
+        $fechaInicio = Carbon::parse($validated['fecha_inicio']);
+        $fechaVencimiento = $this->calcularFechaVencimiento($fechaInicio, $membresia);
+
+        DB::beginTransaction();
+        try {
+            // Crear nueva inscripción
+            $nuevaInscripcion = Inscripcion::create([
+                'id_cliente' => $cliente->id,
+                'id_membresia' => $validated['id_membresia'],
+                'id_convenio' => $validated['id_convenio'] ?? null,
+                'id_estado' => EstadosCodigo::INSCRIPCION_ACTIVA,
+                'fecha_inscripcion' => now()->format('Y-m-d'),
+                'fecha_inicio' => $fechaInicio->format('Y-m-d'),
+                'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
+                'precio_base' => $precioBase,
+                'descuento_aplicado' => $descuentoTotal,
+                'precio_final' => $precioFinal,
+                'id_motivo_descuento' => $validated['id_motivo_descuento'] ?? null,
+                'id_precio_acordado' => 1,
+                'max_pausas_permitidas' => $membresia->max_pausas ?? 2,
+                'observaciones' => ($validated['observaciones'] ?? '') . "\n[Renovación de inscripción #{$inscripcionAnterior->id}]",
+                // Campos de renovación (usa estructura de cambio de plan)
+                'es_cambio_plan' => true,
+                'tipo_cambio' => 'renovacion',
+                'id_inscripcion_anterior' => $inscripcionAnterior->id,
+            ]);
+
+            // Crear pago según tipo
+            $tipoPago = $validated['tipo_pago'];
+            if ($tipoPago === 'pendiente') {
+                $this->crearPagoPendiente($nuevaInscripcion, $validated, $precioFinal);
+            } elseif (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
+                $this->crearPagoInicial($nuevaInscripcion, $validated, $precioFinal);
+            }
+
+            // Registrar en historial
+            HistorialCambio::create([
+                'inscripcion_id' => $nuevaInscripcion->id,
+                'tipo_cambio' => 'renovacion',
+                'descripcion' => "Renovación de membresía. Inscripción anterior: #{$inscripcionAnterior->id}",
+                'datos_anteriores' => json_encode([
+                    'inscripcion_anterior_id' => $inscripcionAnterior->id,
+                    'membresia_anterior' => $inscripcionAnterior->membresia->nombre ?? 'N/A',
+                    'fecha_vencimiento_anterior' => $inscripcionAnterior->fecha_vencimiento->format('Y-m-d'),
+                ]),
+                'datos_nuevos' => json_encode([
+                    'nueva_inscripcion_id' => $nuevaInscripcion->id,
+                    'membresia' => $membresia->nombre,
+                    'fecha_inicio' => $fechaInicio->format('Y-m-d'),
+                    'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
+                    'precio_final' => $precioFinal,
+                ]),
+                'id_usuario' => auth()->id(),
+            ]);
+
+            // Enviar notificación de renovación exitosa
+            try {
+                $notificacionService = app(\App\Services\NotificacionService::class);
+                $notificacionService->enviarNotificacionRenovacion($nuevaInscripcion);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo enviar notificación de renovación: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            $this->invalidateFormToken($request, 'inscripcion_renovar');
+
+            return redirect()->route('admin.inscripciones.show', $nuevaInscripcion)
+                ->with('success', '¡Membresía renovada exitosamente! Nueva vigencia hasta ' . $fechaVencimiento->format('d/m/Y'));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en renovación: ' . $e->getMessage());
+            return back()->with('error', 'Error al procesar la renovación: ' . $e->getMessage());
+        }
     }
 }

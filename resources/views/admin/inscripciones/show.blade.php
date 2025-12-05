@@ -1275,6 +1275,11 @@
                                 <i class="fas fa-level-up-alt"></i>Mejorar Plan
                             </a>
                         @endif
+                        @if($inscripcion->id_estado == 102 || $inscripcion->dias_restantes <= 30)
+                            <a href="{{ route('admin.inscripciones.renovar', $inscripcion) }}" class="btn btn-block btn-success-estoicos mb-2">
+                                <i class="fas fa-sync-alt"></i>Renovar Membresía
+                            </a>
+                        @endif
                         <a href="{{ route('admin.clientes.show', $inscripcion->cliente) }}" class="btn btn-block btn-secondary-estoicos mb-2">
                             <i class="fas fa-user"></i>Ver Cliente
                         </a>
