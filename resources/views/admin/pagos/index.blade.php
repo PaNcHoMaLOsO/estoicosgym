@@ -72,7 +72,7 @@
                 <i class="fas fa-coins"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="statRecaudado">$0</span>
+                <span class="stat-number" id="statRecaudado">${{ number_format($estadisticas['total_recaudado'] ?? 0, 0, ',', '.') }}</span>
                 <span class="stat-label">Recaudado</span>
             </div>
         </div>
@@ -82,7 +82,7 @@
                 <i class="fas fa-check-double"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="statCompletados">0</span>
+                <span class="stat-number" id="statCompletados">{{ $estadisticas['completados'] ?? 0 }}</span>
                 <span class="stat-label">Completados</span>
             </div>
         </div>
@@ -92,7 +92,7 @@
                 <i class="fas fa-hourglass-half"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="statParciales">0</span>
+                <span class="stat-number" id="statParciales">{{ $estadisticas['parciales'] ?? 0 }}</span>
                 <span class="stat-label">Parciales</span>
             </div>
         </div>
@@ -964,6 +964,17 @@ $(document).ready(function() {
     let isLoading = false;
     let hasMoreData = true;
     let currentLoadedPage = 1;
+    
+    // Estadísticas del servidor (valores reales totales)
+    const serverStats = {
+        totalPagos: {{ $totalPagos ?? 0 }},
+        totalRecaudado: {{ $estadisticas['total_recaudado'] ?? 0 }},
+        completados: {{ $estadisticas['completados'] ?? 0 }},
+        parciales: {{ $estadisticas['parciales'] ?? 0 }}
+    };
+    
+    // Flag para saber si hay filtros activos
+    let hasActiveFilters = false;
 
     // =====================================================
     // FUNCIONES DE RENDERIZADO
@@ -1112,6 +1123,17 @@ $(document).ready(function() {
     // ESTADÍSTICAS
     // =====================================================
     function updateStats() {
+        // Si no hay filtros activos y no se han cargado todos los datos,
+        // mostrar estadísticas del servidor (valores totales reales)
+        if (!hasActiveFilters) {
+            $('#statTotalPagos').text(serverStats.totalPagos.toLocaleString('es-CL'));
+            $('#statRecaudado').text('$' + serverStats.totalRecaudado.toLocaleString('es-CL'));
+            $('#statCompletados').text(serverStats.completados.toLocaleString('es-CL'));
+            $('#statParciales').text(serverStats.parciales.toLocaleString('es-CL'));
+            return;
+        }
+        
+        // Si hay filtros activos, calcular desde los datos filtrados
         let totalRecaudado = 0;
         let completados = 0;
         let parciales = 0;
@@ -1125,10 +1147,10 @@ $(document).ready(function() {
             }
         });
         
-        $('#statTotalPagos').text(filteredPagos.length);
+        $('#statTotalPagos').text(filteredPagos.length.toLocaleString('es-CL'));
         $('#statRecaudado').text('$' + totalRecaudado.toLocaleString('es-CL'));
-        $('#statCompletados').text(completados);
-        $('#statParciales').text(parciales);
+        $('#statCompletados').text(completados.toLocaleString('es-CL'));
+        $('#statParciales').text(parciales.toLocaleString('es-CL'));
     }
 
     // =====================================================
@@ -1241,6 +1263,9 @@ $(document).ready(function() {
     function applyFilters() {
         const searchText = $('#searchInput').val().toLowerCase();
         const activeFilter = $('.filter-btn.active').data('filter');
+        
+        // Detectar si hay filtros activos
+        hasActiveFilters = searchText !== '' || activeFilter !== 'todos';
         
         filteredPagos = allPagos.filter(pago => {
             // Search filter

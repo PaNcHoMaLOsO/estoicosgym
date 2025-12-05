@@ -94,7 +94,10 @@ class PagoController extends Controller
         $pagosData = $this->preparePagosData($pagos->items());
         $totalPagos = $pagos->total();
         
-        return view('admin.pagos.index', compact('pagos', 'pagosData', 'totalPagos', 'metodos_pago', 'estados', 'totalEliminados'));
+        // Calcular estadísticas reales desde la base de datos (no solo los paginados)
+        $estadisticas = $this->calcularEstadisticas();
+        
+        return view('admin.pagos.index', compact('pagos', 'pagosData', 'totalPagos', 'metodos_pago', 'estados', 'totalEliminados', 'estadisticas'));
     }
 
     /**
@@ -217,6 +220,38 @@ class PagoController extends Controller
                 'delete_url' => route('admin.pagos.destroy', $pago->uuid ?? $pago->id),
             ];
         })->values()->toArray();
+    }
+
+    /**
+     * Calcular estadísticas reales de pagos desde la base de datos
+     */
+    private function calcularEstadisticas(): array
+    {
+        // Total recaudado (suma de todos los monto_abonado)
+        $totalRecaudado = Pago::sum('monto_abonado');
+        
+        // Obtener IDs de estados
+        $estadoPagado = Estado::where('codigo', EstadosCodigo::PAGO_PAGADO)->first();
+        $estadoParcial = Estado::where('codigo', EstadosCodigo::PAGO_PARCIAL)->first();
+        $estadoPendiente = Estado::where('codigo', EstadosCodigo::PAGO_PENDIENTE)->first();
+        
+        // Contar pagos por estado
+        $completados = $estadoPagado ? Pago::where('id_estado', $estadoPagado->id)->count() : 0;
+        
+        // Parciales incluye tanto PAGO_PARCIAL (202) como PAGO_PENDIENTE (200)
+        $parcialesCount = 0;
+        if ($estadoParcial) {
+            $parcialesCount += Pago::where('id_estado', $estadoParcial->id)->count();
+        }
+        if ($estadoPendiente) {
+            $parcialesCount += Pago::where('id_estado', $estadoPendiente->id)->count();
+        }
+        
+        return [
+            'total_recaudado' => $totalRecaudado,
+            'completados' => $completados,
+            'parciales' => $parcialesCount,
+        ];
     }
 
     /**
