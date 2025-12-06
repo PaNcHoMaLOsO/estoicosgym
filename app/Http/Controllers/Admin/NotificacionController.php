@@ -502,4 +502,246 @@ class NotificacionController extends Controller
                 return [];
         }
     }
+
+    /**
+     * Formulario simple para enviar notificación a un cliente específico
+     * (Vista simplificada - pendiente de implementación completa del rediseño)
+     */
+    public function enviarCliente()
+    {
+        $plantillas = TipoNotificacion::where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
+        return view('admin.notificaciones.enviar-cliente', compact('plantillas'));
+    }
+
+    /**
+     * Buscar cliente individual para envío manual
+     */
+    public function buscarClienteIndividual(Request $request)
+    {
+        $buscar = $request->input('buscar');
+
+        if (empty($buscar)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe ingresar un criterio de búsqueda'
+            ]);
+        }
+
+        $clientes = Cliente::where(function($query) use ($buscar) {
+            $query->where('run_pasaporte', 'like', "%{$buscar}%")
+                  ->orWhere('nombres', 'like', "%{$buscar}%")
+                  ->orWhere('apellido_paterno', 'like', "%{$buscar}%")
+                  ->orWhere('apellido_materno', 'like', "%{$buscar}%")
+                  ->orWhere('email', 'like', "%{$buscar}%")
+                  ->orWhere('celular', 'like', "%{$buscar}%");
+        })
+        ->with(['inscripciones' => function($query) {
+            $query->latest()->limit(1)->with('membresia');
+        }])
+        ->limit(10)
+        ->get()
+        ->map(function($cliente) {
+            $inscripcion = $cliente->inscripciones->first();
+            return [
+                'id' => $cliente->id,
+                'nombre_completo' => $cliente->nombre_completo,
+                'run_pasaporte' => $cliente->run_pasaporte,
+                'email' => $cliente->email,
+                'celular' => $cliente->celular,
+                'membresia' => $inscripcion ? $inscripcion->membresia->nombre : 'Sin membresía',
+                'estado_membresia' => $inscripcion ? $inscripcion->estado->nombre : 'N/A',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'clientes' => $clientes,
+            'total' => $clientes->count()
+        ]);
+    }
+
+    /**
+     * Vista previa del email antes de enviar
+     */
+    public function preview(Request $request)
+    {
+        $clienteId = $request->input('cliente_id');
+        $plantillaId = $request->input('plantilla_id');
+        $notaPersonalizada = $request->input('nota_personalizada');
+
+        $cliente = Cliente::with(['inscripciones' => function($query) {
+            $query->latest()->limit(1)->with(['membresia', 'pagos']);
+        }])->findOrFail($clienteId);
+
+        $plantilla = TipoNotificacion::findOrFail($plantillaId);
+        $inscripcion = $cliente->inscripciones->first();
+
+        // Preparar datos
+        $datos = $this->prepararDatosCliente($cliente, $inscripcion);
+        
+        // Renderizar plantilla
+        $asunto = str_replace(
+            array_map(fn($k) => "{{$k}}", array_keys($datos)),
+            array_values($datos),
+            $plantilla->asunto_email
+        );
+
+        $contenido = str_replace(
+            array_map(fn($k) => "{{$k}}", array_keys($datos)),
+            array_values($datos),
+            $plantilla->plantilla_email
+        );
+
+        // Agregar nota personalizada si existe
+        if (!empty($notaPersonalizada)) {
+            $contenido = str_replace(
+                '</body>',
+                '<div style="background: #fffbf0; border-left: 4px solid #FFC107; padding: 20px; margin: 20px 0;"><p style="margin: 0;"><strong>Nota del administrador:</strong></p><p style="margin: 10px 0 0 0;">' . nl2br(e($notaPersonalizada)) . '</p></div></body>',
+                $contenido
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'asunto' => $asunto,
+            'contenido' => $contenido,
+            'email_destino' => $cliente->email,
+            'datos' => $datos
+        ]);
+    }
+
+    /**
+     * Enviar notificación a cliente individual
+     */
+    public function enviarIndividual(Request $request)
+    {
+        $request->validate([
+            'cliente_id' => 'required|exists:clientes,id',
+            'plantilla_id' => 'required|exists:tipo_notificaciones,id',
+            'nota_personalizada' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $cliente = Cliente::with(['inscripciones' => function($query) {
+                $query->latest()->limit(1)->with(['membresia', 'pagos']);
+            }])->findOrFail($request->cliente_id);
+
+            $plantilla = TipoNotificacion::findOrFail($request->plantilla_id);
+            $inscripcion = $cliente->inscripciones->first();
+
+            // Preparar datos del cliente
+            $datos = $this->prepararDatosCliente($cliente, $inscripcion);
+            
+            // Renderizar plantilla
+            $asunto = str_replace(
+                array_map(fn($k) => "{{$k}}", array_keys($datos)),
+                array_values($datos),
+                $plantilla->asunto_email
+            );
+
+            $contenido = str_replace(
+                array_map(fn($k) => "{{$k}}", array_keys($datos)),
+                array_values($datos),
+                $plantilla->plantilla_email
+            );
+
+            // Agregar nota personalizada si existe
+            $notaPersonalizada = $request->input('nota_personalizada');
+            if (!empty($notaPersonalizada)) {
+                $contenido = str_replace(
+                    '</body>',
+                    '<div style="background: #fffbf0; border-left: 4px solid #FFC107; padding: 20px; margin: 20px 0;"><p style="margin: 0;"><strong>Nota del administrador:</strong></p><p style="margin: 10px 0 0 0;">' . nl2br(e($notaPersonalizada)) . '</p></div></body>',
+                    $contenido
+                );
+            }
+
+            // Crear notificación manual
+            $notificacion = Notificacion::create([
+                'id_tipo_notificacion' => $plantilla->id,
+                'id_cliente' => $cliente->id,
+                'id_inscripcion' => $inscripcion?->id,
+                'email_destino' => $cliente->email,
+                'asunto' => $asunto,
+                'contenido' => $contenido,
+                'id_estado' => Notificacion::ESTADO_PENDIENTE,
+                'fecha_programada' => today(),
+                'tipo_envio' => 'manual',
+                'enviado_por_user_id' => auth()->id(),
+                'nota_personalizada' => $notaPersonalizada,
+            ]);
+
+            $notificacion->registrarLog('programada', 'Notificación manual creada por ' . auth()->user()->name);
+
+            // Enviar inmediatamente
+            Mail::html($contenido, function ($message) use ($cliente, $asunto) {
+                $message->to($cliente->email)
+                        ->subject($asunto);
+            });
+
+            $notificacion->marcarComoEnviada();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación enviada correctamente a ' . $cliente->email,
+                'notificacion_id' => $notificacion->id
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Preparar datos del cliente para reemplazar variables en plantilla
+     */
+    private function prepararDatosCliente(Cliente $cliente, ?Inscripcion $inscripcion): array
+    {
+        $datos = [
+            'nombre' => $cliente->nombre_completo,
+            'nombres' => $cliente->nombres,
+            'apellido' => $cliente->apellido_paterno,
+            'email' => $cliente->email,
+            'celular' => $cliente->celular ?? 'No registrado',
+        ];
+
+        if ($inscripcion) {
+            $totalPagado = $inscripcion->pagos->sum('monto_abonado');
+            $precioBase = $inscripcion->precio_final ?? $inscripcion->precio_base ?? 0;
+            $saldoPendiente = $precioBase - $totalPagado;
+
+            $datos['membresia'] = $inscripcion->membresia->nombre;
+            $datos['fecha_inicio'] = $inscripcion->fecha_inicio->format('d/m/Y');
+            $datos['fecha_vencimiento'] = $inscripcion->fecha_vencimiento->format('d/m/Y');
+            $datos['dias_restantes'] = max(0, today()->diffInDays($inscripcion->fecha_vencimiento, false));
+            $datos['monto_total'] = number_format($precioBase, 0, ',', '.');
+            $datos['monto_pagado'] = number_format($totalPagado, 0, ',', '.');
+            $datos['total_pagado'] = number_format($totalPagado, 0, ',', '.');
+            $datos['monto_pendiente'] = number_format($saldoPendiente, 0, ',', '.');
+            $datos['saldo_pendiente'] = number_format($saldoPendiente, 0, ',', '.');
+
+            // Datos de pausa si aplica
+            if ($inscripcion->fecha_pausa_inicio) {
+                $datos['fecha_pausa'] = Carbon::parse($inscripcion->fecha_pausa_inicio)->format('d/m/Y');
+            }
+            if ($inscripcion->fecha_pausa_fin) {
+                $datos['fecha_reactivacion'] = Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y');
+                $datos['fecha_activacion'] = Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y');
+            }
+
+            // Último pago
+            $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
+            if ($ultimoPago) {
+                $datos['fecha_pago'] = Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y');
+                $datos['monto_ultimo_pago'] = number_format($ultimoPago->monto_abonado, 0, ',', '.');
+            }
+        }
+
+        return $datos;
+    }
 }

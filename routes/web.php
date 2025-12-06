@@ -353,6 +353,12 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
         Route::get('/', [NotificacionController::class, 'index'])->name('index');
         Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
         
+        // Enviar a cliente individual (NUEVO)
+        Route::get('/enviar-cliente', [NotificacionController::class, 'enviarCliente'])->name('enviar-cliente');
+        Route::post('/buscar-cliente', [NotificacionController::class, 'buscarClienteIndividual'])->name('buscar-cliente');
+        Route::post('/preview', [NotificacionController::class, 'preview'])->name('preview');
+        Route::post('/enviar-individual', [NotificacionController::class, 'enviarIndividual'])->name('enviar-individual');
+        
         // Crear notificación masiva
         Route::get('/crear', [NotificacionController::class, 'crear'])->name('crear');
         Route::get('/obtener-destinatarios', [NotificacionController::class, 'obtenerDestinatarios'])->name('obtener-destinatarios');

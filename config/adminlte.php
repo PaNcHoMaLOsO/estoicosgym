@@ -348,6 +348,12 @@ return [
                     'icon' => 'fas fa-fw fa-paper-plane',
                 ],
                 [
+                    'text' => 'Enviar a Cliente',
+                    'url' => 'admin/notificaciones/enviar-cliente',
+                    'icon' => 'fas fa-fw fa-envelope',
+                    'icon_color' => 'success',
+                ],
+                [
                     'text' => 'Plantillas',
                     'url' => 'admin/notificaciones/plantillas',
                     'icon' => 'fas fa-fw fa-palette',
