@@ -129,7 +129,7 @@
                                 </div>
                             </div>
                         </div>
-                        <a href="{{ route('clientes.show', $notificacion->cliente) }}" class="btn btn-outline-info btn-sm">
+                        <a href="{{ route('admin.clientes.show', $notificacion->cliente) }}" class="btn btn-outline-info btn-sm">
                             <i class="fas fa-external-link-alt mr-1"></i> Ver perfil del cliente
                         </a>
                     @else
@@ -327,8 +327,8 @@
                             {{ $notificacion->inscripcion->fecha_fin ? \Carbon\Carbon::parse($notificacion->inscripcion->fecha_fin)->format('d/m/Y') : 'N/A' }}
                         </span>
                     </div>
-                    <a href="{{ route('inscripciones.show', $notificacion->inscripcion) }}" class="btn btn-outline-success btn-sm btn-block mt-3">
-                        <i class="fas fa-external-link-alt mr-1"></i> Ver Inscripción
+                    <a href="{{ route('admin.inscripciones.show', $notificacion->inscripcion) }}" class="btn btn-outline-success btn-sm btn-block mt-3">
+                        <i class="fas fa-external-link-alt mr-1"></i> Ver inscripción completa
                     </a>
                 </div>
             </div>
