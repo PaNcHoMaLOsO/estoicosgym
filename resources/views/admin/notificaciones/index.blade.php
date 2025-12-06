@@ -58,7 +58,46 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 15px;
-        margin-bottom: 25px;
+    }
+
+    .cliente-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cliente-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .cliente-avatar.avatar-menor {
+        background: linear-gradient(135deg, #f0a500 0%, #e09400 100%);
+    }
+
+    .cliente-nombre {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    .cliente-email {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+    }
+
+    .badge-sm {
+        font-size: 0.7rem;
+        padding: 2px 6px;
     }
 
     .stat-card {
@@ -112,13 +151,25 @@
 
     .action-buttons {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
         margin-bottom: 20px;
     }
 
+    @media (max-width: 768px) {
+        .action-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .action-buttons {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .btn-action {
-        padding: 15px 25px;
+        padding: 18px 20px;
         border-radius: 12px;
         font-weight: 600;
         border: none;
@@ -128,6 +179,12 @@
         justify-content: center;
         gap: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
+
+    .btn-action i {
+        font-size: 1.1rem;
     }
 
     .btn-action:hover {
@@ -247,26 +304,47 @@
 
     .table-container {
         padding: 0;
+        overflow-x: auto;
     }
 
     .table {
-        margin: 0;
+        margin-bottom: 0;
     }
 
     .table thead th {
-        background: var(--gray-100);
-        border: none;
-        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
         font-weight: 600;
-        color: var(--gray-800);
         font-size: 0.85rem;
         text-transform: uppercase;
+        color: #495057;
+        padding: 15px 12px;
+        white-space: nowrap;
     }
 
     .table tbody td {
-        padding: 15px;
+        padding: 12px;
         vertical-align: middle;
-        border-color: var(--gray-100);
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .tipo-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-transform: uppercase;
     }
 
     .badge-estado {
@@ -274,6 +352,7 @@
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
+        white-space: nowrap;
     }
 
     .badge-pendiente { background: rgba(240, 165, 0, 0.15); color: #b37a00; }
@@ -281,80 +360,39 @@
     .badge-fallida { background: rgba(233, 69, 96, 0.15); color: #c23655; }
     .badge-cancelada { background: rgba(108, 117, 125, 0.15); color: #495057; }
 
-    .cliente-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .cliente-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 0.9rem;
-    }
-
-    .cliente-avatar.avatar-menor {
-        background: linear-gradient(135deg, #f0a500 0%, #ffc107 100%);
-        border: 2px solid #ff9800;
-    }
-
-    .cliente-nombre {
-        font-weight: 600;
-        color: var(--gray-800);
-    }
-
-    .cliente-email {
-        font-size: 0.8rem;
-        color: var(--gray-600);
-    }
-
-    .tipo-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-
     .tipo-por-vencer { background: rgba(240, 165, 0, 0.1); color: var(--warning); }
     .tipo-vencida { background: rgba(233, 69, 96, 0.1); color: var(--accent); }
     .tipo-bienvenida { background: rgba(0, 191, 142, 0.1); color: var(--success); }
     .tipo-pago { background: rgba(67, 97, 238, 0.1); color: var(--info); }
 
-    .btn-action {
+    .btn-table-action {
         padding: 6px 10px;
         border-radius: 6px;
         border: none;
         font-size: 0.8rem;
         transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
     }
 
-    .btn-action.view {
+    .btn-table-action.view {
         background: rgba(67, 97, 238, 0.1);
         color: var(--info);
     }
 
-    .btn-action.resend {
+    .btn-table-action.resend {
         background: rgba(0, 191, 142, 0.1);
         color: var(--success);
     }
 
-    .btn-action.cancel {
+    .btn-table-action.cancel {
         background: rgba(233, 69, 96, 0.1);
         color: var(--accent);
     }
 
-    .btn-action:hover {
-        transform: scale(1.1);
+    .btn-table-action:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .empty-state {
@@ -365,8 +403,41 @@
 
     .empty-state i {
         font-size: 4rem;
-        color: var(--gray-200);
+        color: var(--gray-300);
         margin-bottom: 20px;
+    }
+
+    .empty-state h4 {
+        color: var(--gray-700);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: var(--gray-600);
+        font-size: 0.95rem;
+    }
+
+    .pagination {
+        margin: 0;
+        justify-content: center;
+    }
+
+    .page-link {
+        border-radius: 8px;
+        margin: 0 3px;
+        border: 1px solid #dee2e6;
+        color: var(--primary);
+    }
+
+    .page-link:hover {
+        background-color: var(--gray-100);
+        border-color: var(--primary);
+    }
+
+    .page-item.active .page-link {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border-color: var(--primary);
     }
 
     @media (max-width: 768px) {
@@ -374,8 +445,24 @@
             grid-template-columns: repeat(2, 1fr);
         }
 
-        .action-bar {
-            flex-direction: column;
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .table {
+            font-size: 0.85rem;
+        }
+
+        .cliente-avatar {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stat-cards {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -409,7 +496,7 @@
     @endif
 
     {{-- Estadísticas --}}
-    <div class="stat-cards">
+    <div class="stat-cards mb-4">
         <div class="stat-card">
             <div class="icon pending"><i class="fas fa-clock"></i></div>
             <div class="info">
@@ -643,7 +730,7 @@
                                 </td>
                                 <td>
                                     <a href="{{ route('admin.notificaciones.show', $notificacion) }}" 
-                                       class="btn-action view" title="Ver detalle">
+                                       class="btn-table-action view" title="Ver detalle">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
@@ -651,7 +738,7 @@
                                         <form action="{{ route('admin.notificaciones.reenviar', $notificacion) }}" 
                                               method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn-action resend" title="Reenviar">
+                                            <button type="submit" class="btn-table-action resend" title="Reenviar">
                                                 <i class="fas fa-redo"></i>
                                             </button>
                                         </form>
@@ -661,7 +748,7 @@
                                         <form action="{{ route('admin.notificaciones.cancelar', $notificacion) }}" 
                                               method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn-action cancel" title="Cancelar">
+                                            <button type="submit" class="btn-table-action cancel" title="Cancelar">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </form>
