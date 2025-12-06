@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             MembresiasSeeder::class,         // 4. Membresías y precios
             PreciosMembresiasSeeder::class,
             ConveniosSeeder::class,          // 5. Convenios
-            NotificacionesSeeder::class,     // 6. Plantillas (incluye soporte apoderados)
+            PlantillasProgymSeeder::class,   // 6. Plantillas PROGYM (de test_emails/)
         ]);
 
         $this->command->info('✅ Seeders base completados');
