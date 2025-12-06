@@ -248,6 +248,7 @@ class ClienteController extends Controller
             'consentimiento_apoderado' => 'nullable|boolean',
             'apoderado_nombre' => 'nullable|string|max:100',
             'apoderado_rut' => ['nullable', new RutValido()],
+            'apoderado_email' => 'nullable|email:rfc|max:100',
             'apoderado_telefono' => 'nullable|string|max:20',
             'apoderado_parentesco' => 'nullable|string|max:50',
             'apoderado_observaciones' => 'nullable|string|max:500',
@@ -272,12 +273,15 @@ class ClienteController extends Controller
                 'consentimiento_apoderado' => 'accepted',
                 'apoderado_nombre' => 'required|string|max:100',
                 'apoderado_rut' => ['required', new RutValido()],
+                'apoderado_email' => 'required|email:rfc|max:100',
                 'apoderado_telefono' => 'required|string|max:20',
                 'apoderado_parentesco' => 'required|string|max:50',
             ], [
                 'consentimiento_apoderado.accepted' => 'Debe confirmar la autorización del apoderado.',
                 'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio.',
                 'apoderado_rut.required' => 'El RUT del apoderado es obligatorio.',
+                'apoderado_email.required' => 'El email del apoderado es obligatorio.',
+                'apoderado_email.email' => 'El email del apoderado no es válido.',
                 'apoderado_telefono.required' => 'El teléfono del apoderado es obligatorio.',
                 'apoderado_parentesco.required' => 'El parentesco es obligatorio.',
             ]);
@@ -587,6 +591,7 @@ class ClienteController extends Controller
             'consentimiento_apoderado' => 'nullable',
             'apoderado_nombre' => 'nullable|string|max:255',
             'apoderado_rut' => ['nullable', new RutValido()],
+            'apoderado_email' => 'nullable|email:rfc|max:100',
             'apoderado_telefono' => 'nullable|string|max:20',
             'apoderado_parentesco' => 'nullable|string|max:100',
             'apoderado_observaciones' => 'nullable|string|max:500',
@@ -617,8 +622,12 @@ class ClienteController extends Controller
             $rules['consentimiento_apoderado'] = 'accepted';
             $rules['apoderado_nombre'] = 'required|string|max:255';
             $rules['apoderado_rut'] = ['required', new RutValido()];
+            $rules['apoderado_email'] = 'required|email:rfc|max:100';
             $rules['apoderado_telefono'] = 'required|string|max:20';
             $rules['apoderado_parentesco'] = 'required|string|max:100';
+            
+            $messages['apoderado_email.required'] = 'El email del apoderado es obligatorio.';
+            $messages['apoderado_email.email'] = 'El email del apoderado no es válido.';
         }
 
         $validated = $request->validate($rules, $messages);
@@ -632,6 +641,7 @@ class ClienteController extends Controller
             $validated['consentimiento_apoderado'] = false;
             $validated['apoderado_nombre'] = null;
             $validated['apoderado_rut'] = null;
+            $validated['apoderado_email'] = null;
             $validated['apoderado_telefono'] = null;
             $validated['apoderado_parentesco'] = null;
             $validated['apoderado_observaciones'] = null;

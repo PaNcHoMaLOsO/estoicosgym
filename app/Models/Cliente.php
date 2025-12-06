@@ -84,6 +84,7 @@ class Cliente extends Model
         'consentimiento_apoderado',
         'apoderado_nombre',
         'apoderado_rut',
+        'apoderado_email',
         'apoderado_telefono',
         'apoderado_parentesco',
         'apoderado_observaciones',

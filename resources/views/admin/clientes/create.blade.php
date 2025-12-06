@@ -175,7 +175,20 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
+                                    <label for="apoderado_email">
+                                        <i class="fas fa-envelope"></i> Email del Apoderado <span class="required">*</span>
+                                    </label>
+                                    <input type="email" class="form-control campo-apoderado @error('apoderado_email') is-invalid @enderror" 
+                                           id="apoderado_email" name="apoderado_email"
+                                           placeholder="ejemplo@email.com"
+                                           value="{{ old('apoderado_email') }}">
+                                    @error('apoderado_email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">📧 Aquí llegarán las notificaciones del menor</small>
+                                </div>
+                                <div class="form-group col-md-4">
                                     <label for="apoderado_telefono">
                                         <i class="fas fa-phone"></i> Teléfono del Apoderado <span class="required">*</span>
                                     </label>
@@ -187,7 +200,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
                                     <label for="apoderado_parentesco">
                                         <i class="fas fa-users"></i> Parentesco <span class="required">*</span>
                                     </label>
@@ -2412,6 +2425,7 @@ $(document).ready(function() {
             'fecha_nacimiento',
             'apoderado_nombre',
             'apoderado_rut',
+            'apoderado_email',
             'apoderado_telefono',
             'apoderado_parentesco',
             'nombres',
@@ -2469,7 +2483,7 @@ $(document).ready(function() {
 
         // Campos de texto - Saltar con Enter
         const camposTexto = [
-            'apoderado_nombre', 'apoderado_telefono',
+            'apoderado_nombre', 'apoderado_email', 'apoderado_telefono',
             'nombres', 'apellido_paterno', 'apellido_materno',
             'celular', 'email', 'direccion',
             'contacto_emergencia', 'telefono_emergencia'
@@ -2500,6 +2514,14 @@ $(document).ready(function() {
             const campo = $(this).attr('id');
             if ($(this).val()) {
                 irAlSiguienteCampo(campo);
+            }
+        });
+
+        // Emails - Saltar con Enter
+        $('#apoderado_email, #email').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                irAlSiguienteCampo($(this).attr('id'));
             }
         });
 
@@ -2584,6 +2606,7 @@ $(document).ready(function() {
         $('#consentimiento_apoderado').prop('checked', false);
         $('#apoderado_nombre').val('');
         $('#apoderado_rut').val('');
+        $('#apoderado_email').val('');
         $('#apoderado_telefono').val('');
         $('#apoderado_parentesco').val('');
         $('#apoderado_observaciones').val('');
@@ -2614,6 +2637,14 @@ $(document).ready(function() {
             actualizarUIValidacionRutApoderado(resultado);
         } else {
             actualizarUIValidacionRutApoderado({ valid: null });
+        }
+    });
+
+    // Validar email del apoderado
+    $('#apoderado_email').on('blur', function() {
+        let email = $(this).val().trim();
+        if (email) {
+            validarEmail(email, 'apoderado_email');
         }
     });
 
@@ -2668,6 +2699,14 @@ $(document).ready(function() {
             let resultado = validarRutChileno($('#apoderado_rut').val());
             if (!resultado.valid) {
                 errores.push('RUT del apoderado no es válido');
+            }
+        }
+        if (!$('#apoderado_email').val().trim()) {
+            errores.push('Email del apoderado es obligatorio');
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test($('#apoderado_email').val().trim())) {
+                errores.push('Email del apoderado no es válido');
             }
         }
         if (!$('#apoderado_telefono').val().trim() || $('#apoderado_telefono').val().length < 10) {
@@ -3193,6 +3232,7 @@ $(document).ready(function() {
                 const camposApoderado = [
                     { id: 'apoderado_nombre', nombre: 'Nombre del apoderado' },
                     { id: 'apoderado_rut', nombre: 'RUT del apoderado' },
+                    { id: 'apoderado_email', nombre: 'Email del apoderado' },
                     { id: 'apoderado_telefono', nombre: 'Teléfono del apoderado' },
                     { id: 'apoderado_parentesco', nombre: 'Parentesco' }
                 ];
@@ -3203,6 +3243,13 @@ $(document).ready(function() {
                         input.addClass('is-invalid');
                         errores.push(`${campo.nombre} es requerido`);
                         isValid = false;
+                    } else if (campo.id === 'apoderado_email') {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(input.val().trim())) {
+                            input.addClass('is-invalid');
+                            errores.push('Email del apoderado no es válido');
+                            isValid = false;
+                        }
                     }
                 });
             }
@@ -3755,7 +3802,7 @@ $(document).ready(function() {
     @if($errors->any())
     // Determinar en qué paso está el error
     (function() {
-        const camposPaso1 = ['run_pasaporte', 'fecha_nacimiento', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'direccion', 'contacto_emergencia', 'telefono_emergencia', 'observaciones', 'apoderado_nombre', 'apoderado_rut', 'apoderado_telefono', 'apoderado_parentesco', 'consentimiento_apoderado'];
+        const camposPaso1 = ['run_pasaporte', 'fecha_nacimiento', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'direccion', 'contacto_emergencia', 'telefono_emergencia', 'observaciones', 'apoderado_nombre', 'apoderado_rut', 'apoderado_email', 'apoderado_telefono', 'apoderado_parentesco', 'consentimiento_apoderado'];
         const camposPaso2 = ['id_membresia', 'id_convenio', 'fecha_inicio', 'descuento_manual', 'id_motivo_descuento'];
         const camposPaso3 = ['tipo_pago', 'id_metodo_pago', 'monto_abonado'];
         

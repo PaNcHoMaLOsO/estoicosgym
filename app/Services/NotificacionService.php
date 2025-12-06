@@ -119,8 +119,20 @@ class NotificacionService
 
         $diasRestantes = Carbon::today()->diffInDays($inscripcion->fecha_vencimiento, false);
 
+        // Determinar el email destino y nombre del destinatario
+        $emailDestino = $cliente->email;
+        $nombreDestinatario = $cliente->nombre_completo;
+        
+        // Si es menor de edad y tiene email de apoderado, enviar al apoderado
+        if ($cliente->es_menor_edad && !empty($cliente->apoderado_email)) {
+            $emailDestino = $cliente->apoderado_email;
+            $nombreDestinatario = $cliente->apoderado_nombre ?: 'Apoderado/a';
+        }
+
         $datos = [
-            'nombre' => $cliente->nombre_completo,
+            'nombre' => $nombreDestinatario,
+            'nombre_cliente' => $cliente->nombre_completo,  // Nombre del menor para el template
+            'es_menor_edad' => $cliente->es_menor_edad,
             'membresia' => $membresia->nombre,
             'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
             'dias_restantes' => max(0, $diasRestantes),
@@ -133,14 +145,18 @@ class NotificacionService
             'id_tipo_notificacion' => $tipo->id,
             'id_cliente' => $cliente->id,
             'id_inscripcion' => $inscripcion->id,
-            'email_destino' => $cliente->email,
+            'email_destino' => $emailDestino,
             'asunto' => $renderizado['asunto'],
             'contenido' => $renderizado['contenido'],
             'id_estado' => Notificacion::ESTADO_PENDIENTE,
             'fecha_programada' => Carbon::today(),
         ]);
 
-        $notificacion->registrarLog('programada', 'Notificación programada automáticamente');
+        $logMensaje = $cliente->es_menor_edad && !empty($cliente->apoderado_email) 
+            ? "Notificación programada para apoderado: {$emailDestino}" 
+            : 'Notificación programada automáticamente';
+            
+        $notificacion->registrarLog('programada', $logMensaje);
 
         return $notificacion;
     }

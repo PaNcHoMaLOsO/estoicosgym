@@ -1101,7 +1101,24 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="apoderado_email" class="form-label">
+                                    <i class="fas fa-envelope"></i> Email del Apoderado <span class="required">*</span>
+                                </label>
+                                <input type="email" 
+                                       class="form-control @error('apoderado_email') is-invalid @enderror" 
+                                       id="apoderado_email" 
+                                       name="apoderado_email" 
+                                       placeholder="ejemplo@email.com"
+                                       value="{{ old('apoderado_email', $cliente->apoderado_email) }}">
+                                @error('apoderado_email')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">📧 Aquí llegarán las notificaciones del menor</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="apoderado_telefono" class="form-label">
                                     <i class="fas fa-phone"></i> Teléfono del Apoderado <span class="required">*</span>
@@ -1117,7 +1134,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="apoderado_parentesco" class="form-label">
                                     <i class="fas fa-users"></i> Parentesco <span class="required">*</span>
@@ -2318,6 +2335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const nombre = document.getElementById('apoderado_nombre')?.value?.trim();
         const rut = document.getElementById('apoderado_rut')?.value?.trim();
+        const email = document.getElementById('apoderado_email')?.value?.trim();
         const telefono = document.getElementById('apoderado_telefono')?.value?.trim();
         const parentesco = document.getElementById('apoderado_parentesco')?.value;
         const consentimiento = document.getElementById('consentimiento_apoderado')?.checked;
@@ -2326,6 +2344,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!nombre) errores.push('Nombre del apoderado');
         if (!rut) errores.push('RUT del apoderado');
+        if (!email) {
+            errores.push('Email del apoderado');
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                errores.push('Email del apoderado (formato inválido)');
+            }
+        }
         if (!telefono) errores.push('Teléfono del apoderado');
         if (!parentesco) errores.push('Parentesco del apoderado');
         if (!consentimiento) errores.push('Consentimiento del apoderado');

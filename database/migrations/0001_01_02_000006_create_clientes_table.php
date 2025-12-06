@@ -30,6 +30,7 @@ return new class extends Migration
             $table->boolean('consentimiento_apoderado')->default(false)->comment('Checkbox de autorización firmada');
             $table->string('apoderado_nombre', 100)->nullable()->comment('Nombre completo del apoderado/tutor');
             $table->string('apoderado_rut', 20)->nullable()->comment('RUT del apoderado');
+            $table->string('apoderado_email', 100)->nullable()->comment('Email del apoderado para notificaciones');
             $table->string('apoderado_telefono', 20)->nullable()->comment('Teléfono del apoderado');
             $table->string('apoderado_parentesco', 50)->nullable()->comment('Relación: Padre, Madre, Tutor, etc.');
             $table->text('apoderado_observaciones')->nullable()->comment('Notas adicionales sobre la autorización');
