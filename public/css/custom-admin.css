@@ -1285,3 +1285,80 @@ i.fa-users {
 .btn-warning i {
     color: inherit !important;
 }
+
+/* ============================================
+   FIX - MENÚS DESPLEGABLES INTERACTIVOS
+   ============================================ */
+
+/* Asegurar que el sidebar tenga overflow visible para submenús */
+.main-sidebar,
+.main-sidebar .sidebar {
+    overflow: visible !important;
+}
+
+/* Asegurar z-index correcto en sidebar */
+.main-sidebar {
+    z-index: 1032 !important;
+}
+
+/* Menús desplegables (treeview) con altura automática */
+.nav-treeview {
+    position: relative;
+    z-index: 1;
+    max-height: none !important;
+    overflow: visible !important;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Contenedor del sidebar con scroll suave */
+.sidebar-wrapper {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: calc(100vh - 50px);
+    padding-bottom: 20px;
+}
+
+/* Mejorar visibilidad de items en submenú */
+.nav-treeview .nav-item {
+    position: relative;
+    z-index: 2;
+}
+
+/* Evitar que los menús se corten */
+.nav-sidebar > .nav-item.menu-open {
+    position: relative;
+    z-index: 10;
+}
+
+/* Transición suave al abrir/cerrar menús */
+.nav-sidebar .nav-treeview {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Espaciado entre menús para mejor click */
+.nav-sidebar > .nav-item {
+    margin-bottom: 2px;
+}
+
+/* Cursor pointer en items clickeables */
+.nav-sidebar .nav-link {
+    cursor: pointer;
+}
+
+/* Mejorar hover en submenús */
+.nav-treeview .nav-link:hover {
+    background: rgba(193, 64, 212, 0.25) !important;
+    padding-left: 1.8rem !important;
+    transition: all 0.2s ease;
+}

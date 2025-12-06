@@ -354,27 +354,6 @@ return [
                 ],
             ],
         ],
-        ['header' => 'CONFIGURACIÓN'],
-        [
-            'text' => 'Membresías',
-            'url' => 'admin/membresias',
-            'icon' => 'fas fa-fw fa-dumbbell',
-        ],
-        [
-            'text' => 'Convenios',
-            'url' => 'admin/convenios',
-            'icon' => 'fas fa-fw fa-handshake',
-        ],
-        [
-            'text' => 'Métodos de Pago',
-            'url' => 'admin/metodos-pago',
-            'icon' => 'fas fa-fw fa-money-bill',
-        ],
-        [
-            'text' => 'Motivos de Descuento',
-            'url' => 'admin/motivos-descuento',
-            'icon' => 'fas fa-fw fa-tag',
-        ],
         ['header' => 'REPORTES'],
         [
             'text' => 'Reportes',
@@ -411,6 +390,27 @@ return [
                     'icon' => 'fas fa-fw fa-exclamation-circle',
                 ],
             ],
+        ],
+        ['header' => 'CONFIGURACIÓN'],
+        [
+            'text' => 'Membresías',
+            'url' => 'admin/membresias',
+            'icon' => 'fas fa-fw fa-dumbbell',
+        ],
+        [
+            'text' => 'Convenios',
+            'url' => 'admin/convenios',
+            'icon' => 'fas fa-fw fa-handshake',
+        ],
+        [
+            'text' => 'Métodos de Pago',
+            'url' => 'admin/metodos-pago',
+            'icon' => 'fas fa-fw fa-money-bill',
+        ],
+        [
+            'text' => 'Motivos de Descuento',
+            'url' => 'admin/motivos-descuento',
+            'icon' => 'fas fa-fw fa-tag',
         ],
     ],
 
