@@ -98,16 +98,31 @@
                                     <label class="text-muted small mb-1">Nombre Completo</label>
                                     <p class="mb-0 font-weight-bold" style="font-size: 1.1rem;">
                                         {{ $notificacion->cliente->user->name ?? 'N/A' }}
+                                        @if($notificacion->cliente->es_menor_edad)
+                                            <span class="badge badge-warning ml-2">
+                                                <i class="fas fa-child"></i> Menor de Edad
+                                            </span>
+                                        @endif
                                     </p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="text-muted small mb-1">Email</label>
+                                    <label class="text-muted small mb-1">Email de Notificación</label>
                                     <p class="mb-0">
                                         <i class="fas fa-envelope text-muted mr-1"></i>
                                         {{ $notificacion->email_destino ?? $notificacion->cliente->user->email ?? 'N/A' }}
+                                        @if($notificacion->cliente->es_menor_edad && $notificacion->email_destino === $notificacion->cliente->apoderado_email)
+                                            <span class="badge badge-info ml-1">
+                                                <i class="fas fa-user-shield"></i> Apoderado
+                                            </span>
+                                        @endif
                                     </p>
+                                    @if($notificacion->cliente->es_menor_edad && $notificacion->cliente->apoderado_nombre)
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-info-circle"></i> Apoderado: {{ $notificacion->cliente->apoderado_nombre }}
+                                        </small>
+                                    @endif
                                 </div>
                             </div>
                             <div class="col-md-6">

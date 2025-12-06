@@ -428,6 +428,20 @@
                         </div>
                     </div>
                     <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Email</span>
+                            @if($cliente->apoderado_email)
+                                <a href="mailto:{{ $cliente->apoderado_email }}" class="info-value link">{{ $cliente->apoderado_email }}</a>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-bell"></i> Aquí llegarán las notificaciones del menor
+                                </small>
+                            @else
+                                <span class="info-value text-warning">No registrado</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="info-row">
                         <div class="info-icon"><i class="fas fa-phone"></i></div>
                         <div class="info-content">
                             <span class="info-label">Teléfono</span>

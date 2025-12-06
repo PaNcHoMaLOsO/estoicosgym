@@ -263,6 +263,11 @@
         font-size: 0.9rem;
     }
 
+    .cliente-avatar.avatar-menor {
+        background: linear-gradient(135deg, #f0a500 0%, #ffc107 100%);
+        border: 2px solid #ff9800;
+    }
+
     .cliente-nombre {
         font-weight: 600;
         color: var(--gray-800);
@@ -479,15 +484,23 @@
                             <tr>
                                 <td>
                                     <div class="cliente-info">
-                                        <div class="cliente-avatar">
+                                        <div class="cliente-avatar {{ $notificacion->cliente->es_menor_edad ? 'avatar-menor' : '' }}">
                                             {{ substr($notificacion->cliente->nombres ?? 'N', 0, 1) }}
                                         </div>
                                         <div>
                                             <div class="cliente-nombre">
                                                 {{ $notificacion->cliente->nombre_completo ?? 'N/A' }}
+                                                @if($notificacion->cliente->es_menor_edad)
+                                                    <span class="badge badge-warning badge-sm ml-1">
+                                                        <i class="fas fa-child"></i> Menor
+                                                    </span>
+                                                @endif
                                             </div>
                                             <div class="cliente-email">
                                                 {{ $notificacion->email_destino }}
+                                                @if($notificacion->cliente->es_menor_edad && $notificacion->email_destino === $notificacion->cliente->apoderado_email)
+                                                    <small class="text-muted ml-1">(Apoderado)</small>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

@@ -1110,7 +1110,11 @@ $(document).ready(function() {
                 </td>
                 <td>
                     <div class="contacto-info">
-                        ${cliente.email ? `<span class="contacto-item"><i class="fas fa-envelope"></i> ${cliente.email}</span>` : ''}
+                        ${cliente.es_menor_edad && cliente.apoderado_email 
+                            ? `<span class="contacto-item"><i class="fas fa-envelope"></i> ${cliente.apoderado_email} <small class="text-muted">(Apoderado)</small></span>` 
+                            : cliente.email 
+                                ? `<span class="contacto-item"><i class="fas fa-envelope"></i> ${cliente.email}</span>` 
+                                : ''}
                         ${cliente.celular ? `<span class="contacto-item"><i class="fas fa-phone"></i> ${cliente.celular}</span>` : ''}
                     </div>
                 </td>
