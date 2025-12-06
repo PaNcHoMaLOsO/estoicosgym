@@ -222,18 +222,29 @@
     }
 
     .cron-info-box {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border-left: 4px solid #2196F3;
-        border-radius: 10px;
-        padding: 15px 20px;
+        background: white;
+        border: 2px solid #e3f2fd;
+        border-left: 5px solid #2196F3;
+        border-radius: 12px;
+        padding: 20px;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 18px;
+        box-shadow: 0 2px 10px rgba(33, 150, 243, 0.1);
+        margin-top: 15px;
     }
 
     .cron-info-box i {
-        font-size: 1.8rem;
-        color: #1976D2;
+        font-size: 2.5rem;
+        color: #2196F3;
+        flex-shrink: 0;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 12px;
     }
 
     .cron-info-box .text {
@@ -243,11 +254,16 @@
     .cron-info-box .text strong {
         color: #1565C0;
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
+        font-size: 1.05rem;
+        font-weight: 700;
     }
 
     .cron-info-box .text small {
         color: #546e7a;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        display: block;
     }
 
     .main-card {
@@ -476,6 +492,24 @@
         .btn-action span {
             display: inline;
         }
+
+        .cron-info-box {
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .cron-info-box i {
+            font-size: 2rem;
+        }
+
+        .cron-info-box .text strong {
+            font-size: 1rem;
+        }
+
+        .cron-info-box .text small {
+            font-size: 0.85rem;
+        }
     }
 
     @media (max-width: 480px) {
@@ -569,14 +603,14 @@
                 <span>Historial</span>
             </a>
         </div>
+    </div>
 
-        {{-- Info CRON --}}
-        <div class="cron-info-box">
-            <i class="fas fa-robot"></i>
-            <div class="text">
-                <strong>Sistema Automático Activo</strong>
-                <small>Las notificaciones automáticas se ejecutan vía CRON todos los días a las 08:00 AM</small>
-            </div>
+    {{-- Info CRON --}}
+    <div class="cron-info-box">
+        <i class="fas fa-robot"></i>
+        <div class="text">
+            <strong>🤖 Sistema Automático Activo</strong>
+            <small>Las notificaciones automáticas se ejecutan vía CRON todos los días a las 08:00 AM. No requiere intervención manual.</small>
         </div>
     </div>
 
