@@ -27,6 +27,9 @@ class Notificacion extends Model
         'intentos',
         'max_intentos',
         'error_mensaje',
+        'tipo_envio',
+        'enviado_por_user_id',
+        'nota_personalizada',
     ];
 
     protected $casts = [
@@ -89,6 +92,11 @@ class Notificacion extends Model
         return $this->hasMany(LogNotificacion::class, 'id_notificacion');
     }
 
+    public function enviadoPor()
+    {
+        return $this->belongsTo(User::class, 'enviado_por_user_id');
+    }
+
     // Scopes
     public function scopePendientes($query)
     {
@@ -112,7 +120,27 @@ class Notificacion extends Model
                      ->where('intentos', '<', \DB::raw('max_intentos'));
     }
 
+    public function scopeAutomaticas($query)
+    {
+        return $query->where('tipo_envio', 'automatica');
+    }
+
+    public function scopeManuales($query)
+    {
+        return $query->where('tipo_envio', 'manual');
+    }
+
     // Helpers
+    public function esAutomatica(): bool
+    {
+        return $this->tipo_envio === 'automatica';
+    }
+
+    public function esManual(): bool
+    {
+        return $this->tipo_envio === 'manual';
+    }
+
     public function estaPendiente(): bool
     {
         return $this->id_estado === self::ESTADO_PENDIENTE;

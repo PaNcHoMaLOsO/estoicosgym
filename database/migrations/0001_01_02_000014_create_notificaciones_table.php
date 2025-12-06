@@ -43,6 +43,11 @@ return new class extends Migration
             $table->unsignedTinyInteger('max_intentos')->default(3);
             $table->text('error_mensaje')->nullable()->comment('Último mensaje de error si falló');
             
+            // Nuevas columnas para diferenciar automáticas vs manuales
+            $table->enum('tipo_envio', ['automatica', 'manual'])->default('automatica')->comment('Origen del envío');
+            $table->unsignedBigInteger('enviado_por_user_id')->nullable()->comment('ID del usuario admin que envió manualmente');
+            $table->text('nota_personalizada')->nullable()->comment('Nota adicional del admin para envíos manuales');
+            
             $table->timestamps();
 
             // Foreign keys
@@ -52,12 +57,16 @@ return new class extends Migration
             $table->foreign('id_pago')->references('id')->on('pagos')->onDelete('set null');
             $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
+            // Foreign key para usuario que envió
+            $table->foreign('enviado_por_user_id')->references('id')->on('users')->onDelete('set null');
+
             // Índices
             $table->index('id_cliente');
             $table->index('id_estado');
             $table->index('fecha_programada');
             $table->index(['id_estado', 'fecha_programada']);
             $table->index('id_tipo_notificacion');
+            $table->index('tipo_envio');
             $table->index(['fecha_programada', 'id_estado'], 'idx_notificaciones_programadas');
         });
 
