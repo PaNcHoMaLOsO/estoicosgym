@@ -272,51 +272,69 @@ class TestEmailVisualizacionCommand extends Command
             return 'sin_notificacion';
         }
 
-        // Verificar si completó pago recientemente
-        if ($inscripcion->pagos->count() > 1) {
-            $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
-            $fechaUltimoPago = Carbon::parse($ultimoPago->fecha_pago);
-            
-            if ($hoy->diffInDays($fechaUltimoPago) <= 3 && $ultimoPago->monto_pendiente == 0) {
-                $pagoAnterior = $inscripcion->pagos->sortByDesc('fecha_pago')->skip(1)->first();
-                if ($pagoAnterior && $pagoAnterior->monto_pendiente > 0) {
-                    return 'pago_completado';
-                }
-            }
-        }
-
-        // Verificar pausas y reactivaciones
-        if ($inscripcion->pausada) {
+        // PRIORIDAD 1: Estados de membresía (Pausada, Vencida, Por Vencer)
+        // Verificar si está PAUSADA (id_estado = 101)
+        if (isset($inscripcion->id_estado) && $inscripcion->id_estado == 101) {
             return 'pausa_inscripcion';
         }
-
-        if ($inscripcion->fecha_pausa_fin) {
-            $fechaReactivacion = Carbon::parse($inscripcion->fecha_pausa_fin);
-            if ($hoy->diffInDays($fechaReactivacion) <= 3) {
-                return 'activacion_inscripcion';
-            }
+        
+        // Verificar si está VENCIDA (id_estado = 102)
+        if (isset($inscripcion->id_estado) && $inscripcion->id_estado == 102) {
+            return 'membresia_vencida';
         }
 
-        // Bienvenida (inscripción reciente)
-        if ($hoy->diffInDays($fechaInicio) <= 7 && $fechaInicio->lte($hoy)) {
-            return 'bienvenida';
-        }
-
-        // Por vencer
-        if ($fechaVencimiento->isFuture() && $hoy->diffInDays($fechaVencimiento) <= 3) {
-            return 'membresia_por_vencer';
-        }
-
-        // Vencida
+        // Vencida por fecha
         if ($fechaVencimiento->isPast()) {
             return 'membresia_vencida';
         }
 
-        // Pago pendiente
+        // Por vencer (7 días o menos)
+        if ($fechaVencimiento->isFuture() && $hoy->diffInDays($fechaVencimiento) <= 7) {
+            return 'membresia_por_vencer';
+        }
+
+        // PRIORIDAD 2: Reactivación reciente
+        if ($inscripcion->fecha_pausa_fin && isset($inscripcion->id_estado) && $inscripcion->id_estado == 100) {
+            $fechaReactivacion = Carbon::parse($inscripcion->fecha_pausa_fin);
+            if ($hoy->diffInDays($fechaReactivacion) <= 2) {
+                return 'activacion_inscripcion';
+            }
+        }
+
+        // PRIORIDAD 3: Pago completado HOY
+        if ($inscripcion->pagos->count() > 1) {
+            $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
+            $fechaUltimoPago = Carbon::parse($ultimoPago->fecha_pago);
+            $totalPagado = $inscripcion->pagos->sum('monto_abonado');
+            $precioBase = $inscripcion->precio_final ?? $inscripcion->precio_base ?? 0;
+            
+            // Completó HOY y saldo = 0
+            if ($hoy->isSameDay($fechaUltimoPago) && $totalPagado >= $precioBase) {
+                $pagoAnterior = $inscripcion->pagos->sortByDesc('fecha_pago')->skip(1)->first();
+                if ($pagoAnterior) {
+                    $totalAnterior = $inscripcion->pagos->filter(function($p) use ($ultimoPago) {
+                        return $p->id != $ultimoPago->id;
+                    })->sum('monto_abonado');
+                    
+                    if ($totalAnterior < $precioBase) {
+                        return 'pago_completado';
+                    }
+                }
+            }
+        }
+
+        // PRIORIDAD 4: Pago pendiente (deuda) - si tiene más de 7 días
         $totalPagado = $inscripcion->pagos->sum('monto_abonado');
-        $precioBase = $inscripcion->precioAcordado->precio ?? 0;
-        if ($totalPagado < $precioBase) {
+        $precioBase = $inscripcion->precio_final ?? $inscripcion->precio_base ?? 0;
+        $saldoPendiente = $precioBase - $totalPagado;
+        
+        if ($saldoPendiente > 0 && $hoy->diffInDays($fechaInicio) > 7) {
             return 'pago_pendiente';
+        }
+
+        // PRIORIDAD 5: Bienvenida (inscripción reciente - últimos 7 días)
+        if ($hoy->diffInDays($fechaInicio) <= 7 && $fechaInicio->lte($hoy)) {
+            return 'bienvenida';
         }
 
         return 'sin_notificacion';

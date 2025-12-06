@@ -172,57 +172,77 @@ class VerificarNotificacionesCommand extends Command
 
         $hoy = \Carbon\Carbon::now();
         
-        // Si el cliente acaba de completar un pago pendiente/parcial
-        if ($inscripcion->pagos->count() > 1) {
-            $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
-            if ($ultimoPago) {
-                $fechaUltimoPago = \Carbon\Carbon::parse($ultimoPago->fecha_pago);
-                if ($hoy->diffInDays($fechaUltimoPago) <= 3 && $ultimoPago->monto_pendiente == 0) {
-                    $pagoAnterior = $inscripcion->pagos->sortByDesc('fecha_pago')->skip(1)->first();
-                    if ($pagoAnterior && $pagoAnterior->monto_pendiente > 0) {
-                        return 'pago_completado';
-                    }
-                }
-            }
-        }
-
-        // Si está pausada
-        if (($inscripcion->pausada ?? false) && $inscripcion->fecha_pausa_inicio) {
+        // PRIORIDAD 1: Estados de membresía (Pausada, Vencida, Por Vencer)
+        // Verificar si está PAUSADA (revisar id_estado = 101)
+        if (isset($inscripcion->id_estado) && $inscripcion->id_estado == 101) {
             return 'pausa_inscripcion';
         }
+        
+        // Verificar si está VENCIDA (revisar id_estado = 102)
+        if (isset($inscripcion->id_estado) && $inscripcion->id_estado == 102) {
+            return 'membresia_vencida';
+        }
 
-        // Si fue reactivada recientemente
-        if ($inscripcion->fecha_pausa_fin && !($inscripcion->pausada ?? false)) {
+        // Verificar por fecha de vencimiento
+        $fechaVencimiento = \Carbon\Carbon::parse($inscripcion->fecha_vencimiento ?? $inscripcion->fecha_fin);
+        $diasRestantes = $hoy->diffInDays($fechaVencimiento, false);
+
+        // Si está vencida por fecha (aunque el estado no esté actualizado)
+        if ($diasRestantes < 0) {
+            return 'membresia_vencida';
+        }
+
+        // Si está por vencer (7 días o menos)
+        if ($diasRestantes >= 0 && $diasRestantes <= 7) {
+            return 'membresia_por_vencer';
+        }
+
+        // PRIORIDAD 2: Si fue reactivada recientemente
+        if ($inscripcion->fecha_pausa_fin && isset($inscripcion->id_estado) && $inscripcion->id_estado == 100) {
             $fechaReactivacion = \Carbon\Carbon::parse($inscripcion->fecha_pausa_fin);
             if ($hoy->diffInDays($fechaReactivacion) <= 2) {
                 return 'activacion_inscripcion';
             }
         }
 
-        // Si es inscripción reciente (bienvenida)
-        $fechaInicio = \Carbon\Carbon::parse($inscripcion->fecha_inicio ?? $inscripcion->fecha_inscripcion);
-        if ($hoy->diffInDays($fechaInicio) <= 7) {
-            return 'bienvenida';
+        // PRIORIDAD 3: Si el cliente acaba de completar un pago pendiente/parcial HOY
+        if ($inscripcion->pagos->count() > 1) {
+            $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
+            if ($ultimoPago) {
+                $fechaUltimoPago = \Carbon\Carbon::parse($ultimoPago->fecha_pago);
+                $totalPagado = $inscripcion->pagos->sum('monto_abonado');
+                $precioBase = $inscripcion->precio_base ?? $inscripcion->precio_final ?? 0;
+                
+                // Completó el pago HOY y ahora saldo = 0
+                if ($hoy->isSameDay($fechaUltimoPago) && $totalPagado >= $precioBase) {
+                    $pagoAnterior = $inscripcion->pagos->sortByDesc('fecha_pago')->skip(1)->first();
+                    if ($pagoAnterior) {
+                        $totalAnterior = $inscripcion->pagos->filter(function($p) use ($ultimoPago) {
+                            return $p->id != $ultimoPago->id;
+                        })->sum('monto_abonado');
+                        
+                        if ($totalAnterior < $precioBase) {
+                            return 'pago_completado';
+                        }
+                    }
+                }
+            }
         }
 
-        $fechaVencimiento = \Carbon\Carbon::parse($inscripcion->fecha_vencimiento ?? $inscripcion->fecha_fin);
-        $diasRestantes = $hoy->diffInDays($fechaVencimiento, false);
-
-        // Si está vencida
-        if ($diasRestantes < 0) {
-            return 'membresia_vencida';
-        }
-
-        // Si está por vencer (3 días o menos)
-        if ($diasRestantes >= 0 && $diasRestantes <= 3) {
-            return 'membresia_por_vencer';
-        }
-
-        // Si tiene pagos pendientes
+        // PRIORIDAD 4: Si tiene pagos pendientes (deuda)
         $totalPagado = $inscripcion->pagos->sum('monto_abonado');
         $precioBase = $inscripcion->precio_base ?? $inscripcion->precio_final ?? 0;
-        if ($totalPagado < $precioBase) {
+        $saldoPendiente = $precioBase - $totalPagado;
+        
+        // Si tiene deuda y la inscripción tiene más de 7 días
+        $fechaInicio = \Carbon\Carbon::parse($inscripcion->fecha_inicio ?? $inscripcion->fecha_inscripcion);
+        if ($saldoPendiente > 0 && $hoy->diffInDays($fechaInicio) > 7) {
             return 'pago_pendiente';
+        }
+
+        // PRIORIDAD 5: Si es inscripción reciente (bienvenida) - últimos 7 días
+        if ($hoy->diffInDays($fechaInicio) <= 7) {
+            return 'bienvenida';
         }
 
         return null;
