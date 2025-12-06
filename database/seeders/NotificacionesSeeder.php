@@ -16,33 +16,41 @@ class NotificacionesSeeder extends Seeder
         $tipos = [
             [
                 'codigo' => 'membresia_por_vencer',
-                'nombre' => 'Membresía Próxima a Vencer',
-                'descripcion' => 'Se envía cuando la membresía está por vencer en los próximos días',
-                'asunto_email' => '⏰ {nombre}, tu membresía en Estoicos Gym vence pronto',
+                'nombre' => 'Membresía por Vencer - Recordatorio',
+                'descripcion' => 'Se envía X días antes de que venza la membresía (configurable)',
+                'asunto_email' => '⏰ {nombre}, tu membresía vence en {dias_restantes} días',
                 'plantilla_email' => '
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">🏋️ Estoicos Gym</h1>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
     </div>
-    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #1a1a2e; margin-top: 0;">Hola {nombre} 👋</h2>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Te recordamos que tu membresía <strong>{membresia}</strong> vence el <strong>{fecha_vencimiento}</strong>.
+    
+    <!-- CONTENIDO -->
+    <div style="padding: 30px 20px;">
+        <h2 style="color: #1a1a2e; margin: 0 0 15px 0;">Hola {nombre} 👋</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Te recordamos que tu membresía <strong>{membresia}</strong> está próxima a vencer.
         </p>
-        <div style="background: #fff3cd; border-left: 4px solid #f0a500; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #856404;">
-                <strong>⏳ Te quedan {dias_restantes} días</strong> para renovar y seguir entrenando sin interrupciones.
-            </p>
+        
+        <!-- ALERTA -->
+        <div style="background: #fff3cd; border-left: 4px solid #f0a500; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin: 0 0 10px 0; color: #856404; font-size: 18px;">⏳ Te quedan {dias_restantes} días</h3>
+            <p style="margin: 0; color: #856404;">Fecha de vencimiento: <strong>{fecha_vencimiento}</strong></p>
         </div>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Acércate a recepción o contáctanos para renovar tu plan y mantener tu progreso. 💪
+        
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            Renueva ahora para seguir entrenando sin interrupciones. <strong>¡No pierdas tu ritmo!</strong> 💪
         </p>
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="#" style="background: #e94560; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Renovar Ahora</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-        <p style="color: #888; font-size: 12px; text-align: center;">
-            Este es un correo automático de Estoicos Gym. Si tienes dudas, contáctanos.
+        
+        <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 20px 0;">
+            Acércate a recepción o contáctanos para renovar tu membresía.
+        </p>
+        
+        <!-- FOOTER -->
+        <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
+            Correo automático de Estoicos Gym<br>
+            <em>Si tienes dudas, contáctanos</em>
         </p>
     </div>
 </div>',
@@ -54,33 +62,41 @@ class NotificacionesSeeder extends Seeder
             ],
             [
                 'codigo' => 'membresia_vencida',
-                'nombre' => 'Membresía Vencida',
-                'descripcion' => 'Se envía el día que la membresía vence',
-                'asunto_email' => '❌ {nombre}, tu membresía en Estoicos Gym ha vencido',
+                'nombre' => 'Membresía Vencida - Recordatorio',
+                'descripcion' => 'Se envía inicio y fin de mes para membresías vencidas',
+                'asunto_email' => '❗ {nombre}, tu membresía en Estoicos Gym ha vencido',
                 'plantilla_email' => '
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">🏋️ Estoicos Gym</h1>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
     </div>
-    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #1a1a2e; margin-top: 0;">Hola {nombre} 👋</h2>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Te informamos que tu membresía <strong>{membresia}</strong> ha vencido el día <strong>{fecha_vencimiento}</strong>.
+    
+    <!-- CONTENIDO -->
+    <div style="padding: 30px 20px;">
+        <h2 style="color: #1a1a2e; margin: 0 0 15px 0;">Hola {nombre} 👋</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Te informamos que tu membresía <strong>{membresia}</strong> venció el <strong>{fecha_vencimiento}</strong>.
         </p>
-        <div style="background: #f8d7da; border-left: 4px solid #e94560; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #721c24;">
-                <strong>⚠️ Tu membresía está vencida.</strong> No podrás acceder al gimnasio hasta renovar.
-            </p>
+        
+        <!-- ALERTA -->
+        <div style="background: #f8d7da; border-left: 4px solid #e94560; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin: 0 0 10px 0; color: #721c24; font-size: 18px;">⚠️ Membresía Vencida</h3>
+            <p style="margin: 0; color: #721c24;">No podrás acceder al gimnasio hasta renovar.</p>
         </div>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            ¡Te extrañamos! Renueva hoy y retoma tu entrenamiento. Recuerda que cada día cuenta para alcanzar tus metas. 🎯
+        
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            <strong>¡Te extrañamos!</strong> Renueva hoy y retoma tu entrenamiento. 💪
         </p>
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="#" style="background: #00bf8e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Renovar Mi Membresía</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-        <p style="color: #888; font-size: 12px; text-align: center;">
-            Este es un correo automático de Estoicos Gym. Si tienes dudas, contáctanos.
+        
+        <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 20px 0;">
+            Cada día cuenta para alcanzar tus metas. Acércate a recepción para renovar tu membresía.
+        </p>
+        
+        <!-- FOOTER -->
+        <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
+            Correo automático de Estoicos Gym<br>
+            <em>Si tienes dudas, contáctanos</em>
         </p>
     </div>
 </div>',
@@ -92,39 +108,46 @@ class NotificacionesSeeder extends Seeder
             ],
             [
                 'codigo' => 'bienvenida',
-                'nombre' => 'Bienvenida Nuevo Cliente',
-                'descripcion' => 'Se envía cuando un cliente se inscribe por primera vez',
-                'asunto_email' => '🎉 ¡Bienvenido a Estoicos Gym, {nombre}!',
+                'nombre' => 'Bienvenida y Confirmación',
+                'descripcion' => 'Se envía cuando un cliente se inscribe - Incluye confirmación de inscripción y pago',
+                'asunto_email' => '🎉 ¡Bienvenido a Estoicos Gym, {nombre}! - Inscripción Confirmada',
                 'plantilla_email' => '
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">🏋️ Estoicos Gym</h1>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
+        <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Tu transformación comienza hoy</p>
     </div>
-    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #1a1a2e; margin-top: 0;">¡Bienvenido/a {nombre}! 🎉</h2>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Nos alegra que te hayas unido a la familia <strong>Estoicos Gym</strong>. Estamos emocionados de acompañarte en tu camino hacia una vida más saludable.
+    
+    <!-- BIENVENIDA -->
+    <div style="padding: 30px 20px;">
+        <h2 style="color: #1a1a2e; margin: 0 0 15px 0;">¡Bienvenido/a {nombre}! 🎉</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            Nos alegra que te hayas unido a <strong>Estoicos Gym</strong>. Tu inscripción ha sido confirmada exitosamente.
         </p>
-        <div style="background: #d4edda; border-left: 4px solid #00bf8e; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #155724;">
-                <strong>✅ Tu membresía {membresia}</strong> está activa hasta el <strong>{fecha_vencimiento}</strong>.
-            </p>
+        
+        <!-- CONFIRMACIÓN INSCRIPCIÓN -->
+        <div style="background: #d4edda; border-left: 4px solid #00bf8e; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin: 0 0 10px 0; color: #155724; font-size: 18px;">✅ Inscripción Confirmada</h3>
+            <p style="margin: 5px 0; color: #155724;"><strong>Membresía:</strong> {membresia}</p>
+            <p style="margin: 5px 0; color: #155724;"><strong>Fecha inicio:</strong> {fecha_inicio}</p>
+            <p style="margin: 5px 0; color: #155724;"><strong>Válida hasta:</strong> {fecha_vencimiento}</p>
+            <p style="margin: 5px 0; color: #155724;"><strong>Precio pagado:</strong> ${precio}</p>
         </div>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            <strong>Tips para comenzar:</strong>
-        </p>
-        <ul style="color: #555; font-size: 16px; line-height: 1.8;">
-            <li>Llega 10 minutos antes para calentar</li>
-            <li>Hidratación: siempre trae tu botella de agua</li>
-            <li>Consulta con nuestros instructores si tienes dudas</li>
-            <li>¡Disfruta el proceso!</li>
+        
+        <!-- TIPS -->
+        <h3 style="color: #1a1a2e; margin: 25px 0 15px 0;">💪 Consejos para empezar:</h3>
+        <ul style="color: #555; font-size: 15px; line-height: 1.8; padding-left: 20px;">
+            <li>Llega 10 minutos antes para prepararte</li>
+            <li>Trae tu botella de agua</li>
+            <li>Consulta con nuestros instructores</li>
+            <li>Escucha a tu cuerpo</li>
         </ul>
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="#" style="background: #e94560; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Ver Horarios</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-        <p style="color: #888; font-size: 12px; text-align: center;">
-            ¿Dudas? Responde a este correo o visítanos en recepción.
+        
+        <!-- FOOTER -->
+        <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
+            ¿Dudas? Contáctanos o visítanos en recepción<br>
+            <em>Estoicos Gym - Transformando vidas</em>
         </p>
     </div>
 </div>',
@@ -136,30 +159,42 @@ class NotificacionesSeeder extends Seeder
             ],
             [
                 'codigo' => 'pago_pendiente',
-                'nombre' => 'Recordatorio de Pago Pendiente',
-                'descripcion' => 'Se envía cuando hay un pago pendiente',
+                'nombre' => 'Pago Pendiente/Parcial - Recordatorio',
+                'descripcion' => 'Se envía cada 15 días cuando hay pago pendiente o parcial',
                 'asunto_email' => '💳 {nombre}, tienes un pago pendiente en Estoicos Gym',
                 'plantilla_email' => '
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">🏋️ Estoicos Gym</h1>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
     </div>
-    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #1a1a2e; margin-top: 0;">Hola {nombre} 👋</h2>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
+    
+    <!-- CONTENIDO -->
+    <div style="padding: 30px 20px;">
+        <h2 style="color: #1a1a2e; margin: 0 0 15px 0;">Hola {nombre} 👋</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
             Te recordamos que tienes un pago pendiente por tu membresía <strong>{membresia}</strong>.
         </p>
-        <div style="background: #fff3cd; border-left: 4px solid #f0a500; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #856404;">
-                <strong>💰 Monto pendiente: ${monto_pendiente}</strong>
-            </p>
+        
+        <!-- DETALLE PAGO -->
+        <div style="background: #fff3cd; border-left: 4px solid #f0a500; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin: 0 0 10px 0; color: #856404; font-size: 18px;">💰 Monto Pendiente</h3>
+            <p style="margin: 0; color: #856404; font-size: 24px; font-weight: bold;">${monto_pendiente}</p>
+            <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">Total: ${monto_total}</p>
         </div>
-        <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Acércate a recepción para regularizar tu pago y continuar disfrutando de nuestras instalaciones.
+        
+        <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+            Acércate a recepción para regularizar tu pago y continuar entrenando sin problemas.
         </p>
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-        <p style="color: #888; font-size: 12px; text-align: center;">
-            Este es un correo automático de Estoicos Gym.
+        
+        <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 20px 0;">
+            Tu membresía vence el: <strong>{fecha_vencimiento}</strong>
+        </p>
+        
+        <!-- FOOTER -->
+        <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
+            Correo automático de Estoicos Gym<br>
+            <em>Si tienes dudas, contáctanos</em>
         </p>
     </div>
 </div>',

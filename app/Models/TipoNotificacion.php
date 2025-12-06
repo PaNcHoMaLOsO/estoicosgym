@@ -63,4 +63,38 @@ class TipoNotificacion extends Model
             'contenido' => $contenido,
         ];
     }
+
+    /**
+     * Obtiene las variables disponibles por código de plantilla
+     */
+    public static function getVariablesDisponibles(string $codigo): array
+    {
+        $variablesComunes = [
+            'nombre' => 'Nombre completo del cliente',
+            'membresia' => 'Nombre de la membresía',
+        ];
+
+        $variablesEspecificas = match($codigo) {
+            'bienvenida' => [
+                'fecha_inicio' => 'Fecha de inicio de la membresía',
+                'fecha_vencimiento' => 'Fecha de vencimiento',
+                'precio' => 'Precio pagado',
+            ],
+            'membresia_por_vencer' => [
+                'fecha_vencimiento' => 'Fecha de vencimiento',
+                'dias_restantes' => 'Días restantes',
+            ],
+            'membresia_vencida' => [
+                'fecha_vencimiento' => 'Fecha de vencimiento',
+            ],
+            'pago_pendiente' => [
+                'monto_pendiente' => 'Monto pendiente de pago',
+                'monto_total' => 'Monto total de la membresía',
+                'fecha_vencimiento' => 'Fecha de vencimiento de la membresía',
+            ],
+            default => [],
+        };
+
+        return array_merge($variablesComunes, $variablesEspecificas);
+    }
 }

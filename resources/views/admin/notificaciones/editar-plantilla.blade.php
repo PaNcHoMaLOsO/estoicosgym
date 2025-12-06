@@ -107,38 +107,71 @@
                 </div>
 
                 {{-- Variables Disponibles --}}
+                {{-- Variables Disponibles --}}
                 <div class="card shadow-sm mt-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
                     <div class="card-header py-3" style="background: #f8f9fa;">
                         <h6 class="mb-0">
                             <i class="fas fa-code mr-2 text-info"></i> Variables Disponibles
                         </h6>
+                        <small class="text-muted">Haz clic para copiar</small>
                     </div>
                     <div class="card-body p-0">
                         <table class="table table-sm mb-0">
                             <tbody>
+                                @php
+                                    $variables = [
+                                        'bienvenida' => [
+                                            '{nombre}' => 'Nombre completo del cliente',
+                                            '{membresia}' => 'Nombre de la membresía',
+                                            '{fecha_inicio}' => 'Fecha de inicio',
+                                            '{fecha_vencimiento}' => 'Fecha de vencimiento',
+                                            '{precio}' => 'Precio pagado',
+                                        ],
+                                        'membresia_por_vencer' => [
+                                            '{nombre}' => 'Nombre completo del cliente',
+                                            '{membresia}' => 'Nombre de la membresía',
+                                            '{fecha_vencimiento}' => 'Fecha de vencimiento',
+                                            '{dias_restantes}' => 'Días restantes',
+                                        ],
+                                        'membresia_vencida' => [
+                                            '{nombre}' => 'Nombre completo del cliente',
+                                            '{membresia}' => 'Nombre de la membresía',
+                                            '{fecha_vencimiento}' => 'Fecha de vencimiento',
+                                        ],
+                                        'pago_pendiente' => [
+                                            '{nombre}' => 'Nombre completo del cliente',
+                                            '{membresia}' => 'Nombre de la membresía',
+                                            '{monto_pendiente}' => 'Monto pendiente',
+                                            '{monto_total}' => 'Monto total',
+                                            '{fecha_vencimiento}' => 'Fecha de vencimiento',
+                                        ],
+                                    ];
+                                    $vars = $variables[$tipoNotificacion->codigo] ?? [];
+                                @endphp
+                                @foreach($vars as $variable => $descripcion)
                                 <tr>
-                                    <td><code class="text-primary">{nombre}</code></td>
-                                    <td>Nombre completo del cliente</td>
+                                    <td>
+                                        <code class="text-primary variable-copy" style="cursor: pointer;" 
+                                              onclick="copiarVariable('{{ $variable }}')" 
+                                              title="Clic para copiar">{{ $variable }}</code>
+                                    </td>
+                                    <td>{{ $descripcion }}</td>
                                 </tr>
-                                <tr>
-                                    <td><code class="text-primary">{membresia}</code></td>
-                                    <td>Nombre de la membresía</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="text-primary">{fecha_vencimiento}</code></td>
-                                    <td>Fecha de vencimiento</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="text-primary">{dias_restantes}</code></td>
-                                    <td>Días restantes</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="text-primary">{fecha_inicio}</code></td>
-                                    <td>Fecha de inicio</td>
-                                </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                {{-- Tips de Edición --}}
+                <div class="alert alert-info mt-3" style="border-radius: 10px;">
+                    <h6><i class="fas fa-lightbulb mr-2"></i> Tips para editar</h6>
+                    <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 13px;">
+                        <li>El HTML ya está simplificado, solo edita el texto</li>
+                        <li>Usa las variables haciendo clic en ellas para copiar</li>
+                        <li>Mantén los estilos en línea (style="...")</li>
+                        <li>Usa Vista Previa para ver los cambios</li>
+                    </ul>
                 </div>
             </div>
 
@@ -215,11 +248,27 @@
 <script>
     let showingPreview = false;
 
+    // Copiar variable al portapapeles
+    function copiarVariable(variable) {
+        navigator.clipboard.writeText(variable).then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Copiado!',
+                text: variable + ' copiado al portapapeles',
+                timer: 1500,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        });
+    }
+
     function togglePreview() {
         const editor = document.getElementById('editorContainer');
         const preview = document.getElementById('previewContainer');
         const previewContent = document.getElementById('previewContent');
         const plantilla = document.getElementById('plantilla_email').value;
+        const btn = event.target.closest('button');
 
         if (!showingPreview) {
             // Mostrar vista previa
@@ -228,19 +277,29 @@
                 .replace(/{membresia}/g, 'Premium Mensual')
                 .replace(/{fecha_vencimiento}/g, '{{ now()->addDays(7)->format("d/m/Y") }}')
                 .replace(/{dias_restantes}/g, '7')
-                .replace(/{fecha_inicio}/g, '{{ now()->subMonth()->format("d/m/Y") }}');
+                .replace(/{fecha_inicio}/g, '{{ now()->subMonth()->format("d/m/Y") }}')
+                .replace(/{precio}/g, '35.000')
+                .replace(/{monto_pendiente}/g, '15.000')
+                .replace(/{monto_total}/g, '40.000');
             
             previewContent.innerHTML = rendered;
             editor.style.display = 'none';
             preview.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-code mr-1"></i> Ver Código';
             showingPreview = true;
         } else {
             // Mostrar editor
             editor.style.display = 'block';
             preview.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Vista Previa';
             showingPreview = false;
         }
     }
+
+    // Highlight de variables en el textarea
+    document.getElementById('plantilla_email').addEventListener('input', function() {
+        // Opcional: agregar highlights visuales más adelante
+    });
 
     @if(session('success'))
         Swal.fire({
