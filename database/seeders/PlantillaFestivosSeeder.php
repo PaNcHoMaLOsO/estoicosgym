@@ -54,7 +54,7 @@ class PlantillaFestivosSeeder extends Seeder
 <body>
     <div class="container">
         <div class="header">
-            <img src="{$logoGym}" alt="Estoicos Gym">
+            <img src="{$logoGym}" alt="ProGym">
         </div>
         
         <div class="festivo-banner">
@@ -96,7 +96,7 @@ class PlantillaFestivosSeeder extends Seeder
         
         <div class="footer">
             <img src="{$logoSuplementos}" alt="Estoicos Suplementos" style="max-width: 120px; margin-bottom: 15px;">
-            <p>Estoicos Gym - Tu templo del fitness</p>
+            <p>ProGym - Tu centro de entrenamiento</p>
             <p>📍 Dirección del gimnasio</p>
             <p>📞 +56 9 XXXX XXXX</p>
             <div class="social-links">
