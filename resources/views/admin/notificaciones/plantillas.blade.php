@@ -52,7 +52,13 @@
                         'membresia_por_vencer' => ['icon' => 'clock', 'color' => '#f0a500'],
                         'membresia_vencida' => ['icon' => 'calendar-times', 'color' => '#e94560'],
                         'bienvenida' => ['icon' => 'hand-sparkles', 'color' => '#00bf8e'],
+                        'pago_completado' => ['icon' => 'check-circle', 'color' => '#00bf8e'],
                         'pago_pendiente' => ['icon' => 'credit-card', 'color' => '#6c757d'],
+                        'pausa_inscripcion' => ['icon' => 'pause-circle', 'color' => '#f0a500'],
+                        'activacion_inscripcion' => ['icon' => 'play-circle', 'color' => '#00bf8e'],
+                        'renovacion' => ['icon' => 'sync-alt', 'color' => '#2EB872'],
+                        'manual' => ['icon' => 'paper-plane', 'color' => '#0dcaf0'],
+                        'notificacion_manual' => ['icon' => 'paper-plane', 'color' => '#0dcaf0'],
                         'horario_festivo' => ['icon' => 'calendar-day', 'color' => '#e94560'],
                     ];
                     $config = $tipoConfig[$tipo->codigo] ?? ['icon' => 'bell', 'color' => '#0dcaf0'];

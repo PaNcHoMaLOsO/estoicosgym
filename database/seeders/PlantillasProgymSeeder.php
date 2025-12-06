@@ -147,22 +147,6 @@ class PlantillasProgymSeeder extends Seeder
             ]
         );
 
-        // PLANTILLA 9: MANUAL
-        DB::table('tipo_notificaciones')->updateOrInsert(
-            ['codigo' => 'manual'],
-            [
-                'nombre' => 'Notificación Manual',
-                'descripcion' => 'Para envíos personalizados desde el sistema',
-                'asunto_email' => '{asunto}',
-                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;"><div style="background: #101010; color: white; padding: 30px 20px; text-align: center;"><h1 style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; font-family: Arial Black, Arial, sans-serif;"><span style="color: #FFFFFF;">PRO</span><span style="color: #E0001A;">GYM</span></h1><p style="margin: 10px 0 0 0; font-size: 14px; color: #C7C7C7; letter-spacing: 2px;">LOS ÁNGELES</p></div><div style="padding: 25px 20px; background: #FFFFFF;"><h2 style="color: #101010; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">Hola {nombre} 👋</h2><div style="color: #505050; font-size: 15px; line-height: 1.6;">{mensaje}</div><div style="text-align: center; margin: 20px 0 15px 0;"><a href="tel:+56950963143" style="display: inline-block; background: #E0001A; color: white; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold;">📞 Llámanos: +56 9 5096 3143</a></div><p style="color: #505050; font-size: 13px; line-height: 1.5; margin: 15px 0 0 0; text-align: center;">También en recepción: progymlosangeles@gmail.com</p></div><div style="background: #101010; color: white; padding: 20px; text-align: center;"><p style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold;">PROGYM - Los Ángeles</p><p style="margin: 0; font-size: 13px;">📧 <a href="mailto:progymlosangeles@gmail.com" style="color: #E0001A; text-decoration: none;">progymlosangeles@gmail.com</a> | 📞 <a href="tel:+56950963143" style="color: #E0001A; text-decoration: none;">+56 9 5096 3143</a></p><p style="margin: 10px 0 0 0; font-size: 13px;"><a href="https://www.instagram.com/progym_losangeles" style="color: #E0001A; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a></p><p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">Este es un correo automático, por favor no responder directamente.</p></div></div>',
-                'dias_anticipacion' => 0,
-                'activo' => true,
-                'enviar_email' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        $this->command->info('✅ Plantillas PROGYM cargadas (9 plantillas)');
+        $this->command->info('✅ Plantillas PROGYM cargadas (8 plantillas - notificacion_manual ya existe)');
     }
 }
