@@ -151,25 +151,25 @@
 
     .action-buttons {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 12px;
         margin-bottom: 20px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 992px) {
         .action-buttons {
             grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 576px) {
         .action-buttons {
             grid-template-columns: 1fr;
         }
     }
 
     .btn-action {
-        padding: 18px 20px;
+        padding: 16px 15px;
         border-radius: 12px;
         font-weight: 600;
         border: none;
@@ -177,14 +177,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         text-decoration: none;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        min-height: 50px;
     }
 
     .btn-action i {
-        font-size: 1.1rem;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .btn-action span {
+        flex-shrink: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .btn-action:hover {
@@ -458,11 +467,24 @@
             height: 35px;
             font-size: 0.9rem;
         }
+
+        .btn-action {
+            font-size: 0.85rem;
+            padding: 14px 12px;
+        }
+
+        .btn-action span {
+            display: inline;
+        }
     }
 
     @media (max-width: 480px) {
         .stat-cards {
             grid-template-columns: 1fr;
+        }
+
+        .btn-action span {
+            font-size: 0.8rem;
         }
     }
 </style>
