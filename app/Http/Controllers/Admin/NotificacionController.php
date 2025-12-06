@@ -67,11 +67,40 @@ class NotificacionController extends Controller
         // Tipos de notificación para filtro
         $tiposNotificacion = TipoNotificacion::orderBy('nombre')->get();
 
+        // Última ejecución automática (simulada - en producción vendría de logs)
+        $ultimaEjecucion = (object)[
+            'fecha' => now()->format('d/m/Y H:i'),
+            'programadas' => Notificacion::whereDate('created_at', today())->where('id_estado', 600)->count(),
+            'enviadas' => Notificacion::whereDate('fecha_envio', today())->where('id_estado', 601)->count(),
+            'fallidas' => Notificacion::whereDate('created_at', today())->where('id_estado', 602)->count(),
+        ];
+
         return view('admin.notificaciones.index', compact(
             'notificaciones',
             'estadisticas',
-            'tiposNotificacion'
+            'tiposNotificacion',
+            'ultimaEjecucion'
         ));
+    }
+
+    /**
+     * Mostrar historial de ejecuciones automáticas
+     */
+    public function historial()
+    {
+        // Agrupar notificaciones por día para mostrar resumen de ejecuciones
+        $historial = Notificacion::selectRaw('DATE(created_at) as fecha, 
+                                              COUNT(*) as total,
+                                              SUM(CASE WHEN id_estado = 600 THEN 1 ELSE 0 END) as pendientes,
+                                              SUM(CASE WHEN id_estado = 601 THEN 1 ELSE 0 END) as enviadas,
+                                              SUM(CASE WHEN id_estado = 602 THEN 1 ELSE 0 END) as fallidas,
+                                              SUM(CASE WHEN id_estado = 603 THEN 1 ELSE 0 END) as canceladas')
+            ->whereNotNull('fecha_programada')
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'desc')
+            ->paginate(30);
+
+        return view('admin.notificaciones.historial', compact('historial'));
     }
 
     /**

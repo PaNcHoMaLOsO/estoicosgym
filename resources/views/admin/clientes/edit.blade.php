@@ -1178,14 +1178,28 @@
 
                     {{-- Checkbox de consentimiento --}}
                     <div class="consentimiento-box">
+                        <div class="alert alert-warning mb-3" style="background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 15px;">
+                            <h6 class="mb-2" style="color: #e65100; font-weight: 600;">
+                                <i class="fas fa-shield-alt mr-2"></i>Autorización del Apoderado/Tutor
+                            </h6>
+                            <p class="mb-2 text-muted small">
+                                Se requiere autorización expresa del apoderado/tutor para:
+                            </p>
+                            <ul class="mb-3 text-muted small" style="line-height: 1.6;">
+                                <li>Inscripción y permanencia del menor en el gimnasio</li>
+                                <li>Envío de notificaciones automáticas al email del apoderado</li>
+                                <li>Comunicaciones sobre estado de membresía y pagos</li>
+                                <li>Uso de datos personales según políticas de privacidad</li>
+                            </ul>
+                        </div>
                         <div class="custom-checkbox">
                             <input type="checkbox" 
                                    id="consentimiento_apoderado" 
                                    name="consentimiento_apoderado" 
                                    value="1"
                                    {{ old('consentimiento_apoderado', $cliente->consentimiento_apoderado) ? 'checked' : '' }}>
-                            <label for="consentimiento_apoderado">
-                                <i class="fas fa-check-circle"></i> Confirmo que el apoderado ha autorizado la inscripción del menor de edad y acepta los términos y condiciones del gimnasio.
+                            <label for="consentimiento_apoderado" style="font-weight: 600; color: #e65100;">
+                                <i class="fas fa-check-circle"></i> Confirmo que el apoderado/tutor ha autorizado expresamente la inscripción del menor y el envío de notificaciones automáticas
                             </label>
                         </div>
                         @error('consentimiento_apoderado')

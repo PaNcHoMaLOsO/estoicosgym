@@ -464,12 +464,37 @@
                         </div>
                     </div>
                     @endif
-                    <div class="consentimiento-badge {{ $cliente->consentimiento_apoderado ? 'aprobado' : 'pendiente' }}">
-                        @if($cliente->consentimiento_apoderado)
-                            <i class="fas fa-check-circle"></i> Consentimiento Aprobado
-                        @else
-                            <i class="fas fa-exclamation-triangle"></i> Consentimiento Pendiente
-                        @endif
+                    
+                    {{-- Autorización del Apoderado --}}
+                    <div class="info-row" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                        <div class="info-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="info-content">
+                            <span class="info-label">Estado de Autorización</span>
+                            @if($cliente->consentimiento_apoderado)
+                                <div class="mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left: 4px solid #28a745; padding: 12px; border-radius: 6px;">
+                                    <h6 class="mb-1" style="color: #155724; font-weight: 600;">
+                                        <i class="fas fa-check-circle mr-1"></i> Autorización Confirmada
+                                    </h6>
+                                    <p class="mb-0 small text-muted">
+                                        El apoderado/tutor ha autorizado expresamente:
+                                    </p>
+                                    <ul class="mb-0 mt-1 small text-muted" style="line-height: 1.6;">
+                                        <li>Inscripción del menor en el gimnasio</li>
+                                        <li>Envío de notificaciones automáticas a: <strong>{{ $cliente->apoderado_email }}</strong></li>
+                                        <li>Comunicaciones sobre membresía y pagos</li>
+                                    </ul>
+                                </div>
+                            @else
+                                <div class="mt-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe4a3 100%); border-left: 4px solid #ff9800; padding: 12px; border-radius: 6px;">
+                                    <h6 class="mb-1" style="color: #856404; font-weight: 600;">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i> Autorización Pendiente
+                                    </h6>
+                                    <p class="mb-0 small text-muted">
+                                        Se requiere confirmación del apoderado/tutor para proceder con notificaciones automáticas.
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

@@ -351,7 +351,7 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
         // Rutas específicas PRIMERO (antes de las rutas con parámetros)
         Route::get('/', [NotificacionController::class, 'index'])->name('index');
-        Route::post('/ejecutar', [NotificacionController::class, 'ejecutar'])->name('ejecutar');
+        Route::get('/historial', [NotificacionController::class, 'historial'])->name('historial');
         
         // Enviar a cliente individual (NUEVO)
         Route::get('/enviar-cliente', [NotificacionController::class, 'enviarCliente'])->name('enviar-cliente');

@@ -405,22 +405,43 @@
 
     {{-- Barra de Acciones --}}
     <div class="action-bar">
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
             <a href="{{ route('admin.notificaciones.crear') }}" class="btn btn-success" style="background: linear-gradient(135deg, #00bf8e, #00a67d); border: none; border-radius: 10px; padding: 12px 25px; font-weight: 600;">
                 <i class="fas fa-plus"></i> Nueva Notificación
             </a>
-            <form action="{{ route('admin.notificaciones.ejecutar') }}" method="POST" class="d-inline">
-                @csrf
-                <input type="hidden" name="accion" value="todo">
-                <button type="submit" class="btn btn-execute">
-                    <i class="fas fa-play"></i> Ejecutar Automáticas
-                </button>
-            </form>
+            <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn btn-plantillas">
+                <i class="fas fa-file-alt"></i> Gestionar Plantillas
+            </a>
+            <div class="cron-status-inline ml-auto">
+                <i class="fas fa-robot text-info"></i>
+                <span class="text-muted small">Las notificaciones automáticas se ejecutan vía CRON a las 08:00 AM</span>
+            </div>
         </div>
-        <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn btn-plantillas">
-            <i class="fas fa-file-alt"></i> Gestionar Plantillas
-        </a>
     </div>
+
+    {{-- Historial de Ejecuciones Automáticas --}}
+    @if(isset($ultimaEjecucion))
+    <div class="alert" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: none; border-left: 4px solid #2196F3; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="mb-1" style="color: #1565C0; font-weight: 600;">
+                    <i class="fas fa-clock mr-2"></i> Última Ejecución Automática
+                </h5>
+                <p class="mb-0 text-muted">
+                    <strong>{{ $ultimaEjecucion->fecha }}</strong> - 
+                    Programadas: <span class="badge badge-info">{{ $ultimaEjecucion->programadas }}</span>
+                    Enviadas: <span class="badge badge-success">{{ $ultimaEjecucion->enviadas }}</span>
+                    @if($ultimaEjecucion->fallidas > 0)
+                        Fallidas: <span class="badge badge-danger">{{ $ultimaEjecucion->fallidas }}</span>
+                    @endif
+                </p>
+            </div>
+            <a href="{{ route('admin.notificaciones.historial') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-history"></i> Ver Historial Completo
+            </a>
+        </div>
+    </div>
+    @endif
 
     {{-- Tabla de Notificaciones --}}
     <div class="main-card">
