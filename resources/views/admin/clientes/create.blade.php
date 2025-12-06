@@ -2555,67 +2555,6 @@ $(document).ready(function() {
     // ============================================
     // DETECCIÓN DE EDAD Y MANEJO DE APODERADO
     // ============================================
-    function calcularEdad(fechaNacimiento) {
-        if (!fechaNacimiento) return null;
-        
-        const hoy = new Date();
-        const nacimiento = new Date(fechaNacimiento);
-        let edad = hoy.getFullYear() - nacimiento.getFullYear();
-        const mes = hoy.getMonth() - nacimiento.getMonth();
-        
-        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-            edad--;
-        }
-        
-        return edad;
-    }
-
-    function verificarEdad() {
-        const fechaNacimiento = $('#fecha_nacimiento').val();
-        const $infoEdad = $('#edad-info');
-        const $seccionApoderado = $('#seccion-apoderado');
-        const $esMenorInput = $('#es_menor_edad');
-        
-        if (!fechaNacimiento) {
-            $infoEdad.text('').removeClass('menor mayor');
-            $seccionApoderado.slideUp(300);
-            $esMenorInput.val('0');
-            esMenorEdad = false;
-            limpiarCamposApoderado();
-            return;
-        }
-        
-        const edad = calcularEdad(fechaNacimiento);
-        
-        if (edad === null || edad < 0) {
-            $infoEdad.text('Fecha inválida').removeClass('menor mayor').addClass('text-danger');
-            return;
-        }
-        
-        if (edad < 18) {
-            // MENOR DE EDAD
-            esMenorEdad = true;
-            $esMenorInput.val('1');
-            $infoEdad.html(`<i class="fas fa-exclamation-triangle"></i> ${edad} años - <strong>Menor de edad</strong>`)
-                     .removeClass('mayor').addClass('menor');
-            $seccionApoderado.slideDown(400);
-            
-            // Hacer campos obligatorios
-            $('.campo-apoderado').prop('required', true);
-        } else {
-            // MAYOR DE EDAD
-            esMenorEdad = false;
-            $esMenorInput.val('0');
-            $infoEdad.html(`<i class="fas fa-check-circle"></i> ${edad} años`)
-                     .removeClass('menor').addClass('mayor');
-            $seccionApoderado.slideUp(300);
-            
-            // Quitar obligatoriedad y limpiar campos
-            $('.campo-apoderado').prop('required', false);
-            limpiarCamposApoderado();
-        }
-    }
-
     function limpiarCamposApoderado() {
         $('#consentimiento_apoderado').prop('checked', false);
         $('#apoderado_nombre').val('');
@@ -2626,12 +2565,81 @@ $(document).ready(function() {
         $('#apoderado_observaciones').val('');
     }
 
-    // Evento al cambiar fecha de nacimiento
-    $('#fecha_nacimiento').on('change', verificarEdad);
+    // Evento al cambiar fecha de nacimiento (CONSOLIDADO - incluye validación de edad mínima)
+    $('#fecha_nacimiento').on('change', function() {
+        const valor = this.value;
+        
+        // Si no hay fecha, limpiar todo
+        if (!valor || valor.length < 10) {
+            $('#edad-info').text('').removeClass('menor mayor');
+            $('#seccion-apoderado').slideUp(300);
+            $('#es_menor_edad').val('0');
+            esMenorEdad = false;
+            limpiarCamposApoderado();
+            return;
+        }
+        
+        // Verificar formato válido
+        const año = parseInt(valor.split('-')[0]);
+        if (año < 1900 || año > new Date().getFullYear()) {
+            return;
+        }
+        
+        // Calcular edad
+        const fechaNac = new Date(valor);
+        const hoy = new Date();
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const m = hoy.getMonth() - fechaNac.getMonth();
+        if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edad--;
+        }
+        
+        // Validar edad mínima (14 años)
+        if (edad < 14) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Edad no válida',
+                text: 'El cliente debe tener al menos 14 años para registrarse.',
+                confirmButtonColor: '#e94560'
+            });
+            // NO limpiar el campo, solo avisar - el usuario puede corregir
+            $('#edad-info').text('Edad mínima: 14 años').removeClass('menor mayor').addClass('text-danger');
+            return;
+        } else if (edad > 110) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fecha no válida',
+                text: 'Verifique la fecha de nacimiento ingresada.',
+                confirmButtonColor: '#e94560'
+            });
+            $('#edad-info').text('Fecha inválida').removeClass('menor mayor').addClass('text-danger');
+            return;
+        }
+        
+        // Edad válida - Actualizar UI
+        if (edad < 18) {
+            // MENOR DE EDAD
+            esMenorEdad = true;
+            $('#es_menor_edad').val('1');
+            $('#edad-info').html(`<i class="fas fa-exclamation-triangle"></i> ${edad} años - <strong>Menor de edad</strong>`)
+                         .removeClass('mayor text-danger').addClass('menor');
+            $('#seccion-apoderado').slideDown(400);
+            $('.campo-apoderado').prop('required', true);
+        } else {
+            // MAYOR DE EDAD
+            esMenorEdad = false;
+            $('#es_menor_edad').val('0');
+            $('#edad-info').html(`<i class="fas fa-check-circle"></i> ${edad} años`)
+                         .removeClass('menor text-danger').addClass('mayor');
+            $('#seccion-apoderado').slideUp(300);
+            $('.campo-apoderado').prop('required', false);
+            limpiarCamposApoderado();
+        }
+    });
     
     // Verificar al cargar si hay valor previo (por old())
     if ($('#fecha_nacimiento').val()) {
-        verificarEdad();
+        $('#fecha_nacimiento').trigger('change');
     }
 
     // Formatear RUT del apoderado
@@ -3018,50 +3026,7 @@ $(document).ready(function() {
         }
     });
 
-    // Validar edad al cambiar fecha (además de mostrar info)
-    // Solo validar si la fecha está completa (año con 4 dígitos)
-    $('#fecha_nacimiento').on('change', function() {
-        const valor = this.value;
-        
-        // Verificar que la fecha esté completa (formato YYYY-MM-DD)
-        if (!valor || valor.length < 10) {
-            return; // No validar fechas incompletas
-        }
-        
-        // Verificar que el año tenga 4 dígitos y sea razonable (> 1900)
-        const año = parseInt(valor.split('-')[0]);
-        if (año < 1900 || año > new Date().getFullYear()) {
-            return; // No validar años incompletos o futuros
-        }
-        
-        const fechaNac = new Date(valor);
-        const hoy = new Date();
-        let edad = hoy.getFullYear() - fechaNac.getFullYear();
-        const m = hoy.getMonth() - fechaNac.getMonth();
-        if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) {
-            edad--;
-        }
-        
-        if (edad < 14) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Edad no válida',
-                text: 'El cliente debe tener al menos 14 años para registrarse.',
-                confirmButtonColor: '#e94560'
-            });
-            this.value = '';
-            $('#edad-info').text('').removeClass('menor mayor');
-        } else if (edad > 110) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Fecha no válida',
-                text: 'Verifique la fecha de nacimiento ingresada.',
-                confirmButtonColor: '#e94560'
-            });
-            this.value = '';
-            $('#edad-info').text('').removeClass('menor mayor');
-        }
-    });
+    // REMOVIDO: Evento duplicado de validación de edad - ahora consolidado arriba (línea ~2630)
 
     // ============================================
     // NAVEGACIÓN POR STEPPER (click en pasos)

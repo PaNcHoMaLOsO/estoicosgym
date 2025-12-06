@@ -566,8 +566,14 @@ class NotificacionController extends Controller
             ->whereNotIn('id', $clientesConInscripcion)
             ->count();
 
+        // Obtener plantillas desde la base de datos
+        $plantillas = TipoNotificacion::where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'codigo', 'nombre', 'asunto_email', 'plantilla_email']);
+
         return view('admin.notificaciones.crear', compact(
-            'clientes', 
+            'clientes',
+            'plantillas', 
             'totalClientes', 
             'clientesActivos', 
             'clientesVencidos', 
@@ -662,102 +668,144 @@ class NotificacionController extends Controller
      */
     public function enviarMasivo(Request $request)
     {
-        $request->validate([
-            'grupo' => 'required|string',
-            'asunto' => 'required|string|max:255',
-            'mensaje' => 'required|string',
-            'cliente_ids' => 'nullable|string',
-            'programar' => 'nullable|boolean',
-            'fecha_programada' => 'nullable|date|after_or_equal:today',
+        // Validaciones mejoradas
+        $validated = $request->validate([
+            'asunto' => 'required|string|min:5|max:255',
+            'mensaje' => 'required|string|min:10|max:5000',
+            'cliente_ids' => 'required|string',
+            'plantilla_id' => 'nullable|integer|exists:tipo_notificaciones,id',
+        ], [
+            'asunto.required' => 'El asunto es obligatorio',
+            'asunto.min' => 'El asunto debe tener al menos 5 caracteres',
+            'asunto.max' => 'El asunto no puede exceder 255 caracteres',
+            'mensaje.required' => 'El mensaje es obligatorio',
+            'mensaje.min' => 'El mensaje debe tener al menos 10 caracteres',
+            'mensaje.max' => 'El mensaje no puede exceder 5000 caracteres',
+            'cliente_ids.required' => 'Debes seleccionar al menos un cliente',
         ]);
-
-        $grupo = $request->input('grupo');
         
-        // Decodificar cliente_ids si viene como JSON string
-        $clienteIdsRaw = $request->input('cliente_ids', '[]');
-        $clienteIds = is_string($clienteIdsRaw) ? json_decode($clienteIdsRaw, true) : $clienteIdsRaw;
-        $clienteIds = is_array($clienteIds) ? $clienteIds : [];
+        // Decodificar cliente_ids
+        $clienteIds = json_decode($request->cliente_ids, true);
         
-        $asunto = $request->input('asunto');
-        $mensaje = $request->input('mensaje');
-        $programar = $request->boolean('programar');
-        $fechaProgramada = $programar && $request->filled('fecha_programada') 
-            ? Carbon::parse($request->fecha_programada) 
-            : Carbon::today();
-
-        // Si no se especificaron clientes, obtener según el grupo
-        if (empty($clienteIds)) {
-            $clienteIds = $this->obtenerClienteIdsPorGrupo($grupo, $request->input('membresia_id'));
+        if (empty($clienteIds) || !is_array($clienteIds)) {
+            return back()
+                ->with('error', 'Debes seleccionar al menos un cliente')
+                ->withInput();
         }
 
-        if (empty($clienteIds)) {
-            return back()->with('error', 'No se encontraron destinatarios para este grupo');
-        }
-
+        // Validar que los clientes existan y tengan email
         $clientes = Cliente::whereIn('id', $clienteIds)
             ->where('activo', true)
             ->whereNotNull('email')
             ->get();
 
-        // Obtener o crear tipo de notificación "manual"
-        $tipoManual = TipoNotificacion::firstOrCreate(
-            ['codigo' => 'notificacion_manual'],
-            [
-                'nombre' => 'Notificación Manual',
-                'descripcion' => 'Notificaciones enviadas manualmente por el administrador',
-                'asunto_email' => '{asunto}',
-                'plantilla_email' => '{mensaje}',
-                'dias_anticipacion' => 0,
-                'activo' => true,
-                'enviar_email' => true,
-            ]
-        );
+        if ($clientes->isEmpty()) {
+            return back()
+                ->with('error', 'No se encontraron clientes válidos con email')
+                ->withInput();
+        }
 
-        $programadas = 0;
+        $asunto = $request->asunto;
+        $mensaje = $request->mensaje;
+
+        // Obtener tipo de notificación (si se seleccionó plantilla) o crear manual
+        if ($request->filled('plantilla_id') && $request->plantilla_id !== 'custom') {
+            $tipoNotificacion = TipoNotificacion::find($request->plantilla_id);
+        } else {
+            $tipoNotificacion = TipoNotificacion::firstOrCreate(
+                ['codigo' => 'notificacion_manual'],
+                [
+                    'nombre' => 'Notificación Manual',
+                    'descripcion' => 'Notificaciones enviadas manualmente por el administrador',
+                    'asunto_email' => '{asunto}',
+                    'plantilla_email' => '{mensaje}',
+                    'dias_anticipacion' => 0,
+                    'activo' => true,
+                    'enviar_email' => true,
+                ]
+            );
+        }
+
+        $creadas = 0;
         $errores = [];
 
         foreach ($clientes as $cliente) {
             try {
                 // Obtener última inscripción del cliente para referencia
                 $inscripcion = Inscripcion::where('id_cliente', $cliente->id)
+                    ->with('membresia')
                     ->orderBy('created_at', 'desc')
                     ->first();
 
-                // Personalizar mensaje
+                // Personalizar mensaje con variables del cliente
+                $variables = [
+                    '{nombre}' => $cliente->nombre_completo,
+                    '{email}' => $cliente->email,
+                    '{membresia}' => $inscripcion?->membresia?->nombre ?? 'Sin membresía',
+                ];
+
+                $asuntoPersonalizado = str_replace(
+                    array_keys($variables),
+                    array_values($variables),
+                    $asunto
+                );
+
                 $mensajePersonalizado = str_replace(
-                    ['{nombre}', '{email}'],
-                    [$cliente->nombre_completo, $cliente->email],
+                    array_keys($variables),
+                    array_values($variables),
                     $mensaje
                 );
 
+                // Crear notificación
                 $notificacion = Notificacion::create([
-                    'id_tipo_notificacion' => $tipoManual->id,
+                    'id_tipo_notificacion' => $tipoNotificacion->id,
                     'id_cliente' => $cliente->id,
                     'id_inscripcion' => $inscripcion?->id,
                     'email_destino' => $cliente->email,
-                    'asunto' => $asunto,
+                    'asunto' => $asuntoPersonalizado,
                     'contenido' => $mensajePersonalizado,
                     'id_estado' => Notificacion::ESTADO_PENDIENTE,
-                    'fecha_programada' => $fechaProgramada,
+                    'fecha_programada' => now(),
+                    'enviado_por_user_id' => auth()->id(),
                 ]);
 
-                $notificacion->registrarLog('programada', "Notificación manual programada para grupo: {$grupo}");
-                $programadas++;
+                $notificacion->registrarLog('creada', 'Notificación manual creada desde el panel');
+                $creadas++;
 
             } catch (\Exception $e) {
-                $errores[] = "Error con {$cliente->email}: " . $e->getMessage();
+                Log::error('Error creando notificación masiva', [
+                    'cliente_id' => $cliente->id,
+                    'error' => $e->getMessage()
+                ]);
+                $errores[] = "Error con {$cliente->nombre_completo}: " . $e->getMessage();
             }
         }
 
-        // Si no es programada para después, enviar inmediatamente
-        if (!$programar || $fechaProgramada->isToday()) {
+        // Enviar inmediatamente las notificaciones creadas
+        try {
             $resultado = $this->notificacionService->enviarPendientes();
+            
+            $mensaje = "✅ Notificaciones enviadas: {$resultado['enviadas']} de {$creadas}";
+            
+            if ($resultado['fallidas'] > 0) {
+                $mensaje .= " | ❌ Fallidas: {$resultado['fallidas']}";
+            }
+            
+            if (!empty($errores)) {
+                $mensaje .= " | ⚠️ Errores: " . count($errores);
+            }
+            
             return redirect()->route('admin.notificaciones.index')
-                ->with('success', "Se programaron {$programadas} notificaciones. Enviadas: {$resultado['enviadas']}, Fallidas: {$resultado['fallidas']}");
+                ->with($resultado['fallidas'] === 0 ? 'success' : 'warning', $mensaje);
+                
+        } catch (\Exception $e) {
+            Log::error('Error enviando notificaciones masivas', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('admin.notificaciones.index')
+                ->with('error', "Se crearon {$creadas} notificaciones pero hubo un error al enviarlas: " . $e->getMessage());
         }
-
-        return redirect()->route('admin.notificaciones.index')
-            ->with('success', "Se programaron {$programadas} notificaciones para el {$fechaProgramada->format('d/m/Y')}");
     }
 
     /**

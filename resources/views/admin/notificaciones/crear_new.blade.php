@@ -27,43 +27,43 @@
     .page-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         color: white;
-        padding: 15px 20px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        box-shadow: 0 3px 15px rgba(26, 26, 46, 0.15);
+        padding: 25px 30px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 20px rgba(26, 26, 46, 0.2);
     }
 
     .page-header h1 {
         margin: 0;
         font-weight: 700;
-        font-size: 1.3rem;
+        font-size: 1.6rem;
     }
 
     .page-header h1 i {
         color: var(--accent);
-        margin-right: 8px;
+        margin-right: 10px;
     }
 
     .page-header p {
-        margin: 5px 0 0;
+        margin: 8px 0 0;
         opacity: 0.9;
-        font-size: 0.85rem;
+        font-size: 0.95rem;
     }
 
     /* Cards */
     .main-card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        border-radius: 16px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
         overflow: hidden;
-        margin-bottom: 15px;
+        margin-bottom: 25px;
         border: 1px solid var(--gray-200);
     }
 
     .main-card-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         color: white;
-        padding: 12px 15px;
+        padding: 18px 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -72,29 +72,29 @@
     .main-card-header h3 {
         margin: 0;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 1.1rem;
     }
 
     .main-card-header h3 i {
         color: var(--accent);
-        margin-right: 6px;
+        margin-right: 8px;
     }
 
     .main-card-body {
-        padding: 15px;
+        padding: 25px;
     }
 
     /* Indicador de pasos */
     .pasos-indicador {
         display: flex;
         justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 15px;
-        padding: 12px 15px;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 20px;
         background: white;
-        border-radius: 30px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        max-width: 650px;
+        border-radius: 50px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        max-width: 700px;
         margin-left: auto;
         margin-right: auto;
     }
@@ -103,10 +103,10 @@
         flex: 1;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         color: var(--gray-600);
-        padding: 6px 10px;
-        border-radius: 20px;
+        padding: 10px 15px;
+        border-radius: 25px;
         transition: all 0.3s ease;
         position: relative;
     }
@@ -134,15 +134,15 @@
     }
 
     .paso-numero {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: var(--gray-200);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.75rem;
+        font-size: 0.9rem;
         transition: all 0.3s ease;
     }
 
@@ -159,27 +159,27 @@
 
     .paso-texto {
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: 0.9rem;
     }
 
     /* Filtros rápidos */
     .filtros-rapidos {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
-        margin-bottom: 12px;
+        margin-bottom: 20px;
     }
 
     .filtro-btn {
-        padding: 6px 14px;
-        border-radius: 20px;
+        padding: 10px 20px;
+        border-radius: 25px;
         border: 2px solid var(--gray-200);
         background: white;
         color: var(--gray-600);
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
     }
 
     .filtro-btn:hover {
@@ -197,10 +197,10 @@
     }
 
     .filtro-btn .badge {
-        margin-left: 6px;
-        padding: 2px 6px;
-        border-radius: 8px;
-        font-size: 0.7rem;
+        margin-left: 8px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.75rem;
     }
 
     .filtro-btn.active .badge {
@@ -244,7 +244,7 @@
     /* Tabla de clientes */
     .tabla-clientes {
         border: 1px solid var(--gray-200);
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
     }
 
@@ -260,7 +260,6 @@
     .tabla-clientes tbody td {
         padding: 12px 15px;
         vertical-align: middle;
-        font-size: 0.9rem;
     }
 
     .tabla-clientes tbody tr:hover {
@@ -274,8 +273,8 @@
     }
 
     .cliente-avatar {
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         display: flex;
@@ -283,7 +282,7 @@
         justify-content: center;
         color: white;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     .cliente-nombre {
@@ -293,14 +292,14 @@
     }
 
     .cliente-email {
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         color: var(--gray-600);
     }
 
     .badge-estado {
-        padding: 5px 10px;
-        border-radius: 12px;
-        font-size: 0.8rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
         font-weight: 600;
     }
 
@@ -319,8 +318,8 @@
     .plantilla-card {
         background: white;
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 8px 6px;
+        border-radius: 16px;
+        padding: 20px 15px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -329,27 +328,27 @@
 
     .plantilla-card:hover {
         border-color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
 
     .plantilla-card.selected {
         border-color: var(--accent);
         background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
         color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(233, 69, 96, 0.25);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
     }
 
     .plantilla-icon {
-        width: 35px;
-        height: 35px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 6px;
-        font-size: 1.1rem;
+        margin: 0 auto 12px;
+        font-size: 1.6rem;
         transition: all 0.3s ease;
         background: var(--gray-100);
     }
@@ -360,31 +359,30 @@
     }
 
     .plantilla-nombre {
-        font-weight: 600;
-        font-size: 0.7rem;
-        line-height: 1.2;
+        font-weight: 700;
+        font-size: 0.9rem;
+        line-height: 1.3;
     }
 
     /* Formulario */
     .form-group label {
         font-weight: 600;
         color: var(--gray-800);
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         display: block;
-        font-size: 0.9rem;
     }
 
     .form-group label i {
         color: var(--accent);
-        margin-right: 4px;
+        margin-right: 5px;
     }
 
     .form-control {
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 8px 12px;
+        border-radius: 10px;
+        padding: 12px 15px;
         transition: all 0.3s ease;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
 
     .form-control:focus {
@@ -423,21 +421,21 @@
 
     /* Variables rápidas */
     .variables-rapidas {
-        margin-top: 8px;
-        padding: 8px;
+        margin-top: 10px;
+        padding: 10px;
         background: var(--gray-100);
-        border-radius: 6px;
+        border-radius: 8px;
     }
 
     .variable-btn {
         display: inline-block;
-        padding: 4px 10px;
+        padding: 5px 12px;
         background: white;
         border: 1px solid var(--gray-200);
-        border-radius: 15px;
-        margin: 2px;
+        border-radius: 20px;
+        margin: 3px;
         cursor: pointer;
-        font-size: 0.75rem;
+        font-size: 0.85rem;
         transition: all 0.2s ease;
     }
 
@@ -452,33 +450,31 @@
     .preview-card {
         background: var(--gray-100);
         border: 2px dashed var(--gray-200);
-        border-radius: 8px;
-        padding: 12px;
+        border-radius: 12px;
+        padding: 20px;
     }
 
     .preview-header {
         text-align: center;
-        padding-bottom: 10px;
+        padding-bottom: 15px;
         border-bottom: 2px solid var(--gray-200);
-        margin-bottom: 10px;
-        font-size: 0.85rem;
+        margin-bottom: 15px;
     }
 
     .preview-logo {
-        max-width: 120px;
+        max-width: 150px;
         height: auto;
     }
 
     .preview-body h5 {
         color: var(--primary);
         font-weight: 700;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
+        margin-bottom: 15px;
     }
 
     .preview-body {
-        font-size: 0.8rem;
-        line-height: 1.5;
+        font-size: 0.9rem;
+        line-height: 1.6;
         color: var(--gray-600);
     }
 
@@ -487,10 +483,10 @@
         background: linear-gradient(135deg, var(--success) 0%, #00a67d 100%);
         border: none;
         color: white;
-        padding: 10px 30px;
-        border-radius: 25px;
+        padding: 16px 50px;
+        border-radius: 50px;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 1.1rem;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
@@ -534,11 +530,10 @@
     .alert-validacion {
         background: #fff3cd;
         border-left: 4px solid var(--warning);
-        padding: 10px 12px;
-        border-radius: 6px;
-        margin-bottom: 12px;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
         display: none;
-        font-size: 0.85rem;
     }
 
     .alert-validacion.show {
@@ -789,7 +784,7 @@
                     </div>
                     <div class="main-card-body">
                         <div class="form-group">
-                            <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
+                            <label><i class="fas fa-heading"></i> Asunto del Email *</label>
                             <input type="text" 
                                    class="form-control" 
                                    id="asunto" 
@@ -819,7 +814,7 @@
                             <div class="variables-rapidas">
                                 <small class="text-muted d-block mb-2"><i class="fas fa-magic"></i> Insertar variable:</small>
                                 <span class="variable-btn" data-var="{nombre}">📛 Nombre</span>
-                                <span class="variable-btn" data-var="{email}">📧 Correo</span>
+                                <span class="variable-btn" data-var="{email}">📧 Email</span>
                                 <span class="variable-btn" data-var="{membresia}">🏋️ Membresía</span>
                             </div>
                             <div class="invalid-feedback"></div>
@@ -829,14 +824,12 @@
                         <div class="mt-4">
                             <label class="mb-2"><i class="fas fa-eye"></i> Vista Previa</label>
                             <div class="preview-card">
-                                <div style="background: #000000; padding: 12px; text-align: center; border-radius: 8px 8px 0 0; margin: -12px -12px 10px -12px;">
-                                    <strong style="font-size: 1.2rem;">
-                                        <span style="color: #ffffff;">PRO</span><span style="color: #e94560;">GYM</span>
-                                    </strong>
+                                <div class="preview-header">
+                                    <strong>Estoicos Gym Los Ángeles</strong>
                                 </div>
                                 <div class="preview-body">
-                                    <h5 id="previewAsunto">Asunto del correo...</h5>
-                                    <div id="previewMensaje">
+                                    <h5 id="previewAsunto">Asunto del email...</h5>
+                                    <div id="previewMensaje" style="white-space: pre-line;">
                                         El mensaje aparecerá aquí...
                                     </div>
                                 </div>
@@ -868,24 +861,7 @@ $(document).ready(function() {
     // Inicializar DataTable
     const tabla = $('#tablaClientes').DataTable({
         language: {
-            "processing": "Procesando...",
-            "lengthMenu": "Mostrar _MENU_ registros",
-            "zeroRecords": "No se encontraron resultados",
-            "emptyTable": "Ningún dato disponible en esta tabla",
-            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "search": "Buscar:",
-            "paginate": {
-                "first": "Primero",
-                "last": "Último",
-                "next": "Siguiente",
-                "previous": "Anterior"
-            },
-            "aria": {
-                "sortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sortDescending": ": Activar para ordenar la columna de manera descendente"
-            }
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
         pageLength: 10,
         order: [[1, 'asc']],
@@ -906,20 +882,15 @@ $(document).ready(function() {
         
         const filtro = $(this).data('filtro');
         
-        // Filtrar por data-estado de la fila, no por texto del badge
-        $.fn.dataTable.ext.search.pop(); // Limpiar filtros previos
-        
-        if (filtro !== 'todos') {
-            $.fn.dataTable.ext.search.push(
-                function(settings, data, dataIndex) {
-                    const row = tabla.row(dataIndex).node();
-                    const estado = $(row).attr('data-estado');
-                    return estado === filtro.slice(0, -1); // 'activos' -> 'activo'
-                }
-            );
+        if (filtro === 'todos') {
+            tabla.column(3).search('').draw();
+        } else if (filtro === 'activos') {
+            tabla.column(3).search('Activo').draw();
+        } else if (filtro === 'vencidos') {
+            tabla.column(3).search('Vencido').draw();
+        } else if (filtro === 'inactivos') {
+            tabla.column(3).search('Inactivo').draw();
         }
-        
-        tabla.draw();
     });
 
     // ========================================
@@ -1052,7 +1023,7 @@ $(document).ready(function() {
     }
 
     function updatePreview() {
-        let asunto = $('#asunto').val() || 'Asunto del correo...';
+        let asunto = $('#asunto').val() || 'Asunto del email...';
         let mensaje = $('#mensaje').val() || 'El mensaje aparecerá aquí...';
         
         // Reemplazar variables con ejemplo
@@ -1065,11 +1036,8 @@ $(document).ready(function() {
         
         asunto = asunto.replace(/\{nombre\}/g, nombreEjemplo);
         
-        // Convertir saltos de línea a <br> para HTML
-        const mensajeHtml = mensaje.replace(/\n/g, '<br>');
-        
         $('#previewAsunto').text(asunto);
-        $('#previewMensaje').html(mensajeHtml);
+        $('#previewMensaje').text(mensaje);
     }
 
     // ========================================

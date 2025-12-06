@@ -114,8 +114,8 @@ class GenerarNotificaciones extends Command
 
         // Buscar inscripciones activas que vencen en 3 días
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
-            ->whereIn('id_estado', [200, 201]) // Activa o En Uso
-            ->whereDate('fecha_fin', $fechaLimite)
+            ->where('id_estado', 100) // Activa
+            ->whereDate('fecha_vencimiento', $fechaLimite)
             ->whereHas('cliente', function($query) {
                 $query->whereNull('deleted_at');
             })
@@ -171,10 +171,10 @@ class GenerarNotificaciones extends Command
         $hoy = Carbon::now()->format('Y-m-d');
         $contador = 0;
 
-        // Buscar inscripciones vencidas (fecha_fin < hoy y estado todavía activo)
+        // Buscar inscripciones vencidas (fecha_vencimiento < hoy)
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
-            ->whereIn('id_estado', [200, 201]) // Activa o En Uso pero ya vencida
-            ->whereDate('fecha_fin', '<', $hoy)
+            ->whereIn('id_estado', [100, 102]) // Activa o Vencida
+            ->whereDate('fecha_vencimiento', '<', $hoy)
             ->whereHas('cliente', function($query) {
                 $query->whereNull('deleted_at');
             })
@@ -201,7 +201,7 @@ class GenerarNotificaciones extends Command
                 continue;
             }
 
-            $diasVencida = Carbon::parse($inscripcion->fecha_fin)->diffInDays(Carbon::now());
+            $diasVencida = Carbon::parse($inscripcion->fecha_vencimiento)->diffInDays(Carbon::now());
 
             Notificacion::create([
                 'id_tipo_notificacion' => $tipoNotificacion->id,
@@ -320,13 +320,13 @@ class GenerarNotificaciones extends Command
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #e94560;">⏰ Tu membresía está por vencer</h2>
             <p>Hola <strong>{$nombre}</strong>,</p>
-            <p>Te recordamos que tu membresía <strong>{$inscripcion->membresia->nombre}</strong> vence el <strong>{$inscripcion->fecha_fin->format('d/m/Y')}</strong>.</p>
+            <p>Te recordamos que tu membresía <strong>{$inscripcion->membresia->nombre}</strong> vence el <strong>{$inscripcion->fecha_vencimiento->format('d/m/Y')}</strong>.</p>
             <p>Para continuar disfrutando de nuestras instalaciones, te invitamos a renovar tu membresía.</p>
             <p style="margin-top: 20px;">
                 <strong>Detalles:</strong><br>
                 - Membresía: {$inscripcion->membresia->nombre}<br>
                 - Fecha de inicio: {$inscripcion->fecha_inicio->format('d/m/Y')}<br>
-                - Fecha de vencimiento: {$inscripcion->fecha_fin->format('d/m/Y')}
+                - Fecha de vencimiento: {$inscripcion->fecha_vencimiento->format('d/m/Y')}
             </p>
             <p>¡Visítanos o contáctanos para renovar!</p>
             <hr>
@@ -346,7 +346,7 @@ class GenerarNotificaciones extends Command
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #dc3545;">❌ Tu membresía ha vencido</h2>
             <p>Hola <strong>{$nombre}</strong>,</p>
-            <p>Tu membresía <strong>{$inscripcion->membresia->nombre}</strong> venció hace <strong>{$diasVencida} días</strong> ({$inscripcion->fecha_fin->format('d/m/Y')}).</p>
+            <p>Tu membresía <strong>{$inscripcion->membresia->nombre}</strong> venció hace <strong>{$diasVencida} días</strong> ({$inscripcion->fecha_vencimiento->format('d/m/Y')}).</p>
             <p>Para poder seguir entrenando, necesitas renovar tu membresía lo antes posible.</p>
             <p>¡Te esperamos!</p>
             <hr>
