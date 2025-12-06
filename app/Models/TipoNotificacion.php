@@ -70,8 +70,10 @@ class TipoNotificacion extends Model
     public static function getVariablesDisponibles(string $codigo): array
     {
         $variablesComunes = [
-            'nombre' => 'Nombre completo del cliente',
+            'nombre' => 'Nombre del destinatario (cliente o apoderado)',
+            'nombre_cliente' => 'Nombre completo del cliente (útil para apoderados)',
             'membresia' => 'Nombre de la membresía',
+            'es_menor_edad' => 'Indica si el cliente es menor de edad (true/false)',
         ];
 
         $variablesEspecificas = match($codigo) {
