@@ -18,12 +18,13 @@ class NotificacionesSeeder extends Seeder
                 'codigo' => 'membresia_por_vencer',
                 'nombre' => 'Membresía por Vencer - Recordatorio',
                 'descripcion' => 'Se envía X días antes de que venza la membresía (configurable)',
-                'asunto_email' => '⏰ {nombre}, tu membresía vence en {dias_restantes} días',
+                'asunto_email' => '⏰ {nombre}, tu membresía en PROGYM vence en {dias_restantes} días',
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
     <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
+        <img src="{logo_url}" alt="PROGYM" style="max-width: 180px; height: auto; margin-bottom: 15px;">
+        <h1 style="margin: 0; font-size: 28px;">PROGYM</h1>
     </div>
     
     <!-- CONTENIDO -->
@@ -49,8 +50,8 @@ class NotificacionesSeeder extends Seeder
         
         <!-- FOOTER -->
         <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
-            Correo automático de Estoicos Gym<br>
-            <em>Si tienes dudas, contáctanos</em>
+            Correo automático de PROGYM<br>
+            <em>Transformando vidas - Si tienes dudas, contáctanos</em>
         </p>
     </div>
 </div>',
@@ -64,12 +65,13 @@ class NotificacionesSeeder extends Seeder
                 'codigo' => 'membresia_vencida',
                 'nombre' => 'Membresía Vencida - Recordatorio',
                 'descripcion' => 'Se envía inicio y fin de mes para membresías vencidas',
-                'asunto_email' => '❗ {nombre}, tu membresía en Estoicos Gym ha vencido',
+                'asunto_email' => '❗ {nombre}, tu membresía en PROGYM ha vencido',
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
     <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
+        <img src="{logo_url}" alt="PROGYM" style="max-width: 180px; height: auto; margin-bottom: 15px;">
+        <h1 style="margin: 0; font-size: 28px;">PROGYM</h1>
     </div>
     
     <!-- CONTENIDO -->
@@ -110,12 +112,13 @@ class NotificacionesSeeder extends Seeder
                 'codigo' => 'bienvenida',
                 'nombre' => 'Bienvenida y Confirmación',
                 'descripcion' => 'Se envía cuando un cliente se inscribe - Incluye confirmación de inscripción y pago',
-                'asunto_email' => '🎉 ¡Bienvenido a Estoicos Gym, {nombre}! - Inscripción Confirmada',
+                'asunto_email' => '🎉 ¡Bienvenido a PROGYM, {nombre}! - Inscripción Confirmada',
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
     <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
+        <img src="{logo_url}" alt="PROGYM" style="max-width: 180px; height: auto; margin-bottom: 15px;">
+        <h1 style="margin: 0; font-size: 28px;">PROGYM</h1>
         <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Tu transformación comienza hoy</p>
     </div>
     
@@ -123,7 +126,7 @@ class NotificacionesSeeder extends Seeder
     <div style="padding: 30px 20px;">
         <h2 style="color: #1a1a2e; margin: 0 0 15px 0;">¡Bienvenido/a {nombre}! 🎉</h2>
         <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-            Nos alegra que te hayas unido a <strong>Estoicos Gym</strong>. Tu inscripción ha sido confirmada exitosamente.
+            Nos alegra que te hayas unido a <strong>PROGYM</strong>. Tu inscripción ha sido confirmada exitosamente.
         </p>
         
         <!-- CONFIRMACIÓN INSCRIPCIÓN -->
@@ -147,7 +150,7 @@ class NotificacionesSeeder extends Seeder
         <!-- FOOTER -->
         <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
             ¿Dudas? Contáctanos o visítanos en recepción<br>
-            <em>Estoicos Gym - Transformando vidas</em>
+            <em>PROGYM - Transformando vidas</em>
         </p>
     </div>
 </div>',
@@ -161,12 +164,13 @@ class NotificacionesSeeder extends Seeder
                 'codigo' => 'pago_pendiente',
                 'nombre' => 'Pago Pendiente/Parcial - Recordatorio',
                 'descripcion' => 'Se envía cada 15 días cuando hay pago pendiente o parcial',
-                'asunto_email' => '💳 {nombre}, tienes un pago pendiente en Estoicos Gym',
+                'asunto_email' => '💳 {nombre}, tienes un pago pendiente en PROGYM',
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
     <div style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">🏋️ ESTOICOS GYM</h1>
+        <img src="{logo_url}" alt="PROGYM" style="max-width: 180px; height: auto; margin-bottom: 15px;">
+        <h1 style="margin: 0; font-size: 28px;">PROGYM</h1>
     </div>
     
     <!-- CONTENIDO -->
@@ -193,8 +197,8 @@ class NotificacionesSeeder extends Seeder
         
         <!-- FOOTER -->
         <p style="color: #888; font-size: 13px; text-align: center; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #ddd;">
-            Correo automático de Estoicos Gym<br>
-            <em>Si tienes dudas, contáctanos</em>
+            Correo automático de PROGYM<br>
+            <em>Transformando vidas - Si tienes dudas, contáctanos</em>
         </p>
     </div>
 </div>',
