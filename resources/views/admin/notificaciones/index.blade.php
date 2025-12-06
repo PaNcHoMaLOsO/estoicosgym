@@ -104,47 +104,84 @@
 
     .action-bar {
         background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.05);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
+        margin-bottom: 20px;
     }
 
-    .btn-execute {
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-        border: none;
-        color: white;
-        border-radius: 10px;
-        padding: 12px 25px;
+    .btn-action {
+        padding: 15px 25px;
+        border-radius: 12px;
         font-weight: 600;
+        border: none;
         transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
-    .btn-execute:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(233, 69, 96, 0.3);
+    .btn-action:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .btn-nueva {
+        background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%);
+        color: white;
+    }
+
+    .btn-programar {
+        background: linear-gradient(135deg, #f0a500 0%, #e09400 100%);
         color: white;
     }
 
     .btn-plantillas {
-        background: linear-gradient(135deg, var(--info) 0%, #3451d4 100%);
-        border: none;
+        background: linear-gradient(135deg, #4361ee 0%, #3451d4 100%);
         color: white;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: 600;
-        transition: all 0.3s ease;
     }
 
-    .btn-plantillas:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+    .btn-historial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+    }
+
+    .cron-info-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid #2196F3;
+        border-radius: 10px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .cron-info-box i {
+        font-size: 1.8rem;
+        color: #1976D2;
+    }
+
+    .cron-info-box .text {
+        flex: 1;
+    }
+
+    .cron-info-box .text strong {
+        color: #1565C0;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .cron-info-box .text small {
+        color: #546e7a;
     }
 
     .main-card {
@@ -405,21 +442,51 @@
 
     {{-- Barra de Acciones --}}
     <div class="action-bar">
-        <div class="d-flex gap-2 flex-wrap align-items-center">
-            <a href="{{ route('admin.notificaciones.crear') }}" class="btn btn-success" style="background: linear-gradient(135deg, #00bf8e, #00a67d); border: none; border-radius: 10px; padding: 12px 25px; font-weight: 600;">
-                <i class="fas fa-plus"></i> Nueva Notificación
+        <div class="action-buttons">
+            <a href="{{ route('admin.notificaciones.crear') }}" class="btn btn-action btn-nueva">
+                <i class="fas fa-plus-circle"></i>
+                <span>Nueva Notificación</span>
             </a>
-            <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn btn-plantillas">
-                <i class="fas fa-file-alt"></i> Gestionar Plantillas
+            <a href="{{ route('admin.notificaciones.programar') }}" class="btn btn-action btn-programar">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Programar Envío</span>
             </a>
-            <div class="cron-status-inline ml-auto">
-                <i class="fas fa-robot text-info"></i>
-                <span class="text-muted small">Las notificaciones automáticas se ejecutan vía CRON a las 08:00 AM</span>
+            <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn btn-action btn-plantillas">
+                <i class="fas fa-file-alt"></i>
+                <span>Plantillas</span>
+            </a>
+            <a href="{{ route('admin.notificaciones.historial') }}" class="btn btn-action btn-historial">
+                <i class="fas fa-history"></i>
+                <span>Historial</span>
+            </a>
+        </div>
+
+        {{-- Info CRON --}}
+        <div class="cron-info-box">
+            <i class="fas fa-robot"></i>
+            <div class="text">
+                <strong>Sistema Automático Activo</strong>
+                <small>Las notificaciones automáticas se ejecutan vía CRON todos los días a las 08:00 AM</small>
             </div>
         </div>
     </div>
 
     {{-- Historial de Ejecuciones Automáticas --}}
+    @if(session('errores_detalle'))
+    <div class="alert alert-warning alert-dismissible fade show" style="border-left: 4px solid #f0a500; border-radius: 10px;">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <h5><i class="fas fa-exclamation-triangle mr-2"></i> Algunas notificaciones fueron rechazadas</h5>
+        <ul class="mb-0 pl-3">
+            @foreach(session('errores_detalle') as $error)
+                <li><small>{{ $error }}</small></li>
+            @endforeach
+        </ul>
+        @if(count(session('errores_detalle')) >= 10)
+            <small class="text-muted d-block mt-2"><em>* Solo se muestran los primeros 10 errores</em></small>
+        @endif
+    </div>
+    @endif
+
     @if(isset($ultimaEjecucion))
     <div class="alert" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: none; border-left: 4px solid #2196F3; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px;">
         <div class="d-flex align-items-center justify-content-between">

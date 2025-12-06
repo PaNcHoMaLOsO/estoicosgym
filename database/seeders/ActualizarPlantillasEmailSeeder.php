@@ -42,8 +42,8 @@ class ActualizarPlantillasEmailSeeder extends Seeder
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://via.placeholder.com/180x60/1a1a2e/e94560?text=ESTOICOS+GYM" alt="Estoicos Gym">
-            <h1>¡Tu membresía está por vencer!</h1>
+            <img src="https://via.placeholder.com/180x60/1a1a2e/e94560?text=ESTOICOS+GYM+LA" alt="Estoicos Gym Los Ángeles">
+            <h1>Tu membresía está por vencer</h1>
         </div>
         <div class="content">
             <p>Hola <strong>{nombre}</strong>,</p>
@@ -71,7 +71,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
         </div>
         
         <div class="footer">
-            <p><strong>Estoicos Gym</strong> - Los Ángeles, Chile</p>
+            <p><strong>Estoicos Gym Los Ángeles</strong> - Los Ángeles, Chile</p>
             <p>📍 Dirección del gimnasio | 📞 Teléfono de contacto</p>
             <div class="social-links">
                 <a href="#">📘 Facebook</a> | <a href="#">📸 Instagram</a>
@@ -94,7 +94,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
 <body>
     <div class="container">
         <div class="header" style="background: linear-gradient(135deg, #e94560 0%, #d63655 100%);">
-            <img src="https://via.placeholder.com/180x60/e94560/ffffff?text=ESTOICOS+GYM" alt="Estoicos Gym">
+            <img src="https://via.placeholder.com/180x60/e94560/ffffff?text=ESTOICOS+GYM+LA" alt="Estoicos Gym Los Ángeles">
             <h1>Tu membresía ha vencido</h1>
         </div>
         <div class="content">
@@ -126,7 +126,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
         </div>
         
         <div class="footer">
-            <p><strong>Estoicos Gym</strong> - Los Ángeles, Chile</p>
+            <p><strong>Estoicos Gym Los Ángeles</strong> - Los Ángeles, Chile</p>
             <p>📍 Dirección del gimnasio | 📞 Teléfono de contacto</p>
             <div class="social-links">
                 <a href="#">📘 Facebook</a> | <a href="#">📸 Instagram</a>
@@ -146,8 +146,8 @@ class ActualizarPlantillasEmailSeeder extends Seeder
 <body>
     <div class="container">
         <div class="header" style="background: linear-gradient(135deg, #00bf8e 0%, #00a67d 100%);">
-            <img src="https://via.placeholder.com/180x60/00bf8e/ffffff?text=ESTOICOS+GYM" alt="Estoicos Gym">
-            <h1>¡Bienvenido a Estoicos Gym!</h1>
+            <img src="https://via.placeholder.com/180x60/00bf8e/ffffff?text=ESTOICOS+GYM+LA" alt="Estoicos Gym Los Ángeles">
+            <h1>¡Bienvenido a Estoicos Gym Los Ángeles!</h1>
         </div>
         <div class="content">
             <p>Hola <strong>{nombre}</strong>,</p>
@@ -182,7 +182,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
         </div>
         
         <div class="footer">
-            <p><strong>Estoicos Gym</strong> - Los Ángeles, Chile</p>
+            <p><strong>Estoicos Gym Los Ángeles</strong> - Los Ángeles, Chile</p>
             <p>📍 Dirección del gimnasio | 📞 Teléfono de contacto</p>
             <div class="social-links">
                 <a href="#">📘 Facebook</a> | <a href="#">📸 Instagram</a>
@@ -209,7 +209,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
         <div class="content">
             <p>Hola <strong>{nombre}</strong>,</p>
             
-            <p>Te recordamos que tienes un <strong>pago pendiente</strong> en Estoicos Gym:</p>
+            <p>Te recordamos que tienes un <strong>pago pendiente</strong> en Estoicos Gym Los Ángeles:</p>
             
             <div class="highlight-box">
                 <strong>💳 Membresía:</strong> {membresia}<br>
@@ -234,7 +234,7 @@ class ActualizarPlantillasEmailSeeder extends Seeder
                 Banco: [Nombre del banco]<br>
                 Cuenta: [Número de cuenta]<br>
                 RUT: [RUT del gimnasio]<br>
-                Nombre: Estoicos Gym
+                Nombre: Estoicos Gym Los Ángeles
             </div>
         </div>
         
@@ -245,10 +245,10 @@ class ActualizarPlantillasEmailSeeder extends Seeder
         </div>
         
         <div class="footer">
-            <p><strong>Estoicos Gym</strong> - Los Ángeles, Chile</p>
+            <p><strong>Estoicos Gym Los Ángeles</strong> - Los Ángeles, Chile</p>
             <p>📍 Dirección del gimnasio | 📞 Teléfono de contacto</p>
             <div class="social-links">
-                <a href="#">📘 Facebook</a> | <a href="#">📸 Instagram</a>
+                <a href="#">📸 Instagram</a> | <a href="#">📱 WhatsApp</a>
             </div>
             <p style="margin-top: 15px; font-size: 11px; color: #666;">
                 Si ya realizaste el pago, ignora este mensaje. Gracias.

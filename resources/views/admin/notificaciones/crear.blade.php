@@ -759,7 +759,7 @@
                     <div class="main-card-body">
                         <div class="tipos-comunicado">
                             <div class="tipo-card" data-tipo="horario" 
-                                 data-asunto="📅 Cambio de Horario - Estoicos Gym" 
+                                 data-asunto="📅 Cambio de Horario - Estoicos Gym Los Ángeles" 
                                  data-mensaje="Estimado/a {nombre},
 
 Te informamos que hemos realizado cambios en nuestro horario de atención:
@@ -774,13 +774,13 @@ Estos cambios entran en vigencia desde [FECHA].
 ¡Gracias por tu comprensión!
 
 Saludos,
-Equipo Estoicos Gym 💪">
+Equipo Estoicos Gym Los Ángeles 💪">
                                 <div class="icon"><i class="fas fa-clock"></i></div>
                                 <div class="nombre">Cambio de Horario</div>
                             </div>
                             
                             <div class="tipo-card" data-tipo="promocion" 
-                                 data-asunto="🎉 ¡Promoción Especial! - Estoicos Gym" 
+                                 data-asunto="🎉 ¡Promoción Especial! - Estoicos Gym Los Ángeles" 
                                  data-mensaje="Hola {nombre},
 
 ¡Tenemos una promoción especial para ti!
@@ -792,13 +792,13 @@ Equipo Estoicos Gym 💪">
 ¡No te lo pierdas!
 
 Saludos,
-Equipo Estoicos Gym 💪">
+Equipo Estoicos Gym Los Ángeles 💪">
                                 <div class="icon"><i class="fas fa-tags"></i></div>
                                 <div class="nombre">Promoción</div>
                             </div>
                             
                             <div class="tipo-card" data-tipo="feriado" 
-                                 data-asunto="📢 Horario Feriado - Estoicos Gym" 
+                                 data-asunto="📢 Horario Feriado - Estoicos Gym Los Ángeles" 
                                  data-mensaje="Estimado/a {nombre},
 
 Te informamos que con motivo de [NOMBRE DEL FERIADO], nuestro horario será:
@@ -811,13 +811,13 @@ Retomamos nuestro horario normal el [FECHA].
 ¡Que disfrutes el feriado!
 
 Saludos,
-Equipo Estoicos Gym 💪">
+Equipo Estoicos Gym Los Ángeles 💪">
                                 <div class="icon"><i class="fas fa-calendar-star"></i></div>
                                 <div class="nombre">Feriado</div>
                             </div>
                             
                             <div class="tipo-card" data-tipo="volver" 
-                                 data-asunto="💪 ¡Te extrañamos! - Estoicos Gym" 
+                                 data-asunto="💪 ¡Te extrañamos! - Estoicos Gym Los Ángeles" 
                                  data-mensaje="Hola {nombre},
 
 ¡Hace tiempo que no te vemos por el gimnasio! 😢
@@ -829,7 +829,7 @@ Sabemos que a veces la rutina se complica, pero queremos que sepas que tu lugar 
 ¡Te esperamos!
 
 Saludos,
-Equipo Estoicos Gym 💪">
+Equipo Estoicos Gym Los Ángeles 💪">
                                 <div class="icon"><i class="fas fa-heart"></i></div>
                                 <div class="nombre">Te Extrañamos</div>
                             </div>
@@ -841,7 +841,7 @@ Equipo Estoicos Gym 💪">
 [Escribe tu mensaje aquí]
 
 Saludos,
-Equipo Estoicos Gym">
+Equipo Estoicos Gym Los Ángeles">
                                 <div class="icon"><i class="fas fa-pen-fancy"></i></div>
                                 <div class="nombre">Personalizado</div>
                             </div>
@@ -888,7 +888,7 @@ Equipo Estoicos Gym">
                             <div class="preview-card">
                                 <div class="preview-header">
                                     <img src="{{ asset('images/estoicos_gym_logo.png') }}" 
-                                         alt="Estoicos Gym" 
+                                         alt="Estoicos Gym Los Ángeles" 
                                          class="preview-logo">
                                 </div>
                                 <div class="preview-body">

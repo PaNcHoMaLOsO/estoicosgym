@@ -115,7 +115,7 @@ HTML;
             [
                 'nombre' => 'Horarios Días Festivos',
                 'descripcion' => 'Notificación de horarios especiales para días festivos y feriados',
-                'asunto_email' => '🎉 {nombre_festivo} - Horarios Especiales | Estoicos Gym',
+                'asunto_email' => '🎉 {nombre_festivo} - Horarios Especiales | Estoicos Gym Los Ángeles',
                 'plantilla_email' => $plantillaHtml,
                 'dias_anticipacion' => 3,
                 'activo' => true,

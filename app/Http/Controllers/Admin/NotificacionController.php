@@ -104,6 +104,293 @@ class NotificacionController extends Controller
     }
 
     /**
+     * Mostrar formulario para programar notificaciones
+     */
+    public function programar()
+    {
+        return view('admin.notificaciones.programar');
+    }
+
+    /**
+     * Buscar clientes por nombre, RUT o email
+     */
+    public function buscarCliente(Request $request)
+    {
+        $query = $request->get('query');
+        
+        $clientes = Cliente::where('activo', true)
+            ->where(function($q) use ($query) {
+                $q->where('nombre', 'LIKE', "%{$query}%")
+                  ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
+                  ->orWhere('apellido_materno', 'LIKE', "%{$query}%")
+                  ->orWhere('run_pasaporte', 'LIKE', "%{$query}%")
+                  ->orWhere('email', 'LIKE', "%{$query}%");
+            })
+            ->select('id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'run_pasaporte')
+            ->limit(10)
+            ->get()
+            ->map(function($cliente) {
+                return [
+                    'id' => $cliente->id,
+                    'nombre_completo' => $cliente->nombre_completo,
+                    'email' => $cliente->email,
+                    'run_pasaporte' => $cliente->run_pasaporte
+                ];
+            });
+
+        return response()->json($clientes);
+    }
+
+    /**
+     * Contar destinatarios según filtros
+     */
+    public function contarDestinatarios(Request $request)
+    {
+        $query = Cliente::where('activo', true);
+
+        switch ($request->tipo_envio) {
+            case 'membresia':
+                if ($request->id_membresia) {
+                    $query->whereHas('inscripciones', function($q) use ($request) {
+                        $q->where('id_membresia', $request->id_membresia)
+                          ->whereIn('id_estado', [100, 200, 400]); // Activo, Por Vencer, Pausado
+                    });
+                }
+                break;
+            
+            case 'estado':
+                if ($request->id_estado) {
+                    $query->whereHas('inscripciones', function($q) use ($request) {
+                        if ($request->id_estado == 200) {
+                            // Por vencer (próximos 7 días)
+                            $q->whereDate('fecha_vencimiento', '<=', now()->addDays(7))
+                              ->whereDate('fecha_vencimiento', '>=', now())
+                              ->where('id_estado', 100);
+                        } else {
+                            $q->where('id_estado', $request->id_estado);
+                        }
+                    });
+                }
+                break;
+            
+            case 'todos':
+                $query->whereHas('inscripciones', function($q) {
+                    $q->whereIn('id_estado', [100, 200, 400]);
+                });
+                break;
+        }
+
+        $count = $query->count();
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Guardar notificación programada con validaciones anti-spam
+     */
+    public function guardarProgramada(Request $request)
+    {
+        // Validar datos básicos
+        $validated = $request->validate([
+            'tipo_envio' => 'required|in:todos,membresia,estado,individual',
+            'id_tipo_notificacion' => 'required|exists:tipos_notificacion,id',
+            'fecha_programada' => 'required_without:enviar_ahora|date|after_or_equal:today',
+            'hora_programada' => 'required_without:enviar_ahora',
+            'asunto_custom' => 'nullable|string|max:255',
+            'mensaje_adicional' => 'nullable|string|max:1000',
+            'enviar_ahora' => 'nullable|boolean',
+        ]);
+
+        // Obtener destinatarios según filtros
+        $query = Cliente::where('activo', true);
+
+        switch ($request->tipo_envio) {
+            case 'individual':
+                $request->validate(['id_cliente' => 'required|exists:clientes,id']);
+                $query->where('id', $request->id_cliente);
+                break;
+            
+            case 'membresia':
+                $request->validate(['id_membresia' => 'nullable|exists:membresias,id']);
+                if ($request->id_membresia) {
+                    $query->whereHas('inscripciones', function($q) use ($request) {
+                        $q->where('id_membresia', $request->id_membresia)
+                          ->whereIn('id_estado', [100, 200, 400]);
+                    });
+                }
+                break;
+            
+            case 'estado':
+                if ($request->id_estado) {
+                    $query->whereHas('inscripciones', function($q) use ($request) {
+                        if ($request->id_estado == 200) {
+                            $q->whereDate('fecha_vencimiento', '<=', now()->addDays(7))
+                              ->whereDate('fecha_vencimiento', '>=', now())
+                              ->where('id_estado', 100);
+                        } else {
+                            $q->where('id_estado', $request->id_estado);
+                        }
+                    });
+                }
+                break;
+            
+            case 'todos':
+                $query->whereHas('inscripciones', function($q) {
+                    $q->whereIn('id_estado', [100, 200, 400]);
+                });
+                break;
+        }
+
+        $clientes = $query->with('inscripciones.membresia')->get();
+
+        if ($clientes->isEmpty()) {
+            return back()->with('error', 'No se encontraron destinatarios con los filtros seleccionados.');
+        }
+
+        // VALIDACIÓN ANTI-SPAM: Límite diario general
+        $notificacionesHoy = Notificacion::whereDate('created_at', today())->count();
+        if ($notificacionesHoy >= 500) {
+            return back()->with('error', 'Se ha alcanzado el límite diario de 500 notificaciones. Intente mañana.');
+        }
+
+        // Verificar que no exceda el límite con este envío
+        if (($notificacionesHoy + $clientes->count()) > 500) {
+            return back()->with('error', "Este envío excedería el límite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones más hoy.");
+        }
+
+        // Determinar fecha/hora de programación
+        $fechaEnvio = $request->enviar_ahora ? now() : Carbon::parse($request->fecha_programada . ' ' . $request->hora_programada);
+
+        $notificacionService = new NotificacionService();
+        $tipo = TipoNotificacion::findOrFail($request->id_tipo_notificacion);
+        
+        $creadas = 0;
+        $rechazadas = 0;
+        $errores = [];
+
+        foreach ($clientes as $cliente) {
+            // VALIDACIÓN ANTI-SPAM 1: Máximo 3 notificaciones por cliente al día
+            $notificacionesClienteHoy = Notificacion::where('email_destinatario', $cliente->email)
+                ->whereDate('created_at', today())
+                ->count();
+
+            if ($notificacionesClienteHoy >= 3) {
+                $rechazadas++;
+                $errores[] = "Cliente {$cliente->nombre_completo}: Límite diario alcanzado (3 notificaciones)";
+                continue;
+            }
+
+            // VALIDACIÓN ANTI-SPAM 2: Intervalo mínimo de 2 horas entre envíos
+            $ultimaNotificacion = Notificacion::where('email_destinatario', $cliente->email)
+                ->latest('created_at')
+                ->first();
+
+            if ($ultimaNotificacion && $ultimaNotificacion->created_at->diffInHours(now()) < 2) {
+                $rechazadas++;
+                $minutosRestantes = 120 - $ultimaNotificacion->created_at->diffInMinutes(now());
+                $errores[] = "Cliente {$cliente->nombre_completo}: Debe esperar {$minutosRestantes} minutos";
+                continue;
+            }
+
+            // VALIDACIÓN ANTI-SPAM 3: No duplicar notificaciones idénticas en 24 horas
+            $notificacionDuplicada = Notificacion::where('email_destinatario', $cliente->email)
+                ->where('id_tipo_notificacion', $tipo->id)
+                ->where('created_at', '>=', now()->subDay())
+                ->exists();
+
+            if ($notificacionDuplicada) {
+                $rechazadas++;
+                $errores[] = "Cliente {$cliente->nombre_completo}: Notificación idéntica enviada recientemente";
+                continue;
+            }
+
+            // Validar que tenga email válido
+            if (!$cliente->email && !($cliente->es_menor_edad && $cliente->apoderado_email)) {
+                $rechazadas++;
+                $errores[] = "Cliente {$cliente->nombre_completo}: Sin email válido";
+                continue;
+            }
+
+            try {
+                // Determinar email de destino
+                $emailDestino = $cliente->email;
+                $nombreDestinatario = $cliente->nombre_completo;
+
+                if ($cliente->es_menor_edad && !empty($cliente->apoderado_email)) {
+                    $emailDestino = $cliente->apoderado_email;
+                    $nombreDestinatario = $cliente->apoderado_nombre ?: 'Apoderado/a';
+                }
+
+                // Obtener inscripción activa
+                $inscripcion = $cliente->inscripciones()
+                    ->whereIn('id_estado', [100, 200, 400])
+                    ->latest()
+                    ->first();
+
+                if (!$inscripcion) {
+                    $rechazadas++;
+                    $errores[] = "Cliente {$cliente->nombre_completo}: Sin inscripción activa";
+                    continue;
+                }
+
+                // Preparar datos para la notificación
+                $data = [
+                    'nombre' => $nombreDestinatario,
+                    'nombre_cliente' => $cliente->nombre_completo,
+                    'membresia' => $inscripcion->membresia->nombre,
+                    'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+                    'dias_restantes' => max(0, $inscripcion->fecha_vencimiento->diffInDays(now(), false)),
+                    'es_menor_edad' => $cliente->es_menor_edad,
+                ];
+
+                // Renderizar contenido
+                $asunto = $request->asunto_custom ?: $tipo->renderizar($tipo->asunto, $data);
+                $contenidoBase = $tipo->renderizar($tipo->plantilla, $data);
+                
+                // Agregar mensaje adicional si existe
+                if ($request->mensaje_adicional) {
+                    $contenidoBase = "<p><strong>" . nl2br(e($request->mensaje_adicional)) . "</strong></p><hr>" . $contenidoBase;
+                }
+
+                // Crear la notificación
+                Notificacion::create([
+                    'id_cliente' => $cliente->id,
+                    'id_tipo_notificacion' => $tipo->id,
+                    'email_destinatario' => $emailDestino,
+                    'asunto' => $asunto,
+                    'contenido' => $contenidoBase,
+                    'fecha_programada' => $fechaEnvio,
+                    'id_estado' => $request->enviar_ahora ? 600 : 600, // 600 = Pendiente
+                    'intento' => 0,
+                ]);
+
+                $creadas++;
+
+            } catch (\Exception $e) {
+                $rechazadas++;
+                $errores[] = "Cliente {$cliente->nombre_completo}: {$e->getMessage()}";
+                \Log::error("Error al crear notificación programada: " . $e->getMessage());
+            }
+        }
+
+        // Preparar mensaje de resultado
+        $mensaje = "Notificaciones programadas: {$creadas}";
+        
+        if ($rechazadas > 0) {
+            $mensaje .= " | Rechazadas: {$rechazadas}";
+        }
+
+        if ($request->enviar_ahora && $creadas > 0) {
+            // Ejecutar envío inmediato
+            \Artisan::call('notificaciones:enviar');
+            $mensaje .= " | Enviando ahora...";
+        }
+
+        return redirect()->route('admin.notificaciones.index')
+            ->with('success', $mensaje)
+            ->with('errores_detalle', array_slice($errores, 0, 10)); // Solo mostrar primeros 10 errores
+    }
+
+    /**
      * Ver detalle de una notificación
      */
     public function show(Notificacion $notificacion)

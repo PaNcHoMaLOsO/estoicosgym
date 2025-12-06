@@ -353,9 +353,15 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
         Route::get('/', [NotificacionController::class, 'index'])->name('index');
         Route::get('/historial', [NotificacionController::class, 'historial'])->name('historial');
         
-        // Enviar a cliente individual (NUEVO)
+        // Programar notificaciones masivas (NUEVO)
+        Route::get('/programar', [NotificacionController::class, 'programar'])->name('programar');
+        Route::post('/guardar-programada', [NotificacionController::class, 'guardarProgramada'])->name('guardar-programada');
+        Route::get('/buscar-cliente', [NotificacionController::class, 'buscarCliente'])->name('buscar-cliente');
+        Route::get('/contar-destinatarios', [NotificacionController::class, 'contarDestinatarios'])->name('contar-destinatarios');
+        
+        // Enviar a cliente individual
         Route::get('/enviar-cliente', [NotificacionController::class, 'enviarCliente'])->name('enviar-cliente');
-        Route::post('/buscar-cliente', [NotificacionController::class, 'buscarClienteIndividual'])->name('buscar-cliente');
+        Route::post('/buscar-cliente-individual', [NotificacionController::class, 'buscarClienteIndividual'])->name('buscar-cliente-individual');
         Route::post('/preview', [NotificacionController::class, 'preview'])->name('preview');
         Route::post('/enviar-individual', [NotificacionController::class, 'enviarIndividual'])->name('enviar-individual');
         
