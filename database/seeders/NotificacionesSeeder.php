@@ -81,7 +81,7 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+    <div style="background: #101010; color: white; padding: 30px 20px; text-align: center;">
         <h1 style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; font-family: Arial Black, Arial, sans-serif;">
             <span style="color: #FFFFFF;">PRO</span><span style="color: #E0001A;">GYM</span>
         </h1>
@@ -92,26 +92,22 @@ class NotificacionesSeeder extends Seeder
     <div style="padding: 25px 20px; background: #FFFFFF;">
         <h2 style="color: #101010; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">Hola {nombre} 👋</h2>
         <p style="color: #505050; font-size: 15px; line-height: 1.6; margin: 0 0 18px 0;">
-            Tu membresía <strong style="color: #101010;">{membresia}</strong> venció el <strong>{fecha_vencimiento}</strong>. ¡Te extrañamos!
+            Tu membresía <strong style="color: #101010;">{membresia}</strong> venció el <strong style="color: #E0001A;">{fecha_vencimiento}</strong>. ¡Te extrañamos!
         </p>
         
-        <!-- ALERTA INFORMATIVA -->
-        <div style="background: #fff5f5; border: 2px solid #E0001A; padding: 25px; margin: 30px 0; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0 0 12px 0; color: #E0001A; font-size: 20px; font-weight: bold;">⚠️ Tu Membresía Ha Vencido</h3>
-            <p style="margin: 0; color: #505050; font-size: 15px;">Renueva hoy y continúa con tu rutina de entrenamiento.</p>
+        <!-- ALERTA VENCIDA (ROJO) -->
+        <div style="background: #fff5f5; border-left: 4px solid #E0001A; padding: 18px; margin: 20px 0; border-radius: 6px;">
+            <h3 style="margin: 0 0 8px 0; color: #E0001A; font-size: 18px; font-weight: bold;">⚠️ Membresía Vencida</h3>
+            <p style="margin: 0; color: #505050; font-size: 14px;">Renueva para seguir entrenando 💪</p>
         </div>
-        
-        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 25px 0;">
-            <strong style="color: #E0001A;">¡Te extrañamos en el gimnasio!</strong> Renueva hoy y continúa con tu rutina. Estamos aquí para apoyarte en tus metas. 💪
-        </p>
         
         <!-- CTA BUTTON -->
-        <div style="text-align: center; margin: 35px 0;">
-            <a href="mailto:progymlosangeles@gmail.com?subject=Renovar%20Membres%C3%ADa%20Vencida&body=Hola%2C%20quiero%20renovar%20mi%20membres%C3%ADa" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">📧 Renovar Ahora</a>
+        <div style="text-align: center; margin: 20px 0 15px 0;">
+            <a href="tel:+56950963143" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">📞 Llámanos: +56 9 5096 3143</a>
         </div>
         
-        <p style="color: #505050; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
-            Acércate a recepción o contáctanos al <strong style="color: #101010;">+56 9 5096 3143</strong>
+        <p style="color: #505050; font-size: 13px; line-height: 1.5; margin: 15px 0 0 0; text-align: center;">
+            También en recepción: progymlosangeles@gmail.com
         </p>
     </div>
     
@@ -314,15 +310,15 @@ class NotificacionesSeeder extends Seeder
     </div>
     
     <!-- CONTENIDO -->
-    <div style="padding: 40px 30px; background: #FFFFFF;">
-        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Hola {nombre} 👋</h2>
-        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Hemos procesado exitosamente la <strong style="color: #FFC107;">pausa de tu membresía</strong> <strong style="color: #101010;">{membresia}</strong>.
+    <div style="padding: 25px 20px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">Hola {nombre} 👋</h2>
+        <p style="color: #505050; font-size: 15px; line-height: 1.6; margin: 0 0 18px 0;">
+            Hemos pausado tu membresía <strong style="color: #101010;">{membresia}</strong>.
         </p>
         
-        <!-- INFO PAUSA -->
-        <div style="background: #fffbf0; border-left: 4px solid #FFC107; padding: 25px; margin: 30px 0; border-radius: 4px;">
-            <h3 style="margin: 0 0 15px 0; color: #101010; font-size: 20px; font-weight: bold;">⏸️ Estado: Pausada</h3>
+        <!-- INFO PAUSA (AMARILLO) -->
+        <div style="background: #fffbf0; border-left: 4px solid #FFC107; padding: 18px; margin: 20px 0; border-radius: 6px;">
+            <h3 style="margin: 0 0 10px 0; color: #FFC107; font-size: 18px; font-weight: bold;">⏸️ Pausada</h3>
             <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td style="padding: 8px 0; color: #505050; font-size: 15px;">Fecha de pausa:</td>
@@ -339,16 +335,16 @@ class NotificacionesSeeder extends Seeder
             Durante este período tu acceso al gimnasio estará <strong style="color: #E0001A;">suspendido temporalmente</strong>. La fecha de vencimiento de tu membresía se extenderá automáticamente según los días pausados.
         </p>
         
-        <div style="background: #F5F5F5; border-radius: 8px; padding: 25px; margin: 30px 0;">
-            <h3 style="margin: 0 0 15px 0; color: #101010; font-size: 18px; font-weight: bold;">📋 Información Importante</h3>
+        <div style="background: #F5F5F5; border-radius: 6px; padding: 18px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #101010; font-size: 16px; font-weight: bold;">📋 Información Importante</h3>
             <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 0;">✅ Tu cupo quedará reservado durante la pausa</p>
             <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 10px 0 0 0;">✅ Los días pausados se agregarán a tu membresía</p>
             <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 10px 0 0 0;">✅ Podrás reactivar antes de la fecha programada</p>
         </div>
         
         <!-- CTA BUTTON -->
-        <div style="text-align: center; margin: 35px 0;">
-            <a href="mailto:progymlosangeles@gmail.com?subject=Consulta sobre mi pausa - {nombre} {apellido}" style="display: inline-block; background: #101010; color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">📧 Contáctanos</a>
+        <div style="text-align: center; margin: 20px 0 15px 0;">
+            <a href="tel:+56950963143" style="display: inline-block; background: #FFC107; color: #101010; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;">📞 Llámanos: +56 9 5096 3143</a>
         </div>
         
         <p style="color: #707070; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
@@ -388,7 +384,7 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+    <div style="background: #101010; color: white; padding: 30px 20px; text-align: center;">
         <h1 style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; font-family: Arial Black, Arial, sans-serif;">
             <span style="color: #FFFFFF;">PRO</span><span style="color: #E0001A;">GYM</span>
         </h1>
@@ -396,15 +392,15 @@ class NotificacionesSeeder extends Seeder
     </div>
     
     <!-- CONTENIDO -->
-    <div style="padding: 40px 30px; background: #FFFFFF;">
-        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">¡Bienvenido de vuelta, {nombre}! 💪</h2>
-        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Tu membresía <strong style="color: #101010;">{membresia}</strong> ha sido <strong style="color: #2EB872;">reactivada exitosamente</strong>. ¡Estamos felices de tenerte de vuelta!
+    <div style="padding: 25px 20px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">¡Bienvenido de vuelta, {nombre}! 🎉</h2>
+        <p style="color: #505050; font-size: 15px; line-height: 1.6; margin: 0 0 18px 0;">
+            Tu membresía <strong style="color: #101010;">{membresia}</strong> ha sido <strong style="color: #2EB872;">reactivada</strong>. ¡Te esperamos!
         </p>
         
-        <!-- INFO ACTIVACION -->
-        <div style="background: #f0fdf4; border-left: 4px solid #2EB872; padding: 25px; margin: 30px 0; border-radius: 4px;">
-            <h3 style="margin: 0 0 15px 0; color: #101010; font-size: 20px; font-weight: bold;">▶️ Estado: Activa</h3>
+        <!-- INFO ACTIVACION (VERDE) -->
+        <div style="background: #f0fdf4; border-left: 4px solid #2EB872; padding: 18px; margin: 20px 0; border-radius: 6px;">
+            <h3 style="margin: 0 0 10px 0; color: #2EB872; font-size: 18px; font-weight: bold;">▶️ Activa</h3>
             <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td style="padding: 8px 0; color: #505050; font-size: 15px;">Fecha de activación:</td>
@@ -425,17 +421,17 @@ class NotificacionesSeeder extends Seeder
             Tu acceso al gimnasio está <strong style="color: #2EB872;">disponible inmediatamente</strong>. Los días que estuviste en pausa se han agregado a tu fecha de vencimiento.
         </p>
         
-        <div style="background: #F5F5F5; border-radius: 8px; padding: 25px; margin: 30px 0;">
-            <h3 style="margin: 0 0 15px 0; color: #101010; font-size: 18px; font-weight: bold;">🔥 Retoma tu Rutina</h3>
-            <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 0;">⏰ <strong>Horarios:</strong> Lunes a Viernes 07:00 - 22:30 hrs</p>
-            <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 10px 0 0 0;">📋 <strong>Sábado:</strong> 10:00 - 14:00 hrs | <strong>Domingo:</strong> Cerrado</p>
-            <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 10px 0 0 0;">💧 <strong>Hidratación:</strong> Recuerda traer tu botella de agua</p>
-            <p style="color: #505050; font-size: 15px; line-height: 1.7; margin: 10px 0 0 0;">👨‍🏫 <strong>Asesoría:</strong> Nuestro instructor está disponible para ayudarte</p>
+        <!-- HORARIOS COMPACTOS -->
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2EB872;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold;">⏰ Horarios de atención:</p>
+            <p style="margin: 3px 0; font-size: 14px; color: #505050;">📅 Lunes a Viernes: 07:00 - 22:30 hrs</p>
+            <p style="margin: 3px 0; font-size: 14px; color: #505050;">📅 Sábado: 10:00 - 14:00 hrs</p>
+            <p style="margin: 3px 0 0 0; color: #E0001A; font-size: 14px; font-weight: 600;">🚫 Domingo: Cerrado</p>
         </div>
         
         <!-- CTA BUTTON -->
-        <div style="text-align: center; margin: 35px 0;">
-            <a href="mailto:progymlosangeles@gmail.com?subject=Consulta - {nombre} {apellido}" style="display: inline-block; background: #2EB872; color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">📧 Escríbenos</a>
+        <div style="text-align: center; margin: 20px 0 15px 0;">
+            <a href="tel:+56950963143" style="display: inline-block; background: #2EB872; color: white; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;">📞 Llámanos: +56 9 5096 3143</a>
         </div>
         
         <p style="color: #707070; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
