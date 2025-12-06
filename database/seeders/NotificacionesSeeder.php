@@ -22,50 +22,48 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #253A5B; color: white; padding: 40px 20px; text-align: center;">
-        <img src="{logo_url}" alt="PROGYM" style="max-width: 200px; height: auto; margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #F1E6BF; letter-spacing: 1px;">PROGYM</h1>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #F1E6BF; opacity: 0.9;">Transformando vidas</p>
+    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+        <img src="https://raw.githubusercontent.com/PaNcHoMaLOsO/estoicosgym/main/public/images/progym_logo.svg" alt="PROGYM" style="max-width: 220px; height: auto;">
     </div>
     
     <!-- CONTENIDO -->
-    <div style="padding: 40px 30px; background: #ffffff;">
-        <h2 style="color: #121212; margin: 0 0 20px 0; font-size: 24px;">Hola {nombre} 👋</h2>
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Te recordamos que tu membresía <strong style="color: #C140D4;">{membresia}</strong> está próxima a vencer.
+    <div style="padding: 40px 30px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Hola {nombre} 👋</h2>
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
+            Te recordamos que tu membresía <strong style="color: #101010;">{membresia}</strong> está próxima a vencer.
         </p>
         
-        <!-- ALERTA -->
-        <div style="background: #F1E6BF; border-left: 5px solid #C140D4; padding: 25px; margin: 30px 0; border-radius: 8px;">
-            <h3 style="margin: 0 0 12px 0; color: #121212; font-size: 20px; font-weight: bold;">⏳ Te quedan {dias_restantes} días</h3>
-            <p style="margin: 0; color: #121212; font-size: 15px;">Fecha de vencimiento: <strong>{fecha_vencimiento}</strong></p>
+        <!-- RECORDATORIO -->
+        <div style="background: #FFFFFF; border-left: 6px solid #FFC107; padding: 25px; margin: 30px 0; border-radius: 6px; border: 1px solid #C7C7C7; border-left: 6px solid #FFC107;">
+            <h3 style="margin: 0 0 12px 0; color: #101010; font-size: 20px; font-weight: bold;">⏳ Te quedan {dias_restantes} días</h3>
+            <p style="margin: 0; color: #505050; font-size: 15px;">Fecha de vencimiento: <strong style="color: #101010;">{fecha_vencimiento}</strong></p>
         </div>
         
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 25px 0;">
-            Renueva ahora para seguir entrenando sin interrupciones. <strong style="color: #C140D4;">¡No pierdas tu ritmo!</strong> 💪
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 25px 0;">
+            Renueva ahora para seguir entrenando sin interrupciones. <strong style="color: #E0001A;">¡No pierdas tu ritmo!</strong> 💪
         </p>
         
         <!-- CTA BUTTON -->
         <div style="text-align: center; margin: 35px 0;">
-            <a href="{whatsapp_url}" style="display: inline-block; background: #C140D4; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(193, 64, 212, 0.3);">💬 Renovar por WhatsApp</a>
+            <a href="https://wa.me/56950963143?text=Hola%2C%20quiero%20renovar%20mi%20membres%C3%ADa" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">💬 Renovar por WhatsApp</a>
         </div>
         
-        <p style="color: #8A8A8A; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
-            También puedes acercarte a recepción o llamarnos al <strong style="color: #121212;">{telefono}</strong>
+        <p style="color: #505050; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
+            También puedes acercarte a recepción o llamarnos al <strong style="color: #101010;">+56 9 5096 3143</strong>
         </p>
     </div>
     
     <!-- FOOTER -->
-    <div style="background: #253A5B; color: #F1E6BF; padding: 30px 20px; text-align: center;">
-        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">PROGYM - Los Ángeles</p>
+    <div style="background: #101010; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">PROGYM - Los Ángeles</p>
         <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
-            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #F1E6BF; text-decoration: none;">Ver ubicación en Google Maps</a><br>
-            📧 {email} | 📞 {telefono}
+            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 progymlosangeles@gmail.com | 📞 +56 9 5096 3143
         </p>
         <p style="margin: 0; font-size: 13px;">
-            <a href="https://www.instagram.com/progym_losangeles" style="color: #C140D4; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
+            <a href="https://www.instagram.com/progym_losangeles" style="color: #E0001A; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
         </p>
-        <p style="margin: 15px 0 0 0; font-size: 11px; color: #8A8A8A; opacity: 0.8;">
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
             Este es un correo automático, por favor no responder directamente.
         </p>
     </div>
@@ -84,50 +82,48 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #253A5B; color: white; padding: 40px 20px; text-align: center;">
-        <img src="{logo_url}" alt="PROGYM" style="max-width: 200px; height: auto; margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #F1E6BF; letter-spacing: 1px;">PROGYM</h1>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #F1E6BF; opacity: 0.9;">Transformando vidas</p>
+    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+        <img src="https://raw.githubusercontent.com/PaNcHoMaLOsO/estoicosgym/main/public/images/progym_logo.svg" alt="PROGYM" style="max-width: 220px; height: auto;">
     </div>
     
     <!-- CONTENIDO -->
-    <div style="padding: 40px 30px; background: #ffffff;">
-        <h2 style="color: #121212; margin: 0 0 20px 0; font-size: 24px;">Hola {nombre} 👋</h2>
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Te informamos que tu membresía <strong style="color: #C140D4;">{membresia}</strong> venció el <strong>{fecha_vencimiento}</strong>.
+    <div style="padding: 40px 30px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Hola {nombre} 👋</h2>
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
+            Te informamos que tu membresía <strong style="color: #101010;">{membresia}</strong> venció el <strong>{fecha_vencimiento}</strong>.
         </p>
         
-        <!-- ALERTA -->
-        <div style="background: #ffe6e6; border-left: 5px solid #D93030; padding: 25px; margin: 30px 0; border-radius: 8px;">
-            <h3 style="margin: 0 0 12px 0; color: #D93030; font-size: 20px; font-weight: bold;">⚠️ Membresía Vencida</h3>
-            <p style="margin: 0; color: #121212; font-size: 15px;">No podrás acceder al gimnasio hasta renovar.</p>
+        <!-- ALERTA ROJA -->
+        <div style="background: #E0001A; color: #FFFFFF; padding: 25px; margin: 30px 0; border-radius: 6px;">
+            <h3 style="margin: 0 0 12px 0; color: #FFFFFF; font-size: 20px; font-weight: bold;">⚠️ Membresía Vencida</h3>
+            <p style="margin: 0; color: #FFFFFF; font-size: 15px;">No podrás acceder al gimnasio hasta renovar.</p>
         </div>
         
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 25px 0;">
-            <strong style="color: #C140D4;">¡Te extrañamos!</strong> Renueva hoy y retoma tu entrenamiento. Cada día cuenta para alcanzar tus metas. 💪
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 25px 0;">
+            <strong style="color: #E0001A;">¡Te extrañamos!</strong> Renueva hoy y retoma tu entrenamiento. Cada día cuenta para alcanzar tus metas. 💪
         </p>
         
         <!-- CTA BUTTON -->
         <div style="text-align: center; margin: 35px 0;">
-            <a href="{whatsapp_url}" style="display: inline-block; background: #C140D4; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(193, 64, 212, 0.3);">💬 Renovar Ahora</a>
+            <a href="https://wa.me/56950963143?text=Hola%2C%20quiero%20renovar%20mi%20membres%C3%ADa" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">💬 Renovar Ahora</a>
         </div>
         
-        <p style="color: #8A8A8A; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
-            Acércate a recepción o contáctanos al <strong style="color: #121212;">{telefono}</strong>
+        <p style="color: #505050; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
+            Acércate a recepción o contáctanos al <strong style="color: #101010;">+56 9 5096 3143</strong>
         </p>
     </div>
     
     <!-- FOOTER -->
-    <div style="background: #253A5B; color: #F1E6BF; padding: 30px 20px; text-align: center;">
-        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">PROGYM - Los Ángeles</p>
+    <div style="background: #101010; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">PROGYM - Los Ángeles</p>
         <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
-            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #F1E6BF; text-decoration: none;">Ver ubicación en Google Maps</a><br>
-            📧 {email} | 📞 {telefono}
+            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 progymlosangeles@gmail.com | 📞 +56 9 5096 3143
         </p>
         <p style="margin: 0; font-size: 13px;">
-            <a href="https://www.instagram.com/progym_losangeles" style="color: #C140D4; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
+            <a href="https://www.instagram.com/progym_losangeles" style="color: #E0001A; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
         </p>
-        <p style="margin: 15px 0 0 0; font-size: 11px; color: #8A8A8A; opacity: 0.8;">
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
             Este es un correo automático, por favor no responder directamente.
         </p>
     </div>
@@ -146,31 +142,29 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #253A5B; color: white; padding: 40px 20px; text-align: center;">
-        <img src="{logo_url}" alt="PROGYM" style="max-width: 200px; height: auto; margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #F1E6BF; letter-spacing: 1px;">PROGYM</h1>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #F1E6BF; opacity: 0.9;">Transformando vidas</p>
+    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+        <img src="https://raw.githubusercontent.com/PaNcHoMaLOsO/estoicosgym/main/public/images/progym_logo.svg" alt="PROGYM" style="max-width: 220px; height: auto;">
     </div>
     
     <!-- BIENVENIDA -->
-    <div style="padding: 40px 30px; background: #ffffff;">
-        <h2 style="color: #121212; margin: 0 0 20px 0; font-size: 24px;">¡Bienvenido/a {nombre}! 🎉</h2>
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Nos alegra que te hayas unido a <strong style="color: #C140D4;">PROGYM</strong>. Tu inscripción ha sido confirmada exitosamente y tu transformación comienza hoy.
+    <div style="padding: 40px 30px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">¡Bienvenido/a {nombre}! 🎉</h2>
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
+            Nos alegra que te hayas unido a <strong style="color: #101010;">PROGYM</strong>. Tu inscripción ha sido confirmada exitosamente y tu transformación comienza hoy.
         </p>
         
         <!-- CONFIRMACIÓN INSCRIPCIÓN -->
-        <div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 25px; margin: 30px 0; border-radius: 8px;">
-            <h3 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 20px; font-weight: bold;">✅ Inscripción Confirmada</h3>
-            <p style="margin: 8px 0; color: #121212; font-size: 15px;"><strong>Membresía:</strong> {membresia}</p>
-            <p style="margin: 8px 0; color: #121212; font-size: 15px;"><strong>Fecha inicio:</strong> {fecha_inicio}</p>
-            <p style="margin: 8px 0; color: #121212; font-size: 15px;"><strong>Válida hasta:</strong> {fecha_vencimiento}</p>
-            <p style="margin: 8px 0; color: #121212; font-size: 15px;"><strong>Precio pagado:</strong> ${precio}</p>
+        <div style="background: #FFFFFF; border-left: 6px solid #2EB872; padding: 25px; margin: 30px 0; border-radius: 6px; border: 1px solid #C7C7C7; border-left: 6px solid #2EB872;">
+            <h3 style="margin: 0 0 15px 0; color: #2EB872; font-size: 20px; font-weight: bold;">✅ Inscripción Confirmada</h3>
+            <p style="margin: 8px 0; color: #505050; font-size: 15px;"><strong style="color: #101010;">Membresía:</strong> {membresia}</p>
+            <p style="margin: 8px 0; color: #505050; font-size: 15px;"><strong style="color: #101010;">Fecha inicio:</strong> {fecha_inicio}</p>
+            <p style="margin: 8px 0; color: #505050; font-size: 15px;"><strong style="color: #101010;">Válida hasta:</strong> {fecha_vencimiento}</p>
+            <p style="margin: 8px 0; color: #505050; font-size: 15px;"><strong style="color: #101010;">Precio pagado:</strong> ${precio}</p>
         </div>
         
         <!-- TIPS -->
-        <h3 style="color: #C140D4; margin: 30px 0 20px 0; font-size: 20px;">💪 Consejos para empezar:</h3>
-        <ul style="color: #121212; font-size: 15px; line-height: 1.9; padding-left: 25px; margin: 0 0 30px 0;">
+        <h3 style="color: #101010; margin: 30px 0 20px 0; font-size: 20px;">💪 Consejos para empezar:</h3>
+        <ul style="color: #505050; font-size: 15px; line-height: 1.9; padding-left: 25px; margin: 0 0 30px 0;">
             <li style="margin-bottom: 10px;">Llega 10-15 minutos antes para prepararte</li>
             <li style="margin-bottom: 10px;">Trae tu botella de agua y toalla</li>
             <li style="margin-bottom: 10px;">Consulta con nuestros instructores cualquier duda</li>
@@ -180,25 +174,25 @@ class NotificacionesSeeder extends Seeder
         
         <!-- CTA BUTTON -->
         <div style="text-align: center; margin: 35px 0;">
-            <a href="{whatsapp_url}" style="display: inline-block; background: #C140D4; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(193, 64, 212, 0.3);">💬 Únete a WhatsApp</a>
+            <a href="https://wa.me/56950963143?text=Hola%2C%20soy%20nuevo%20miembro%20de%20PROGYM" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">💬 Únete a WhatsApp</a>
         </div>
         
-        <p style="color: #8A8A8A; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
-            ¿Dudas? Llámanos al <strong style="color: #121212;">{telefono}</strong> o visítanos en recepción
+        <p style="color: #505050; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
+            ¿Dudas? Llámanos al <strong style="color: #101010;">+56 9 5096 3143</strong> o visítanos en recepción
         </p>
     </div>
     
     <!-- FOOTER -->
-    <div style="background: #253A5B; color: #F1E6BF; padding: 30px 20px; text-align: center;">
-        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">PROGYM - Los Ángeles</p>
+    <div style="background: #101010; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">PROGYM - Los Ángeles</p>
         <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
-            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #F1E6BF; text-decoration: none;">Ver ubicación en Google Maps</a><br>
-            📧 {email} | 📞 {telefono}
+            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 progymlosangeles@gmail.com | 📞 +56 9 5096 3143
         </p>
         <p style="margin: 0; font-size: 13px;">
-            <a href="https://www.instagram.com/progym_losangeles" style="color: #C140D4; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
+            <a href="https://www.instagram.com/progym_losangeles" style="color: #E0001A; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
         </p>
-        <p style="margin: 15px 0 0 0; font-size: 11px; color: #8A8A8A; opacity: 0.8;">
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
             Este es un correo automático, por favor no responder directamente.
         </p>
     </div>
@@ -217,51 +211,49 @@ class NotificacionesSeeder extends Seeder
                 'plantilla_email' => '
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
     <!-- HEADER -->
-    <div style="background: #253A5B; color: white; padding: 40px 20px; text-align: center;">
-        <img src="{logo_url}" alt="PROGYM" style="max-width: 200px; height: auto; margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #F1E6BF; letter-spacing: 1px;">PROGYM</h1>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #F1E6BF; opacity: 0.9;">Transformando vidas</p>
+    <div style="background: #101010; color: white; padding: 50px 20px; text-align: center;">
+        <img src="https://raw.githubusercontent.com/PaNcHoMaLOsO/estoicosgym/main/public/images/progym_logo.svg" alt="PROGYM" style="max-width: 220px; height: auto;">
     </div>
     
     <!-- CONTENIDO -->
-    <div style="padding: 40px 30px; background: #ffffff;">
-        <h2 style="color: #121212; margin: 0 0 20px 0; font-size: 24px;">Hola {nombre} 👋</h2>
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
-            Te recordamos que tienes un pago pendiente por tu membresía <strong style="color: #C140D4;">{membresia}</strong>.
+    <div style="padding: 40px 30px; background: #FFFFFF;">
+        <h2 style="color: #101010; margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Hola {nombre} 👋</h2>
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
+            Te recordamos que tienes un pago pendiente por tu membresía <strong style="color: #101010;">{membresia}</strong>.
         </p>
         
         <!-- DETALLE PAGO -->
-        <div style="background: #F1E6BF; border-left: 5px solid #C140D4; padding: 25px; margin: 30px 0; border-radius: 8px;">
-            <h3 style="margin: 0 0 12px 0; color: #121212; font-size: 20px; font-weight: bold;">💰 Monto Pendiente</h3>
-            <p style="margin: 0; color: #C140D4; font-size: 28px; font-weight: bold;">${monto_pendiente}</p>
-            <p style="margin: 12px 0 0 0; color: #121212; font-size: 14px;">Monto total: <strong>${monto_total}</strong></p>
+        <div style="background: #FFFFFF; border-left: 6px solid #E0001A; padding: 25px; margin: 30px 0; border-radius: 6px; border: 1px solid #C7C7C7; border-left: 6px solid #E0001A;">
+            <h3 style="margin: 0 0 12px 0; color: #101010; font-size: 20px; font-weight: bold;">💰 Monto Pendiente</h3>
+            <p style="margin: 0; color: #E0001A; font-size: 28px; font-weight: bold;">${monto_pendiente}</p>
+            <p style="margin: 12px 0 0 0; color: #505050; font-size: 14px;">Monto total: <strong style="color: #101010;">${monto_total}</strong></p>
         </div>
         
-        <p style="color: #121212; font-size: 16px; line-height: 1.7; margin: 25px 0;">
-            Regulariza tu pago para continuar entrenando sin interrupciones. Tu membresía vence el <strong style="color: #C140D4;">{fecha_vencimiento}</strong>.
+        <p style="color: #505050; font-size: 16px; line-height: 1.7; margin: 25px 0;">
+            Regulariza tu pago para continuar entrenando sin interrupciones. Tu membresía vence el <strong style="color: #E0001A;">{fecha_vencimiento}</strong>.
         </p>
         
         <!-- CTA BUTTON -->
         <div style="text-align: center; margin: 35px 0;">
-            <a href="{whatsapp_url}" style="display: inline-block; background: #C140D4; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(193, 64, 212, 0.3);">💬 Contactar para Pagar</a>
+            <a href="https://wa.me/56950963143?text=Hola%2C%20quiero%20pagar%20mi%20membres%C3%ADa" style="display: inline-block; background: #E0001A; color: #FFFFFF; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">💬 Contactar para Pagar</a>
         </div>
         
-        <p style="color: #8A8A8A; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
-            También puedes acercarte a recepción o llamarnos al <strong style="color: #121212;">{telefono}</strong>
+        <p style="color: #505050; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
+            También puedes acercarte a recepción o llamarnos al <strong style="color: #101010;">+56 9 5096 3143</strong>
         </p>
     </div>
     
     <!-- FOOTER -->
-    <div style="background: #253A5B; color: #F1E6BF; padding: 30px 20px; text-align: center;">
-        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold;">PROGYM - Los Ángeles</p>
+    <div style="background: #101010; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">PROGYM - Los Ángeles</p>
         <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
-            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #F1E6BF; text-decoration: none;">Ver ubicación en Google Maps</a><br>
-            📧 {email} | 📞 {telefono}
+            📍 <a href="https://www.google.com/maps/place/Gimnasio+ProGym" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 progymlosangeles@gmail.com | 📞 +56 9 5096 3143
         </p>
         <p style="margin: 0; font-size: 13px;">
-            <a href="https://www.instagram.com/progym_losangeles" style="color: #C140D4; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
+            <a href="https://www.instagram.com/progym_losangeles" style="color: #E0001A; text-decoration: none; font-weight: bold;">📸 @progym_losangeles</a>
         </p>
-        <p style="margin: 15px 0 0 0; font-size: 11px; color: #8A8A8A; opacity: 0.8;">
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
             Este es un correo automático, por favor no responder directamente.
         </p>
     </div>
