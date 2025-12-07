@@ -157,49 +157,56 @@
         <div class="card mb-4" id="seccionPlantillas" style="display:none;">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-file-alt"></i> 2. Seleccionar Plantilla</h3>
-                <p class="text-muted mb-0 mt-2"><small>Plantillas personalizadas para anuncios, promociones y eventos del gimnasio</small></p>
+                <p class="text-muted mb-0 mt-2"><small>Haz clic en una plantilla para cargarla y editarla</small></p>
             </div>
             <div class="card-body">
                 <div class="row">
                     @foreach($plantillasPersonalizadas as $plantilla)
-                    <div class="col-md-3 mb-3">
-                        <div class="card plantilla-card" 
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card plantilla-card h-100" 
                              data-id="{{ $plantilla['id'] }}"
                              data-nombre="{{ $plantilla['nombre'] }}"
                              data-asunto="{{ $plantilla['asunto_email'] }}"
-                             data-contenido="{{ htmlspecialchars($plantilla['plantilla_email']) }}">
-                            <div class="card-body text-center">
-                                @switch($plantilla['codigo'])
-                                    @case('horario_especial')
-                                        <i class="fas fa-calendar-alt fa-3x mb-2" style="color: #667eea;"></i>
-                                        @break
-                                    @case('promocion')
-                                        <i class="fas fa-tags fa-3x mb-2" style="color: #f5576c;"></i>
-                                        @break
-                                    @case('anuncio')
-                                        <i class="fas fa-bullhorn fa-3x mb-2" style="color: #fdcb6e;"></i>
-                                        @break
-                                    @case('evento')
-                                        <i class="fas fa-star fa-3x mb-2" style="color: #a8edea;"></i>
-                                        @break
-                                    @default
-                                        <i class="fas fa-envelope fa-3x text-primary mb-2"></i>
-                                @endswitch
-                                <h5>{{ $plantilla['nombre'] }}</h5>
-                                <small class="text-muted">{{ Str::limit($plantilla['asunto_email'], 50) }}</small>
+                             data-contenido="{{ htmlspecialchars($plantilla['plantilla_email']) }}"
+                             style="cursor: pointer; transition: all 0.3s ease; border: 2px solid #e0e0e0;">
+                            
+                            <div class="card-header text-center" style="background: linear-gradient(135deg, 
+                                @if($plantilla['codigo'] === 'horario_especial') #667eea 0%, #764ba2 100%
+                                @elseif($plantilla['codigo'] === 'promocion') #f093fb 0%, #f5576c 100%
+                                @elseif($plantilla['codigo'] === 'anuncio') #667eea 0%, #764ba2 100%
+                                @else #a8edea 0%, #fed6e3 100%
+                                @endif
+                                ); color: white; padding: 15px;">
+                                <h5 class="mb-0" style="font-weight: bold;">{{ $plantilla['nombre'] }}</h5>
+                            </div>
+                            
+                            <div class="card-body p-0" style="height: 250px; overflow: hidden; position: relative;">
+                                <iframe 
+                                    srcdoc="{{ htmlspecialchars($plantilla['plantilla_email']) }}"
+                                    style="width: 100%; height: 100%; border: none; pointer-events: none; transform: scale(0.8); transform-origin: top left; width: 125%; height: 125%;"
+                                    sandbox="allow-same-origin">
+                                </iframe>
+                                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0); cursor: pointer;"></div>
+                            </div>
+                            
+                            <div class="card-footer text-center" style="background: #f8f9fa; padding: 12px;">
+                                <small class="text-muted">
+                                    <i class="fas fa-mouse-pointer"></i> Clic para editar
+                                </small>
                             </div>
                         </div>
                     </div>
                     @endforeach
                     
                     {{-- Plantilla personalizada --}}
-                    <div class="col-md-3 mb-3">
-                        <div class="card plantilla-card" 
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card plantilla-card h-100" 
                              data-id="custom"
                              data-nombre="Personalizado"
                              data-asunto=""
-                             data-contenido="">
-                            <div class="card-body text-center">
+                             data-contenido=""
+                             style="cursor: pointer; transition: all 0.3s ease; border: 2px solid #e0e0e0;">
+                            <div class="card-body text-center d-flex flex-column justify-content-center" style="min-height: 350px;">
                                 <i class="fas fa-pen-fancy fa-3x text-secondary mb-2"></i>
                                 <h5>Personalizado</h5>
                             </div>
@@ -487,67 +494,43 @@
         color: white;
     }
 
-    /* Plantillas elegantes */
+    /* Plantillas con vista previa */
     .plantilla-card {
         cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid #ecf0f1;
-        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
         position: relative;
         background: white;
-    }
-
-    .plantilla-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(to right, var(--accent), var(--accent-light));
-        transform: scaleX(0);
-        transition: transform 0.4s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
     .plantilla-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        border-color: var(--accent);
-    }
-
-    .plantilla-card:hover::before {
-        transform: scaleX(1);
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        border-color: var(--accent) !important;
     }
     
     .plantilla-card.selected {
-        border: 3px solid var(--accent);
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.05) 0%, rgba(236, 112, 99, 0.05) 100%);
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 15px 50px rgba(231, 76, 60, 0.3);
+        border: 3px solid var(--accent) !important;
+        box-shadow: 0 12px 40px rgba(231, 76, 60, 0.3) !important;
     }
 
-    .plantilla-card.selected::before {
-        transform: scaleX(1);
+    .plantilla-card iframe {
+        border: none;
+        pointer-events: none;
     }
 
-    .plantilla-card .card-body {
-        padding: 30px 20px;
-    }
-
-    .plantilla-card i {
+    .plantilla-card .card-footer {
         transition: all 0.3s ease;
     }
 
-    .plantilla-card:hover i {
-        transform: scale(1.1) rotate(5deg);
+    .plantilla-card:hover .card-footer {
+        background: var(--accent) !important;
+        color: white !important;
     }
 
-    .plantilla-card h5 {
-        font-weight: 700;
-        margin-top: 15px;
-        font-size: 1rem;
-        color: var(--dark);
+    .plantilla-card:hover .card-footer small {
+        color: white !important;
     }
 
     /* Summernote elegante */

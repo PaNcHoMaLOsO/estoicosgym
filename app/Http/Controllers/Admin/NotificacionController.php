@@ -573,125 +573,215 @@ class NotificacionController extends Controller
                 'nombre' => '📅 Horario Especial',
                 'codigo' => 'horario_especial',
                 'asunto_email' => '📅 Horario Especial - [Nombre del Día]',
-                'plantilla_email' => '🏋️ ESTOICOS GYM
-
-📅 HORARIO ESPECIAL
-
-Día: [Miércoles]
-Fecha: [16 de Julio]
-Motivo: [Día de la Virgen del Carmen]
-
-Estimado {nombre},
-
-Te informamos que el día [16 de julio] tendremos horario especial por motivo de [festividad].
-
-⏰ Horario: [9:00 AM - 6:00 PM]
-
-💰 Tarifas del Día:
-✅ Socios: GRATIS
-🎫 Pase Diario: $[5000]
-
-¡Te esperamos para seguir entrenando juntos! 💪
-
----
-📍 [Dirección del gimnasio]
-📞 [Teléfono de contacto]
-© 2025 Estoicos Gym'
+                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; border-radius: 15px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
+        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px;">Tu gimnasio de confianza</p>
+    </div>
+    
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+        <h2 style="color: #667eea; text-align: center; margin-top: 0; font-size: 24px;">📅 HORARIO ESPECIAL</h2>
+        
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
+            <p style="color: white; font-size: 20px; font-weight: bold; margin: 0;">Día: [Miércoles]</p>
+            <p style="color: white; font-size: 18px; margin: 8px 0 0 0;">[16 de Julio]</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #667eea; font-size: 16px; font-weight: bold; margin: 0 0 8px 0;">🎉 [Día de la Virgen del Carmen]</p>
+            <p style="color: #495057; margin: 0; line-height: 1.6;">
+                Estimado <strong>{nombre}</strong>, te informamos que el día <strong>[16 de julio]</strong> tendremos horario especial.
+            </p>
+        </div>
+        
+        <div style="border-left: 4px solid #667eea; padding-left: 15px; margin: 20px 0;">
+            <h3 style="color: #495057; margin: 0 0 8px 0; font-size: 16px;">⏰ Horario:</h3>
+            <p style="color: #6c757d; font-size: 16px; margin: 0;"><strong>[9:00 AM - 6:00 PM]</strong></p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 18px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #495057; margin: 0 0 12px 0; text-align: center; font-size: 16px;">💰 Tarifas del Día</h3>
+            <table style="width: 100%; margin: 8px 0;">
+                <tr>
+                    <td style="padding: 8px; color: #495057;"><strong>✅ Socios:</strong></td>
+                    <td style="padding: 8px; color: #28a745; font-size: 18px; font-weight: bold; text-align: right;">GRATIS</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; color: #495057; border-top: 1px solid rgba(0,0,0,0.1);"><strong>🎫 Pase Diario:</strong></td>
+                    <td style="padding: 8px; color: #667eea; font-size: 18px; font-weight: bold; text-align: right; border-top: 1px solid rgba(0,0,0,0.1);">$[5000]</td>
+                </tr>
+            </table>
+        </div>
+        
+        <p style="color: #6c757d; text-align: center; margin: 15px 0; font-style: italic;">
+            ¡Te esperamos para seguir entrenando juntos! 💪
+        </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 25px;">
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 [Dirección del gimnasio]</p>
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 [Teléfono de contacto]</p>
+        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
+    </div>
+</div>'
             ],
             [
                 'id' => 'promocion',
                 'nombre' => '🎉 Promoción Especial',
                 'codigo' => 'promocion',
                 'asunto_email' => '🎉 ¡Promoción Especial Solo para Ti!',
-                'plantilla_email' => '🏋️ ESTOICOS GYM
-¡Tu mejor versión te espera!
-
-🎉 ¡PROMOCIÓN ESPECIAL!
-Por tiempo limitado
-
-Hola {nombre},
-
-¡Tenemos una oferta increíble para ti!
-
-🎁 [30]% DE DESCUENTO
-En [membresías mensuales / inscripciones nuevas / etc.]
-
-📝 Detalles:
-[Describe aquí los detalles de la promoción. Por ejemplo: "Inscríbete este mes y obtén 30% de descuento en tu primera mensualidad. Incluye evaluación física gratuita y plan de entrenamiento personalizado."]
-
-⏰ Válido hasta: [31 de Diciembre 2025]
-
-¡No dejes pasar esta oportunidad! 🚀
-
----
-📍 Visítanos en: [Dirección]
-📞 Contacto: [Teléfono]
-© 2025 Estoicos Gym'
+                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 20px; border-radius: 15px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
+        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px;">¡Tu mejor versión te espera!</p>
+    </div>
+    
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 18px;">
+            <h2 style="color: #f5576c; margin: 0; font-size: 26px;">🎉 ¡PROMOCIÓN ESPECIAL!</h2>
+            <p style="color: #f093fb; font-size: 16px; font-weight: bold; margin: 8px 0;">Por tiempo limitado</p>
+        </div>
+        
+        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Hola <strong>{nombre}</strong>,</p>
+        <p style="color: #495057; margin: 15px 0; font-size: 15px;">¡Tenemos una oferta increíble para ti!</p>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin: 20px 0; text-align: center;">
+            <p style="color: white; font-size: 42px; font-weight: bold; margin: 0;">[30]%</p>
+            <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin: 8px 0;">DE DESCUENTO</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📝 En:</h3>
+            <p style="color: #6c757d; margin: 0; font-size: 15px;">[Membresías mensuales / Inscripciones nuevas / etc.]</p>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+            <p style="color: #856404; margin: 0; line-height: 1.6; font-size: 14px;">
+                [Describe aquí los detalles de la promoción. Por ejemplo: "Inscríbete este mes y obtén 30% de descuento en tu primera mensualidad. Incluye evaluación física gratuita y plan de entrenamiento personalizado."]
+            </p>
+        </div>
+        
+        <div style="border: 2px dashed #f5576c; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <p style="color: #495057; margin: 0 0 8px 0; font-size: 14px;"><strong>⏰ Válido hasta:</strong></p>
+            <p style="color: #f5576c; font-size: 20px; font-weight: bold; margin: 0;">[31 de Diciembre 2025]</p>
+        </div>
+        
+        <p style="color: #6c757d; text-align: center; font-size: 14px; margin: 20px 0;">
+            ¡No dejes pasar esta oportunidad! 🚀
+        </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 25px;">
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 Visítanos en: [Dirección]</p>
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 Contacto: [Teléfono]</p>
+        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
+    </div>
+</div>'
             ],
             [
                 'id' => 'anuncio',
                 'nombre' => '📢 Anuncio Importante',
                 'codigo' => 'anuncio',
                 'asunto_email' => '📢 Anuncio Importante - Estoicos Gym',
-                'plantilla_email' => '🏋️ ESTOICOS GYM
-
-📢 ANUNCIO IMPORTANTE
-
-Estimado {nombre},
-
-[TÍTULO DEL ANUNCIO]
-
-[Escribe aquí el contenido principal del anuncio. Por ejemplo: "Queremos informarte que a partir del próximo mes renovaremos nuestras instalaciones. Durante este período habrá algunas áreas temporalmente cerradas."]
-
-ℹ️ Información adicional:
-• [Punto 1]
-• [Punto 2]
-• [Punto 3]
-
-Gracias por tu comprensión y apoyo 🙏
-
----
-📍 Estoicos Gym
-📞 [Contacto]
-© 2025 Estoicos Gym'
+                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; border-radius: 15px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
+    </div>
+    
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+            <p style="color: #2d3436; font-size: 22px; font-weight: bold; margin: 0;">📢 ANUNCIO IMPORTANTE</p>
+        </div>
+        
+        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Estimado <strong>{nombre}</strong>,</p>
+        
+        <h2 style="color: #667eea; margin: 20px 0 15px 0; font-size: 20px;">[TÍTULO DEL ANUNCIO]</h2>
+        
+        <div style="color: #495057; line-height: 1.7; margin: 18px 0; font-size: 15px;">
+            <p style="margin: 0;">[Escribe aquí el contenido principal del anuncio. Por ejemplo: "Queremos informarte que a partir del próximo mes renovaremos nuestras instalaciones. Durante este período habrá algunas áreas temporalmente cerradas."]</p>
+        </div>
+        
+        <div style="background: #e3f2fd; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <p style="color: #495057; margin: 0 0 10px 0; font-weight: bold; font-size: 15px;">ℹ️ Información adicional:</p>
+            <ul style="color: #6c757d; margin: 8px 0; padding-left: 20px; font-size: 14px;">
+                <li style="margin: 5px 0;">[Punto 1]</li>
+                <li style="margin: 5px 0;">[Punto 2]</li>
+                <li style="margin: 5px 0;">[Punto 3]</li>
+            </ul>
+        </div>
+        
+        <p style="color: #6c757d; text-align: center; margin: 20px 0; font-style: italic; font-size: 14px;">
+            Gracias por tu comprensión y apoyo 🙏
+        </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 25px;">
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 Estoicos Gym</p>
+        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 [Contacto]</p>
+        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
+    </div>
+</div>'
             ],
             [
                 'id' => 'evento',
                 'nombre' => '🎊 Evento Especial',
                 'codigo' => 'evento',
                 'asunto_email' => '🎊 ¡Te invitamos a nuestro evento!',
-                'plantilla_email' => '🏋️ ESTOICOS GYM
-¡Juntos somos más fuertes!
-
-🎊 ¡EVENTO ESPECIAL!
-
-Hola {nombre},
-
-¡Tenemos un evento increíble para ti!
-
-🎯 [NOMBRE DEL EVENTO]
-
-📅 Fecha: [Sábado 15 de Enero 2025]
-⏰ Hora: [10:00 AM]
-📍 Lugar: [Estoicos Gym - Área principal]
-
-📝 Descripción:
-[Describe el evento. Ejemplo: "Únete a nuestra competencia de CrossFit. Prueba tu fuerza, resistencia y habilidades en diferentes categorías. ¡Habrá premios para los ganadores!"]
-
-🎁 ¿Qué incluye?
-• [Inscripción gratuita para socios]
-• [Refrigerio y bebidas]
-• [Premios para los primeros 3 lugares]
-• [Música en vivo]
-
-¡Confirma tu asistencia llamando al [teléfono] o respondiendo este correo!
-
-¡No te lo pierdas! 🎉
-
----
-📍 [Dirección]
-📞 [Teléfono]
-© 2025 Estoicos Gym'
+                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 40px 20px; border-radius: 15px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #667eea; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
+        <p style="color: #764ba2; font-size: 14px; margin-top: 8px;">¡Juntos somos más fuertes!</p>
+    </div>
+    
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 18px;">
+            <h2 style="color: #f5576c; margin: 0; font-size: 26px;">🎊 ¡EVENTO ESPECIAL!</h2>
+        </div>
+        
+        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Hola <strong>{nombre}</strong>,</p>
+        <p style="color: #495057; margin: 15px 0; font-size: 15px;">¡Tenemos un evento increíble para ti!</p>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 22px; border-radius: 12px; margin: 20px 0; color: white;">
+            <h3 style="margin: 0 0 12px 0; font-size: 22px; text-align: center;">🎯 [NOMBRE DEL EVENTO]</h3>
+            <div style="text-align: center;">
+                <p style="margin: 4px 0; font-size: 16px;">📅 Fecha: [Sábado 15 de Enero 2025]</p>
+                <p style="margin: 4px 0; font-size: 16px;">⏰ Hora: [10:00 AM]</p>
+                <p style="margin: 4px 0; font-size: 16px;">📍 Lugar: [Estoicos Gym - Área principal]</p>
+            </div>
+        </div>
+        
+        <div style="color: #495057; line-height: 1.7; margin: 18px 0;">
+            <h3 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📝 Descripción:</h3>
+            <p style="margin: 0; font-size: 15px;">[Describe el evento. Ejemplo: "Únete a nuestra competencia de CrossFit. Prueba tu fuerza, resistencia y habilidades en diferentes categorías. ¡Habrá premios para los ganadores!"]</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #495057; margin: 0 0 12px 0; font-size: 16px;">🎁 ¿Qué incluye?</h3>
+            <ul style="color: #6c757d; line-height: 1.7; margin: 8px 0; padding-left: 20px; font-size: 14px;">
+                <li style="margin: 5px 0;">[Inscripción gratuita para socios]</li>
+                <li style="margin: 5px 0;">[Refrigerio y bebidas]</li>
+                <li style="margin: 5px 0;">[Premios para los primeros 3 lugares]</li>
+                <li style="margin: 5px 0;">[Música en vivo]</li>
+            </ul>
+        </div>
+        
+        <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; border-left: 4px solid #17a2b8;">
+            <p style="color: #0c5460; font-size: 14px; margin: 0;">
+                ¡Confirma tu asistencia llamando al <strong>[teléfono]</strong> o respondiendo este correo!
+            </p>
+        </div>
+        
+        <p style="color: #6c757d; text-align: center; margin: 15px 0; font-size: 16px; font-weight: bold;">
+            ¡No te lo pierdas! 🎉
+        </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 25px;">
+        <p style="color: #764ba2; font-size: 13px; margin: 4px 0;">📍 [Dirección]</p>
+        <p style="color: #764ba2; font-size: 13px; margin: 4px 0;">📞 [Teléfono]</p>
+        <p style="color: rgba(118, 75, 162, 0.7); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
+    </div>
+</div>'
             ]
         ];
 
