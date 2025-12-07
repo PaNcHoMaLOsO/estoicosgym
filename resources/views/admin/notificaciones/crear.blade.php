@@ -2,618 +2,6 @@
 
 @section('title', 'Nueva Notificación - Estoicos Gym')
 
-@section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
-<style>
-    /* Reset y base */
-    * {
-        box-sizing: border-box;
-    }
-
-    .content-wrapper {
-        background: #f4f6f9 !important;
-    }
-
-    :root {
-        --primary: #1a1a2e;
-        --primary-light: #16213e;
-        --accent: #e94560;
-        --accent-light: #ff6b6b;
-        --success: #00bf8e;
-        --warning: #f0a500;
-        --info: #4361ee;
-        --gray-100: #f8f9fa;
-        --gray-200: #e9ecef;
-        --gray-600: #6c757d;
-        --gray-800: #343a40;
-    }
-
-    /* Header */
-    .page-header {
-        background: white;
-        padding: 30px;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        margin-bottom: 24px;
-    }
-
-    .page-header h1 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 1.75rem;
-        color: #2c3e50;
-    }
-
-    .page-header h1 i {
-        color: var(--accent);
-        margin-right: 12px;
-    }
-
-    .page-header p {
-        margin: 8px 0 0;
-        color: #7f8c8d;
-        font-size: 0.95rem;
-    }
-
-    /* Main Container - Asegurar que esté sobre el sidebar */
-    .content {
-        position: relative;
-        z-index: 100 !important;
-    }
-
-    /* Cards */
-    .main-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-        border: 1px solid #e9ecef;
-        overflow: visible;
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .main-card-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
-        padding: 16px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 16px 16px 0 0;
-    }
-
-    .main-card-header h3 {
-        margin: 0;
-        font-weight: 600;
-        font-size: 1.05rem;
-    }
-
-    .main-card-header h3 i {
-        color: var(--accent);
-        margin-right: 8px;
-    }
-
-    .main-card-body {
-        padding: 24px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* Paso 3 - Sin vista previa */
-    #seccionMensaje {
-        margin-bottom: 20px;
-    }
-
-    /* Indicador de pasos */
-    .pasos-indicador {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 15px;
-        padding: 12px 15px;
-        background: white;
-        border-radius: 30px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        max-width: 650px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .paso {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--gray-600);
-        padding: 6px 10px;
-        border-radius: 20px;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .paso::after {
-        content: '→';
-        position: absolute;
-        right: -18px;
-        color: var(--gray-200);
-        font-weight: bold;
-    }
-
-    .paso:last-child::after {
-        display: none;
-    }
-
-    .paso.active {
-        color: var(--accent);
-        background: rgba(233, 69, 96, 0.1);
-    }
-
-    .paso.completed {
-        color: var(--success);
-        background: rgba(0, 191, 142, 0.1);
-    }
-
-    .paso-numero {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: var(--gray-200);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.75rem;
-        transition: all 0.3s ease;
-    }
-
-    .paso.active .paso-numero {
-        background: var(--accent);
-        color: white;
-        box-shadow: 0 3px 10px rgba(233, 69, 96, 0.3);
-    }
-
-    .paso.completed .paso-numero {
-        background: var(--success);
-        color: white;
-    }
-
-    .paso-texto {
-        font-weight: 600;
-        font-size: 0.75rem;
-    }
-
-    /* Filtros rápidos */
-    .filtros-rapidos {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-    }
-
-    .filtro-btn {
-        padding: 6px 14px;
-        border-radius: 20px;
-        border: 2px solid var(--gray-200);
-        background: white;
-        color: var(--gray-600);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 0.8rem;
-    }
-
-    .filtro-btn:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        transform: translateY(-2px);
-    }
-
-    .filtro-btn.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
-    }
-
-    .filtro-btn .badge {
-        margin-left: 6px;
-        padding: 2px 6px;
-        border-radius: 8px;
-        font-size: 0.7rem;
-    }
-
-    .filtro-btn.active .badge {
-        background: rgba(255,255,255,0.3);
-    }
-
-    /* Info de selección */
-    .seleccion-info {
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-        color: white;
-        padding: 15px 25px;
-        border-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
-        animation: slideIn 0.3s ease;
-    }
-
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .seleccion-info.hidden {
-        display: none;
-    }
-
-    .seleccion-count {
-        font-size: 1.1rem;
-        font-weight: 700;
-    }
-
-    /* Tabla de clientes */
-    .tabla-clientes {
-        border: 1px solid var(--gray-200);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    /* Arreglar tamaño del selector de registros */
-    .dataTables_length select {
-        padding: 4px 8px;
-        border: 1px solid var(--gray-200);
-        border-radius: 6px;
-        font-size: 0.875rem;
-        margin: 0 8px;
-        min-width: 60px;
-        background: white;
-    }
-
-    .dataTables_length label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--gray-600);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .dataTables_filter label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--gray-600);
-    }
-
-    .dataTables_filter input {
-        padding: 6px 12px;
-        border: 1px solid var(--gray-200);
-        border-radius: 6px;
-        font-size: 0.875rem;
-        margin-left: 8px;
-    }
-
-    .tabla-clientes thead th {
-        background: var(--gray-100);
-        border-bottom: 2px solid var(--gray-200);
-        padding: 12px 15px;
-        font-weight: 600;
-        color: var(--gray-800);
-        font-size: 0.9rem;
-    }
-
-    .tabla-clientes tbody td {
-        padding: 12px 15px;
-        vertical-align: middle;
-        font-size: 0.9rem;
-    }
-
-    .tabla-clientes tbody tr:hover {
-        background-color: var(--gray-100);
-    }
-
-    .cliente-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .cliente-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 0.95rem;
-    }
-
-    .cliente-nombre {
-        font-weight: 600;
-        color: var(--gray-800);
-        font-size: 0.95rem;
-    }
-
-    .cliente-email {
-        font-size: 0.875rem;
-        color: var(--gray-600);
-    }
-
-    .badge-estado {
-        padding: 5px 10px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .badge-activo { background: rgba(0, 191, 142, 0.15); color: var(--success); }
-    .badge-inactivo { background: rgba(108, 117, 125, 0.15); color: var(--gray-600); }
-    .badge-vencido { background: rgba(233, 69, 96, 0.15); color: var(--accent); }
-
-    /* Plantillas */
-    .plantillas-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        justify-content: flex-start;
-    }
-
-    .plantilla-card {
-        background: white;
-        border: 2px solid var(--gray-200);
-        border-radius: 12px;
-        padding: 15px 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        min-width: 140px;
-        flex: 0 0 auto;
-    }
-
-    .plantilla-card:hover {
-        border-color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-
-    .plantilla-card.selected {
-        border-color: var(--accent);
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(233, 69, 96, 0.25);
-    }
-
-    .plantilla-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 10px;
-        font-size: 1.3rem;
-        transition: all 0.3s ease;
-        background: var(--gray-100);
-    }
-
-    .plantilla-card.selected .plantilla-icon {
-        background: rgba(255,255,255,0.25);
-        color: white;
-        transform: scale(1.1);
-    }
-
-    .plantilla-nombre {
-        font-weight: 600;
-        font-size: 0.85rem;
-        line-height: 1.2;
-    }
-
-    /* Formulario */
-    .form-group label {
-        font-weight: 600;
-        color: var(--gray-800);
-        margin-bottom: 5px;
-        display: block;
-        font-size: 0.9rem;
-    }
-
-    .form-group label i {
-        color: var(--accent);
-        margin-right: 4px;
-    }
-
-    .form-control {
-        border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 8px 12px;
-        transition: all 0.3s ease;
-        font-size: 0.9rem;
-    }
-
-    .form-control:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
-    }
-
-    /* Summernote customization */
-    .note-editor.note-frame {
-        border: 2px solid var(--gray-200);
-        border-radius: 8px;
-    }
-
-    .note-editor.note-frame.focused {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
-    }
-
-    .note-toolbar {
-        background: var(--gray-100) !important;
-        border-bottom: 2px solid var(--gray-200) !important;
-    }
-
-    .note-btn-group .note-btn {
-        background: white !important;
-        border: 1px solid var(--gray-200) !important;
-        color: var(--gray-800) !important;
-    }
-
-    .note-btn-group .note-btn:hover {
-        background: var(--accent) !important;
-        color: white !important;
-        border-color: var(--accent) !important;
-    }
-
-    .form-control.is-invalid {
-        border-color: #dc3545;
-    }
-
-    .form-control.is-valid {
-        border-color: var(--success);
-    }
-
-    .invalid-feedback, .valid-feedback {
-        display: block;
-        margin-top: 5px;
-        font-size: 0.85rem;
-    }
-
-    .char-counter {
-        font-size: 0.85rem;
-        color: var(--gray-600);
-        margin-top: 5px;
-        text-align: right;
-    }
-
-    .char-counter.warning {
-        color: var(--warning);
-    }
-
-    .char-counter.danger {
-        color: var(--accent);
-    }
-
-    /* Variables rápidas */
-    .variables-rapidas {
-        margin-top: 8px;
-        padding: 8px;
-        background: var(--gray-100);
-        border-radius: 6px;
-    }
-
-    .variable-btn {
-        display: inline-block;
-        padding: 4px 10px;
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-radius: 15px;
-        margin: 2px;
-        cursor: pointer;
-        font-size: 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-    .variable-btn:hover {
-        background: var(--accent);
-        color: white;
-        border-color: var(--accent);
-        transform: scale(1.05);
-    }
-
-
-
-    /* Botones */
-    .btn-enviar {
-        background: linear-gradient(135deg, var(--success) 0%, #00a67d 100%);
-        border: none;
-        color: white;
-        padding: 10px 30px;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 0.95rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 191, 142, 0.3);
-    }
-
-    .btn-enviar::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        transition: left 0.5s ease;
-    }
-
-    .btn-enviar:hover::before {
-        left: 100%;
-    }
-
-    .btn-enviar:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(0, 191, 142, 0.4);
-        color: white;
-    }
-
-    .btn-enviar:disabled {
-        background: var(--gray-200);
-        color: var(--gray-600);
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn-enviar:disabled::before {
-        display: none;
-    }
-
-    /* Alertas de validación */
-    .alert-validacion {
-        background: #fff3cd;
-        border-left: 4px solid var(--warning);
-        padding: 10px 12px;
-        border-radius: 6px;
-        margin-bottom: 12px;
-        display: none;
-        font-size: 0.85rem;
-    }
-
-    .alert-validacion.show {
-        display: block;
-        animation: slideIn 0.3s ease;
-    }
-
-    .alert-validacion ul {
-        margin: 0;
-        padding-left: 20px;
-    }
-
-    .alert-validacion li {
-        margin: 5px 0;
-        color: #856404;
-    }
-</style>
-@endsection
-
 @section('content_header')
     <div class="page-header">
         <h1><i class="fas fa-paper-plane"></i> Nueva Notificación</h1>
@@ -622,7 +10,7 @@
 @stop
 
 @section('content')
-    <!-- Indicador de pasos -->
+    {{-- Indicador de pasos --}}
     <div class="pasos-indicador">
         <div class="paso active" id="paso1">
             <span class="paso-numero">1</span>
@@ -642,194 +30,176 @@
         </div>
     </div>
 
-    <!-- Alerta de validación -->
-    <div class="alert-validacion" id="alertValidacion">
-        <strong><i class="fas fa-exclamation-triangle"></i> Completa los siguientes campos:</strong>
-        <ul id="listaValidacion"></ul>
-    </div>
-
     <form action="{{ route('admin.notificaciones.enviar-masivo') }}" method="POST" id="comunicadoForm">
         @csrf
         <input type="hidden" name="cliente_ids" id="clienteIdsInput" value="">
         <input type="hidden" name="plantilla_id" id="plantillaIdInput" value="">
 
         {{-- PASO 1: DESTINATARIOS --}}
-        <div class="main-card mb-4">
-            <div class="main-card-header">
-                <h3><i class="fas fa-users"></i> 1. Seleccionar Destinatarios</h3>
-                <button type="button" class="btn btn-sm btn-light" id="btnSeleccionarTodos">
-                    <i class="fas fa-check-double"></i> Todos los visibles
-                </button>
-            </div>
-            <div class="main-card-body">
-                {{-- Filtros rápidos --}}
-                <div class="filtros-rapidos">
-                            <button type="button" class="filtro-btn active" data-filtro="todos">
-                                <i class="fas fa-users"></i> Todos
-                                <span class="badge badge-secondary">{{ $totalClientes ?? 0 }}</span>
-                            </button>
-                            <button type="button" class="filtro-btn" data-filtro="activos">
-                                <i class="fas fa-check-circle"></i> Activos
-                                <span class="badge badge-success">{{ $clientesActivos ?? 0 }}</span>
-                            </button>
-                            <button type="button" class="filtro-btn" data-filtro="vencidos">
-                                <i class="fas fa-calendar-times"></i> Vencidos
-                                <span class="badge badge-danger">{{ $clientesVencidos ?? 0 }}</span>
-                            </button>
-                            <button type="button" class="filtro-btn" data-filtro="inactivos">
-                                <i class="fas fa-user-slash"></i> Sin inscripción
-                                <span class="badge badge-warning">{{ $clientesInactivos ?? 0 }}</span>
-                            </button>
-                        </div>
-
-                        {{-- Info de selección --}}
-                        <div class="seleccion-info hidden" id="seleccionInfo">
-                            <span class="seleccion-count">
-                                <i class="fas fa-check-circle"></i> 
-                                <span id="seleccionCount">0</span> clientes seleccionados
-                            </span>
-                            <button type="button" class="btn btn-sm btn-light" id="btnLimpiarSeleccion">
-                                <i class="fas fa-times"></i> Limpiar
-                            </button>
-                        </div>
-
-                        {{-- Tabla de clientes --}}
-                        <div class="tabla-clientes">
-                            <table class="table table-hover mb-0" id="tablaClientes" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th width="40">
-                                            <input type="checkbox" class="custom-checkbox" id="checkAll">
-                                        </th>
-                                        <th>Cliente</th>
-                                        <th>Membresía</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($clientes as $cliente)
-                                    @php
-                                        $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first();
-                                        $ultimaInscripcion = $cliente->inscripciones->sortByDesc('created_at')->first();
-                                        
-                                        if ($inscripcionActiva) {
-                                            $estado = 'Activo';
-                                            $estadoClass = 'activo';
-                                        } elseif ($ultimaInscripcion && $ultimaInscripcion->id_estado == 102) {
-                                            $estado = 'Vencido';
-                                            $estadoClass = 'vencido';
-                                        } else {
-                                            $estado = 'Inactivo';
-                                            $estadoClass = 'inactivo';
-                                        }
-                                        
-                                        $tieneEmail = !empty($cliente->email);
-                                    @endphp
-                                    <tr class="{{ !$tieneEmail ? 'sin-email' : '' }}" data-estado="{{ $estadoClass }}">
-                                        <td>
-                                            @if($tieneEmail)
-                                            <input type="checkbox" 
-                                                   class="custom-checkbox cliente-check" 
-                                                   value="{{ $cliente->id }}"
-                                                   data-nombre="{{ $cliente->nombre_completo }}"
-                                                   data-email="{{ $cliente->email }}">
-                                            @else
-                                            <i class="fas fa-ban text-muted" title="Sin email"></i>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="cliente-info">
-                                                <div class="cliente-avatar">
-                                                    {{ strtoupper(substr($cliente->nombres, 0, 1)) }}{{ strtoupper(substr($cliente->apellido_paterno, 0, 1)) }}
-                                                </div>
-                                                <div>
-                                                    <div class="cliente-nombre">{{ $cliente->nombre_completo }}</div>
-                                                    <div class="cliente-email">
-                                                        @if($tieneEmail)
-                                                            {{ $cliente->email }}
-                                                        @else
-                                                            <span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Sin email</span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if($inscripcionActiva && $inscripcionActiva->membresia)
-                                                {{ $inscripcionActiva->membresia->nombre }}
-                                            @elseif($ultimaInscripcion && $ultimaInscripcion->membresia)
-                                                <span class="text-muted">{{ $ultimaInscripcion->membresia->nombre }}</span>
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <span class="badge-estado badge-{{ $estadoClass }}">
-                                                @if($estadoClass == 'activo')
-                                                    <i class="fas fa-check"></i>
-                                                @elseif($estadoClass == 'vencido')
-                                                    <i class="fas fa-calendar-times"></i>
-                                                @else
-                                                    <i class="fas fa-user-slash"></i>
-                                                @endif
-                                                {{ $estado }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-users"></i> 1. Seleccionar Destinatarios</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnSeleccionarTodos">
+                        <i class="fas fa-check-double"></i> Seleccionar todos
+                    </button>
                 </div>
+            </div>
+            <div class="card-body">
+                {{-- Filtros rápidos --}}
+                <div class="filtros-rapidos mb-3">
+                    <button type="button" class="filtro-btn active" data-filtro="todos">
+                        <i class="fas fa-users"></i> Todos
+                        <span class="badge badge-secondary">{{ $totalClientes ?? 0 }}</span>
+                    </button>
+                    <button type="button" class="filtro-btn" data-filtro="activos">
+                        <i class="fas fa-check-circle"></i> Activos
+                        <span class="badge badge-success">{{ $clientesActivos ?? 0 }}</span>
+                    </button>
+                    <button type="button" class="filtro-btn" data-filtro="vencidos">
+                        <i class="fas fa-calendar-times"></i> Vencidos
+                        <span class="badge badge-danger">{{ $clientesVencidos ?? 0 }}</span>
+                    </button>
+                    <button type="button" class="filtro-btn" data-filtro="inactivos">
+                        <i class="fas fa-user-slash"></i> Sin inscripción
+                        <span class="badge badge-warning">{{ $clientesInactivos ?? 0 }}</span>
+                    </button>
+                </div>
+
+                {{-- Info de selección --}}
+                <div class="alert alert-info hidden" id="seleccionInfo">
+                    <i class="fas fa-check-circle"></i>
+                    <strong><span id="seleccionCount">0</span> clientes seleccionados</strong>
+                    <button type="button" class="btn btn-sm btn-light float-right" id="btnLimpiarSeleccion">
+                        <i class="fas fa-times"></i> Limpiar
+                    </button>
+                </div>
+
+                {{-- Tabla de clientes --}}
+                <table class="table table-hover" id="tablaClientes">
+                    <thead>
+                        <tr>
+                            <th width="40"><input type="checkbox" id="checkAll"></th>
+                            <th>Cliente</th>
+                            <th>Membresía</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($clientes as $cliente)
+                        @php
+                            $inscripcionActiva = $cliente->inscripciones->where('id_estado', 100)->first();
+                            $ultimaInscripcion = $cliente->inscripciones->sortByDesc('created_at')->first();
+                            
+                            if ($inscripcionActiva) {
+                                $estado = 'Activo';
+                                $estadoClass = 'activo';
+                                $badgeClass = 'success';
+                            } elseif ($ultimaInscripcion && $ultimaInscripcion->id_estado == 102) {
+                                $estado = 'Vencido';
+                                $estadoClass = 'vencido';
+                                $badgeClass = 'danger';
+                            } else {
+                                $estado = 'Inactivo';
+                                $estadoClass = 'inactivo';
+                                $badgeClass = 'secondary';
+                            }
+                            
+                            $tieneEmail = !empty($cliente->email);
+                        @endphp
+                        <tr class="{{ !$tieneEmail ? 'table-secondary' : '' }}" data-estado="{{ $estadoClass }}">
+                            <td>
+                                @if($tieneEmail)
+                                <input type="checkbox" 
+                                       class="cliente-check" 
+                                       value="{{ $cliente->id }}"
+                                       data-nombre="{{ $cliente->nombre_completo }}"
+                                       data-email="{{ $cliente->email }}">
+                                @else
+                                <i class="fas fa-ban text-muted" title="Sin email"></i>
+                                @endif
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ $cliente->nombre_completo }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        @if($tieneEmail)
+                                            <i class="fas fa-envelope"></i> {{ $cliente->email }}
+                                        @else
+                                            <i class="fas fa-exclamation-triangle text-danger"></i> Sin email
+                                        @endif
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                @if($inscripcionActiva && $inscripcionActiva->membresia)
+                                    {{ $inscripcionActiva->membresia->nombre }}
+                                @elseif($ultimaInscripcion && $ultimaInscripcion->membresia)
+                                    <span class="text-muted">{{ $ultimaInscripcion->membresia->nombre }}</span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ $badgeClass }}">
+                                    {{ $estado }}
+                                </span>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
 
         {{-- PASO 2: PLANTILLAS --}}
-        <div class="main-card mb-4" id="seccionPlantillas" style="display:none;">
-            <div class="main-card-header">
-                <h3><i class="fas fa-file-alt"></i> 2. Seleccionar Plantilla</h3>
+        <div class="card mb-4" id="seccionPlantillas" style="display:none;">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-file-alt"></i> 2. Seleccionar Plantilla</h3>
             </div>
-            <div class="main-card-body">
-                <div class="plantillas-grid">
-                            @foreach($plantillas as $plantilla)
-                            <div class="plantilla-card" 
-                                 data-id="{{ $plantilla->id }}"
-                                 data-nombre="{{ $plantilla->nombre }}"
-                                 data-asunto="{{ $plantilla->asunto_email }}"
-                                 data-contenido="{{ $plantilla->plantilla_email }}">
-                                <div class="plantilla-icon">
-                                    @switch($plantilla->codigo)
-                                        @case('membresia_por_vencer')
-                                            <i class="fas fa-clock"></i>
-                                            @break
-                                        @case('membresia_vencida')
-                                            <i class="fas fa-calendar-times"></i>
-                                            @break
-                                        @case('bienvenida')
-                                            <i class="fas fa-hand-sparkles"></i>
-                                            @break
-                                        @case('pago_pendiente')
-                                            <i class="fas fa-dollar-sign"></i>
-                                            @break
-                                        @default
-                                            <i class="fas fa-envelope"></i>
-                                    @endswitch
-                                </div>
-                                <div class="plantilla-nombre">{{ $plantilla->nombre }}</div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach($plantillas as $plantilla)
+                    <div class="col-md-3 mb-3">
+                        <div class="card plantilla-card" 
+                             data-id="{{ $plantilla->id }}"
+                             data-nombre="{{ $plantilla->nombre }}"
+                             data-asunto="{{ $plantilla->asunto_email }}"
+                             data-contenido="{{ $plantilla->plantilla_email }}">
+                            <div class="card-body text-center">
+                                @switch($plantilla->codigo)
+                                    @case('membresia_por_vencer')
+                                        <i class="fas fa-clock fa-3x text-warning mb-2"></i>
+                                        @break
+                                    @case('membresia_vencida')
+                                        <i class="fas fa-calendar-times fa-3x text-danger mb-2"></i>
+                                        @break
+                                    @case('bienvenida')
+                                        <i class="fas fa-hand-sparkles fa-3x text-success mb-2"></i>
+                                        @break
+                                    @case('pago_pendiente')
+                                        <i class="fas fa-dollar-sign fa-3x text-info mb-2"></i>
+                                        @break
+                                    @default
+                                        <i class="fas fa-envelope fa-3x text-primary mb-2"></i>
+                                @endswitch
+                                <h5>{{ $plantilla->nombre }}</h5>
                             </div>
-                            @endforeach
-                            
-                            {{-- Plantilla personalizada --}}
-                            <div class="plantilla-card" 
-                                 data-id="custom"
-                                 data-nombre="Personalizado"
-                                 data-asunto=""
-                                 data-contenido="">
-                                <div class="plantilla-icon">
-                                    <i class="fas fa-pen-fancy"></i>
-                                </div>
-                                <div class="plantilla-nombre">Personalizado</div>
+                        </div>
+                    </div>
+                    @endforeach
+                    
+                    {{-- Plantilla personalizada --}}
+                    <div class="col-md-3 mb-3">
+                        <div class="card plantilla-card" 
+                             data-id="custom"
+                             data-nombre="Personalizado"
+                             data-asunto=""
+                             data-contenido="">
+                            <div class="card-body text-center">
+                                <i class="fas fa-pen-fancy fa-3x text-secondary mb-2"></i>
+                                <h5>Personalizado</h5>
                             </div>
                         </div>
                     </div>
@@ -838,45 +208,43 @@
         </div>
 
         {{-- PASO 3: COMPONER MENSAJE --}}
-        <div class="main-card mb-4" id="seccionMensaje" style="display:none;">
-            {{-- Editor de Mensaje --}}
-                <div class="main-card-header">
-                    <h3><i class="fas fa-edit"></i> 3. Componer Mensaje</h3>
+        <div class="card mb-4" id="seccionMensaje" style="display:none;">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-edit"></i> 3. Componer Mensaje</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="asunto" 
+                           name="asunto" 
+                           placeholder="Ej: ¡Promoción especial para ti!"
+                           maxlength="255"
+                           required>
+                    <small class="form-text text-muted">
+                        <span id="asuntoCount">0</span>/255 caracteres
+                    </small>
                 </div>
-                <div class="main-card-body">
-                    <div class="form-group">
-                        <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="asunto" 
-                               name="asunto" 
-                               placeholder="Ej: ¡Promoción especial para ti!"
-                               maxlength="255"
-                               required>
-                        <div class="char-counter">
-                            <span id="asuntoCount">0</span>/255 caracteres
-                        </div>
-                        <div class="invalid-feedback"></div>
-                    </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-align-left"></i> Mensaje *</label>
+                    <textarea class="form-control" 
+                              id="mensaje" 
+                              name="mensaje" 
+                              placeholder="Escribe tu mensaje aquí..."
+                              required></textarea>
+                    <small class="form-text text-muted">
+                        <span id="mensajeCount">0</span>/5000 caracteres
+                    </small>
                     
-                    <div class="form-group">
-                        <label><i class="fas fa-align-left"></i> Mensaje *</label>
-                        <textarea class="form-control" 
-                                  id="mensaje" 
-                                  name="mensaje" 
-                                  placeholder="Escribe tu mensaje aquí..."
-                                  required></textarea>
-                        <div class="char-counter">
-                            <span id="mensajeCount">0</span>/5000 caracteres
+                    <div class="alert alert-light mt-2">
+                        <small><i class="fas fa-magic"></i> <strong>Variables disponibles:</strong></small>
+                        <div class="mt-2">
+                            <span class="badge badge-info mr-1 variable-btn" data-var="{nombre}">📛 {nombre}</span>
+                            <span class="badge badge-info mr-1 variable-btn" data-var="{email}">📧 {email}</span>
+                            <span class="badge badge-info variable-btn" data-var="{membresia}">🏋️ {membresia}</span>
                         </div>
-                        
-                        <div class="variables-rapidas">
-                            <small class="text-muted d-block mb-2"><i class="fas fa-magic"></i> Insertar variable:</small>
-                            <span class="variable-btn" data-var="{nombre}">📛 Nombre</span>
-                            <span class="variable-btn" data-var="{email}">📧 Correo</span>
-                            <span class="variable-btn" data-var="{membresia}">🏋️ Membresía</span>
-                        </div>
-                        <div class="invalid-feedback"></div>
                     </div>
                 </div>
             </div>
@@ -884,27 +252,589 @@
 
         {{-- PASO 4: ENVIAR --}}
         <div class="text-center mb-4" id="seccionEnviar" style="display:none;">
-            <button type="submit" class="btn btn-enviar btn-lg" id="btnEnviar" disabled>
-                <i class="fas fa-paper-plane"></i> 4. Enviar a <span id="btnCount">0</span> clientes
+            <button type="submit" class="btn btn-success btn-lg" id="btnEnviar" disabled>
+                <i class="fas fa-paper-plane"></i> Enviar a <span id="btnCount">0</span> clientes
             </button>
-            <p class="text-muted mt-2 mb-0">
+            <p class="text-muted mt-2">
                 <small><i class="fas fa-info-circle"></i> Los correos se enviarán inmediatamente</small>
             </p>
         </div>
     </form>
 @stop
 
+@section('css')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+<style>
+    :root {
+        --primary: #2c3e50;
+        --primary-dark: #1a252f;
+        --accent: #e74c3c;
+        --accent-light: #ec7063;
+        --success: #27ae60;
+        --success-light: #2ecc71;
+        --warning: #f39c12;
+        --info: #3498db;
+        --dark: #34495e;
+    }
+
+    body {
+        background: #ecf0f1;
+    }
+
+    /* Header elegante */
+    .page-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 2rem;
+        color: white;
+        position: relative;
+        z-index: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .page-header h1 i {
+        color: var(--accent);
+        margin-right: 15px;
+        text-shadow: 0 2px 10px rgba(231, 76, 60, 0.5);
+    }
+
+    .page-header p {
+        margin: 12px 0 0;
+        color: rgba(255,255,255,0.85);
+        font-size: 1rem;
+        position: relative;
+        z-index: 1;
+        font-weight: 300;
+    }
+
+    /* Indicador de pasos elegante */
+    .pasos-indicador {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 25px 30px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    .pasos-indicador::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 60px;
+        right: 60px;
+        height: 3px;
+        background: linear-gradient(to right, #e9ecef 0%, #e9ecef 100%);
+        transform: translateY(-50%);
+        z-index: 0;
+    }
+
+    .paso {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #95a5a6;
+        padding: 10px 20px;
+        border-radius: 15px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 1;
+        background: white;
+    }
+
+    .paso.active {
+        color: var(--accent);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(236, 112, 99, 0.05) 100%);
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.2);
+    }
+
+    .paso.completed {
+        color: var(--success);
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(46, 204, 113, 0.05) 100%);
+    }
+
+    .paso-numero {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ecf0f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1rem;
+        transition: all 0.4s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .paso.active .paso-numero {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        color: white;
+        box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        transform: scale(1.1);
+    }
+
+    .paso.completed .paso-numero {
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+        color: white;
+        box-shadow: 0 3px 15px rgba(39, 174, 96, 0.3);
+    }
+
+    .paso-texto {
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.3px;
+    }
+
+    /* Filtros rápidos elegantes */
+    .filtros-rapidos {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filtro-btn {
+        padding: 10px 20px;
+        border-radius: 25px;
+        border: 2px solid #ecf0f1;
+        background: white;
+        color: #7f8c8d;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.875rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .filtro-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(231, 76, 60, 0.1);
+        transform: translate(-50%, -50%);
+        transition: width 0.5s, height 0.5s;
+    }
+
+    .filtro-btn:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .filtro-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(231, 76, 60, 0.2);
+    }
+
+    .filtro-btn.active {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        border-color: var(--accent);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 25px rgba(231, 76, 60, 0.35);
+    }
+
+    .filtro-btn i,
+    .filtro-btn .badge {
+        position: relative;
+        z-index: 1;
+    }
+
+    .filtro-btn .badge {
+        margin-left: 8px;
+        padding: 3px 8px;
+        font-weight: 700;
+    }
+
+    .filtro-btn.active .badge {
+        background: rgba(255,255,255,0.25);
+        color: white;
+    }
+
+    /* Plantillas elegantes */
+    .plantilla-card {
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid #ecf0f1;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        background: white;
+    }
+
+    .plantilla-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--accent), var(--accent-light));
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
+    .plantilla-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        border-color: var(--accent);
+    }
+
+    .plantilla-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .plantilla-card.selected {
+        border: 3px solid var(--accent);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.05) 0%, rgba(236, 112, 99, 0.05) 100%);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 50px rgba(231, 76, 60, 0.3);
+    }
+
+    .plantilla-card.selected::before {
+        transform: scaleX(1);
+    }
+
+    .plantilla-card .card-body {
+        padding: 30px 20px;
+    }
+
+    .plantilla-card i {
+        transition: all 0.3s ease;
+    }
+
+    .plantilla-card:hover i {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .plantilla-card h5 {
+        font-weight: 700;
+        margin-top: 15px;
+        font-size: 1rem;
+        color: var(--dark);
+    }
+
+    /* Summernote elegante */
+    .note-editor.note-frame {
+        border: 2px solid #ecf0f1;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+
+    .note-editor.note-frame.focused {
+        border-color: var(--accent);
+        box-shadow: 0 5px 30px rgba(231, 76, 60, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .note-toolbar {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ecf0f1 100%) !important;
+        border-bottom: 2px solid #ecf0f1 !important;
+        padding: 15px !important;
+    }
+
+    .note-btn-group .note-btn {
+        border-radius: 8px !important;
+        margin: 2px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .note-btn-group .note-btn:hover {
+        background: var(--accent) !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .note-editable {
+        min-height: 300px;
+        padding: 20px;
+        font-size: 0.95rem;
+        line-height: 1.8;
+    }
+
+    .note-editable:focus {
+        background: #fefefe;
+    }
+
+    /* Variables elegantes */
+    .variable-btn {
+        cursor: pointer;
+        font-size: 0.875rem;
+        padding: 8px 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 20px;
+        font-weight: 600;
+        border: 2px solid transparent;
+    }
+
+    .variable-btn:hover {
+        background: var(--accent) !important;
+        color: white !important;
+        transform: translateY(-3px) scale(1.1);
+        box-shadow: 0 5px 20px rgba(231, 76, 60, 0.3);
+        border-color: var(--accent) !important;
+    }
+
+    /* DataTables customización */
+    .dataTables_length select {
+        min-width: 70px;
+        padding: 6px 30px 6px 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin: 0 8px;
+    }
+
+    .dataTables_length label,
+    .dataTables_filter label {
+        font-weight: 500;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .dataTables_filter input {
+        padding: 8px 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-left: 8px;
+        min-width: 250px;
+    }
+
+    .dataTables_filter input:focus {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    /* Cards AdminLTE mejoradas */
+    .card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 35px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ecf0f1 100%);
+        border-bottom: 3px solid var(--accent);
+        padding: 20px 25px;
+        border-radius: 20px 20px 0 0 !important;
+    }
+
+    .card-title {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--dark);
+        margin: 0;
+        letter-spacing: -0.3px;
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    /* Alerts elegantes */
+    .alert-info {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(93, 173, 226, 0.05) 100%);
+        border-left: 4px solid var(--info);
+        border-radius: 15px;
+        padding: 15px 20px;
+        box-shadow: 0 3px 15px rgba(52, 152, 219, 0.1);
+    }
+
+    /* Botones principales elegantes */
+    .btn-success {
+        background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+        border: none;
+        box-shadow: 0 8px 25px rgba(39, 174, 96, 0.35);
+        border-radius: 30px;
+        padding: 15px 40px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-success::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-success:hover::before {
+        width: 400px;
+        height: 400px;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(39, 174, 96, 0.5);
+    }
+
+    .btn-success i {
+        margin-right: 10px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--info) 0%, #5dade2 100%);
+        border: none;
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        border-radius: 20px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+    }
+
+    /* Tabla elegante */
+    .table {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 100%);
+        color: white;
+        font-weight: 700;
+        padding: 15px;
+        border: none;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.03) 0%, rgba(236, 112, 99, 0.03) 100%);
+        transform: scale(1.01);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Animaciones suaves */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+</style>
+@stop
+
 @section('js')
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/lang/summernote-es-ES.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    // Inicializar DataTable
+    const tabla = $('#tablaClientes').DataTable({
+        language: {
+            "processing": "Procesando...",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "zeroRecords": "No se encontraron resultados",
+            "emptyTable": "Ningún dato disponible en esta tabla",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "search": "Buscar:",
+            "searchPlaceholder": "Ej: Juan Pérez, email...",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            }
+        },
+        pageLength: 10,
+        order: [[1, 'asc']],
+        columnDefs: [
+            { orderable: false, targets: 0 }
+        ]
+    });
+    
+    // Agregar placeholder manualmente al input de búsqueda
+    $('.dataTables_filter input').attr('placeholder', 'Ej: Juan Pérez, email...');
+    
     // Inicializar Summernote
     $('#mensaje').summernote({
-        height: 350,
+        height: 300,
         lang: 'es-ES',
         toolbar: [
             ['style', ['style']],
@@ -916,68 +846,19 @@ $(document).ready(function() {
             ['insert', ['link']],
             ['view', ['codeview', 'help']]
         ],
-        styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-        fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 'Helvetica', 'Impact', 'Tahoma', 'Times New Roman', 'Verdana'],
         placeholder: 'Escribe tu mensaje aquí... Puedes usar formato HTML',
         callbacks: {
             onChange: function(contents, $editable) {
-                // Actualizar contador y preview en tiempo real
                 const textLength = $editable.text().length;
                 $('#mensajeCount').text(textLength);
-                
-                // Cambiar color según límite
-                if (textLength > 4500) {
-                    $('#mensajeCount').parent().addClass('warning');
-                } else {
-                    $('#mensajeCount').parent().removeClass('warning');
-                }
-                
                 validarFormulario();
-            },
-            onPaste: function(e) {
-                // Permitir pegar HTML sin problemas
-                const bufferText = ((e.originalEvent || e).clipboardData || window.clipboardData).getData('text/html');
-                e.preventDefault();
-                
-                // Limpiar y sanitizar el HTML pegado
-                const cleanHtml = bufferText.replace(/<(script|iframe|object|embed)[^>]*>.*?<\/\1>/gi, '');
-                document.execCommand('insertHTML', false, cleanHtml);
             }
         }
     });
-    // Inicializar DataTable
-    const tabla = $('#tablaClientes').DataTable({
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-        language: {
-            "processing": "Procesando...",
-            "lengthMenu": "Mostrar _MENU_ registros",
-            "zeroRecords": "No se encontraron resultados",
-            "emptyTable": "Ningún dato disponible en esta tabla",
-            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "search": "Buscar:",
-            "paginate": {
-                "first": "Primero",
-                "last": "Último",
-                "next": "Siguiente",
-                "previous": "Anterior"
-            },
-            "aria": {
-                "sortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sortDescending": ": Activar para ordenar la columna de manera descendente"
-            }
-        },
-        pageLength: 10,
-        order: [[1, 'asc']],
-        columnDefs: [
-            { orderable: false, targets: 0 }
-        ]
-    });
-
+    
     let selectedClientes = [];
     let plantillaSeleccionada = null;
-
+    
     // ========================================
     // FILTROS RÁPIDOS
     // ========================================
@@ -987,15 +868,14 @@ $(document).ready(function() {
         
         const filtro = $(this).data('filtro');
         
-        // Filtrar por data-estado de la fila, no por texto del badge
-        $.fn.dataTable.ext.search.pop(); // Limpiar filtros previos
+        $.fn.dataTable.ext.search.pop();
         
         if (filtro !== 'todos') {
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
                     const row = tabla.row(dataIndex).node();
                     const estado = $(row).attr('data-estado');
-                    return estado === filtro.slice(0, -1); // 'activos' -> 'activo'
+                    return estado === filtro.slice(0, -1);
                 }
             );
         }
@@ -1024,7 +904,6 @@ $(document).ready(function() {
 
     $('#checkAll').change(function() {
         const isChecked = $(this).is(':checked');
-        // Solo selecciona los visibles en la página actual
         $('#tablaClientes tbody tr:visible .cliente-check').each(function() {
             $(this).prop('checked', isChecked).trigger('change');
         });
@@ -1034,36 +913,40 @@ $(document).ready(function() {
         const $btn = $(this);
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Seleccionando...');
         
-        // Selecciona TODOS los clientes (todas las páginas)
-        let countSeleccionados = 0;
-        tabla.rows().every(function() {
+        let countNuevos = 0;
+        
+        // Recorrer TODOS los registros, incluso los de otras páginas
+        tabla.rows({ search: 'applied' }).every(function() {
             const row = this.node();
             const checkbox = $(row).find('.cliente-check');
-            if (checkbox.length && !checkbox.is(':checked')) {
+            
+            if (checkbox.length) {
                 const id = parseInt(checkbox.val());
                 const nombre = checkbox.data('nombre');
                 const email = checkbox.data('email');
+                
+                // Solo agregar si no está ya seleccionado
                 if (!selectedClientes.find(c => c.id === id)) {
                     selectedClientes.push({ id, nombre, email });
-                    countSeleccionados++;
+                    countNuevos++;
                 }
+                
+                // Marcar el checkbox
                 checkbox.prop('checked', true);
             }
         });
         
         setTimeout(() => {
             updateSeleccion();
-            $btn.prop('disabled', false).html('<i class="fas fa-check-double"></i> Todos los visibles');
+            $btn.prop('disabled', false).html('<i class="fas fa-check-double"></i> Seleccionar todos');
             
-            if (countSeleccionados > 0) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Seleccionados!',
-                    text: `Se seleccionaron ${countSeleccionados} clientes adicionales de todas las páginas`,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            }
+            Swal.fire({
+                icon: 'success',
+                title: '¡Seleccionados!',
+                html: `<p>Total: <strong>${selectedClientes.length} clientes</strong></p>${countNuevos > 0 ? `<p><small>Agregados: ${countNuevos} nuevos</small></p>` : ''}`,
+                timer: 2500,
+                showConfirmButton: false
+            });
         }, 100);
     });
 
@@ -1124,7 +1007,7 @@ $(document).ready(function() {
     });
 
     // ========================================
-    // ACTUALIZACIÓN EN TIEMPO REAL
+    // CONTADORES
     // ========================================
     $('#asunto').on('input', function() {
         updateCharCounters();
@@ -1137,22 +1020,7 @@ $(document).ready(function() {
         
         $('#asuntoCount').text(asuntoLength);
         $('#mensajeCount').text(mensajeLength);
-        
-        // Cambiar color según límite
-        if (asuntoLength > 200) {
-            $('#asuntoCount').parent().addClass('warning');
-        } else {
-            $('#asuntoCount').parent().removeClass('warning');
-        }
-        
-        if (mensajeLength > 4500) {
-            $('#mensajeCount').parent().addClass('warning');
-        } else {
-            $('#mensajeCount').parent().removeClass('warning');
-        }
     }
-
-
 
     // ========================================
     // ACTUALIZAR PASOS
@@ -1161,18 +1029,12 @@ $(document).ready(function() {
         const clientesOk = selectedClientes.length > 0;
         const plantillaOk = plantillaSeleccionada !== null;
         const asuntoOk = $('#asunto').val().trim() !== '';
-        const mensajeOk = $('#mensaje').val().trim() !== '';
-        const mensajeCompleto = asuntoOk && mensajeOk;
+        const mensajeOk = !$('#mensaje').summernote('isEmpty');
         
-        // Paso 1: Clientes
-        $('#paso1')
-            .toggleClass('completed', clientesOk)
-            .toggleClass('active', !clientesOk);
-        
-        // Paso 2: Plantilla - Mostrar solo si hay clientes seleccionados
-        $('#paso2')
-            .toggleClass('completed', plantillaOk)
-            .toggleClass('active', clientesOk && !plantillaOk);
+        $('#paso1').toggleClass('completed', clientesOk).toggleClass('active', !clientesOk);
+        $('#paso2').toggleClass('completed', plantillaOk).toggleClass('active', clientesOk && !plantillaOk);
+        $('#paso3').toggleClass('completed', asuntoOk && mensajeOk).toggleClass('active', plantillaOk && !(asuntoOk && mensajeOk));
+        $('#paso4').toggleClass('completed', clientesOk && plantillaOk && asuntoOk && mensajeOk).toggleClass('active', asuntoOk && mensajeOk);
         
         if (clientesOk) {
             $('#seccionPlantillas').slideDown(300);
@@ -1182,12 +1044,6 @@ $(document).ready(function() {
             $('#seccionEnviar').slideUp(300);
         }
         
-        // Paso 3: Mensaje - Mostrar solo si hay plantilla seleccionada
-        const mensajeOkReal = !$('#mensaje').summernote('isEmpty') && $('.note-editable').text().trim().length >= 10;
-        $('#paso3')
-            .toggleClass('completed', asuntoOk && mensajeOkReal)
-            .toggleClass('active', plantillaOk && !(asuntoOk && mensajeOkReal));
-        
         if (plantillaOk) {
             $('#seccionMensaje').slideDown(300);
         } else {
@@ -1195,12 +1051,7 @@ $(document).ready(function() {
             $('#seccionEnviar').slideUp(300);
         }
         
-        // Paso 4: Enviar - Mostrar solo si el mensaje está completo
-        $('#paso4')
-            .toggleClass('completed', clientesOk && plantillaOk && mensajeCompleto)
-            .toggleClass('active', mensajeCompleto);
-        
-        if (mensajeCompleto && clientesOk && plantillaOk) {
+        if (asuntoOk && mensajeOk && clientesOk && plantillaOk) {
             $('#seccionEnviar').slideDown(300);
         } else {
             $('#seccionEnviar').slideUp(300);
@@ -1208,61 +1059,18 @@ $(document).ready(function() {
     }
 
     // ========================================
-    // VALIDACIÓN DEL FORMULARIO
+    // VALIDACIÓN
     // ========================================
     function validarFormulario() {
-        const errores = [];
+        const clientesOk = selectedClientes.length > 0;
+        const asuntoOk = $('#asunto').val().trim().length >= 5;
+        const mensajeOk = !$('#mensaje').summernote('isEmpty') && $('.note-editable').text().trim().length >= 10;
         
-        // Validar clientes
-        if (selectedClientes.length === 0) {
-            errores.push('Selecciona al menos un cliente');
-            $('#seleccionInfo').addClass('is-invalid');
-        } else {
-            $('#seleccionInfo').removeClass('is-invalid');
-        }
-        
-        // Validar asunto
-        const asunto = $('#asunto').val().trim();
-        if (asunto === '') {
-            errores.push('El asunto es obligatorio');
-            $('#asunto').addClass('is-invalid').removeClass('is-valid');
-            $('#asunto').siblings('.invalid-feedback').text('El asunto es obligatorio');
-        } else if (asunto.length < 5) {
-            errores.push('El asunto debe tener al menos 5 caracteres');
-            $('#asunto').addClass('is-invalid').removeClass('is-valid');
-            $('#asunto').siblings('.invalid-feedback').text('Debe tener al menos 5 caracteres');
-        } else {
-            $('#asunto').removeClass('is-invalid').addClass('is-valid');
-        }
-        
-        // Validar mensaje
-        const mensajeEmpty = $('#mensaje').summernote('isEmpty');
-        const mensajeText = $('.note-editable').text().trim();
-        if (mensajeEmpty || mensajeText === '') {
-            errores.push('El mensaje es obligatorio');
-            $('.note-editor').addClass('is-invalid').removeClass('is-valid');
-            $('#mensaje').siblings('.invalid-feedback').text('El mensaje es obligatorio');
-        } else if (mensajeText.length < 10) {
-            errores.push('El mensaje debe tener al menos 10 caracteres');
-            $('.note-editor').addClass('is-invalid').removeClass('is-valid');
-            $('#mensaje').siblings('.invalid-feedback').text('Debe tener al menos 10 caracteres');
-        } else {
-            $('.note-editor').removeClass('is-invalid').addClass('is-valid');
-        }
-        
-        // Mostrar/ocultar alerta
-        if (errores.length > 0) {
-            $('#listaValidacion').html(errores.map(e => `<li>${e}</li>`).join(''));
-            $('#alertValidacion').addClass('show');
-            $('#btnEnviar').prop('disabled', true);
-        } else {
-            $('#alertValidacion').removeClass('show');
-            $('#btnEnviar').prop('disabled', false);
-        }
+        $('#btnEnviar').prop('disabled', !(clientesOk && asuntoOk && mensajeOk));
     }
 
     // ========================================
-    // ENVÍO DEL FORMULARIO
+    // ENVÍO
     // ========================================
     $('#comunicadoForm').submit(function(e) {
         e.preventDefault();
@@ -1277,14 +1085,12 @@ $(document).ready(function() {
             return;
         }
         
-        const mensajePreview = $('.note-editable').text().substring(0, 100);
         Swal.fire({
             title: '¿Enviar notificación?',
             html: `
                 <div style="text-align: left; padding: 20px;">
                     <p><strong>📧 Destinatarios:</strong> ${selectedClientes.length} clientes</p>
-                    <p><strong>📝 Asunto:</strong> ${$('#asunto').val().substring(0, 60)}${$('#asunto').val().length > 60 ? '...' : ''}</p>
-                    <p><strong>💬 Mensaje:</strong> ${mensajePreview}${mensajePreview.length > 100 ? '...' : ''}</p>
+                    <p><strong>📝 Asunto:</strong> ${$('#asunto').val().substring(0, 60)}</p>
                 </div>
             `,
             icon: 'question',
@@ -1292,25 +1098,18 @@ $(document).ready(function() {
             confirmButtonColor: '#00bf8e',
             cancelButtonColor: '#6c757d',
             confirmButtonText: '<i class="fas fa-paper-plane"></i> Sí, enviar ahora',
-            cancelButtonText: 'Cancelar',
-            showLoaderOnConfirm: true,
-            preConfirm: () => {
-                return true;
-            }
+            cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Mostrar loading
                 Swal.fire({
                     title: 'Enviando...',
                     html: 'Por favor espera mientras se envían las notificaciones',
                     allowOutsideClick: false,
-                    allowEscapeKey: false,
                     didOpen: () => {
                         Swal.showLoading();
                     }
                 });
                 
-                // Enviar formulario
                 this.submit();
             }
         });
