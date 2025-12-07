@@ -566,8 +566,9 @@ class NotificacionController extends Controller
             ->whereNotIn('id', $clientesConInscripcion)
             ->count();
 
-        // Obtener plantillas desde la base de datos
+        // Obtener plantillas desde la base de datos (excluimos notificacion_manual)
         $plantillas = TipoNotificacion::where('activo', true)
+            ->where('codigo', '!=', 'notificacion_manual')
             ->orderBy('nombre')
             ->get(['id', 'codigo', 'nombre', 'asunto_email', 'plantilla_email']);
 

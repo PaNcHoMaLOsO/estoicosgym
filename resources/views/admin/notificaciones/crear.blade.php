@@ -4,9 +4,15 @@
 
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
 <style>
+    /* Reset y base */
+    * {
+        box-sizing: border-box;
+    }
+
     .content-wrapper {
-        background: #f8f9fa !important;
+        background: #f4f6f9 !important;
     }
 
     :root {
@@ -25,63 +31,80 @@
 
     /* Header */
     .page-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        box-shadow: 0 3px 15px rgba(26, 26, 46, 0.15);
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        margin-bottom: 24px;
     }
 
     .page-header h1 {
         margin: 0;
         font-weight: 700;
-        font-size: 1.3rem;
+        font-size: 1.75rem;
+        color: #2c3e50;
     }
 
     .page-header h1 i {
         color: var(--accent);
-        margin-right: 8px;
+        margin-right: 12px;
     }
 
     .page-header p {
-        margin: 5px 0 0;
-        opacity: 0.9;
-        font-size: 0.85rem;
+        margin: 8px 0 0;
+        color: #7f8c8d;
+        font-size: 0.95rem;
+    }
+
+    /* Main Container - Asegurar que esté sobre el sidebar */
+    .content {
+        position: relative;
+        z-index: 100 !important;
     }
 
     /* Cards */
     .main-card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
-        overflow: hidden;
-        margin-bottom: 15px;
-        border: 1px solid var(--gray-200);
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+        border: 1px solid #e9ecef;
+        overflow: visible;
+        width: 100%;
+        max-width: 100%;
     }
 
     .main-card-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
         color: white;
-        padding: 12px 15px;
+        padding: 16px 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-radius: 16px 16px 0 0;
     }
 
     .main-card-header h3 {
         margin: 0;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
     }
 
     .main-card-header h3 i {
         color: var(--accent);
-        margin-right: 6px;
+        margin-right: 8px;
     }
 
     .main-card-body {
-        padding: 15px;
+        padding: 24px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Paso 3 - Sin vista previa */
+    #seccionMensaje {
+        margin-bottom: 20px;
     }
 
     /* Indicador de pasos */
@@ -248,6 +271,40 @@
         overflow: hidden;
     }
 
+    /* Arreglar tamaño del selector de registros */
+    .dataTables_length select {
+        padding: 4px 8px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin: 0 8px;
+        min-width: 60px;
+        background: white;
+    }
+
+    .dataTables_length label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dataTables_filter label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--gray-600);
+    }
+
+    .dataTables_filter input {
+        padding: 6px 12px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-left: 8px;
+    }
+
     .tabla-clientes thead th {
         background: var(--gray-100);
         border-bottom: 2px solid var(--gray-200);
@@ -310,21 +367,23 @@
 
     /* Plantillas */
     .plantillas-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: flex-start;
     }
 
     .plantilla-card {
         background: white;
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 8px 6px;
+        border-radius: 12px;
+        padding: 15px 20px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+        min-width: 140px;
+        flex: 0 0 auto;
     }
 
     .plantilla-card:hover {
@@ -342,14 +401,14 @@
     }
 
     .plantilla-icon {
-        width: 35px;
-        height: 35px;
+        width: 45px;
+        height: 45px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 6px;
-        font-size: 1.1rem;
+        margin: 0 auto 10px;
+        font-size: 1.3rem;
         transition: all 0.3s ease;
         background: var(--gray-100);
     }
@@ -357,11 +416,12 @@
     .plantilla-card.selected .plantilla-icon {
         background: rgba(255,255,255,0.25);
         color: white;
+        transform: scale(1.1);
     }
 
     .plantilla-nombre {
         font-weight: 600;
-        font-size: 0.7rem;
+        font-size: 0.85rem;
         line-height: 1.2;
     }
 
@@ -390,6 +450,34 @@
     .form-control:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+    }
+
+    /* Summernote customization */
+    .note-editor.note-frame {
+        border: 2px solid var(--gray-200);
+        border-radius: 8px;
+    }
+
+    .note-editor.note-frame.focused {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+    }
+
+    .note-toolbar {
+        background: var(--gray-100) !important;
+        border-bottom: 2px solid var(--gray-200) !important;
+    }
+
+    .note-btn-group .note-btn {
+        background: white !important;
+        border: 1px solid var(--gray-200) !important;
+        color: var(--gray-800) !important;
+    }
+
+    .note-btn-group .note-btn:hover {
+        background: var(--accent) !important;
+        color: white !important;
+        border-color: var(--accent) !important;
     }
 
     .form-control.is-invalid {
@@ -448,39 +536,7 @@
         transform: scale(1.05);
     }
 
-    /* Vista previa */
-    .preview-card {
-        background: var(--gray-100);
-        border: 2px dashed var(--gray-200);
-        border-radius: 8px;
-        padding: 12px;
-    }
 
-    .preview-header {
-        text-align: center;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--gray-200);
-        margin-bottom: 10px;
-        font-size: 0.85rem;
-    }
-
-    .preview-logo {
-        max-width: 120px;
-        height: auto;
-    }
-
-    .preview-body h5 {
-        color: var(--primary);
-        font-weight: 700;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
-    }
-
-    .preview-body {
-        font-size: 0.8rem;
-        line-height: 1.5;
-        color: var(--gray-600);
-    }
 
     /* Botones */
     .btn-enviar {
@@ -597,19 +653,17 @@
         <input type="hidden" name="cliente_ids" id="clienteIdsInput" value="">
         <input type="hidden" name="plantilla_id" id="plantillaIdInput" value="">
 
-        <div class="row">
-            {{-- Columna Izquierda: Clientes --}}
-            <div class="col-lg-7 mb-4">
-                <div class="main-card">
-                    <div class="main-card-header">
-                        <h3><i class="fas fa-users"></i> Seleccionar Destinatarios</h3>
-                        <button type="button" class="btn btn-sm btn-light" id="btnSeleccionarTodos">
-                            <i class="fas fa-check-double"></i> Todos los visibles
-                        </button>
-                    </div>
-                    <div class="main-card-body">
-                        {{-- Filtros rápidos --}}
-                        <div class="filtros-rapidos">
+        {{-- PASO 1: DESTINATARIOS --}}
+        <div class="main-card mb-4">
+            <div class="main-card-header">
+                <h3><i class="fas fa-users"></i> 1. Seleccionar Destinatarios</h3>
+                <button type="button" class="btn btn-sm btn-light" id="btnSeleccionarTodos">
+                    <i class="fas fa-check-double"></i> Todos los visibles
+                </button>
+            </div>
+            <div class="main-card-body">
+                {{-- Filtros rápidos --}}
+                <div class="filtros-rapidos">
                             <button type="button" class="filtro-btn active" data-filtro="todos">
                                 <i class="fas fa-users"></i> Todos
                                 <span class="badge badge-secondary">{{ $totalClientes ?? 0 }}</span>
@@ -729,16 +783,15 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            {{-- Columna Derecha: Plantilla y Mensaje --}}
-            <div class="col-lg-5 mb-4">
-                {{-- Plantillas --}}
-                <div class="main-card mb-4">
-                    <div class="main-card-header">
-                        <h3><i class="fas fa-file-alt"></i> Seleccionar Plantilla</h3>
-                    </div>
-                    <div class="main-card-body">
-                        <div class="plantillas-grid">
+        {{-- PASO 2: PLANTILLAS --}}
+        <div class="main-card mb-4" id="seccionPlantillas" style="display:none;">
+            <div class="main-card-header">
+                <h3><i class="fas fa-file-alt"></i> 2. Seleccionar Plantilla</h3>
+            </div>
+            <div class="main-card-body">
+                <div class="plantillas-grid">
                             @foreach($plantillas as $plantilla)
                             <div class="plantilla-card" 
                                  data-id="{{ $plantilla->id }}"
@@ -781,80 +834,62 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                {{-- Editor de Mensaje --}}
-                <div class="main-card">
-                    <div class="main-card-header">
-                        <h3><i class="fas fa-edit"></i> Componer Mensaje</h3>
+        {{-- PASO 3: COMPONER MENSAJE --}}
+        <div class="main-card mb-4" id="seccionMensaje" style="display:none;">
+            {{-- Editor de Mensaje --}}
+                <div class="main-card-header">
+                    <h3><i class="fas fa-edit"></i> 3. Componer Mensaje</h3>
+                </div>
+                <div class="main-card-body">
+                    <div class="form-group">
+                        <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="asunto" 
+                               name="asunto" 
+                               placeholder="Ej: ¡Promoción especial para ti!"
+                               maxlength="255"
+                               required>
+                        <div class="char-counter">
+                            <span id="asuntoCount">0</span>/255 caracteres
+                        </div>
+                        <div class="invalid-feedback"></div>
                     </div>
-                    <div class="main-card-body">
-                        <div class="form-group">
-                            <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="asunto" 
-                                   name="asunto" 
-                                   placeholder="Ej: ¡Promoción especial para ti!"
-                                   maxlength="255"
-                                   required>
-                            <div class="char-counter">
-                                <span id="asuntoCount">0</span>/255 caracteres
-                            </div>
-                            <div class="invalid-feedback"></div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> Mensaje *</label>
+                        <textarea class="form-control" 
+                                  id="mensaje" 
+                                  name="mensaje" 
+                                  placeholder="Escribe tu mensaje aquí..."
+                                  required></textarea>
+                        <div class="char-counter">
+                            <span id="mensajeCount">0</span>/5000 caracteres
                         </div>
                         
-                        <div class="form-group">
-                            <label><i class="fas fa-align-left"></i> Mensaje *</label>
-                            <textarea class="form-control" 
-                                      id="mensaje" 
-                                      name="mensaje" 
-                                      rows="10"
-                                      placeholder="Escribe tu mensaje aquí..."
-                                      maxlength="5000"
-                                      required></textarea>
-                            <div class="char-counter">
-                                <span id="mensajeCount">0</span>/5000 caracteres
-                            </div>
-                            
-                            <div class="variables-rapidas">
-                                <small class="text-muted d-block mb-2"><i class="fas fa-magic"></i> Insertar variable:</small>
-                                <span class="variable-btn" data-var="{nombre}">📛 Nombre</span>
-                                <span class="variable-btn" data-var="{email}">📧 Correo</span>
-                                <span class="variable-btn" data-var="{membresia}">🏋️ Membresía</span>
-                            </div>
-                            <div class="invalid-feedback"></div>
+                        <div class="variables-rapidas">
+                            <small class="text-muted d-block mb-2"><i class="fas fa-magic"></i> Insertar variable:</small>
+                            <span class="variable-btn" data-var="{nombre}">📛 Nombre</span>
+                            <span class="variable-btn" data-var="{email}">📧 Correo</span>
+                            <span class="variable-btn" data-var="{membresia}">🏋️ Membresía</span>
                         </div>
-
-                        {{-- Vista Previa --}}
-                        <div class="mt-4">
-                            <label class="mb-2"><i class="fas fa-eye"></i> Vista Previa</label>
-                            <div class="preview-card">
-                                <div style="background: #000000; padding: 12px; text-align: center; border-radius: 8px 8px 0 0; margin: -12px -12px 10px -12px;">
-                                    <strong style="font-size: 1.2rem;">
-                                        <span style="color: #ffffff;">PRO</span><span style="color: #e94560;">GYM</span>
-                                    </strong>
-                                </div>
-                                <div class="preview-body">
-                                    <h5 id="previewAsunto">Asunto del correo...</h5>
-                                    <div id="previewMensaje">
-                                        El mensaje aparecerá aquí...
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Botón Enviar --}}
-                        <div class="mt-4 text-center">
-                            <button type="submit" class="btn btn-enviar btn-lg" id="btnEnviar" disabled>
-                                <i class="fas fa-paper-plane"></i> Enviar a <span id="btnCount">0</span> clientes
-                            </button>
-                            <p class="text-muted mt-2 mb-0">
-                                <small><i class="fas fa-info-circle"></i> Los correos se enviarán inmediatamente</small>
-                            </p>
-                        </div>
+                        <div class="invalid-feedback"></div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        {{-- PASO 4: ENVIAR --}}
+        <div class="text-center mb-4" id="seccionEnviar" style="display:none;">
+            <button type="submit" class="btn btn-enviar btn-lg" id="btnEnviar" disabled>
+                <i class="fas fa-paper-plane"></i> 4. Enviar a <span id="btnCount">0</span> clientes
+            </button>
+            <p class="text-muted mt-2 mb-0">
+                <small><i class="fas fa-info-circle"></i> Los correos se enviarán inmediatamente</small>
+            </p>
         </div>
     </form>
 @stop
@@ -863,10 +898,56 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/lang/summernote-es-ES.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Inicializar Summernote
+    $('#mensaje').summernote({
+        height: 350,
+        lang: 'es-ES',
+        toolbar: [
+            ['style', ['style']],
+            ['font', ['bold', 'italic', 'underline', 'clear']],
+            ['fontname', ['fontname']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link']],
+            ['view', ['codeview', 'help']]
+        ],
+        styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+        fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 'Helvetica', 'Impact', 'Tahoma', 'Times New Roman', 'Verdana'],
+        placeholder: 'Escribe tu mensaje aquí... Puedes usar formato HTML',
+        callbacks: {
+            onChange: function(contents, $editable) {
+                // Actualizar contador y preview en tiempo real
+                const textLength = $editable.text().length;
+                $('#mensajeCount').text(textLength);
+                
+                // Cambiar color según límite
+                if (textLength > 4500) {
+                    $('#mensajeCount').parent().addClass('warning');
+                } else {
+                    $('#mensajeCount').parent().removeClass('warning');
+                }
+                
+                validarFormulario();
+            },
+            onPaste: function(e) {
+                // Permitir pegar HTML sin problemas
+                const bufferText = ((e.originalEvent || e).clipboardData || window.clipboardData).getData('text/html');
+                e.preventDefault();
+                
+                // Limpiar y sanitizar el HTML pegado
+                const cleanHtml = bufferText.replace(/<(script|iframe|object|embed)[^>]*>.*?<\/\1>/gi, '');
+                document.execCommand('insertHTML', false, cleanHtml);
+            }
+        }
+    });
     // Inicializar DataTable
     const tabla = $('#tablaClientes').DataTable({
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
         language: {
             "processing": "Procesando...",
             "lengthMenu": "Mostrar _MENU_ registros",
@@ -943,17 +1024,47 @@ $(document).ready(function() {
 
     $('#checkAll').change(function() {
         const isChecked = $(this).is(':checked');
+        // Solo selecciona los visibles en la página actual
         $('#tablaClientes tbody tr:visible .cliente-check').each(function() {
             $(this).prop('checked', isChecked).trigger('change');
         });
     });
 
     $('#btnSeleccionarTodos').click(function() {
-        $('#tablaClientes tbody tr:visible .cliente-check').each(function() {
-            if (!$(this).is(':checked')) {
-                $(this).prop('checked', true).trigger('change');
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Seleccionando...');
+        
+        // Selecciona TODOS los clientes (todas las páginas)
+        let countSeleccionados = 0;
+        tabla.rows().every(function() {
+            const row = this.node();
+            const checkbox = $(row).find('.cliente-check');
+            if (checkbox.length && !checkbox.is(':checked')) {
+                const id = parseInt(checkbox.val());
+                const nombre = checkbox.data('nombre');
+                const email = checkbox.data('email');
+                if (!selectedClientes.find(c => c.id === id)) {
+                    selectedClientes.push({ id, nombre, email });
+                    countSeleccionados++;
+                }
+                checkbox.prop('checked', true);
             }
         });
+        
+        setTimeout(() => {
+            updateSeleccion();
+            $btn.prop('disabled', false).html('<i class="fas fa-check-double"></i> Todos los visibles');
+            
+            if (countSeleccionados > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Seleccionados!',
+                    text: `Se seleccionaron ${countSeleccionados} clientes adicionales de todas las páginas`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }, 100);
     });
 
     $('#btnLimpiarSeleccion').click(function() {
@@ -996,10 +1107,9 @@ $(document).ready(function() {
         
         $('#plantillaIdInput').val(plantillaSeleccionada.id);
         $('#asunto').val(plantillaSeleccionada.asunto);
-        $('#mensaje').val(plantillaSeleccionada.contenido);
+        $('#mensaje').summernote('code', plantillaSeleccionada.contenido);
         
         updateCharCounters();
-        updatePreview();
         updatePasos();
         validarFormulario();
     });
@@ -1009,30 +1119,21 @@ $(document).ready(function() {
     // ========================================
     $('.variable-btn').click(function() {
         const variable = $(this).data('var');
-        const textarea = document.getElementById('mensaje');
-        const cursorPos = textarea.selectionStart;
-        const textBefore = textarea.value.substring(0, cursorPos);
-        const textAfter = textarea.value.substring(cursorPos);
-        textarea.value = textBefore + variable + textAfter;
-        textarea.focus();
-        textarea.setSelectionRange(cursorPos + variable.length, cursorPos + variable.length);
-        updateCharCounters();
-        updatePreview();
-        validarFormulario();
+        $('#mensaje').summernote('insertText', variable);
+        $('#mensaje').summernote('focus');
     });
 
     // ========================================
     // ACTUALIZACIÓN EN TIEMPO REAL
     // ========================================
-    $('#asunto, #mensaje').on('input', function() {
+    $('#asunto').on('input', function() {
         updateCharCounters();
-        updatePreview();
         validarFormulario();
     });
 
     function updateCharCounters() {
         const asuntoLength = $('#asunto').val().length;
-        const mensajeLength = $('#mensaje').val().length;
+        const mensajeLength = $('#mensaje').summernote('isEmpty') ? 0 : $('.note-editable').text().length;
         
         $('#asuntoCount').text(asuntoLength);
         $('#mensajeCount').text(mensajeLength);
@@ -1051,26 +1152,7 @@ $(document).ready(function() {
         }
     }
 
-    function updatePreview() {
-        let asunto = $('#asunto').val() || 'Asunto del correo...';
-        let mensaje = $('#mensaje').val() || 'El mensaje aparecerá aquí...';
-        
-        // Reemplazar variables con ejemplo
-        const nombreEjemplo = selectedClientes.length > 0 ? selectedClientes[0].nombre : 'Juan Pérez';
-        const emailEjemplo = selectedClientes.length > 0 ? selectedClientes[0].email : 'juan@ejemplo.com';
-        
-        mensaje = mensaje.replace(/\{nombre\}/g, nombreEjemplo);
-        mensaje = mensaje.replace(/\{email\}/g, emailEjemplo);
-        mensaje = mensaje.replace(/\{membresia\}/g, 'Mensual Premium');
-        
-        asunto = asunto.replace(/\{nombre\}/g, nombreEjemplo);
-        
-        // Convertir saltos de línea a <br> para HTML
-        const mensajeHtml = mensaje.replace(/\n/g, '<br>');
-        
-        $('#previewAsunto').text(asunto);
-        $('#previewMensaje').html(mensajeHtml);
-    }
+
 
     // ========================================
     // ACTUALIZAR PASOS
@@ -1087,20 +1169,42 @@ $(document).ready(function() {
             .toggleClass('completed', clientesOk)
             .toggleClass('active', !clientesOk);
         
-        // Paso 2: Plantilla
+        // Paso 2: Plantilla - Mostrar solo si hay clientes seleccionados
         $('#paso2')
             .toggleClass('completed', plantillaOk)
             .toggleClass('active', clientesOk && !plantillaOk);
         
-        // Paso 3: Mensaje
-        $('#paso3')
-            .toggleClass('completed', mensajeCompleto)
-            .toggleClass('active', plantillaOk && !mensajeCompleto);
+        if (clientesOk) {
+            $('#seccionPlantillas').slideDown(300);
+        } else {
+            $('#seccionPlantillas').slideUp(300);
+            $('#seccionMensaje').slideUp(300);
+            $('#seccionEnviar').slideUp(300);
+        }
         
-        // Paso 4: Enviar
+        // Paso 3: Mensaje - Mostrar solo si hay plantilla seleccionada
+        const mensajeOkReal = !$('#mensaje').summernote('isEmpty') && $('.note-editable').text().trim().length >= 10;
+        $('#paso3')
+            .toggleClass('completed', asuntoOk && mensajeOkReal)
+            .toggleClass('active', plantillaOk && !(asuntoOk && mensajeOkReal));
+        
+        if (plantillaOk) {
+            $('#seccionMensaje').slideDown(300);
+        } else {
+            $('#seccionMensaje').slideUp(300);
+            $('#seccionEnviar').slideUp(300);
+        }
+        
+        // Paso 4: Enviar - Mostrar solo si el mensaje está completo
         $('#paso4')
             .toggleClass('completed', clientesOk && plantillaOk && mensajeCompleto)
             .toggleClass('active', mensajeCompleto);
+        
+        if (mensajeCompleto && clientesOk && plantillaOk) {
+            $('#seccionEnviar').slideDown(300);
+        } else {
+            $('#seccionEnviar').slideUp(300);
+        }
     }
 
     // ========================================
@@ -1132,17 +1236,18 @@ $(document).ready(function() {
         }
         
         // Validar mensaje
-        const mensaje = $('#mensaje').val().trim();
-        if (mensaje === '') {
+        const mensajeEmpty = $('#mensaje').summernote('isEmpty');
+        const mensajeText = $('.note-editable').text().trim();
+        if (mensajeEmpty || mensajeText === '') {
             errores.push('El mensaje es obligatorio');
-            $('#mensaje').addClass('is-invalid').removeClass('is-valid');
+            $('.note-editor').addClass('is-invalid').removeClass('is-valid');
             $('#mensaje').siblings('.invalid-feedback').text('El mensaje es obligatorio');
-        } else if (mensaje.length < 10) {
+        } else if (mensajeText.length < 10) {
             errores.push('El mensaje debe tener al menos 10 caracteres');
-            $('#mensaje').addClass('is-invalid').removeClass('is-valid');
+            $('.note-editor').addClass('is-invalid').removeClass('is-valid');
             $('#mensaje').siblings('.invalid-feedback').text('Debe tener al menos 10 caracteres');
         } else {
-            $('#mensaje').removeClass('is-invalid').addClass('is-valid');
+            $('.note-editor').removeClass('is-invalid').addClass('is-valid');
         }
         
         // Mostrar/ocultar alerta
@@ -1172,13 +1277,14 @@ $(document).ready(function() {
             return;
         }
         
+        const mensajePreview = $('.note-editable').text().substring(0, 100);
         Swal.fire({
             title: '¿Enviar notificación?',
             html: `
                 <div style="text-align: left; padding: 20px;">
                     <p><strong>📧 Destinatarios:</strong> ${selectedClientes.length} clientes</p>
                     <p><strong>📝 Asunto:</strong> ${$('#asunto').val().substring(0, 60)}${$('#asunto').val().length > 60 ? '...' : ''}</p>
-                    <p><strong>💬 Mensaje:</strong> ${$('#mensaje').val().substring(0, 100)}${$('#mensaje').val().length > 100 ? '...' : ''}</p>
+                    <p><strong>💬 Mensaje:</strong> ${mensajePreview}${mensajePreview.length > 100 ? '...' : ''}</p>
                 </div>
             `,
             icon: 'question',
@@ -1212,7 +1318,6 @@ $(document).ready(function() {
 
     // Inicializar
     updateCharCounters();
-    updatePreview();
     validarFormulario();
 });
 </script>

@@ -713,16 +713,6 @@
         <div>
             <h1><i class="fas fa-bell"></i> Notificaciones</h1>
         </div>
-        <div class="header-actions">
-            <a href="{{ route('admin.notificaciones.crear') }}" class="btn-header btn-header-primary">
-                <i class="fas fa-plus-circle"></i>
-                Nueva Notificación
-            </a>
-            <a href="{{ route('admin.notificaciones.plantillas') }}" class="btn-header btn-header-secondary">
-                <i class="fas fa-cog"></i>
-                Configurar
-            </a>
-        </div>
     </div>
 
     {{-- Alertas --}}
