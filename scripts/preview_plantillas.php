@@ -1,4 +1,4 @@
-<?php
+v <?php
 
 /**
  * PREVIEW DE PLANTILLAS DE EMAIL
@@ -52,14 +52,14 @@ $datosPrueba = [
 // Plantillas a procesar
 $plantillas = [
     '01_bienvenida.html' => 'Bienvenida',
-    '05_pago_completado.html' => 'Pago Completado',
-    '06_membresia_por_vencer.html' => 'Membresía por Vencer',
-    '07_membresia_vencida.html' => 'Membresía Vencida',
-    '09_pausa_inscripcion.html' => 'Pausa Inscripción',
-    '10_activacion_inscripcion.html' => 'Activación Inscripción',
-    '11_pago_pendiente.html' => 'Pago Pendiente',
-    '12_renovacion.html' => 'Renovación',
-    '13_confirmacion_tutor_legal.html' => 'Confirmación Tutor Legal',
+    '02_pago_completado.html' => 'Pago Completado',
+    '03_membresia_por_vencer.html' => 'Membresía por Vencer',
+    '04_membresia_vencida.html' => 'Membresía Vencida',
+    '05_pausa_inscripcion.html' => 'Pausa Inscripción',
+    '06_activacion_inscripcion.html' => 'Activación Inscripción',
+    '07_pago_pendiente.html' => 'Pago Pendiente',
+    '08_renovacion.html' => 'Renovación',
+    '09_confirmacion_tutor_legal.html' => 'Confirmación Tutor Legal',
 ];
 
 $carpetaPreview = storage_path('app/test_emails/preview');
