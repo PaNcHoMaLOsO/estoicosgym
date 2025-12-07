@@ -4,6 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * MIGRACIÓN CONSOLIDADA: pagos
+ * 
+ * Incluye:
+ * - Estructura original de pagos
+ * - Índice compuesto [fecha_pago, id_estado] (de add_optimization_indexes)
+ * 
+ * NOTA: Los índices individuales ya estaban en la original
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -20,7 +29,7 @@ return new class extends Migration
 
             $table->date('fecha_pago');
             $table->unsignedBigInteger('id_metodo_pago')->nullable();
-            $table->unsignedInteger('id_estado')->comment('Estado: 200=Pendiente, 201=Pagado, 202=Parcial');
+            $table->unsignedInteger('id_estado')->comment('Estado: 200=Pendiente, 201=Pagado, 202=Parcial, 205=Traspasado');
 
             $table->enum('tipo_pago', ['completo', 'parcial', 'pendiente', 'mixto'])->default('completo');
             
@@ -48,13 +57,16 @@ return new class extends Migration
             $table->foreign('id_metodo_pago2')->references('id')->on('metodos_pago')->onDelete('restrict');
             $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
-            // Índices
+            // Índices originales
             $table->index('id_cliente');
             $table->index('id_inscripcion');
             $table->index('fecha_pago');
             $table->index('id_estado');
             $table->index('referencia_pago');
             $table->index(['id_inscripcion', 'id_estado'], 'idx_pagos_inscripcion_estado');
+            
+            // ✅ CONSOLIDADO: Índice compuesto agregado de add_optimization_indexes
+            $table->index(['fecha_pago', 'id_estado']);
         });
     }
 

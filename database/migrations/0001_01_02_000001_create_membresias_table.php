@@ -4,6 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * MIGRACIÓN CONSOLIDADA: membresias
+ * 
+ * Incluye:
+ * - Estructura original
+ * - Índice 'activo' ya estaba en la original
+ * 
+ * NOTA: No hay cambios de add_optimization_indexes porque ya tenía el índice
+ */
 return new class extends Migration
 {
     public function up(): void

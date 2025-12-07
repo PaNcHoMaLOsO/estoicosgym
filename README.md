@@ -19,8 +19,9 @@ Construido con **Laravel 12**, **AdminLTE 3**, **MySQL 8** y **PHP 8.2+**
 4. [Características](#características)
 5. [Uso del Sistema](#uso-del-sistema)
 6. [Estructura del Proyecto](#estructura-del-proyecto)
-7. [Problemas Comunes](#problemas-comunes)
-8. [Soporte](#soporte)
+7. [Documentación Adicional](#documentación-adicional)
+8. [Problemas Comunes](#problemas-comunes)
+9. [Soporte](#soporte)
 
 ---
 
@@ -298,9 +299,21 @@ tail -f storage/logs/laravel.log
 
 ---
 
-## 🎉 Inicio Rápido (5 minutos)
+---
 
-Ver el archivo **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** para una instalación step-by-step más simple.
+## 📚 Documentación Adicional
+
+### Configuración de Emails
+- **[Configuración Completa de Emails](docs/CONFIGURACION_EMAILS.md)** - Setup de Sender.net, plantillas, pruebas
+- **[Coherencia de Colores](COHERENCIA_COLORES_EMAILS.md)** - Paleta de diseño para emails
+- **[Flujo de Notificaciones](FLUJO_NOTIFICACIONES_AUTOMATICAS.md)** - Cómo funcionan las notificaciones automáticas
+
+### Planes y Auditorías
+- **Planes futuros:** `docs/planes/` - Planes de consolidación y rediseño
+- **Auditorías:** `docs/auditorias/` - Validaciones y análisis de arquitectura
+
+### Scripts de Utilidad
+- **Scripts de debug:** `scripts/` - Scripts PHP para pruebas y validaciones
 
 ---
 
@@ -317,9 +330,30 @@ Ver el archivo **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** para una instalación st
 - **Licencia:** MIT
 - **Autor:** PaNcHoMaLOsO
 - **GitHub:** [@PaNcHoMaLOsO](https://github.com/PaNcHoMaLOsO)
-- **Versión:** 1.0.0 - Estado Final
-- **Última actualización:** 2025
+- **Versión:** 2.0.0
+- **Última actualización:** 6 de diciembre de 2025
 
 **Sistema en producción y completamente funcional. ¡Listo para usar!**
+
+---
+
+## 🗂️ Estructura de Documentación
+
+```
+📁 Raíz
+├── README.md                              # Este archivo
+├── COHERENCIA_COLORES_EMAILS.md           # Paleta de diseño
+├── FLUJO_NOTIFICACIONES_AUTOMATICAS.md    # Sistema automático
+│
+📁 docs/
+├── CONFIGURACION_EMAILS.md                # Guía completa de emails
+├── auditorias/                            # Validaciones y análisis
+│   ├── VALIDACION_NOTIFICACIONES.md
+│   ├── RESPUESTA_ARQUITECTURA_NOTIFICACIONES.md
+│   └── RESUMEN_IMPLEMENTACION_RENOVACION.md
+└── planes/                                # Planes futuros
+    ├── PLAN_CONSOLIDACION_MIGRACIONES.md
+    └── PLAN_REDISENO_NOTIFICACIONES.md
+```
 
 

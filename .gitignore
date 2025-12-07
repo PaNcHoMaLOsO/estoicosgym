@@ -20,3 +20,12 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Scripts temporales y de debug
+/scripts/temp/
+/scripts/output/
+
+# Carpetas antiguas (si se regeneran)
+/database/migrations_consolidadas/
+/database/seeders_consolidados/
+/database/seeders_manuales/

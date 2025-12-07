@@ -4,6 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * MIGRACIÓN CONSOLIDADA: clientes
+ * 
+ * Incluye:
+ * - Estructura original de clientes
+ * - Índice en 'email' (de add_optimization_indexes)
+ * 
+ * NOTA: Los índices en run_pasaporte, activo, id_convenio ya estaban en la original
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -39,13 +48,19 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
+            // Foreign keys
             $table->foreign('id_convenio')->references('id')->on('convenios')->onDelete('set null');
             $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('set null');
+            
+            // Índices originales
             $table->index('run_pasaporte');
             $table->index(['nombres', 'apellido_paterno']);
             $table->index('id_convenio');
             $table->index('id_estado');
             $table->index('activo');
+            
+            // ✅ CONSOLIDADO: Índice agregado de add_optimization_indexes
+            $table->index('email');
         });
     }
 

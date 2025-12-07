@@ -4,6 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * MIGRACIÓN CONSOLIDADA: users
+ * 
+ * Incluye:
+ * - Estructura original de users
+ * - Campo id_rol (de add_role_to_users_table)
+ * - Tablas: password_reset_tokens, sessions, verification_codes
+ * 
+ * IMPORTANTE: Esta migración debe ejecutarse DESPUÉS de:
+ * - create_roles_table (porque tiene FK a roles)
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -13,6 +24,10 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            
+            // ✅ CONSOLIDADO: Campo agregado de add_role_to_users_table
+            $table->unsignedBigInteger('id_rol')->default(1);
+            
             $table->string('password');
             $table->string('phone', 20)->nullable();
             $table->boolean('two_factor_enabled')->default(false);
@@ -21,6 +36,9 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+            
+            // ✅ CONSOLIDADO: FK agregada de add_role_to_users_table
+            $table->foreign('id_rol')->references('id')->on('roles')->onDelete('restrict');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -48,11 +66,9 @@ return new class extends Migration
             $table->string('phone', 20)->nullable();
             $table->boolean('is_used')->default(false);
             $table->timestamp('expires_at');
-            $table->timestamp('verified_at')->nullable();
             $table->timestamps();
             
-            $table->index(['user_id', 'type', 'is_used']);
-            $table->index('code');
+            $table->index(['user_id', 'is_used']);
             $table->index('expires_at');
         });
     }

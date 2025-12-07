@@ -19,14 +19,14 @@ class DatabaseSeeder extends Seeder
 
         // ===== DATOS BASE DEL SISTEMA =====
         $this->call([
-            RolesSeeder::class,              // 1. Primero (usuarios dependen)
-            EstadoSeeder::class,             // 2. Estados (todo depende de estos)
-            MetodoPagoSeeder::class,         // 3. Configuraciones base
-            MotivoDescuentoSeeder::class,
-            MembresiasSeeder::class,         // 4. Membresías y precios
-            PreciosMembresiasSeeder::class,
-            ConveniosSeeder::class,          // 5. Convenios
-            PlantillasProgymSeeder::class,   // 6. Plantillas PROGYM (de test_emails/)
+            RolesSeeder::class,              // 1. Roles de usuario
+            EstadoSeeder::class,             // 2. Estados (100-199 membresías, 200-299 pagos, 600-699 notificaciones)
+            MetodoPagoSeeder::class,         // 3. Métodos de pago (Efectivo, Débito, Crédito, etc.)
+            MotivoDescuentoSeeder::class,    // 4. Motivos de descuento
+            MembresiasSeeder::class,         // 5. Tipos de membresías (Anual, Semestral, Trimestral, Mensual, Diario)
+            PreciosMembresiasSeeder::class,  // 6. Precios por membresía
+            ConveniosSeeder::class,          // 7. Convenios con empresas/instituciones
+            PlantillasProgymSeeder::class,   // 8. Plantillas de email (8 plantillas: bienvenida, vencimiento, pagos, etc.)
         ]);
 
         $this->command->info('✅ Seeders base completados');
@@ -50,14 +50,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('✅ Usuarios creados');
         $this->command->newLine();
 
-        // ===== DATOS DE PRUEBA (solo desarrollo) =====
-        if (app()->environment('local', 'development')) {
-            $this->command->warn('⚙️  Entorno de desarrollo detectado');
-            
-            // Descomentar cuando necesites datos de prueba:
-            // $this->call(ClientesPruebaCompletoSeeder::class);  // 12+ escenarios completos
-            // $this->call(DatosRealistasSeeder::class);           // Datos realistas chilenos
-        }
+        // ===== NOTA: DATOS DE PRUEBA =====
+        // Los clientes se crean manualmente mediante el sistema
+        // Para pruebas específicas, usar seeders opcionales:
+        //   - ClientesPruebaCompletoSeeder (12+ escenarios)
+        //   - DatosRealistasSeeder (datos realistas chilenos)
+        // Ejecutar: php artisan db:seed --class=NombreDelSeeder
 
         $this->command->newLine();
         $this->command->info('🎉 ¡Base de datos lista!');

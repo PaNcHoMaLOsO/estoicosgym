@@ -4,6 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * MIGRACIÓN CONSOLIDADA: inscripciones
+ * 
+ * Incluye:
+ * - Estructura original de inscripciones
+ * - Índices adicionales de add_optimization_indexes:
+ *   - id_membresia
+ *   - fecha_vencimiento
+ * 
+ * NOTA: Los índices id_cliente, id_estado, [id_cliente, id_estado] ya estaban
+ */
 return new class extends Migration
 {
     public function up(): void
@@ -69,7 +80,7 @@ return new class extends Migration
             $table->foreign('id_motivo_descuento')->references('id')->on('motivos_descuento')->onDelete('set null');
             $table->foreign('id_estado')->references('codigo')->on('estados')->onDelete('restrict');
 
-            // Índices
+            // Índices originales
             $table->index('id_cliente');
             $table->index('id_estado');
             $table->index('id_inscripcion_anterior');
@@ -79,6 +90,10 @@ return new class extends Migration
             $table->index('id_cliente_original');
             $table->index(['fecha_inicio', 'fecha_vencimiento']);
             $table->index(['id_cliente', 'id_estado'], 'idx_inscripciones_cliente_estado');
+            
+            // ✅ CONSOLIDADO: Índices agregados de add_optimization_indexes
+            $table->index('id_membresia');
+            $table->index('fecha_vencimiento');
         });
     }
 
