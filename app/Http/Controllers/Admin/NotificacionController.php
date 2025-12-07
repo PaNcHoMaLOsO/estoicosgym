@@ -566,15 +566,138 @@ class NotificacionController extends Controller
             ->whereNotIn('id', $clientesConInscripcion)
             ->count();
 
-        // Obtener plantillas desde la base de datos (excluimos notificacion_manual)
-        $plantillas = TipoNotificacion::where('activo', true)
-            ->where('codigo', '!=', 'notificacion_manual')
-            ->orderBy('nombre')
-            ->get(['id', 'codigo', 'nombre', 'asunto_email', 'plantilla_email']);
+        // Plantillas personalizadas para uso manual (texto plano editable)
+        $plantillasPersonalizadas = [
+            [
+                'id' => 'horario_especial',
+                'nombre' => '📅 Horario Especial',
+                'codigo' => 'horario_especial',
+                'asunto_email' => '📅 Horario Especial - [Nombre del Día]',
+                'plantilla_email' => '🏋️ ESTOICOS GYM
+
+📅 HORARIO ESPECIAL
+
+Día: [Miércoles]
+Fecha: [16 de Julio]
+Motivo: [Día de la Virgen del Carmen]
+
+Estimado {nombre},
+
+Te informamos que el día [16 de julio] tendremos horario especial por motivo de [festividad].
+
+⏰ Horario: [9:00 AM - 6:00 PM]
+
+💰 Tarifas del Día:
+✅ Socios: GRATIS
+🎫 Pase Diario: $[5000]
+
+¡Te esperamos para seguir entrenando juntos! 💪
+
+---
+📍 [Dirección del gimnasio]
+📞 [Teléfono de contacto]
+© 2025 Estoicos Gym'
+            ],
+            [
+                'id' => 'promocion',
+                'nombre' => '🎉 Promoción Especial',
+                'codigo' => 'promocion',
+                'asunto_email' => '🎉 ¡Promoción Especial Solo para Ti!',
+                'plantilla_email' => '🏋️ ESTOICOS GYM
+¡Tu mejor versión te espera!
+
+🎉 ¡PROMOCIÓN ESPECIAL!
+Por tiempo limitado
+
+Hola {nombre},
+
+¡Tenemos una oferta increíble para ti!
+
+🎁 [30]% DE DESCUENTO
+En [membresías mensuales / inscripciones nuevas / etc.]
+
+📝 Detalles:
+[Describe aquí los detalles de la promoción. Por ejemplo: "Inscríbete este mes y obtén 30% de descuento en tu primera mensualidad. Incluye evaluación física gratuita y plan de entrenamiento personalizado."]
+
+⏰ Válido hasta: [31 de Diciembre 2025]
+
+¡No dejes pasar esta oportunidad! 🚀
+
+---
+📍 Visítanos en: [Dirección]
+📞 Contacto: [Teléfono]
+© 2025 Estoicos Gym'
+            ],
+            [
+                'id' => 'anuncio',
+                'nombre' => '📢 Anuncio Importante',
+                'codigo' => 'anuncio',
+                'asunto_email' => '📢 Anuncio Importante - Estoicos Gym',
+                'plantilla_email' => '🏋️ ESTOICOS GYM
+
+📢 ANUNCIO IMPORTANTE
+
+Estimado {nombre},
+
+[TÍTULO DEL ANUNCIO]
+
+[Escribe aquí el contenido principal del anuncio. Por ejemplo: "Queremos informarte que a partir del próximo mes renovaremos nuestras instalaciones. Durante este período habrá algunas áreas temporalmente cerradas."]
+
+ℹ️ Información adicional:
+• [Punto 1]
+• [Punto 2]
+• [Punto 3]
+
+Gracias por tu comprensión y apoyo 🙏
+
+---
+📍 Estoicos Gym
+📞 [Contacto]
+© 2025 Estoicos Gym'
+            ],
+            [
+                'id' => 'evento',
+                'nombre' => '🎊 Evento Especial',
+                'codigo' => 'evento',
+                'asunto_email' => '🎊 ¡Te invitamos a nuestro evento!',
+                'plantilla_email' => '🏋️ ESTOICOS GYM
+¡Juntos somos más fuertes!
+
+🎊 ¡EVENTO ESPECIAL!
+
+Hola {nombre},
+
+¡Tenemos un evento increíble para ti!
+
+🎯 [NOMBRE DEL EVENTO]
+
+📅 Fecha: [Sábado 15 de Enero 2025]
+⏰ Hora: [10:00 AM]
+📍 Lugar: [Estoicos Gym - Área principal]
+
+📝 Descripción:
+[Describe el evento. Ejemplo: "Únete a nuestra competencia de CrossFit. Prueba tu fuerza, resistencia y habilidades en diferentes categorías. ¡Habrá premios para los ganadores!"]
+
+🎁 ¿Qué incluye?
+• [Inscripción gratuita para socios]
+• [Refrigerio y bebidas]
+• [Premios para los primeros 3 lugares]
+• [Música en vivo]
+
+¡Confirma tu asistencia llamando al [teléfono] o respondiendo este correo!
+
+¡No te lo pierdas! 🎉
+
+---
+📍 [Dirección]
+📞 [Teléfono]
+© 2025 Estoicos Gym'
+            ]
+        ];
 
         return view('admin.notificaciones.crear', compact(
             'clientes',
-            'plantillas', 
+            'plantillasPersonalizadas', 
             'totalClientes', 
             'clientesActivos', 
             'clientesVencidos', 

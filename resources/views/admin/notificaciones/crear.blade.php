@@ -153,38 +153,40 @@
             </div>
         </div>
 
-        {{-- PASO 2: PLANTILLAS --}}
+        {{-- PASO 2: PLANTILLAS PERSONALIZADAS --}}
         <div class="card mb-4" id="seccionPlantillas" style="display:none;">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-file-alt"></i> 2. Seleccionar Plantilla</h3>
+                <p class="text-muted mb-0 mt-2"><small>Plantillas personalizadas para anuncios, promociones y eventos del gimnasio</small></p>
             </div>
             <div class="card-body">
                 <div class="row">
-                    @foreach($plantillas as $plantilla)
+                    @foreach($plantillasPersonalizadas as $plantilla)
                     <div class="col-md-3 mb-3">
                         <div class="card plantilla-card" 
-                             data-id="{{ $plantilla->id }}"
-                             data-nombre="{{ $plantilla->nombre }}"
-                             data-asunto="{{ $plantilla->asunto_email }}"
-                             data-contenido="{{ $plantilla->plantilla_email }}">
+                             data-id="{{ $plantilla['id'] }}"
+                             data-nombre="{{ $plantilla['nombre'] }}"
+                             data-asunto="{{ $plantilla['asunto_email'] }}"
+                             data-contenido="{{ htmlspecialchars($plantilla['plantilla_email']) }}">
                             <div class="card-body text-center">
-                                @switch($plantilla->codigo)
-                                    @case('membresia_por_vencer')
-                                        <i class="fas fa-clock fa-3x text-warning mb-2"></i>
+                                @switch($plantilla['codigo'])
+                                    @case('horario_especial')
+                                        <i class="fas fa-calendar-alt fa-3x mb-2" style="color: #667eea;"></i>
                                         @break
-                                    @case('membresia_vencida')
-                                        <i class="fas fa-calendar-times fa-3x text-danger mb-2"></i>
+                                    @case('promocion')
+                                        <i class="fas fa-tags fa-3x mb-2" style="color: #f5576c;"></i>
                                         @break
-                                    @case('bienvenida')
-                                        <i class="fas fa-hand-sparkles fa-3x text-success mb-2"></i>
+                                    @case('anuncio')
+                                        <i class="fas fa-bullhorn fa-3x mb-2" style="color: #fdcb6e;"></i>
                                         @break
-                                    @case('pago_pendiente')
-                                        <i class="fas fa-dollar-sign fa-3x text-info mb-2"></i>
+                                    @case('evento')
+                                        <i class="fas fa-star fa-3x mb-2" style="color: #a8edea;"></i>
                                         @break
                                     @default
                                         <i class="fas fa-envelope fa-3x text-primary mb-2"></i>
                                 @endswitch
-                                <h5>{{ $plantilla->nombre }}</h5>
+                                <h5>{{ $plantilla['nombre'] }}</h5>
+                                <small class="text-muted">{{ Str::limit($plantilla['asunto_email'], 50) }}</small>
                             </div>
                         </div>
                     </div>
