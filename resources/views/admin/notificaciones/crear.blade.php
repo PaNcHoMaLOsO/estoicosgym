@@ -613,12 +613,23 @@
 
     /* DataTables customización */
     .dataTables_length select {
-        min-width: 70px;
-        padding: 6px 30px 6px 10px;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        margin: 0 8px;
+        min-width: 80px;
+        padding: 8px 35px 8px 12px;
+        border: 2px solid #ecf0f1;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        margin: 0 10px;
+        font-weight: 600;
+        color: var(--dark);
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .dataTables_length select:focus {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
     }
 
     .dataTables_length label,
@@ -904,9 +915,37 @@ $(document).ready(function() {
 
     $('#checkAll').change(function() {
         const isChecked = $(this).is(':checked');
-        $('#tablaClientes tbody tr:visible .cliente-check').each(function() {
-            $(this).prop('checked', isChecked).trigger('change');
-        });
+        
+        if (isChecked) {
+            // Seleccionar TODOS los registros (todas las páginas)
+            tabla.rows({ search: 'applied' }).every(function() {
+                const row = this.node();
+                const checkbox = $(row).find('.cliente-check');
+                
+                if (checkbox.length) {
+                    const id = parseInt(checkbox.val());
+                    const nombre = checkbox.data('nombre');
+                    const email = checkbox.data('email');
+                    
+                    if (!selectedClientes.find(c => c.id === id)) {
+                        selectedClientes.push({ id, nombre, email });
+                    }
+                    checkbox.prop('checked', true);
+                }
+            });
+        } else {
+            // Deseleccionar todos
+            selectedClientes = [];
+            tabla.rows().every(function() {
+                const row = this.node();
+                const checkbox = $(row).find('.cliente-check');
+                if (checkbox.length) {
+                    checkbox.prop('checked', false);
+                }
+            });
+        }
+        
+        updateSeleccion();
     });
 
     $('#btnSeleccionarTodos').click(function() {
@@ -938,7 +977,8 @@ $(document).ready(function() {
         
         setTimeout(() => {
             updateSeleccion();
-            $btn.prop('disabled', false).html('<i class="fas fa-check-double"></i> Seleccionar todos');
+            $btn.prop('disabled', false).html('<i class="fas fa-check-double"></i> Seleccionar todos los registros');
+            $('#checkAll').prop('checked', true);
             
             Swal.fire({
                 icon: 'success',
