@@ -840,11 +840,24 @@ class NotificacionService
 
         // Intentar enviar inmediatamente
         try {
+            // 🔧 MODO TEST: En desarrollo, enviar siempre al email verificado de Resend
+            // En producción con dominio verificado, enviar al cliente real
+            $emailDestino = (config('app.env') === 'production' && config('mail.from.address') !== 'onboarding@resend.dev')
+                ? $cliente->email
+                : 'estoicosgymlosangeles@gmail.com'; // Email verificado en Resend (plan free)
+            
             $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
                 'from' => 'PROGYM <onboarding@resend.dev>',
-                'to' => [$cliente->email],
+                'to' => [$emailDestino],
                 'subject' => $notificacion->asunto,
                 'html' => $contenido,
+            ]);
+            
+            \Log::info("📧 Email bienvenida enviado", [
+                'email_destino' => $emailDestino,
+                'email_cliente_original' => $cliente->email,
+                'inscripcion_id' => $inscripcion->id,
+                'modo' => config('app.env')
             ]);
 
             // Actualizar estado a enviado
