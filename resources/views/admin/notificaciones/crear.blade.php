@@ -761,11 +761,34 @@ $(document).ready(function() {
 
         // Capturar contenido editable
         const asuntoTexto = $('#previewAsunto').text().trim();
-        const mensajeHtml = $('#previewMensaje').html();
-        const mensajeTexto = $('<div>').html(mensajeHtml).text().trim();
+        
+        // Construir HTML completo del email con estilos inline
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; background: #f4f6f9;">
+                <!-- Header -->
+                <div style="background: #000000; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
+                    <div style="font-size: 2rem; letter-spacing: 1px;">
+                        <span style="color: #ffffff; font-weight: 700;">PRO</span><span style="color: #E0001A; font-weight: 700;">GYM</span>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 13px;">Tu gimnasio de confianza</p>
+                </div>
+                
+                <!-- Contenido -->
+                <div style="background: white; padding: 30px;">
+                    ${$('#previewMensaje').html()}
+                </div>
+                
+                <!-- Footer -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 0 0 12px 12px; color: white;">
+                    <p style="margin: 4px 0; font-size: 13px;">📍 Av. Principal #123, Ciudad</p>
+                    <p style="margin: 4px 0; font-size: 13px;">📞 +56 9 1234 5678</p>
+                    <p style="opacity: 0.7; font-size: 11px; margin: 12px 0 0 0;">© 2025 Estoicos Gym</p>
+                </div>
+            </div>
+        `;
         
         $('#asunto').val(asuntoTexto);
-        $('#mensaje').val(mensajeTexto);
+        $('#mensaje').val(emailHtml);
         $('#cliente_ids').val(JSON.stringify(selectedClientes.map(c => c.id)));
 
         if (selectedClientes.length === 0) {
