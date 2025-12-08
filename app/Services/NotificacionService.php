@@ -236,6 +236,34 @@ class NotificacionService
                     $asunto = '▶️ ¡Bienvenido/a de vuelta! - PROGYM';
                     break;
 
+                case 'confirmacion_tutor_legal':
+                    // Esta notificación se envía al tutor legal cuando se registra un menor
+                    $clienteMenor = $cliente;
+                    $nombreMenor = trim($clienteMenor->nombres . ' ' . $clienteMenor->apellido_paterno);
+                    $runMenor = $clienteMenor->run_pasaporte ?? 'No especificado';
+                    $fechaNacimientoMenor = $clienteMenor->fecha_nacimiento ? Carbon::parse($clienteMenor->fecha_nacimiento)->format('d/m/Y') : 'No especificada';
+                    
+                    // Datos del tutor (ya está en $emailDestino si es menor de edad)
+                    $nombreTutor = $clienteMenor->apoderado_nombre ?? 'Tutor Legal';
+                    $runTutor = $clienteMenor->apoderado_run ?? 'No especificado';
+                    
+                    $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
+                    
+                    $datos = [
+                        'María González' => $nombreTutor,
+                        'Juanito Pérez' => $nombreMenor,
+                        '25.555.666-7' => $runMenor,
+                        '15/03/2010' => $fechaNacimientoMenor,
+                        '11.222.333-4' => $runTutor,
+                        'Trimestral' => $membresia->nombre,
+                        '06/12/2025' => Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'),
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                        '$$65.000' => $precioTotal,
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('09_confirmacion_tutor_legal.html', $datos);
+                    $asunto = '📋 Confirmación de Tutor Legal - PROGYM';
+                    break;
+
                 case TipoNotificacion::PAGO_PENDIENTE:
                     $totalPagado = $inscripcion->pagos()->sum('monto_abonado');
                     $saldoPendiente = $inscripcion->precio_final - $totalPagado;
@@ -581,6 +609,127 @@ class NotificacionService
     /**
      * Enviar notificación de bienvenida automáticamente al crear inscripción
      */
+    /**
+     * Envía notificación de confirmación al tutor legal cuando se registra un menor
+     */
+    public function enviarNotificacionTutorLegal(Inscripcion $inscripcion): array
+    {
+        // Cargar relaciones necesarias
+        $inscripcion->load(['cliente', 'membresia']);
+        $cliente = $inscripcion->cliente;
+
+        // Verificar que es menor de edad y tiene datos del tutor
+        if (!$cliente->es_menor_edad || empty($cliente->apoderado_email)) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Cliente no es menor de edad o no tiene email de apoderado'
+            ];
+        }
+
+        // Cargar plantilla
+        $rutaPlantilla = storage_path('app/test_emails/preview/09_confirmacion_tutor_legal.html');
+        if (!file_exists($rutaPlantilla)) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Plantilla de confirmación de tutor no encontrada'
+            ];
+        }
+
+        $contenido = file_get_contents($rutaPlantilla);
+
+        // Extraer solo el body
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
+            $contenido = $matches[1];
+        }
+
+        // Preparar datos dinámicos
+        $nombreMenor = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
+        $runMenor = $cliente->run_pasaporte ?? 'No especificado';
+        $fechaNacimientoMenor = $cliente->fecha_nacimiento ? Carbon::parse($cliente->fecha_nacimiento)->format('d/m/Y') : 'No especificada';
+        $nombreTutor = $cliente->apoderado_nombre ?? 'Tutor Legal';
+        $runTutor = $cliente->apoderado_run ?? 'No especificado';
+        $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
+
+        // Reemplazar variables
+        $contenido = str_replace('María González', $nombreTutor, $contenido);
+        $contenido = str_replace('Juanito Pérez', $nombreMenor, $contenido);
+        $contenido = str_replace('25.555.666-7', $runMenor, $contenido);
+        $contenido = str_replace('15/03/2010', $fechaNacimientoMenor, $contenido);
+        $contenido = str_replace('11.222.333-4', $runTutor, $contenido);
+        $contenido = str_replace('Trimestral', $inscripcion->membresia->nombre, $contenido);
+        $contenido = str_replace('06/12/2025', Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
+        $contenido = str_replace('06/03/2026', Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
+        $contenido = str_replace('$$65.000', $precioTotal, $contenido);
+
+        // Crear registro de notificación (buscar tipo o crear temporal)
+        $tipoTutor = TipoNotificacion::where('codigo', 'confirmacion_tutor_legal')->first();
+        
+        if (!$tipoTutor) {
+            // Si no existe el tipo, usar notificacion_manual como fallback
+            $tipoTutor = TipoNotificacion::where('codigo', TipoNotificacion::NOTIFICACION_MANUAL)->first();
+        }
+
+        $notificacion = Notificacion::create([
+            'id_tipo_notificacion' => $tipoTutor->id,
+            'id_cliente' => $cliente->id,
+            'id_inscripcion' => $inscripcion->id,
+            'email_destino' => $cliente->apoderado_email,
+            'asunto' => '📋 Confirmación de Tutor Legal - PROGYM',
+            'contenido' => $contenido,
+            'id_estado' => Notificacion::ESTADO_PENDIENTE,
+            'fecha_programada' => Carbon::now(),
+        ]);
+
+        // Intentar enviar inmediatamente
+        try {
+            $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
+                'from' => 'PROGYM <onboarding@resend.dev>',
+                'to' => [$cliente->apoderado_email],
+                'subject' => $notificacion->asunto,
+                'html' => $contenido,
+            ]);
+
+            $notificacion->update([
+                'id_estado' => Notificacion::ESTADO_ENVIADO,
+                'fecha_envio' => Carbon::now(),
+                'id_email_proveedor' => $resultado->id ?? null,
+            ]);
+
+            LogNotificacion::create([
+                'id_notificacion' => $notificacion->id,
+                'accion' => LogNotificacion::ACCION_ENVIADA,
+                'detalle' => json_encode(['resend_id' => $resultado->id, 'tipo' => 'tutor_legal']),
+            ]);
+
+            return [
+                'enviada' => true,
+                'mensaje' => 'Notificación enviada al tutor legal',
+                'notificacion_id' => $notificacion->id
+            ];
+
+        } catch (\Exception $e) {
+            $notificacion->update([
+                'id_estado' => Notificacion::ESTADO_FALLIDO,
+                'intentos_envio' => 1,
+            ]);
+
+            LogNotificacion::create([
+                'id_notificacion' => $notificacion->id,
+                'accion' => 'fallida',
+                'detalle' => json_encode(['error' => $e->getMessage()]),
+            ]);
+
+            return [
+                'enviada' => false,
+                'mensaje' => 'Error al enviar: ' . $e->getMessage(),
+                'notificacion_id' => $notificacion->id
+            ];
+        }
+    }
+
+    /**
+     * Envía notificación de bienvenida automática
+     */
     public function enviarNotificacionBienvenida(Inscripcion $inscripcion): array
     {
         // Buscar tipo de notificación de bienvenida
@@ -690,9 +839,8 @@ class NotificacionService
             // Log de éxito
             LogNotificacion::create([
                 'id_notificacion' => $notificacion->id,
-                'accion' => 'enviado',
-                'resultado' => 'exito',
-                'detalles' => json_encode(['resend_id' => $resultado->id]),
+                'accion' => 'enviada',
+                'detalle' => json_encode(['resend_id' => $resultado->id]),
             ]);
 
             return [
@@ -711,9 +859,8 @@ class NotificacionService
             // Log de error
             LogNotificacion::create([
                 'id_notificacion' => $notificacion->id,
-                'accion' => 'envio_fallido',
-                'resultado' => 'error',
-                'detalles' => json_encode(['error' => $e->getMessage()]),
+                'accion' => 'fallida',
+                'detalle' => json_encode(['error' => $e->getMessage()]),
             ]);
 
             return [

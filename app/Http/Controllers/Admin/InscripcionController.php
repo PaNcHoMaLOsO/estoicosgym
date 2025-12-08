@@ -412,13 +412,25 @@ class InscripcionController extends Controller
         // Invalidar token para prevenir doble envío
         $this->invalidateFormToken($request, 'inscripcion_create');
 
-        // 🎉 ENVIAR NOTIFICACIÓN DE BIENVENIDA AUTOMÁTICAMENTE
+        // 🎉 ENVIAR NOTIFICACIONES AUTOMÁTICAS
         try {
             $notificacionService = app(NotificacionService::class);
+            
+            // Enviar notificación de bienvenida (siempre)
             $notificacionService->enviarNotificacionBienvenida($inscripcion);
             Log::info("Notificación de bienvenida enviada para inscripción #{$inscripcion->id}");
+            
+            // Si es menor de edad, enviar también confirmación al tutor legal
+            if ($inscripcion->cliente->es_menor_edad && !empty($inscripcion->cliente->apoderado_email)) {
+                $resultadoTutor = $notificacionService->enviarNotificacionTutorLegal($inscripcion);
+                if ($resultadoTutor['enviada']) {
+                    Log::info("Notificación de tutor legal enviada a: {$inscripcion->cliente->apoderado_email}");
+                } else {
+                    Log::warning("No se pudo enviar notificación de tutor legal: {$resultadoTutor['mensaje']}");
+                }
+            }
         } catch (\Exception $e) {
-            Log::error("Error al enviar notificación de bienvenida: " . $e->getMessage());
+            Log::error("Error al enviar notificaciones: " . $e->getMessage());
             // No interrumpir el flujo si falla el envío del email
         }
 
