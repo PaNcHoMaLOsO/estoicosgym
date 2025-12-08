@@ -208,6 +208,70 @@ class NotificacionService
                     $asunto = '🎊 Renovación exitosa - PROGYM';
                     break;
 
+                case TipoNotificacion::PAUSA_INSCRIPCION:
+                    $fechaPausa = $inscripcion->fecha_pausa_inicio ? Carbon::parse($inscripcion->fecha_pausa_inicio)->format('d/m/Y') : Carbon::now()->format('d/m/Y');
+                    $fechaReactivacion = $inscripcion->fecha_pausa_fin ? Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y') : 'A definir';
+                    $motivo = $inscripcion->razon_pausa ?? 'Motivo personal';
+                    
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        '06/12/2025' => $fechaPausa,
+                        'Viaje por trabajo' => $motivo,
+                        '15/01/2026' => $fechaReactivacion,
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('05_pausa_inscripcion.html', $datos);
+                    $asunto = '⏸️ Membresía pausada - PROGYM';
+                    break;
+
+                case TipoNotificacion::ACTIVACION_INSCRIPCION:
+                    $fechaActivacion = Carbon::now()->format('d/m/Y');
+                    
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        '06/12/2025' => $fechaActivacion,
+                        'Trimestral' => $membresia->nombre,
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('06_activacion_inscripcion.html', $datos);
+                    $asunto = '▶️ ¡Bienvenido/a de vuelta! - PROGYM';
+                    break;
+
+                case TipoNotificacion::PAGO_PENDIENTE:
+                    $totalPagado = $inscripcion->pagos()->sum('monto_abonado');
+                    $saldoPendiente = $inscripcion->precio_final - $totalPagado;
+                    $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
+                    $saldoFormateado = '$' . number_format($saldoPendiente, 0, ',', '.');
+                    
+                    // Reemplazar el formato especial $$25.000 con un placeholder temporal
+                    $rutaPlantilla = storage_path('app/test_emails/preview/07_pago_pendiente.html');
+                    $contenidoOriginal = file_get_contents($rutaPlantilla);
+                    
+                    // Extraer solo el body
+                    if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenidoOriginal, $matches)) {
+                        $contenidoOriginal = $matches[1];
+                    }
+                    
+                    // Primero reemplazar $$25.000 y $$65.000 para evitar confusión
+                    $contenidoOriginal = str_replace('$$25.000', '___SALDO___', $contenidoOriginal);
+                    $contenidoOriginal = str_replace('$$65.000', '___TOTAL___', $contenidoOriginal);
+                    
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        'Trimestral' => $membresia->nombre,
+                        '___SALDO___' => $saldoFormateado,
+                        '___TOTAL___' => $precioTotal,
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                        '$65.000' => $precioTotal,
+                    ];
+                    
+                    $contenido = $contenidoOriginal;
+                    foreach ($datos as $clave => $valor) {
+                        $contenido = str_replace($clave, $valor, $contenido);
+                    }
+                    
+                    $asunto = '💰 Recordatorio de saldo pendiente - PROGYM';
+                    break;
+
                 default:
                     // Fallback al método antiguo si no está implementado
                     $datos = [
