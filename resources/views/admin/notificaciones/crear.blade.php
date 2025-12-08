@@ -135,25 +135,111 @@
 }
 
 .filtro-btn {
-    padding: 8px 16px;
-    border: 2px solid #e9ecef;
-    background: white;
-    border-radius: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.9rem;
+    color: #495057;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .filtro-btn:hover {
-    border-color: var(--accent);
-    background: rgba(233, 69, 96, 0.05);
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .filtro-btn.active {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, #d63851 100%);
     color: white;
-    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+}
+
+/* Tabla moderna */
+#tablaClientes {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#tablaClientes thead th {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    font-weight: 600;
+    padding: 14px 12px;
+    border: none;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+#tablaClientes thead th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+#tablaClientes thead th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+#tablaClientes tbody tr {
+    background: white;
+    transition: all 0.3s;
+}
+
+#tablaClientes tbody tr:hover {
+    background: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#tablaClientes tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+#tablaClientes tbody tr:last-child td:first-child {
+    border-radius: 0 0 0 8px;
+}
+
+#tablaClientes tbody tr:last-child td:last-child {
+    border-radius: 0 0 8px 0;
+}
+
+/* Checkbox personalizado */
+.cliente-check, #selectAll {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+/* Badges mejorados */
+.badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, #00bf8e 0%, #00a876 100%);
+    color: white;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, #e94560 0%, #d63851 100%);
+    color: white;
+}
+
+.badge-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
 }
 
 .clientes-seleccionados {
@@ -183,48 +269,91 @@
 /* === PASO 2: PLANTILLAS === */
 .plantillas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
 }
 
 .plantilla-card {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 28px 20px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.plantilla-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent) 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.4s;
 }
 
 .plantilla-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(233, 69, 96, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(233, 69, 96, 0.25);
+}
+
+.plantilla-card:hover::before {
+    transform: scaleX(1);
 }
 
 .plantilla-card.selected {
-    border-color: var(--accent);
-    background: rgba(233, 69, 96, 0.05);
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.95) 0%, rgba(214, 56, 81, 0.95) 100%);
+    box-shadow: 0 12px 28px rgba(233, 69, 96, 0.4);
+    transform: translateY(-8px) scale(1.03);
+}
+
+.plantilla-card.selected::before {
+    transform: scaleX(1);
+    background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+}
+
+.plantilla-card.selected .plantilla-icon {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent);
+    box-shadow: 0 6px 16px rgba(255,255,255,0.4);
+}
+
+.plantilla-card.selected .plantilla-nombre {
+    color: white;
+    font-weight: 700;
 }
 
 .plantilla-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(233, 69, 96, 0.1);
+    width: 70px;
+    height: 70px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.85) 0%, rgba(214, 56, 81, 0.85) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 12px;
-    font-size: 1.5rem;
-    color: var(--accent);
+    margin: 0 auto 16px;
+    font-size: 1.8rem;
+    color: white;
+    transition: all 0.4s;
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+}
+
+.plantilla-card:hover .plantilla-icon {
+    transform: rotate(5deg) scale(1.1);
+    box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
 }
 
 .plantilla-nombre {
     font-weight: 600;
     color: #2c3e50;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    transition: all 0.3s;
 }
 
 /* === PASO 3: PREVISUALIZACIÓN === */

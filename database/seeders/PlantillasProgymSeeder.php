@@ -26,7 +26,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Bienvenida',
                 'descripcion' => 'Email de bienvenida al inscribirse (incluye detalles de pago)',
                 'asunto_email' => '🎉 Bienvenido/a {nombre} a PROGYM - ¡Comienza tu transformación!',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/01_bienvenida.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/01_bienvenida.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -42,7 +42,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Pago Completado',
                 'descripcion' => 'Confirmación cuando se completa el pago de la membresía',
                 'asunto_email' => '✅ {nombre}, tu pago ha sido registrado - PROGYM',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/02_pago_completado.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/02_pago_completado.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -58,7 +58,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Membresía por Vencer',
                 'descripcion' => 'Recordatorio X días antes del vencimiento (soporte apoderados)',
                 'asunto_email' => '⏰ {nombre}, la membresía de {nombre_cliente} vence en {dias_restantes} días',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/03_membresia_por_vencer.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/03_membresia_por_vencer.html')),
                 'dias_anticipacion' => 5,
                 'activo' => true,
                 'enviar_email' => true,
@@ -74,7 +74,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Membresía Vencida',
                 'descripcion' => 'Notificación cuando la membresía ha vencido (soporte apoderados)',
                 'asunto_email' => '❗ {nombre}, la membresía de {nombre_cliente} en PROGYM ha vencido',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/04_membresia_vencida.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/04_membresia_vencida.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -90,7 +90,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Pausa de Inscripción',
                 'descripcion' => 'Confirmación cuando el cliente pausa su membresía',
                 'asunto_email' => '⏸️ {nombre}, tu membresía en PROGYM ha sido pausada',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/05_pausa_inscripcion.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/05_pausa_inscripcion.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -106,7 +106,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Activación de Inscripción',
                 'descripcion' => 'Confirmación cuando se reactiva la membresía pausada',
                 'asunto_email' => '▶️ {nombre}, ¡Bienvenido de vuelta a PROGYM!',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/06_activacion_inscripcion.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/06_activacion_inscripcion.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -122,7 +122,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Pago Pendiente',
                 'descripcion' => 'Recordatorio de saldo pendiente',
                 'asunto_email' => '💳 {nombre}, tienes un saldo pendiente en PROGYM',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/07_pago_pendiente.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/07_pago_pendiente.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -138,7 +138,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Renovación Exitosa',
                 'descripcion' => 'Confirmación de renovación de membresía',
                 'asunto_email' => '🎊 {nombre}, tu membresía en PROGYM ha sido renovada',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/08_renovacion.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/08_renovacion.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -154,7 +154,7 @@ class PlantillasProgymSeeder extends Seeder
                 'nombre' => 'Confirmación de Tutor Legal',
                 'descripcion' => 'Constancia legal enviada al apoderado cuando inscribe a un menor',
                 'asunto_email' => '📋 {nombre_apoderado}, confirmación de registro como Tutor Legal - PROGYM',
-                'plantilla_email' => file_get_contents(storage_path('app/test_emails/09_confirmacion_tutor_legal.html')),
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/09_confirmacion_tutor_legal.html')),
                 'dias_anticipacion' => 0,
                 'activo' => true,
                 'enviar_email' => true,
@@ -163,6 +163,80 @@ class PlantillasProgymSeeder extends Seeder
             ]
         );
 
-        $this->command->info('✅ Plantillas PROGYM cargadas (9 plantillas completas)');
+        $this->command->info('✅ 9 plantillas automáticas cargadas');
+        $this->command->newLine();
+        $this->command->info('📝 Cargando plantillas manuales...');
+
+        // PLANTILLA 10: HORARIO ESPECIAL (MANUAL)
+        DB::table('tipo_notificaciones')->updateOrInsert(
+            ['codigo' => 'horario_especial'],
+            [
+                'nombre' => 'Horario Especial',
+                'descripcion' => 'Plantilla manual para anunciar cambios en horarios',
+                'asunto_email' => '📅 Horario Especial - PROGYM',
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/10_horario_especial.html')),
+                'dias_anticipacion' => 0,
+                'activo' => true,
+                'enviar_email' => true,
+                'es_manual' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // PLANTILLA 11: PROMOCIÓN (MANUAL)
+        DB::table('tipo_notificaciones')->updateOrInsert(
+            ['codigo' => 'promocion'],
+            [
+                'nombre' => 'Promoción Especial',
+                'descripcion' => 'Plantilla manual para enviar promociones y ofertas',
+                'asunto_email' => '🎁 Promoción Especial - PROGYM',
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/11_promocion.html')),
+                'dias_anticipacion' => 0,
+                'activo' => true,
+                'enviar_email' => true,
+                'es_manual' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // PLANTILLA 12: ANUNCIO (MANUAL)
+        DB::table('tipo_notificaciones')->updateOrInsert(
+            ['codigo' => 'anuncio'],
+            [
+                'nombre' => 'Anuncio Importante',
+                'descripcion' => 'Plantilla manual para comunicados importantes',
+                'asunto_email' => '📢 Anuncio Importante - PROGYM',
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/12_anuncio.html')),
+                'dias_anticipacion' => 0,
+                'activo' => true,
+                'enviar_email' => true,
+                'es_manual' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // PLANTILLA 13: EVENTO (MANUAL)
+        DB::table('tipo_notificaciones')->updateOrInsert(
+            ['codigo' => 'evento'],
+            [
+                'nombre' => 'Evento Especial',
+                'descripcion' => 'Plantilla manual para invitaciones a eventos',
+                'asunto_email' => '🎉 No te pierdas nuestro evento - PROGYM',
+                'plantilla_email' => file_get_contents(storage_path('app/test_emails/preview/13_evento.html')),
+                'dias_anticipacion' => 0,
+                'activo' => true,
+                'enviar_email' => true,
+                'es_manual' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        $this->command->info('✅ 4 plantillas manuales cargadas');
+        $this->command->newLine();
+        $this->command->info('🎉 Total: 13 plantillas de notificación PROGYM listas');
     }
 }

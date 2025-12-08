@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('dias_anticipacion')->default(0)->comment('Días antes del evento para enviar (ej: 5 días antes de vencer)');
             $table->boolean('activo')->default(true);
             $table->boolean('enviar_email')->default(true);
+            $table->boolean('es_manual')->default(false)->comment('Indica si es plantilla manual (true) o automática del sistema (false)');
             $table->timestamps();
         });
 
