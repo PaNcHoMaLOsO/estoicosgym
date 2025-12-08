@@ -419,6 +419,27 @@ class PagoController extends Controller
         
         $pago = Pago::create($datosPago);
 
+        // 📧 ENVIAR NOTIFICACIÓN SI EL PAGO ESTÁ COMPLETO
+        if ($idEstado == 201) { // Pago completado
+            try {
+                $notificacionService = app(\App\Services\NotificacionService::class);
+                $inscripcion->load(['cliente', 'membresia', 'pagos']);
+                
+                // Usar crearNotificacion para que use la plantilla HTML con datos dinámicos
+                $tipoNotificacion = \App\Models\TipoNotificacion::where('codigo', \App\Models\TipoNotificacion::PAGO_COMPLETADO)
+                    ->where('activo', true)
+                    ->first();
+                    
+                if ($tipoNotificacion && $inscripcion->cliente->email) {
+                    $notificacionService->crearNotificacion($tipoNotificacion, $inscripcion);
+                    \Illuminate\Support\Facades\Log::info("Notificación de pago completado programada para inscripción #{$inscripcion->id}");
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Error al programar notificación de pago completado: " . $e->getMessage());
+                // No interrumpir el flujo si falla el envío del email
+            }
+        }
+
         // Invalidar token para prevenir doble envío
         $this->invalidateFormToken($request, 'pago_create');
 

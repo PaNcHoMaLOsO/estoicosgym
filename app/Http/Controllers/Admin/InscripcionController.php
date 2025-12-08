@@ -841,6 +841,23 @@ class InscripcionController extends Controller
             $dias = $indefinida ? null : (int) $validated['dias'];
             $inscripcion->pausar($dias, $validated['razon'] ?? '', $indefinida);
 
+            // 📧 ENVIAR NOTIFICACIÓN DE PAUSA
+            try {
+                $notificacionService = app(NotificacionService::class);
+                $inscripcion->load(['cliente', 'membresia']);
+                
+                $tipoPausa = TipoNotificacion::where('codigo', TipoNotificacion::PAUSA_INSCRIPCION)
+                    ->where('activo', true)
+                    ->first();
+                    
+                if ($tipoPausa && $inscripcion->cliente->email) {
+                    $notificacionService->crearNotificacion($tipoPausa, $inscripcion);
+                    Log::info("Notificación de pausa programada para inscripción #{$inscripcion->id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Error al programar notificación de pausa: " . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => $indefinida 
@@ -889,6 +906,23 @@ class InscripcionController extends Controller
             $diasGuardados = $inscripcion->dias_restantes_al_pausar ?? 0;
 
             $inscripcion->reanudar();
+
+            // 📧 ENVIAR NOTIFICACIÓN DE ACTIVACIÓN
+            try {
+                $notificacionService = app(NotificacionService::class);
+                $inscripcion->load(['cliente', 'membresia']);
+                
+                $tipoActivacion = TipoNotificacion::where('codigo', TipoNotificacion::ACTIVACION_INSCRIPCION)
+                    ->where('activo', true)
+                    ->first();
+                    
+                if ($tipoActivacion && $inscripcion->cliente->email) {
+                    $notificacionService->crearNotificacion($tipoActivacion, $inscripcion);
+                    Log::info("Notificación de activación programada para inscripción #{$inscripcion->id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Error al programar notificación de activación: " . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
