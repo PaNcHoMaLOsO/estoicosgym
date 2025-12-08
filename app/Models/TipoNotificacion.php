@@ -32,8 +32,13 @@ class TipoNotificacion extends Model
     const MEMBRESIA_POR_VENCER = 'membresia_por_vencer';
     const MEMBRESIA_VENCIDA = 'membresia_vencida';
     const PAGO_PENDIENTE = 'pago_pendiente';
+    const PAGO_COMPLETADO = 'pago_completado';
     const BIENVENIDA = 'bienvenida';
-    const RENOVACION_EXITOSA = 'renovacion_exitosa';
+    const RENOVACION = 'renovacion';
+    const RENOVACION_EXITOSA = 'renovacion_exitosa';  // Alias
+    const PAUSA_INSCRIPCION = 'pausa_inscripcion';
+    const ACTIVACION_INSCRIPCION = 'activacion_inscripcion';
+    const NOTIFICACION_MANUAL = 'notificacion_manual';
 
     public function notificaciones()
     {

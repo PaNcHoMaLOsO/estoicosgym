@@ -179,6 +179,35 @@ class NotificacionService
                     $asunto = '❌ Tu membresía ' . $membresia->nombre . ' ha vencido';
                     break;
 
+                case TipoNotificacion::PAGO_COMPLETADO:
+                    $ultimoPago = $inscripcion->pagos()->orderBy('id', 'desc')->first();
+                    $metodoPago = $ultimoPago ? $ultimoPago->metodoPago->nombre ?? 'No especificado' : 'No especificado';
+                    $fechaPago = $ultimoPago ? Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y') : Carbon::now()->format('d/m/Y');
+                    $montoPago = $ultimoPago ? '$' . number_format($ultimoPago->monto_abonado, 0, ',', '.') : '$0';
+                    
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        'Trimestral' => $membresia->nombre,
+                        '$65.000' => $montoPago,
+                        'Transferencia' => $metodoPago,
+                        '06/12/2025' => $fechaPago,
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('02_pago_completado.html', $datos);
+                    $asunto = '✅ Pago completado - PROGYM';
+                    break;
+
+                case TipoNotificacion::RENOVACION:
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        'Trimestral' => $membresia->nombre,
+                        '06/12/2025' => Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'),
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('08_renovacion.html', $datos);
+                    $asunto = '🎊 Renovación exitosa - PROGYM';
+                    break;
+
                 default:
                     // Fallback al método antiguo si no está implementado
                     $datos = [
