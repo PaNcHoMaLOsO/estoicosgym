@@ -602,15 +602,35 @@ $(document).ready(function() {
         }
 
         tabla.draw();
+        updateSelectAllState();
     });
 
     // ===== SELECT ALL =====
     $('#selectAll').change(function() {
         const isChecked = $(this).is(':checked');
-        tabla.rows({search: 'applied'}).every(function() {
-            const checkbox = $(this.node()).find('.cliente-check');
-            checkbox.prop('checked', isChecked).trigger('change');
+        
+        // Iterar sobre TODAS las filas, no solo las visibles
+        tabla.rows({search: 'applied'}).nodes().to$().find('.cliente-check').each(function() {
+            const $checkbox = $(this);
+            const id = parseInt($checkbox.val());
+            const nombre = $checkbox.data('nombre');
+            const email = $checkbox.data('email');
+            
+            // Marcar/desmarcar checkbox
+            $checkbox.prop('checked', isChecked);
+            
+            // Agregar o remover de la lista
+            if (isChecked) {
+                if (!selectedClientes.find(c => c.id === id)) {
+                    selectedClientes.push({id, nombre, email});
+                }
+            } else {
+                selectedClientes = selectedClientes.filter(c => c.id !== id);
+            }
         });
+        
+        updateSeleccionados();
+        updatePasos();
     });
 
     // ===== SELECCIÓN DE CLIENTES =====
@@ -625,11 +645,21 @@ $(document).ready(function() {
             }
         } else {
             selectedClientes = selectedClientes.filter(c => c.id !== id);
+            // Si deselecciona uno, desmarcar el "select all"
+            $('#selectAll').prop('checked', false);
         }
 
         updateSeleccionados();
         updatePasos();
+        updateSelectAllState();
     });
+
+    // Actualizar estado del checkbox "Seleccionar todos"
+    function updateSelectAllState() {
+        const totalVisibles = tabla.rows({search: 'applied'}).nodes().length;
+        const totalSeleccionados = tabla.rows({search: 'applied'}).nodes().to$().find('.cliente-check:checked').length;
+        $('#selectAll').prop('checked', totalVisibles > 0 && totalSeleccionados === totalVisibles);
+    }
 
     function updateSeleccionados() {
         const count = selectedClientes.length;
