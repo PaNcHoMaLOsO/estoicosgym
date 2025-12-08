@@ -381,9 +381,16 @@ class NotificacionController extends Controller
         }
 
         if ($request->enviar_ahora && $creadas > 0) {
-            // Ejecutar envÃ­o inmediato
-            \Artisan::call('notificaciones:enviar');
-            $mensaje .= " | Enviando ahora...";
+            // Ejecutar envío inmediato usando el servicio directamente
+            $resultadoEnvio = $notificacionService->enviarPendientes();
+            $mensaje = "{$resultadoEnvio['enviadas']} de {$resultadoEnvio['total']} enviado";
+            if ($resultadoEnvio['enviadas'] != 1) {
+                $mensaje .= "s"; // Pluralizar si es necesario
+            }
+            
+            if ($resultadoEnvio['fallidas'] > 0) {
+                $mensaje .= " | {$resultadoEnvio['fallidas']} fallida" . ($resultadoEnvio['fallidas'] != 1 ? "s" : "");
+            }
         }
 
         return redirect()->route('admin.notificaciones.index')
