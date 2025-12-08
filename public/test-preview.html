@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Preview</title>
+</head>
+<body>
+    <h1>Test de Preview de Plantillas</h1>
+    <button onclick="cargarPreview(1)">Cargar Plantilla 1 (Bienvenida)</button>
+    <button onclick="cargarPreview(2)">Cargar Plantilla 2 (Pago Completado)</button>
+    
+    <hr>
+    
+    <div id="preview" style="border: 2px solid #ddd; padding: 20px; margin-top: 20px;">
+        <p>Selecciona una plantilla arriba...</p>
+    </div>
+
+    <script>
+        function cargarPreview(tipoId) {
+            document.getElementById('preview').innerHTML = '<p>Cargando...</p>';
+            
+            fetch('/admin/notificaciones/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    id_tipo_notificacion: tipoId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('preview').innerHTML = data.html;
+                } else {
+                    document.getElementById('preview').innerHTML = '<p style="color: red;">Error al cargar</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('preview').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -49,7 +49,7 @@ class NotificacionController extends Controller
             $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 
-        // Búsqueda por cliente
+        // BÃºsqueda por cliente
         if ($request->filled('buscar')) {
             $buscar = $request->buscar;
             $query->whereHas('cliente', function ($q) use ($buscar) {
@@ -61,13 +61,13 @@ class NotificacionController extends Controller
 
         $notificaciones = $query->paginate(20)->withQueryString();
 
-        // Estadísticas
+        // EstadÃ­sticas
         $estadisticas = $this->notificacionService->obtenerEstadisticas();
 
-        // Tipos de notificación para filtro
+        // Tipos de notificaciÃ³n para filtro
         $tiposNotificacion = TipoNotificacion::orderBy('nombre')->get();
 
-        // Última ejecución automática (simulada - en producción vendría de logs)
+        // Ãšltima ejecuciÃ³n automÃ¡tica (simulada - en producciÃ³n vendrÃ­a de logs)
         $ultimaEjecucion = (object)[
             'fecha' => now()->format('d/m/Y H:i'),
             'programadas' => Notificacion::whereDate('created_at', today())->where('id_estado', 600)->count(),
@@ -84,11 +84,11 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Mostrar historial de ejecuciones automáticas
+     * Mostrar historial de ejecuciones automÃ¡ticas
      */
     public function historial()
     {
-        // Agrupar notificaciones por día para mostrar resumen de ejecuciones
+        // Agrupar notificaciones por dÃ­a para mostrar resumen de ejecuciones
         $historial = Notificacion::selectRaw('DATE(created_at) as fecha, 
                                               COUNT(*) as total,
                                               SUM(CASE WHEN id_estado = 600 THEN 1 ELSE 0 END) as pendientes,
@@ -142,7 +142,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Contar destinatarios según filtros
+     * Contar destinatarios segÃºn filtros
      */
     public function contarDestinatarios(Request $request)
     {
@@ -162,7 +162,7 @@ class NotificacionController extends Controller
                 if ($request->id_estado) {
                     $query->whereHas('inscripciones', function($q) use ($request) {
                         if ($request->id_estado == 200) {
-                            // Por vencer (próximos 7 días)
+                            // Por vencer (prÃ³ximos 7 dÃ­as)
                             $q->whereDate('fecha_vencimiento', '<=', now()->addDays(7))
                               ->whereDate('fecha_vencimiento', '>=', now())
                               ->where('id_estado', 100);
@@ -185,11 +185,11 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Guardar notificación programada con validaciones anti-spam
+     * Guardar notificaciÃ³n programada con validaciones anti-spam
      */
     public function guardarProgramada(Request $request)
     {
-        // Validar datos básicos
+        // Validar datos bÃ¡sicos
         $validated = $request->validate([
             'tipo_envio' => 'required|in:todos,membresia,estado,individual',
             'id_tipo_notificacion' => 'required|exists:tipos_notificacion,id',
@@ -200,7 +200,7 @@ class NotificacionController extends Controller
             'enviar_ahora' => 'nullable|boolean',
         ]);
 
-        // Obtener destinatarios según filtros
+        // Obtener destinatarios segÃºn filtros
         $query = Cliente::where('activo', true);
 
         switch ($request->tipo_envio) {
@@ -246,18 +246,18 @@ class NotificacionController extends Controller
             return back()->with('error', 'No se encontraron destinatarios con los filtros seleccionados.');
         }
 
-        // VALIDACIÓN ANTI-SPAM: Límite diario general
+        // VALIDACIÃ“N ANTI-SPAM: LÃ­mite diario general
         $notificacionesHoy = Notificacion::whereDate('created_at', today())->count();
         if ($notificacionesHoy >= 500) {
-            return back()->with('error', 'Se ha alcanzado el límite diario de 500 notificaciones. Intente mañana.');
+            return back()->with('error', 'Se ha alcanzado el lÃ­mite diario de 500 notificaciones. Intente maÃ±ana.');
         }
 
-        // Verificar que no exceda el límite con este envío
+        // Verificar que no exceda el lÃ­mite con este envÃ­o
         if (($notificacionesHoy + $clientes->count()) > 500) {
-            return back()->with('error', "Este envío excedería el límite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones más hoy.");
+            return back()->with('error', "Este envÃ­o excederÃ­a el lÃ­mite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones mÃ¡s hoy.");
         }
 
-        // Determinar fecha/hora de programación
+        // Determinar fecha/hora de programaciÃ³n
         $fechaEnvio = $request->enviar_ahora ? now() : Carbon::parse($request->fecha_programada . ' ' . $request->hora_programada);
 
         $notificacionService = new NotificacionService();
@@ -268,18 +268,18 @@ class NotificacionController extends Controller
         $errores = [];
 
         foreach ($clientes as $cliente) {
-            // VALIDACIÓN ANTI-SPAM 1: Máximo 3 notificaciones por cliente al día
+            // VALIDACIÃ“N ANTI-SPAM 1: MÃ¡ximo 3 notificaciones por cliente al dÃ­a
             $notificacionesClienteHoy = Notificacion::where('email_destinatario', $cliente->email)
                 ->whereDate('created_at', today())
                 ->count();
 
             if ($notificacionesClienteHoy >= 3) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: Límite diario alcanzado (3 notificaciones)";
+                $errores[] = "Cliente {$cliente->nombre_completo}: LÃ­mite diario alcanzado (3 notificaciones)";
                 continue;
             }
 
-            // VALIDACIÓN ANTI-SPAM 2: Intervalo mínimo de 2 horas entre envíos
+            // VALIDACIÃ“N ANTI-SPAM 2: Intervalo mÃ­nimo de 2 horas entre envÃ­os
             $ultimaNotificacion = Notificacion::where('email_destinatario', $cliente->email)
                 ->latest('created_at')
                 ->first();
@@ -291,7 +291,7 @@ class NotificacionController extends Controller
                 continue;
             }
 
-            // VALIDACIÓN ANTI-SPAM 3: No duplicar notificaciones idénticas en 24 horas
+            // VALIDACIÃ“N ANTI-SPAM 3: No duplicar notificaciones idÃ©nticas en 24 horas
             $notificacionDuplicada = Notificacion::where('email_destinatario', $cliente->email)
                 ->where('id_tipo_notificacion', $tipo->id)
                 ->where('created_at', '>=', now()->subDay())
@@ -299,14 +299,14 @@ class NotificacionController extends Controller
 
             if ($notificacionDuplicada) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: Notificación idéntica enviada recientemente";
+                $errores[] = "Cliente {$cliente->nombre_completo}: NotificaciÃ³n idÃ©ntica enviada recientemente";
                 continue;
             }
 
-            // Validar que tenga email válido
+            // Validar que tenga email vÃ¡lido
             if (!$cliente->email && !($cliente->es_menor_edad && $cliente->apoderado_email)) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: Sin email válido";
+                $errores[] = "Cliente {$cliente->nombre_completo}: Sin email vÃ¡lido";
                 continue;
             }
 
@@ -320,7 +320,7 @@ class NotificacionController extends Controller
                     $nombreDestinatario = $cliente->apoderado_nombre ?: 'Apoderado/a';
                 }
 
-                // Obtener inscripción activa
+                // Obtener inscripciÃ³n activa
                 $inscripcion = $cliente->inscripciones()
                     ->whereIn('id_estado', [100, 200, 400])
                     ->latest()
@@ -328,11 +328,11 @@ class NotificacionController extends Controller
 
                 if (!$inscripcion) {
                     $rechazadas++;
-                    $errores[] = "Cliente {$cliente->nombre_completo}: Sin inscripción activa";
+                    $errores[] = "Cliente {$cliente->nombre_completo}: Sin inscripciÃ³n activa";
                     continue;
                 }
 
-                // Preparar datos para la notificación
+                // Preparar datos para la notificaciÃ³n
                 $data = [
                     'nombre' => $nombreDestinatario,
                     'nombre_cliente' => $cliente->nombre_completo,
@@ -351,7 +351,7 @@ class NotificacionController extends Controller
                     $contenidoBase = "<p><strong>" . nl2br(e($request->mensaje_adicional)) . "</strong></p><hr>" . $contenidoBase;
                 }
 
-                // Crear la notificación
+                // Crear la notificaciÃ³n
                 Notificacion::create([
                     'id_cliente' => $cliente->id,
                     'id_tipo_notificacion' => $tipo->id,
@@ -368,7 +368,7 @@ class NotificacionController extends Controller
             } catch (\Exception $e) {
                 $rechazadas++;
                 $errores[] = "Cliente {$cliente->nombre_completo}: {$e->getMessage()}";
-                \Log::error("Error al crear notificación programada: " . $e->getMessage());
+                \Log::error("Error al crear notificaciÃ³n programada: " . $e->getMessage());
             }
         }
 
@@ -380,7 +380,7 @@ class NotificacionController extends Controller
         }
 
         if ($request->enviar_ahora && $creadas > 0) {
-            // Ejecutar envío inmediato
+            // Ejecutar envÃ­o inmediato
             \Artisan::call('notificaciones:enviar');
             $mensaje .= " | Enviando ahora...";
         }
@@ -391,7 +391,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Ver detalle de una notificación
+     * Ver detalle de una notificaciÃ³n
      */
     public function show(Notificacion $notificacion)
     {
@@ -401,12 +401,12 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Reenviar una notificación fallida
+     * Reenviar una notificaciÃ³n fallida
      */
     public function reenviar(Notificacion $notificacion)
     {
         if (!$notificacion->puedeReintentar() && $notificacion->id_estado !== Notificacion::ESTADO_FALLIDO) {
-            return back()->with('error', 'Esta notificación no puede ser reenviada');
+            return back()->with('error', 'Esta notificaciÃ³n no puede ser reenviada');
         }
 
         try {
@@ -414,12 +414,12 @@ class NotificacionController extends Controller
                 'id_estado' => Notificacion::ESTADO_PENDIENTE,
                 'fecha_programada' => Carbon::today(),
             ]);
-            $notificacion->registrarLog('reintentando', 'Reenvío manual desde panel de administración');
+            $notificacion->registrarLog('reintentando', 'ReenvÃ­o manual desde panel de administraciÃ³n');
 
             // Intentar enviar inmediatamente
             $resultado = $this->notificacionService->enviarPendientes();
 
-            return back()->with('success', 'Notificación reenviada correctamente');
+            return back()->with('success', 'NotificaciÃ³n reenviada correctamente');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Error al reenviar: ' . $e->getMessage());
@@ -427,7 +427,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Cancelar una notificación pendiente
+     * Cancelar una notificaciÃ³n pendiente
      */
     public function cancelar(Notificacion $notificacion)
     {
@@ -435,9 +435,9 @@ class NotificacionController extends Controller
             return back()->with('error', 'Solo se pueden cancelar notificaciones pendientes');
         }
 
-        $notificacion->cancelar('Cancelada manualmente desde panel de administración');
+        $notificacion->cancelar('Cancelada manualmente desde panel de administraciÃ³n');
 
-        return back()->with('success', 'Notificación cancelada');
+        return back()->with('success', 'NotificaciÃ³n cancelada');
     }
 
     /**
@@ -477,7 +477,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Gestión de tipos de notificación (plantillas)
+     * GestiÃ³n de tipos de notificaciÃ³n (plantillas)
      */
     public function plantillas()
     {
@@ -487,7 +487,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Editar plantilla de notificación
+     * Editar plantilla de notificaciÃ³n
      */
     public function editarPlantilla(TipoNotificacion $tipoNotificacion)
     {
@@ -495,7 +495,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Actualizar plantilla de notificación
+     * Actualizar plantilla de notificaciÃ³n
      */
     public function actualizarPlantilla(Request $request, TipoNotificacion $tipoNotificacion)
     {
@@ -522,7 +522,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Ver log de una notificación
+     * Ver log de una notificaciÃ³n
      */
     public function logs(Notificacion $notificacion)
     {
@@ -558,7 +558,7 @@ class NotificacionController extends Controller
             ->distinct('id_cliente')
             ->count('id_cliente');
             
-        // Clientes sin inscripción activa ni vencida
+        // Clientes sin inscripciÃ³n activa ni vencida
         $clientesConInscripcion = Inscripcion::whereIn('id_estado', [100, 102])
             ->pluck('id_cliente')
             ->unique();
@@ -566,225 +566,52 @@ class NotificacionController extends Controller
             ->whereNotIn('id', $clientesConInscripcion)
             ->count();
 
-        // Plantillas personalizadas para uso manual (texto plano editable)
-        $plantillasPersonalizadas = [
-            [
-                'id' => 'horario_especial',
-                'nombre' => '📅 Horario Especial',
-                'codigo' => 'horario_especial',
-                'asunto_email' => '📅 Horario Especial - [Nombre del Día]',
-                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; border-radius: 15px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
-        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px;">Tu gimnasio de confianza</p>
-    </div>
-    
-    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-        <h2 style="color: #667eea; text-align: center; margin-top: 0; font-size: 24px;">📅 HORARIO ESPECIAL</h2>
-        
-        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-            <p style="color: white; font-size: 20px; font-weight: bold; margin: 0;">Día: [Miércoles]</p>
-            <p style="color: white; font-size: 18px; margin: 8px 0 0 0;">[16 de Julio]</p>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
-            <p style="color: #667eea; font-size: 16px; font-weight: bold; margin: 0 0 8px 0;">🎉 [Día de la Virgen del Carmen]</p>
-            <p style="color: #495057; margin: 0; line-height: 1.6;">
-                Estimado <strong>{nombre}</strong>, te informamos que el día <strong>[16 de julio]</strong> tendremos horario especial.
-            </p>
-        </div>
-        
-        <div style="border-left: 4px solid #667eea; padding-left: 15px; margin: 20px 0;">
-            <h3 style="color: #495057; margin: 0 0 8px 0; font-size: 16px;">⏰ Horario:</h3>
-            <p style="color: #6c757d; font-size: 16px; margin: 0;"><strong>[9:00 AM - 6:00 PM]</strong></p>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 18px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="color: #495057; margin: 0 0 12px 0; text-align: center; font-size: 16px;">💰 Tarifas del Día</h3>
-            <table style="width: 100%; margin: 8px 0;">
-                <tr>
-                    <td style="padding: 8px; color: #495057;"><strong>✅ Socios:</strong></td>
-                    <td style="padding: 8px; color: #28a745; font-size: 18px; font-weight: bold; text-align: right;">GRATIS</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; color: #495057; border-top: 1px solid rgba(0,0,0,0.1);"><strong>🎫 Pase Diario:</strong></td>
-                    <td style="padding: 8px; color: #667eea; font-size: 18px; font-weight: bold; text-align: right; border-top: 1px solid rgba(0,0,0,0.1);">$[5000]</td>
-                </tr>
-            </table>
-        </div>
-        
-        <p style="color: #6c757d; text-align: center; margin: 15px 0; font-style: italic;">
-            ¡Te esperamos para seguir entrenando juntos! 💪
-        </p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 25px;">
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 [Dirección del gimnasio]</p>
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 [Teléfono de contacto]</p>
-        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
-    </div>
-</div>'
-            ],
-            [
-                'id' => 'promocion',
-                'nombre' => '🎉 Promoción Especial',
-                'codigo' => 'promocion',
-                'asunto_email' => '🎉 ¡Promoción Especial Solo para Ti!',
-                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 20px; border-radius: 15px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
-        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px;">¡Tu mejor versión te espera!</p>
-    </div>
-    
-    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-        <div style="text-align: center; margin-bottom: 18px;">
-            <h2 style="color: #f5576c; margin: 0; font-size: 26px;">🎉 ¡PROMOCIÓN ESPECIAL!</h2>
-            <p style="color: #f093fb; font-size: 16px; font-weight: bold; margin: 8px 0;">Por tiempo limitado</p>
-        </div>
-        
-        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Hola <strong>{nombre}</strong>,</p>
-        <p style="color: #495057; margin: 15px 0; font-size: 15px;">¡Tenemos una oferta increíble para ti!</p>
-        
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin: 20px 0; text-align: center;">
-            <p style="color: white; font-size: 42px; font-weight: bold; margin: 0;">[30]%</p>
-            <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin: 8px 0;">DE DESCUENTO</p>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📝 En:</h3>
-            <p style="color: #6c757d; margin: 0; font-size: 15px;">[Membresías mensuales / Inscripciones nuevas / etc.]</p>
-        </div>
-        
-        <div style="background: #fff3cd; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-            <p style="color: #856404; margin: 0; line-height: 1.6; font-size: 14px;">
-                [Describe aquí los detalles de la promoción. Por ejemplo: "Inscríbete este mes y obtén 30% de descuento en tu primera mensualidad. Incluye evaluación física gratuita y plan de entrenamiento personalizado."]
-            </p>
-        </div>
-        
-        <div style="border: 2px dashed #f5576c; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-            <p style="color: #495057; margin: 0 0 8px 0; font-size: 14px;"><strong>⏰ Válido hasta:</strong></p>
-            <p style="color: #f5576c; font-size: 20px; font-weight: bold; margin: 0;">[31 de Diciembre 2025]</p>
-        </div>
-        
-        <p style="color: #6c757d; text-align: center; font-size: 14px; margin: 20px 0;">
-            ¡No dejes pasar esta oportunidad! 🚀
-        </p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 25px;">
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 Visítanos en: [Dirección]</p>
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 Contacto: [Teléfono]</p>
-        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
-    </div>
-</div>'
-            ],
-            [
-                'id' => 'anuncio',
-                'nombre' => '📢 Anuncio Importante',
-                'codigo' => 'anuncio',
-                'asunto_email' => '📢 Anuncio Importante - Estoicos Gym',
-                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; border-radius: 15px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
-    </div>
-    
-    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-            <p style="color: #2d3436; font-size: 22px; font-weight: bold; margin: 0;">📢 ANUNCIO IMPORTANTE</p>
-        </div>
-        
-        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Estimado <strong>{nombre}</strong>,</p>
-        
-        <h2 style="color: #667eea; margin: 20px 0 15px 0; font-size: 20px;">[TÍTULO DEL ANUNCIO]</h2>
-        
-        <div style="color: #495057; line-height: 1.7; margin: 18px 0; font-size: 15px;">
-            <p style="margin: 0;">[Escribe aquí el contenido principal del anuncio. Por ejemplo: "Queremos informarte que a partir del próximo mes renovaremos nuestras instalaciones. Durante este período habrá algunas áreas temporalmente cerradas."]</p>
-        </div>
-        
-        <div style="background: #e3f2fd; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
-            <p style="color: #495057; margin: 0 0 10px 0; font-weight: bold; font-size: 15px;">ℹ️ Información adicional:</p>
-            <ul style="color: #6c757d; margin: 8px 0; padding-left: 20px; font-size: 14px;">
-                <li style="margin: 5px 0;">[Punto 1]</li>
-                <li style="margin: 5px 0;">[Punto 2]</li>
-                <li style="margin: 5px 0;">[Punto 3]</li>
-            </ul>
-        </div>
-        
-        <p style="color: #6c757d; text-align: center; margin: 20px 0; font-style: italic; font-size: 14px;">
-            Gracias por tu comprensión y apoyo 🙏
-        </p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 25px;">
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📍 Estoicos Gym</p>
-        <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 4px 0;">📞 [Contacto]</p>
-        <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
-    </div>
-</div>'
-            ],
-            [
-                'id' => 'evento',
-                'nombre' => '🎊 Evento Especial',
-                'codigo' => 'evento',
-                'asunto_email' => '🎊 ¡Te invitamos a nuestro evento!',
-                'plantilla_email' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 40px 20px; border-radius: 15px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #667eea; font-size: 32px; font-weight: bold; margin: 0;">🏋️ ESTOICOS GYM</h1>
-        <p style="color: #764ba2; font-size: 14px; margin-top: 8px;">¡Juntos somos más fuertes!</p>
-    </div>
-    
-    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-        <div style="text-align: center; margin-bottom: 18px;">
-            <h2 style="color: #f5576c; margin: 0; font-size: 26px;">🎊 ¡EVENTO ESPECIAL!</h2>
-        </div>
-        
-        <p style="color: #495057; margin: 15px 0; font-size: 15px;">Hola <strong>{nombre}</strong>,</p>
-        <p style="color: #495057; margin: 15px 0; font-size: 15px;">¡Tenemos un evento increíble para ti!</p>
-        
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 22px; border-radius: 12px; margin: 20px 0; color: white;">
-            <h3 style="margin: 0 0 12px 0; font-size: 22px; text-align: center;">🎯 [NOMBRE DEL EVENTO]</h3>
-            <div style="text-align: center;">
-                <p style="margin: 4px 0; font-size: 16px;">📅 Fecha: [Sábado 15 de Enero 2025]</p>
-                <p style="margin: 4px 0; font-size: 16px;">⏰ Hora: [10:00 AM]</p>
-                <p style="margin: 4px 0; font-size: 16px;">📍 Lugar: [Estoicos Gym - Área principal]</p>
-            </div>
-        </div>
-        
-        <div style="color: #495057; line-height: 1.7; margin: 18px 0;">
-            <h3 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📝 Descripción:</h3>
-            <p style="margin: 0; font-size: 15px;">[Describe el evento. Ejemplo: "Únete a nuestra competencia de CrossFit. Prueba tu fuerza, resistencia y habilidades en diferentes categorías. ¡Habrá premios para los ganadores!"]</p>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 18px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #495057; margin: 0 0 12px 0; font-size: 16px;">🎁 ¿Qué incluye?</h3>
-            <ul style="color: #6c757d; line-height: 1.7; margin: 8px 0; padding-left: 20px; font-size: 14px;">
-                <li style="margin: 5px 0;">[Inscripción gratuita para socios]</li>
-                <li style="margin: 5px 0;">[Refrigerio y bebidas]</li>
-                <li style="margin: 5px 0;">[Premios para los primeros 3 lugares]</li>
-                <li style="margin: 5px 0;">[Música en vivo]</li>
-            </ul>
-        </div>
-        
-        <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; border-left: 4px solid #17a2b8;">
-            <p style="color: #0c5460; font-size: 14px; margin: 0;">
-                ¡Confirma tu asistencia llamando al <strong>[teléfono]</strong> o respondiendo este correo!
-            </p>
-        </div>
-        
-        <p style="color: #6c757d; text-align: center; margin: 15px 0; font-size: 16px; font-weight: bold;">
-            ¡No te lo pierdas! 🎉
-        </p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 25px;">
-        <p style="color: #764ba2; font-size: 13px; margin: 4px 0;">📍 [Dirección]</p>
-        <p style="color: #764ba2; font-size: 13px; margin: 4px 0;">📞 [Teléfono]</p>
-        <p style="color: rgba(118, 75, 162, 0.7); font-size: 11px; margin: 15px 0 0 0;">© 2025 Estoicos Gym</p>
-    </div>
-</div>'
-            ]
+        // Cargar todas las plantillas desde archivos HTML
+        $plantillasPersonalizadas = [];
+        $archivosPlantillas = [
+            ['archivo' => '01_bienvenida.html', 'nombre' => 'Bienvenida', 'asunto' => 'Bienvenido a PROGYM Los Angeles'],
+            ['archivo' => '02_pago_completado.html', 'nombre' => 'Pago Completado', 'asunto' => 'Confirmacion de Pago - PROGYM'],
+            ['archivo' => '03_membresia_por_vencer.html', 'nombre' => 'Membresia por Vencer', 'asunto' => 'Tu membresia esta por vencer'],
+            ['archivo' => '04_membresia_vencida.html', 'nombre' => 'Membresia Vencida', 'asunto' => 'Tu membresia ha vencido'],
+            ['archivo' => '05_pausa_inscripcion.html', 'nombre' => 'Pausa de Inscripcion', 'asunto' => 'Confirmacion de Pausa'],
+            ['archivo' => '06_activacion_inscripcion.html', 'nombre' => 'Activacion', 'asunto' => 'Tu inscripcion ha sido activada'],
+            ['archivo' => '07_pago_pendiente.html', 'nombre' => 'Pago Pendiente', 'asunto' => 'Tienes un pago pendiente'],
+            ['archivo' => '08_renovacion.html', 'nombre' => 'Renovacion', 'asunto' => 'Renueva tu membresia'],
+            ['archivo' => '09_confirmacion_tutor_legal.html', 'nombre' => 'Tutor Legal', 'asunto' => 'Confirmacion de Tutor Legal'],
+            ['archivo' => '10_horario_especial.html', 'nombre' => 'Horario Especial', 'asunto' => 'Horario Especial'],
+            ['archivo' => '11_promocion.html', 'nombre' => 'Promocion', 'asunto' => 'Promocion Especial'],
+            ['archivo' => '12_anuncio.html', 'nombre' => 'Anuncio', 'asunto' => 'Anuncio Importante'],
+            ['archivo' => '13_evento.html', 'nombre' => 'Evento', 'asunto' => 'No te pierdas nuestro evento'],
         ];
 
+        foreach ($archivosPlantillas as $plantilla) {
+            $ruta = storage_path('app/test_emails/preview/' . $plantilla['archivo']);
+            if (file_exists($ruta)) {
+                // Leer el archivo
+                $contenido = file_get_contents($ruta);
+                
+                // Extraer solo el contenido entre <body> y </body>
+                if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
+                    $contenido = $matches[1];
+                }
+                
+                // Si hay un div.container, extraer solo su contenido
+                if (preg_match('/<div\s+class="container"[^>]*>(.*?)<\/div>\s*$/is', $contenido, $matches)) {
+                    $contenido = $matches[1];
+                }
+                
+                // Limpiar espacios innecesarios
+                $contenido = trim($contenido);
+                
+                $plantillasPersonalizadas[] = [
+                    'id' => str_replace('.html', '', $plantilla['archivo']),
+                    'nombre' => $plantilla['nombre'],
+                    'codigo' => str_replace('.html', '', $plantilla['archivo']),
+                    'asunto_email' => $plantilla['asunto'],
+                    'plantilla_email' => $contenido
+                ];
+            }
+        }
         return view('admin.notificaciones.crear', compact(
             'clientes',
             'plantillasPersonalizadas', 
@@ -796,7 +623,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Obtener destinatarios según el grupo seleccionado
+     * Obtener destinatarios segÃºn el grupo seleccionado
      */
     public function obtenerDestinatarios(Request $request)
     {
@@ -878,7 +705,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Enviar notificación masiva
+     * Enviar notificaciÃ³n masiva
      */
     public function enviarMasivo(Request $request)
     {
@@ -915,21 +742,21 @@ class NotificacionController extends Controller
 
         if ($clientes->isEmpty()) {
             return back()
-                ->with('error', 'No se encontraron clientes válidos con email')
+                ->with('error', 'No se encontraron clientes vÃ¡lidos con email')
                 ->withInput();
         }
 
         $asunto = $request->asunto;
         $mensaje = $request->mensaje;
 
-        // Obtener tipo de notificación (si se seleccionó plantilla) o crear manual
+        // Obtener tipo de notificaciÃ³n (si se seleccionÃ³ plantilla) o crear manual
         if ($request->filled('plantilla_id') && $request->plantilla_id !== 'custom') {
             $tipoNotificacion = TipoNotificacion::find($request->plantilla_id);
         } else {
             $tipoNotificacion = TipoNotificacion::firstOrCreate(
                 ['codigo' => 'notificacion_manual'],
                 [
-                    'nombre' => 'Notificación Manual',
+                    'nombre' => 'NotificaciÃ³n Manual',
                     'descripcion' => 'Notificaciones enviadas manualmente por el administrador',
                     'asunto_email' => '{asunto}',
                     'plantilla_email' => '{mensaje}',
@@ -945,7 +772,7 @@ class NotificacionController extends Controller
 
         foreach ($clientes as $cliente) {
             try {
-                // Obtener última inscripción del cliente para referencia
+                // Obtener Ãºltima inscripciÃ³n del cliente para referencia
                 $inscripcion = Inscripcion::where('id_cliente', $cliente->id)
                     ->with('membresia')
                     ->orderBy('created_at', 'desc')
@@ -955,7 +782,7 @@ class NotificacionController extends Controller
                 $variables = [
                     '{nombre}' => $cliente->nombre_completo,
                     '{email}' => $cliente->email,
-                    '{membresia}' => $inscripcion?->membresia?->nombre ?? 'Sin membresía',
+                    '{membresia}' => $inscripcion?->membresia?->nombre ?? 'Sin membresÃ­a',
                 ];
 
                 $asuntoPersonalizado = str_replace(
@@ -970,7 +797,7 @@ class NotificacionController extends Controller
                     $mensaje
                 );
 
-                // Crear notificación
+                // Crear notificaciÃ³n
                 $notificacion = Notificacion::create([
                     'id_tipo_notificacion' => $tipoNotificacion->id,
                     'id_cliente' => $cliente->id,
@@ -983,11 +810,11 @@ class NotificacionController extends Controller
                     'enviado_por_user_id' => auth()->id(),
                 ]);
 
-                $notificacion->registrarLog('creada', 'Notificación manual creada desde el panel');
+                $notificacion->registrarLog('creada', 'NotificaciÃ³n manual creada desde el panel');
                 $creadas++;
 
             } catch (\Exception $e) {
-                Log::error('Error creando notificación masiva', [
+                Log::error('Error creando notificaciÃ³n masiva', [
                     'cliente_id' => $cliente->id,
                     'error' => $e->getMessage()
                 ]);
@@ -999,14 +826,14 @@ class NotificacionController extends Controller
         try {
             $resultado = $this->notificacionService->enviarPendientes();
             
-            $mensaje = "✅ Notificaciones enviadas: {$resultado['enviadas']} de {$creadas}";
+            $mensaje = "âœ… Notificaciones enviadas: {$resultado['enviadas']} de {$creadas}";
             
             if ($resultado['fallidas'] > 0) {
-                $mensaje .= " | ❌ Fallidas: {$resultado['fallidas']}";
+                $mensaje .= " | âŒ Fallidas: {$resultado['fallidas']}";
             }
             
             if (!empty($errores)) {
-                $mensaje .= " | ⚠️ Errores: " . count($errores);
+                $mensaje .= " | âš ï¸ Errores: " . count($errores);
             }
             
             return redirect()->route('admin.notificaciones.index')
@@ -1023,7 +850,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Obtener IDs de clientes según el grupo
+     * Obtener IDs de clientes segÃºn el grupo
      */
     private function obtenerClienteIdsPorGrupo(string $grupo, ?int $membresiaId = null): array
     {
@@ -1082,8 +909,8 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Formulario simple para enviar notificación a un cliente específico
-     * (Vista simplificada - pendiente de implementación completa del rediseño)
+     * Formulario simple para enviar notificaciÃ³n a un cliente especÃ­fico
+     * (Vista simplificada - pendiente de implementaciÃ³n completa del rediseÃ±o)
      */
     public function enviarCliente()
     {
@@ -1095,7 +922,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Buscar cliente individual para envío manual
+     * Buscar cliente individual para envÃ­o manual
      */
     public function buscarClienteIndividual(Request $request)
     {
@@ -1104,7 +931,7 @@ class NotificacionController extends Controller
         if (empty($buscar)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debe ingresar un criterio de búsqueda'
+                'message' => 'Debe ingresar un criterio de bÃºsqueda'
             ]);
         }
 
@@ -1129,7 +956,7 @@ class NotificacionController extends Controller
                 'run_pasaporte' => $cliente->run_pasaporte,
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
-                'membresia' => $inscripcion ? $inscripcion->membresia->nombre : 'Sin membresía',
+                'membresia' => $inscripcion ? $inscripcion->membresia->nombre : 'Sin membresÃ­a',
                 'estado_membresia' => $inscripcion ? $inscripcion->estado->nombre : 'N/A',
             ];
         });
@@ -1192,7 +1019,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Enviar notificación a cliente individual
+     * Enviar notificaciÃ³n a cliente individual
      */
     public function enviarIndividual(Request $request)
     {
@@ -1236,7 +1063,7 @@ class NotificacionController extends Controller
                 );
             }
 
-            // Crear notificación manual
+            // Crear notificaciÃ³n manual
             $notificacion = Notificacion::create([
                 'id_tipo_notificacion' => $plantilla->id,
                 'id_cliente' => $cliente->id,
@@ -1251,7 +1078,7 @@ class NotificacionController extends Controller
                 'nota_personalizada' => $notaPersonalizada,
             ]);
 
-            $notificacion->registrarLog('programada', 'Notificación manual creada por ' . auth()->user()->name);
+            $notificacion->registrarLog('programada', 'NotificaciÃ³n manual creada por ' . auth()->user()->name);
 
             // Enviar inmediatamente
             Mail::html($contenido, function ($message) use ($cliente, $asunto) {
@@ -1263,7 +1090,7 @@ class NotificacionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Notificación enviada correctamente a ' . $cliente->email,
+                'message' => 'NotificaciÃ³n enviada correctamente a ' . $cliente->email,
                 'notificacion_id' => $notificacion->id
             ]);
 
@@ -1312,7 +1139,7 @@ class NotificacionController extends Controller
                 $datos['fecha_activacion'] = Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y');
             }
 
-            // Último pago
+            // Ãšltimo pago
             $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
             if ($ultimoPago) {
                 $datos['fecha_pago'] = Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y');

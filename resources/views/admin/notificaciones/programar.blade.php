@@ -109,6 +109,28 @@
                             <textarea name="mensaje_adicional" class="form-control" rows="4" placeholder="Texto adicional que se agregará al email..."></textarea>
                             <small class="text-muted">Este mensaje aparecerá al inicio del email</small>
                         </div>
+
+                        <!-- PREVIEW VISUAL DE LA PLANTILLA -->
+                        <div id="preview-plantilla" style="display: none;">
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="font-weight-bold mb-0">
+                                    <i class="fas fa-eye mr-2"></i>Vista Previa del Email
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-refrescar-preview">
+                                    <i class="fas fa-sync-alt"></i> Refrescar
+                                </button>
+                            </div>
+                            <div class="border rounded p-3" style="background: #f8f9fa; max-height: 600px; overflow-y: auto;">
+                                <div id="contenido-preview" style="background: white; padding: 20px; border-radius: 8px;">
+                                    <!-- Aquí se cargará el HTML renderizado -->
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Esta es una vista previa con datos de ejemplo. Los datos reales se personalizarán para cada cliente.
+                            </small>
+                        </div>
                     </div>
                 </div>
 
@@ -249,6 +271,49 @@
 @section('js')
 <script>
 $(document).ready(function() {
+    // PREVIEW VISUAL DE PLANTILLA
+    $('#id_tipo_notificacion').on('change', function() {
+        const tipoId = $(this).val();
+        
+        if (!tipoId) {
+            $('#preview-plantilla').hide();
+            return;
+        }
+        
+        cargarPreviewPlantilla(tipoId);
+    });
+
+    $('#btn-refrescar-preview').on('click', function() {
+        const tipoId = $('#id_tipo_notificacion').val();
+        if (tipoId) {
+            cargarPreviewPlantilla(tipoId);
+        }
+    });
+
+    function cargarPreviewPlantilla(tipoId) {
+        $('#contenido-preview').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-3">Cargando vista previa...</p></div>');
+        $('#preview-plantilla').show();
+        
+        $.ajax({
+            url: '{{ route("admin.notificaciones.preview") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id_tipo_notificacion: tipoId
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#contenido-preview').html(response.html);
+                } else {
+                    $('#contenido-preview').html('<div class="alert alert-warning"><i class="fas fa-exclamation-triangle mr-2"></i>No se pudo cargar la vista previa</div>');
+                }
+            },
+            error: function() {
+                $('#contenido-preview').html('<div class="alert alert-danger"><i class="fas fa-times-circle mr-2"></i>Error al cargar la vista previa</div>');
+            }
+        });
+    }
+
     // Mostrar/ocultar filtros según tipo de envío
     $('#tipo_envio').on('change', function() {
         const tipo = $(this).val();
