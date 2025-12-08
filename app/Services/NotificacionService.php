@@ -416,4 +416,137 @@ class NotificacionService
             'mensaje' => "Se programaron {$programadas} notificaciones de pago pendiente"
         ];
     }
+
+    /**
+     * Enviar notificación de bienvenida automáticamente al crear inscripción
+     */
+    public function enviarNotificacionBienvenida(Inscripcion $inscripcion): array
+    {
+        // Buscar tipo de notificación de bienvenida
+        $tipoBienvenida = TipoNotificacion::where('codigo', TipoNotificacion::BIENVENIDA)
+            ->where('activo', true)
+            ->first();
+
+        if (!$tipoBienvenida) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Tipo de notificación de bienvenida no encontrado o inactivo'
+            ];
+        }
+
+        // Cargar relaciones necesarias
+        $inscripcion->load(['cliente', 'membresia']);
+        $cliente = $inscripcion->cliente;
+
+        // Validar que el cliente tenga email
+        if (!$cliente || !$cliente->email) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Cliente sin email registrado'
+            ];
+        }
+
+        // Verificar si ya existe una notificación de bienvenida para esta inscripción
+        $existe = Notificacion::where('id_inscripcion', $inscripcion->id)
+            ->where('id_tipo_notificacion', $tipoBienvenida->id)
+            ->exists();
+
+        if ($existe) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Ya existe una notificación de bienvenida para esta inscripción'
+            ];
+        }
+
+        // Cargar plantilla de bienvenida
+        $rutaPlantilla = storage_path('app/test_emails/preview/01_bienvenida.html');
+        if (!file_exists($rutaPlantilla)) {
+            return [
+                'enviada' => false,
+                'mensaje' => 'Plantilla de bienvenida no encontrada'
+            ];
+        }
+
+        $contenido = file_get_contents($rutaPlantilla);
+
+        // Extraer solo el body
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
+            $contenido = $matches[1];
+        }
+
+        // Reemplazar variables
+        $contenido = str_replace('{nombre}', $cliente->nombres, $contenido);
+        $contenido = str_replace('{apellido}', $cliente->apellido_paterno, $contenido);
+        $contenido = str_replace('{membresia}', $inscripcion->membresia->nombre, $contenido);
+        $contenido = str_replace('{fecha_inicio}', Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
+        $contenido = str_replace('{fecha_vencimiento}', Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
+        
+        $precioMembresia = $inscripcion->membresia->precios()->orderBy('id', 'desc')->first();
+        $monto = $precioMembresia ? '$' . number_format($precioMembresia->precio_normal, 0, ',', '.') : '$0';
+        $contenido = str_replace('{monto}', $monto, $contenido);
+
+        // Crear registro de notificación
+        $notificacion = Notificacion::create([
+            'id_tipo_notificacion' => $tipoBienvenida->id,
+            'id_cliente' => $cliente->id,
+            'id_inscripcion' => $inscripcion->id,
+            'email_destino' => $cliente->email,
+            'asunto' => '🎉 ¡Bienvenido a PROGYM Los Ángeles!',
+            'contenido' => $contenido,
+            'id_estado' => Notificacion::ESTADO_PENDIENTE,
+            'fecha_programada' => Carbon::now(),
+        ]);
+
+        // Intentar enviar inmediatamente
+        try {
+            $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
+                'from' => 'PROGYM <onboarding@resend.dev>',
+                'to' => [$cliente->email],
+                'subject' => $notificacion->asunto,
+                'html' => $contenido,
+            ]);
+
+            // Actualizar estado a enviado
+            $notificacion->update([
+                'id_estado' => Notificacion::ESTADO_ENVIADO,
+                'fecha_envio' => Carbon::now(),
+                'id_email_proveedor' => $resultado->id ?? null,
+            ]);
+
+            // Log de éxito
+            LogNotificacion::create([
+                'id_notificacion' => $notificacion->id,
+                'accion' => 'enviado',
+                'resultado' => 'exito',
+                'detalles' => json_encode(['resend_id' => $resultado->id]),
+            ]);
+
+            return [
+                'enviada' => true,
+                'mensaje' => 'Notificación de bienvenida enviada exitosamente',
+                'notificacion_id' => $notificacion->id
+            ];
+
+        } catch (\Exception $e) {
+            // Marcar como fallida
+            $notificacion->update([
+                'id_estado' => Notificacion::ESTADO_FALLIDO,
+                'intentos_envio' => 1,
+            ]);
+
+            // Log de error
+            LogNotificacion::create([
+                'id_notificacion' => $notificacion->id,
+                'accion' => 'envio_fallido',
+                'resultado' => 'error',
+                'detalles' => json_encode(['error' => $e->getMessage()]),
+            ]);
+
+            return [
+                'enviada' => false,
+                'mensaje' => 'Error al enviar notificación: ' . $e->getMessage(),
+                'notificacion_id' => $notificacion->id
+            ];
+        }
+    }
 }

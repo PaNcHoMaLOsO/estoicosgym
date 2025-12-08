@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\NotificacionService;
 
 class InscripcionController extends Controller
 {
@@ -410,6 +411,16 @@ class InscripcionController extends Controller
 
         // Invalidar token para prevenir doble envío
         $this->invalidateFormToken($request, 'inscripcion_create');
+
+        // 🎉 ENVIAR NOTIFICACIÓN DE BIENVENIDA AUTOMÁTICAMENTE
+        try {
+            $notificacionService = app(NotificacionService::class);
+            $notificacionService->enviarNotificacionBienvenida($inscripcion);
+            Log::info("Notificación de bienvenida enviada para inscripción #{$inscripcion->id}");
+        } catch (\Exception $e) {
+            Log::error("Error al enviar notificación de bienvenida: " . $e->getMessage());
+            // No interrumpir el flujo si falla el envío del email
+        }
 
         return redirect()->route('admin.inscripciones.show', $inscripcion)
             ->with('success', 'Inscripción creada exitosamente' . ($pagoPendiente ? ' - Pago pendiente de registrar' : ' con pago registrado'));
