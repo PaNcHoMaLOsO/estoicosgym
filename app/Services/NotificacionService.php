@@ -366,10 +366,20 @@ class NotificacionService
             try {
                 $notificacion->registrarLog('enviando', 'Iniciando envío de correo');
 
-                Mail::html($notificacion->contenido, function ($message) use ($notificacion) {
-                    $message->to($notificacion->email_destino)
-                            ->subject($notificacion->asunto);
-                });
+                // Enviar usando Resend
+                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
+                    'from' => 'PROGYM <onboarding@resend.dev>',
+                    'to' => [$notificacion->email_destino],
+                    'subject' => $notificacion->asunto,
+                    'html' => $notificacion->contenido,
+                ]);
+
+                // Registrar en log_notificaciones
+                LogNotificacion::create([
+                    'id_notificacion' => $notificacion->id,
+                    'accion' => 'enviada',
+                    'detalle' => json_encode(['resend_id' => $resultado->id]),
+                ]);
 
                 $notificacion->marcarComoEnviada();
                 $enviadas++;
@@ -377,10 +387,18 @@ class NotificacionService
                 Log::info("Notificación enviada", [
                     'id' => $notificacion->id,
                     'email' => $notificacion->email_destino,
-                    'tipo' => $notificacion->tipoNotificacion->codigo ?? 'N/A'
+                    'tipo' => $notificacion->tipoNotificacion->codigo ?? 'N/A',
+                    'resend_id' => $resultado->id
                 ]);
 
             } catch (\Exception $e) {
+                // Registrar error en log_notificaciones
+                LogNotificacion::create([
+                    'id_notificacion' => $notificacion->id,
+                    'accion' => 'fallida',
+                    'detalle' => 'Error: ' . $e->getMessage(),
+                ]);
+
                 $notificacion->marcarComoFallida($e->getMessage());
                 $fallidas++;
 

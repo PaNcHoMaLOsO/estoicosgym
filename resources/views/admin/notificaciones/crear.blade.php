@@ -542,7 +542,7 @@
             <!-- Inputs ocultos -->
             <input type="hidden" id="asunto" name="asunto">
             <input type="hidden" id="mensaje" name="mensaje">
-            <input type="hidden" id="clientes" name="clientes">
+            <input type="hidden" id="cliente_ids" name="cliente_ids">
 
             <!-- Botón Enviar -->
             <div class="text-center mt-4 pt-4" style="border-top: 2px solid #e9ecef;">
@@ -766,7 +766,7 @@ $(document).ready(function() {
         
         $('#asunto').val(asuntoTexto);
         $('#mensaje').val(mensajeTexto);
-        $('#clientes').val(JSON.stringify(selectedClientes.map(c => c.id)));
+        $('#cliente_ids').val(JSON.stringify(selectedClientes.map(c => c.id)));
 
         if (selectedClientes.length === 0) {
             Swal.fire({
