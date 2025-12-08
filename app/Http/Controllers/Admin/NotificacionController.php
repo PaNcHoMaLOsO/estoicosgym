@@ -566,22 +566,13 @@ class NotificacionController extends Controller
             ->whereNotIn('id', $clientesConInscripcion)
             ->count();
 
-        // Cargar todas las plantillas desde archivos HTML
+        // Cargar solo las 4 plantillas manuales desde archivos HTML
         $plantillasPersonalizadas = [];
         $archivosPlantillas = [
-            ['archivo' => '01_bienvenida.html', 'nombre' => 'Bienvenida', 'asunto' => 'Bienvenido a PROGYM Los Angeles'],
-            ['archivo' => '02_pago_completado.html', 'nombre' => 'Pago Completado', 'asunto' => 'Confirmacion de Pago - PROGYM'],
-            ['archivo' => '03_membresia_por_vencer.html', 'nombre' => 'Membresia por Vencer', 'asunto' => 'Tu membresia esta por vencer'],
-            ['archivo' => '04_membresia_vencida.html', 'nombre' => 'Membresia Vencida', 'asunto' => 'Tu membresia ha vencido'],
-            ['archivo' => '05_pausa_inscripcion.html', 'nombre' => 'Pausa de Inscripcion', 'asunto' => 'Confirmacion de Pausa'],
-            ['archivo' => '06_activacion_inscripcion.html', 'nombre' => 'Activacion', 'asunto' => 'Tu inscripcion ha sido activada'],
-            ['archivo' => '07_pago_pendiente.html', 'nombre' => 'Pago Pendiente', 'asunto' => 'Tienes un pago pendiente'],
-            ['archivo' => '08_renovacion.html', 'nombre' => 'Renovacion', 'asunto' => 'Renueva tu membresia'],
-            ['archivo' => '09_confirmacion_tutor_legal.html', 'nombre' => 'Tutor Legal', 'asunto' => 'Confirmacion de Tutor Legal'],
-            ['archivo' => '10_horario_especial.html', 'nombre' => 'Horario Especial', 'asunto' => 'Horario Especial'],
-            ['archivo' => '11_promocion.html', 'nombre' => 'Promocion', 'asunto' => 'Promocion Especial'],
-            ['archivo' => '12_anuncio.html', 'nombre' => 'Anuncio', 'asunto' => 'Anuncio Importante'],
-            ['archivo' => '13_evento.html', 'nombre' => 'Evento', 'asunto' => 'No te pierdas nuestro evento'],
+            ['archivo' => '10_horario_especial.html', 'nombre' => 'Horario Especial', 'asunto' => 'Horario Especial', 'codigo' => 'horario_especial'],
+            ['archivo' => '11_promocion.html', 'nombre' => 'Promocion', 'asunto' => 'Promocion Especial', 'codigo' => 'promocion'],
+            ['archivo' => '12_anuncio.html', 'nombre' => 'Anuncio', 'asunto' => 'Anuncio Importante', 'codigo' => 'anuncio'],
+            ['archivo' => '13_evento.html', 'nombre' => 'Evento', 'asunto' => 'No te pierdas nuestro evento', 'codigo' => 'evento'],
         ];
 
         foreach ($archivosPlantillas as $plantilla) {
@@ -606,7 +597,7 @@ class NotificacionController extends Controller
                 $plantillasPersonalizadas[] = [
                     'id' => str_replace('.html', '', $plantilla['archivo']),
                     'nombre' => $plantilla['nombre'],
-                    'codigo' => str_replace('.html', '', $plantilla['archivo']),
+                    'codigo' => $plantilla['codigo'],
                     'asunto_email' => $plantilla['asunto'],
                     'plantilla_email' => $contenido
                 ];

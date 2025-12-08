@@ -692,11 +692,7 @@
     </div>
     <div class="paso" id="paso3">
         <span class="paso-numero">3</span>
-        <span class="paso-texto">Mensaje</span>
-    </div>
-    <div class="paso" id="paso4">
-        <span class="paso-numero">4</span>
-        <span class="paso-texto">Enviar</span>
+        <span class="paso-texto">Previsualización</span>
     </div>
 </div>
 
@@ -856,17 +852,17 @@
                          data-contenido="{{ $plantilla['plantilla_email'] ?? '' }}">
                         <div class="plantilla-icon">
                             @switch($plantilla['codigo'] ?? '')
-                                @case('membresia_por_vencer')
+                                @case('horario_especial')
                                     <i class="fas fa-clock"></i>
                                     @break
-                                @case('membresia_vencida')
-                                    <i class="fas fa-calendar-times"></i>
+                                @case('promocion')
+                                    <i class="fas fa-tags"></i>
                                     @break
-                                @case('bienvenida')
-                                    <i class="fas fa-hand-sparkles"></i>
+                                @case('anuncio')
+                                    <i class="fas fa-bullhorn"></i>
                                     @break
-                                @case('pago_pendiente')
-                                    <i class="fas fa-dollar-sign"></i>
+                                @case('evento')
+                                    <i class="fas fa-calendar-star"></i>
                                     @break
                                 @default
                                     <i class="fas fa-envelope"></i>
@@ -891,135 +887,92 @@
         </div>
     </div>
 
-    {{-- PASO 3: COMPONER MENSAJE --}}
-    <div id="seccionMensaje" style="display:none;">
-        {{-- Vista Previa EDITABLE (IZQUIERDA) --}}
-        <div class="main-card">
-            <div class="main-card-header">
-                <h3><i class="fas fa-edit"></i> Vista Previa Editable</h3>
-                <small style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">Edita directamente aquí</small>
-            </div>
-            <div class="main-card-body" style="padding: 0; background: #f4f6f9;">
-                {{-- Simulación de Email con estilo de plantilla --}}
-                <div style="font-family: Arial, sans-serif; max-width: 100%; margin: 0 auto; background: #f4f6f9; padding: 20px;">
-                    
-                    {{-- Header PROGYM --}}
-                    <div style="background: #000000; padding: 24px; text-align: center; border-radius: 12px 12px 0 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <strong style="font-size: 2rem; letter-spacing: 1px;">
-                            <span style="color: #ffffff; font-weight: 700;">PRO</span><span style="color: #E0001A; font-weight: 700;">GYM</span>
-                        </strong>
-                        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 13px;">Tu gimnasio de confianza</p>
-                    </div>
-                    
-                    {{-- Contenido del email --}}
-                    <div style="background: white; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                        
-                        {{-- Asunto editable --}}
-                        <h2 id="previewAsunto" 
-                            contenteditable="true" 
-                            style="color: #1a1a2e; 
-                                   font-size: 24px; 
-                                   font-weight: 700; 
-                                   margin: 0 0 20px 0; 
-                                   cursor: text; 
-                                   border: 2px dashed transparent; 
-                                   padding: 12px; 
-                                   border-radius: 8px; 
-                                   transition: all 0.3s;
-                                   line-height: 1.3;"
-                            placeholder="Asunto del correo...">Asunto del correo...</h2>
-                        
-                        {{-- Mensaje editable --}}
-                        <div id="previewMensaje" 
-                             contenteditable="true" 
-                             style="color: #495057; 
-                                    font-size: 15px; 
-                                    line-height: 1.7; 
-                                    cursor: text; 
-                                    border: 2px dashed transparent; 
-                                    padding: 16px; 
-                                    border-radius: 8px; 
-                                    min-height: 150px; 
-                                    transition: all 0.3s;"
-                             placeholder="El mensaje aparecerá aquí...">
-                            El mensaje aparecerá aquí...
-                        </div>
-                    </div>
-                    
-                    {{-- Footer --}}
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                padding: 20px; 
-                                text-align: center; 
-                                border-radius: 0 0 12px 12px; 
-                                box-shadow: 0 -2px 8px rgba(0,0,0,0.05);">
-                        <p style="color: rgba(255,255,255,0.9); font-size: 13px; margin: 4px 0;">
-                            <i class="fas fa-map-marker-alt"></i> Av. Principal #123, Ciudad
-                        </p>
-                        <p style="color: rgba(255,255,255,0.9); font-size: 13px; margin: 4px 0;">
-                            <i class="fas fa-phone"></i> +56 9 1234 5678
-                        </p>
-                        <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 12px 0 0 0;">
-                            © 2025 Estoicos Gym - Todos los derechos reservados
-                        </p>
-                    </div>
-                    
+    {{-- PASO 3: PREVISUALIZACIÓN EDITABLE --}}
+    <div class="main-card mb-4" id="seccionMensaje" style="display:none;">
+        <div class="main-card-header">
+            <h3><i class="fas fa-eye"></i> 3. Previsualización y Edición</h3>
+            <small style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">Haz clic en el texto para editarlo</small>
+        </div>
+        <div class="main-card-body" style="padding: 20px; background: #f4f6f9;">
+            {{-- Simulación de Email con estilo de plantilla --}}
+            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; background: #f4f6f9;">
+                
+                {{-- Header PROGYM --}}
+                <div style="background: #000000; padding: 24px; text-align: center; border-radius: 12px 12px 0 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <strong style="font-size: 2rem; letter-spacing: 1px;">
+                        <span style="color: #ffffff; font-weight: 700;">PRO</span><span style="color: #E0001A; font-weight: 700;">GYM</span>
+                    </strong>
+                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 13px;">Tu gimnasio de confianza</p>
                 </div>
+                
+                {{-- Contenido del email --}}
+                <div style="background: white; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    
+                    {{-- Asunto editable --}}
+                    <h2 id="previewAsunto" 
+                        contenteditable="true" 
+                        style="color: #1a1a2e; 
+                               font-size: 24px; 
+                               font-weight: 700; 
+                               margin: 0 0 20px 0; 
+                               cursor: text; 
+                               border: 2px dashed transparent; 
+                               padding: 12px; 
+                               border-radius: 8px; 
+                               transition: all 0.3s;
+                               line-height: 1.3;"
+                        placeholder="Asunto del correo...">Asunto del correo...</h2>
+                    
+                    {{-- Mensaje editable --}}
+                    <div id="previewMensaje" 
+                         contenteditable="true" 
+                         style="color: #495057; 
+                                font-size: 15px; 
+                                line-height: 1.7; 
+                                cursor: text; 
+                                border: 2px dashed transparent; 
+                                padding: 16px; 
+                                border-radius: 8px; 
+                                min-height: 200px; 
+                                transition: all 0.3s;"
+                         placeholder="El mensaje aparecerá aquí...">
+                        El mensaje aparecerá aquí...
+                    </div>
+                </div>
+                
+                {{-- Footer --}}
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            padding: 20px; 
+                            text-align: center; 
+                            border-radius: 0 0 12px 12px; 
+                            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);">
+                    <p style="color: rgba(255,255,255,0.9); font-size: 13px; margin: 4px 0;">
+                        <i class="fas fa-map-marker-alt"></i> Av. Principal #123, Ciudad
+                    </p>
+                    <p style="color: rgba(255,255,255,0.9); font-size: 13px; margin: 4px 0;">
+                        <i class="fas fa-phone"></i> +56 9 1234 5678
+                    </p>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 12px 0 0 0;">
+                        © 2025 Estoicos Gym - Todos los derechos reservados
+                    </p>
+                </div>
+                
+            </div>
+
+            {{-- Inputs ocultos para capturar el contenido editado --}}
+            <input type="hidden" id="asunto" name="asunto">
+            <input type="hidden" id="mensaje" name="mensaje">
+
+            {{-- Botón de enviar --}}
+            <div class="text-center mt-4 pt-3" style="border-top: 2px solid #e9ecef;">
+                <button type="submit" class="btn btn-enviar btn-lg" id="btnEnviar" disabled>
+                    <i class="fas fa-paper-plane"></i> Enviar a <span id="btnCount">0</span> clientes
+                </button>
+                <p class="text-muted mt-2 mb-0">
+                    <small><i class="fas fa-info-circle"></i> Los correos se enviarán inmediatamente</small>
+                </p>
             </div>
         </div>
-
-        {{-- Editor de Mensaje (DERECHA) --}}
-        <div class="main-card">
-            <div class="main-card-header">
-                <h3><i class="fas fa-edit"></i> 3. Componer Mensaje</h3>
-            </div>
-            <div class="main-card-body">
-                <div class="form-group">
-                    <label><i class="fas fa-heading"></i> Asunto del Correo *</label>
-                    <input type="text"
-                           class="form-control"
-                           id="asunto"
-                           name="asunto"
-                           placeholder="Ej: ¡Promoción especial para ti!"
-                           maxlength="255"
-                           required>
-                    <div class="char-counter">
-                        <span id="asuntoCount">0</span>/255 caracteres
-                    </div>
-                    <div class="invalid-feedback"></div>
-                </div>
-
-                <div class="form-group">
-                    <label><i class="fas fa-align-left"></i> Mensaje *</label>
-                    <textarea class="form-control"
-                              id="mensaje"
-                              name="mensaje"
-                              rows="14"
-                              placeholder="Escribe tu mensaje aquí..."
-                              maxlength="5000"
-                              required></textarea>
-                    <div class="char-counter">
-                        <span id="mensajeCount">0</span>/5000 caracteres
-                    </div>
-                    <div class="variables-rapidas">
-                        <small class="text-muted d-block mb-2"><i class="fas fa-magic"></i> Insertar variable:</small>
-                        <span class="variable-btn" data-var="{nombre}">📛 Nombre</span>
-                        <span class="variable-btn" data-var="{email}">📧 Correo</span>
-                        <span class="variable-btn" data-var="{membresia}">🏋️ Membresía</span>
-                    </div>
-                    <div class="invalid-feedback"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- PASO 4: ENVIAR --}}
-    <div class="text-center mb-4" id="seccionEnviar" style="display:none;">
-        <button type="submit" class="btn btn-enviar btn-lg" id="btnEnviar" disabled>
-            <i class="fas fa-paper-plane"></i> 4. Enviar a <span id="btnCount">0</span> clientes
-        </button>
-        <p class="text-muted mt-2 mb-0">
-            <small><i class="fas fa-info-circle"></i> Los correos se enviarán inmediatamente</small>
-        </p>
     </div>
 </form>
 @stop
@@ -1310,8 +1263,8 @@ $(document).ready(function() {
     function updatePasos() {
         const clientesOk = selectedClientes.length > 0;
         const plantillaOk = plantillaSeleccionada !== null;
-        const asuntoOk = $('#asunto').val().trim() !== '';
-        const mensajeOk = $('#mensaje').val().trim() !== '';
+        const asuntoOk = $('#previewAsunto').text().trim() !== '' && $('#previewAsunto').text().trim() !== 'Asunto del correo...';
+        const mensajeOk = $('#previewMensaje').text().trim() !== '' && $('#previewMensaje').text().trim() !== 'El mensaje aparecerá aquí...';
         const mensajeCompleto = asuntoOk && mensajeOk;
 
         // Paso 1: Clientes
@@ -1329,10 +1282,9 @@ $(document).ready(function() {
         } else {
             $('#seccionPlantillas').slideUp(300);
             $('#seccionMensaje').slideUp(300);
-            $('#seccionEnviar').slideUp(300);
         }
 
-        // Paso 3: Mensaje - Mostrar solo si hay plantilla seleccionada
+        // Paso 3: Previsualización - Mostrar solo si hay plantilla seleccionada
         $('#paso3')
             .toggleClass('completed', mensajeCompleto)
             .toggleClass('active', plantillaOk && !mensajeCompleto);
@@ -1341,18 +1293,6 @@ $(document).ready(function() {
             $('#seccionMensaje').slideDown(300);
         } else {
             $('#seccionMensaje').slideUp(300);
-            $('#seccionEnviar').slideUp(300);
-        }
-
-        // Paso 4: Enviar - Mostrar solo si el mensaje está completo
-        $('#paso4')
-            .toggleClass('completed', clientesOk && plantillaOk && mensajeCompleto)
-            .toggleClass('active', mensajeCompleto);
-
-        if (mensajeCompleto && clientesOk && plantillaOk) {
-            $('#seccionEnviar').slideDown(300);
-        } else {
-            $('#seccionEnviar').slideUp(300);
         }
     }
 
@@ -1414,6 +1354,21 @@ $(document).ready(function() {
     // ========================================
     $('#comunicadoForm').submit(function(e) {
         e.preventDefault();
+
+        // Capturar contenido editable en inputs ocultos antes de enviar
+        const asuntoTexto = $('#previewAsunto').text().trim();
+        const mensajeHtml = $('#previewMensaje').html();
+        const mensajeTexto = mensajeHtml
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/div><div>/gi, '\n')
+            .replace(/<div>/gi, '\n')
+            .replace(/<\/div>/gi, '')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .trim();
+        
+        $('#asunto').val(asuntoTexto);
+        $('#mensaje').val(mensajeTexto);
 
         if (selectedClientes.length === 0) {
             Swal.fire({
