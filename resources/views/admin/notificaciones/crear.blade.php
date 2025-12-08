@@ -232,46 +232,23 @@
     max-width: 800px;
     margin: 0 auto;
     font-family: Arial, sans-serif;
-}
-
-.preview-header {
-    background: #000000;
-    padding: 24px;
-    text-align: center;
-    border-radius: 12px 12px 0 0;
-}
-
-.preview-logo {
-    font-size: 2rem;
-    letter-spacing: 1px;
-}
-
-.preview-logo-white {
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.preview-logo-red {
-    color: #E0001A;
-    font-weight: 700;
-}
-
-.preview-subtitle {
-    color: rgba(255,255,255,0.8);
-    margin: 8px 0 0 0;
-    font-size: 13px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .preview-content {
     background: white;
-    padding: 30px;
+    padding: 20px 30px;
+    border-bottom: 2px solid #e9ecef;
 }
 
 .preview-asunto {
     color: #1a1a2e;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
-    margin: 0 0 20px 0;
+    margin: 0;
     padding: 12px;
     border: 2px dashed transparent;
     border-radius: 8px;
@@ -279,8 +256,7 @@
     outline: none;
 }
 
-.preview-asunto:focus,
-.preview-mensaje:focus {
+.preview-asunto:focus {
     border-color: var(--accent);
     background: rgba(233, 69, 96, 0.02);
 }
@@ -289,24 +265,17 @@
     color: #495057;
     font-size: 15px;
     line-height: 1.7;
-    padding: 16px;
+    padding: 20px;
     border: 2px dashed transparent;
     border-radius: 8px;
-    min-height: 200px;
+    min-height: 400px;
     outline: none;
+    background: white;
 }
 
-.preview-footer {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-    text-align: center;
-    border-radius: 0 0 12px 12px;
-    color: white;
-}
-
-.preview-footer p {
-    margin: 4px 0;
-    font-size: 13px;
+.preview-mensaje:focus {
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.02);
 }
 
 /* === BOTÓN ENVIAR === */
@@ -353,6 +322,48 @@
 @stop
 
 @section('content')
+
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session('success') }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if(session('warning'))
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> <strong>Errores de validación:</strong>
+    <ul class="mb-0">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
 <form id="formNotificacion" method="POST" action="{{ route('admin.notificaciones.enviar-masivo') }}">
     @csrf
     
@@ -510,33 +521,19 @@
         </div>
         <div class="card-body-custom" style="background: #f4f6f9;">
             <div class="preview-email">
-                <!-- Header -->
-                <div class="preview-header">
-                    <div class="preview-logo">
-                        <span class="preview-logo-white">PRO</span><span class="preview-logo-red">GYM</span>
-                    </div>
-                    <p class="preview-subtitle">Tu gimnasio de confianza</p>
-                </div>
-
-                <!-- Contenido -->
+                <!-- Asunto (editable) -->
                 <div class="preview-content">
                     <h2 class="preview-asunto" 
                         contenteditable="true" 
                         id="previewAsunto"
                         placeholder="Asunto del correo...">Asunto del correo...</h2>
-                    
-                    <div class="preview-mensaje" 
-                         contenteditable="true" 
-                         id="previewMensaje"
-                         placeholder="El mensaje aparecerá aquí...">El mensaje aparecerá aquí...</div>
                 </div>
 
-                <!-- Footer -->
-                <div class="preview-footer">
-                    <p><i class="fas fa-map-marker-alt"></i> Av. Principal #123, Ciudad</p>
-                    <p><i class="fas fa-phone"></i> +56 9 1234 5678</p>
-                    <p style="opacity: 0.7; font-size: 11px;">© 2025 Estoicos Gym</p>
-                </div>
+                <!-- Contenido del email (las plantillas ya incluyen header y footer) -->
+                <div class="preview-mensaje" 
+                     contenteditable="true" 
+                     id="previewMensaje"
+                     placeholder="El mensaje aparecerá aquí...">El mensaje aparecerá aquí...</div>
             </div>
 
             <!-- Inputs ocultos -->
@@ -759,37 +756,21 @@ $(document).ready(function() {
     $('#formNotificacion').submit(function(e) {
         e.preventDefault();
 
-        // Capturar contenido editable
+        // Capturar contenido editable directamente (las plantillas ya tienen el HTML completo)
         const asuntoTexto = $('#previewAsunto').text().trim();
-        
-        // Construir HTML completo del email con estilos inline
-        const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; background: #f4f6f9;">
-                <!-- Header -->
-                <div style="background: #000000; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
-                    <div style="font-size: 2rem; letter-spacing: 1px;">
-                        <span style="color: #ffffff; font-weight: 700;">PRO</span><span style="color: #E0001A; font-weight: 700;">GYM</span>
-                    </div>
-                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 13px;">Tu gimnasio de confianza</p>
-                </div>
-                
-                <!-- Contenido -->
-                <div style="background: white; padding: 30px;">
-                    ${$('#previewMensaje').html()}
-                </div>
-                
-                <!-- Footer -->
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 0 0 12px 12px; color: white;">
-                    <p style="margin: 4px 0; font-size: 13px;">📍 Av. Principal #123, Ciudad</p>
-                    <p style="margin: 4px 0; font-size: 13px;">📞 +56 9 1234 5678</p>
-                    <p style="opacity: 0.7; font-size: 11px; margin: 12px 0 0 0;">© 2025 Estoicos Gym</p>
-                </div>
-            </div>
-        `;
+        const emailHtml = $('#previewMensaje').html();
         
         $('#asunto').val(asuntoTexto);
         $('#mensaje').val(emailHtml);
         $('#cliente_ids').val(JSON.stringify(selectedClientes.map(c => c.id)));
+
+        // Debug: mostrar qué se va a enviar
+        console.log('=== DATOS A ENVIAR ===');
+        console.log('Asunto:', asuntoTexto);
+        console.log('Asunto length:', asuntoTexto.length);
+        console.log('Mensaje length:', emailHtml.length);
+        console.log('Clientes IDs:', selectedClientes.map(c => c.id));
+        console.log('Cliente_ids value:', $('#cliente_ids').val());
 
         if (selectedClientes.length === 0) {
             Swal.fire({
@@ -799,6 +780,8 @@ $(document).ready(function() {
             });
             return;
         }
+
+        const $form = $(this);
 
         Swal.fire({
             title: '¿Enviar notificación?',
@@ -823,7 +806,7 @@ $(document).ready(function() {
                         Swal.showLoading();
                     }
                 });
-                this.submit();
+                $form[0].submit();
             }
         });
     });

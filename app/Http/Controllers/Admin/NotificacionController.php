@@ -579,21 +579,8 @@ class NotificacionController extends Controller
         foreach ($archivosPlantillas as $plantilla) {
             $ruta = storage_path('app/test_emails/preview/' . $plantilla['archivo']);
             if (file_exists($ruta)) {
-                // Leer el archivo
+                // Leer el archivo completo (ya tiene toda la estructura necesaria)
                 $contenido = file_get_contents($ruta);
-                
-                // Extraer solo el contenido entre <body> y </body>
-                if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
-                    $contenido = $matches[1];
-                }
-                
-                // Si hay un div.container, extraer solo su contenido
-                if (preg_match('/<div\s+class="container"[^>]*>(.*?)<\/div>\s*$/is', $contenido, $matches)) {
-                    $contenido = $matches[1];
-                }
-                
-                // Limpiar espacios innecesarios
-                $contenido = trim($contenido);
                 
                 $plantillasPersonalizadas[] = [
                     'id' => str_replace('.html', '', $plantilla['archivo']),
@@ -704,7 +691,7 @@ class NotificacionController extends Controller
         // Validaciones mejoradas
         $validated = $request->validate([
             'asunto' => 'required|string|min:5|max:255',
-            'mensaje' => 'required|string|min:10|max:5000',
+            'mensaje' => 'required|string|min:10|max:50000',
             'cliente_ids' => 'required|string',
             'plantilla_id' => 'nullable|integer|exists:tipo_notificaciones,id',
         ], [
@@ -713,7 +700,7 @@ class NotificacionController extends Controller
             'asunto.max' => 'El asunto no puede exceder 255 caracteres',
             'mensaje.required' => 'El mensaje es obligatorio',
             'mensaje.min' => 'El mensaje debe tener al menos 10 caracteres',
-            'mensaje.max' => 'El mensaje no puede exceder 5000 caracteres',
+            'mensaje.max' => 'El mensaje no puede exceder 50000 caracteres',
             'cliente_ids.required' => 'Debes seleccionar al menos un cliente',
         ]);
         
@@ -814,31 +801,61 @@ class NotificacionController extends Controller
             }
         }
 
-        // Enviar inmediatamente las notificaciones creadas
-        try {
-            $resultado = $this->notificacionService->enviarPendientes();
-            
-            $mensaje = "âœ… Notificaciones enviadas: {$resultado['enviadas']} de {$creadas}";
-            
-            if ($resultado['fallidas'] > 0) {
-                $mensaje .= " | âŒ Fallidas: {$resultado['fallidas']}";
+        // Enviar inmediatamente las notificaciones recién creadas
+        $enviadas = 0;
+        $fallidas = 0;
+
+        // Obtener las notificaciones pendientes recién creadas (últimos 5 minutos)
+        $notificacionesPendientes = Notificacion::where('id_estado', Notificacion::ESTADO_PENDIENTE)
+            ->where('enviado_por_user_id', auth()->id())
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->whereIn('id_cliente', $clienteIds)
+            ->get();
+
+        foreach ($notificacionesPendientes as $notificacion) {
+            try {
+                // Enviar usando Resend
+                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
+                    'from' => 'PROGYM <onboarding@resend.dev>',
+                    'to' => [$notificacion->email_destino],
+                    'subject' => $notificacion->asunto,
+                    'html' => $notificacion->contenido,
+                ]);
+
+                // Registrar en log
+                LogNotificacion::create([
+                    'id_notificacion' => $notificacion->id,
+                    'accion' => 'enviada',
+                    'detalle' => json_encode(['resend_id' => $resultado->id]),
+                ]);
+
+                $notificacion->marcarComoEnviada();
+                $enviadas++;
+
+                Log::info("Notificación manual enviada", ['id' => $notificacion->id, 'email' => $notificacion->email_destino]);
+
+            } catch (\Exception $e) {
+                LogNotificacion::create([
+                    'id_notificacion' => $notificacion->id,
+                    'accion' => 'fallida',
+                    'detalle' => 'Error: ' . $e->getMessage(),
+                ]);
+
+                $notificacion->marcarComoFallida($e->getMessage());
+                $fallidas++;
+
+                Log::error("Error enviando notificación", ['id' => $notificacion->id, 'error' => $e->getMessage()]);
             }
-            
-            if (!empty($errores)) {
-                $mensaje .= " | âš ï¸ Errores: " . count($errores);
-            }
-            
-            return redirect()->route('admin.notificaciones.index')
-                ->with($resultado['fallidas'] === 0 ? 'success' : 'warning', $mensaje);
-                
-        } catch (\Exception $e) {
-            Log::error('Error enviando notificaciones masivas', [
-                'error' => $e->getMessage()
-            ]);
-            
-            return redirect()->route('admin.notificaciones.index')
-                ->with('error', "Se crearon {$creadas} notificaciones pero hubo un error al enviarlas: " . $e->getMessage());
         }
+
+        $mensaje = "Notificaciones enviadas: {$enviadas} de {$creadas}";
+        
+        if ($fallidas > 0) {
+            $mensaje .= " | Fallidas: {$fallidas}";
+        }
+        
+        return redirect()->route('admin.notificaciones.index')
+            ->with($fallidas === 0 ? 'success' : 'warning', $mensaje);
     }
 
     /**
@@ -1142,3 +1159,4 @@ class NotificacionController extends Controller
         return $datos;
     }
 }
+
