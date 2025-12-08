@@ -110,6 +110,32 @@ class NotificacionService
     }
 
     /**
+     * Carga y procesa plantilla HTML con datos dinámicos
+     */
+    private function cargarPlantillaHTML(string $nombreArchivo, array $datos): string
+    {
+        $rutaPlantilla = storage_path("app/test_emails/preview/{$nombreArchivo}");
+        
+        if (!file_exists($rutaPlantilla)) {
+            throw new \Exception("Plantilla no encontrada: {$nombreArchivo}");
+        }
+
+        $contenido = file_get_contents($rutaPlantilla);
+        
+        // Extraer solo el body
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
+            $contenido = $matches[1];
+        }
+
+        // Reemplazar cada variable
+        foreach ($datos as $clave => $valor) {
+            $contenido = str_replace($clave, $valor, $contenido);
+        }
+
+        return $contenido;
+    }
+
+    /**
      * Crea una notificación para una inscripción
      */
     public function crearNotificacion(TipoNotificacion $tipo, Inscripcion $inscripcion): Notificacion
@@ -121,33 +147,75 @@ class NotificacionService
 
         // Determinar el email destino y nombre del destinatario
         $emailDestino = $cliente->email;
-        $nombreDestinatario = $cliente->nombre_completo;
+        $nombreCompleto = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
         
         // Si es menor de edad y tiene email de apoderado, enviar al apoderado
         if ($cliente->es_menor_edad && !empty($cliente->apoderado_email)) {
             $emailDestino = $cliente->apoderado_email;
-            $nombreDestinatario = $cliente->apoderado_nombre ?: 'Apoderado/a';
         }
 
-        $datos = [
-            'nombre' => $nombreDestinatario,
-            'nombre_cliente' => $cliente->nombre_completo,  // Nombre del menor para el template
-            'es_menor_edad' => $cliente->es_menor_edad,
-            'membresia' => $membresia->nombre,
-            'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-            'dias_restantes' => max(0, $diasRestantes),
-            'fecha_inicio' => $inscripcion->fecha_inicio->format('d/m/Y'),
-        ];
+        // Preparar contenido según tipo de notificación
+        $contenido = '';
+        $asunto = '';
 
-        $renderizado = $tipo->renderizar($datos);
+        try {
+            switch ($tipo->codigo) {
+                case TipoNotificacion::MEMBRESIA_POR_VENCER:
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        '5 días' => $diasRestantes . ' días',
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('03_membresia_por_vencer.html', $datos);
+                    $asunto = '⏰ Tu membresía ' . $membresia->nombre . ' vence pronto';
+                    break;
+
+                case TipoNotificacion::MEMBRESIA_VENCIDA:
+                    $datos = [
+                        'Juan Pérez' => $nombreCompleto,
+                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
+                    ];
+                    $contenido = $this->cargarPlantillaHTML('04_membresia_vencida.html', $datos);
+                    $asunto = '❌ Tu membresía ' . $membresia->nombre . ' ha vencido';
+                    break;
+
+                default:
+                    // Fallback al método antiguo si no está implementado
+                    $datos = [
+                        'nombre' => $nombreCompleto,
+                        'nombre_cliente' => $nombreCompleto,
+                        'es_menor_edad' => $cliente->es_menor_edad,
+                        'membresia' => $membresia->nombre,
+                        'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+                        'dias_restantes' => max(0, $diasRestantes),
+                        'fecha_inicio' => $inscripcion->fecha_inicio->format('d/m/Y'),
+                    ];
+                    $renderizado = $tipo->renderizar($datos);
+                    $contenido = $renderizado['contenido'];
+                    $asunto = $renderizado['asunto'];
+                    break;
+            }
+        } catch (\Exception $e) {
+            // Si falla, usar método antiguo
+            Log::warning("Error al cargar plantilla HTML: " . $e->getMessage());
+            $datos = [
+                'nombre' => $nombreCompleto,
+                'membresia' => $membresia->nombre,
+                'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
+                'dias_restantes' => max(0, $diasRestantes),
+            ];
+            $renderizado = $tipo->renderizar($datos);
+            $contenido = $renderizado['contenido'];
+            $asunto = $renderizado['asunto'];
+        }
 
         $notificacion = Notificacion::create([
             'id_tipo_notificacion' => $tipo->id,
             'id_cliente' => $cliente->id,
             'id_inscripcion' => $inscripcion->id,
             'email_destino' => $emailDestino,
-            'asunto' => $renderizado['asunto'],
-            'contenido' => $renderizado['contenido'],
+            'asunto' => $asunto,
+            'contenido' => $contenido,
             'id_estado' => Notificacion::ESTADO_PENDIENTE,
             'fecha_programada' => Carbon::today(),
         ]);
@@ -474,16 +542,29 @@ class NotificacionService
             $contenido = $matches[1];
         }
 
-        // Reemplazar variables
-        $contenido = str_replace('{nombre}', $cliente->nombres, $contenido);
-        $contenido = str_replace('{apellido}', $cliente->apellido_paterno, $contenido);
-        $contenido = str_replace('{membresia}', $inscripcion->membresia->nombre, $contenido);
-        $contenido = str_replace('{fecha_inicio}', Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
-        $contenido = str_replace('{fecha_vencimiento}', Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
+        // Obtener información del pago más reciente
+        $pago = $inscripcion->pagos()->orderBy('id', 'desc')->first();
         
-        $precioMembresia = $inscripcion->membresia->precios()->orderBy('id', 'desc')->first();
-        $monto = $precioMembresia ? '$' . number_format($precioMembresia->precio_normal, 0, ',', '.') : '$0';
-        $contenido = str_replace('{monto}', $monto, $contenido);
+        // Calcular montos
+        $totalPagado = $inscripcion->pagos()->sum('monto_abonado');
+        $saldoPendienteNum = $inscripcion->precio_final - $totalPagado;
+        
+        // Formatear valores
+        $nombreCompleto = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
+        $precioFinal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
+        $montoPagado = '$' . number_format($totalPagado, 0, ',', '.');
+        $saldoPendiente = '$' . number_format($saldoPendienteNum, 0, ',', '.');
+        $tipoPago = $saldoPendienteNum > 0 ? 'Parcial' : 'Completo';
+        
+        // Reemplazar variables en la plantilla
+        $contenido = str_replace('Juan Pérez', $nombreCompleto, $contenido);
+        $contenido = str_replace('Trimestral', $inscripcion->membresia->nombre, $contenido);
+        $contenido = str_replace('$65.000', $precioFinal, $contenido);
+        $contenido = str_replace('06/12/2025', \Carbon\Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
+        $contenido = str_replace('06/03/2026', \Carbon\Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
+        $contenido = str_replace('Parcial', $tipoPago, $contenido);
+        $contenido = str_replace('$40.000', $montoPagado, $contenido);
+        $contenido = str_replace('$25.000', $saldoPendiente, $contenido);
 
         // Crear registro de notificación
         $notificacion = Notificacion::create([

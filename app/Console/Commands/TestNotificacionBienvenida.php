@@ -143,41 +143,33 @@ class TestNotificacionBienvenida extends Command
                 $this->info('');
             }
 
-            // PASO 6: Intentar enviar manualmente
-            $this->info('📧 PASO 6: Enviando email de bienvenida manualmente...');
+            // PASO 6: Usar el servicio de notificaciones REAL
+            $this->info('📧 PASO 6: Enviando email de bienvenida usando NotificacionService...');
             
-            // Cargar plantilla de bienvenida
-            $rutaPlantilla = storage_path('app/test_emails/preview/01_bienvenida.html');
-            if (!file_exists($rutaPlantilla)) {
-                throw new \Exception('Plantilla de bienvenida no encontrada');
+            try {
+                $notificacionService = app(NotificacionService::class);
+                $resultado = $notificacionService->enviarNotificacionBienvenida($inscripcion);
+                
+                if ($resultado['enviada']) {
+                    $this->line("   ✅ Email enviado exitosamente");
+                    $this->line("   📧 Destino: {$email}");
+                    $this->line("   💾 Notificación ID: {$resultado['notificacion_id']}");
+                    $this->line("   📊 Datos del email:");
+                    $this->line("      • Cliente: {$cliente->nombre_completo}");
+                    $this->line("      • Membresía: {$membresia->nombre}");
+                    $this->line("      • Precio: \$" . number_format($inscripcion->precio_final, 0, ',', '.'));
+                    $this->line("      • Fecha inicio: {$fechaInicio->format('d/m/Y')}");
+                    $this->line("      • Fecha vencimiento: {$fechaVencimiento->format('d/m/Y')}");
+                    $this->line("      • Tipo pago: " . ($pago->monto_pendiente > 0 ? 'Parcial' : 'Completo'));
+                    $this->line("      • Monto pagado: \$" . number_format($pago->monto_abonado, 0, ',', '.'));
+                    $this->line("      • Saldo: \$" . number_format($pago->monto_pendiente, 0, ',', '.'));
+                } else {
+                    $this->error("   ❌ Error: {$resultado['mensaje']}");
+                }
+            } catch (\Exception $e) {
+                $this->error("   ❌ Error al enviar: {$e->getMessage()}");
             }
-
-            $contenido = file_get_contents($rutaPlantilla);
             
-            // Extraer solo el body
-            if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
-                $contenido = $matches[1];
-            }
-
-            // Reemplazar variables
-            $contenido = str_replace('{nombre}', $cliente->nombre, $contenido);
-            $contenido = str_replace('{apellido}', $cliente->apellido_paterno, $contenido);
-            $contenido = str_replace('{membresia}', $membresia->nombre, $contenido);
-            $contenido = str_replace('{fecha_inicio}', $fechaInicio->format('d/m/Y'), $contenido);
-            $contenido = str_replace('{fecha_vencimiento}', $fechaVencimiento->format('d/m/Y'), $contenido);
-            $contenido = str_replace('{monto}', '$' . number_format($membresia->precio_actual, 0, ',', '.'), $contenido);
-
-            // Enviar con Resend
-            $resultado = Resend::emails()->send([
-                'from' => 'PROGYM <onboarding@resend.dev>',
-                'to' => [$email],
-                'subject' => '🎉 ¡Bienvenido a PROGYM Los Ángeles!',
-                'html' => $contenido,
-            ]);
-
-            $this->line("   ✅ Email enviado exitosamente");
-            $this->line("   📧 Destino: {$email}");
-            $this->line("   🆔 ID de envío: {$resultado->id}");
             $this->info('');
 
             // RESUMEN FINAL
