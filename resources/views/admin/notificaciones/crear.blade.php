@@ -462,8 +462,7 @@
                     <div class="plantilla-card"
                          data-id="{{ $plantilla['id'] }}"
                          data-nombre="{{ $plantilla['nombre'] }}"
-                         data-asunto="{{ $plantilla['asunto_email'] ?? '' }}"
-                         data-contenido="{{ htmlspecialchars($plantilla['plantilla_email'] ?? '') }}">
+                         data-asunto="{{ $plantilla['asunto_email'] ?? '' }}">
                         <div class="plantilla-icon">
                             @switch($plantilla['codigo'] ?? '')
                                 @case('horario_especial')
@@ -483,6 +482,8 @@
                             @endswitch
                         </div>
                         <div class="plantilla-nombre">{{ $plantilla['nombre'] }}</div>
+                        <!-- Contenido HTML oculto -->
+                        <div class="plantilla-contenido" style="display:none;">{!! $plantilla['plantilla_email'] ?? '' !!}</div>
                     </div>
                 @endforeach
 
@@ -661,18 +662,20 @@ $(document).ready(function() {
         $('.plantilla-card').removeClass('selected');
         $(this).addClass('selected');
 
+        const contenidoHtml = $(this).find('.plantilla-contenido').html();
+
         plantillaSeleccionada = {
             id: $(this).data('id'),
             nombre: $(this).data('nombre'),
             asunto: $(this).data('asunto'),
-            contenido: $(this).data('contenido')
+            contenido: contenidoHtml
         };
 
         // Cargar contenido en preview
-        if (plantillaSeleccionada.contenido) {
+        if (plantillaSeleccionada.contenido && plantillaSeleccionada.contenido.trim() !== '') {
             $('#previewMensaje').html(plantillaSeleccionada.contenido);
         } else {
-            $('#previewMensaje').html('Escribe tu mensaje personalizado aquí...');
+            $('#previewMensaje').text('Escribe tu mensaje personalizado aquí...');
         }
 
         if (plantillaSeleccionada.asunto) {
