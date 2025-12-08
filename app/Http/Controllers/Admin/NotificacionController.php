@@ -50,7 +50,7 @@ class NotificacionController extends Controller
             $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 
-        // BÃºsqueda por cliente
+        // Búsqueda por cliente
         if ($request->filled('buscar')) {
             $buscar = $request->buscar;
             $query->whereHas('cliente', function ($q) use ($buscar) {
@@ -62,13 +62,13 @@ class NotificacionController extends Controller
 
         $notificaciones = $query->paginate(20)->withQueryString();
 
-        // EstadÃ­sticas
+        // Estadísticas
         $estadisticas = $this->notificacionService->obtenerEstadisticas();
 
-        // Tipos de notificaciÃ³n para filtro
+        // Tipos de notificación para filtro
         $tiposNotificacion = TipoNotificacion::orderBy('nombre')->get();
 
-        // Ãšltima ejecuciÃ³n automÃ¡tica (simulada - en producciÃ³n vendrÃ­a de logs)
+        // Última ejecución automática (simulada - en producción vendría de logs)
         $ultimaEjecucion = (object)[
             'fecha' => now()->format('d/m/Y H:i'),
             'programadas' => Notificacion::whereDate('created_at', today())->where('id_estado', 600)->count(),
@@ -85,7 +85,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Mostrar historial de ejecuciones automÃ¡ticas
+     * Mostrar historial de ejecuciones automáticas
      */
     public function historial()
     {
@@ -143,7 +143,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Contar destinatarios segÃºn filtros
+     * Contar destinatarios según filtros
      */
     public function contarDestinatarios(Request $request)
     {
@@ -190,7 +190,7 @@ class NotificacionController extends Controller
      */
     public function guardarProgramada(Request $request)
     {
-        // Validar datos bÃ¡sicos
+        // Validar datos básicos
         $validated = $request->validate([
             'tipo_envio' => 'required|in:todos,membresia,estado,individual',
             'id_tipo_notificacion' => 'required|exists:tipos_notificacion,id',
@@ -201,7 +201,7 @@ class NotificacionController extends Controller
             'enviar_ahora' => 'nullable|boolean',
         ]);
 
-        // Obtener destinatarios segÃºn filtros
+        // Obtener destinatarios según filtros
         $query = Cliente::where('activo', true);
 
         switch ($request->tipo_envio) {
@@ -255,7 +255,7 @@ class NotificacionController extends Controller
 
         // Verificar que no exceda el lÃ­mite con este envÃ­o
         if (($notificacionesHoy + $clientes->count()) > 500) {
-            return back()->with('error', "Este envÃ­o excederÃ­a el lÃ­mite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones mÃ¡s hoy.");
+            return back()->with('error', "Este envÃ­o excederÃ­a el lÃ­mite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones más hoy.");
         }
 
         // Determinar fecha/hora de programaciÃ³n
@@ -269,7 +269,7 @@ class NotificacionController extends Controller
         $errores = [];
 
         foreach ($clientes as $cliente) {
-            // VALIDACIÃ“N ANTI-SPAM 1: MÃ¡ximo 3 notificaciones por cliente al dÃ­a
+            // VALIDACIÃ“N ANTI-SPAM 1: Máximo 3 notificaciones por cliente al dÃ­a
             $notificacionesClienteHoy = Notificacion::where('email_destinatario', $cliente->email)
                 ->whereDate('created_at', today())
                 ->count();
@@ -304,10 +304,10 @@ class NotificacionController extends Controller
                 continue;
             }
 
-            // Validar que tenga email vÃ¡lido
+            // Validar que tenga email válido
             if (!$cliente->email && !($cliente->es_menor_edad && $cliente->apoderado_email)) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: Sin email vÃ¡lido";
+                $errores[] = "Cliente {$cliente->nombre_completo}: Sin email válido";
                 continue;
             }
 
@@ -402,12 +402,12 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Reenviar una notificaciÃ³n fallida
+     * Reenviar una notificación fallida
      */
     public function reenviar(Notificacion $notificacion)
     {
         if (!$notificacion->puedeReintentar() && $notificacion->id_estado !== Notificacion::ESTADO_FALLIDO) {
-            return back()->with('error', 'Esta notificaciÃ³n no puede ser reenviada');
+            return back()->with('error', 'Esta notificación no puede ser reenviada');
         }
 
         try {
@@ -415,12 +415,12 @@ class NotificacionController extends Controller
                 'id_estado' => Notificacion::ESTADO_PENDIENTE,
                 'fecha_programada' => Carbon::today(),
             ]);
-            $notificacion->registrarLog('reintentando', 'ReenvÃ­o manual desde panel de administraciÃ³n');
+            $notificacion->registrarLog('reintentando', 'Reenvío manual desde panel de administración');
 
             // Intentar enviar inmediatamente
             $resultado = $this->notificacionService->enviarPendientes();
 
-            return back()->with('success', 'NotificaciÃ³n reenviada correctamente');
+            return back()->with('success', 'Notificación reenviada correctamente');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Error al reenviar: ' . $e->getMessage());
@@ -602,7 +602,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Obtener destinatarios segÃºn el grupo seleccionado
+     * Obtener destinatarios según el grupo seleccionado
      */
     public function obtenerDestinatarios(Request $request)
     {
@@ -721,7 +721,7 @@ class NotificacionController extends Controller
 
         if ($clientes->isEmpty()) {
             return back()
-                ->with('error', 'No se encontraron clientes vÃ¡lidos con email')
+                ->with('error', 'No se encontraron clientes válidos con email')
                 ->withInput();
         }
 
@@ -751,7 +751,7 @@ class NotificacionController extends Controller
 
         foreach ($clientes as $cliente) {
             try {
-                // Obtener Ãºltima inscripciÃ³n del cliente para referencia
+                // Obtener Última inscripciÃ³n del cliente para referencia
                 $inscripcion = Inscripcion::where('id_cliente', $cliente->id)
                     ->with('membresia')
                     ->orderBy('created_at', 'desc')
@@ -859,7 +859,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Obtener IDs de clientes segÃºn el grupo
+     * Obtener IDs de clientes según el grupo
      */
     private function obtenerClienteIdsPorGrupo(string $grupo, ?int $membresiaId = null): array
     {
@@ -940,7 +940,7 @@ class NotificacionController extends Controller
         if (empty($buscar)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debe ingresar un criterio de bÃºsqueda'
+                'message' => 'Debe ingresar un criterio de Búsqueda'
             ]);
         }
 
