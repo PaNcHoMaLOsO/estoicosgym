@@ -13,6 +13,7 @@ use App\Services\NotificacionService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class NotificacionController extends Controller
 {
