@@ -58,17 +58,35 @@ routes/web.php (buscar "clientes")
 
 #### 1. **MODELO Cliente.php** (Lo que representa)
 ```php
-// Línea ~15-30
+// Línea ~66-92
 class Cliente extends Model
 {
     protected $fillable = [
-        'rut', 'nombre', 'apellido_paterno', 'apellido_materno',
-        'fecha_nacimiento', 'genero', 'direccion', 'telefono',
-        'email', 'es_menor_edad', 'estado_id'
+        'uuid',
+        'run_pasaporte',      // RUT o pasaporte
+        'nombres',
+        'apellido_paterno',
+        'apellido_materno',
+        'celular',
+        'email',
+        'direccion',
+        'fecha_nacimiento',
+        'contacto_emergencia',
+        'telefono_emergencia',
+        'id_convenio',
+        'observaciones',
+        'activo',             // boolean (en lugar de estado_id)
+        // Campos para menores de edad
+        'es_menor_edad',
+        'consentimiento_apoderado',
+        'apoderado_nombre',
+        'apoderado_rut',
+        'apoderado_email',
+        'apoderado_telefono',
     ];
 }
 ```
-**Qué hace:** Define qué campos tiene un cliente en la BD.
+**Qué hace:** Define qué campos tiene un cliente en la BD. El sistema maneja clientes con RUT/pasaporte, datos de contacto de emergencia, y si es menor de edad registra los datos del apoderado.
 
 #### 2. **VALIDACIÓN RUT** (Lo más técnico)
 ```php
@@ -107,36 +125,35 @@ public function store(Request $request)
 {
     // 1. VALIDAR datos del formulario
     $validated = $request->validate([
-        'rut' => 'required|unique:clientes',
-        'nombre' => 'required|string|max:100',
-        'email' => 'required|email|unique:clientes',
+        'run_pasaporte' => 'required|unique:clientes',
+        'nombres' => 'required|string|max:100',
+        'apellido_paterno' => 'required|string|max:100',
+        'celular' => 'required|string',
+        'email' => 'nullable|email|unique:clientes',
         // ... más validaciones
     ]);
     
-    // 2. VALIDAR RUT específicamente
-    if (!$this->validarRut($request->rut)) {
-        return back()->with('error', 'RUT inválido');
+    // 2. VALIDAR RUT específicamente (si es RUT chileno)
+    if ($this->esRutChileno($request->run_pasaporte)) {
+        if (!$this->validarRut($request->run_pasaporte)) {
+            return back()->with('error', 'RUT inválido');
+        }
     }
     
     // 3. GUARDAR en base de datos
     $cliente = Cliente::create($validated);
     
-    // 4. SI ES MENOR → Crear registro de tutor
-    if ($request->es_menor_edad) {
-        TutorLegal::create([
-            'cliente_id' => $cliente->id,
-            'rut_tutor' => $request->rut_tutor,
-            'nombre_tutor' => $request->nombre_tutor,
-            // ...
-        ]);
-    }
+    // 4. SI ES MENOR → Los datos del apoderado ya están en el mismo registro
+    // El modelo Cliente incluye todos los campos del apoderado:
+    // - apoderado_nombre, apoderado_rut, apoderado_email
+    // - apoderado_telefono, consentimiento_apoderado
     
     // 5. REDIRIGIR con mensaje
     return redirect()->route('admin.clientes.index')
                     ->with('success', 'Cliente creado');
 }
 ```
-**Si te preguntan:** "Primero validamos todos los datos, luego verificamos el RUT con el algoritmo, guardamos el cliente, y si es menor creamos automáticamente el registro del tutor legal."
+**Si te preguntan:** "Primero validamos todos los datos, si es RUT chileno lo verificamos con el algoritmo módulo 11, guardamos el cliente con todos sus datos. Si es menor de edad, los datos del apoderado se guardan en el mismo registro del cliente."
 
 #### 4. **SOFT DELETE** (Borrado lógico)
 ```php
@@ -191,73 +208,102 @@ resources/views/admin/membresias/
 
 ### 🔍 Código Clave:
 
-#### 1. **MODELO Membresia.php** (Doble precio)
+#### 1. **MODELO Membresia.php** (Sistema de precios separado)
 ```php
-// Línea ~20-40
+// Línea ~47-55
 protected $fillable = [
+    'uuid',
     'nombre',
+    'duracion_meses',    // Meses de duración
+    'duracion_dias',     // Días (para pase diario o anual)
+    'max_pausas',        // Máximo de pausas permitidas
     'descripcion',
-    'duracion_dias',
-    'precio_normal',      // ← PRECIO 1
-    'precio_convenio',    // ← PRECIO 2
-    'estado_id'
+    'activo',            // boolean
 ];
 
-// Relación con historial
-public function historialPrecios()
+// Relación con precios (tabla separada)
+public function precios()
 {
-    return $this->hasMany(HistorialPrecioMembresia::class);
+    return $this->hasMany(PrecioMembresia::class, 'id_membresia');
 }
 ```
+**IMPORTANTE:** Los precios NO están en la tabla membresías, están en `precios_membresias` con vigencias.
 
-#### 2. **HISTORIAL DE PRECIOS** (Lo diferenciador)
+#### 2. **SISTEMA DE PRECIOS CON VIGENCIAS** (Lo diferenciador)
 ```php
-// MembresiaController.php método update() línea ~180-220
-public function update(Request $request, $id)
-{
-    $membresia = Membresia::findOrFail($id);
-    
-    // SI CAMBIÓ EL PRECIO → Guardar en historial
-    if ($request->precio_normal != $membresia->precio_normal ||
-        $request->precio_convenio != $membresia->precio_convenio) {
-        
-        HistorialPrecioMembresia::create([
-            'membresia_id' => $membresia->id,
-            'precio_normal_anterior' => $membresia->precio_normal,
-            'precio_convenio_anterior' => $membresia->precio_convenio,
-            'precio_normal_nuevo' => $request->precio_normal,
-            'precio_convenio_nuevo' => $request->precio_convenio,
-            'fecha_cambio' => now(),
-            'usuario_id' => auth()->id()
-        ]);
-    }
-    
-    // Actualizar membresía
-    $membresia->update($request->all());
-    
-    return redirect()->route('admin.membresias.index')
-                    ->with('success', 'Membresía actualizada');
-}
-```
-**Si te preguntan:** "Cada vez que cambia el precio, guardamos el historial: precio anterior, nuevo, fecha y quién lo cambió. Así tenemos trazabilidad completa para auditoría."
+// TABLA: precios_membresias
+// Modelo: PrecioMembresia.php
 
-#### 3. **DOBLE PRECIO EN VISTA**
-```php
-// create.blade.php línea ~40-60
-<div class="row">
-    <div class="col-md-6">
-        <label>Precio Normal</label>
-        <input type="number" name="precio_normal" 
-               class="form-control" required>
-    </div>
-    
-    <div class="col-md-6">
-        <label>Precio Convenio</label>
-        <input type="number" name="precio_convenio" 
-               class="form-control" required>
-    </div>
-</div>
+protected $fillable = [
+    'id_membresia',
+    'precio_normal',              // Precio para clientes sin convenio
+    'precio_convenio',            // Precio con descuento (NULL = sin descuento)
+    'fecha_vigencia_desde',       // Desde cuándo es válido este precio
+    'fecha_vigencia_hasta',       // Hasta cuándo (NULL = vigente actualmente)
+    'activo',                     // boolean
+];
+
+// Ejemplo de cambio de precio:
+// 1. El precio actual tiene fecha_vigencia_hasta = NULL (vigente)
+// 2. Al crear nuevo precio:
+
+$precio_actual = PrecioMembresia::where('id_membresia', $membresia_id)
+    ->whereNull('fecha_vigencia_hasta')
+    ->first();
+
+// Cerrar precio actual
+$precio_actual->update([
+    'fecha_vigencia_hasta' => now()->subDay(),
+    'activo' => false
+]);
+
+// Crear nuevo precio
+PrecioMembresia::create([
+    'id_membresia' => $membresia_id,
+    'precio_normal' => $nuevo_precio_normal,
+    'precio_convenio' => $nuevo_precio_convenio,
+    'fecha_vigencia_desde' => now(),
+    'fecha_vigencia_hasta' => null,  // Vigente
+    'activo' => true
+]);
+
+// Historial automático en tabla historial_precios
+HistorialPrecio::create([
+    'id_precio_membresia' => $precio_actual->id,
+    'precio_normal_anterior' => $precio_actual->precio_normal,
+    'precio_normal_nuevo' => $nuevo_precio_normal,
+    'fecha_cambio' => now(),
+    'id_usuario' => auth()->id()
+]);
 ```
+**Si te preguntan:** "Usamos un sistema de precios con vigencias. Cada precio tiene fecha_desde y fecha_hasta. Al cambiar precios, cerramos el anterior y creamos uno nuevo. El historial se genera automáticamente en la tabla `historial_precios`. Esto permite trazabilidad completa y saber qué precio tenía una inscripción en cualquier fecha."
+
+#### 3. **OBTENER PRECIO VIGENTE**
+```php
+// Obtener precio actual de una membresía
+$precio_vigente = PrecioMembresia::where('id_membresia', $membresia_id)
+    ->where('activo', true)
+    ->whereNull('fecha_vigencia_hasta')  // Vigente actualmente
+    ->first();
+
+// O con relación:
+$membresia = Membresia::find($id);
+$precio_actual = $membresia->precios()
+    ->where('activo', true)
+    ->whereNull('fecha_vigencia_hasta')
+    ->first();
+
+// Al crear inscripción, guardar el ID del precio:
+Inscripcion::create([
+    'id_cliente' => $cliente_id,
+    'id_membresia' => $membresia_id,
+    'id_precio_acordado' => $precio_actual->id,  // ← Referencia al precio
+    'precio_base' => $precio_actual->precio_normal,
+    'precio_final' => $precio_actual->precio_convenio ?? $precio_actual->precio_normal,
+    // ...
+]);
+```
+**Ventaja:** Cada inscripción queda ligada al precio específico que tenía la membresía en ese momento, incluso si después cambia el precio.
 
 ---
 
@@ -284,43 +330,59 @@ resources/views/admin/inscripciones/
 
 ### 🔍 Código Clave:
 
-#### 1. **ESTADOS con ENUM** (Lo más importante)
+#### 1. **ESTADOS con CONSTANTES** (Lo más importante)
 ```php
-// app/Enums/EstadoInscripcion.php
-namespace App\Enums;
+// app/Enums/EstadosCodigo.php
+// NO usamos enum, usamos clase con constantes
 
-enum EstadoInscripcion: int
+class EstadosCodigo
 {
-    case PENDIENTE = 100;
-    case ACTIVA = 101;
-    case PAUSADA = 102;
-    case VENCIDA = 103;
-    case CANCELADA = 104;
+    // ESTADOS DE INSCRIPCIÓN/MEMBRESÍA (100-106)
+    public const INSCRIPCION_ACTIVA = 100;
+    public const INSCRIPCION_PAUSADA = 101;
+    public const INSCRIPCION_VENCIDA = 102;
+    public const INSCRIPCION_CANCELADA = 103;
+    public const INSCRIPCION_SUSPENDIDA = 104;
+    public const INSCRIPCION_CAMBIADA = 105;
+    public const INSCRIPCION_TRASPASADA = 106;
     
-    public function label(): string
-    {
-        return match($this) {
-            self::PENDIENTE => 'Pendiente',
-            self::ACTIVA => 'Activa',
-            self::PAUSADA => 'Pausada',
-            self::VENCIDA => 'Vencida',
-            self::CANCELADA => 'Cancelada',
-        };
-    }
+    // ESTADOS DE PAGO (200-205)
+    public const PAGO_PENDIENTE = 200;
+    public const PAGO_PAGADO = 201;
+    public const PAGO_PARCIAL = 202;
+    public const PAGO_VENCIDO = 203;
+    public const PAGO_CANCELADO = 204;
+    public const PAGO_TRASPASADO = 205;
     
-    public function color(): string
-    {
-        return match($this) {
-            self::PENDIENTE => 'warning',
-            self::ACTIVA => 'success',
-            self::PAUSADA => 'info',
-            self::VENCIDA => 'danger',
-            self::CANCELADA => 'dark',
-        };
-    }
+    // ESTADOS DE CLIENTE (400-402)
+    public const CLIENTE_ACTIVO = 400;
+    public const CLIENTE_SUSPENDIDO = 401;
+    public const CLIENTE_CANCELADO = 402;
+    
+    // ESTADOS DE NOTIFICACIÓN (600-603)
+    public const NOTIFICACION_PENDIENTE = 600;
+    public const NOTIFICACION_ENVIADA = 601;
+    public const NOTIFICACION_FALLIDA = 602;
+    public const NOTIFICACION_CANCELADA = 603;
+    
+    // GRUPOS para validaciones
+    public const INSCRIPCION_ACCESO_PERMITIDO = [
+        self::INSCRIPCION_ACTIVA,
+    ];
+    
+    public const INSCRIPCION_FINALIZADOS = [
+        self::INSCRIPCION_CANCELADA,
+        self::INSCRIPCION_CAMBIADA,
+        self::INSCRIPCION_TRASPASADA,
+    ];
 }
+
+// Uso:
+use App\Enums\EstadosCodigo;
+
+$inscripcion->id_estado = EstadosCodigo::INSCRIPCION_ACTIVA; // 100
 ```
-**Si te preguntan:** "Usamos Enums de PHP 8.1 para los estados. Cada número tiene un significado (100=Pendiente, 101=Activa, etc.). Es más seguro que usar strings y evita errores de tipeo."
+**Si te preguntan:** "Usamos una clase con constantes públicas para centralizar todos los códigos de estado. Cada grupo tiene un rango numérico (100-106 inscripciones, 200-205 pagos, 600-603 notificaciones). Es más mantenible que hardcodear números y evita errores."
 
 #### 2. **CREAR INSCRIPCIÓN** (Flujo completo)
 ```php
@@ -330,42 +392,54 @@ public function store(Request $request)
     DB::beginTransaction();
     
     try {
-        // 1. CREAR INSCRIPCIÓN
+        // 1. OBTENER PRECIO VIGENTE
+        $precio_vigente = PrecioMembresia::where('id_membresia', $request->membresia_id)
+            ->whereNull('fecha_vigencia_hasta')
+            ->first();
+        
+        // 2. CREAR INSCRIPCIÓN
         $inscripcion = Inscripcion::create([
-            'codigo' => $this->generarCodigo(),
-            'cliente_id' => $request->cliente_id,
-            'membresia_id' => $request->membresia_id,
+            'uuid' => Str::uuid(),
+            'id_cliente' => $request->cliente_id,
+            'id_membresia' => $request->membresia_id,
+            'id_precio_acordado' => $precio_vigente->id,  // Precio en ese momento
+            'fecha_inscripcion' => now(),
             'fecha_inicio' => $request->fecha_inicio,
             'fecha_vencimiento' => $this->calcularVencimiento(
                 $request->fecha_inicio, 
-                $request->duracion_dias
+                $membresia->duracion_dias
             ),
-            'precio_membresia' => $request->precio,
-            'descuento' => $request->descuento ?? 0,
-            'total_pagar' => $request->precio - ($request->descuento ?? 0),
-            'estado_id' => EstadoInscripcion::PENDIENTE->value
+            'precio_base' => $precio_vigente->precio_normal,
+            'descuento_aplicado' => $request->descuento ?? 0,
+            'precio_final' => $precio_vigente->precio_normal - ($request->descuento ?? 0),
+            'id_estado' => EstadosCodigo::INSCRIPCION_ACTIVA  // No ::value
         ]);
         
-        // 2. CREAR PAGO (si paga algo)
-        if ($request->monto_pagado > 0) {
+        // 3. CREAR PAGO (si paga algo)
+        if ($request->monto_abonado > 0) {
+            $monto_pendiente = $inscripcion->precio_final - $request->monto_abonado;
+            
             Pago::create([
-                'inscripcion_id' => $inscripcion->id,
-                'monto' => $request->monto_pagado,
-                'metodo_pago_id' => $request->metodo_pago_id,
+                'uuid' => Str::uuid(),
+                'id_inscripcion' => $inscripcion->id,
+                'id_cliente' => $inscripcion->id_cliente,
+                'monto_abonado' => $request->monto_abonado,
+                'monto_pendiente' => $monto_pendiente,
+                'id_metodo_pago' => $request->metodo_pago_id,
                 'fecha_pago' => now(),
-                'estado_id' => EstadoPago::COMPLETADO->value
+                'cantidad_cuotas' => $request->cantidad_cuotas ?? 1,
+                'numero_cuota' => 1,
+                'id_estado' => $monto_pendiente > 0 
+                    ? EstadosCodigo::PAGO_PARCIAL 
+                    : EstadosCodigo::PAGO_PAGADO
             ]);
             
-            // SI PAGÓ TODO → Activar inscripción
-            if ($request->monto_pagado >= $inscripcion->total_pagar) {
-                $inscripcion->update([
-                    'estado_id' => EstadoInscripcion::ACTIVA->value
-                ]);
-            }
+            // SI PAGÓ TODO → Ya está activa
+            // Si no, queda ACTIVA pero con saldo pendiente
         }
         
-        // 3. ENVIAR NOTIFICACIÓN
-        event(new InscripcionCreada($inscripcion));
+        // 4. ENVIAR NOTIFICACIÓN (si existe evento)
+        // event(new InscripcionCreada($inscripcion));
         
         DB::commit();
         
@@ -378,7 +452,7 @@ public function store(Request $request)
     }
 }
 ```
-**Si te preguntan:** "Usamos transacciones de base de datos. Si algo falla, todo se revierte automáticamente. Creamos la inscripción, el pago, y si pagó todo la activamos. Al final disparamos un evento para la notificación automática."
+**Si te preguntan:** "Usamos transacciones de base de datos. Si algo falla, todo se revierte automáticamente. Primero obtenemos el precio vigente actual de la membresía, creamos la inscripción guardando el ID del precio (para trazabilidad histórica), creamos el pago inicial que puede ser parcial o completo. La inscripción se crea directamente activa si no hay restricciones."
 
 #### 3. **PAUSAR INSCRIPCIÓN** (Lógica de negocio)
 ```php
@@ -388,12 +462,12 @@ public function pausar(Request $request, $id)
     $inscripcion = Inscripcion::findOrFail($id);
     
     // VALIDAR: Solo se puede pausar si está Activa
-    if ($inscripcion->estado_id != EstadoInscripcion::ACTIVA->value) {
+    if ($inscripcion->id_estado != EstadosCodigo::INSCRIPCION_ACTIVA) {
         return back()->with('error', 'Solo se pueden pausar inscripciones activas');
     }
     
     // VALIDAR: Debe pagar multa (10% del total)
-    $multa = $inscripcion->total_pagar * 0.10;
+    $multa = $inscripcion->precio_final * 0.10;
     
     if ($request->pago_multa < $multa) {
         return back()->with('error', "Debe pagar multa de $multa");
@@ -409,19 +483,26 @@ public function pausar(Request $request, $id)
     
     // ACTUALIZAR
     $inscripcion->update([
-        'estado_id' => EstadoInscripcion::PAUSADA->value,
-        'fecha_pausa' => now(),
+        'id_estado' => EstadosCodigo::INSCRIPCION_PAUSADA,
+        'pausada' => true,
+        'fecha_pausa_inicio' => now(),
+        'fecha_pausa_fin' => now()->addDays($request->dias_pausa),
         'dias_pausa' => $request->dias_pausa,
-        'fecha_vencimiento' => $nueva_fecha_vencimiento
+        'fecha_vencimiento' => $nueva_fecha_vencimiento,
+        'pausas_realizadas' => $inscripcion->pausas_realizadas + 1
     ]);
     
     // REGISTRAR PAGO DE MULTA
     Pago::create([
-        'inscripcion_id' => $inscripcion->id,
-        'monto' => $request->pago_multa,
-        'metodo_pago_id' => $request->metodo_pago_id,
-        'tipo' => 'multa_pausa',
-        'fecha_pago' => now()
+        'uuid' => Str::uuid(),
+        'id_inscripcion' => $inscripcion->id,
+        'id_cliente' => $inscripcion->id_cliente,
+        'monto_abonado' => $request->pago_multa,
+        'monto_pendiente' => 0,
+        'id_metodo_pago' => $request->metodo_pago_id,
+        'observaciones' => 'Multa por pausa de membresía',
+        'fecha_pago' => now(),
+        'id_estado' => EstadosCodigo::PAGO_PAGADO
     ]);
     
     return back()->with('success', 'Inscripción pausada');
@@ -429,7 +510,7 @@ public function pausar(Request $request, $id)
 ```
 **Si te preguntan:** "La pausa requiere pagar una multa del 10%. Calculamos cuántos días le quedan, sumamos los días de pausa, y actualizamos la fecha de vencimiento. Todo queda registrado en el historial."
 
-#### 4. **PAGOS PARCIALES** (Lo complejo)
+#### 4. **PAGOS PARCIALES / EN CUOTAS** (Lo complejo)
 ```php
 // PagoController.php método registrarParcial() línea ~150-200
 public function registrarParcial(Request $request)
@@ -437,47 +518,48 @@ public function registrarParcial(Request $request)
     $inscripcion = Inscripcion::findOrFail($request->inscripcion_id);
     
     // CALCULAR saldo pendiente
-    $total_pagado = $inscripcion->pagos()->sum('monto');
-    $saldo_pendiente = $inscripcion->total_pagar - $total_pagado;
+    $total_pagado = $inscripcion->pagos()->sum('monto_abonado');
+    $saldo_pendiente = $inscripcion->precio_final - $total_pagado;
     
     // VALIDAR monto
-    if ($request->monto > $saldo_pendiente) {
+    if ($request->monto_abonado > $saldo_pendiente) {
         return back()->with('error', 'Monto excede saldo pendiente');
     }
     
-    // CREAR pago parcial
-    $pago = PagoParcial::create([
-        'inscripcion_id' => $inscripcion->id,
-        'monto' => $request->monto,
-        'metodo_pago_id' => $request->metodo_pago_id,
+    // OBTENER número de cuota (contar cuotas anteriores)
+    $numero_cuota = $inscripcion->pagos()->count() + 1;
+    
+    // CREAR pago parcial (en la MISMA tabla pagos)
+    $pago = Pago::create([
+        'uuid' => Str::uuid(),
+        'grupo_pago' => $inscripcion->uuid,  // Agrupar cuotas
+        'id_inscripcion' => $inscripcion->id,
+        'id_cliente' => $inscripcion->id_cliente,
+        'monto_abonado' => $request->monto_abonado,
+        'monto_pendiente' => $saldo_pendiente - $request->monto_abonado,
+        'id_metodo_pago' => $request->metodo_pago_id,
         'fecha_pago' => now(),
-        'numero_cuota' => $this->siguienteNumeroCuota($inscripcion),
-        'estado_id' => EstadoPago::COMPLETADO->value
+        'cantidad_cuotas' => $request->cantidad_cuotas_total,
+        'numero_cuota' => $numero_cuota,
+        'monto_cuota' => $request->monto_abonado,
+        'id_estado' => ($saldo_pendiente - $request->monto_abonado) > 0
+            ? EstadosCodigo::PAGO_PARCIAL
+            : EstadosCodigo::PAGO_PAGADO
     ]);
     
     // VERIFICAR si completó el pago
-    $nuevo_total_pagado = $total_pagado + $request->monto;
+    $nuevo_total_pagado = $total_pagado + $request->monto_abonado;
     
-    if ($nuevo_total_pagado >= $inscripcion->total_pagar) {
-        // ACTIVAR inscripción
-        $inscripcion->update([
-            'estado_id' => EstadoInscripcion::ACTIVA->value
-        ]);
-        
-        // Crear pago completo en tabla pagos
-        Pago::create([
-            'inscripcion_id' => $inscripcion->id,
-            'monto' => $inscripcion->total_pagar,
-            'estado_id' => EstadoPago::COMPLETADO->value,
-            'completado_con_parciales' => true
-        ]);
+    if ($nuevo_total_pagado >= $inscripcion->precio_final) {
+        // Actualizar último pago a PAGADO
+        $pago->update(['id_estado' => EstadosCodigo::PAGO_PAGADO]);
     }
     
-    return back()->with('success', "Pago parcial registrado. Saldo: " . 
-                        ($saldo_pendiente - $request->monto));
+    return back()->with('success', "Cuota #{$numero_cuota} registrada. Saldo: $" . 
+                        number_format($saldo_pendiente - $request->monto_abonado, 0));
 }
 ```
-**Si te preguntan:** "Permitimos pagar en cuotas. Cada pago se registra con su número de cuota. Cuando la suma de todos los pagos parciales alcanza el total, activamos automáticamente la inscripción."
+**Si te preguntan:** "NO usamos tabla `pagos_parciales` separada. Los pagos en cuotas se manejan en la misma tabla `pagos` con los campos `cantidad_cuotas`, `numero_cuota` y `grupo_pago` (UUID). Cada cuota es un registro independiente. Cuando la suma de `monto_abonado` de todos los pagos alcanza el `precio_final`, el estado cambia a PAGADO."
 
 #### 5. **TRASPASOS** (Lo más complejo)
 ```php
@@ -490,11 +572,14 @@ public function traspaso(Request $request)
         $inscripcion_origen = Inscripcion::findOrFail($request->inscripcion_id);
         
         // VALIDAR: Debe estar activa y paga
-        if ($inscripcion_origen->estado_id != EstadoInscripcion::ACTIVA->value) {
+        if ($inscripcion_origen->id_estado != EstadosCodigo::INSCRIPCION_ACTIVA) {
             throw new \Exception('Inscripción debe estar activa');
         }
         
-        if ($inscripcion_origen->saldo_pendiente > 0) {
+        $saldo_pendiente = $inscripcion_origen->precio_final - 
+                           $inscripcion_origen->pagos()->sum('monto_abonado');
+        
+        if ($saldo_pendiente > 0) {
             throw new \Exception('Debe estar completamente pagada');
         }
         
@@ -503,30 +588,37 @@ public function traspaso(Request $request)
         
         // CALCULAR proporcional a pagar
         $membresia_nueva = Membresia::findOrFail($request->membresia_nueva_id);
-        $precio_dia_anterior = $inscripcion_origen->total_pagar / 
+        $precio_nuevo = $membresia_nueva->precios()
+            ->whereNull('fecha_vigencia_hasta')->first();
+        
+        $precio_dia_anterior = $inscripcion_origen->precio_final / 
                                $inscripcion_origen->membresia->duracion_dias;
         $valor_dias_restantes = $precio_dia_anterior * $dias_restantes;
-        $diferencia_pagar = $membresia_nueva->precio_normal - $valor_dias_restantes;
+        $diferencia_pagar = $precio_nuevo->precio_normal - $valor_dias_restantes;
         
-        // CANCELAR inscripción anterior
+        // MARCAR inscripción anterior como traspasada
         $inscripcion_origen->update([
-            'estado_id' => EstadoInscripcion::CANCELADA->value,
-            'motivo_cancelacion' => 'Traspaso a nueva membresía',
-            'fecha_cancelacion' => now()
+            'id_estado' => EstadosCodigo::INSCRIPCION_TRASPASADA,
+            'observaciones' => 'Traspasada a nueva membresía el ' . now()->format('d/m/Y')
         ]);
         
         // CREAR nueva inscripción
         $inscripcion_nueva = Inscripcion::create([
-            'codigo' => $this->generarCodigo(),
-            'cliente_id' => $inscripcion_origen->cliente_id,
-            'membresia_id' => $request->membresia_nueva_id,
+            'uuid' => Str::uuid(),
+            'id_cliente' => $inscripcion_origen->id_cliente,
+            'id_membresia' => $request->membresia_nueva_id,
+            'id_precio_acordado' => $precio_nuevo->id,
+            'fecha_inscripcion' => now(),
             'fecha_inicio' => now(),
             'fecha_vencimiento' => now()->addDays($membresia_nueva->duracion_dias),
-            'precio_membresia' => $membresia_nueva->precio_normal,
-            'descuento' => $valor_dias_restantes,
-            'total_pagar' => $diferencia_pagar,
-            'estado_id' => EstadoInscripcion::PENDIENTE->value,
-            'inscripcion_origen_id' => $inscripcion_origen->id // ← Referencia
+            'precio_base' => $precio_nuevo->precio_normal,
+            'descuento_aplicado' => $valor_dias_restantes,  // Crédito de días anteriores
+            'precio_final' => $diferencia_pagar,
+            'id_estado' => EstadosCodigo::INSCRIPCION_ACTIVA,
+            'es_cambio_plan' => true,
+            'id_inscripcion_anterior' => $inscripcion_origen->id, // ← Referencia
+            'tipo_cambio' => $diferencia_pagar > 0 ? 'upgrade' : 'downgrade',
+            'credito_plan_anterior' => $valor_dias_restantes
         ]);
         
         // SI DEBE PAGAR DIFERENCIA
@@ -536,14 +628,13 @@ public function traspaso(Request $request)
             return redirect()->route('admin.inscripciones.show', $inscripcion_nueva)
                             ->with('warning', "Debe pagar diferencia: $$diferencia_pagar");
         } else {
-            // No debe pagar o le sobra
-            $inscripcion_nueva->update([
-                'estado_id' => EstadoInscripcion::ACTIVA->value
-            ]);
+            // No debe pagar (downgrade) o le sobra crédito
+            // Ya está activa desde la creación
             
             DB::commit();
             return redirect()->route('admin.inscripciones.show', $inscripcion_nueva)
-                            ->with('success', 'Traspaso exitoso');
+                            ->with('success', 'Traspaso exitoso. Crédito aplicado: $' . 
+                                   number_format($valor_dias_restantes, 0));
         }
         
     } catch (\Exception $e) {
@@ -933,82 +1024,126 @@ database/migrations/
 CLIENTES:
 2024_xx_create_clientes_table.php
 ├── id
-├── rut (único)
-├── nombre
+├── uuid
+├── run_pasaporte (único, acepta RUT o pasaporte)
+├── nombres
 ├── apellido_paterno
-├── apellido_materno
-├── email (único)
-├── telefono
+├── apellido_materno (nullable)
+├── celular
+├── email (nullable, único)
+├── direccion
 ├── fecha_nacimiento
-├── es_menor_edad
-├── estado_id
+├── contacto_emergencia
+├── telefono_emergencia
+├── id_convenio (FK nullable)
+├── observaciones
+├── activo (boolean)
 ├── deleted_at (soft delete)
+├── es_menor_edad (boolean)
+├── consentimiento_apoderado
+├── apoderado_nombre
+├── apodeado_rut
+├── apoderado_email
+├── apoderado_telefono
+├── apoderado_parentesco
 └── timestamps
 
-TUTORES:
-2024_xx_create_tutores_legales_table.php
-├── id
-├── cliente_id (FK)
-├── rut_tutor
-├── nombre_tutor
-└── timestamps
+NOTA: NO existe tabla tutores_legales separada, 
+los datos del apoderado están en la misma tabla clientes
 
 MEMBRESÍAS:
 2024_xx_create_membresias_table.php
 ├── id
+├── uuid
 ├── nombre
+├── duracion_meses
 ├── duracion_dias
-├── precio_normal      ← IMPORTANTE
-├── precio_convenio    ← IMPORTANTE
-├── estado_id
+├── max_pausas
+├── descripcion
+├── activo (boolean)
+├── deleted_at
 └── timestamps
 
-HISTORIAL PRECIOS:
-2024_xx_create_historial_precio_membresias_table.php
+PRECIOS DE MEMBRESÍAS (tabla separada):
+2024_xx_create_precios_membresias_table.php
 ├── id
-├── membresia_id (FK)
+├── id_membresia (FK)
+├── precio_normal
+├── precio_convenio (nullable)
+├── fecha_vigencia_desde
+├── fecha_vigencia_hasta (nullable = vigente)
+├── activo (boolean)
+└── timestamps
+
+HISTORIAL DE PRECIOS:
+2024_xx_create_historial_precios_table.php
+├── id
+├── id_precio_membresia (FK)
 ├── precio_normal_anterior
-├── precio_convenio_anterior
 ├── precio_normal_nuevo
+├── precio_convenio_anterior
 ├── precio_convenio_nuevo
 ├── fecha_cambio
-├── usuario_id
+├── id_usuario
 └── timestamps
 
 INSCRIPCIONES:
 2024_xx_create_inscripciones_table.php
 ├── id
-├── codigo (único, ej: 0001234)
-├── cliente_id (FK)
-├── membresia_id (FK)
+├── uuid
+├── id_cliente (FK)
+├── id_membresia (FK)
+├── id_convenio (FK nullable)
+├── id_precio_acordado (FK a precios_membresias)
+├── fecha_inscripcion
 ├── fecha_inicio
 ├── fecha_vencimiento
-├── precio_membresia
-├── descuento
-├── total_pagar
-├── estado_id (100-104)
-├── inscripcion_origen_id (para traspasos)
+├── precio_base
+├── descuento_aplicado
+├── precio_final
+├── id_motivo_descuento (FK nullable)
+├── id_estado (100-106) referencia a tabla estados
+├── observaciones
+├── deleted_at
+├── pausada (boolean)
+├── dias_pausa
+├── fecha_pausa_inicio
+├── fecha_pausa_fin
+├── pausas_realizadas
+├── max_pausas_permitidas
+├── es_cambio_plan (boolean)
+├── id_inscripcion_anterior (FK para traspasos)
+├── tipo_cambio (upgrade/downgrade)
+├── credito_plan_anterior
 └── timestamps
 
-PAGOS:
+PAGOS (incluye pagos parciales/cuotas):
 2024_xx_create_pagos_table.php
 ├── id
-├── inscripcion_id (FK)
-├── monto
-├── metodo_pago_id
+├── uuid
+├── grupo_pago (UUID para agrupar cuotas)
+├── id_inscripcion (FK)
+├── id_cliente (FK)
+├── monto_abonado
+├── monto_pendiente
+├── id_motivo_descuento (FK nullable)
 ├── fecha_pago
-├── estado_id (200-202)
+├── id_metodo_pago (FK)
+├── id_metodo_pago2 (FK nullable, para pagos combinados)
+├── monto_metodo1
+├── monto_metodo2
+├── referencia_pago
+├── id_estado (200-205)
+├── cantidad_cuotas (total de cuotas)
+├── numero_cuota (1, 2, 3...)
+├── monto_cuota
+├── fecha_vencimiento_cuota
+├── observaciones
+├── deleted_at
 └── timestamps
 
-PAGOS PARCIALES:
-2024_xx_create_pagos_parciales_table.php
-├── id
-├── inscripcion_id (FK)
-├── monto
-├── numero_cuota
-├── metodo_pago_id
-├── fecha_pago
-└── timestamps
+NOTA: NO existe tabla pagos_parciales separada.
+Los pagos en cuotas se manejan aquí con cantidad_cuotas y numero_cuota.
 
 NOTIFICACIONES:
 2024_xx_create_notificaciones_table.php
@@ -1035,9 +1170,9 @@ public function inscripciones()
     return $this->hasMany(Inscripcion::class);
 }
 
-public function tutorLegal()
+public function convenio()
 {
-    return $this->hasOne(TutorLegal::class);
+    return $this->belongsTo(Convenio::class, 'id_convenio');
 }
 
 public function notificaciones()
@@ -1048,22 +1183,27 @@ public function notificaciones()
 // Inscripcion.php
 public function cliente()
 {
-    return $this->belongsTo(Cliente::class);
+    return $this->belongsTo(Cliente::class, 'id_cliente');
 }
 
 public function membresia()
 {
-    return $this->belongsTo(Membresia::class);
+    return $this->belongsTo(Membresia::class, 'id_membresia');
+}
+
+public function precioAcordado()
+{
+    return $this->belongsTo(PrecioMembresia::class, 'id_precio_acordado');
+}
+
+public function convenio()
+{
+    return $this->belongsTo(Convenio::class, 'id_convenio');
 }
 
 public function pagos()
 {
-    return $this->hasMany(Pago::class);
-}
-
-public function pagosParciales()
-{
-    return $this->hasMany(PagoParcial::class);
+    return $this->hasMany(Pago::class, 'id_inscripcion');
 }
 
 public function notificaciones()
@@ -1074,12 +1214,23 @@ public function notificaciones()
 // Membresia.php
 public function inscripciones()
 {
-    return $this->hasMany(Inscripcion::class);
+    return $this->hasMany(Inscripcion::class, 'id_membresia');
+}
+
+public function precios()
+{
+    return $this->hasMany(PrecioMembresia::class, 'id_membresia');
+}
+
+// PrecioMembresia.php
+public function membresia()
+{
+    return $this->belongsTo(Membresia::class, 'id_membresia');
 }
 
 public function historialPrecios()
 {
-    return $this->hasMany(HistorialPrecioMembresia::class);
+    return $this->hasMany(HistorialPrecio::class, 'id_precio_membresia');
 }
 ```
 
@@ -1548,6 +1699,279 @@ document.getElementById('rut').addEventListener('blur', async function() {
     }
 });
 ```
+
+---
+
+## 📧 API EXTERNA: RESEND
+
+### ¿Qué es Resend?
+
+**Resend** es el servicio externo que usamos para enviar emails transaccionales (notificaciones, bienvenida, recordatorios).
+
+```
+Sitio: https://resend.com
+Librería: resend/resend-php
+Config: config/mail.php
+```
+
+### 🔑 Configuración
+
+```php
+// .env
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+MAIL_FROM_ADDRESS=onboarding@resend.dev
+MAIL_FROM_NAME="PROGYM"
+
+// config/mail.php
+'mailers' => [
+    'resend' => [
+        'transport' => 'resend',
+    ],
+],
+```
+
+### 📤 Uso en NotificacionService.php
+
+```php
+use Resend\Laravel\Facades\Resend;
+
+// Enviar email
+$resultado = Resend::emails()->send([
+    'from' => 'PROGYM <onboarding@resend.dev>',
+    'to' => ['cliente@email.com'],
+    'subject' => 'Bienvenido a PROGYM',
+    'html' => $contenido_html
+]);
+
+// Respuesta
+{
+    "id": "re_xxxxx",  // ID único de Resend
+    "status": "sent"
+}
+```
+
+### 🔍 Tracking de Emails
+
+```php
+// Guardamos el ID de Resend en BD
+Notificacion::update([
+    'resend_id' => $resultado['id'],
+    'estado_id' => 601 // Enviada
+]);
+
+// Logs completos
+LogNotificacion::create([
+    'notificacion_id' => $notificacion->id,
+    'accion' => 'enviada',
+    'resultado' => 'exitoso',
+    'resend_id' => $resultado['id'],
+    'fecha' => now()
+]);
+```
+
+### ⚠️ Manejo de Errores
+
+```php
+try {
+    $resultado = Resend::emails()->send([...]);
+    
+} catch (\Resend\Exceptions\ErrorException $e) {
+    // Errores de Resend
+    // - API key inválida
+    // - Rate limit excedido
+    // - Email inválido
+    // - Dominio no verificado
+    
+    LogNotificacion::create([
+        'notificacion_id' => $notificacion->id,
+        'accion' => 'intento_envio',
+        'resultado' => 'fallido',
+        'error' => $e->getMessage(),
+        'codigo_error' => $e->getCode()
+    ]);
+    
+    // Reintentar hasta 3 veces
+    if ($notificacion->intentos < 3) {
+        $notificacion->increment('intentos');
+    } else {
+        $notificacion->update(['estado_id' => 602]); // Fallida
+    }
+}
+```
+
+### 📊 Límites de Resend (Plan Gratuito)
+
+```
+✅ 100 emails/día
+✅ 3,000 emails/mes
+✅ 1 dominio verificado
+✅ API completa
+✅ Logs básicos
+
+Plan Pagado:
+💰 $20/mes → 50,000 emails
+💰 $80/mes → 100,000 emails
+```
+
+### 🔐 Seguridad
+
+```php
+// NUNCA exponer la API key
+// ✅ Usar .env
+RESEND_API_KEY=re_xxxxx
+
+// ❌ NO hardcodear
+$api_key = "re_xxxxx"; // MAL
+
+// ✅ Validar emails antes de enviar
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    throw new \Exception('Email inválido');
+}
+
+// ✅ Rate limiting interno
+if ($emails_hoy >= 100) {
+    throw new \Exception('Límite diario alcanzado');
+}
+```
+
+### 🎯 Ventajas de Resend vs Otros
+
+```
+✅ API simple y moderna
+✅ Mejor deliverability que Gmail/SMTP
+✅ SDK oficial para Laravel
+✅ Logs detallados en dashboard
+✅ Webhooks para eventos (bounce, delivered, opened)
+✅ Testing con emails reales
+✅ Dominio de prueba incluido (onboarding@resend.dev)
+```
+
+### 📝 Ejemplo Completo de Envío
+
+```php
+// NotificacionService.php método enviarNotificacion()
+public function enviarNotificacion($notificacion)
+{
+    try {
+        // 1. VALIDAR cliente activo
+        if ($notificacion->cliente->estado_id != 1) {
+            throw new \Exception('Cliente inactivo');
+        }
+        
+        // 2. VALIDAR límites anti-spam
+        if (!$this->puedeEnviar($notificacion->cliente_id)) {
+            throw new \Exception('Límite de envíos alcanzado');
+        }
+        
+        // 3. OBTENER plantilla HTML
+        $plantilla = $notificacion->tipoNotificacion;
+        
+        // 4. RENDERIZAR con datos del cliente
+        $contenido = $this->renderizarPlantilla(
+            $plantilla->html_template,
+            $notificacion->cliente,
+            $notificacion->inscripcion
+        );
+        
+        // 5. ENVIAR vía Resend
+        $resultado = Resend::emails()->send([
+            'from' => config('mail.from.address'),
+            'to' => [$notificacion->cliente->email],
+            'subject' => $notificacion->asunto,
+            'html' => $contenido,
+            'tags' => [
+                'tipo' => $notificacion->tipoNotificacion->nombre,
+                'cliente_id' => $notificacion->cliente_id
+            ]
+        ]);
+        
+        // 6. ACTUALIZAR notificación
+        $notificacion->update([
+            'estado_id' => 601, // Enviada
+            'fecha_enviado' => now(),
+            'resend_id' => $resultado['id']
+        ]);
+        
+        // 7. LOG exitoso
+        LogNotificacion::create([
+            'notificacion_id' => $notificacion->id,
+            'accion' => 'enviada',
+            'resultado' => 'exitoso',
+            'resend_id' => $resultado['id'],
+            'detalles' => json_encode($resultado)
+        ]);
+        
+        return ['exito' => true, 'resend_id' => $resultado['id']];
+        
+    } catch (\Resend\Exceptions\ErrorException $e) {
+        // Error de Resend
+        $this->logError($notificacion, $e);
+        return ['exito' => false, 'error' => $e->getMessage()];
+        
+    } catch (\Exception $e) {
+        // Error general
+        $this->logError($notificacion, $e);
+        return ['exito' => false, 'error' => $e->getMessage()];
+    }
+}
+```
+
+### 🧪 Testing sin Consumir Cuota
+
+```php
+// Usar dominio de prueba
+'to' => ['delivered@resend.dev'],  // ✅ Siempre exitoso
+'to' => ['bounced@resend.dev'],    // ❌ Siempre falla
+'to' => ['complained@resend.dev'], // ⚠️ Marca como spam
+```
+
+### 🔄 Webhooks (Futuro)
+
+```php
+// Resend puede notificar eventos:
+POST /api/webhooks/resend
+
+{
+    "type": "email.delivered",
+    "data": {
+        "email_id": "re_xxxxx",
+        "to": "cliente@email.com",
+        "subject": "Bienvenido",
+        "created_at": "2025-12-09T10:00:00Z"
+    }
+}
+
+// Actualizar estado en BD
+public function webhook(Request $request)
+{
+    $evento = $request->input('type');
+    $resend_id = $request->input('data.email_id');
+    
+    $notificacion = Notificacion::where('resend_id', $resend_id)->first();
+    
+    match($evento) {
+        'email.delivered' => $notificacion->update(['entregado' => true]),
+        'email.bounced' => $notificacion->update(['rebotado' => true]),
+        'email.opened' => $notificacion->increment('aperturas'),
+        'email.clicked' => $notificacion->increment('clics'),
+        default => null
+    };
+}
+```
+
+### 💡 Preguntas Frecuentes
+
+**¿Por qué Resend y no Gmail?**
+> Gmail tiene límites muy bajos (500/día) y puede marcar como spam. Resend está diseñado específicamente para emails transaccionales con mejor deliverability.
+
+**¿Qué pasa si se acaba la cuota?**
+> Las notificaciones quedan pendientes en BD. Cuando renueva la cuota (nuevo mes o upgrade), el CRON las envía automáticamente.
+
+**¿Se pueden enviar adjuntos?**
+> Sí, Resend soporta attachments, pero por ahora solo usamos HTML para notificaciones simples.
+
+**¿Cómo verificar que llegó el email?**
+> En el dashboard de Resend podemos ver logs completos: enviados, entregados, abiertos, clics. Cada email tiene su `resend_id` único.
 
 ---
 
