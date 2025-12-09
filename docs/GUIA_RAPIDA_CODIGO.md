@@ -1221,6 +1221,334 @@ Si falla cualquiera → Se deshace TODO
 ### "¿Por qué eligieron Resend?"
 > "Es una API moderna, simple de usar, con buen free tier, y específicamente diseñada para notificaciones transaccionales. Tiene mejor deliverability que Gmail."
 
+### "¿Tienen APIs REST implementadas?"
+> "Sí, tenemos APIs REST internas para búsquedas AJAX, dashboard en tiempo real, validación de RUT, cálculos de precios, y operaciones sobre inscripciones y pagos. Retornan JSON para consumo desde JavaScript."
+
+---
+
+## 🌐 APIs REST INTERNAS
+
+El sistema tiene **APIs REST** para operaciones AJAX y datos en tiempo real:
+
+### 📍 Rutas API (routes/web.php)
+```
+Prefijo: /api/ (requiere autenticación)
+
+CONTROLADORES:
+├── app/Http/Controllers/Api/ClienteApiController.php
+├── app/Http/Controllers/Api/SearchApiController.php
+├── app/Http/Controllers/Api/DashboardApiController.php
+├── app/Http/Controllers/Api/MembresiaApiController.php
+├── app/Http/Controllers/Api/InscripcionApiController.php
+├── app/Http/Controllers/Api/PausaApiController.php
+└── app/Http/Controllers/Api/PagoApiController.php
+```
+
+### 🔍 1. **APIs de Búsqueda** (SearchApiController)
+
+```php
+// Buscar clientes (autocomplete)
+GET /api/clientes/search?q=juan
+
+Response:
+[
+    {
+        "id": 1,
+        "text": "Juan Pérez (juan@email.com)"
+    }
+]
+
+// Buscar inscripciones
+GET /api/inscripciones/search?q=0001234
+```
+
+**Uso:** Campos con autocomplete tipo-ahead en formularios
+
+---
+
+### 👤 2. **APIs de Clientes** (ClienteApiController)
+
+```php
+// Listar clientes activos
+GET /api/clientes
+
+Response:
+[
+    {
+        "id": 1,
+        "nombre_completo": "Juan Pérez",
+        "run": "12345678-9",
+        "email": "juan@email.com",
+        "celular": "987654321",
+        "inscripciones_activas": 1
+    }
+]
+
+// Ver cliente específico
+GET /api/clientes/{id}
+
+// Estadísticas del cliente
+GET /api/clientes/{id}/stats
+
+// Validar RUT
+POST /api/clientes/validar-rut
+Body: { "rut": "12345678-9" }
+
+Response:
+{
+    "valido": true,
+    "mensaje": "RUT válido"
+}
+```
+
+**Uso:** Lazy loading de tabla clientes, validación en tiempo real
+
+---
+
+### 💪 3. **APIs de Membresías** (MembresiaApiController)
+
+```php
+// Listar membresías activas
+GET /api/membresias
+
+// Buscar membresías
+GET /api/membresias/search?q=mensual
+
+// Ver membresía específica
+GET /api/membresias/{id}
+
+Response:
+{
+    "id": 1,
+    "nombre": "Mensual",
+    "duracion_dias": 30,
+    "precio_normal": 25000,
+    "precio_convenio": 20000
+}
+
+// Obtener descuento de convenio
+GET /api/convenios/{id}/descuento
+```
+
+**Uso:** Cargar precios dinámicamente en formularios de inscripción
+
+---
+
+### 📝 4. **APIs de Inscripciones** (InscripcionApiController)
+
+```php
+// Calcular precio final y fecha vencimiento
+POST /api/inscripciones/calcular
+
+Body:
+{
+    "membresia_id": 1,
+    "fecha_inicio": "2025-12-09",
+    "aplica_convenio": true,
+    "convenio_id": 5,
+    "descuento_manual": 0
+}
+
+Response:
+{
+    "precio_base": 25000,
+    "descuento_convenio": 5000,
+    "descuento_manual": 0,
+    "precio_final": 20000,
+    "fecha_vencimiento": "2026-01-08",
+    "duracion_dias": 30
+}
+```
+
+**Uso:** Calcular en tiempo real mientras usuario llena formulario
+
+---
+
+### ⏸️ 5. **APIs de Pausas** (PausaApiController)
+
+```php
+// Pausar inscripción
+POST /api/pausas/{id}/pausar
+Body: { "dias_pausa": 14 }
+
+// Reanudar inscripción
+POST /api/pausas/{id}/reanudar
+
+// Ver info de pausa
+GET /api/pausas/{id}/info
+
+// Verificar pausas expiradas (CRON)
+POST /api/pausas/verificar-expiradas
+```
+
+**Uso:** Operaciones AJAX sin recargar página
+
+---
+
+### 💳 6. **APIs de Pagos** (PagoApiController)
+
+```php
+// Crear pago
+POST /api/pagos
+Body: {
+    "inscripcion_id": 1,
+    "monto_abonado": 25000,
+    "metodo_pago_id": 1
+}
+
+// Ver pago específico
+GET /api/pagos/{id}
+
+// Actualizar pago
+PUT /api/pagos/{id}
+
+// Eliminar pago
+DELETE /api/pagos/{id}
+
+// Obtener saldo pendiente
+GET /api/inscripciones/{id}/saldo
+
+Response:
+{
+    "total_pagar": 25000,
+    "total_pagado": 10000,
+    "saldo_pendiente": 15000,
+    "porcentaje_pagado": 40
+}
+
+// Calcular cuotas
+POST /api/pagos/calcular-cuotas
+Body: {
+    "monto_total": 25000,
+    "numero_cuotas": 5
+}
+
+Response:
+{
+    "numero_cuotas": 5,
+    "monto_por_cuota": 5000,
+    "total": 25000
+}
+```
+
+**Uso:** Gestión de pagos parciales y cálculos en formularios
+
+---
+
+### 📊 7. **APIs de Dashboard** (DashboardApiController)
+
+```php
+// Estadísticas generales
+GET /api/dashboard/stats
+
+Response:
+{
+    "clientes_activos": 150,
+    "inscripciones_activas": 120,
+    "ingresos_mes": 3500000,
+    "pagos_pendientes": 450000
+}
+
+// Ingresos por mes
+GET /api/dashboard/ingresos-mes
+
+// Inscripciones por estado
+GET /api/dashboard/inscripciones-estado
+
+// Membresías populares
+GET /api/dashboard/membresias-populares
+
+// Métodos de pago más usados
+GET /api/dashboard/metodos-pago
+
+// Últimos pagos
+GET /api/dashboard/ultimos-pagos
+
+// Próximas a vencer
+GET /api/dashboard/proximas-vencer
+
+// Resumen de clientes
+GET /api/dashboard/resumen-clientes
+```
+
+**Uso:** Dashboard con gráficos en tiempo real
+
+---
+
+### 🔐 Autenticación
+
+Todas las APIs requieren:
+```
+✅ Usuario autenticado (middleware: auth)
+✅ Sesión activa
+✅ CSRF token (para POST/PUT/DELETE)
+```
+
+### 📤 Formato de Respuesta
+
+Todas las APIs retornan JSON:
+```php
+// Éxito
+{
+    "data": { ... },
+    "message": "Operación exitosa"
+}
+
+// Error
+{
+    "error": "Mensaje de error",
+    "code": 400
+}
+```
+
+### 💡 Ejemplo de Uso en JavaScript
+
+```javascript
+// Buscar cliente (autocomplete)
+fetch('/api/clientes/search?q=juan')
+    .then(res => res.json())
+    .then(data => {
+        console.log(data); // Array de clientes
+    });
+
+// Calcular precio inscripción
+fetch('/api/inscripciones/calcular', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify({
+        membresia_id: 1,
+        fecha_inicio: '2025-12-09',
+        aplica_convenio: true
+    })
+})
+.then(res => res.json())
+.then(data => {
+    document.getElementById('precio').value = data.precio_final;
+    document.getElementById('fecha_vencimiento').value = data.fecha_vencimiento;
+});
+
+// Validar RUT en tiempo real
+document.getElementById('rut').addEventListener('blur', async function() {
+    const response = await fetch('/api/clientes/validar-rut', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ rut: this.value })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.valido) {
+        alert('RUT inválido');
+    }
+});
+```
+
 ---
 
 ## 📚 ARCHIVOS A REVISAR (Orden de prioridad)
