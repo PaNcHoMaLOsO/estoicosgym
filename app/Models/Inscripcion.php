@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadosCodigo;
 use App\Models\HistorialCambio;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -42,7 +43,7 @@ use Carbon\Carbon;
  */
 class Inscripcion extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'inscripciones';
     protected $primaryKey = 'id';

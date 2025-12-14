@@ -19,7 +19,7 @@ class ClienteFactory extends Factory
             'email' => $this->faker->unique()->safeEmail(),
             'celular' => '+56' . $this->faker->numerify('#########'),
             'direccion' => $this->faker->address(),
-            'fecha_nacimiento' => $this->faker->dateOfBirth(),
+            'fecha_nacimiento' => $this->faker->date(),
             'contacto_emergencia' => $this->faker->name(),
             'telefono_emergencia' => '+56' . $this->faker->numerify('#########'),
             'observaciones' => $this->faker->sentence(),
