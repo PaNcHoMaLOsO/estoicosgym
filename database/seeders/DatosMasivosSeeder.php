@@ -38,6 +38,6 @@ class DatosMasivosSeeder extends Seeder
                 ]);
             });
         });
-        $this->command->info("✅ Datos masivos generados correctamente.");
+        $this->command->info("Datos masivos generados correctamente.");
     }
 }

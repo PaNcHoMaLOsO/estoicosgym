@@ -62,6 +62,11 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+
+        "limpiar-y-cargar": [
+            "@php artisan migrate:fresh --seed",
+            "@php artisan db:seed --class=DatosMasivosSeeder"
         ]
     },
     "extra": {

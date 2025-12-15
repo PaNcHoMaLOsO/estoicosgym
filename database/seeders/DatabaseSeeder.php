@@ -26,7 +26,8 @@ class DatabaseSeeder extends Seeder
             MembresiasSeeder::class,         // 5. Tipos de membresías (Anual, Semestral, Trimestral, Mensual, Diario)
             PreciosMembresiasSeeder::class,  // 6. Precios por membresía
             ConveniosSeeder::class,          // 7. Convenios con empresas/instituciones
-            PlantillasProgymSeeder::class,   // 8. Plantillas de email (8 plantillas: bienvenida, vencimiento, pagos, etc.)
+
+            //PlantillasProgymSeeder::class,   // 8. Plantillas de email (8 plantillas: bienvenida, vencimiento, pagos, etc.)
         ]);
 
         $this->command->info('✅ Seeders base completados');
