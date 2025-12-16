@@ -9,6 +9,9 @@ class ClienteFactory extends Factory
 {
     protected $model = Cliente::class;
 
+    // Registro estático de RUNs generados para asegurar unicidad
+    protected static $runsGenerados = [];
+
     public function definition(): array
     {
         $nombres = [
@@ -26,7 +29,7 @@ class ClienteFactory extends Factory
             'Cornejo', 'Salazar', 'Miranda', 'Cárdenas', 'Riquelme', 'Bravo', 'Cortés', 'Saavedra', 'Navarro', 'Ortega'
         ];
         return [
-            'run_pasaporte' => $this->generarRutChileno(),
+            'run_pasaporte' => $this->generarRutChilenoUnico(),
             'nombres' => $this->faker->randomElement($nombres),
             'apellido_paterno' => $this->faker->randomElement($apellidos),
             'apellido_materno' => $this->faker->randomElement($apellidos),
@@ -50,6 +53,16 @@ class ClienteFactory extends Factory
         $numeroFormateado = number_format($numero, 0, '', '.');
         return $numeroFormateado . '-' . $dv;
     }
+    public function generarRutChilenoUnico(): string
+    {
+        do {
+            $run = $this->generarRutChileno();
+        } while (in_array($run, self::$runsGenerados));
+        self::$runsGenerados[] = $run;
+        return $run;
+    }
+
+    
 
     private function calcularDigitoVerificador(int $numero): string
     {

@@ -15,9 +15,11 @@ class DatosMasivosSeeder extends Seeder
      */
     public function run(): void
     {
-        $totalClientes = 100; // Un millón
+        $totalClientes = 2000; //
         $inscripcionesPorCliente = 1; // Ajustable
         $pagosPorInscripcion = 1; // Ajustable
+
+        $start = microtime(true);
 
         // Asegurar que existan membresías y métodos de pago
         if (\App\Models\Membresia::count() < 5) {
@@ -38,6 +40,11 @@ class DatosMasivosSeeder extends Seeder
                 ]);
             });
         });
+        $end = microtime(true);
+        $duration = $end - $start;
+        $minutes = floor($duration / 60);
+        $seconds = $duration - ($minutes * 60);
         $this->command->info("Datos masivos generados correctamente.");
+        $this->command->info(sprintf('Tiempo total: %d min %.2f seg', $minutes, $seconds));
     }
 }
