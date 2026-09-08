@@ -889,8 +889,42 @@ $(document).ready(function() {
         updateEstePago();
     });
 
-    // Mixto montos change
+    // Mixto montos change con validación
     $('#monto_metodo1, #monto_metodo2').on('input', function() {
+        let monto = parseFloat($(this).val()) || 0;
+        
+        // No permitir montos negativos
+        if (monto < 0) {
+            monto = 0;
+            $(this).val(0);
+        }
+        
+        // No permitir que un solo monto supere el saldo pendiente
+        if (monto > montoPendiente) {
+            monto = montoPendiente;
+            $(this).val(Math.round(montoPendiente));
+            Swal.fire({
+                icon: 'warning',
+                title: 'Monto ajustado',
+                text: `El monto máximo es $${formatNumber(montoPendiente)} (saldo pendiente)`,
+                confirmButtonColor: '#e94560',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+        
+        // Validar que la suma no exceda el saldo pendiente
+        const m1 = parseFloat($('#monto_metodo1').val()) || 0;
+        const m2 = parseFloat($('#monto_metodo2').val()) || 0;
+        const total = m1 + m2;
+        
+        if (total > montoPendiente) {
+            // Ajustar el monto actual para no exceder
+            const exceso = total - montoPendiente;
+            const nuevoMonto = Math.max(0, monto - exceso);
+            $(this).val(Math.round(nuevoMonto));
+        }
+        
         updateEstePago();
     });
 

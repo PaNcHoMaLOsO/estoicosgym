@@ -1715,8 +1715,22 @@ $(document).ready(function() {
     }
 
     // ========== PAGO MIXTO - 2 MÉTODOS SIMPLES ==========
-    // Actualizar resumen al cambiar montos
+    // Actualizar resumen al cambiar montos con validación
     $('#monto_metodo1, #monto_metodo2').on('input', function() {
+        let monto = parseInt($(this).val()) || 0;
+        
+        // No permitir montos negativos
+        if (monto < 0) {
+            monto = 0;
+            $(this).val(monto);
+        }
+        
+        // No permitir que un solo monto supere el precio final
+        if (monto > precioFinal) {
+            monto = Math.round(precioFinal);
+            $(this).val(monto);
+        }
+        
         actualizarResumenMixto();
     });
 
@@ -1725,15 +1739,29 @@ $(document).ready(function() {
     });
 
     function actualizarResumenMixto() {
-        const monto1 = parseInt($('#monto_metodo1').val()) || 0;
-        const monto2 = parseInt($('#monto_metodo2').val()) || 0;
+        let monto1 = parseInt($('#monto_metodo1').val()) || 0;
+        let monto2 = parseInt($('#monto_metodo2').val()) || 0;
         const metodo1 = $('#id_metodo_pago1').val();
         const metodo2 = $('#id_metodo_pago2').val();
         const metodo1Nombre = $('#id_metodo_pago1 option:selected').text();
         const metodo2Nombre = $('#id_metodo_pago2 option:selected').text();
         
+        // Validar que la suma no supere el precio final
         const totalIngresado = monto1 + monto2;
-        const diferencia = precioFinal - totalIngresado;
+        if (totalIngresado > precioFinal) {
+            // Ajustar el segundo monto para no exceder
+            const exceso = totalIngresado - precioFinal;
+            if (document.activeElement.id === 'monto_metodo2') {
+                monto2 = Math.max(0, monto2 - exceso);
+                $('#monto_metodo2').val(Math.round(monto2));
+            } else {
+                monto1 = Math.max(0, monto1 - exceso);
+                $('#monto_metodo1').val(Math.round(monto1));
+            }
+        }
+        
+        const totalFinal = monto1 + monto2;
+        const diferencia = precioFinal - totalFinal;
 
         // Construir array de detalles para el hidden field
         const detalles = [];
@@ -1754,7 +1782,7 @@ $(document).ready(function() {
 
         // Actualizar displays
         $('#mixto-total-pagar').text('$' + formatNumber(precioFinal));
-        $('#mixto-total-ingresado').text('$' + formatNumber(totalIngresado));
+        $('#mixto-total-ingresado').text('$' + formatNumber(totalFinal));
         
         const boxDiferencia = $('#mixto-diferencia-box');
         boxDiferencia.removeClass('ok error');
@@ -1765,11 +1793,13 @@ $(document).ready(function() {
         } else if (diferencia > 0) {
             $('#mixto-diferencia').text('-$' + formatNumber(diferencia)).css('color', 'var(--warning)');
         } else {
-            $('#mixto-diferencia').text('+$' + formatNumber(Math.abs(diferencia))).css('color', 'var(--accent)');
+            // Ya no debería llegar aquí por la validación, pero por seguridad
+            $('#mixto-diferencia').text('Excede el total').css('color', 'var(--accent)');
+            boxDiferencia.addClass('error');
         }
 
         // Guardar en hidden fields
-        $('#total-mixto').val(Math.round(totalIngresado));
+        $('#total-mixto').val(Math.round(totalFinal));
         $('#detalle-pagos-mixto').val(JSON.stringify(detalles));
     }
 

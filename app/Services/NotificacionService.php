@@ -8,11 +8,17 @@ use App\Models\Notificacion;
 use App\Models\TipoNotificacion;
 use App\Models\LogNotificacion;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class NotificacionService
 {
+    private CorreoService $correo;
+
+    public function __construct(?CorreoService $correo = null)
+    {
+        $this->correo = $correo ?? new CorreoService();
+    }
+
     /**
      * Programa notificaciones para membresías próximas a vencer
      */
@@ -366,19 +372,18 @@ class NotificacionService
             try {
                 $notificacion->registrarLog('enviando', 'Iniciando envío de correo');
 
-                // Enviar usando Resend
-                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                    'from' => 'PROGYM <onboarding@resend.dev>',
-                    'to' => [$notificacion->email_destino],
-                    'subject' => $notificacion->asunto,
-                    'html' => $notificacion->contenido,
-                ]);
+                // Enviar usando PHPMailer (SMTP configurado en las variables MAIL_* del .env)
+                $this->correo->enviar(
+                    $notificacion->email_destino,
+                    $notificacion->asunto,
+                    $notificacion->contenido
+                );
 
                 // Registrar en log_notificaciones
                 LogNotificacion::create([
                     'id_notificacion' => $notificacion->id,
                     'accion' => 'enviada',
-                    'detalle' => json_encode(['resend_id' => $resultado->id]),
+                    'detalle' => 'Correo enviado correctamente',
                 ]);
 
                 $notificacion->marcarComoEnviada();
@@ -388,7 +393,6 @@ class NotificacionService
                     'id' => $notificacion->id,
                     'email' => $notificacion->email_destino,
                     'tipo' => $notificacion->tipoNotificacion->codigo ?? 'N/A',
-                    'resend_id' => $resultado->id
                 ]);
 
             } catch (\Exception $e) {
@@ -435,10 +439,11 @@ class NotificacionService
                 $notificacion->registrarLog('reintentando', "Reintento #{$notificacion->intentos}");
                 $notificacion->update(['id_estado' => Notificacion::ESTADO_PENDIENTE]);
 
-                Mail::html($notificacion->contenido, function ($message) use ($notificacion) {
-                    $message->to($notificacion->email_destino)
-                            ->subject($notificacion->asunto);
-                });
+                $this->correo->enviar(
+                    $notificacion->email_destino,
+                    $notificacion->asunto,
+                    $notificacion->contenido
+                );
 
                 $notificacion->marcarComoEnviada();
                 $reenviadas++;
@@ -499,7 +504,7 @@ class NotificacionService
      */
     public function enviarNotificacionRenovacion(Inscripcion $inscripcion): ?Notificacion
     {
-        $tipoNotificacion = TipoNotificacion::where('codigo', TipoNotificacion::RENOVACION_EXITOSA)
+        $tipoNotificacion = TipoNotificacion::where('codigo', TipoNotificacion::RENOVACION)
             ->where('activo', true)
             ->first();
 
@@ -536,10 +541,11 @@ class NotificacionService
 
         // Intentar enviar inmediatamente
         try {
-            Mail::html($notificacion->contenido, function ($message) use ($notificacion) {
-                $message->to($notificacion->email_destino)
-                        ->subject($notificacion->asunto);
-            });
+            $this->correo->enviar(
+                $notificacion->email_destino,
+                $notificacion->asunto,
+                $notificacion->contenido
+            );
             $notificacion->marcarComoEnviada();
         } catch (\Exception $e) {
             Log::warning('Notificación de renovación quedó pendiente: ' . $e->getMessage());
@@ -700,23 +706,22 @@ class NotificacionService
 
         // Intentar enviar inmediatamente
         try {
-            $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                'from' => 'PROGYM <onboarding@resend.dev>',
-                'to' => [$cliente->apoderado_email],
-                'subject' => $notificacion->asunto,
-                'html' => $contenido,
-            ]);
+            $messageId = $this->correo->enviar(
+                $cliente->apoderado_email,
+                $notificacion->asunto,
+                $contenido
+            );
 
             $notificacion->update([
                 'id_estado' => Notificacion::ESTADO_ENVIADO,
                 'fecha_envio' => Carbon::now(),
-                'id_email_proveedor' => $resultado->id ?? null,
+                'id_email_proveedor' => $messageId,
             ]);
 
             LogNotificacion::create([
                 'id_notificacion' => $notificacion->id,
                 'accion' => LogNotificacion::ACCION_ENVIADA,
-                'detalle' => json_encode(['resend_id' => $resultado->id, 'tipo' => 'tutor_legal']),
+                'detalle' => json_encode(['message_id' => $messageId, 'tipo' => 'tutor_legal']),
             ]);
 
             return [
@@ -840,38 +845,29 @@ class NotificacionService
 
         // Intentar enviar inmediatamente
         try {
-            // 🔧 MODO TEST: En desarrollo, enviar siempre al email verificado de Resend
-            // En producción con dominio verificado, enviar al cliente real
-            $emailDestino = (config('app.env') === 'production' && config('mail.from.address') !== 'onboarding@resend.dev')
-                ? $cliente->email
-                : 'estoicosgymlosangeles@gmail.com'; // Email verificado en Resend (plan free)
-            
-            $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                'from' => 'PROGYM <onboarding@resend.dev>',
-                'to' => [$emailDestino],
-                'subject' => $notificacion->asunto,
-                'html' => $contenido,
-            ]);
-            
+            $messageId = $this->correo->enviar(
+                $cliente->email,
+                $notificacion->asunto,
+                $contenido
+            );
+
             \Log::info("📧 Email bienvenida enviado", [
-                'email_destino' => $emailDestino,
-                'email_cliente_original' => $cliente->email,
+                'email_destino' => $cliente->email,
                 'inscripcion_id' => $inscripcion->id,
-                'modo' => config('app.env')
             ]);
 
             // Actualizar estado a enviado
             $notificacion->update([
                 'id_estado' => Notificacion::ESTADO_ENVIADO,
                 'fecha_envio' => Carbon::now(),
-                'id_email_proveedor' => $resultado->id ?? null,
+                'id_email_proveedor' => $messageId,
             ]);
 
             // Log de éxito
             LogNotificacion::create([
                 'id_notificacion' => $notificacion->id,
                 'accion' => 'enviada',
-                'detalle' => json_encode(['resend_id' => $resultado->id]),
+                'detalle' => json_encode(['message_id' => $messageId]),
             ]);
 
             return [

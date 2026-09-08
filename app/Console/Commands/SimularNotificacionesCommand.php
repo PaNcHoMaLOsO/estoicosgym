@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use App\Services\CorreoService;
 use App\Models\Cliente;
 use App\Models\Inscripcion;
 
@@ -100,10 +100,7 @@ class SimularNotificacionesCommand extends Command
 
             // Enviar email
             try {
-                Mail::html($contenidoEmail, function ($message) use ($emailDestino, $asuntoEmail) {
-                    $message->to($emailDestino)
-                            ->subject($asuntoEmail);
-                });
+                (new CorreoService())->enviar($emailDestino, $asuntoEmail, $contenidoEmail);
 
                 $this->info("  ✅ Enviado: {$plantilla->nombre}");
                 $enviados++;

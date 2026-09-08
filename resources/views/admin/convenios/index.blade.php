@@ -252,13 +252,13 @@
         background: var(--gray-50);
         border-top: 1px solid var(--gray-200);
         display: flex;
-        gap: 0.5rem;
+        gap: 0.75rem;
         justify-content: center;
         flex-wrap: wrap;
     }
 
     .btn-action {
-        padding: 0.5rem 0.875rem;
+        padding: 0.5rem 1rem;
         border-radius: 8px;
         font-size: 0.8rem;
         font-weight: 600;
@@ -268,9 +268,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.35rem;
+        gap: 0.5rem;
         text-decoration: none;
         white-space: nowrap;
+        min-width: 85px;
     }
 
     .btn-action-view {

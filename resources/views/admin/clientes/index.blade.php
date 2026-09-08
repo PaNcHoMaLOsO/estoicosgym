@@ -546,6 +546,14 @@
         color: #fff;
         font-weight: 700;
         font-size: 14px;
+        overflow: hidden;
+    }
+
+    .cliente-avatar .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
     }
 
     .cliente-avatar.avatar-menor {
@@ -1101,7 +1109,12 @@ $(document).ready(function() {
             <tr class="cliente-row" data-id="${cliente.id}">
                 <td>
                     <div class="cliente-info">
-                        <div class="cliente-avatar ${cliente.es_menor_edad ? 'avatar-menor' : ''}">${initials}</div>
+                        <div class="cliente-avatar ${cliente.es_menor_edad ? 'avatar-menor' : ''}">
+                            ${cliente.foto_perfil
+                                ? `<img src="${cliente.foto_perfil}" alt="Foto" class="avatar-img" onerror="this.parentElement.innerHTML='${initials}'">`
+                                : initials
+                            }
+                        </div>
                         <div class="cliente-details">
                             <span class="cliente-nombre">${nombreCompleto} ${menorBadge}</span>
                             <span class="cliente-rut">${cliente.run_pasaporte || 'Sin RUT'}</span>

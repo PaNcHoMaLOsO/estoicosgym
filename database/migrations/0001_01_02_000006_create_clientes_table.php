@@ -43,7 +43,9 @@ return new class extends Migration
             $table->string('apoderado_telefono', 20)->nullable()->comment('Teléfono del apoderado');
             $table->string('apoderado_parentesco', 50)->nullable()->comment('Relación: Padre, Madre, Tutor, etc.');
             $table->text('apoderado_observaciones')->nullable()->comment('Notas adicionales sobre la autorización');
-            
+
+            $table->string('foto_perfil', 255)->nullable()->comment('Ruta relativa dentro de storage/app/public/clientes/');
+
             $table->boolean('activo')->default(true);
             $table->softDeletes();
             $table->timestamps();

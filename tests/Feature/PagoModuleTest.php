@@ -31,7 +31,7 @@ class PagoModuleTest extends TestCase
         $this->assertContains('monto_abonado', $fillable);
         $this->assertContains('monto_pendiente', $fillable);
         $this->assertContains('fecha_pago', $fillable);
-        $this->assertContains('id_metodo_pago_principal', $fillable);
+        $this->assertContains('id_metodo_pago', $fillable);
         $this->assertContains('id_estado', $fillable);
     }
 
@@ -42,7 +42,7 @@ class PagoModuleTest extends TestCase
         
         // Verificar que tiene métodos de relación
         $this->assertTrue(method_exists($pago, 'inscripcion'));
-        $this->assertTrue(method_exists($pago, 'metodoPagoPrincipal'));
+        $this->assertTrue(method_exists($pago, 'metodoPago'));
         $this->assertTrue(method_exists($pago, 'estado'));
         $this->assertTrue(method_exists($pago, 'motivoDescuento'));
     }

@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Resend;
+use App\Services\CorreoService;
 
 class TestEnviarPlantillas extends Command
 {
@@ -39,13 +39,7 @@ class TestEnviarPlantillas extends Command
         $this->info("Email destino: {$emailDestino}");
         $this->newLine();
 
-        $apiKey = env('RESEND_API_KEY');
-        if (!$apiKey) {
-            $this->error('RESEND_API_KEY no está configurada en .env');
-            return 1;
-        }
-        
-        $resend = Resend::client($apiKey);
+        $correo = new CorreoService();
 
         $plantillas = [
             '01_bienvenida.html',
@@ -108,14 +102,9 @@ class TestEnviarPlantillas extends Command
             
             try {
                 // Enviar email
-                $resultado = $resend->emails->send([
-                    'from' => 'PROGYM Los Angeles <onboarding@resend.dev>',
-                    'to' => [$emailDestino],
-                    'subject' => "TEST - {$nombrePlantilla}",
-                    'html' => $contenido,
-                ]);
+                $messageId = $correo->enviar($emailDestino, "TEST - {$nombrePlantilla}", $contenido);
                 
-                $this->info("✅ Enviado: {$plantilla} (ID: {$resultado->id})");
+                $this->info("✅ Enviado: {$plantilla} (ID: {$messageId})");
                 $enviados++;
                 
                 // Esperar 2 segundos entre envíos

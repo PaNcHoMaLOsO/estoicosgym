@@ -589,6 +589,10 @@
 
                 <!-- Sección de pago mixto -->
                 <div class="seccion-pago" id="seccion-pago-mixto">
+                    <!-- Hidden fields para el backend -->
+                    <input type="hidden" name="detalle_pagos_mixto" id="detalle_pagos_mixto" value="[]">
+                    <input type="hidden" name="total_mixto" id="total_mixto" value="0">
+                    
                     <div class="form-row-grid">
                         <div style="background: rgba(67,97,238,0.05); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(67,97,238,0.2);">
                             <h6 style="color: var(--info); margin-bottom: 0.75rem;"><i class="fas fa-credit-card"></i> Método 1</h6>
@@ -750,8 +754,34 @@ $(document).ready(function() {
     function calcularTotalMixto() {
         const monto1 = parseFloat($('#monto_metodo1').val()) || 0;
         const monto2 = parseFloat($('#monto_metodo2').val()) || 0;
+        const metodo1 = $('#id_metodo_pago1').val();
+        const metodo2 = $('#id_metodo_pago2').val();
+        const metodo1Nombre = $('#id_metodo_pago1 option:selected').text();
+        const metodo2Nombre = $('#id_metodo_pago2 option:selected').text();
         const total = monto1 + monto2;
+        
         $('#total_mixto_display').val('$' + formatNumber(total));
+        
+        // Actualizar campos ocultos para el backend
+        $('#total_mixto').val(Math.round(total));
+        
+        // Construir detalle para el backend
+        const detalles = [];
+        if (monto1 > 0 && metodo1) {
+            detalles.push({
+                monto: monto1,
+                id_metodo_pago: metodo1,
+                metodo_nombre: metodo1Nombre
+            });
+        }
+        if (monto2 > 0 && metodo2) {
+            detalles.push({
+                monto: monto2,
+                id_metodo_pago: metodo2,
+                metodo_nombre: metodo2Nombre
+            });
+        }
+        $('#detalle_pagos_mixto').val(JSON.stringify(detalles));
         
         // Cambiar color si coincide con precio final
         if (total === precioFinal) {
@@ -762,6 +792,7 @@ $(document).ready(function() {
     }
 
     $('#monto_metodo1, #monto_metodo2').on('input', calcularTotalMixto);
+    $('#id_metodo_pago1, #id_metodo_pago2').on('change', calcularTotalMixto);
 
     // Tipo de pago
     $('input[name="tipo_pago"]').on('change', function() {

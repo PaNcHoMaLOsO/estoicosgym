@@ -157,7 +157,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: '{{ route("admin.notificaciones.buscar-cliente") }}',
+            url: '{{ route("admin.notificaciones.buscar-cliente-individual") }}',
             method: 'POST',
             data: {
                 buscar: buscar,

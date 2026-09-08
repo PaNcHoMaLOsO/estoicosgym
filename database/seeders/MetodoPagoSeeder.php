@@ -9,7 +9,7 @@ class MetodoPagoSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('metodos_pago')->insert([
+        $metodos = [
             [
                 'nombre' => 'Efectivo',
                 'descripcion' => 'Pago en efectivo en el gimnasio',
@@ -28,6 +28,11 @@ class MetodoPagoSeeder extends Seeder
                 'requiere_comprobante' => false,
                 'activo' => true,
             ],
-        ]);
+        ];
+
+        DB::table('metodos_pago')->insert(array_map(
+            fn ($metodo) => $metodo + ['created_at' => now(), 'updated_at' => now()],
+            $metodos
+        ));
     }
 }

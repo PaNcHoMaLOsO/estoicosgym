@@ -74,7 +74,7 @@ class ReporteController extends Controller
                 'monto_total' => ['label' => 'Monto Total', 'tipo' => 'moneda'],
                 'monto_abonado' => ['label' => 'Monto Abonado', 'tipo' => 'moneda'],
                 'monto_pendiente' => ['label' => 'Monto Pendiente', 'tipo' => 'moneda'],
-                'tipo_pago' => ['label' => 'Tipo Pago', 'tipo' => 'select', 'opciones' => ['completo' => 'Completo', 'abono' => 'Abono']],
+                'tipo_pago' => ['label' => 'Tipo Pago', 'tipo' => 'select', 'opciones' => ['completo' => 'Completo', 'parcial' => 'Abono', 'mixto' => 'Mixto', 'pendiente' => 'Pendiente']],
                 'id_estado' => ['label' => 'Estado', 'tipo' => 'estado'],
                 'referencia_pago' => ['label' => 'Referencia', 'tipo' => 'texto'],
                 'observaciones' => ['label' => 'Observaciones', 'tipo' => 'texto'],

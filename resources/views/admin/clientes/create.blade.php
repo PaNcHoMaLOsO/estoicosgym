@@ -50,7 +50,7 @@
 
     <!-- Form Container -->
     <div class="form-container">
-        <form action="{{ route('admin.clientes.store') }}" method="POST" id="clienteForm">
+        <form action="{{ route('admin.clientes.store') }}" method="POST" id="clienteForm" enctype="multipart/form-data">
             @csrf
             <input type="hidden" id="form_submit_token" name="form_submit_token" value="{{ uniqid() }}">
             <input type="hidden" id="flujo_cliente" name="flujo_cliente" value="solo_cliente">
@@ -58,6 +58,28 @@
 
             <!-- ========== PASO 1: DATOS DEL CLIENTE ========== -->
             <div class="step-content active" id="step-1">
+                <!-- FOTO DE PERFIL -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-camera"></i>
+                        <h3>Foto del Cliente <small class="text-muted font-weight-normal" style="font-size:.8rem">(opcional)</small></h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="d-flex align-items-center" style="gap:1.5rem;flex-wrap:wrap">
+                            <div id="fotoPreview" style="width:100px;height:100px;border-radius:14px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2rem;font-weight:700;overflow:hidden;border:3px solid #e2e8f0;flex-shrink:0">
+                                <i class="fas fa-user" id="fotoIcon"></i>
+                            </div>
+                            <div>
+                                <label class="btn btn-outline-secondary btn-sm mb-2" for="foto_perfil" style="cursor:pointer">
+                                    <i class="fas fa-upload"></i> Seleccionar foto
+                                </label>
+                                <input type="file" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/webp" class="d-none">
+                                <p class="text-muted mb-0" style="font-size:.8rem">JPG, PNG o WEBP. Máx. 2&nbsp;MB.</p>
+                                <small id="fotoNombre" class="text-success d-none"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="section-card">
                     <div class="section-header">
                         <i class="fas fa-id-card"></i>
@@ -2421,6 +2443,11 @@
 </style>
 <script>
 $(document).ready(function() {
+    // Evitar diálogo "¿Reenviar formulario?" al refrescar
+    if (window.history.replaceState) {
+        window.history.replaceState(null, document.title, window.location.href);
+    }
+
     let currentStep = 1;
     const totalSteps = 3;
     let precioFinal = 0;
@@ -2553,7 +2580,23 @@ $(document).ready(function() {
     setupAutoTab();
 
     // ============================================
-    // DETECCIÓN DE EDAD Y MANEJO DE APODERADO
+    // PREVIEW FOTO DE PERFIL
+    // ============================================
+    $('#foto_perfil').on('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            Swal.fire({ icon: 'error', title: 'Archivo muy grande', text: 'La foto no puede superar 2 MB.', customClass: { popup: 'swal-estoicos' }, buttonsStyling: false, confirmButtonText: 'Entendido' });
+            this.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#fotoPreview').html('<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">');
+            $('#fotoNombre').text(file.name).removeClass('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
     // ============================================
     function limpiarCamposApoderado() {
         $('#consentimiento_apoderado').prop('checked', false);
@@ -3237,6 +3280,14 @@ $(document).ready(function() {
                 const listaErrores = errores.slice(0, 5).map(e => `<li>${e}</li>`).join('');
                 const masErrores = errores.length > 5 ? `<li>...y ${errores.length - 5} más</li>` : '';
                 
+                // Scroll inmediato al primer campo con error (sin esperar el Swal)
+                const $primerError = $('.is-invalid').first();
+                if ($primerError.length) {
+                    $('html, body').animate({ scrollTop: $primerError.offset().top - 120 }, 300, function() {
+                        $primerError.focus();
+                    });
+                }
+
                 Swal.fire({
                     title: 'Verifica los datos',
                     html: `
@@ -3255,6 +3306,12 @@ $(document).ready(function() {
                         confirmButton: 'swal2-confirm'
                     },
                     buttonsStyling: false
+                }).then(function() {
+                    // Al cerrar el Swal, enfocar el campo con error
+                    const $err = $('.is-invalid').first();
+                    if ($err.length) {
+                        $err.focus();
+                    }
                 });
             }
         }

@@ -87,8 +87,8 @@
                         </span>
                         <div class="info-box-content">
                             <span class="info-box-text">Creado</span>
-                            <span class="info-box-number">{{ $metodoPago->created_at->format('d/m/Y') }}</span>
-                            <small class="text-muted">{{ $metodoPago->created_at->format('H:i') }}</small>
+                            <span class="info-box-number">{{ $metodoPago->created_at ? $metodoPago->created_at->format('d/m/Y') : 'N/A' }}</span>
+                            <small class="text-muted">{{ $metodoPago->created_at ? $metodoPago->created_at->format('H:i') : '' }}</small>
                         </div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <small class="d-block text-muted mt-2">
-                        <i class="fas fa-sync"></i> Actualizado: {{ $metodoPago->updated_at->format('d/m/Y H:i') }}
+                        <i class="fas fa-sync"></i> Actualizado: {{ $metodoPago->updated_at ? $metodoPago->updated_at->format('d/m/Y H:i') : 'N/A' }}
                     </small>
                 </div>
             </div>

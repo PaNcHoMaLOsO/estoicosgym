@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\MotivoDescuento;
+use App\Models\Inscripcion;
 use Illuminate\Http\Request;
 
 class MotivoDescuentoController extends Controller
 {
+    use ValidatesFormToken;
+
     /**
      * Display a listing of the resource.
      */
@@ -30,6 +34,10 @@ class MotivoDescuentoController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->validateFormToken($request, 'motivo_descuento_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:motivos_descuento',
             'descripcion' => 'nullable|string|max:500',
@@ -63,6 +71,10 @@ class MotivoDescuentoController extends Controller
      */
     public function update(Request $request, MotivoDescuento $motivoDescuento)
     {
+        if (!$this->validateFormToken($request, 'motivo_descuento_update_' . $motivoDescuento->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:motivos_descuento,nombre,' . $motivoDescuento->id,
             'descripcion' => 'nullable|string|max:500',
@@ -80,6 +92,14 @@ class MotivoDescuentoController extends Controller
      */
     public function destroy(MotivoDescuento $motivoDescuento)
     {
+        // Verificar si está siendo usado en inscripciones
+        $usadoEnInscripciones = Inscripcion::where('id_motivo_descuento', $motivoDescuento->id)->exists();
+
+        if ($usadoEnInscripciones) {
+            return redirect()->route('admin.motivos-descuento.index')
+                ->with('error', 'No se puede eliminar este motivo porque está siendo usado en inscripciones.');
+        }
+
         $motivoDescuento->delete();
 
         return redirect()->route('admin.motivos-descuento.index')

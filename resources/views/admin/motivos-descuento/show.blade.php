@@ -79,12 +79,12 @@
             <div class="row">
                 <div class="col-md-6">
                     <small class="d-block text-muted mt-2">
-                        <i class="fas fa-calendar"></i> Creado: {{ $motivoDescuento->created_at->format('d/m/Y H:i') }}
+                        <i class="fas fa-calendar"></i> Creado: {{ $motivoDescuento->created_at ? $motivoDescuento->created_at->format('d/m/Y H:i') : 'N/A' }}
                     </small>
                 </div>
                 <div class="col-md-6">
                     <small class="d-block text-muted mt-2">
-                        <i class="fas fa-sync"></i> Actualizado: {{ $motivoDescuento->updated_at->format('d/m/Y H:i') }}
+                        <i class="fas fa-sync"></i> Actualizado: {{ $motivoDescuento->updated_at ? $motivoDescuento->updated_at->format('d/m/Y H:i') : 'N/A' }}
                     </small>
                 </div>
             </div>

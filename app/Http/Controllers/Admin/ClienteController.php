@@ -164,6 +164,9 @@ class ClienteController extends Controller
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
                 'es_menor_edad' => (bool) $cliente->es_menor_edad,
+                'foto_perfil' => $cliente->foto_perfil
+                    ? asset('storage/' . $cliente->foto_perfil)
+                    : null,
                 'estadoClass' => $estadoClass,
                 'estadoTexto' => $estadoTexto,
                 'membresiaTexto' => $membresiaTexto,
@@ -260,8 +263,8 @@ class ClienteController extends Controller
             'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
             'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
             'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida.',
-            'email.unique' => 'Este correo electrónico ya está registrado.',
             'celular.regex' => 'Formato de celular inválido. Use: +56 9 1234 5678',
+            'email.unique' => 'Este correo ya está registrado en otro cliente.',
         ];
 
         $validatedCliente = $request->validate($rules, $messages);
@@ -397,6 +400,13 @@ class ClienteController extends Controller
                 $validatedMembresia, $membresia, $precioActual, $precioFinal, $descuentoTotal,
                 $validatedPago, $tipoPago, $montoAbonado, $estadoPago
             ) {
+                // Subir foto de perfil si se envió
+                $fotoPerfil = null;
+                if ($request->hasFile('foto_perfil')) {
+                    $fotoPerfil = $request->file('foto_perfil')
+                        ->store('clientes', 'public');
+                }
+
                 // Crear cliente
                 $cliente = Cliente::create([
                     ...$validatedCliente,
@@ -407,6 +417,7 @@ class ClienteController extends Controller
                     'apoderado_telefono' => $esMenorEdad ? $request->input('apoderado_telefono') : null,
                     'apoderado_parentesco' => $esMenorEdad ? $request->input('apoderado_parentesco') : null,
                     'apoderado_observaciones' => $esMenorEdad ? $request->input('apoderado_observaciones') : null,
+                    'foto_perfil' => $fotoPerfil,
                     'activo' => true,
                 ]);
 
@@ -607,7 +618,7 @@ class ClienteController extends Controller
             'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
             'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida (máximo 110 años).',
             'email.email' => 'Ingrese un correo electrónico válido.',
-            'email.unique' => 'Este correo electrónico ya está registrado.',
+            'email.unique' => 'Este correo ya está registrado en otro cliente.',
             'celular.regex' => 'Formato de celular inválido. Use: 912345678 o +56912345678',
             'telefono_emergencia.regex' => 'Formato de teléfono de emergencia inválido.',
             'consentimiento_apoderado.accepted' => 'Debe aceptar el consentimiento del apoderado para clientes menores de edad.',
@@ -649,6 +660,24 @@ class ClienteController extends Controller
 
         $cliente->update($validated);
 
+        // Actualizar foto de perfil si se envió una nueva
+        if ($request->hasFile('foto_perfil')) {
+            // Borrar la anterior
+            if ($cliente->foto_perfil) {
+                \Storage::disk('public')->delete($cliente->foto_perfil);
+            }
+            $cliente->foto_perfil = $request->file('foto_perfil')
+                ->store('clientes', 'public');
+            $cliente->save();
+        }
+
+        // Eliminar foto si el usuario la quitó
+        if ($request->input('eliminar_foto') === '1' && $cliente->foto_perfil) {
+            \Storage::disk('public')->delete($cliente->foto_perfil);
+            $cliente->foto_perfil = null;
+            $cliente->save();
+        }
+
         return redirect()->route('admin.clientes.show', $cliente)
             ->with('success', 'Cliente actualizado exitosamente');
     }
@@ -674,7 +703,12 @@ class ClienteController extends Controller
         }
 
         $nombreCliente = $cliente->nombres . ' ' . $cliente->apellido_paterno;
-        
+
+        // Borrar foto de perfil si existe
+        if ($cliente->foto_perfil) {
+            \Storage::disk('public')->delete($cliente->foto_perfil);
+        }
+
         // SoftDelete: enviar a papelera
         $cliente->delete();
 
@@ -741,47 +775,6 @@ class ClienteController extends Controller
 
         return redirect()->route('admin.clientes.index')
             ->with('success', "Cliente '{$cliente->nombres} {$cliente->apellido_paterno}' desactivado exitosamente.");
-    }
-
-    /**
-     * API: Obtener precio de membresía (normal o con descuento por convenio)
-     */
-    public function getPrecioMembresia($membresia_id)
-    {
-        $convenio_id = request('convenio');
-        
-        // Obtener la membresía y su precio actual
-        $membresia = Membresia::find($membresia_id);
-        if (!$membresia) {
-            return response()->json(['error' => 'Membresía no encontrada'], 404);
-        }
-        
-        $precioActual = PrecioMembresia::where('id_membresia', $membresia_id)
-            ->where(function ($query) {
-                $query->whereNull('fecha_vigencia_hasta')
-                      ->orWhere('fecha_vigencia_hasta', '>=', now());
-            })
-            ->orderBy('fecha_vigencia_hasta', 'desc')
-            ->first();
-        
-        if (!$precioActual) {
-            return response()->json(['error' => 'Precio no encontrado'], 404);
-        }
-        
-        $precioBase = (int) $precioActual->precio_normal;
-        $precioFinal = $precioBase;
-        
-        // Si hay convenio, aplicar descuento
-        if ($convenio_id && $precioActual->precio_convenio) {
-            $precioFinal = (int) $precioActual->precio_convenio;
-        }
-        
-        return response()->json([
-            'precio_base' => $precioBase,
-            'precio_final' => $precioFinal,
-            'duracion_dias' => (int) $membresia->duracion_dias,
-            'nombre' => $membresia->nombre
-        ]);
     }
 
     // ==========================================

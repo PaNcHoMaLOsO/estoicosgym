@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
+use App\Services\CorreoService;
 use Illuminate\Support\Facades\DB;
 use App\Mail\NotificacionMail;
 
@@ -51,10 +51,7 @@ class TestEmailCommand extends Command
         $this->info("📨 Enviando correo...");
 
         try {
-            Mail::html($htmlContent, function ($message) use ($email, $asunto) {
-                $message->to($email)
-                        ->subject($asunto);
-            });
+            (new CorreoService())->enviar($email, $asunto, $htmlContent);
 
             $this->info("✅ ¡Correo enviado exitosamente!");
             $this->info("📬 Revisa la bandeja de entrada de: {$email}");

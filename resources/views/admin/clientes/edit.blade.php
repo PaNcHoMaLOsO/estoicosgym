@@ -978,10 +978,40 @@
         </div>
 
         <div class="edit-card-body">
-            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST" id="editClienteForm" autocomplete="off">
+            <form action="{{ route('admin.clientes.update', $cliente) }}" method="POST" id="editClienteForm" autocomplete="off" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="form_submit_token" value="{{ uniqid() }}">
+                <input type="hidden" name="eliminar_foto" id="eliminar_foto" value="0">
+
+                {{-- SECCIÓN: FOTO DE PERFIL --}}
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-camera"></i> Foto del Cliente <small class="text-muted font-weight-normal" style="font-size:.8rem">(opcional)</small>
+                    </div>
+                    <div class="d-flex align-items-center" style="gap:1.5rem;flex-wrap:wrap">
+                        <div id="fotoPreview" style="width:110px;height:110px;border-radius:14px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2.5rem;font-weight:700;overflow:hidden;border:3px solid #e2e8f0;flex-shrink:0">
+                            @if($cliente->foto_perfil)
+                                <img id="fotoActual" src="{{ asset('storage/' . $cliente->foto_perfil) }}" alt="Foto" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">
+                            @else
+                                <i class="fas fa-user" id="fotoIcon"></i>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="btn btn-outline-secondary btn-sm mb-2" for="foto_perfil" style="cursor:pointer">
+                                <i class="fas fa-upload"></i> {{ $cliente->foto_perfil ? 'Cambiar foto' : 'Subir foto' }}
+                            </label>
+                            <input type="file" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/webp" class="d-none">
+                            @if($cliente->foto_perfil)
+                            <button type="button" class="btn btn-outline-danger btn-sm mb-2 ml-1" id="btnEliminarFoto">
+                                <i class="fas fa-trash"></i> Eliminar foto
+                            </button>
+                            @endif
+                            <p class="text-muted mb-0" style="font-size:.8rem">JPG, PNG o WEBP. Máx. 2&nbsp;MB.</p>
+                            <small id="fotoNombre" class="text-success d-none"></small>
+                        </div>
+                    </div>
+                </div>
 
                 {{-- SECCIÓN: IDENTIFICACIÓN --}}
                 <div class="form-section">
@@ -2648,6 +2678,34 @@ document.addEventListener('DOMContentLoaded', function() {
             if (input.value.length >= 2) buscar(input.value.trim());
         });
     })();
+
+    // ============================================
+    // PREVIEW FOTO DE PERFIL
+    // ============================================
+    $('#foto_perfil').on('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('La foto no puede superar 2 MB.');
+            this.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#fotoPreview').html('<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">');
+            $('#fotoNombre').text(file.name).removeClass('d-none');
+            $('#eliminar_foto').val('0');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $('#btnEliminarFoto').on('click', function() {
+        $('#fotoPreview').html('<i class="fas fa-user" style="font-size:2.5rem;color:#fff;"></i>');
+        $('#eliminar_foto').val('1');
+        $('#foto_perfil').val('');
+        $('#fotoNombre').addClass('d-none');
+        $(this).hide();
+    });
 });
 </script>
 @endpush

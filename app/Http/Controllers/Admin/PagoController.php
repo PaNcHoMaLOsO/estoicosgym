@@ -239,10 +239,13 @@ class PagoController extends Controller
         // (200=Pendiente, 201=Pagado, 202=Parcial, 203=Vencido, 204=Cancelado, 205=Traspasado)
         
         return [
-            'pagados' => Pago::where('id_estado', 201)->count(),
-            'parciales' => Pago::where('id_estado', 202)->count(),
-            'pendientes' => Pago::where('id_estado', 200)->count(),
-            'vencidos' => Pago::where('id_estado', 203)->count(),
+            'pagados'          => Pago::where('id_estado', 201)->count(),
+            'parciales'        => Pago::where('id_estado', 202)->count(),
+            'pendientes'       => Pago::where('id_estado', 200)->count(),
+            'vencidos'         => Pago::where('id_estado', 203)->count(),
+            // Totales de dinero
+            'total_recaudado'  => (int) Pago::whereIn('id_estado', [201, 202])->sum('monto_abonado'),
+            'total_pendiente'  => (int) Pago::whereIn('id_estado', [200, 202])->sum('monto_pendiente'),
         ];
     }
 
@@ -295,6 +298,21 @@ class PagoController extends Controller
             // Verificar que el cliente esté activo
             if ($inscripcionCheck->cliente && !$inscripcionCheck->cliente->activo) {
                 return back()->with('error', 'No se puede registrar pago para un cliente inactivo.');
+            }
+
+            // DETECCIÓN DE PAGO DUPLICADO: mismo monto + misma inscripción + misma fecha (ventana de 5 min)
+            $montoEnviado = intval($request->input('monto_abonado', 0));
+            $fechaEnviada = $request->input('fecha_pago');
+            if ($montoEnviado > 0 && $fechaEnviada) {
+                $pagoReciente = Pago::where('id_inscripcion', $inscripcionCheck->id)
+                    ->where('monto_abonado', $montoEnviado)
+                    ->where('fecha_pago', $fechaEnviada)
+                    ->where('created_at', '>=', now()->subMinutes(5))
+                    ->exists();
+                if ($pagoReciente) {
+                    return back()->with('error', 'Ya se registró un pago idéntico (mismo monto y fecha) hace menos de 5 minutos para esta inscripción. Si es intencional, espere unos minutos e inténtelo de nuevo.')
+                        ->withInput();
+                }
             }
         }
 
@@ -361,6 +379,20 @@ class PagoController extends Controller
         else if ($tipoPago === 'mixto') {
             $monto1 = intval($request->input('monto_metodo1', 0));
             $monto2 = intval($request->input('monto_metodo2', 0));
+            
+            // Validar que cada monto individual sea positivo y no exceda el saldo pendiente
+            if ($monto1 <= 0 || $monto2 <= 0) {
+                return back()->withErrors([
+                    'monto_metodo1' => "Ambos montos deben ser mayores a $0"
+                ])->withInput();
+            }
+            
+            if ($monto1 > $montoPendiente || $monto2 > $montoPendiente) {
+                return back()->withErrors([
+                    'monto_metodo1' => "Ningún monto puede exceder el saldo pendiente ($" . number_format($montoPendiente, 0, ',', '.') . ")"
+                ])->withInput();
+            }
+            
             $montoAbonado = $monto1 + $monto2;
 
             if ($montoAbonado != intval($montoPendiente)) {
@@ -385,14 +417,15 @@ class PagoController extends Controller
         $idEstado = $nuevoSaldoPendiente <= 0 ? 201 : 202; // 201=Pagado, 202=Parcial
 
         // Crear pago
+        // monto_total SIEMPRE es el precio total de la inscripción (no el saldo parcial)
         $idCliente = $inscripcion->id_cliente;
-        $montoTotal = $montoAbonado + $nuevoSaldoPendiente;
+        $precioTotalInscripcion = $inscripcion->precio_final ?? $inscripcion->precio_base;
         
         // Preparar datos del pago
         $datosPago = [
             'id_inscripcion' => $validated['id_inscripcion'],
             'id_cliente' => $idCliente,
-            'monto_total' => $montoTotal,
+            'monto_total' => $precioTotalInscripcion,
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => $nuevoSaldoPendiente,
             'cantidad_cuotas' => $cantidadCuotas,
@@ -401,7 +434,8 @@ class PagoController extends Controller
             'fecha_pago' => $validated['fecha_pago'],
             'periodo_inicio' => $inscripcion->fecha_inicio,
             'periodo_fin' => $inscripcion->fecha_vencimiento,
-            'tipo_pago' => $tipoPago,
+            // La UI usa 'abono'; la BD guarda ese caso como 'parcial' (enum de la tabla pagos)
+            'tipo_pago' => $tipoPago === 'abono' ? 'parcial' : $tipoPago,
             'referencia_pago' => $validated['referencia_pago'] ?? null,
             'observaciones' => $validated['observaciones'] ?? null,
             'id_estado' => $idEstado,
@@ -509,10 +543,14 @@ class PagoController extends Controller
         $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
         $montoAbonado = intval($validated['monto_abonado']);
 
+        // Sumar lo pagado en OTROS registros de esta inscripción (excluye el pago actual)
+        $totalOtrosPagos = (int) $inscripcion->pagos()->where('id', '!=', $pago->id)->sum('monto_abonado');
+        $limitePermitido = max(0, $montoTotal - $totalOtrosPagos);
+
         // Validación de monto
-        if ($montoAbonado > $montoTotal) {
+        if ($montoAbonado > $limitePermitido) {
             return back()->withErrors([
-                'monto_abonado' => "El monto no puede exceder $" . number_format($montoTotal, 0, ',', '.') . " (precio de membresía)"
+                'monto_abonado' => "El monto no puede exceder $" . number_format($limitePermitido, 0, ',', '.') . " (saldo disponible descontando otros pagos de esta inscripci\u00f3n)"
             ])->withInput();
         }
 
@@ -522,13 +560,13 @@ class PagoController extends Controller
             ])->withInput();
         }
 
-        // Calcular montos
-        $montoPendiente = $montoTotal - $montoAbonado;
+        // Calcular montos considerando TODOS los pagos de la inscripción
+        $montoPendiente = max(0, $montoTotal - $totalOtrosPagos - $montoAbonado);
         $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
         $montoCuota = $montoAbonado / $cantidadCuotas;
 
-        // Determinar estado automáticamente según monto (la FK referencia a codigo)
-        $nuevoIdEstado = $montoAbonado >= $montoTotal ? 201 : 202; // 201=Pagado, 202=Parcial
+        // Determinar estado considerando el total acumulado de todos los pagos
+        $nuevoIdEstado = ($totalOtrosPagos + $montoAbonado) >= $montoTotal ? 201 : 202; // 201=Pagado, 202=Parcial
 
         // Actualizar pago con todos los campos
         $pago->update([
@@ -649,7 +687,7 @@ class PagoController extends Controller
     public function historial($id)
     {
         $pagos = Pago::where('id_inscripcion', $id)
-            ->with('metodoPagoPrincipal')
+            ->with('metodoPago')
             ->orderBy('fecha_pago', 'desc')
             ->limit(5)
             ->get();

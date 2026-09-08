@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\MetodoPago;
+use App\Models\Pago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +34,9 @@ class MetodoPagoController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$this->validateFormToken($request, 'metodo_pago_create')) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        if (!$this->validateFormToken($request, 'metodo_pago_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
         
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:metodos_pago',
@@ -69,7 +72,9 @@ class MetodoPagoController extends Controller
      */
     public function update(Request $request, MetodoPago $metodoPago)
     {
-        if (!$this->validateFormToken($request, 'metodo_pago_update_' . $metodoPago->id)) return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        if (!$this->validateFormToken($request, 'metodo_pago_update_' . $metodoPago->id)) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
         
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:metodos_pago,nombre,' . $metodoPago->id,
@@ -89,6 +94,16 @@ class MetodoPagoController extends Controller
      */
     public function destroy(MetodoPago $metodoPago)
     {
+        // Verificar si está siendo usado en pagos (método principal o secundario en pago mixto)
+        $usadoEnPagos = Pago::where('id_metodo_pago', $metodoPago->id)
+            ->orWhere('id_metodo_pago2', $metodoPago->id)
+            ->exists();
+
+        if ($usadoEnPagos) {
+            return redirect()->route('admin.metodos-pago.index')
+                ->with('error', 'No se puede eliminar este método porque está siendo usado en pagos registrados.');
+        }
+
         $metodoPago->delete();
 
         return redirect()->route('admin.metodos-pago.index')

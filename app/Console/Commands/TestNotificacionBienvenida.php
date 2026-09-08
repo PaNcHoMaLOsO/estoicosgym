@@ -13,8 +13,6 @@ use App\Models\Notificacion;
 use App\Services\NotificacionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Resend\Laravel\Facades\Resend;
 
 class TestNotificacionBienvenida extends Command
 {

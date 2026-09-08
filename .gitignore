@@ -29,3 +29,8 @@ Thumbs.db
 /database/migrations_consolidadas/
 /database/seeders_consolidados/
 /database/seeders_manuales/
+
+# Archivos autogenerados por laravel-ide-helper (solo para el editor)
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php

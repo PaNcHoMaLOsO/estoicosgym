@@ -71,7 +71,14 @@
             <!-- Avatar -->
             <div class="avatar-section">
                 <div class="avatar {{ $cliente->activo ? '' : 'inactive' }}">
-                    {{ strtoupper(substr($cliente->nombres, 0, 1) . substr($cliente->apellido_paterno, 0, 1)) }}
+                    @if($cliente->foto_perfil)
+                        <img src="{{ asset('storage/' . $cliente->foto_perfil) }}"
+                             alt="Foto {{ $cliente->nombres }}"
+                             class="avatar-img"
+                             onerror="this.parentElement.innerHTML='{{ strtoupper(substr($cliente->nombres,0,1).substr($cliente->apellido_paterno,0,1)) }}'">
+                    @else
+                        {{ strtoupper(substr($cliente->nombres, 0, 1) . substr($cliente->apellido_paterno, 0, 1)) }}
+                    @endif
                 </div>
                 <span class="status-indicator {{ $cliente->activo ? 'active' : 'inactive' }}">
                     {{ $cliente->activo ? 'Activo' : 'Inactivo' }}
@@ -953,6 +960,14 @@
         border: 5px solid white;
         box-shadow: 0 8px 24px rgba(26, 26, 46, 0.25);
         letter-spacing: -1px;
+        overflow: hidden;
+    }
+
+    .avatar .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 13px;
     }
 
     .avatar.inactive {

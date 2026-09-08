@@ -253,7 +253,7 @@
    CONTENIDO PRINCIPAL
    ============================================ */
 .content-wrapper {
-    background: #f0f2f5 !important;
+    background: #f4f6f9 !important;
 }
 
 .content-header {
@@ -1155,6 +1155,29 @@ td .btn {
 .stats-grid .stat-icon i {
     color: #fff !important;
 }
+
+/* ============================================
+   NORMALIZACIÓN DE BOTONES DE ACCIÓN / HEADER
+   Evita que los botones "pierdan su forma" (icono + texto
+   alineados, sin romperse en varias líneas ni perder relleno).
+   No toca colores, solo el layout interno del botón.
+   ============================================ */
+.btn-action,
+.btn-header,
+.btn-action-edit,
+.btn-action-back,
+.btn-action-delete,
+.btn-header-light,
+.btn-header-warning {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+    text-decoration: none !important;
+    line-height: 1.2;
+}
+
 
 /* Iconos de información personal */
 .info-item i,

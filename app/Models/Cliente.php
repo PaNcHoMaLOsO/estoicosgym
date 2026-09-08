@@ -88,6 +88,7 @@ class Cliente extends Model
         'apoderado_telefono',
         'apoderado_parentesco',
         'apoderado_observaciones',
+        'foto_perfil',
     ];
 
     protected $dates = [

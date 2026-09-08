@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Cliente;
 use App\Models\TipoNotificacion;
-use Resend\Laravel\Facades\Resend;
+use App\Services\CorreoService;
 use Carbon\Carbon;
 
 class TestEmailVisualizacionCommand extends Command
@@ -101,21 +101,20 @@ class TestEmailVisualizacionCommand extends Command
                 $this->line("      • cantidad_pagos: {$datos['cantidad_pagos']}");
                 $this->newLine();
             } else {
-                // Enviar por email (modo original - requiere dominio verificado)
+                // Enviar por email usando PHPMailer
                 try {
-                    Resend::emails()->send([
-                        'from' => 'PROGYM <estoicosgymlosangeles@gmail.com>',
-                        'to' => ['delivered@resend.dev'], // Email de prueba de Resend
-                        'subject' => "[TEST {$tipoNotificacion}] " . $plantilla->asunto_email,
-                        'html' => $htmlFinal,
-                    ]);
+                    (new CorreoService())->enviar(
+                        'estoicosgymlosangeles@gmail.com',
+                        "[TEST {$tipoNotificacion}] " . $plantilla->asunto_email,
+                        $htmlFinal
+                    );
 
                     $enviados++;
                     $emoji = $this->obtenerEmoji($tipoNotificacion);
                     $this->info("{$emoji} Email #{$enviados} enviado: {$tipoNotificacion}");
                     $this->newLine();
 
-                    sleep(2); // Resend permite 2 req/seg
+                    sleep(1);
 
                 } catch (\Exception $e) {
                     $this->error("❌ Error enviando {$tipoNotificacion}: " . $e->getMessage());

@@ -9,7 +9,7 @@ class MotivoDescuentoSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('motivos_descuento')->insert([
+        $motivos = [
             [
                 'nombre' => 'Convenio Estudiante',
                 'descripcion' => 'Descuento por convenio con institución educativa',
@@ -35,6 +35,11 @@ class MotivoDescuentoSeeder extends Seeder
                 'descripcion' => 'Motivo no especificado',
                 'activo' => true,
             ],
-        ]);
+        ];
+
+        DB::table('motivos_descuento')->insert(array_map(
+            fn ($motivo) => $motivo + ['created_at' => now(), 'updated_at' => now()],
+            $motivos
+        ));
     }
 }

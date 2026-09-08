@@ -12,13 +12,6 @@ use App\Http\Controllers\Admin\ConvenioController;
 use App\Http\Controllers\Admin\MetodoPagoController;
 use App\Http\Controllers\Admin\MotivoDescuentoController;
 use App\Http\Controllers\Admin\NotificacionController;
-use App\Http\Controllers\Api\InscripcionApiController;
-use App\Http\Controllers\Api\SearchApiController;
-use App\Http\Controllers\Api\MembresiaApiController;
-use App\Http\Controllers\Api\ClienteApiController;
-use App\Http\Controllers\Api\DashboardApiController;
-use App\Http\Controllers\Api\PausaApiController;
-use App\Http\Controllers\Api\PagoApiController;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\Cliente;
@@ -375,10 +368,16 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     Route::delete('membresias/{id}/eliminar-permanente', [MembresiaController::class, 'forceDelete'])->name('membresias.force-delete');
 
     // CRUD Métodos de Pago
-    Route::resource('metodos-pago', MetodoPagoController::class);
+    // Nota: el parámetro se renombra a {metodoPago} para que coincida con el
+    // type-hint del controlador (MetodoPago $metodoPago) y funcione el binding.
+    Route::resource('metodos-pago', MetodoPagoController::class)
+        ->parameters(['metodos-pago' => 'metodoPago']);
 
     // CRUD Motivos de Descuento
-    Route::resource('motivos-descuento', MotivoDescuentoController::class);
+    // Nota: el parámetro se renombra a {motivoDescuento} para que coincida con el
+    // type-hint del controlador (MotivoDescuento $motivoDescuento).
+    Route::resource('motivos-descuento', MotivoDescuentoController::class)
+        ->parameters(['motivos-descuento' => 'motivoDescuento']);
 
     // ===== NOTIFICACIONES =====
     Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
@@ -418,53 +417,3 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
 
 }); // Fin middleware('auth')
 
-// API Routes - Grupo con prefijo 'api'
-Route::prefix('api')->middleware('auth')->group(function () {
-    // Dashboard
-    Route::get('/dashboard/stats', [DashboardApiController::class, 'stats']);
-    Route::get('/dashboard/ingresos-mes', [DashboardApiController::class, 'ingresosPorMes']);
-    Route::get('/dashboard/inscripciones-estado', [DashboardApiController::class, 'inscripcionesPorEstado']);
-    Route::get('/dashboard/membresias-populares', [DashboardApiController::class, 'membresiasPopulares']);
-    Route::get('/dashboard/metodos-pago', [DashboardApiController::class, 'metodosPagoPopulares']);
-    Route::get('/dashboard/ultimos-pagos', [DashboardApiController::class, 'ultimosPagos']);
-    Route::get('/dashboard/proximas-vencer', [DashboardApiController::class, 'proximasAVencer']);
-    Route::get('/dashboard/resumen-clientes', [DashboardApiController::class, 'resumenClientes']);
-    
-    // Búsqueda
-    Route::get('/clientes/search', [SearchApiController::class, 'searchClientes']);
-    Route::get('/inscripciones/search', [SearchApiController::class, 'searchInscripciones']);
-    
-    // Clientes
-    Route::get('/clientes', [ClienteApiController::class, 'index']);
-    Route::get('/clientes/{id}', [ClienteApiController::class, 'show']);
-    Route::get('/clientes/{id}/stats', [ClienteApiController::class, 'stats']);
-    Route::post('/clientes/validar-rut', [ClienteApiController::class, 'validarRut']);
-    
-    // Precio de membresía
-    Route::get('/precio-membresia/{membresia_id}', [ClienteController::class, 'getPrecioMembresia']);
-    
-    // Membresias
-    Route::get('/membresias', [MembresiaApiController::class, 'index']);
-    Route::get('/membresias/search', [MembresiaApiController::class, 'search']);
-    Route::get('/membresias/{id}', [MembresiaApiController::class, 'show']);
-    
-    // Obtener descuento de convenio
-    Route::get('/convenios/{id}/descuento', [InscripcionApiController::class, 'getConvenioDescuento']);
-    
-    // Calcular precio final y fecha vencimiento
-    Route::post('/inscripciones/calcular', [InscripcionApiController::class, 'calcular']);
-    
-    // Pausas - Manejo de pausas en membresías
-    Route::post('/pausas/{id}/pausar', [PausaApiController::class, 'pausar']);
-    Route::post('/pausas/{id}/reanudar', [PausaApiController::class, 'reanudar']);
-    Route::get('/pausas/{id}/info', [PausaApiController::class, 'info']);
-    Route::post('/pausas/verificar-expiradas', [PausaApiController::class, 'verificarExpiradas']);
-    
-    // Pagos - API REST para pagos
-    Route::post('/pagos', [PagoApiController::class, 'store']);
-    Route::get('/pagos/{id}', [PagoApiController::class, 'show']);
-    Route::put('/pagos/{id}', [PagoApiController::class, 'update']);
-    Route::delete('/pagos/{id}', [PagoApiController::class, 'destroy']);
-    Route::get('/inscripciones/{id}/saldo', [PagoApiController::class, 'getSaldo']);
-    Route::post('/pagos/calcular-cuotas', [PagoApiController::class, 'calcularCuotas']);
-});

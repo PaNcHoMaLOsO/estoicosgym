@@ -36,7 +36,6 @@ class InscripcionModuleTest extends TestCase
             'fecha_inscripcion',
             'fecha_inicio',
             'fecha_vencimiento',
-            'dia_pago',
             'precio_base',
             'descuento_aplicado',
             'precio_final',

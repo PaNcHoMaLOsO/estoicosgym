@@ -465,6 +465,16 @@ return [
                 ],
             ],
         ],
+        'AdminGlobalJS' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'js',
+                    'asset' => true,
+                    'location' => 'js/admin-global.js',
+                ],
+            ],
+        ],
         'Datatables' => [
             'active' => false,
             'files' => [

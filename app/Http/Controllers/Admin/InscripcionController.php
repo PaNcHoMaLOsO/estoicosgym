@@ -14,6 +14,7 @@ use App\Models\MetodoPago;
 use App\Models\Pago;
 use App\Models\HistorialTraspaso;
 use App\Models\HistorialCambio;
+use App\Models\TipoNotificacion;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Traits\ValidatesFormToken;
@@ -325,6 +326,17 @@ class InscripcionController extends Controller
             return back()->with('error', 'No se puede crear inscripción para un cliente inactivo. Por favor, reactive el cliente primero.');
         }
 
+        // VALIDACIÓN: Verificar que el cliente no tenga ya una inscripción activa o pausada
+        if ($cliente) {
+            $inscripcionActiva = Inscripcion::where('id_cliente', $cliente->id)
+                ->whereIn('id_estado', [100, 101]) // 100=Activa, 101=Pausada
+                ->first();
+            if ($inscripcionActiva) {
+                $estadoNombre = $inscripcionActiva->id_estado === 100 ? 'Activa' : 'Pausada';
+                return back()->with('error', "Este cliente ya tiene una inscripción {$estadoNombre}. Use la opción de Renovar o espere a que venza la actual.");
+            }
+        }
+
         // Verificar tipo de pago
         $tipoPago = $request->input('tipo_pago', 'completo');
         $pagoPendiente = $tipoPago === 'pendiente';
@@ -381,6 +393,36 @@ class InscripcionController extends Controller
             }
         }
 
+        // VALIDACIÓN: El monto total mixto no puede superar el precio final
+        if ($pagoMixto && isset($validated['total_mixto'])) {
+            $totalMixto = (float) $validated['total_mixto'];
+            if ($totalMixto > $precioFinal) {
+                return back()->withErrors([
+                    'total_mixto' => 'El monto total de pagos mixtos ($' . number_format($totalMixto, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
+                ])->withInput();
+            }
+            
+            // Validar también los montos individuales del detalle
+            $detallePagos = json_decode($validated['detalle_pagos_mixto'] ?? '[]', true);
+            $sumaDetalles = 0;
+            foreach ($detallePagos as $detalle) {
+                $monto = (float) ($detalle['monto'] ?? 0);
+                if ($monto < 0) {
+                    return back()->withErrors([
+                        'detalle_pagos_mixto' => 'No se permiten montos negativos en los pagos.'
+                    ])->withInput();
+                }
+                $sumaDetalles += $monto;
+            }
+            
+            // Verificar que la suma de detalles coincida con total_mixto
+            if (abs($sumaDetalles - $totalMixto) > 1) { // Tolerancia de $1 por redondeos
+                return back()->withErrors([
+                    'detalle_pagos_mixto' => 'La suma de los pagos ($' . number_format($sumaDetalles, 0, ',', '.') . ') no coincide con el total indicado ($' . number_format($totalMixto, 0, ',', '.') . ').'
+                ])->withInput();
+            }
+        }
+
         // Calcular fecha de vencimiento
         $fechaInicio = Carbon::parse($validated['fecha_inicio']);
         $fechaVencimiento = $this->calcularFechaVencimiento($fechaInicio, $membresia);
@@ -400,13 +442,16 @@ class InscripcionController extends Controller
         $tipoPago = $validated['tipo_pago'] ?? 'completo';
         
         if ($tipoPago === 'mixto') {
-            // Pago mixto: crear dos pagos con diferentes métodos
+            // Pago mixto: crear múltiples pagos con diferentes métodos
             $this->crearPagoMixto($inscripcion, $validated, $precioFinal);
         } elseif ($pagoPendiente) {
             // Pago pendiente: crear registro con estado Pendiente (200)
             $this->crearPagoPendiente($inscripcion, $validated, $precioFinal);
-        } elseif (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
-            $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
+        } else {
+            // Pago completo o abono: crear un solo pago inicial
+            if (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
+                $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
+            }
         }
 
         // Invalidar token para prevenir doble envío
@@ -1325,7 +1370,8 @@ class InscripcionController extends Controller
             if (!$inscripcion->puedeTraspasarse($ignorarDeuda)) {
                 $infoTraspaso = $inscripcion->getInfoTraspaso();
                 
-                if ($infoTraspaso['tiene_deuda']) {
+                // Solo culpar a la deuda si es realmente el motivo del bloqueo
+                if ($infoTraspaso['tiene_deuda'] && !$ignorarDeuda) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Esta inscripción tiene una deuda pendiente de $' . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . '. Active la opción "Ignorar requisito de pago completo" si desea continuar.',
@@ -1423,7 +1469,8 @@ class InscripcionController extends Controller
                 DB::commit();
 
                 $mensajeExito = "Membresía transferida exitosamente a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}.";
-                if ($infoTraspaso['tiene_deuda']) {
+                // Solo culpar a la deuda si es realmente el motivo del bloqueo
+                if ($infoTraspaso['tiene_deuda'] && !$ignorarDeuda) {
                     $mensajeExito .= " La deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . " fue transferida al nuevo titular.";
                 }
 
@@ -1580,8 +1627,11 @@ class InscripcionController extends Controller
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        // Validación
-        $validated = $request->validate([
+        $tipoPago = $request->input('tipo_pago', 'completo');
+        $pagoMixto = $tipoPago === 'mixto';
+
+        // Validación base
+        $rules = [
             'id_membresia' => 'required|exists:membresias,id',
             'id_convenio' => 'nullable|exists:convenios,id',
             'fecha_inicio' => 'required|date',
@@ -1592,7 +1642,15 @@ class InscripcionController extends Controller
             'monto_abonado' => 'nullable|numeric|min:0',
             'id_metodo_pago' => 'nullable|exists:metodos_pago,id',
             'fecha_pago' => 'nullable|date',
-        ]);
+        ];
+
+        // Agregar reglas para pago mixto
+        if ($pagoMixto) {
+            $rules['detalle_pagos_mixto'] = 'required|string';
+            $rules['total_mixto'] = 'required|numeric|min:1';
+        }
+
+        $validated = $request->validate($rules);
 
         $cliente = $inscripcionAnterior->cliente;
         $membresia = Membresia::findOrFail($validated['id_membresia']);
@@ -1610,6 +1668,16 @@ class InscripcionController extends Controller
         
         $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
         $precioFinal = max(0, $precioBase - $descuentoTotal);
+
+        // VALIDACIÓN: El monto mixto no puede superar el precio final
+        if ($pagoMixto && isset($validated['total_mixto'])) {
+            $totalMixto = (float) $validated['total_mixto'];
+            if ($totalMixto > $precioFinal) {
+                return back()->withErrors([
+                    'total_mixto' => 'El monto total de pagos mixtos ($' . number_format($totalMixto, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
+                ])->withInput();
+            }
+        }
 
         // Calcular fecha de vencimiento
         $fechaInicio = Carbon::parse($validated['fecha_inicio']);
@@ -1641,10 +1709,16 @@ class InscripcionController extends Controller
 
             // Crear pago según tipo
             $tipoPago = $validated['tipo_pago'];
-            if ($tipoPago === 'pendiente') {
+            if ($tipoPago === 'mixto') {
+                // Pago mixto: crear múltiples pagos con diferentes métodos
+                $this->crearPagoMixto($nuevaInscripcion, $validated, $precioFinal);
+            } elseif ($tipoPago === 'pendiente') {
                 $this->crearPagoPendiente($nuevaInscripcion, $validated, $precioFinal);
-            } elseif (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
-                $this->crearPagoInicial($nuevaInscripcion, $validated, $precioFinal);
+            } else {
+                // Pago completo o abono: crear un solo pago inicial
+                if (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
+                    $this->crearPagoInicial($nuevaInscripcion, $validated, $precioFinal);
+                }
             }
 
             // Registrar en historial

@@ -10,18 +10,20 @@ use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\Membresia;
 use App\Services\NotificacionService;
+use App\Services\CorreoService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class NotificacionController extends Controller
 {
     protected NotificacionService $notificacionService;
+    protected CorreoService $correo;
 
-    public function __construct(NotificacionService $notificacionService)
+    public function __construct(NotificacionService $notificacionService, CorreoService $correo)
     {
         $this->notificacionService = $notificacionService;
+        $this->correo = $correo;
     }
 
     /**
@@ -270,7 +272,7 @@ class NotificacionController extends Controller
 
         foreach ($clientes as $cliente) {
             // VALIDACIÃ“N ANTI-SPAM 1: Máximo 3 notificaciones por cliente al dÃ­a
-            $notificacionesClienteHoy = Notificacion::where('email_destinatario', $cliente->email)
+            $notificacionesClienteHoy = Notificacion::where('email_destino', $cliente->email)
                 ->whereDate('created_at', today())
                 ->count();
 
@@ -281,7 +283,7 @@ class NotificacionController extends Controller
             }
 
             // VALIDACIÃ“N ANTI-SPAM 2: Intervalo mÃ­nimo de 2 horas entre envÃ­os
-            $ultimaNotificacion = Notificacion::where('email_destinatario', $cliente->email)
+            $ultimaNotificacion = Notificacion::where('email_destino', $cliente->email)
                 ->latest('created_at')
                 ->first();
 
@@ -293,7 +295,7 @@ class NotificacionController extends Controller
             }
 
             // VALIDACIÃ“N ANTI-SPAM 3: No duplicar notificaciones idÃ©nticas en 24 horas
-            $notificacionDuplicada = Notificacion::where('email_destinatario', $cliente->email)
+            $notificacionDuplicada = Notificacion::where('email_destino', $cliente->email)
                 ->where('id_tipo_notificacion', $tipo->id)
                 ->where('created_at', '>=', now()->subDay())
                 ->exists();
@@ -343,9 +345,10 @@ class NotificacionController extends Controller
                     'es_menor_edad' => $cliente->es_menor_edad,
                 ];
 
-                // Renderizar contenido
-                $asunto = $request->asunto_custom ?: $tipo->renderizar($tipo->asunto, $data);
-                $contenidoBase = $tipo->renderizar($tipo->plantilla, $data);
+                // Renderizar contenido (renderizar() devuelve ['asunto' => ..., 'contenido' => ...])
+                $render = $tipo->renderizar($data);
+                $asunto = $request->asunto_custom ?: $render['asunto'];
+                $contenidoBase = $render['contenido'];
                 
                 // Agregar mensaje adicional si existe
                 if ($request->mensaje_adicional) {
@@ -356,12 +359,12 @@ class NotificacionController extends Controller
                 Notificacion::create([
                     'id_cliente' => $cliente->id,
                     'id_tipo_notificacion' => $tipo->id,
-                    'email_destinatario' => $emailDestino,
+                    'email_destino' => $emailDestino,
                     'asunto' => $asunto,
                     'contenido' => $contenidoBase,
                     'fecha_programada' => $fechaEnvio,
-                    'id_estado' => $request->enviar_ahora ? 600 : 600, // 600 = Pendiente
-                    'intento' => 0,
+                    'id_estado' => 600, // 600 = Pendiente
+                    'intentos' => 0,
                 ]);
 
                 $creadas++;
@@ -821,19 +824,18 @@ class NotificacionController extends Controller
 
         foreach ($notificacionesPendientes as $notificacion) {
             try {
-                // Enviar usando Resend
-                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                    'from' => 'PROGYM <onboarding@resend.dev>',
-                    'to' => [$notificacion->email_destino],
-                    'subject' => $notificacion->asunto,
-                    'html' => $notificacion->contenido,
-                ]);
+                // Enviar usando PHPMailer
+                $messageId = $this->correo->enviar(
+                    $notificacion->email_destino,
+                    $notificacion->asunto,
+                    $notificacion->contenido
+                );
 
                 // Registrar en log
                 LogNotificacion::create([
                     'id_notificacion' => $notificacion->id,
                     'accion' => 'enviada',
-                    'detalle' => json_encode(['resend_id' => $resultado->id]),
+                    'detalle' => json_encode(['message_id' => $messageId]),
                 ]);
 
                 $notificacion->marcarComoEnviada();
@@ -1097,10 +1099,7 @@ class NotificacionController extends Controller
             $notificacion->registrarLog('programada', 'NotificaciÃ³n manual creada por ' . auth()->user()->name);
 
             // Enviar inmediatamente
-            Mail::html($contenido, function ($message) use ($cliente, $asunto) {
-                $message->to($cliente->email)
-                        ->subject($asunto);
-            });
+            $this->correo->enviar($cliente->email, $asunto, $contenido);
 
             $notificacion->marcarComoEnviada();
 

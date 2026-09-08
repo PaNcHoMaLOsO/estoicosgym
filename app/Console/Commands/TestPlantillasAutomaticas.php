@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Inscripcion;
 use App\Models\TipoNotificacion;
 use App\Services\NotificacionService;
+use App\Services\CorreoService;
 use Carbon\Carbon;
 
 class TestPlantillasAutomaticas extends Command
@@ -56,15 +57,10 @@ class TestPlantillasAutomaticas extends Command
                 $notificacion->update(['email_destino' => $email]);
                 
                 // Enviar
-                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                    'from' => 'PROGYM <onboarding@resend.dev>',
-                    'to' => [$email],
-                    'subject' => $notificacion->asunto,
-                    'html' => $notificacion->contenido,
-                ]);
+                $messageId = (new CorreoService())->enviar($email, $notificacion->asunto, $notificacion->contenido);
 
                 $this->line("   ✅ Enviado: {$notificacion->asunto}");
-                $this->line("   📧 ID: {$resultado->id}");
+                $this->line("   📧 ID: {$messageId}");
                 $resultados[] = '✅ Membresía por vencer';
                 
                 // Limpiar
@@ -93,15 +89,10 @@ class TestPlantillasAutomaticas extends Command
                 $notificacion->update(['email_destino' => $email]);
                 
                 // Enviar
-                $resultado = \Resend\Laravel\Facades\Resend::emails()->send([
-                    'from' => 'PROGYM <onboarding@resend.dev>',
-                    'to' => [$email],
-                    'subject' => $notificacion->asunto,
-                    'html' => $notificacion->contenido,
-                ]);
+                $messageId = (new CorreoService())->enviar($email, $notificacion->asunto, $notificacion->contenido);
 
                 $this->line("   ✅ Enviado: {$notificacion->asunto}");
-                $this->line("   📧 ID: {$resultado->id}");
+                $this->line("   📧 ID: {$messageId}");
                 $resultados[] = '✅ Membresía vencida';
                 
                 // Limpiar
