@@ -91,7 +91,7 @@ class NotificacionController extends Controller
      */
     public function historial()
     {
-        // Agrupar notificaciones por dÃ­a para mostrar resumen de ejecuciones
+        // Agrupar notificaciones por día para mostrar resumen de ejecuciones
         $historial = Notificacion::selectRaw('DATE(created_at) as fecha, 
                                               COUNT(*) as total,
                                               SUM(CASE WHEN id_estado = 600 THEN 1 ELSE 0 END) as pendientes,
@@ -165,7 +165,7 @@ class NotificacionController extends Controller
                 if ($request->id_estado) {
                     $query->whereHas('inscripciones', function($q) use ($request) {
                         if ($request->id_estado == 200) {
-                            // Por vencer (prÃ³ximos 7 dÃ­as)
+                            // Por vencer (próximos 7 días)
                             $q->whereDate('fecha_vencimiento', '<=', now()->addDays(7))
                               ->whereDate('fecha_vencimiento', '>=', now())
                               ->where('id_estado', 100);
@@ -188,7 +188,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Guardar notificaciÃ³n programada con validaciones anti-spam
+     * Guardar notificación programada con validaciones anti-spam
      */
     public function guardarProgramada(Request $request)
     {
@@ -249,18 +249,18 @@ class NotificacionController extends Controller
             return back()->with('error', 'No se encontraron destinatarios con los filtros seleccionados.');
         }
 
-        // VALIDACIÃ“N ANTI-SPAM: LÃ­mite diario general
+        // VALIDACIÓN ANTI-SPAM: Límite diario general
         $notificacionesHoy = Notificacion::whereDate('created_at', today())->count();
         if ($notificacionesHoy >= 500) {
-            return back()->with('error', 'Se ha alcanzado el lÃ­mite diario de 500 notificaciones. Intente maÃ±ana.');
+            return back()->with('error', 'Se ha alcanzado el límite diario de 500 notificaciones. Intente mañana.');
         }
 
-        // Verificar que no exceda el lÃ­mite con este envÃ­o
+        // Verificar que no exceda el límite con este envío
         if (($notificacionesHoy + $clientes->count()) > 500) {
-            return back()->with('error', "Este envÃ­o excederÃ­a el lÃ­mite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones más hoy.");
+            return back()->with('error', "Este envío excedería el límite diario. Solo puede enviar " . (500 - $notificacionesHoy) . " notificaciones más hoy.");
         }
 
-        // Determinar fecha/hora de programaciÃ³n
+        // Determinar fecha/hora de programación
         $fechaEnvio = $request->enviar_ahora ? now() : Carbon::parse($request->fecha_programada . ' ' . $request->hora_programada);
 
         $notificacionService = new NotificacionService();
@@ -271,18 +271,18 @@ class NotificacionController extends Controller
         $errores = [];
 
         foreach ($clientes as $cliente) {
-            // VALIDACIÃ“N ANTI-SPAM 1: Máximo 3 notificaciones por cliente al dÃ­a
+            // VALIDACIÓN ANTI-SPAM 1: Máximo 3 notificaciones por cliente al día
             $notificacionesClienteHoy = Notificacion::where('email_destino', $cliente->email)
                 ->whereDate('created_at', today())
                 ->count();
 
             if ($notificacionesClienteHoy >= 3) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: LÃ­mite diario alcanzado (3 notificaciones)";
+                $errores[] = "Cliente {$cliente->nombre_completo}: Límite diario alcanzado (3 notificaciones)";
                 continue;
             }
 
-            // VALIDACIÃ“N ANTI-SPAM 2: Intervalo mÃ­nimo de 2 horas entre envÃ­os
+            // VALIDACIÓN ANTI-SPAM 2: Intervalo mínimo de 2 horas entre envíos
             $ultimaNotificacion = Notificacion::where('email_destino', $cliente->email)
                 ->latest('created_at')
                 ->first();
@@ -294,7 +294,7 @@ class NotificacionController extends Controller
                 continue;
             }
 
-            // VALIDACIÃ“N ANTI-SPAM 3: No duplicar notificaciones idÃ©nticas en 24 horas
+            // VALIDACIÓN ANTI-SPAM 3: No duplicar notificaciones idénticas en 24 horas
             $notificacionDuplicada = Notificacion::where('email_destino', $cliente->email)
                 ->where('id_tipo_notificacion', $tipo->id)
                 ->where('created_at', '>=', now()->subDay())
@@ -302,7 +302,7 @@ class NotificacionController extends Controller
 
             if ($notificacionDuplicada) {
                 $rechazadas++;
-                $errores[] = "Cliente {$cliente->nombre_completo}: NotificaciÃ³n idÃ©ntica enviada recientemente";
+                $errores[] = "Cliente {$cliente->nombre_completo}: Notificación idéntica enviada recientemente";
                 continue;
             }
 
@@ -323,7 +323,7 @@ class NotificacionController extends Controller
                     $nombreDestinatario = $cliente->apoderado_nombre ?: 'Apoderado/a';
                 }
 
-                // Obtener inscripciÃ³n activa
+                // Obtener inscripción activa
                 $inscripcion = $cliente->inscripciones()
                     ->whereIn('id_estado', [100, 200, 400])
                     ->latest()
@@ -331,11 +331,11 @@ class NotificacionController extends Controller
 
                 if (!$inscripcion) {
                     $rechazadas++;
-                    $errores[] = "Cliente {$cliente->nombre_completo}: Sin inscripciÃ³n activa";
+                    $errores[] = "Cliente {$cliente->nombre_completo}: Sin inscripción activa";
                     continue;
                 }
 
-                // Preparar datos para la notificaciÃ³n
+                // Preparar datos para la notificación
                 $data = [
                     'nombre' => $nombreDestinatario,
                     'nombre_cliente' => $cliente->nombre_completo,
@@ -355,7 +355,7 @@ class NotificacionController extends Controller
                     $contenidoBase = "<p><strong>" . nl2br(e($request->mensaje_adicional)) . "</strong></p><hr>" . $contenidoBase;
                 }
 
-                // Crear la notificaciÃ³n
+                // Crear la notificación
                 Notificacion::create([
                     'id_cliente' => $cliente->id,
                     'id_tipo_notificacion' => $tipo->id,
@@ -372,7 +372,7 @@ class NotificacionController extends Controller
             } catch (\Exception $e) {
                 $rechazadas++;
                 $errores[] = "Cliente {$cliente->nombre_completo}: {$e->getMessage()}";
-                \Log::error("Error al crear notificaciÃ³n programada: " . $e->getMessage());
+                \Log::error("Error al crear notificación programada: " . $e->getMessage());
             }
         }
 
@@ -402,7 +402,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Ver detalle de una notificaciÃ³n
+     * Ver detalle de una notificación
      */
     public function show(Notificacion $notificacion)
     {
@@ -438,7 +438,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Cancelar una notificaciÃ³n pendiente
+     * Cancelar una notificación pendiente
      */
     public function cancelar(Notificacion $notificacion)
     {
@@ -446,9 +446,9 @@ class NotificacionController extends Controller
             return back()->with('error', 'Solo se pueden cancelar notificaciones pendientes');
         }
 
-        $notificacion->cancelar('Cancelada manualmente desde panel de administraciÃ³n');
+        $notificacion->cancelar('Cancelada manualmente desde panel de administración');
 
-        return back()->with('success', 'NotificaciÃ³n cancelada');
+        return back()->with('success', 'Notificación cancelada');
     }
 
     /**
@@ -488,7 +488,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * GestiÃ³n de tipos de notificaciÃ³n (plantillas)
+     * Gestión de tipos de notificación (plantillas)
      */
     public function plantillas()
     {
@@ -498,7 +498,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Editar plantilla de notificaciÃ³n
+     * Editar plantilla de notificación
      */
     public function editarPlantilla(TipoNotificacion $tipoNotificacion)
     {
@@ -506,7 +506,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Actualizar plantilla de notificaciÃ³n
+     * Actualizar plantilla de notificación
      */
     public function actualizarPlantilla(Request $request, TipoNotificacion $tipoNotificacion)
     {
@@ -533,7 +533,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Ver log de una notificaciÃ³n
+     * Ver log de una notificación
      */
     public function logs(Notificacion $notificacion)
     {
@@ -569,7 +569,7 @@ class NotificacionController extends Controller
             ->distinct('id_cliente')
             ->count('id_cliente');
             
-        // Clientes sin inscripciÃ³n activa ni vencida
+        // Clientes sin inscripción activa ni vencida
         $clientesConInscripcion = Inscripcion::whereIn('id_estado', [100, 102])
             ->pluck('id_cliente')
             ->unique();
@@ -694,7 +694,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Enviar notificaciÃ³n masiva
+     * Enviar notificación masiva
      */
     public function enviarMasivo(Request $request)
     {
@@ -738,14 +738,14 @@ class NotificacionController extends Controller
         $asunto = $request->asunto;
         $mensaje = $request->mensaje;
 
-        // Obtener tipo de notificaciÃ³n (si se seleccionÃ³ plantilla) o crear manual
+        // Obtener tipo de notificación (si se seleccionó plantilla) o crear manual
         if ($request->filled('plantilla_id') && $request->plantilla_id !== 'custom') {
             $tipoNotificacion = TipoNotificacion::find($request->plantilla_id);
         } else {
             $tipoNotificacion = TipoNotificacion::firstOrCreate(
                 ['codigo' => 'notificacion_manual'],
                 [
-                    'nombre' => 'NotificaciÃ³n Manual',
+                    'nombre' => 'Notificación Manual',
                     'descripcion' => 'Notificaciones enviadas manualmente por el administrador',
                     'asunto_email' => '{asunto}',
                     'plantilla_email' => '{mensaje}',
@@ -761,7 +761,7 @@ class NotificacionController extends Controller
 
         foreach ($clientes as $cliente) {
             try {
-                // Obtener Última inscripciÃ³n del cliente para referencia
+                // Obtener Última inscripción del cliente para referencia
                 $inscripcion = Inscripcion::where('id_cliente', $cliente->id)
                     ->with('membresia')
                     ->orderBy('created_at', 'desc')
@@ -771,7 +771,7 @@ class NotificacionController extends Controller
                 $variables = [
                     '{nombre}' => $cliente->nombre_completo,
                     '{email}' => $cliente->email,
-                    '{membresia}' => $inscripcion?->membresia?->nombre ?? 'Sin membresÃ­a',
+                    '{membresia}' => $inscripcion?->membresia?->nombre ?? 'Sin membresía',
                 ];
 
                 $asuntoPersonalizado = str_replace(
@@ -786,7 +786,7 @@ class NotificacionController extends Controller
                     $mensaje
                 );
 
-                // Crear notificaciÃ³n
+                // Crear notificación
                 $notificacion = Notificacion::create([
                     'id_tipo_notificacion' => $tipoNotificacion->id,
                     'id_cliente' => $cliente->id,
@@ -799,11 +799,11 @@ class NotificacionController extends Controller
                     'enviado_por_user_id' => auth()->id(),
                 ]);
 
-                $notificacion->registrarLog('creada', 'NotificaciÃ³n manual creada desde el panel');
+                $notificacion->registrarLog('creada', 'Notificación manual creada desde el panel');
                 $creadas++;
 
             } catch (\Exception $e) {
-                Log::error('Error creando notificaciÃ³n masiva', [
+                Log::error('Error creando notificación masiva', [
                     'cliente_id' => $cliente->id,
                     'error' => $e->getMessage()
                 ]);
@@ -927,8 +927,8 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Formulario simple para enviar notificaciÃ³n a un cliente especÃ­fico
-     * (Vista simplificada - pendiente de implementaciÃ³n completa del rediseÃ±o)
+     * Formulario simple para enviar notificación a un cliente específico
+     * (Vista simplificada - pendiente de implementación completa del rediseño)
      */
     public function enviarCliente()
     {
@@ -940,7 +940,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Buscar cliente individual para envÃ­o manual
+     * Buscar cliente individual para envío manual
      */
     public function buscarClienteIndividual(Request $request)
     {
@@ -974,7 +974,7 @@ class NotificacionController extends Controller
                 'run_pasaporte' => $cliente->run_pasaporte,
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
-                'membresia' => $inscripcion ? $inscripcion->membresia->nombre : 'Sin membresÃ­a',
+                'membresia' => $inscripcion ? $inscripcion->membresia->nombre : 'Sin membresía',
                 'estado_membresia' => $inscripcion ? $inscripcion->estado->nombre : 'N/A',
             ];
         });
@@ -1037,7 +1037,7 @@ class NotificacionController extends Controller
     }
 
     /**
-     * Enviar notificaciÃ³n a cliente individual
+     * Enviar notificación a cliente individual
      */
     public function enviarIndividual(Request $request)
     {
@@ -1081,7 +1081,7 @@ class NotificacionController extends Controller
                 );
             }
 
-            // Crear notificaciÃ³n manual
+            // Crear notificación manual
             $notificacion = Notificacion::create([
                 'id_tipo_notificacion' => $plantilla->id,
                 'id_cliente' => $cliente->id,
@@ -1096,7 +1096,7 @@ class NotificacionController extends Controller
                 'nota_personalizada' => $notaPersonalizada,
             ]);
 
-            $notificacion->registrarLog('programada', 'NotificaciÃ³n manual creada por ' . auth()->user()->name);
+            $notificacion->registrarLog('programada', 'Notificación manual creada por ' . auth()->user()->name);
 
             // Enviar inmediatamente
             $this->correo->enviar($cliente->email, $asunto, $contenido);
@@ -1105,7 +1105,7 @@ class NotificacionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'NotificaciÃ³n enviada correctamente a ' . $cliente->email,
+                'message' => 'Notificación enviada correctamente a ' . $cliente->email,
                 'notificacion_id' => $notificacion->id
             ]);
 
@@ -1154,7 +1154,7 @@ class NotificacionController extends Controller
                 $datos['fecha_activacion'] = Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y');
             }
 
-            // Ãšltimo pago
+            // Último pago
             $ultimoPago = $inscripcion->pagos->sortByDesc('fecha_pago')->first();
             if ($ultimoPago) {
                 $datos['fecha_pago'] = Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y');

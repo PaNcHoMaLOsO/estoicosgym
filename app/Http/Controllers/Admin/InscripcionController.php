@@ -942,9 +942,16 @@ class InscripcionController extends Controller
                 ], 422);
             }
 
-            // Calcular días que estuvo pausada
-            $diasEnPausa = $inscripcion->fecha_pausa_inicio 
-                ? $inscripcion->fecha_pausa_inicio->diffInDays(now()) 
+            // Días que estuvo pausada, contados de dia a dia como ya lo hace
+            // Inscripcion::reanudar().
+            //
+            // Aqui se comparaba la fecha con now() a secas, y eso son dos
+            // fallos: diffInDays() devuelve un FLOAT —el aviso llegaba a
+            // pantalla como «Estuvo pausada 0.95361123678241 días»— y ademas
+            // fecha_pausa_inicio se guarda a medianoche, asi que la parte
+            // decimal no era tiempo pausado sino la hora del reloj.
+            $diasEnPausa = $inscripcion->fecha_pausa_inicio
+                ? (int) $inscripcion->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay())
                 : 0;
                 
             // Obtener días restantes guardados antes de reanudar
@@ -969,9 +976,19 @@ class InscripcionController extends Controller
                 Log::error("Error al programar notificación de activación: " . $e->getMessage());
             }
 
+            // Pausar y reanudar el mismo dia es lo normal cuando fue un error:
+            // «Estuvo pausada 0 días» se lee como que no paso nada.
+            $tiempoPausada = $diasEnPausa === 0
+                ? 'menos de un día'
+                : ($diasEnPausa === 1 ? 'un día' : "{$diasEnPausa} días");
+
+            $diasRestaurados = (int) $diasGuardados === 1
+                ? 'un día'
+                : "{$diasGuardados} días";
+
             return response()->json([
                 'success' => true,
-                'message' => "Membresía reanudada. Estuvo pausada {$diasEnPausa} días. Se restauraron {$diasGuardados} días de membresía.",
+                'message' => "Membresía reanudada. Estuvo pausada {$tiempoPausada}. Se restauraron {$diasRestaurados} de membresía.",
             ]);
         } catch (\Exception $e) {
             Log::error('Error al reanudar inscripción: ' . $e->getMessage());
@@ -1588,13 +1605,19 @@ class InscripcionController extends Controller
                 ->with('warning', 'Esta inscripción aún tiene más de 30 días de vigencia. No es necesario renovar.');
         }
 
-        $clientes = Cliente::where('activo', true)->orderBy('nombres')->get();
+        // Solo lo que la vista usa de verdad. Antes se cargaban tres cosas mas
+        // que renovar.blade.php no menciona en ninguna linea:
+        //   - $clientes, que traia TODOS los clientes activos en cada apertura
+        //     de la pantalla (se renueva la inscripcion de un socio ya conocido,
+        //     no se elige uno de la lista);
+        //   - $estados, que ademas filtraba por la categoria 'inscripcion', que
+        //     no existe: en la tabla `estados` esos codigos son 'membresia', asi
+        //     que la consulta devolvia siempre una coleccion vacia;
+        //   - $estadoActiva, que nadie leia.
         $membresias = Membresia::where('activo', true)->orderBy('nombre')->get();
         $convenios = Convenio::where('activo', true)->get();
         $motivos = MotivoDescuento::where('activo', true)->get();
         $metodosPago = MetodoPago::where('activo', true)->get();
-        $estados = Estado::where('categoria', 'inscripcion')->get();
-        $estadoActiva = Estado::where('codigo', EstadosCodigo::INSCRIPCION_ACTIVA)->first();
 
         // Pre-cargar datos de la inscripción anterior
         $datosRenovacion = [
@@ -1607,8 +1630,8 @@ class InscripcionController extends Controller
         ];
 
         return view('admin.inscripciones.renovar', compact(
-            'inscripcion', 'clientes', 'membresias', 'convenios', 
-            'motivos', 'metodosPago', 'estados', 'estadoActiva', 'datosRenovacion'
+            'inscripcion', 'membresias', 'convenios',
+            'motivos', 'metodosPago', 'datosRenovacion'
         ));
     }
 
