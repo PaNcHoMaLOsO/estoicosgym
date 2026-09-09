@@ -321,7 +321,16 @@ class RegistroClienteService
             if ($abonado > 0) {
                 $exigirMetodo();
             }
-            $estado = $abonado === 0 ? self::PAGO_PENDIENTE : self::PAGO_PARCIAL;
+
+            // Un mixto que cubre el TOTAL queda Pagado, no Parcial. «Mixto»
+            // dice que el dinero entro por dos vias, no que falte plata: pagar
+            // la mitad en efectivo y la mitad con tarjeta se marcaba como
+            // Parcial, y el gimnasio creia que le debian lo que ya cobro.
+            $estado = match (true) {
+                $abonado <= 0 => self::PAGO_PENDIENTE,
+                $abonado >= $precioFinal => self::PAGO_PAGADO,
+                default => self::PAGO_PARCIAL,
+            };
         }
 
         return [
