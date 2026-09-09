@@ -286,6 +286,8 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     Route::prefix('panel')->name('panel.')->group(function () {
         Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
+        Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
+        Route::get('/pagos', [\App\Http\Controllers\Panel\PagoController::class, 'index'])->name('pagos.index');
     });
 
     // Rutas Admin - Grupo con prefijo 'admin'
