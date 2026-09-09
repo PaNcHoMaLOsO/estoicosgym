@@ -2,88 +2,79 @@
 
 namespace App\Console\Commands;
 
+use App\Services\CorreoService;
 use Illuminate\Console\Command;
-use PHPMailer\PHPMailer\PHPMailer;
-use Throwable;
 
 /**
- * Comprueba la configuracion SMTP SIN enviar ningun correo.
+ * Comprueba la configuracion de correo SIN enviar nada.
  *
  * Existe aparte de `test:email` a proposito: aquel manda un mensaje de verdad,
  * y para saber si la clave quedo bien puesta no hace falta molestar a nadie ni
- * gastar cuota. Solo abre la conexion, autentica y cuelga.
+ * gastar cuota.
  */
 class VerificarCorreoCommand extends Command
 {
-    protected $signature = 'correo:verificar';
+    protected $signature = 'correo:verificar {via? : smtp o resend; por defecto, las configuradas}';
 
-    protected $description = 'Verifica la conexion y la clave SMTP sin enviar correos';
+    protected $description = 'Verifica la configuración de correo sin enviar nada';
 
-    public function handle(): int
+    public function handle(CorreoService $correo): int
     {
-        $host = (string) config('mail.mailers.smtp.host');
-        $puerto = (int) config('mail.mailers.smtp.port');
-        $usuario = (string) config('mail.mailers.smtp.username');
-        $clave = (string) config('mail.mailers.smtp.password');
+        $principal = $correo->nombrePrincipal();
+        $respaldo = $correo->nombreRespaldo();
 
-        $this->line("Servidor : {$host}:{$puerto}");
-        $this->line("Cuenta   : {$usuario}");
+        $vias = $this->argument('via')
+            ? [$this->argument('via')]
+            : array_values(array_unique(array_filter([$principal, $respaldo])));
 
-        if ($clave === '' || str_starts_with($clave, 'AQUI_TU_')) {
-            $this->newLine();
-            $this->error('MAIL_PASSWORD sigue con el valor de ejemplo.');
-            $this->line('Pon la contrasena de aplicacion de 16 caracteres en el .env y repite.');
+        $this->line('Remitente : ' . config('mail.from.address'));
+        $this->line('Principal : ' . $principal);
+        $this->line('Respaldo  : ' . ($respaldo ?: 'ninguno'));
+        $this->newLine();
 
-            return self::FAILURE;
+        $fallos = 0;
+
+        foreach ($vias as $via) {
+            try {
+                $motivo = $correo->comprobar($via);
+                $descripcion = $correo->descripcion($via);
+            } catch (\Throwable $e) {
+                $this->error("  {$via}: {$e->getMessage()}");
+                $fallos++;
+
+                continue;
+            }
+
+            if ($motivo === null) {
+                $this->info("  ✓ {$descripcion} — operativo");
+
+                continue;
+            }
+
+            $this->error("  ✗ {$descripcion} — {$motivo}");
+            $fallos++;
         }
-
-        // Gmail entrega la clave en 4 bloques de 4 separados por espacios y hay
-        // que pegarla SIN ellos: con espacios la autenticacion falla y el error
-        // que devuelve el servidor no dice por que.
-        if (preg_match('/\s/', $clave)) {
-            $this->newLine();
-            $this->error('La clave tiene espacios. Gmail la muestra en bloques de 4, pero se pega junta.');
-
-            return self::FAILURE;
-        }
-
-        $mail = new PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host = $host;
-        $mail->Port = $puerto;
-        $mail->SMTPAuth = true;
-        $mail->Username = $usuario;
-        $mail->Password = $clave;
-        $mail->SMTPSecure = $puerto === 465
-            ? PHPMailer::ENCRYPTION_SMTPS
-            : PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Timeout = 15;
 
         $this->newLine();
 
-        try {
-            if ($mail->smtpConnect()) {
-                $mail->smtpClose();
+        if ($fallos === 0) {
+            $this->info('El envío de correos está operativo.');
 
-                $this->info('Conexion y autenticacion correctas. El envio de correos esta operativo.');
-
-                return self::SUCCESS;
-            }
-        } catch (Throwable $e) {
-            $this->error('No se pudo autenticar: ' . $e->getMessage());
-
-            if ($mail->ErrorInfo !== '') {
-                $this->line('Detalle: ' . $mail->ErrorInfo);
-            }
-
-            $this->newLine();
-            $this->line('Si la clave es correcta, revisa que la cuenta tenga la verificacion');
-            $this->line('en 2 pasos activada: sin ella Google no emite contrasenas de aplicacion.');
-
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
-        $this->error('No se pudo conectar con el servidor.');
+        // Un respaldo caido no deja al sistema sin correo, pero conviene saberlo.
+        if ($fallos < count($vias)) {
+            $this->warn('Hay una vía disponible, pero revisa la que falla.');
+
+            return self::SUCCESS;
+        }
+
+        $this->newLine();
+        $this->line('Recordatorios:');
+        $this->line('  · Gmail exige verificación en 2 pasos y una contraseña de aplicación');
+        $this->line('    de 16 caracteres, pegada SIN los espacios con que la muestra.');
+        $this->line('  · Resend solo envía desde un dominio verificado en su panel.');
 
         return self::FAILURE;
     }

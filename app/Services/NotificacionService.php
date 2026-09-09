@@ -413,6 +413,11 @@ class NotificacionService
             }
         }
 
+        // Se suelta la sesion SMTP al terminar la tanda. La conexion se reusa
+        // entre correos —abrir una por cada uno hacia que Gmail cortara— pero
+        // dejarla abierta despues no sirve de nada.
+        $this->correo->cerrar();
+        
         return [
             'enviadas' => $enviadas,
             'fallidas' => $fallidas,
@@ -454,6 +459,10 @@ class NotificacionService
             }
         }
 
+        // Misma razon que en la tanda anterior: la sesion SMTP se reusa
+        // durante el bucle y se suelta al acabar.
+        $this->correo->cerrar();
+        
         return [
             'reenviadas' => $reenviadas,
             'fallidas' => $fallidasNuevamente,
