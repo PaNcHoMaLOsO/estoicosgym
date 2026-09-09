@@ -52,7 +52,7 @@ export default function Index({ inscripciones, filtros, resumen }) {
 
                 <Link
                     href="/admin/inscripciones/create"
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-ink transition-opacity hover:opacity-90"
+                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
                     Nueva inscripción

@@ -1,11 +1,13 @@
 /**
- * FICHERO GENERADO. NO LO EDITES A MANO.
+ * Tokens de diseño — PANEL de administracion de PRO GYM.
  *
- * Se escribe desde design/tokens.json con `node design/generar.mjs --aplicar`.
- * Cualquier cambio a mano lo revierte el siguiente generado, y mientras tanto
- * lo pone rojo el test Feature\Diseno\TokensSincronizadosTest.
+ * ESTE FICHERO SE EDITA A MANO. Viene copiado del panel de
+ * estoicos-suplementos, donde SI era generado desde design/tokens.json con
+ * `node design/generar.mjs --aplicar`; aqui no existe ese generador ni el test
+ * que lo vigilaba, asi que la cabecera original mentia y se quito. Si algun dia
+ * se trae el generador, este aviso vuelve a cambiar.
  *
- * Tokens de diseño — PANEL de administracion.
+ * Los colores de marca salen del logotipo: rojo, plata y negro.
  *
  * Tres capas, y el orden importa:
  *   1. primitivas --app-*  en :root, cambian con el tema;
@@ -68,7 +70,11 @@
   --color-input: var(--app-line-strong);
   --color-ring: var(--app-accent);
   --color-primary: var(--app-volt);
-  --color-primary-foreground: var(--app-ink);
+  /* El rojo de marca pide texto BLANCO encima, no el negro de la tinta: con
+     `text-ink` sobre el rojo el contraste se queda en 1.4:1 y el boton
+     primario no se lee. Por eso el color de encima es un token propio. */
+  --color-on-volt: var(--app-on-volt);
+  --color-primary-foreground: var(--app-on-volt);
   --color-secondary: var(--app-surface-2);
   --color-secondary-foreground: var(--app-chalk);
   --color-destructive: var(--app-danger);
@@ -79,35 +85,40 @@
 :root {
   color-scheme: light dark;
 
-  /* Cromo: no es marca, no se edita desde /admin. */
-  --app-page: #fcfaf7;
+  /* Cromo: grises NEUTROS, no el crema calido de la tienda de suplementos. El
+     logotipo es rojo y plata sobre negro, y un fondo con matiz calido le
+     ensucia el gris del isotipo. */
+  --app-page: #f6f6f7;
   --app-surface: #ffffff;
-  --app-surface-2: #f5f0e9;
+  --app-surface-2: #eeeef0;
   --app-raise: #ffffff;
-  --app-line: #e9e2d7;
-  --app-line-strong: #d4cabb;
-  --app-chalk: #1e1622;
-  --app-fog: #6b6473;
-  --app-ok: #1f6b4d;
+  --app-line: #e1e1e4;
+  --app-line-strong: #c9c9ce;
+  --app-chalk: #141417;
+  --app-fog: #6a6a72;
+  --app-ok: #1c6b46;
   --app-warn: #8a5a12;
-  --app-danger: #b4472e;
+  /* Ladrillo apagado A PROPOSITO, no el rojo de marca: si «Eliminar» se
+     pintara del mismo rojo que el boton primario, la accion destructiva y la
+     principal serian el mismo color y nadie distinguiria una de otra. */
+  --app-danger: #a8231b;
   --app-info: #2a5d86;
-  --app-scrim: rgb(30 22 34 / 0.32);
+  --app-scrim: rgb(10 10 12 / 0.4);
   --app-ember: var(--app-danger);
 
-  --app-menu: 0 2px 4px rgb(30 22 34 / 0.06), 0 8px 20px -8px rgb(30 22 34 / 0.14);
-  --app-overlay: 0 24px 64px -24px rgb(30 22 34 / 0.3);
+  --app-menu: 0 2px 4px rgb(10 10 12 / 0.06), 0 8px 20px -8px rgb(10 10 12 / 0.14);
+  --app-overlay: 0 24px 64px -24px rgb(10 10 12 / 0.3);
 
-  /* Marca: cada uno es un ajuste del grupo `marca` y su valor real llega en
-     caliente. Estos son los DEFECTOS DUROS y tienen que casar con
-     App\Support\AjustesCatalogo, o una instalacion recien hecha se pintaria
-     distinta a lo que dice el panel. */
-  --app-ink: #170d1c;
-  --app-on-ink: #f6f1f7;
+  /* Marca PRO GYM, tomada del logotipo: rojo, plata y negro. */
+  --app-ink: #0a0a0b;
+  --app-on-ink: #f4f4f6;
   --app-font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --app-volt: #b08b3e;
-  --app-volt-soft: #c2a04f;
-  --app-accent: #8b21a8;
+  --app-volt: #d81f26;
+  --app-volt-soft: #ef4a51;
+  --app-on-volt: #ffffff;
+  /* El plata del «GYM». Es cromo, no un segundo color de marca: sirve para el
+     foco y los realces, nunca para rellenar. */
+  --app-accent: #7c8189;
 
   /* Movimiento. El panel no anima con JS: estos son los unicos valores. */
   --dur-rapida: 150ms;
@@ -120,50 +131,62 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --app-page: #100a16;
-    --app-surface: #181022;
-    --app-surface-2: #21172d;
-    --app-raise: #281d38;
-    --app-line: #2f2241;
-    --app-line-strong: #463357;
-    --app-chalk: #f3eff6;
-    --app-fog: #a79db4;
-    --app-ok: #5fd0a0;
+    /* Negros neutros: el logotipo vive sobre negro puro. */
+    --app-page: #0a0a0b;
+    --app-surface: #121214;
+    --app-surface-2: #1a1a1e;
+    --app-raise: #222226;
+    --app-line: #2a2a2f;
+    --app-line-strong: #3d3d44;
+    --app-chalk: #f2f2f4;
+    --app-fog: #a0a0a9;
+    --app-ok: #4ecb92;
     --app-warn: #e0b25f;
-    --app-danger: #f08a5d;
+    /* Salmon y no rojo: sobre negro un rojo puro se confundiria con el rojo
+       de marca, que aqui es mas vivo todavia. */
+    --app-danger: #ff8a7a;
     --app-info: #7fb8e8;
     --app-scrim: rgb(0 0 0 / 0.62);
     --app-ember: var(--app-danger);
 
     --app-menu: 0 2px 6px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.6);
     --app-overlay: 0 24px 64px -24px rgb(0 0 0 / 0.75);
-    --app-volt: #efdca8;
-    --app-volt-soft: #f7ebc8;
-    --app-accent: #d9a7f0;
+    /* Se sube un punto respecto al claro para que aguante sobre negro, pero
+       sin pasarse: con blanco encima tiene que seguir dando 4.5:1. */
+    --app-volt: #dd2a32;
+    --app-volt-soft: #f0555c;
+    --app-on-volt: #ffffff;
+    --app-accent: #c8ccd2;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --app-page: #100a16;
-  --app-surface: #181022;
-  --app-surface-2: #21172d;
-  --app-raise: #281d38;
-  --app-line: #2f2241;
-  --app-line-strong: #463357;
-  --app-chalk: #f3eff6;
-  --app-fog: #a79db4;
-  --app-ok: #5fd0a0;
+  /* Negros neutros: el logotipo vive sobre negro puro. */
+  --app-page: #0a0a0b;
+  --app-surface: #121214;
+  --app-surface-2: #1a1a1e;
+  --app-raise: #222226;
+  --app-line: #2a2a2f;
+  --app-line-strong: #3d3d44;
+  --app-chalk: #f2f2f4;
+  --app-fog: #a0a0a9;
+  --app-ok: #4ecb92;
   --app-warn: #e0b25f;
-  --app-danger: #f08a5d;
+  /* Salmon y no rojo: sobre negro un rojo puro se confundiria con el rojo
+     de marca, que aqui es mas vivo todavia. */
+  --app-danger: #ff8a7a;
   --app-info: #7fb8e8;
   --app-scrim: rgb(0 0 0 / 0.62);
   --app-ember: var(--app-danger);
 
   --app-menu: 0 2px 6px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.6);
   --app-overlay: 0 24px 64px -24px rgb(0 0 0 / 0.75);
-  --app-volt: #efdca8;
-  --app-volt-soft: #f7ebc8;
-  --app-accent: #d9a7f0;
+  /* Se sube un punto respecto al claro para que aguante sobre negro, pero
+     sin pasarse: con blanco encima tiene que seguir dando 4.5:1. */
+  --app-volt: #dd2a32;
+  --app-volt-soft: #f0555c;
+  --app-on-volt: #ffffff;
+  --app-accent: #c8ccd2;
 }

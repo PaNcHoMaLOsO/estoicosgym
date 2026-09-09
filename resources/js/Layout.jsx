@@ -88,10 +88,26 @@ function esActiva(href, url) {
     return ruta === href || ruta.startsWith(`${href}/`);
 }
 
+/**
+ * Firma de PRO GYM.
+ *
+ * Es TIPOGRAFICA y no una imagen a proposito: se repinta sola con el tema
+ * —«GYM» usa text-chalk, que es casi negro en claro y casi blanco en oscuro,
+ * igual que el plata del logotipo cambia segun el fondo— y no pesa ninguna
+ * peticion en cada carga.
+ *
+ * PARA PONER EL LOGOTIPO DE VERDAD: deja el PNG en public/img/progym.png y
+ * cambia el interior por <img src="/img/progym.png" alt="PRO GYM" className="h-5 w-auto" />.
+ * Hacen falta las dos variantes (la clara y la oscura) o el isotipo gris se
+ * pierde sobre uno de los dos fondos.
+ */
 function Marca({ className = '' }) {
     return (
         <span className={`flex items-baseline gap-1.5 ${className}`}>
-            <span className="text-sm font-bold tracking-tight uppercase">Estoicos Gym</span>
+            <span className="text-sm font-bold tracking-tight uppercase">
+                <span className="text-volt">PRO</span>
+                <span className="text-chalk">GYM</span>
+            </span>
             {/* «panel» se queda: distingue de un vistazo el panel del sitio. */}
             <span className="apoyo text-fog">panel</span>
         </span>

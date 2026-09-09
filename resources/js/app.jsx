@@ -11,7 +11,7 @@ import Layout from './Layout';
 
 const paginas = import.meta.glob('./pages/**/*.jsx');
 
-const NOMBRE = 'Estoicos Gym';
+const NOMBRE = 'PRO GYM';
 
 createInertiaApp({
     title: (titulo) => (titulo ? `${titulo} · ${NOMBRE}` : NOMBRE),
@@ -31,6 +31,7 @@ createInertiaApp({
     },
 
     progress: {
-        color: '#b08b3e',
+        // El rojo de marca; es el mismo valor que --app-volt del tema claro.
+        color: '#d81f26',
     },
 });
