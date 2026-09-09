@@ -271,7 +271,14 @@ Route::post('/logout', function () {
 })->middleware('auth')->name('logout');
 
 // ===== RUTAS PROTEGIDAS (Requieren autenticación) =====
-Route::middleware(['auth', 'verify.session'])->group(function () {
+/*
+ * 'puede' sin argumento deduce el permiso del NOMBRE de la ruta
+ * (App\Support\Permisos) y deja pasar las que no son de un modulo protegido.
+ * Va en el grupo entero para que ninguna ruta nueva nazca sin proteger, que es
+ * como estaba TODO hasta ahora: la tabla `roles` guardaba permisos y no habia
+ * nada que los leyera.
+ */
+Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

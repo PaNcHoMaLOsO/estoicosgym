@@ -85,6 +85,45 @@ class User extends Authenticatable
     }
 
     /**
+     * ¿Este usuario puede hacer esto?
+     *
+     * Los permisos viven en roles.permisos, un JSON con nombres del estilo
+     * «clientes.crear». El comodin «*» lo puede todo y es lo que tiene el
+     * administrador: asi, cada permiso nuevo que se invente no hay que
+     * acordarse de sumarselo.
+     *
+     * Sin rol NO se puede nada. Es a proposito: un usuario sin rol es un
+     * registro a medio hacer, y ante la duda el sistema no abre la puerta.
+     */
+    public function puede(string $permiso): bool
+    {
+        $permisos = $this->rol?->permisos;
+
+        if (! is_array($permisos)) {
+            return false;
+        }
+
+        if (in_array('*', $permisos, true)) {
+            return true;
+        }
+
+        if (in_array($permiso, $permisos, true)) {
+            return true;
+        }
+
+        // «clientes.*» concede todo lo de clientes sin listarlo pieza a pieza.
+        $modulo = explode('.', $permiso)[0];
+
+        return in_array("{$modulo}.*", $permisos, true);
+    }
+
+    /** Todos los permisos efectivos, para mandarlos al panel. */
+    public function permisos(): array
+    {
+        return is_array($this->rol?->permisos) ? $this->rol->permisos : [];
+    }
+
+    /**
      * Métodos requeridos por AdminLTE para el menú de usuario
      */
     

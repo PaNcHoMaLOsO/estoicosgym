@@ -32,6 +32,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { puede } from '@/lib/permisos';
 import { fijarTema, usarPreferenciaDeTema } from '@/lib/tema';
 
 /**
@@ -46,18 +47,18 @@ const GRUPOS = [
     {
         titulo: 'Mesón',
         secciones: [
-            { href: '/panel', etiqueta: 'Resumen', Icono: LayoutDashboardIcon },
+            { href: '/panel', etiqueta: 'Resumen', Icono: LayoutDashboardIcon, permiso: 'clientes.ver' },
             // Arriba del todo: es lo que se abre con el socio delante.
-            { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon },
-            { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon },
-            { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon },
+            { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon, permiso: 'clientes.ver' },
+            { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon, permiso: 'inscripciones.ver' },
+            { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon, permiso: 'pagos.ver' },
         ],
     },
     {
         titulo: 'Seguimiento',
         secciones: [
-            { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon },
-            { href: '/panel/notificaciones', etiqueta: 'Notificaciones', Icono: BellIcon },
+            { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon, permiso: 'historial.ver' },
+            { href: '/panel/notificaciones', etiqueta: 'Notificaciones', Icono: BellIcon, permiso: 'notificaciones.ver' },
             // Reportes es lo unico que todavia no se migro: el constructor de
             // informes es un formulario grande y no un listado. Apunta al Blade
             // para que el enlace funcione; `externa` evita que Inertia intente
@@ -67,6 +68,7 @@ const GRUPOS = [
                 etiqueta: 'Reportes',
                 Icono: ChartNoAxesColumnIcon,
                 externa: true,
+                permiso: 'reportes.ver',
             },
         ],
     },
@@ -78,10 +80,10 @@ const GRUPOS = [
  * nueva no deberia tener que adivinar donde vive.
  */
 const CONFIGURACION = [
-    { href: '/panel/membresias', etiqueta: 'Membresías', Icono: ScrollTextIcon },
-    { href: '/panel/convenios', etiqueta: 'Convenios', Icono: Building2Icon },
-    { href: '/panel/metodos-pago', etiqueta: 'Métodos de pago', Icono: WalletIcon },
-    { href: '/panel/motivos-descuento', etiqueta: 'Motivos de descuento', Icono: BadgePercentIcon },
+    { href: '/panel/membresias', etiqueta: 'Membresías', Icono: ScrollTextIcon, permiso: 'configuracion.ver' },
+    { href: '/panel/convenios', etiqueta: 'Convenios', Icono: Building2Icon, permiso: 'configuracion.ver' },
+    { href: '/panel/metodos-pago', etiqueta: 'Métodos de pago', Icono: WalletIcon, permiso: 'configuracion.ver' },
+    { href: '/panel/motivos-descuento', etiqueta: 'Motivos de descuento', Icono: BadgePercentIcon, permiso: 'configuracion.ver' },
 ];
 
 const TEMAS = [
@@ -155,10 +157,21 @@ function Enlace({ seccion, url, onIr }) {
  * cajon de movil: si fueran dos copias, la seccion que se anadiera manana
  * aparecería en una y no en la otra.
  */
-function Arbol({ url, onIr }) {
+function Arbol({ url, auth, onIr }) {
+    const visibles = (secciones) => secciones.filter((s) => !s.permiso || puede(auth, s.permiso));
+
+    // Un grupo entero puede quedarse sin secciones —recepcion no ve nada de
+    // Configuracion—, y en ese caso tampoco se pinta su rotulo: un titulo
+    // suelto sobre el vacio parece que algo no cargo.
+    const grupos = GRUPOS.map((g) => ({ ...g, secciones: visibles(g.secciones) })).filter(
+        (g) => g.secciones.length > 0,
+    );
+
+    const configuracion = visibles(CONFIGURACION);
+
     return (
         <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-3">
-            {GRUPOS.map((grupo) => (
+            {grupos.map((grupo) => (
                 <div key={grupo.titulo} className="space-y-0.5">
                     <p className="rotulo px-3 pb-1">{grupo.titulo}</p>
                     {grupo.secciones.map((seccion) => (
@@ -167,12 +180,14 @@ function Arbol({ url, onIr }) {
                 </div>
             ))}
 
-            <div className="mt-auto space-y-0.5 border-t border-line pt-3">
-                <p className="rotulo px-3 pb-1">Configuración</p>
-                {CONFIGURACION.map((seccion) => (
-                    <Enlace key={seccion.href} seccion={seccion} url={url} onIr={onIr} />
-                ))}
-            </div>
+            {configuracion.length > 0 ? (
+                <div className="mt-auto space-y-0.5 border-t border-line pt-3">
+                    <p className="rotulo px-3 pb-1">Configuración</p>
+                    {configuracion.map((seccion) => (
+                        <Enlace key={seccion.href} seccion={seccion} url={url} onIr={onIr} />
+                    ))}
+                </div>
+            ) : null}
         </nav>
     );
 }
@@ -307,7 +322,7 @@ export default function Layout({ children }) {
                         </Link>
                     </div>
 
-                    <Arbol url={url} />
+                    <Arbol url={url} auth={auth} />
 
                     <div className="shrink-0 border-t border-line p-2">
                         <MenuDeUsuario correo={auth?.user?.email} className="w-full" />
@@ -334,7 +349,7 @@ export default function Layout({ children }) {
                                 </SheetTitle>
                             </SheetHeader>
 
-                            <Arbol url={url} onIr={cerrarCajon} />
+                            <Arbol url={url} auth={auth} onIr={cerrarCajon} />
 
                             <div className="shrink-0 border-t border-line p-2">
                                 <MenuDeUsuario correo={auth?.user?.email} className="w-full" />

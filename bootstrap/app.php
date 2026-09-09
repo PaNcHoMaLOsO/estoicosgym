@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
             'verify.session' => \App\Http\Middleware\VerifyActiveSession::class,
+            'puede' => \App\Http\Middleware\VerificaPermiso::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -44,6 +44,11 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'id_rol' => $request->user()->id_rol,
+                    'rol' => $request->user()->rol?->nombre,
+                    // Los permisos viajan al panel para NO ENSENAR lo que no se
+                    // puede usar. Es cosmetica: quien manda es el middleware,
+                    // que revisa cada peticion aunque el enlace no se pinte.
+                    'permisos' => $request->user()->permisos(),
                 ] : null,
             ],
 
