@@ -114,21 +114,23 @@ class ClienteController extends Controller
      */
     public function store(Request $request, RegistroClienteService $registro)
     {
-        if (! $this->validateFormToken($request, 'cliente_create')) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
-
+        // Validar PRIMERO. Si se reservase el turno antes, un formulario con un
+        // error de dato lo dejaria pillado y al corregirlo no se podria enviar.
         $datos = $registro->validar($request);
+
+        if (! $this->validateFormToken($request, 'cliente_create')) {
+            return back()->with('error', 'Este registro ya se envió. Revisa la lista antes de repetirlo.');
+        }
 
         try {
             $resultado = $registro->registrar($datos, $request->file('foto_perfil'));
         } catch (\Throwable $e) {
             report($e);
+            // No se creo nada: se devuelve el turno para poder reintentar.
+            $this->releaseFormToken($request, 'cliente_create');
 
             return back()->withInput()->with('error', 'Error al procesar el registro. Por favor intente nuevamente.');
         }
-
-        $this->invalidateFormToken($request, 'cliente_create');
 
         return redirect()->route('panel.clientes.index')->with('success', $resultado['mensaje']);
     }

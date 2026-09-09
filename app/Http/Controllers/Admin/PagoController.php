@@ -283,9 +283,6 @@ class PagoController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$this->validateFormToken($request, 'pago_create')) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
 
         // VALIDACIÓN: Verificar estado de inscripción antes de crear pago
         $inscripcionCheck = Inscripcion::find($request->input('id_inscripcion'));
@@ -451,6 +448,15 @@ class PagoController extends Controller
             $datosPago['id_metodo_pago'] = $validated['id_metodo_pago'];
         }
         
+        // El turno del envio se reserva AQUI, justo antes de escribir, y no al
+        // entrar: asi un formulario rechazado por validacion no deja el turno
+        // pillado y se puede corregir y reenviar. Cache::add() decide el empate
+        // en una sola operacion, que es lo que faltaba cuando los pagos se
+        // duplicaban con el doble clic.
+        if (! $this->validateFormToken($request, 'pago_create')) {
+            return back()->with('error', 'Este pago ya se registró. Revísalo en el listado antes de repetirlo.');
+        }
+
         $pago = Pago::create($datosPago);
 
         // 📧 ENVIAR NOTIFICACIÓN SI EL PAGO ESTÁ COMPLETO

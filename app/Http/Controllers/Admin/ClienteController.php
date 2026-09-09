@@ -203,26 +203,28 @@ class ClienteController extends Controller
      */
     public function store(Request $request, RegistroClienteService $registro)
     {
-        // Validar que no sea doble envío
-        if (!$this->validateFormToken($request, 'cliente_create')) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
-
         // Las validaciones, los precios y la transaccion viven en el servicio:
         // el panel de React hace esta misma alta y no puede haber dos copias de
         // trescientas lineas que se separen a la primera correccion.
+        //
+        // Se valida ANTES de reservar el turno del envio: si se reservase antes,
+        // un formulario con un dato mal lo dejaria pillado y al corregirlo no se
+        // podria reenviar.
+        $datos = $registro->validar($request);
+
+        if (! $this->validateFormToken($request, 'cliente_create')) {
+            return back()->with('error', 'Este registro ya se envió. Revisa la lista antes de repetirlo.');
+        }
+
         try {
-            $datos = $registro->validar($request);
             $resultado = $registro->registrar($datos, $request->file('foto_perfil'));
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
         } catch (\Exception $e) {
             \Log::error('Error al crear cliente: ' . $e->getMessage());
+            // No se creo nada: se devuelve el turno para poder reintentar.
+            $this->releaseFormToken($request, 'cliente_create');
 
             return back()->withInput()->with('error', 'Error al procesar el registro. Por favor intente nuevamente.');
         }
-
-        $this->invalidateFormToken($request, 'cliente_create');
 
         return redirect()->route('admin.clientes.show', $resultado['cliente'])
             ->with('success', $resultado['mensaje']);
