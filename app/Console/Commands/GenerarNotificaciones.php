@@ -201,7 +201,10 @@ class GenerarNotificaciones extends Command
                 continue;
             }
 
-            $diasVencida = Carbon::parse($inscripcion->fecha_vencimiento)->diffInDays(Carbon::now());
+            // Entero y de dia a dia. diffInDays() devuelve un float y la firma de
+            // generarContenidoMembresiaVencida() lo trunca, asi que el correo decia
+            // «vencio hace 3 dias» cuando iban 3,9: se pierde casi un dia entero.
+            $diasVencida = (int) Carbon::parse($inscripcion->fecha_vencimiento)->startOfDay()->diffInDays(Carbon::now()->startOfDay());
 
             Notificacion::create([
                 'id_tipo_notificacion' => $tipoNotificacion->id,

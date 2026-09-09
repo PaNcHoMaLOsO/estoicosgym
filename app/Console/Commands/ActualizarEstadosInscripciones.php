@@ -42,7 +42,9 @@ class ActualizarEstadosInscripciones extends Command
             $this->warn("   → Encontradas {$activasVencidas->count()} inscripciones activas vencidas");
             
             foreach ($activasVencidas as $insc) {
-                $diasVencida = $insc->fecha_vencimiento->diffInDays($hoy);
+                // De dia a dia y entero: fecha_vencimiento se guarda a medianoche,
+                // asi que restarle la hora actual dejaba decimales en pantalla.
+                $diasVencida = (int) $insc->fecha_vencimiento->startOfDay()->diffInDays($hoy->copy()->startOfDay());
                 $this->line("     - ID #{$insc->id}: {$insc->cliente->nombres} {$insc->cliente->apellido_paterno}");
                 $this->line("       Membresía: {$insc->membresia->nombre}, Venció hace {$diasVencida} días");
                 
@@ -78,7 +80,7 @@ class ActualizarEstadosInscripciones extends Command
             $this->warn("   → Encontradas {$pausasTerminadas->count()} pausas que deberían terminar");
             
             foreach ($pausasTerminadas as $insc) {
-                $diasPasados = $insc->fecha_pausa_fin->diffInDays($hoy);
+                $diasPasados = (int) $insc->fecha_pausa_fin->startOfDay()->diffInDays($hoy->copy()->startOfDay());
                 $this->line("     - ID #{$insc->id}: {$insc->cliente->nombres} {$insc->cliente->apellido_paterno}");
                 $this->line("       Pausa terminó hace {$diasPasados} días (fecha_pausa_fin: {$insc->fecha_pausa_fin->format('d/m/Y')})");
                 
