@@ -23,7 +23,7 @@ export default function Index({ clientes, filtros, resumen }) {
                 </div>
 
                 <Link
-                    href="/admin/clientes/create"
+                    href="/panel/clientes/crear"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <UserPlusIcon className="size-4" aria-hidden="true" />

@@ -3,8 +3,15 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Cliente;
+use App\Models\Convenio;
+use App\Models\Membresia;
+use App\Models\MetodoPago;
+use App\Models\MotivoDescuento;
+use App\Services\RegistroClienteService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /**
@@ -16,6 +23,8 @@ use Inertia\Inertia;
  */
 class ClienteController extends Controller
 {
+    use ValidatesFormToken;
+
     /**
      * La busqueda y la paginacion se hacen EN LA BASE y no en el navegador.
      *
@@ -65,6 +74,63 @@ class ClienteController extends Controller
             'filtros' => ['buscar' => $busqueda],
             'resumen' => $this->resumen(),
         ]);
+    }
+
+    /**
+     * Formulario de alta.
+     *
+     * Los catalogos viajan como props: el formulario los necesita ya cargados
+     * para pintar los desplegables, y pedirlos por separado al abrir la
+     * pantalla habria sido una segunda vuelta al servidor para nada.
+     */
+    public function create()
+    {
+        return Inertia::render('Clientes/Crear', [
+            'membresias' => Membresia::where('activo', true)
+                ->with(['precios' => fn ($q) => $q->where('activo', true)])
+                ->orderBy('nombre')
+                ->get()
+                ->map(fn (Membresia $m) => [
+                    'id' => $m->id,
+                    'nombre' => $m->nombre,
+                    'dias' => $m->duracion_dias,
+                    'precio' => (int) ($m->precios->first()->precio_normal ?? 0),
+                    'precio_convenio' => (int) ($m->precios->first()->precio_convenio ?? 0),
+                ]),
+            'convenios' => Convenio::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'motivos' => MotivoDescuento::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'metodosPago' => MetodoPago::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
+            // Mismo token anti-doble-envio que usa el panel Blade.
+            'formToken' => (string) Str::uuid(),
+        ]);
+    }
+
+    /**
+     * Alta del socio.
+     *
+     * La logica esta en RegistroClienteService, el MISMO que usa el panel
+     * Blade: validaciones, calculo de precios y la transaccion de las tres
+     * tablas. Aqui solo se decide a donde volver.
+     */
+    public function store(Request $request, RegistroClienteService $registro)
+    {
+        if (! $this->validateFormToken($request, 'cliente_create')) {
+            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
+        }
+
+        $datos = $registro->validar($request);
+
+        try {
+            $resultado = $registro->registrar($datos, $request->file('foto_perfil'));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Error al procesar el registro. Por favor intente nuevamente.');
+        }
+
+        $this->invalidateFormToken($request, 'cliente_create');
+
+        return redirect()->route('panel.clientes.index')->with('success', $resultado['mensaje']);
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Models\Pago;
 use App\Models\PrecioMembresia;
 use App\Rules\RutValido;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Services\RegistroClienteService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -200,295 +201,31 @@ class ClienteController extends Controller
      * Store a newly created resource in storage.
      * Flujo ÚNICO: Cliente -> Convenio -> Membresía -> Pago
      */
-    public function store(Request $request)
+    public function store(Request $request, RegistroClienteService $registro)
     {
         // Validar que no sea doble envío
         if (!$this->validateFormToken($request, 'cliente_create')) {
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        // Determinar qué tipo de flujo es
-        $flujoCliente = $request->input('flujo_cliente', 'completo');
-
-        // ================================================================
-        // FASE 1: VALIDAR TODO ANTES DE CREAR CUALQUIER REGISTRO
-        // ================================================================
-
-        // 1.1 Validar datos del cliente
-        $rules = [
-            'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte', new RutValido()],
-            'nombres' => [
-                'required', 'string', 'max:50',
-                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
-                function ($attribute, $value, $fail) {
-                    if (preg_match('/\s{2,}/', $value)) {
-                        $fail('El nombre no debe tener espacios dobles.');
-                    }
-                },
-            ],
-            'apellido_paterno' => [
-                'required', 'string', 'max:50',
-                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
-                function ($attribute, $value, $fail) {
-                    if (preg_match('/\s{2,}/', $value)) {
-                        $fail('El apellido no debe tener espacios dobles.');
-                    }
-                },
-            ],
-            'apellido_materno' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/'],
-            'celular' => ['required', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
-            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('clientes', 'email')],
-            'direccion' => 'nullable|string|max:500',
-            'fecha_nacimiento' => [
-                'nullable', 'date',
-                'before_or_equal:' . now()->subYears(14)->format('Y-m-d'),
-                'after_or_equal:' . now()->subYears(110)->format('Y-m-d'),
-            ],
-            'contacto_emergencia' => 'nullable|string|max:100',
-            'telefono_emergencia' => ['nullable', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
-            'observaciones' => 'nullable|string|max:500',
-            'es_menor_edad' => 'nullable|boolean',
-            'consentimiento_apoderado' => 'nullable|boolean',
-            'apoderado_nombre' => 'nullable|string|max:100',
-            'apoderado_rut' => ['nullable', new RutValido()],
-            'apoderado_email' => 'nullable|email:rfc|max:100',
-            'apoderado_telefono' => 'nullable|string|max:20',
-            'apoderado_parentesco' => 'nullable|string|max:50',
-            'apoderado_observaciones' => 'nullable|string|max:500',
-        ];
-
-        $messages = [
-            'nombres.regex' => 'El nombre solo debe contener letras y espacios.',
-            'apellido_paterno.regex' => 'El apellido solo debe contener letras y espacios.',
-            'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
-            'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
-            'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida.',
-            'celular.regex' => 'Formato de celular inválido. Use: +56 9 1234 5678',
-            'email.unique' => 'Este correo ya está registrado en otro cliente.',
-        ];
-
-        $validatedCliente = $request->validate($rules, $messages);
-
-        // 1.2 Validar apoderado si es menor
-        $esMenorEdad = $request->boolean('es_menor_edad');
-        if ($esMenorEdad) {
-            $request->validate([
-                'consentimiento_apoderado' => 'accepted',
-                'apoderado_nombre' => 'required|string|max:100',
-                'apoderado_rut' => ['required', new RutValido()],
-                'apoderado_email' => 'required|email:rfc|max:100',
-                'apoderado_telefono' => 'required|string|max:20',
-                'apoderado_parentesco' => 'required|string|max:50',
-            ], [
-                'consentimiento_apoderado.accepted' => 'Debe confirmar la autorización del apoderado.',
-                'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio.',
-                'apoderado_rut.required' => 'El RUT del apoderado es obligatorio.',
-                'apoderado_email.required' => 'El email del apoderado es obligatorio.',
-                'apoderado_email.email' => 'El email del apoderado no es válido.',
-                'apoderado_telefono.required' => 'El teléfono del apoderado es obligatorio.',
-                'apoderado_parentesco.required' => 'El parentesco es obligatorio.',
-            ]);
-        }
-
-        // 1.3 Validar membresía SI el flujo lo requiere
-        $validatedMembresia = null;
-        $membresia = null;
-        $precioActual = null;
-        $precioFinal = 0;
-        $descuentoTotal = 0;
-
-        if ($flujoCliente !== 'solo_cliente') {
-            $validatedMembresia = $request->validate([
-                'id_convenio' => 'nullable|exists:convenios,id',
-                'id_membresia' => 'required|exists:membresias,id',
-                'fecha_inicio' => 'required|date|after_or_equal:today',
-                'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-                'descuento_manual' => 'nullable|numeric|min:0',
-                'observaciones_inscripcion' => 'nullable|string|max:500',
-            ], [
-                'id_membresia.required' => 'Debe seleccionar una membresía.',
-                'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
-                'fecha_inicio.after_or_equal' => 'La fecha de inicio debe ser hoy o posterior.',
-            ]);
-
-            // Obtener membresía y precio
-            $membresia = Membresia::findOrFail($validatedMembresia['id_membresia']);
-            $precioActual = PrecioMembresia::where('id_membresia', $membresia->id)
-                ->where(function ($query) {
-                    $query->whereNull('fecha_vigencia_hasta')
-                          ->orWhere('fecha_vigencia_hasta', '>=', now());
-                })
-                ->orderBy('fecha_vigencia_hasta', 'desc')
-                ->firstOrFail();
-
-            // Calcular precios
-            $precioBase = (int) $precioActual->precio_normal;
-            $descuentoConvenio = 0;
-            $descuentoManual = (int) ($validatedMembresia['descuento_manual'] ?? 0);
-
-            if ($validatedMembresia['id_convenio'] && $precioActual->precio_convenio) {
-                $precioBase = (int) $precioActual->precio_convenio;
-                $descuentoConvenio = (int) $precioActual->precio_normal - (int) $precioActual->precio_convenio;
-            }
-
-            // Validar descuento manual
-            if ($descuentoManual > $precioBase) {
-                return back()->withInput()->with('error', "El descuento (\${$descuentoManual}) no puede superar el precio (\${$precioBase}).");
-            }
-
-            $precioFinal = max(0, $precioBase - $descuentoManual);
-            $descuentoTotal = $descuentoConvenio + $descuentoManual;
-        }
-
-        // 1.4 Validar pago SI el flujo lo requiere
-        $validatedPago = null;
-        $tipoPago = null;
-        $montoAbonado = 0;
-        $estadoPago = 200;
-
-        if ($flujoCliente === 'completo') {
-            $validatedPago = $request->validate([
-                'tipo_pago' => 'required|in:completo,parcial,pendiente,mixto',
-                'monto_abonado' => 'nullable|numeric|min:0',
-                'id_metodo_pago' => 'nullable|exists:metodos_pago,id',
-                'fecha_pago' => 'required|date|before_or_equal:today',
-            ], [
-                'tipo_pago.required' => 'Debe seleccionar un tipo de pago.',
-                'fecha_pago.required' => 'La fecha de pago es obligatoria.',
-                'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser futura.',
-            ]);
-
-            $tipoPago = $validatedPago['tipo_pago'];
-            $montoAbonado = (int) ($validatedPago['monto_abonado'] ?? 0);
-
-            // Validaciones específicas por tipo
-            if ($tipoPago === 'completo') {
-                $montoAbonado = $precioFinal;
-                if (!$request->input('id_metodo_pago')) {
-                    return back()->withInput()->with('error', 'Debe seleccionar un método de pago.');
-                }
-                $estadoPago = 201;
-            } elseif ($tipoPago === 'parcial') {
-                if ($montoAbonado <= 0 || $montoAbonado >= $precioFinal) {
-                    return back()->withInput()->with('error', 'En pago parcial, el monto debe ser mayor a $0 y menor al precio total.');
-                }
-                if (!$request->input('id_metodo_pago')) {
-                    return back()->withInput()->with('error', 'Debe seleccionar un método de pago.');
-                }
-                $estadoPago = 202;
-            } elseif ($tipoPago === 'pendiente') {
-                $montoAbonado = 0;
-                $estadoPago = 200;
-            } elseif ($tipoPago === 'mixto') {
-                if ($montoAbonado < 0 || $montoAbonado > $precioFinal) {
-                    return back()->withInput()->with('error', 'El monto no es válido para pago mixto.');
-                }
-                if ($montoAbonado > 0 && !$request->input('id_metodo_pago')) {
-                    return back()->withInput()->with('error', 'Debe seleccionar un método de pago.');
-                }
-                $estadoPago = $montoAbonado == 0 ? 200 : 202;
-            }
-        }
-
-        // ================================================================
-        // FASE 2: CREAR REGISTROS EN TRANSACCIÓN
-        // ================================================================
-        
+        // Las validaciones, los precios y la transaccion viven en el servicio:
+        // el panel de React hace esta misma alta y no puede haber dos copias de
+        // trescientas lineas que se separen a la primera correccion.
         try {
-            return \DB::transaction(function () use (
-                $request, $flujoCliente, $validatedCliente, $esMenorEdad,
-                $validatedMembresia, $membresia, $precioActual, $precioFinal, $descuentoTotal,
-                $validatedPago, $tipoPago, $montoAbonado, $estadoPago
-            ) {
-                // Subir foto de perfil si se envió
-                $fotoPerfil = null;
-                if ($request->hasFile('foto_perfil')) {
-                    $fotoPerfil = $request->file('foto_perfil')
-                        ->store('clientes', 'public');
-                }
-
-                // Crear cliente
-                $cliente = Cliente::create([
-                    ...$validatedCliente,
-                    'es_menor_edad' => $esMenorEdad,
-                    'consentimiento_apoderado' => $esMenorEdad ? $request->boolean('consentimiento_apoderado') : false,
-                    'apoderado_nombre' => $esMenorEdad ? $request->input('apoderado_nombre') : null,
-                    'apoderado_rut' => $esMenorEdad ? $request->input('apoderado_rut') : null,
-                    'apoderado_telefono' => $esMenorEdad ? $request->input('apoderado_telefono') : null,
-                    'apoderado_parentesco' => $esMenorEdad ? $request->input('apoderado_parentesco') : null,
-                    'apoderado_observaciones' => $esMenorEdad ? $request->input('apoderado_observaciones') : null,
-                    'foto_perfil' => $fotoPerfil,
-                    'activo' => true,
-                ]);
-
-                // CASO 1: Solo cliente
-                if ($flujoCliente === 'solo_cliente') {
-                    $this->invalidateFormToken($request, 'cliente_create');
-                    return redirect()->route('admin.clientes.show', $cliente)
-                        ->with('success', 'Cliente registrado exitosamente.');
-                }
-
-                // Crear inscripción
-                $fechaInicio = Carbon::parse($validatedMembresia['fecha_inicio']);
-                $fechaVencimiento = $fechaInicio->clone()->addDays($membresia->duracion_dias);
-
-                $inscripcion = Inscripcion::create([
-                    'uuid' => Str::uuid(),
-                    'id_cliente' => $cliente->id,
-                    'id_membresia' => $membresia->id,
-                    'id_precio_acordado' => $precioActual->id,
-                    'id_convenio' => $validatedMembresia['id_convenio'] ?? null,
-                    'id_motivo_descuento' => $validatedMembresia['id_motivo_descuento'] ?? null,
-                    'observaciones' => $validatedMembresia['observaciones_inscripcion'] ?? null,
-                    'fecha_inscripcion' => Carbon::now(),
-                    'fecha_inicio' => $fechaInicio,
-                    'fecha_vencimiento' => $fechaVencimiento,
-                    'precio_base' => (int) $precioActual->precio_normal,
-                    'descuento_aplicado' => $descuentoTotal,
-                    'precio_final' => $precioFinal,
-                    'id_estado' => 100,
-                ]);
-
-                // CASO 2: Cliente + Membresía
-                if ($flujoCliente === 'con_membresia') {
-                    $this->invalidateFormToken($request, 'cliente_create');
-                    return redirect()->route('admin.clientes.show', $cliente)
-                        ->with('success', 'Cliente y membresía registrados. Pago pendiente.');
-                }
-
-                // CASO 3: Cliente + Membresía + Pago
-                $montoPendiente = max(0, $precioFinal - $montoAbonado);
-
-                Pago::create([
-                    'uuid' => Str::uuid(),
-                    'id_inscripcion' => $inscripcion->id,
-                    'id_cliente' => $cliente->id,
-                    'monto_total' => $precioFinal,
-                    'monto_abonado' => $montoAbonado,
-                    'monto_pendiente' => $montoPendiente,
-                    'fecha_pago' => Carbon::parse($validatedPago['fecha_pago']),
-                    'id_metodo_pago' => $validatedPago['id_metodo_pago'] ?? null,
-                    'id_estado' => $estadoPago,
-                    'tipo_pago' => $tipoPago,
-                    'referencia_pago' => $request->input('referencia_pago'),
-                    'observaciones' => $request->input('observaciones_pago'),
-                ]);
-
-                $estadoTexto = match($tipoPago) {
-                    'completo' => 'Pagado completamente',
-                    'parcial' => 'Abono registrado',
-                    'pendiente' => 'Pago pendiente',
-                    'mixto' => $montoAbonado > 0 ? 'Abono registrado' : 'Pago pendiente',
-                };
-
-                $this->invalidateFormToken($request, 'cliente_create');
-                return redirect()->route('admin.clientes.show', $cliente)
-                    ->with('success', "Registro completo. Estado: {$estadoTexto}");
-            });
+            $datos = $registro->validar($request);
+            $resultado = $registro->registrar($datos, $request->file('foto_perfil'));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             \Log::error('Error al crear cliente: ' . $e->getMessage());
+
             return back()->withInput()->with('error', 'Error al procesar el registro. Por favor intente nuevamente.');
         }
+
+        $this->invalidateFormToken($request, 'cliente_create');
+
+        return redirect()->route('admin.clientes.show', $resultado['cliente'])
+            ->with('success', $resultado['mensaje']);
     }
 
     /**
