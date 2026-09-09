@@ -1,0 +1,186 @@
+/**
+ * Movimiento de los primitivos que FLOTAN (dialogo, cajon, menu, pista).
+ *
+ * Por que vive aqui y no en resources/css/app.css: el panel no anima nada mas.
+ * En reposo no hay elevacion, en hover no hay transform y las filas no se
+ * mueven. Lo unico que se anima es lo que aparece y desaparece de la nada, y
+ * eso lo pintan los seis primitivos de components/ui/**. Manteniendo su
+ * movimiento junto a ellos, quien copie el septimo con `shadcn add` sabe donde
+ * mirar.
+ *
+ * Y no es decoracion: Radix desmonta el nodo en cuanto se cierra A MENOS que
+ * encuentre una animacion CSS corriendo (escucha `animationend`; las
+ * transiciones NO le sirven). Sin estos fotogramas el dialogo desaparece de
+ * golpe y, con el, el foco que tiene que volver al disparador.
+ *
+ * Las duraciones y curvas salen de resources/css/tokens.css (fichero generado).
+ * El segundo valor de cada var() es la red por si esta hoja se cargara sin la
+ * otra: un `animation` con una duracion invalida no anima NADA y Radix se
+ * quedaria esperando un `animationend` que no llega, dejando el dialogo
+ * clavado en pantalla.
+ */
+
+@keyframes ui-aparece {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes ui-desaparece {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/*
+ * AQUI NO SE TOCA `transform`, Y ES LA CORRECCION DE UN FALLO VISIBLE.
+ *
+ * El dialogo se centra con las utilidades `-translate-x-1/2 -translate-y-1/2`, y
+ * Tailwind 4 ya NO las compila dentro de `transform`: usa la propiedad
+ * independiente `translate`.
+ *
+ *     .-translate-y-1\/2 { --tw-translate-y: …; translate: var(--tw-translate-x) var(--tw-translate-y) }
+ *
+ * `translate` y `transform` no se pisan: se COMPONEN. Estos fotogramas repetian
+ * `translate(-50%, -50%)` dentro de `transform`, asi que durante los 250 ms de la
+ * entrada el desplazamiento era el doble —−100 % en las dos direcciones— y el
+ * dialogo aparecia arriba a la izquierda del centro. Al terminar la animacion el
+ * `transform` dejaba de aplicarse y saltaba al sitio: se veia salir de la
+ * izquierda y colocarse de golpe.
+ *
+ * Se anima solo `scale`, tambien como propiedad independiente, que se compone
+ * con el `translate` de Tailwind sin repetirlo. Si algun dia el centrado vuelve a
+ * `transform`, esto sigue valiendo.
+ */
+@keyframes ui-entra-flotante {
+    from {
+        opacity: 0;
+        scale: 0.98;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+@keyframes ui-sale-flotante {
+    from {
+        opacity: 1;
+        scale: 1;
+    }
+    to {
+        opacity: 0;
+        scale: 0.98;
+    }
+}
+
+@keyframes ui-entra-izquierda {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes ui-sale-izquierda {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes ui-entra-menu {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes ui-sale-menu {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+}
+
+/* --- velo del dialogo y del cajon --- */
+
+[data-slot='dialog-overlay'][data-state='open'],
+[data-slot='sheet-overlay'][data-state='open'] {
+    animation: ui-aparece var(--dur-rapida, 150ms) var(--ease-salida, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+[data-slot='dialog-overlay'][data-state='closed'],
+[data-slot='sheet-overlay'][data-state='closed'] {
+    animation: ui-desaparece var(--dur-rapida, 150ms) var(--ease-entrada, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* --- dialogo centrado --- */
+
+[data-slot='dialog-content'][data-state='open'] {
+    animation: ui-entra-flotante var(--dur-media, 250ms) var(--ease-salida, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+[data-slot='dialog-content'][data-state='closed'] {
+    animation: ui-sale-flotante var(--dur-rapida, 150ms) var(--ease-entrada, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* --- cajon lateral: entra desde el borde izquierdo, que es donde vive la
+       hamburguesa que lo abre --- */
+
+[data-slot='sheet-content'][data-state='open'] {
+    animation: ui-entra-izquierda var(--dur-panel, 320ms) var(--ease-salida, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+[data-slot='sheet-content'][data-state='closed'] {
+    animation: ui-sale-izquierda var(--dur-media, 250ms) var(--ease-entrada, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* --- menus y pistas --- */
+
+[data-slot='dropdown-menu-content'][data-state='open'],
+[data-slot='dropdown-menu-sub-content'][data-state='open'],
+[data-slot='tooltip-content'][data-state='delayed-open'],
+[data-slot='tooltip-content'][data-state='instant-open'] {
+    animation: ui-entra-menu var(--dur-rapida, 150ms) var(--ease-salida, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+[data-slot='dropdown-menu-content'][data-state='closed'],
+[data-slot='dropdown-menu-sub-content'][data-state='closed'],
+[data-slot='tooltip-content'][data-state='closed'] {
+    animation: ui-sale-menu var(--dur-rapida, 150ms) var(--ease-entrada, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/*
+ * Quien pide menos movimiento no puede quedarse sin dialogo: la animacion sigue
+ * existiendo (Radix la necesita para saber cuando desmontar) pero dura lo justo
+ * para no verse.
+ */
+@media (prefers-reduced-motion: reduce) {
+    [data-slot='dialog-overlay'],
+    [data-slot='dialog-content'],
+    [data-slot='sheet-overlay'],
+    [data-slot='sheet-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dropdown-menu-sub-content'],
+    [data-slot='tooltip-content'] {
+        animation-duration: 1ms !important;
+    }
+}

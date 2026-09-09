@@ -1,0 +1,169 @@
+/**
+ * FICHERO GENERADO. NO LO EDITES A MANO.
+ *
+ * Se escribe desde design/tokens.json con `node design/generar.mjs --aplicar`.
+ * Cualquier cambio a mano lo revierte el siguiente generado, y mientras tanto
+ * lo pone rojo el test Feature\Diseno\TokensSincronizadosTest.
+ *
+ * Tokens de diseño — PANEL de administracion.
+ *
+ * Tres capas, y el orden importa:
+ *   1. primitivas --app-*  en :root, cambian con el tema;
+ *   2. tokens semanticos   en @theme inline, REFERENCIAN a la primitiva;
+ *   3. utilidades          en el fichero que importa este.
+ *
+ * LA TRAMPA DE @theme inline. Tailwind 4 INCRUSTA el valor del token en cada
+ * utilidad. Si --color-volt fuera el literal #c9ee5f, `bg-volt` compilaria a
+ * `background-color:#c9ee5f` y ningun <style> podria cambiarlo. Apuntando a
+ * var(--app-volt) compila a `background-color:var(--app-volt)` y basta con
+ * redefinir la primitiva. Por eso NINGUN valor literal entra en @theme inline.
+ */
+
+@theme inline {
+  --color-page: var(--app-page);
+  --color-surface: var(--app-surface);
+  --color-surface-2: var(--app-surface-2);
+  --color-raise: var(--app-raise);
+  --color-line: var(--app-line);
+  --color-line-strong: var(--app-line-strong);
+  --color-chalk: var(--app-chalk);
+  --color-fog: var(--app-fog);
+  --color-ok: var(--app-ok);
+  --color-warn: var(--app-warn);
+  --color-danger: var(--app-danger);
+  --color-info: var(--app-info);
+  --color-scrim: var(--app-scrim);
+
+  /* Marca. Referencian a la primitiva a proposito: es lo unico que permite que
+     los ajustes de /admin cambien el color en caliente. Ver el aviso de arriba. */
+  --color-volt: var(--app-volt);
+  --color-volt-soft: var(--app-volt-soft);
+  --color-ink: var(--app-ink);
+  --color-on-ink: var(--app-on-ink);
+  --color-accent: var(--app-accent);
+  --color-ember: var(--app-ember);
+
+  --font-sans: var(--app-font-sans);
+
+  --radius-control: 6px;
+  --radius-panel: 8px;
+  --radius-pill: 999px;
+
+  --shadow-menu: var(--app-menu);
+  --shadow-overlay: var(--app-overlay);
+
+  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-entrada: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- alias que esperan los componentes copiados de shadcn/ui --- */
+  --color-background: var(--app-surface);
+  --color-foreground: var(--app-chalk);
+  --color-card: var(--app-surface);
+  --color-card-foreground: var(--app-chalk);
+  --color-popover: var(--app-raise);
+  --color-popover-foreground: var(--app-chalk);
+  --color-muted: var(--app-surface-2);
+  --color-muted-foreground: var(--app-fog);
+  --color-border: var(--app-line);
+  --color-input: var(--app-line-strong);
+  --color-ring: var(--app-accent);
+  --color-primary: var(--app-volt);
+  --color-primary-foreground: var(--app-ink);
+  --color-secondary: var(--app-surface-2);
+  --color-secondary-foreground: var(--app-chalk);
+  --color-destructive: var(--app-danger);
+  --color-destructive-foreground: var(--app-on-ink);
+  --radius: var(--radius-control);
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Cromo: no es marca, no se edita desde /admin. */
+  --app-page: #fcfaf7;
+  --app-surface: #ffffff;
+  --app-surface-2: #f5f0e9;
+  --app-raise: #ffffff;
+  --app-line: #e9e2d7;
+  --app-line-strong: #d4cabb;
+  --app-chalk: #1e1622;
+  --app-fog: #6b6473;
+  --app-ok: #1f6b4d;
+  --app-warn: #8a5a12;
+  --app-danger: #b4472e;
+  --app-info: #2a5d86;
+  --app-scrim: rgb(30 22 34 / 0.32);
+  --app-ember: var(--app-danger);
+
+  --app-menu: 0 2px 4px rgb(30 22 34 / 0.06), 0 8px 20px -8px rgb(30 22 34 / 0.14);
+  --app-overlay: 0 24px 64px -24px rgb(30 22 34 / 0.3);
+
+  /* Marca: cada uno es un ajuste del grupo `marca` y su valor real llega en
+     caliente. Estos son los DEFECTOS DUROS y tienen que casar con
+     App\Support\AjustesCatalogo, o una instalacion recien hecha se pintaria
+     distinta a lo que dice el panel. */
+  --app-ink: #170d1c;
+  --app-on-ink: #f6f1f7;
+  --app-font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --app-volt: #b08b3e;
+  --app-volt-soft: #c2a04f;
+  --app-accent: #8b21a8;
+
+  /* Movimiento. El panel no anima con JS: estos son los unicos valores. */
+  --dur-rapida: 150ms;
+  --dur-media: 250ms;
+  --dur-panel: 320ms;
+  --dur-lenta: 400ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --app-page: #100a16;
+    --app-surface: #181022;
+    --app-surface-2: #21172d;
+    --app-raise: #281d38;
+    --app-line: #2f2241;
+    --app-line-strong: #463357;
+    --app-chalk: #f3eff6;
+    --app-fog: #a79db4;
+    --app-ok: #5fd0a0;
+    --app-warn: #e0b25f;
+    --app-danger: #f08a5d;
+    --app-info: #7fb8e8;
+    --app-scrim: rgb(0 0 0 / 0.62);
+    --app-ember: var(--app-danger);
+
+    --app-menu: 0 2px 6px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.6);
+    --app-overlay: 0 24px 64px -24px rgb(0 0 0 / 0.75);
+    --app-volt: #efdca8;
+    --app-volt-soft: #f7ebc8;
+    --app-accent: #d9a7f0;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --app-page: #100a16;
+  --app-surface: #181022;
+  --app-surface-2: #21172d;
+  --app-raise: #281d38;
+  --app-line: #2f2241;
+  --app-line-strong: #463357;
+  --app-chalk: #f3eff6;
+  --app-fog: #a79db4;
+  --app-ok: #5fd0a0;
+  --app-warn: #e0b25f;
+  --app-danger: #f08a5d;
+  --app-info: #7fb8e8;
+  --app-scrim: rgb(0 0 0 / 0.62);
+  --app-ember: var(--app-danger);
+
+  --app-menu: 0 2px 6px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.6);
+  --app-overlay: 0 24px 64px -24px rgb(0 0 0 / 0.75);
+  --app-volt: #efdca8;
+  --app-volt-soft: #f7ebc8;
+  --app-accent: #d9a7f0;
+}

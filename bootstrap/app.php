@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Agregar middleware de no-cache para rutas autenticadas
         $middleware->appendToGroup('web', \App\Http\Middleware\NoCacheMiddleware::class);
+
+        // Panel nuevo en Inertia + React. Las vistas Blade que siguen vivas no
+        // se ven afectadas: el middleware solo actua sobre respuestas Inertia.
+        $middleware->appendToGroup('web', \App\Http\Middleware\HandleInertiaRequests::class);
         
         // Alias para middlewares personalizados
         $middleware->alias([

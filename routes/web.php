@@ -276,6 +276,18 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    /*
+     * PANEL NUEVO (Inertia + React).
+     *
+     * Vive bajo /panel y no reemplaza a /admin todavia: se migra pantalla por
+     * pantalla y las dos conviven mientras tanto. Cuando /panel cubra todos los
+     * modulos, /admin pasa a redirigir aqui.
+     */
+    Route::prefix('panel')->name('panel.')->group(function () {
+        Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
+        Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
+    });
+
     // Rutas Admin - Grupo con prefijo 'admin'
     Route::prefix('admin')->name('admin.')->group(function () {
     // Rutas personalizadas de clientes (deben ir antes del resource)
