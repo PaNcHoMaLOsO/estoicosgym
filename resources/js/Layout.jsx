@@ -58,7 +58,16 @@ const GRUPOS = [
         secciones: [
             { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon },
             { href: '/panel/notificaciones', etiqueta: 'Notificaciones', Icono: BellIcon },
-            { href: '/panel/reportes', etiqueta: 'Reportes', Icono: ChartNoAxesColumnIcon },
+            // Reportes es lo unico que todavia no se migro: el constructor de
+            // informes es un formulario grande y no un listado. Apunta al Blade
+            // para que el enlace funcione; `externa` evita que Inertia intente
+            // resolverlo como pagina suya y devuelva un 404.
+            {
+                href: '/admin/reportes',
+                etiqueta: 'Reportes',
+                Icono: ChartNoAxesColumnIcon,
+                externa: true,
+            },
         ],
     },
 ];
@@ -118,8 +127,12 @@ function Enlace({ seccion, url, onIr }) {
     const activa = esActiva(seccion.href, url);
     const { Icono } = seccion;
 
+    // Las secciones que siguen en Blade se visitan con una carga normal: un
+    // <Link> de Inertia pediria esa ruta como pagina suya y no lo es.
+    const Componente = seccion.externa ? 'a' : Link;
+
     return (
-        <Link
+        <Componente
             href={seccion.href}
             onClick={onIr}
             aria-current={activa ? 'page' : undefined}
@@ -133,7 +146,7 @@ function Enlace({ seccion, url, onIr }) {
         >
             <Icono className="size-4 shrink-0" aria-hidden="true" />
             {seccion.etiqueta}
-        </Link>
+        </Componente>
     );
 }
 

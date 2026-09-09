@@ -288,6 +288,14 @@ Route::middleware(['auth', 'verify.session'])->group(function () {
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
         Route::get('/pagos', [\App\Http\Controllers\Panel\PagoController::class, 'index'])->name('pagos.index');
+        Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
+        Route::get('/notificaciones', [\App\Http\Controllers\Panel\NotificacionController::class, 'index'])->name('notificaciones.index');
+
+        // Catalogos de configuracion.
+        Route::get('/membresias', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'membresias'])->name('membresias.index');
+        Route::get('/convenios', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'convenios'])->name('convenios.index');
+        Route::get('/metodos-pago', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'metodosPago'])->name('metodos-pago.index');
+        Route::get('/motivos-descuento', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'motivosDescuento'])->name('motivos-descuento.index');
     });
 
     // Rutas Admin - Grupo con prefijo 'admin'

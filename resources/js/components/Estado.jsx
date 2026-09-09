@@ -22,6 +22,11 @@ const ESTADOS = {
     203: { texto: 'Vencido', tono: 'danger' },
     204: { texto: 'Cancelado', tono: 'neutro' },
     205: { texto: 'Traspasado', tono: 'info' },
+    // --- notificacion ---
+    600: { texto: 'Pendiente', tono: 'warn' },
+    601: { texto: 'Enviada', tono: 'ok' },
+    602: { texto: 'Fallida', tono: 'danger' },
+    603: { texto: 'Cancelada', tono: 'neutro' },
 };
 
 const TONOS = {
