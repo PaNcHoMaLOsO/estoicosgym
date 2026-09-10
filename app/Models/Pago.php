@@ -117,6 +117,32 @@ class Pago extends Model
         return 'uuid';
     }
 
+    /**
+     * Estados en los que el dinero ENTRO de verdad a la caja.
+     *
+     * 201 es el pago saldado y 202 el abono: en los dos hay plata recibida y
+     * las dos cuentan como ingreso. Quedan fuera el pendiente (200), que no ha
+     * pagado nada, el cancelado (204) y el traspasado (205), que ya se contó en
+     * la inscripción a la que se mudó.
+     */
+    public const ESTADOS_CON_INGRESO = [201, 202];
+
+    /**
+     * Lo que se cobró de verdad.
+     *
+     * EXISTE PARA QUE DOS PANTALLAS NO DIGAN COSAS DISTINTAS. El panel de inicio
+     * sumaba 201 y 202, y los reportes solo 201: para el mismo mes uno decía
+     * $2.000.034 y el otro $1.295.000, porque los abonos parciales —la mitad
+     * del dinero— no aparecían en los informes. Con el criterio escrito en un
+     * solo sitio no pueden volver a separarse.
+     *
+     * Se usa como `Pago::ingresos()->sum('monto_abonado')`.
+     */
+    public function scopeIngresos($query)
+    {
+        return $query->whereIn('id_estado', self::ESTADOS_CON_INGRESO);
+    }
+
     public function inscripcion()
     {
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');

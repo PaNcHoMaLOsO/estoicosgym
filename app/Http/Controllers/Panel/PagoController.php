@@ -65,8 +65,8 @@ class PagoController extends Controller
             'pagos' => $pagos,
             'filtros' => ['buscar' => $busqueda, 'estado' => $estado],
             'resumen' => [
-                'recaudado_hoy' => (int) Pago::whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
-                'recaudado_mes' => (int) Pago::whereYear('fecha_pago', $hoy->year)
+                'recaudado_hoy' => (int) Pago::ingresos()->whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
+                'recaudado_mes' => (int) Pago::ingresos()->whereYear('fecha_pago', $hoy->year)
                     ->whereMonth('fecha_pago', $hoy->month)
                     ->sum('monto_abonado'),
                 // Lo que queda por cobrar es la cifra que mueve a actuar.

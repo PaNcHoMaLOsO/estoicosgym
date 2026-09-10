@@ -33,7 +33,7 @@ class ResumenController extends Controller
                     ->whereBetween('fecha_vencimiento', [$hoy, $hoy->copy()->addDays(7)])
                     ->count(),
             ],
-            'recaudado_hoy' => (int) Pago::whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
+            'recaudado_hoy' => (int) Pago::ingresos()->whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
         ]);
     }
 }

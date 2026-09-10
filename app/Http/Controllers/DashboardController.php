@@ -45,13 +45,13 @@ class DashboardController extends Controller
         $inscripcionesSuspendidas = Inscripcion::where('id_estado', $codigoSuspendida)->count();
         
         // Ingresos del Mes (solo pagos completados o parciales)
-        $ingresosMes = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $ingresosMes = Pago::ingresos()
             ->whereYear('fecha_pago', now()->year)
             ->whereMonth('fecha_pago', now()->month)
             ->sum('monto_abonado');
         
         // Ingresos Mes Anterior
-        $ingresosMesAnterior = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $ingresosMesAnterior = Pago::ingresos()
             ->whereYear('fecha_pago', now()->subMonth()->year)
             ->whereMonth('fecha_pago', now()->subMonth()->month)
             ->sum('monto_abonado');
@@ -93,7 +93,7 @@ class DashboardController extends Controller
         // ========== MÉTRICAS DE RENDIMIENTO ==========
         
         // Ticket Promedio (solo pagos completados)
-        $ticketPromedio = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $ticketPromedio = Pago::ingresos()
             ->whereYear('fecha_pago', now()->year)
             ->whereMonth('fecha_pago', now()->month)
             ->avg('monto_abonado') ?? 0;
@@ -133,7 +133,7 @@ class DashboardController extends Controller
         $ingresosHistorico = collect();
         for ($i = 5; $i >= 0; $i--) {
             $fecha = now()->subMonths($i);
-            $total = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+            $total = Pago::ingresos()
                 ->whereYear('fecha_pago', $fecha->year)
                 ->whereMonth('fecha_pago', $fecha->month)
                 ->sum('monto_abonado');
@@ -171,7 +171,7 @@ class DashboardController extends Controller
         // ========== TABLA: Últimos Pagos ==========
         
         $ultimosPagos = Pago::with(['inscripcion.cliente', 'inscripcion.membresia', 'metodoPago', 'estado'])
-            ->whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+            ->ingresos()
             ->orderByDesc('fecha_pago')
             ->limit(8)
             ->get();
@@ -185,7 +185,7 @@ class DashboardController extends Controller
 
         // ========== MÉTODOS DE PAGO ==========
         
-        $metodosPagoPopulares = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $metodosPagoPopulares = Pago::ingresos()
             ->select('id_metodo_pago', DB::raw('count(*) as total'))
             ->groupBy('id_metodo_pago')
             ->with('metodoPago')
@@ -212,13 +212,13 @@ class DashboardController extends Controller
 
         // ========== RESUMEN DEL DÍA ==========
         
-        $ingresosHoy = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $ingresosHoy = Pago::ingresos()
             ->whereDate('fecha_pago', today())
             ->sum('monto_abonado');
         
         $inscripcionesHoy = Inscripcion::whereDate('created_at', today())->count();
         
-        $pagosHoy = Pago::whereIn('id_estado', [$codigoPagoPagado, $codigoPagoParcial])
+        $pagosHoy = Pago::ingresos()
             ->whereDate('fecha_pago', today())
             ->count();
 

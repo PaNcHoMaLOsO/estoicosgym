@@ -144,7 +144,7 @@ class ReporteController extends Controller
                               ->count(),
             'ingresos_mes' => Pago::whereMonth('fecha_pago', now()->month)
                                  ->whereYear('fecha_pago', now()->year)
-                                 ->where('id_estado', 201)
+                                 ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
                                  ->sum('monto_abonado'),
         ];
 
@@ -662,7 +662,7 @@ class ReporteController extends Controller
                 DB::raw('COUNT(*) as cantidad')
             )
             ->whereYear('fecha_pago', $year)
-            ->where('id_estado', 201) // Solo pagados
+            ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
             ->groupBy(DB::raw('MONTH(fecha_pago)'))
             ->orderBy('mes')
             ->get();
@@ -674,7 +674,7 @@ class ReporteController extends Controller
             )
             ->join('metodos_pago', 'pagos.id_metodo_pago', '=', 'metodos_pago.id')
             ->whereYear('fecha_pago', $year)
-            ->where('id_estado', 201)
+            ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
             ->groupBy('metodos_pago.id', 'metodos_pago.nombre')
             ->orderByDesc('total')
             ->get();
@@ -687,13 +687,13 @@ class ReporteController extends Controller
             ->join('inscripciones', 'pagos.id_inscripcion', '=', 'inscripciones.id')
             ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
             ->whereYear('fecha_pago', $year)
-            ->where('pagos.id_estado', 201)
+            ->whereIn('pagos.id_estado', Pago::ESTADOS_CON_INGRESO)
             ->groupBy('membresias.id', 'membresias.nombre')
             ->orderByDesc('total')
             ->get();
 
         $totalAnual = Pago::whereYear('fecha_pago', $year)
-            ->where('id_estado', 201)
+            ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
             ->sum('monto_abonado');
 
         return view('admin.reportes.ingresos-mensuales', compact(
@@ -815,11 +815,11 @@ class ReporteController extends Controller
             // Pagos
             'pagos_mes' => Pago::whereMonth('fecha_pago', $mesActual)
                               ->whereYear('fecha_pago', $yearActual)
-                              ->where('id_estado', 201)
+                              ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
                               ->count(),
             'ingresos_mes' => Pago::whereMonth('fecha_pago', $mesActual)
                                  ->whereYear('fecha_pago', $yearActual)
-                                 ->where('id_estado', 201)
+                                 ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
                                  ->sum('monto_abonado'),
             'pagos_pendientes' => Pago::whereIn('id_estado', [200, 202])->count(),
             'monto_pendiente' => Pago::whereIn('id_estado', [200, 202])->sum('monto_pendiente'),
@@ -840,7 +840,7 @@ class ReporteController extends Controller
                 'mes' => $fecha->translatedFormat('M Y'),
                 'ingresos' => Pago::whereMonth('fecha_pago', $fecha->month)
                                  ->whereYear('fecha_pago', $fecha->year)
-                                 ->where('id_estado', 201)
+                                 ->whereIn('id_estado', Pago::ESTADOS_CON_INGRESO)
                                  ->sum('monto_abonado'),
                 'inscripciones' => Inscripcion::whereMonth('created_at', $fecha->month)
                                              ->whereYear('created_at', $fecha->year)
