@@ -400,6 +400,12 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/reportes/constructor/{modulo}/ver', [\App\Http\Controllers\Panel\ConstructorController::class, 'generar'])->name('reportes.constructor.ver');
         Route::get('/reportes/constructor/{modulo}/csv', [\App\Http\Controllers\Panel\ConstructorController::class, 'exportar'])->name('reportes.constructor.csv');
         Route::get('/notificaciones', [\App\Http\Controllers\Panel\NotificacionController::class, 'index'])->name('notificaciones.index');
+        // El envio va ANTES de la ficha: si fuera despues, /notificaciones/enviar
+        // entraria por {notificacion} y buscaria una con uuid «enviar».
+        Route::get('/notificaciones/enviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'create'])->name('notificaciones.crear');
+        Route::get('/notificaciones/buscar-socio', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'buscar'])->name('notificaciones.buscar-cliente');
+        Route::post('/notificaciones/vista-previa', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'vistaPrevia'])->name('notificaciones.preview');
+        Route::post('/notificaciones/enviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'store'])->name('notificaciones.enviar-individual');
         Route::get('/notificaciones/{notificacion}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'notificacion'])->name('notificaciones.show');
 
         // Catalogos de configuracion.

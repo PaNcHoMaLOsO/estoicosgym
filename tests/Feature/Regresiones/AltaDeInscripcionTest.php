@@ -344,15 +344,24 @@ class AltaDeInscripcionTest extends CasoConCatalogos
         $this->assertSame('2026-03-30', $inscripcion->fecha_vencimiento->format('Y-m-d'));
     }
 
-    /** El mismo formulario enviado dos veces no puede inscribir dos veces. */
-    public function test_reenviar_el_formulario_no_inscribe_dos_veces(): void
+    /**
+     * Un doble clic no inscribe dos veces.
+     *
+     * Aquí quien lo impide NO es el turno anti-duplicado sino la regla de «este
+     * socio ya tiene una membresía vigente», que se comprueba antes: en cuanto
+     * la primera se guarda, la segunda no tiene por dónde pasar. El turno sigue
+     * puesto por si acaso, y donde de verdad hace falta —cobrar, que sí admite
+     * dos pagos seguidos al mismo socio— se comprueba en RegistroDePagosTest.
+     */
+    public function test_un_doble_clic_no_inscribe_dos_veces(): void
     {
         $socio = $this->socio();
         $datos = $this->formulario($socio);
 
         $this->inscribir($datos);
-        $this->inscribir($datos);
+        $segundo = $this->inscribir($datos);
 
         $this->assertSame(1, Inscripcion::where('id_cliente', $socio->id)->count());
+        $segundo->assertSessionHasErrors('id_cliente');
     }
 }

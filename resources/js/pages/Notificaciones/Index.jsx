@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { SendIcon } from 'lucide-react';
 
-import Externo from '@/components/Externo';
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
@@ -36,13 +35,13 @@ export default function Index({ notificaciones, filtros, resumen }) {
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <h1 className="text-lg font-semibold text-chalk">Notificaciones</h1>
 
-                <Externo
-                    href="/admin/notificaciones/enviar-cliente"
+                <Link
+                    href="/panel/notificaciones/enviar"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <SendIcon className="size-4" aria-hidden="true" />
-                    Enviar a un cliente
-                </Externo>
+                    Escribir a un socio
+                </Link>
             </header>
 
             <div className="mb-4 grid gap-3 sm:grid-cols-3">

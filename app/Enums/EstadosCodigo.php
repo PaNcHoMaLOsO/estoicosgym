@@ -190,6 +190,12 @@ class EstadosCodigo
             self::CLIENTE_ACTIVO => 'Activo',
             self::CLIENTE_SUSPENDIDO => 'Suspendido',
             self::CLIENTE_CANCELADO => 'Cancelado',
+            // Faltaban: un correo que no salio se enseñaba como «Desconocido»,
+            // que no dice si esta esperando, si fallo o si alguien lo cancelo.
+            self::NOTIFICACION_PENDIENTE => 'Pendiente de envío',
+            self::NOTIFICACION_ENVIADA => 'Enviada',
+            self::NOTIFICACION_FALLIDA => 'No salió',
+            self::NOTIFICACION_CANCELADA => 'Cancelada',
             default => 'Desconocido',
         };
     }
