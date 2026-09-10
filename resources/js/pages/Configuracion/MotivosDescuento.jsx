@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
+import Externo from '@/components/Externo';
 import Activo from '@/components/Activo';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
@@ -17,13 +18,13 @@ export default function MotivosDescuento({ motivos }) {
                     <p className="apoyo text-fog">Por qué se rebaja el precio de una inscripción</p>
                 </div>
 
-                <Link
+                <Externo
                     href="/admin/motivos-descuento/create"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
                     Nuevo motivo
-                </Link>
+                </Externo>
             </header>
 
             <Tabla
@@ -34,12 +35,12 @@ export default function MotivosDescuento({ motivos }) {
                 {motivos.map((motivo) => (
                     <Fila key={motivo.id}>
                         <Celda className="font-medium text-chalk">
-                            <Link
+                            <Externo
                                 href={`/admin/motivos-descuento/${motivo.id}`}
                                 className="hover:underline"
                             >
                                 {motivo.nombre}
-                            </Link>
+                            </Externo>
                         </Celda>
                         <Celda>{motivo.descripcion ?? '—'}</Celda>
                         <Celda>

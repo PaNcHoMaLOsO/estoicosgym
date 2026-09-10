@@ -84,7 +84,7 @@ export default function PorVencer({ dias, inscripciones, sinContacto }) {
                 {inscripciones.map((i) => (
                     <Fila key={i.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/admin/inscripciones/${i.uuid}`} className="hover:underline">
+                            <Link href={`/panel/inscripciones/${i.uuid}`} className="hover:underline">
                                 {i.socio}
                             </Link>
                         </Celda>

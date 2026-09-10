@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { CheckIcon, PlusIcon } from 'lucide-react';
 
+import Externo from '@/components/Externo';
 import Activo from '@/components/Activo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -17,13 +18,13 @@ export default function MetodosPago({ metodos }) {
                     <p className="apoyo text-fog">Cómo se puede pagar en el mesón</p>
                 </div>
 
-                <Link
+                <Externo
                     href="/admin/metodos-pago/create"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
                     Nuevo método
-                </Link>
+                </Externo>
             </header>
 
             <Tabla
@@ -34,9 +35,9 @@ export default function MetodosPago({ metodos }) {
                 {metodos.map((metodo) => (
                     <Fila key={metodo.id}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/admin/metodos-pago/${metodo.id}`} className="hover:underline">
+                            <Externo href={`/admin/metodos-pago/${metodo.id}`} className="hover:underline">
                                 {metodo.nombre}
-                            </Link>
+                            </Externo>
                             {metodo.descripcion ? (
                                 <span className="apoyo block text-fog">{metodo.descripcion}</span>
                             ) : null}
