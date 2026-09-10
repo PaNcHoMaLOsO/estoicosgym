@@ -54,6 +54,31 @@ class Nota extends Model
     }
 
     /**
+     * A partir de cuántos días una nota pendiente pide una decisión.
+     *
+     * Tres: lo que se apunta en el mesón se hace ese día o al siguiente. Lo que
+     * lleva tres días ahí ya no se va a hacer solo.
+     */
+    public const DIAS_PARA_ENVEJECER = 3;
+
+    /**
+     * ¿Lleva demasiado sin que nadie la toque?
+     *
+     * Las notas NO se borran solas. Una tarea pendiente que desaparece sola es
+     * lo peor que puede pasar: alguien la escribió porque importaba y nadie se
+     * entera de que ya no está. Lo que sí se hace es ENSEÑARLA DISTINTA, para
+     * que quien pase por el mesón decida: se hace, o se quita.
+     */
+    public function estaVieja(): bool
+    {
+        if ($this->hecha || ! $this->created_at) {
+            return false;
+        }
+
+        return $this->created_at->startOfDay()->diffInDays(today()) >= self::DIAS_PARA_ENVEJECER;
+    }
+
+    /**
      * Lo que se enseña en el mesón: lo pendiente, y lo tachado hoy.
      *
      * Las pendientes van TODAS aunque sean de anteayer —una tarea sin hacer no

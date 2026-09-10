@@ -345,6 +345,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * Lo fiado en el meson: la barra de proteina que alguien se lleva y
          * paga despues. Va con el trabajo de meson, como las notas.
          */
+        Route::get('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'index'])->name('fiados.index');
         Route::get('/fiados/buscar-socio', [\App\Http\Controllers\Panel\FiadoController::class, 'buscar'])->name('fiados.buscar');
         Route::post('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'store'])->name('fiados.store');
         Route::post('/fiados/saldar', [\App\Http\Controllers\Panel\FiadoController::class, 'saldar'])->name('fiados.saldar');

@@ -155,6 +155,13 @@ class ResumenController extends Controller
                 'autor' => $n->autor?->name,
                 'cuando' => $n->created_at?->format('H:i'),
                 'hecha_por' => $n->quienLaHizo?->name,
+                // Cuantos dias lleva ahi. Las notas NO se borran solas —una
+                // tarea pendiente que desaparece sola es lo peor que puede
+                // pasar—, pero una que lleva una semana sin que nadie la toque
+                // hay que enseñarla distinta para que alguien decida: se hace
+                // o se quita.
+                'dias' => (int) $n->created_at?->startOfDay()->diffInDays(today()),
+                'vieja' => $n->estaVieja(),
             ])
             ->all();
     }

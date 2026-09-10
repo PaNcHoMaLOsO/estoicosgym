@@ -11,6 +11,7 @@ import {
     LogOutIcon,
     MenuIcon,
     MonitorIcon,
+    NotebookPenIcon,
     MoonIcon,
     ScrollTextIcon,
     SunIcon,
@@ -54,6 +55,10 @@ const GRUPOS = [
             { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon, permiso: 'clientes.ver' },
             { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon, permiso: 'inscripciones.ver' },
             { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon, permiso: 'pagos.ver' },
+            // Va con el meson y NO con Pagos: lo fiado no es dinero de
+            // membresias y no toca la caja. Ponerlo al lado invitaria a
+            // confundirlos.
+            { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
         ],
     },
     {

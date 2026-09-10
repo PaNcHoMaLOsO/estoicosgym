@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Fiado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 /**
  * La libreta de lo fiado en el mesón.
@@ -18,6 +20,37 @@ use Illuminate\Validation\ValidationException;
  */
 class FiadoController extends Controller
 {
+    /**
+     * La pantalla propia de lo fiado.
+     *
+     * En el resumen hay un resumen: quién debe y cuánto, para el vistazo del
+     * mesón. Aquí está lo demás —lo ya cobrado, con fecha y con quién lo cobró—
+     * porque eso no se mira todos los días pero hace falta cuando alguien
+     * discute una cifra o hay que cuadrar el mes.
+     *
+     * ESTO NO ES CAJA DEL GIMNASIO. Lo cobrado aquí no aparece en los ingresos
+     * ni en ningún informe de membresías: es la libreta del mesón, y su cuenta
+     * se lleva aparte a propósito.
+     */
+    public function index(Request $request)
+    {
+        $hoy = Carbon::today();
+
+        $cobradoEsteMes = (int) Fiado::where('pagado', true)
+            ->whereBetween('pagado_en', [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()])
+            ->sum('monto');
+
+        return Inertia::render('Fiados', [
+            'cuentas' => $this->cuentasPendientes(),
+            'cobrado' => $this->loYaCobrado(),
+            'cifras' => [
+                'se_debe' => (int) Fiado::debiendo()->sum('monto'),
+                'personas' => Fiado::debiendo()->get()->groupBy(fn (Fiado $f) => $f->claveDeCuenta())->count(),
+                'cobrado_mes' => $cobradoEsteMes,
+            ],
+        ]);
+    }
+
     /** Anota una cosa más en la cuenta de alguien. */
     public function store(Request $request)
     {
@@ -115,6 +148,81 @@ class FiadoController extends Controller
         $fiado->delete();
 
         return back();
+    }
+
+    /**
+     * Las cuentas que siguen abiertas, agrupadas por persona.
+     *
+     * La misma forma que usa el resumen, para que las dos pantallas cuenten lo
+     * mismo: si cada una agrupara a su manera, la portada podría decir «Juan
+     * debe $4.000» y esta otra repartirlo en dos deudores.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function cuentasPendientes(): array
+    {
+        return Fiado::debiendo()
+            // El autor va cargado: cada linea dice quien la apunto, y pedirlo
+            // por fila seria una consulta por cada cosa que alguien se llevo.
+            ->with(['cliente:id,uuid,nombres,apellido_paterno', 'autor:id,name'])
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(fn (Fiado $f) => $f->claveDeCuenta())
+            ->map(function ($lineas) {
+                $primera = $lineas->first();
+                $desde = $lineas->min('created_at');
+
+                return [
+                    'clave' => $primera->claveDeCuenta(),
+                    'quien' => $primera->aNombreDe(),
+                    'socio_uuid' => $primera->cliente?->uuid,
+                    'id_cliente' => $primera->id_cliente,
+                    'nombre' => $primera->nombre,
+                    'total' => (int) $lineas->sum('monto'),
+                    'desde' => $desde?->format('d/m/Y'),
+                    // Cuantos dias lleva debiendo: una cuenta de hace tres
+                    // semanas no se cobra sola, y conviene que se note.
+                    'dias' => (int) $desde?->startOfDay()->diffInDays(today()),
+                    'lineas' => $lineas->map(fn (Fiado $f) => [
+                        'uuid' => $f->uuid,
+                        'concepto' => $f->concepto,
+                        'monto' => $f->monto,
+                        'cuando' => $f->created_at?->format('d/m/Y H:i'),
+                        'apunto' => $f->autor?->name,
+                    ])->values()->all(),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Lo ya cobrado, lo más reciente primero.
+     *
+     * Se guarda y se enseña porque es lo que responde «¿pero yo no pagué eso?»
+     * tres semanas después. Se corta en 100: más allá, quien lo busque va a
+     * mirar la fecha concreta, no a bajar la lista.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function loYaCobrado(): array
+    {
+        return Fiado::where('pagado', true)
+            ->with(['cliente:id,uuid,nombres,apellido_paterno', 'autor:id,name'])
+            ->orderByDesc('pagado_en')
+            ->limit(100)
+            ->get()
+            ->map(fn (Fiado $f) => [
+                'uuid' => $f->uuid,
+                'quien' => $f->aNombreDe(),
+                'socio_uuid' => $f->cliente?->uuid,
+                'concepto' => $f->concepto,
+                'monto' => $f->monto,
+                'cuando' => $f->pagado_en?->format('d/m/Y H:i'),
+                'apunto' => $f->autor?->name,
+            ])
+            ->all();
     }
 
     /**

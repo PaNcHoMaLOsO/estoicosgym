@@ -1,4 +1,4 @@
-import { router, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckIcon, PlusIcon, TrashIcon, UndoIcon } from 'lucide-react';
 
@@ -115,8 +115,22 @@ export function Notas({ notas }) {
                                     {nota.texto}
                                 </p>
                                 <p className="apoyo text-fog">
-                                    {nota.autor ?? 'alguien'} · {nota.cuando}
+                                    {nota.autor ?? 'alguien'} ·{' '}
+                                    {nota.dias === 0
+                                        ? nota.cuando
+                                        : nota.dias === 1
+                                          ? 'ayer'
+                                          : `hace ${nota.dias} días`}
                                     {nota.hecha && nota.hecha_por ? ` · hecha por ${nota.hecha_por}` : ''}
+
+                                    {/* Las notas NO se borran solas: una tarea
+                                        pendiente que desaparece sola es lo peor
+                                        que puede pasar. Lo que se hace es
+                                        enseñarla distinta para que alguien
+                                        decida —se hace, o se quita—. */}
+                                    {nota.vieja ? (
+                                        <span className="ml-1 text-warn">· sigue sin hacerse</span>
+                                    ) : null}
                                 </p>
                             </div>
 
@@ -167,7 +181,15 @@ export function Fiados({ fiados }) {
                 <div>
                     <h2 className="rotulo">Fiado en el mesón</h2>
                     <p className="apoyo mt-0.5 text-fog">
-                        Lo que se llevaron y todavía no pagan
+                        Lo que se llevaron y todavía no pagan ·{' '}
+                        {/* Aqui va el vistazo; lo cobrado y el historial estan
+                            en su pantalla, que no se mira todos los dias. */}
+                        <Link
+                            href="/panel/fiados"
+                            className="text-fog underline transition-colors hover:text-chalk"
+                        >
+                            ver todo
+                        </Link>
                     </p>
                 </div>
 
@@ -256,8 +278,13 @@ export function Fiados({ fiados }) {
     );
 }
 
-/** El formulario de apuntar: a quién, qué y cuánto. */
-function ApuntarFiado({ alTerminar }) {
+/**
+ * El formulario de apuntar: a quien, que y cuanto.
+ *
+ * Se exporta porque lo usan las DOS pantallas —el resumen y la de fiados—, y
+ * dos copias del mismo formulario acaban pidiendo cosas distintas.
+ */
+export function ApuntarFiado({ alTerminar }) {
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState(null);
     const [socio, setSocio] = useState(null);
@@ -312,8 +339,17 @@ function ApuntarFiado({ alTerminar }) {
         });
     }
 
+    /*
+     * El ANCHO no va aqui.
+     *
+     * Con `w-full` dentro, el campo del monto lo heredaba y peleaba con su
+     * propio `w-24`: Tailwind resuelve ese empate por el orden en que salen las
+     * dos reglas en la hoja, no por el orden en que se escriben, y ganaba
+     * `w-full`. En pantalla el monto se comia la fila entera y «que se llevo»
+     * quedaba en un recuadro de un centimetro.
+     */
     const campo =
-        'w-full rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none';
+        'rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none';
 
     return (
         <form onSubmit={enviar} className="mb-3 space-y-2 rounded-panel border border-line bg-surface-2 p-3">
@@ -339,7 +375,7 @@ function ApuntarFiado({ alTerminar }) {
                         onChange={(e) => buscar(e.target.value)}
                         placeholder="¿Quién? Busca al socio, o escribe un nombre"
                         aria-label="A quién se le apunta"
-                        className={campo}
+                        className={`${campo} w-full`}
                         autoFocus
                     />
 
@@ -387,7 +423,7 @@ function ApuntarFiado({ alTerminar }) {
                     onChange={(e) => setData('monto', e.target.value)}
                     placeholder="$"
                     aria-label="Cuánto"
-                    className={`${campo} w-24 tabular-nums`}
+                    className={`${campo} w-28 shrink-0 tabular-nums`}
                 />
             </div>
 

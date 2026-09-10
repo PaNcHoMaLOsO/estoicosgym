@@ -32,6 +32,25 @@ class LibretaDelMesonTest extends CasoConCatalogos
 
     // ---------- Notas ----------
 
+    /**
+     * Una nota escrita hace tantos dias.
+     *
+     * `created_at` NO esta en el fillable, asi que pasarlo a create() lo ignora
+     * y la nota nace con la fecha de hoy: hay que forzarlo despues, o la prueba
+     * comprueba otra cosa distinta de la que dice.
+     */
+    private function notaDeHace(int $dias, array $extra = []): Nota
+    {
+        $nota = Nota::create($extra + [
+            'texto' => 'Una nota',
+            'id_usuario' => $this->usuario()->id,
+        ]);
+
+        $nota->forceFill(['created_at' => now()->subDays($dias)])->saveQuietly();
+
+        return $nota->refresh();
+    }
+
     public function test_se_apunta_una_nota(): void
     {
         $this->como()->post('/panel/notas', ['texto' => 'Llamar al técnico'])
@@ -111,15 +130,10 @@ class LibretaDelMesonTest extends CasoConCatalogos
      */
     public function test_lo_pendiente_de_ayer_sigue_ahi_y_lo_hecho_de_ayer_no(): void
     {
-        Nota::create([
-            'texto' => 'Sigue pendiente de ayer',
-            'id_usuario' => $this->usuario()->id,
-            'created_at' => now()->subDays(3),
-        ]);
+        $this->notaDeHace(3, ['texto' => 'Sigue pendiente de ayer']);
 
-        Nota::create([
+        $this->notaDeHace(2, [
             'texto' => 'Se hizo anteayer',
-            'id_usuario' => $this->usuario()->id,
             'hecha' => true,
             'hecha_en' => now()->subDays(2),
         ]);
@@ -289,6 +303,109 @@ class LibretaDelMesonTest extends CasoConCatalogos
         Fiado::query()->update(['pagado' => true, 'pagado_en' => now()]);
 
         $this->assertSame([], $this->como()->get('/panel')->viewData('page')['props']['fiados']);
+    }
+
+    /**
+     * Una nota pendiente que lleva dias ahi SE MARCA, no se borra.
+     *
+     * Borrarla sola es lo peor que puede pasar: alguien la escribio porque
+     * importaba y nadie se entera de que ya no esta. Marcarla obliga a que
+     * quien pase por el meson decida: se hace, o se quita.
+     */
+    public function test_una_nota_que_lleva_dias_se_marca_pero_no_desaparece(): void
+    {
+        $this->notaDeHace(7, ['texto' => 'Esto lleva una semana']);
+
+        $notas = collect($this->como()->get('/panel')->viewData('page')['props']['notas']);
+
+        $this->assertCount(1, $notas, 'La nota vieja desaparecio sola.');
+        $this->assertTrue($notas->first()['vieja']);
+        $this->assertSame(7, $notas->first()['dias']);
+    }
+
+    public function test_una_nota_de_hoy_no_esta_marcada_como_vieja(): void
+    {
+        Nota::create(['texto' => 'Recien apuntada', 'id_usuario' => $this->usuario()->id]);
+
+        $notas = collect($this->como()->get('/panel')->viewData('page')['props']['notas']);
+
+        $this->assertFalse($notas->first()['vieja']);
+        $this->assertSame(0, $notas->first()['dias']);
+    }
+
+    // ---------- La pantalla propia de fiados ----------
+
+    public function test_la_pantalla_de_fiados_separa_lo_que_se_debe_de_lo_cobrado(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Debe esto', 'monto' => 3000]);
+        $this->fiar(['nombre' => 'Otro', 'concepto' => 'Ya pago esto', 'monto' => 2000]);
+
+        Fiado::where('concepto', 'Ya pago esto')->update([
+            'pagado' => true,
+            'pagado_en' => now(),
+        ]);
+
+        $props = $this->como()->get('/panel/fiados')->viewData('page')['props'];
+
+        $this->assertCount(1, $props['cuentas']);
+        $this->assertSame('Debe esto', $props['cuentas'][0]['lineas'][0]['concepto']);
+
+        $this->assertCount(1, $props['cobrado']);
+        $this->assertSame('Ya pago esto', $props['cobrado'][0]['concepto']);
+    }
+
+    public function test_la_pantalla_cuenta_lo_que_se_debe_y_lo_cobrado_este_mes(): void
+    {
+        $this->fiar(['monto' => 3000]);
+        $this->fiar(['nombre' => 'Otra persona', 'monto' => 2000]);
+
+        Fiado::where('monto', 2000)->update(['pagado' => true, 'pagado_en' => now()]);
+
+        $cifras = $this->como()->get('/panel/fiados')->viewData('page')['props']['cifras'];
+
+        $this->assertSame(3000, $cifras['se_debe']);
+        $this->assertSame(1, $cifras['personas']);
+        $this->assertSame(2000, $cifras['cobrado_mes']);
+    }
+
+    /** Lo cobrado el mes pasado no cuenta en el de este. */
+    public function test_lo_cobrado_el_mes_pasado_no_cuenta_en_este(): void
+    {
+        $this->fiar(['monto' => 5000]);
+
+        Fiado::query()->update([
+            'pagado' => true,
+            'pagado_en' => now()->subMonthNoOverflow()->startOfMonth(),
+        ]);
+
+        $cifras = $this->como()->get('/panel/fiados')->viewData('page')['props']['cifras'];
+
+        $this->assertSame(0, $cifras['cobrado_mes']);
+    }
+
+    /**
+     * Las dos pantallas agrupan IGUAL.
+     *
+     * Si cada una lo hiciera a su manera, la portada podria decir «Juan debe
+     * $4.000» y la de fiados repartirlo en dos deudores distintos.
+     */
+    public function test_el_resumen_y_la_pantalla_de_fiados_cuentan_lo_mismo(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
+        $this->fiar(['nombre' => 'Un visitante', 'monto' => 1000]);
+
+        $enElResumen = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+        $enSuPantalla = collect($this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas']);
+
+        $this->assertSame(
+            $enElResumen->pluck('total')->all(),
+            $enSuPantalla->pluck('total')->all()
+        );
     }
 
     // ---------- El dinero y quién lo ve ----------
