@@ -64,12 +64,34 @@ Route::middleware('guest')->group(function () {
                 
                 if ($result['success']) {
                     return redirect()->route('2fa.show')->with('status', $result['message']);
-                } else {
-                    // Si falla el envío, permitir login sin 2FA
-                    Auth::login($user, request()->boolean('remember'));
-                    request()->session()->regenerate();
-                    return redirect()->intended('dashboard');
                 }
+
+                /*
+                 * SI EL CODIGO NO SALE, NO SE ENTRA.
+                 *
+                 * Aqui antes se hacia Auth::login() «para no dejar fuera al
+                 * usuario», y eso convertia el segundo factor en un adorno:
+                 * bastaba con que el canal fallara para que la clave sola
+                 * abriera la puerta. Y no era un caso raro. Sin ningun canal
+                 * configurado —que es como esta hoy— el envio SIEMPRE falla,
+                 * asi que todo el que activaba 2FA entraba sin el creyendose
+                 * protegido, y lo unico que quedaba era un aviso en el log.
+                 *
+                 * Un control de seguridad que se apaga solo es peor que uno que
+                 * estorba: el que estorba se ve. Si el canal esta caido, el
+                 * administrador puede desactivarle el 2FA a esa cuenta.
+                 */
+                session()->forget(['2fa_user_id', '2fa_remember']);
+
+                \Illuminate\Support\Facades\Log::error('No se pudo enviar el código 2FA; se bloqueó el acceso.', [
+                    'usuario' => $user->id,
+                    'canal' => $user->two_factor_channel,
+                    'motivo' => $result['message'] ?? null,
+                ]);
+
+                return back()->withErrors([
+                    'email' => 'No pudimos enviarte el código de verificación. Inténtalo de nuevo en un momento; si sigue fallando, avisa al administrador.',
+                ])->onlyInput('email');
             }
             
             request()->session()->regenerate();

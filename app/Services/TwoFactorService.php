@@ -107,19 +107,33 @@ class TwoFactorService
         }
 
         // Opción 3: CallMeBot (Gratis para pruebas)
-        if (config('services.callmebot.enabled', true)) {
+        // CallMeBot pide las DOS cosas: estar activado y tener clave. El defecto
+        // era `true` con la clave vacia, asi que se daba por buena una via que
+        // no podia enviar nada: cortaba antes de llegar al respaldo de
+        // desarrollo y dejaba el 2FA imposible de probar en local.
+        if (config('services.callmebot.enabled', false) && config('services.callmebot.api_key')) {
             return $this->sendViaCallMeBot($phone, $message);
         }
 
-        // Desarrollo: Log del código
-        Log::info("2FA WhatsApp Code", [
+        // Sin ningun canal configurado no hay por donde mandarlo.
+        //
+        // El codigo SOLO se escribe en el registro fuera de produccion: es la
+        // credencial que abre la sesion, y dejarla en texto plano en
+        // laravel.log se la regala a cualquiera que pueda leer ese fichero,
+        // copias de respaldo y visores incluidos. Antes se escribia siempre,
+        // aunque justo debajo se devolviera false.
+        if (! app()->environment('local', 'development')) {
+            Log::warning('2FA: no hay ningun canal de envio configurado.', ['canal' => 'whatsapp']);
+
+            return false;
+        }
+
+        Log::info('2FA WhatsApp (sin enviar, entorno de desarrollo)', [
             'phone' => $phone,
             'code' => $code,
-            'message' => $message
         ]);
 
-        // En desarrollo siempre retorna true
-        return app()->environment('local', 'development');
+        return true;
     }
 
     /**
@@ -134,13 +148,25 @@ class TwoFactorService
             return $this->sendViaTwilio($phone, $message, 'sms');
         }
 
-        // Desarrollo: Log del código
-        Log::info("2FA SMS Code", [
+        // Sin ningun canal configurado no hay por donde mandarlo.
+        //
+        // El codigo SOLO se escribe en el registro fuera de produccion: es la
+        // credencial que abre la sesion, y dejarla en texto plano en
+        // laravel.log se la regala a cualquiera que pueda leer ese fichero,
+        // copias de respaldo y visores incluidos. Antes se escribia siempre,
+        // aunque justo debajo se devolviera false.
+        if (! app()->environment('local', 'development')) {
+            Log::warning('2FA: no hay ningun canal de envio configurado.', ['canal' => 'sms']);
+
+            return false;
+        }
+
+        Log::info('2FA SMS (sin enviar, entorno de desarrollo)', [
             'phone' => $phone,
             'code' => $code,
         ]);
 
-        return app()->environment('local', 'development');
+        return true;
     }
 
     /**
