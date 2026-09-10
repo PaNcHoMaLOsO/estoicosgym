@@ -7,8 +7,7 @@ use Tests\TestCase;
 
 class PagoModuleTest extends TestCase
 {
-    /** @test */
-    public function modulo_pagos_carga_correctamente()
+    public function test_modulo_pagos_carga_correctamente()
     {
         // Verificar que el modelo Pago existe
         $this->assertTrue(class_exists(Pago::class));
@@ -21,8 +20,7 @@ class PagoModuleTest extends TestCase
         $this->assertEquals('uuid', $pago->getRouteKeyName());
     }
 
-    /** @test */
-    public function pago_tiene_fillable_correcto()
+    public function test_pago_tiene_fillable_correcto()
     {
         $pago = new Pago();
         
@@ -35,8 +33,7 @@ class PagoModuleTest extends TestCase
         $this->assertContains('id_estado', $fillable);
     }
 
-    /** @test */
-    public function pago_tiene_relaciones_correctas()
+    public function test_pago_tiene_relaciones_correctas()
     {
         $pago = new Pago();
         
@@ -47,28 +44,24 @@ class PagoModuleTest extends TestCase
         $this->assertTrue(method_exists($pago, 'motivoDescuento'));
     }
 
-    /** @test */
-    public function pago_modelo_tiene_timestamps()
+    public function test_pago_modelo_tiene_timestamps()
     {
         $pago = new Pago();
         $this->assertTrue($pago->timestamps);
     }
 
-    /** @test */
-    public function controlador_pagos_existe()
+    public function test_controlador_pagos_existe()
     {
         $this->assertTrue(class_exists(\App\Http\Controllers\Admin\PagoController::class));
     }
 
-    /** @test */
-    public function pago_tabla_esta_configurada()
+    public function test_pago_tabla_esta_configurada()
     {
         $pago = new Pago();
         $this->assertEquals('pagos', $pago->getTable());
     }
 
-    /** @test */
-    public function pago_usa_uuid_como_ruta_key()
+    public function test_pago_usa_uuid_como_ruta_key()
     {
         $pago = new Pago();
         $routeKey = $pago->getRouteKeyName();
