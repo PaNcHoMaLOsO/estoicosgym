@@ -105,13 +105,39 @@ class Cliente extends Model
     // ===== MUTATORS PARA SANITIZACIÓN DE DATOS =====
 
     /**
+     * Un nombre escrito como se escribe un nombre.
+     *
+     * ucwords() TRABAJA POR BYTES y no sabe poner en mayuscula una letra
+     * acentuada: «álvarez» le llegaba ya en minusculas desde mb_strtolower y
+     * salia igual, porque la «á» ocupa dos bytes y no es una letra a-z. Asi
+     * quedaron guardados en la base todos los Álvarez, y le pasaba a cualquier
+     * Ángela, Óscar o Íñigo.
+     */
+    public static function comoNombrePropio(?string $valor): ?string
+    {
+        $limpio = mb_strtolower(preg_replace('/\s+/', ' ', trim((string) $valor)), 'UTF-8');
+
+        if ($limpio === '') {
+            return null;
+        }
+
+        // Se parte tambien por guion y apostrofo: «jean-luc» y «o'brien»
+        // llevan mayuscula en las dos mitades.
+        return preg_replace_callback(
+            "/(^|[\\s\\-'])(\\p{L})/u",
+            fn (array $t) => $t[1] . mb_strtoupper($t[2], 'UTF-8'),
+            $limpio
+        );
+    }
+
+    /**
      * Sanitizar y capitalizar nombres
      */
     public function setNombresAttribute($value)
     {
         // Eliminar espacios extras y capitalizar cada palabra
         $this->attributes['nombres'] = $value 
-            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            ? self::comoNombrePropio($value)
             : null;
     }
 
@@ -121,7 +147,7 @@ class Cliente extends Model
     public function setApellidoPaternoAttribute($value)
     {
         $this->attributes['apellido_paterno'] = $value 
-            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            ? self::comoNombrePropio($value)
             : null;
     }
 
@@ -131,7 +157,7 @@ class Cliente extends Model
     public function setApellidoMaternoAttribute($value)
     {
         $this->attributes['apellido_materno'] = $value 
-            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            ? self::comoNombrePropio($value)
             : null;
     }
 
@@ -171,7 +197,7 @@ class Cliente extends Model
     public function setApoderadoNombreAttribute($value)
     {
         $this->attributes['apoderado_nombre'] = $value 
-            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            ? self::comoNombrePropio($value)
             : null;
     }
 
@@ -181,7 +207,7 @@ class Cliente extends Model
     public function setContactoEmergenciaAttribute($value)
     {
         $this->attributes['contacto_emergencia'] = $value 
-            ? ucwords(mb_strtolower(preg_replace('/\s+/', ' ', trim($value)), 'UTF-8')) 
+            ? self::comoNombrePropio($value)
             : null;
     }
 
