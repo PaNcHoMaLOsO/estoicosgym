@@ -18,6 +18,27 @@ use Inertia\Inertia;
  */
 class HistorialController extends Controller
 {
+    /**
+     * Como se lee cada tipo de cambio.
+     *
+     * El valor guardado es el de la columna —«cambio_estado_inscripcion»— y
+     * enseñarlo poniendole la primera en mayuscula daba «Renovacion» sin
+     * tilde y «Cambio estado inscripcion» en una sola linea.
+     */
+    private const COMO_SE_LLAMA = [
+        'pausa' => 'Pausa',
+        'reanudacion' => 'Reanudación',
+        'cambio_plan' => 'Cambio de plan',
+        'renovacion' => 'Renovación',
+        'traspaso' => 'Traspaso',
+        'inscripcion' => 'Alta',
+        'cambio_estado_inscripcion' => 'Cambio de estado',
+        'cambio_estado_cliente' => 'Cambio de estado del socio',
+        'cancelacion_inscripcion' => 'Cancelación',
+        'suspension' => 'Suspensión',
+        'vencimiento' => 'Vencimiento',
+    ];
+
     public function index()
     {
         // Los codigos de estado se resuelven a nombre AQUI y de una sola vez:
@@ -33,10 +54,14 @@ class HistorialController extends Controller
                 'id' => "cambio-{$c->id}",
                 'cuando' => $c->fecha_cambio ?? $c->created_at,
                 'clase' => 'cambio',
-                'titulo' => $c->tipo_cambio ? ucfirst(str_replace('_', ' ', $c->tipo_cambio)) : 'Cambio',
+                'titulo' => self::COMO_SE_LLAMA[$c->tipo_cambio] ?? 'Cambio',
                 'socio' => $c->cliente
                     ? trim("{$c->cliente->nombres} {$c->cliente->apellido_paterno}")
                     : null,
+                // El uuid para poder llegar a su ficha: de ahi sale todo lo
+                // demas —sus membresias, sus pagos—, que es lo que se viene a
+                // mirar despues de leer que paso.
+                'socio_uuid' => $c->cliente?->uuid,
                 'detalle' => $c->motivo ?: $this->resumirDetalles($c->detalles),
                 'de' => $estados[$c->estado_anterior] ?? $c->estado_anterior,
                 'a' => $estados[$c->estado_nuevo] ?? $c->estado_nuevo,
@@ -61,6 +86,10 @@ class HistorialController extends Controller
                 'a' => $t->clienteDestino
                     ? trim("{$t->clienteDestino->nombres} {$t->clienteDestino->apellido_paterno}")
                     : null,
+                // En un traspaso los dos extremos son personas, y se llega a
+                // las dos fichas desde aqui.
+                'de_uuid' => $t->clienteOrigen?->uuid,
+                'a_uuid' => $t->clienteDestino?->uuid,
                 'usuario' => $t->usuario?->name,
             ]);
 

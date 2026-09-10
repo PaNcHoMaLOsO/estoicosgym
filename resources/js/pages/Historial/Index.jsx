@@ -1,5 +1,27 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowRightIcon, PencilIcon, RepeatIcon } from 'lucide-react';
+
+/**
+ * Un nombre que lleva a su ficha, si se sabe de quien es.
+ *
+ * Leer que hubo un traspaso es la mitad: lo que se viene a hacer despues es
+ * mirar como quedaron los dos socios, y eso esta en sus fichas.
+ */
+function Socio({ nombre, uuid }) {
+    if (!nombre) {
+        return <span className="text-fog">—</span>;
+    }
+
+    if (!uuid) {
+        return <>{nombre}</>;
+    }
+
+    return (
+        <Link href={`/panel/clientes/${uuid}`} className="hover:underline">
+            {nombre}
+        </Link>
+    );
+}
 
 const CLASES = {
     cambio: { Icono: PencilIcon, color: 'text-info' },
@@ -38,16 +60,33 @@ export default function Index({ movimientos }) {
                                 <div className="min-w-0 flex-1">
                                     <p className="text-sm text-chalk">
                                         <span className="font-medium">{m.titulo}</span>
-                                        {m.socio ? <span className="text-fog"> · {m.socio}</span> : null}
+                                        {m.socio ? (
+                                            <span className="text-fog">
+                                                {' · '}
+                                                <Socio nombre={m.socio} uuid={m.socio_uuid} />
+                                            </span>
+                                        ) : null}
                                     </p>
 
                                     {/* El «de → a» es lo que de verdad se viene a
-                                        leer: que cambio, no solo que hubo un cambio. */}
-                                    {m.de || m.a ? (
+                                        leer: que cambio, no solo que hubo un cambio.
+
+                                        Si los dos lados dicen lo mismo —una
+                                        renovacion va de Activa a Activa— no hay
+                                        cambio que enseñar y la flecha sobra. */}
+                                    {(m.de || m.a) && m.de !== m.a ? (
                                         <p className="apoyo mt-0.5 flex flex-wrap items-center gap-1 text-fog">
-                                            <span>{m.de ?? '—'}</span>
+                                            {/* En un traspaso los dos extremos son
+                                                personas y llevan a su ficha; en un
+                                                cambio de estado son solo nombres de
+                                                estado y no llevan a ninguna parte. */}
+                                            <span>
+                                                <Socio nombre={m.de} uuid={m.de_uuid} />
+                                            </span>
                                             <ArrowRightIcon className="size-3" aria-hidden="true" />
-                                            <span className="text-chalk">{m.a ?? '—'}</span>
+                                            <span className="text-chalk">
+                                                <Socio nombre={m.a} uuid={m.a_uuid} />
+                                            </span>
                                         </p>
                                     ) : null}
 
