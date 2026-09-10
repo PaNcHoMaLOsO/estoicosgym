@@ -330,6 +330,25 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
      */
     Route::prefix('panel')->name('panel.')->group(function () {
         Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
+
+        /*
+         * El bloc de notas del meson, en la portada.
+         *
+         * Cae en el permiso de clientes —lo mismo que `resumen`— porque es del
+         * trabajo de meson: quien atiende apunta lo que hay que hacer hoy.
+         */
+        Route::post('/notas', [\App\Http\Controllers\Panel\NotaController::class, 'store'])->name('notas.store');
+        Route::patch('/notas/{nota}', [\App\Http\Controllers\Panel\NotaController::class, 'alternar'])->name('notas.alternar');
+        Route::delete('/notas/{nota}', [\App\Http\Controllers\Panel\NotaController::class, 'destroy'])->name('notas.destroy');
+
+        /*
+         * Lo fiado en el meson: la barra de proteina que alguien se lleva y
+         * paga despues. Va con el trabajo de meson, como las notas.
+         */
+        Route::get('/fiados/buscar-socio', [\App\Http\Controllers\Panel\FiadoController::class, 'buscar'])->name('fiados.buscar');
+        Route::post('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'store'])->name('fiados.store');
+        Route::post('/fiados/saldar', [\App\Http\Controllers\Panel\FiadoController::class, 'saldar'])->name('fiados.saldar');
+        Route::delete('/fiados/{fiado}', [\App\Http\Controllers\Panel\FiadoController::class, 'destroy'])->name('fiados.destroy');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/crear', [\App\Http\Controllers\Panel\ClienteController::class, 'create'])->name('clientes.create');
         Route::post('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'store'])->name('clientes.store');

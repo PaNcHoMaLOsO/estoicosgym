@@ -35,6 +35,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { puede } from '@/lib/permisos';
 import { fijarTema, usarPreferenciaDeTema } from '@/lib/tema';
+import { BotonPrivado, ProveedorPrivado } from '@/Privado';
 
 /**
  * Navegacion del panel.
@@ -323,6 +324,7 @@ export default function Layout({ children }) {
 
     return (
         <TooltipProvider>
+            <ProveedorPrivado>
             <div className="min-h-dvh bg-page">
                 {/* CARRIL FIJO en escritorio. Carril y no barra horizontal:
                     son once secciones y creceran; ademas deja a las tablas el
@@ -336,8 +338,12 @@ export default function Layout({ children }) {
 
                     <Arbol url={url} auth={auth} />
 
-                    <div className="shrink-0 border-t border-line p-2">
-                        <MenuDeUsuario correo={auth?.user?.email} className="w-full" />
+                    {/* El ojito, al lado del usuario: se busca abajo a la
+                        izquierda, donde estan las cosas de «yo», no arriba
+                        entre lo que se esta mirando. */}
+                    <div className="flex shrink-0 items-center gap-1 border-t border-line p-2">
+                        <MenuDeUsuario correo={auth?.user?.email} className="min-w-0 flex-1" />
+                        <BotonPrivado />
                     </div>
                 </aside>
 
@@ -373,6 +379,8 @@ export default function Layout({ children }) {
                         <Marca />
                     </Link>
 
+                    <BotonPrivado />
+
                     <MenuDeUsuario
                         correo={auth?.user?.email}
                         alineacion="end"
@@ -390,6 +398,7 @@ export default function Layout({ children }) {
                     </main>
                 </div>
             </div>
+            </ProveedorPrivado>
         </TooltipProvider>
     );
 }

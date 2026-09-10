@@ -1,0 +1,331 @@
+<?php
+
+namespace Tests\Feature\Regresiones;
+
+use App\Models\Cliente;
+use App\Models\Fiado;
+use App\Models\Nota;
+use App\Models\Pago;
+use App\Models\User;
+use Tests\CasoConCatalogos;
+
+/**
+ * La libreta del mesón: las notas del día y lo fiado.
+ *
+ * Lo que más importa de aquí es que LO FIADO NO ES UN PAGO DE MEMBRESÍA. Una
+ * bebida de $1.500 no puede aparecer en la caja del día ni en el saldo del
+ * socio: son dos libretas distintas y mezclarlas descuadraría las dos.
+ */
+class LibretaDelMesonTest extends CasoConCatalogos
+{
+    private $admin = null;
+
+    private function usuario(): User
+    {
+        return $this->admin ??= $this->administrador();
+    }
+
+    private function como()
+    {
+        return $this->actingAs($this->usuario());
+    }
+
+    // ---------- Notas ----------
+
+    public function test_se_apunta_una_nota(): void
+    {
+        $this->como()->post('/panel/notas', ['texto' => 'Llamar al técnico'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('notas', [
+            'texto' => 'Llamar al técnico',
+            'hecha' => false,
+            'id_usuario' => $this->usuario()->id,
+        ]);
+    }
+
+    public function test_una_nota_vacia_no_se_guarda(): void
+    {
+        $this->como()->post('/panel/notas', ['texto' => '  '])
+            ->assertSessionHasErrors('texto');
+
+        $this->assertSame(0, Nota::count());
+    }
+
+    /**
+     * El bloc es COMPARTIDO: en el mesón se turnan varias personas y lo que
+     * deja escrito la de la mañana tiene que verlo la de la tarde.
+     */
+    public function test_el_bloc_lo_ve_todo_el_mundo_no_solo_quien_escribio(): void
+    {
+        $otro = $this->recepcionista();
+
+        Nota::create(['texto' => 'Lo apuntó otro', 'id_usuario' => $otro->id]);
+
+        $respuesta = $this->como()->get('/panel');
+
+        $notas = collect($respuesta->viewData('page')['props']['notas']);
+
+        $this->assertCount(1, $notas);
+        $this->assertSame('Lo apuntó otro', $notas->first()['texto']);
+        $this->assertSame($otro->name, $notas->first()['autor']);
+    }
+
+    public function test_tachar_una_nota_deja_quien_y_cuando(): void
+    {
+        $nota = Nota::create(['texto' => 'Pedir toallas', 'id_usuario' => $this->usuario()->id]);
+
+        $this->como()->patch("/panel/notas/{$nota->uuid}")->assertSessionHasNoErrors();
+
+        $nota->refresh();
+
+        $this->assertTrue($nota->hecha);
+        $this->assertNotNull($nota->hecha_en);
+        $this->assertSame($this->usuario()->id, $nota->id_usuario_hecha);
+    }
+
+    /** Tacharla es un clic y equivocarse también: se puede destachar. */
+    public function test_destachar_borra_el_rastro_de_que_estaba_hecha(): void
+    {
+        $nota = Nota::create([
+            'texto' => 'Ups',
+            'id_usuario' => $this->usuario()->id,
+            'hecha' => true,
+            'hecha_en' => now(),
+            'id_usuario_hecha' => $this->usuario()->id,
+        ]);
+
+        $this->como()->patch("/panel/notas/{$nota->uuid}");
+
+        $nota->refresh();
+
+        $this->assertFalse($nota->hecha);
+        // Dejar el rastro haría creer que sigue hecha.
+        $this->assertNull($nota->hecha_en);
+        $this->assertNull($nota->id_usuario_hecha);
+    }
+
+    /**
+     * Una tarea sin hacer NO caduca sola. Las hechas sí desaparecen al día
+     * siguiente, o el bloc se convierte en un archivo histórico.
+     */
+    public function test_lo_pendiente_de_ayer_sigue_ahi_y_lo_hecho_de_ayer_no(): void
+    {
+        Nota::create([
+            'texto' => 'Sigue pendiente de ayer',
+            'id_usuario' => $this->usuario()->id,
+            'created_at' => now()->subDays(3),
+        ]);
+
+        Nota::create([
+            'texto' => 'Se hizo anteayer',
+            'id_usuario' => $this->usuario()->id,
+            'hecha' => true,
+            'hecha_en' => now()->subDays(2),
+        ]);
+
+        $textos = collect($this->como()->get('/panel')->viewData('page')['props']['notas'])
+            ->pluck('texto');
+
+        $this->assertTrue($textos->contains('Sigue pendiente de ayer'));
+        $this->assertFalse($textos->contains('Se hizo anteayer'));
+    }
+
+    // ---------- Fiado ----------
+
+    private function fiar(array $datos = [])
+    {
+        return $this->como()->post('/panel/fiados', array_merge([
+            'nombre' => 'Un visitante',
+            'concepto' => 'Bebida',
+            'monto' => 1500,
+        ], $datos));
+    }
+
+    public function test_se_apunta_algo_fiado(): void
+    {
+        $this->fiar()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('fiados', [
+            'nombre' => 'Un visitante',
+            'concepto' => 'Bebida',
+            'monto' => 1500,
+            'pagado' => false,
+        ]);
+    }
+
+    /** Sin socio ni nombre no se sabe de quién es la cuenta. */
+    public function test_hay_que_decir_de_quien_es(): void
+    {
+        $this->fiar(['nombre' => '', 'id_cliente' => null])
+            ->assertSessionHasErrors('nombre');
+
+        $this->assertSame(0, Fiado::count());
+    }
+
+    /**
+     * EL QUE IMPORTA.
+     *
+     * Una bebida del mesón NO es un pago de membresía. `pagos` mueve la caja
+     * del día, los informes de ingresos y el saldo del socio; meter ahí $1.500
+     * descuadraría las tres cosas y ningún informe sabría separarlas después.
+     */
+    public function test_lo_fiado_no_toca_la_caja_ni_el_saldo_del_socio(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+        $pagosAntes = Pago::count();
+        $cajaAntes = (int) Pago::ingresos()->sum('monto_abonado');
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 3000]);
+
+        $this->assertSame($pagosAntes, Pago::count(), 'Lo fiado creó un pago de membresía.');
+        $this->assertSame($cajaAntes, (int) Pago::ingresos()->sum('monto_abonado'));
+    }
+
+    /** Cada cosa que se lleva se suma a su cuenta. */
+    public function test_lo_fiado_se_va_sumando(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true, 'nombres' => 'Pablo']);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Barra', 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Bebida', 'monto' => 1500]);
+
+        $cuentas = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+
+        $this->assertCount(1, $cuentas, 'Las dos líneas del mismo socio son una sola cuenta.');
+        $this->assertSame(4000, $cuentas->first()['total']);
+        $this->assertCount(2, $cuentas->first()['lineas']);
+    }
+
+    /**
+     * Dos personas distintas son dos cuentas, aunque una esté a nombre suelto.
+     */
+    public function test_cada_persona_tiene_su_cuenta(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
+        $this->fiar(['nombre' => 'El hermano de alguien', 'monto' => 2000]);
+
+        $cuentas = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+
+        $this->assertCount(2, $cuentas);
+    }
+
+    /**
+     * Se salda la cuenta ENTERA. Marcarlas de una en una es la forma de
+     * dejarse una sin querer y que esa persona arrastre $1.500 para siempre.
+     */
+    public function test_saldar_paga_toda_la_cuenta_de_esa_persona(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, Fiado::debiendo()->count());
+        $this->assertSame(2, Fiado::where('pagado', true)->count());
+    }
+
+    /** Y saldar a uno no toca la cuenta de otro. */
+    public function test_saldar_a_uno_no_salda_al_otro(): void
+    {
+        $uno = Cliente::factory()->create(['activo' => true]);
+        $otro = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $uno->id, 'nombre' => null, 'monto' => 1000]);
+        $this->fiar(['id_cliente' => $otro->id, 'nombre' => null, 'monto' => 2000]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id]);
+
+        $this->assertSame(
+            2000,
+            (int) Fiado::debiendo()->where('id_cliente', $otro->id)->sum('monto')
+        );
+    }
+
+    public function test_saldar_deja_constancia_de_quien_cobro(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+
+        $fiado = Fiado::first();
+
+        $this->assertNotNull($fiado->pagado_en);
+        $this->assertSame($this->usuario()->id, $fiado->id_usuario_cobro);
+    }
+
+    /** Una línea apuntada por error se quita; una ya cobrada no. */
+    public function test_se_quita_una_linea_apuntada_por_error(): void
+    {
+        $this->fiar();
+        $fiado = Fiado::firstOrFail();
+
+        $this->como()->delete("/panel/fiados/{$fiado->uuid}")->assertSessionHasNoErrors();
+
+        $this->assertSame(0, Fiado::count());
+    }
+
+    public function test_no_se_borra_algo_que_ya_se_cobro(): void
+    {
+        $this->fiar();
+        $fiado = Fiado::firstOrFail();
+        $fiado->update(['pagado' => true, 'pagado_en' => now()]);
+
+        $this->como()->delete("/panel/fiados/{$fiado->uuid}")->assertSessionHas('error');
+
+        $this->assertSame(1, Fiado::count());
+    }
+
+    /** Lo pagado sale de la lista: la libreta enseña lo que se debe. */
+    public function test_lo_pagado_desaparece_de_la_libreta(): void
+    {
+        $this->fiar();
+        Fiado::query()->update(['pagado' => true, 'pagado_en' => now()]);
+
+        $this->assertSame([], $this->como()->get('/panel')->viewData('page')['props']['fiados']);
+    }
+
+    // ---------- El dinero y quién lo ve ----------
+
+    /**
+     * Recepción NO recibe las cifras de caja. No se le tapan en pantalla: no
+     * salen del servidor. Taparlas sería un adorno —el dato estaría en la
+     * página— y esto es el permiso `reportes.ver`.
+     */
+    public function test_recepcion_no_recibe_las_cifras_de_caja(): void
+    {
+        $respuesta = $this->actingAs($this->recepcionista())->get('/panel');
+
+        $this->assertNull(
+            $respuesta->viewData('page')['props']['caja'],
+            'A recepción le llegó la caja del día en la portada.'
+        );
+    }
+
+    public function test_quien_puede_ver_los_informes_si_las_recibe(): void
+    {
+        $caja = $this->como()->get('/panel')->viewData('page')['props']['caja'];
+
+        $this->assertIsArray($caja);
+        $this->assertArrayHasKey('hoy', $caja);
+        $this->assertArrayHasKey('por_cobrar', $caja);
+    }
+
+    /** Y la cifra de «por cobrar» es de membresías, sin lo fiado del mesón. */
+    public function test_lo_fiado_no_entra_en_el_por_cobrar_de_membresias(): void
+    {
+        $antes = $this->como()->get('/panel')->viewData('page')['props']['caja']['por_cobrar'];
+
+        $this->fiar(['monto' => 9999]);
+
+        $despues = $this->como()->get('/panel')->viewData('page')['props']['caja']['por_cobrar'];
+
+        $this->assertSame($antes, $despues);
+    }
+}

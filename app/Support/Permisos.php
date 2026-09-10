@@ -22,6 +22,7 @@ class Permisos
         'builder', 'generar', 'predefinido', 'campos', 'json',
         'info-cambio-plan', 'buscar-clientes-traspaso', 'buscar-cliente',
         'buscar-cliente-individual', 'contar-destinatarios', 'obtener-destinatarios',
+        'buscar',
         'preview', 'plantillas', 'editar', 'traspaso.show',
     ];
 
@@ -32,8 +33,10 @@ class Permisos
     private const EDITAR = [
         'edit', 'update', 'activate', 'deactivate', 'reactivate',
         'restore', 'restaurar', 'actualizar', 'programar', 'guardar-programada',
-        // Activar y desactivar un catalogo desde su listado.
+        // Activar y desactivar un catalogo, y tachar y destachar una nota.
         'alternar',
+        // Cobrar lo fiado: se marca como pagado, no se crea nada.
+        'saldar',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
@@ -80,6 +83,13 @@ class Permisos
         // configuracion, como el resto de lo que se toca de tarde en tarde.
         'papelera' => 'configuracion',
         'resumen' => 'clientes',
+        // El bloc de notas del meson va con el trabajo de meson: quien
+        // atiende apunta lo que hay que hacer hoy.
+        'notas' => 'clientes',
+        // Lo fiado tambien: lo apunta y lo cobra quien esta en el meson. NO va
+        // con `pagos` a proposito —una bebida de $1.500 no es el dinero de las
+        // membresias— ni con `reportes`, que es lo que recepcion no ve.
+        'fiados' => 'clientes',
     ];
 
     /**

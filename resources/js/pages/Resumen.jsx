@@ -2,21 +2,36 @@ import { Head, Link } from '@inertiajs/react';
 import { PhoneOffIcon } from 'lucide-react';
 
 import Barras from '@/components/Barras';
+import { Fiados, Notas } from '@/components/Libreta';
+import { Reservado } from '@/Privado';
 import Columnas from '@/components/Columnas';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
 /**
  * Portada del panel.
  *
- * NO HAY CIFRAS DE DINERO, a propósito: la ve todo el mundo, incluida recepción,
- * que por permisos no entra a los informes de ingresos. La plata vive en
- * Reportes. Aquí está lo que se puede HACER hoy.
+ * Arriba, LA LIBRETA DEL MESON: lo que hay que hacer hoy y lo que la gente se
+ * llevo fiado. Es lo primero porque es lo unico que se escribe desde aqui;
+ * todo lo demas son cifras que se miran.
+ *
+ * Las cifras de dinero solo llegan a quien tiene permiso para verlas —recepcion
+ * no las recibe— y ademas salen TAPADAS. Eso ultimo no es un permiso: es que en
+ * el meson se sienta gente detras de quien atiende. El ojito de la barra las
+ * destapa, y la tecla O tambien.
  */
 
-function Cifra({ etiqueta, valor, pie, tono = 'normal' }) {
-    // El color solo aparece cuando el número pide actuar. Si todo se pintara,
-    // no destacaría nada.
-    const activo = valor > 0;
+function Cifra({ etiqueta, valor, pie, tono = 'normal', siempreTono = false }) {
+    /*
+     * El color solo aparece cuando el numero pide actuar. Si todo se pintara,
+     * no destacaria nada.
+     *
+     * `valor` puede ser un numero o venir envuelto en <Reservado> para poder
+     * taparlo, y entonces la comparacion no vale: por eso `siempreTono`, que
+     * usa quien ya sabe desde fuera si hay algo que atender. El color se queda
+     * aunque la cifra este tapada, a proposito: «hay algo por cobrar» no es
+     * ningun secreto, la cantidad si.
+     */
+    const activo = siempreTono || valor > 0;
 
     const estilos = {
         normal: 'border-line bg-surface',
@@ -67,7 +82,13 @@ function Faltan({ dias }) {
     return <span className="font-medium text-warn">{dias} d</span>;
 }
 
-export default function Resumen({ cifras, altas, porPlan, porVencer }) {
+const pesos = new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+});
+
+export default function Resumen({ cifras, caja, notas, fiados, altas, porPlan, porVencer }) {
     return (
         <>
             <Head title="Resumen" />
@@ -77,11 +98,43 @@ export default function Resumen({ cifras, altas, porPlan, porVencer }) {
                 <p className="apoyo text-fog">Qué hay que atender hoy</p>
             </header>
 
+            {/* LA LIBRETA PRIMERO: es lo unico de esta pantalla que se escribe,
+                y lo que se apunta al llegar. Lo demas son cifras que se miran. */}
+            <div className="mb-4 grid gap-3 lg:grid-cols-2">
+                <Notas notas={notas} />
+                <Fiados fiados={fiados} />
+            </div>
+
+            {/* La caja solo la recibe quien puede verla. Y aun asi va tapada:
+                el ojito de la barra o la tecla O la destapan. */}
+            {caja ? (
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                    <Cifra
+                        etiqueta="Entró hoy"
+                        valor={<Reservado ancho="w-20">{pesos.format(caja.hoy)}</Reservado>}
+                    />
+                    <Cifra
+                        etiqueta="Entró este mes"
+                        valor={<Reservado ancho="w-20">{pesos.format(caja.mes)}</Reservado>}
+                    />
+                    <Cifra
+                        etiqueta="Por cobrar"
+                        valor={<Reservado ancho="w-20">{pesos.format(caja.por_cobrar)}</Reservado>}
+                        pie="de membresías, sin contar lo fiado"
+                        tono={caja.por_cobrar > 0 ? 'aviso' : 'normal'}
+                        siempreTono
+                    />
+                </div>
+            ) : null}
+
             <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Cifra etiqueta="Socios activos" valor={cifras.socios} />
+                <Cifra
+                    etiqueta="Socios activos"
+                    valor={<Reservado>{cifras.socios}</Reservado>}
+                />
                 <Cifra
                     etiqueta="Membresías al día"
-                    valor={cifras.al_dia}
+                    valor={<Reservado>{cifras.al_dia}</Reservado>}
                     pie={cifras.pausadas > 0 ? `${cifras.pausadas} pausadas` : undefined}
                 />
                 <Cifra
