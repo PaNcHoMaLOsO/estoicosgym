@@ -14,6 +14,7 @@ import {
     MoonIcon,
     ScrollTextIcon,
     SunIcon,
+    Trash2Icon,
     UsersIcon,
     WalletIcon,
     XIcon,
@@ -79,6 +80,9 @@ const CONFIGURACION = [
     { href: '/panel/convenios', etiqueta: 'Convenios', Icono: Building2Icon, permiso: 'configuracion.ver' },
     { href: '/panel/metodos-pago', etiqueta: 'Métodos de pago', Icono: WalletIcon, permiso: 'configuracion.ver' },
     { href: '/panel/motivos-descuento', etiqueta: 'Motivos de descuento', Icono: BadgePercentIcon, permiso: 'configuracion.ver' },
+    // La ultima del grupo a proposito: se entra buscando algo que se
+    // borro por error, no todos los dias.
+    { href: '/panel/papelera', etiqueta: 'Papelera', Icono: Trash2Icon, permiso: 'configuracion.ver' },
 ];
 
 const TEMAS = [

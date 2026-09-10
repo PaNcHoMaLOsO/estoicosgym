@@ -31,7 +31,7 @@ class Permisos
     /** Modificar lo que ya existe, incluido activar y desactivar. */
     private const EDITAR = [
         'edit', 'update', 'activate', 'deactivate', 'reactivate',
-        'restore', 'actualizar', 'programar', 'guardar-programada',
+        'restore', 'restaurar', 'actualizar', 'programar', 'guardar-programada',
         // Activar y desactivar un catalogo desde su listado.
         'alternar',
     ];
@@ -75,6 +75,10 @@ class Permisos
         'motivos-descuento' => 'configuracion',
         // Activar y desactivar, que valen para los cuatro a la vez.
         'catalogos' => 'configuracion',
+        // La papelera cruza todos los modulos —socios, membresias, pagos,
+        // catalogos— y devolver algo borrado no es tarea de meson: cae en
+        // configuracion, como el resto de lo que se toca de tarde en tarde.
+        'papelera' => 'configuracion',
         'resumen' => 'clientes',
     ];
 

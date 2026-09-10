@@ -381,6 +381,17 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/pagos/{pago}', \App\Http\Controllers\Panel\PagoFichaController::class)->name('pagos.show');
         Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
 
+        /*
+         * Lo borrado que todavia se puede recuperar, todo en una pantalla.
+         *
+         * NO hay «eliminar del todo»: un socio con inscripciones, un plan con
+         * membresias vendidas o un pago de una caja de hace tres años estan
+         * referenciados por otras filas, y quitarlos deja huecos en sitios que
+         * nadie mira hasta que cuadran mal las cuentas.
+         */
+        Route::get('/papelera', [\App\Http\Controllers\Panel\PapeleraController::class, 'index'])->name('papelera.index');
+        Route::patch('/papelera/{tipo}/{id}/restaurar', [\App\Http\Controllers\Panel\PapeleraController::class, 'restaurar'])->name('papelera.restore');
+
         // Informes. El constructor dinamico sigue en /admin: arma consultas a
         // medida y no se parece a estas cuatro pantallas.
         Route::get('/reportes', [\App\Http\Controllers\Panel\ReporteController::class, 'index'])->name('reportes.index');
