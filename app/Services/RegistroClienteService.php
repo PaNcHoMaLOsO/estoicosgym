@@ -86,6 +86,72 @@ class RegistroClienteService
     }
 
     /**
+     * Revisa los datos de una ficha que YA existe.
+     *
+     * Solo la ficha: al editar no se toca la membresia ni los pagos, que tienen
+     * sus propias pantallas —renovar, cobrar— con sus propias reglas. Aqui se
+     * corrige un telefono mal escrito, no se cambia lo que se cobro.
+     *
+     * @return array<string,mixed>
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function validarEdicion(Request $request, Cliente $cliente): array
+    {
+        $datos = $request->validate(
+            $this->reglasCliente($cliente),
+            $this->mensajesCliente()
+        );
+
+        $esMenor = $request->boolean('es_menor_edad');
+
+        if ($esMenor) {
+            $request->validate($this->reglasApoderado(), $this->mensajesApoderado());
+        }
+
+        return [
+            'cliente' => $datos,
+            'es_menor' => $esMenor,
+            // Al dejar de ser menor los datos del apoderado se BORRAN, no se
+            // quedan escondidos: si vuelve a marcarse como menor por error,
+            // aparecerian los de antes como si siguieran valiendo.
+            'apoderado' => $esMenor ? [
+                'consentimiento_apoderado' => $request->boolean('consentimiento_apoderado'),
+                'apoderado_nombre' => $request->input('apoderado_nombre'),
+                'apoderado_rut' => $request->input('apoderado_rut'),
+                'apoderado_email' => $request->input('apoderado_email'),
+                'apoderado_telefono' => $request->input('apoderado_telefono'),
+                'apoderado_parentesco' => $request->input('apoderado_parentesco'),
+                'apoderado_observaciones' => $request->input('apoderado_observaciones'),
+            ] : [
+                'consentimiento_apoderado' => false,
+                'apoderado_nombre' => null,
+                'apoderado_rut' => null,
+                'apoderado_email' => null,
+                'apoderado_telefono' => null,
+                'apoderado_parentesco' => null,
+                'apoderado_observaciones' => null,
+            ],
+        ];
+    }
+
+    /**
+     * Guarda los cambios de una ficha.
+     *
+     * @param array<string,mixed> $datos lo que devolvio validarEdicion()
+     */
+    public function actualizar(Cliente $cliente, array $datos): Cliente
+    {
+        $cliente->update(
+            $datos['cliente']
+            + ['es_menor_edad' => $datos['es_menor']]
+            + $datos['apoderado']
+        );
+
+        return $cliente->refresh();
+    }
+
+    /**
      * Crea los registros en UNA transaccion y devuelve el socio y el aviso.
      *
      * Todo junto y no en tres pasos: si el pago fallara despues de haber
@@ -142,15 +208,28 @@ class RegistroClienteService
     // Validacion
     // ─────────────────────────────────────────────────────────────────────
 
-    private function reglasCliente(): array
+    /**
+     * @param ?Cliente $actual el socio que se esta editando, si es una edicion
+     */
+    private function reglasCliente(?Cliente $actual = null): array
     {
         return [
-            'run_pasaporte' => ['nullable', 'unique:clientes,run_pasaporte', new RutValido()],
+            // Al editar, su propio RUT y su propio correo NO cuentan como
+            // repetidos: sin esto, guardar una ficha sin tocar esos campos
+            // se rechazaria a si misma.
+            'run_pasaporte' => [
+                'nullable',
+                Rule::unique('clientes', 'run_pasaporte')->ignore($actual?->id),
+                new RutValido(),
+            ],
             'nombres' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El nombre')],
             'apellido_paterno' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El apellido')],
             'apellido_materno' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/'],
             'celular' => ['required', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
-            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('clientes', 'email')],
+            'email' => [
+                'required', 'email:rfc', 'max:255',
+                Rule::unique('clientes', 'email')->ignore($actual?->id),
+            ],
             'direccion' => 'nullable|string|max:500',
             'fecha_nacimiento' => [
                 'nullable', 'date',

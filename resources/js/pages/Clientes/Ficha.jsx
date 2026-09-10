@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeftIcon, PencilIcon, PlusIcon } from 'lucide-react';
 
-import Externo from '@/components/Externo';
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -82,13 +81,13 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
                     </div>
 
                     <div className="flex gap-2">
-                        <Externo
-                            href={`/admin/clientes/${cliente.uuid}/edit`}
+                        <Link
+                            href={`/panel/clientes/${cliente.uuid}/editar`}
                             className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                         >
                             <PencilIcon className="size-4" aria-hidden="true" />
                             Editar
-                        </Externo>
+                        </Link>
                         <Link
                             href={`/panel/pagos/cobrar?inscripcion=${vigente?.uuid ?? ''}`}
                             className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"

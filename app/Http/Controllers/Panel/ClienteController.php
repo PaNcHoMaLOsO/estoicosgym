@@ -136,6 +136,59 @@ class ClienteController extends Controller
     }
 
     /**
+     * La ficha de un socio, para corregirla.
+     *
+     * Solo sus datos: la membresía y los pagos NO se tocan aquí, tienen sus
+     * propias pantallas —renovar, cobrar— con sus propias reglas. Esto es para
+     * arreglar un teléfono mal escrito, no para cambiar lo que se cobró.
+     */
+    public function edit(Cliente $cliente)
+    {
+        return Inertia::render('Clientes/Editar', [
+            'cliente' => [
+                'uuid' => $cliente->uuid,
+                'run_pasaporte' => $cliente->run_pasaporte,
+                'nombres' => $cliente->nombres,
+                'apellido_paterno' => $cliente->apellido_paterno,
+                'apellido_materno' => $cliente->apellido_materno,
+                'celular' => $cliente->celular,
+                'email' => $cliente->email,
+                'direccion' => $cliente->direccion,
+                'fecha_nacimiento' => $cliente->fecha_nacimiento?->format('Y-m-d'),
+                'contacto_emergencia' => $cliente->contacto_emergencia,
+                'telefono_emergencia' => $cliente->telefono_emergencia,
+                'observaciones' => $cliente->observaciones,
+                'es_menor_edad' => (bool) $cliente->es_menor_edad,
+                'consentimiento_apoderado' => (bool) $cliente->consentimiento_apoderado,
+                'apoderado_nombre' => $cliente->apoderado_nombre,
+                'apoderado_rut' => $cliente->apoderado_rut,
+                'apoderado_email' => $cliente->apoderado_email,
+                'apoderado_telefono' => $cliente->apoderado_telefono,
+                'apoderado_parentesco' => $cliente->apoderado_parentesco,
+                'apoderado_observaciones' => $cliente->apoderado_observaciones,
+                'nombre' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
+            ],
+        ]);
+    }
+
+    public function update(Request $request, Cliente $cliente, RegistroClienteService $registro)
+    {
+        $datos = $registro->validarEdicion($request, $cliente);
+
+        try {
+            $registro->actualizar($cliente, $datos);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'No se pudieron guardar los cambios. Inténtalo nuevamente.');
+        }
+
+        return redirect()
+            ->route('panel.clientes.show', $cliente->uuid)
+            ->with('success', 'Ficha actualizada.');
+    }
+
+    /**
      * Cuatro cifras, no diez: son las que se miran al abrir.
      *
      * Los codigos son los de la tabla estados (100 activa, 101 pausada,
