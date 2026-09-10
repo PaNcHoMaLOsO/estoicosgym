@@ -12,16 +12,23 @@ base de datos y la misma lógica de negocio.
 
 | | Dónde | Estado |
 |---|---|---|
-| **Panel nuevo** | `/panel` | Inertia + React. Listados, informes, fichas de socio, inscripción y pago, alta de socio y cobro |
-| **Panel antiguo** | `/admin` | Blade + AdminLTE. Todo lo demás: edición, papelera, pausar, renovar, traspasar y notificaciones |
+| **Panel nuevo** | `/panel` | Inertia + React. El día a día completo del gimnasio |
+| **Panel antiguo** | `/admin` | Blade + AdminLTE. Se mantiene en pie, pero el panel nuevo ya no enlaza a él |
 
-El panel nuevo enlaza al antiguo donde todavía no llega, así que ninguna
-operación se quedó sin sitio. **Nada del panel antiguo está roto**: sigue siendo
-la única vía para casi todas las operaciones de escritura.
+**El panel nuevo cubre el trabajo entero**: alta de socios, inscribir, cobrar,
+corregir o anular un pago, renovar, pausar, reanudar, traspasar, cambiar de
+plan, dar de baja, papelera, informes con constructor a medida, configuración de
+planes y precios, y los correos —uno a un socio, un aviso a un grupo, y el texto
+de las plantillas—.
+
+El panel antiguo sigue sirviendo las mismas pantallas por si hiciera falta
+volver a alguna, pero desde `/panel` ya no se llega a él por ningún enlace.
 
 La lógica compartida vive en servicios (`app/Services/`) y no en los
-controladores, justamente para que los dos paneles no se separen: `RegistroClienteService`
-da de alta socios y `RegistroPagoService` cobra, y los llaman ambos.
+controladores, justamente para que los dos paneles no se separen. `RegistroClienteService`
+da de alta socios, `RegistroInscripcionService` inscribe y renueva,
+`RegistroPagoService` cobra, `EnvioManualService` y `EnvioMasivoService` mandan
+los correos, y `ConstructorInformes` arma los informes a medida.
 
 ---
 
@@ -69,12 +76,24 @@ estado se deduce de los montos y las fechas, los precios salen de
 
 ## Entrar
 
+En `http://localhost:8000/panel`:
+
 | Rol | Correo | Contraseña |
 |---|---|---|
 | Administrador | `admin@progym.cl` | `password` |
 | Recepcionista | `recepcion@progym.cl` | `password` |
 
-Cámbialas antes de poner esto en producción.
+Salen de `DatabaseSeeder`. **Cámbialas antes de poner esto en producción**:
+
+```bash
+php artisan tinker
+```
+
+```php
+$u = App\Models\User::where('email', 'admin@progym.cl')->first();
+$u->password = Hash::make('la-nueva');
+$u->save();
+```
 
 **Los permisos por rol se aplican de verdad.** Recepción hace el trabajo de
 mesón —altas, inscripciones, cobros, pausar, renovar, traspasar— y no entra a la
@@ -132,10 +151,16 @@ php artisan test
 ```
 
 Corren sobre SQLite en memoria, sin tocar tu base. Las de `tests/Feature/Regresiones/`
-cubren fallos que ocurrieron de verdad —el pago duplicado por doble clic, el
-abono que reventaba, el segundo factor que se saltaba solo, el enlace de
-recuperación que no caducaba— y están escritas para fallar si alguien los
-reintroduce.
+cubren fallos que ocurrieron de verdad y están escritas para fallar si alguien
+los reintroduce: el pago duplicado por doble clic, el abono que reventaba, el
+segundo factor que se saltaba solo, el enlace de recuperación que no caducaba,
+la renovación que nunca llegó a guardarse, «no paga ahora» que dejaba
+inscripciones sin ningún pago detrás, y el reenvío de un correo que disparaba
+todos los demás de la cola.
+
+`TodasLasPantallasAbrenTest` recorre TODAS las rutas GET del panel con datos
+detrás. Es la más tonta y la que más veces ha servido: una pantalla que revienta
+al abrirse no la detecta ninguna prueba de negocio.
 
 ---
 
