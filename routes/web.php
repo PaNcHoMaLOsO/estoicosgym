@@ -476,7 +476,6 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Programar notificaciones masivas (NUEVO)
         Route::get('/programar', [NotificacionController::class, 'programar'])->name('programar');
         Route::post('/guardar-programada', [NotificacionController::class, 'guardarProgramada'])->name('guardar-programada');
-        Route::get('/buscar-cliente', [NotificacionController::class, 'buscarCliente'])->name('buscar-cliente');
         Route::get('/contar-destinatarios', [NotificacionController::class, 'contarDestinatarios'])->name('contar-destinatarios');
         
         // Enviar a cliente individual

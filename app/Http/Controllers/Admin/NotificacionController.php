@@ -114,35 +114,6 @@ class NotificacionController extends Controller
         return view('admin.notificaciones.programar');
     }
 
-    /**
-     * Buscar clientes por nombre, RUT o email
-     */
-    public function buscarCliente(Request $request)
-    {
-        $query = $request->get('query');
-        
-        $clientes = Cliente::where('activo', true)
-            ->where(function($q) use ($query) {
-                $q->where('nombre', 'LIKE', "%{$query}%")
-                  ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
-                  ->orWhere('apellido_materno', 'LIKE', "%{$query}%")
-                  ->orWhere('run_pasaporte', 'LIKE', "%{$query}%")
-                  ->orWhere('email', 'LIKE', "%{$query}%");
-            })
-            ->select('id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'run_pasaporte')
-            ->limit(10)
-            ->get()
-            ->map(function($cliente) {
-                return [
-                    'id' => $cliente->id,
-                    'nombre_completo' => $cliente->nombre_completo,
-                    'email' => $cliente->email,
-                    'run_pasaporte' => $cliente->run_pasaporte
-                ];
-            });
-
-        return response()->json($clientes);
-    }
 
     /**
      * Contar destinatarios según filtros

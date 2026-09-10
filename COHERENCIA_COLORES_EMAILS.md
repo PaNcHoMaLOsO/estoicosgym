@@ -1,5 +1,12 @@
 # 🎨 Sistema de Coherencia de Colores - Plantillas de Email PROGYM
 
+> **Actualizado.** El rojo y el negro pasaron a ser los del logotipo
+> (`#d81f26` y `#0a0a0b`), los mismos que usa el panel. Antes las plantillas
+> llevaban `#E0001A` y `#101010`: eran dos rojos distintos en correos del mismo
+> gimnasio. Los colores que SIGNIFICAN algo —el verde de «pagado», el ambar de
+> «por vencer»— no se tocaron: se eligieron para leerse en un cliente de correo.
+
+
 ## 📋 Paleta de Colores por Estado
 
 ### 🟢 Verde (#2EB872) - Estados Positivos/Completados
@@ -39,14 +46,14 @@
 </div>
 
 <!-- Botón CTA atención -->
-<a href="tel:..." style="background: #FFC107; color: #101010;">
+<a href="tel:..." style="background: #FFC107; color: #0a0a0b;">
     📞 Llámanos: +56 9 5096 3143
 </a>
 ```
 
 ---
 
-### 🔴 Rojo (#E0001A) - Urgente/Acción Requerida
+### 🔴 Rojo (#d81f26) - Urgente/Acción Requerida
 **Uso:** Vencimientos, deudas, estados que requieren acción inmediata
 
 **Plantillas que lo usan:**
@@ -56,24 +63,24 @@
 **Ejemplos visuales:**
 ```html
 <!-- Box de urgencia -->
-<div style="background: #fff5f5; border-left: 4px solid #E0001A;">
-    <h3 style="color: #E0001A;">⚠️ Membresía Vencida</h3>
+<div style="background: #fff5f5; border-left: 4px solid #d81f26;">
+    <h3 style="color: #d81f26;">⚠️ Membresía Vencida</h3>
 </div>
 
 <!-- Saldo pendiente -->
-<p style="color: #E0001A; font-size: 26px; font-weight: bold;">
+<p style="color: #d81f26; font-size: 26px; font-weight: bold;">
     $25.000
 </p>
 
 <!-- Botón CTA urgente -->
-<a href="tel:..." style="background: #E0001A; color: #FFFFFF;">
+<a href="tel:..." style="background: #d81f26; color: #FFFFFF;">
     📞 Llámanos: +56 9 5096 3143
 </a>
 ```
 
 ---
 
-### ⚫ Negro (#101010) - Principal/Header
+### ⚫ Negro (#0a0a0b) - Principal/Header
 **Uso:** Header principal, textos principales, contraste fuerte
 
 **Aplicación:**
@@ -84,10 +91,10 @@
 **Ejemplo:**
 ```html
 <!-- Header universal -->
-<div style="background: #101010; color: white;">
+<div style="background: #0a0a0b; color: white;">
     <h1 style="font-family: Arial Black;">
         <span style="color: #FFFFFF;">PRO</span>
-        <span style="color: #E0001A;">GYM</span>
+        <span style="color: #d81f26;">GYM</span>
     </h1>
 </div>
 ```
