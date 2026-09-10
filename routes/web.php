@@ -337,6 +337,12 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // entraria por {cliente} y buscaria un socio con uuid «crear».
         Route::get('/clientes/{cliente}', \App\Http\Controllers\Panel\ClienteFichaController::class)->name('clientes.show');
         Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
+        Route::get('/inscripciones/crear', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'create'])->name('inscripciones.create');
+        Route::get('/inscripciones/buscar-socio', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'buscar'])->name('inscripciones.buscar-socio');
+        Route::post('/inscripciones', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'store'])->name('inscripciones.store');
+        // La ficha va DESPUES del alta, igual que en clientes: si fuera antes,
+        // /inscripciones/crear entraria por {inscripcion} y buscaria una
+        // membresia con uuid «crear».
         Route::get('/inscripciones/{inscripcion}', \App\Http\Controllers\Panel\InscripcionFichaController::class)->name('inscripciones.show');
 
         /*

@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
-import Externo from '@/components/Externo';
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
@@ -51,13 +50,13 @@ export default function Index({ inscripciones, filtros, resumen }) {
                     </p>
                 </div>
 
-                <Externo
-                    href="/admin/inscripciones/create"
+                <Link
+                    href="/panel/inscripciones/crear"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
                     Nueva inscripción
-                </Externo>
+                </Link>
             </header>
 
             <div className="mb-3 flex flex-wrap gap-2">

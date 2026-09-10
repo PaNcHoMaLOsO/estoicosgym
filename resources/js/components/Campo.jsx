@@ -76,7 +76,10 @@ export function Seleccion({ nombre, error, valor, alCambiar, opciones, vacio = '
             aria-invalid={error ? 'true' : undefined}
             className={`${BASE} ${borde(error)}`}
         >
-            <option value="">{vacio}</option>
+            {/* Un desplegable que ya viene con algo elegido no necesita opcion
+                vacia: elegirla dejaria el campo sin valor y no significa nada.
+                Se pide con vacio={null}. */}
+            {vacio === null ? null : <option value="">{vacio}</option>}
             {opciones.map((o) => (
                 <option key={o.valor} value={o.valor}>
                     {o.etiqueta}

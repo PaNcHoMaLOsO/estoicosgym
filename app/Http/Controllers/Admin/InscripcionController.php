@@ -21,6 +21,8 @@ use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotificacionService;
+use App\Services\RegistroInscripcionService;
+use Illuminate\Validation\ValidationException;
 
 class InscripcionController extends Controller
 {
@@ -314,173 +316,38 @@ class InscripcionController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request)
+    /**
+     * Alta de inscripcion desde el panel de Blade.
+     *
+     * Los calculos y las validaciones viven en RegistroInscripcionService, el
+     * mismo que usa el panel nuevo, para que las dos pantallas no se separen.
+     * Antes esto eran 168 lineas aqui dentro.
+     */
+    public function store(Request $request, RegistroInscripcionService $registro)
     {
+        try {
+            $resultado = $registro->validar($request);
+        } catch (ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors());
+        }
+
         if (!$this->validateFormToken($request, 'inscripcion_create')) {
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        // VALIDACIÓN: Verificar que el cliente está activo antes de crear inscripción
-        $cliente = Cliente::find($request->input('id_cliente'));
-        if ($cliente && !$cliente->activo) {
-            return back()->with('error', 'No se puede crear inscripción para un cliente inactivo. Por favor, reactive el cliente primero.');
-        }
-
-        // VALIDACIÓN: Verificar que el cliente no tenga ya una inscripción activa o pausada
-        if ($cliente) {
-            $inscripcionActiva = Inscripcion::where('id_cliente', $cliente->id)
-                ->whereIn('id_estado', [100, 101]) // 100=Activa, 101=Pausada
-                ->first();
-            if ($inscripcionActiva) {
-                $estadoNombre = $inscripcionActiva->id_estado === 100 ? 'Activa' : 'Pausada';
-                return back()->with('error', "Este cliente ya tiene una inscripción {$estadoNombre}. Use la opción de Renovar o espere a que venza la actual.");
-            }
-        }
-
-        // Verificar tipo de pago
-        $tipoPago = $request->input('tipo_pago', 'completo');
-        $pagoPendiente = $tipoPago === 'pendiente';
-        $pagoMixto = $tipoPago === 'mixto';
-
-        // Validación base
-        $rules = [
-            'id_cliente' => 'required|exists:clientes,id',
-            'id_membresia' => 'required|exists:membresias,id',
-            'id_convenio' => 'nullable|exists:convenios,id',
-            'id_estado' => 'required|exists:estados,codigo',
-            'fecha_inicio' => 'required|date',
-            'descuento_aplicado' => 'nullable|numeric|min:0',
-            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-            'observaciones' => 'nullable|string|max:500',
-            'tipo_pago' => 'required|in:completo,abono,mixto,pendiente',
-        ];
-
-        // Agregar reglas según tipo de pago
-        if ($pagoMixto) {
-            $rules['detalle_pagos_mixto'] = 'required|string';
-            $rules['total_mixto'] = 'required|numeric|min:1';
-            $rules['fecha_pago'] = 'required|date';
-        } elseif (!$pagoPendiente) {
-            $rules['monto_abonado'] = 'required|numeric|min:1';
-            $rules['id_metodo_pago'] = 'required|exists:metodos_pago,id';
-            $rules['fecha_pago'] = 'required|date';
-        }
-
-        $validated = $request->validate($rules);
-
-        // Obtener datos de membresía y calcular precios
-        $membresia = Membresia::findOrFail($validated['id_membresia']);
-        $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
-        
-        // VALIDACIÓN: El descuento no puede superar el precio base
-        $descuentoAplicado = (float) ($validated['descuento_aplicado'] ?? 0);
-        if ($descuentoAplicado > $precioBase) {
-            return back()->withErrors([
-                'descuento_aplicado' => 'El descuento ($' . number_format($descuentoAplicado, 0, ',', '.') . ') no puede superar el precio base ($' . number_format($precioBase, 0, ',', '.') . ').'
-            ])->withInput();
-        }
-        
-        $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
-        $precioFinal = max(0, $precioBase - $descuentoTotal);
-        
-        // VALIDACIÓN: El monto abonado no puede superar el precio final
-        if (!$pagoPendiente && !$pagoMixto && isset($validated['monto_abonado'])) {
-            $montoAbonado = (float) $validated['monto_abonado'];
-            if ($montoAbonado > $precioFinal) {
-                return back()->withErrors([
-                    'monto_abonado' => 'El monto a pagar ($' . number_format($montoAbonado, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
-                ])->withInput();
-            }
-        }
-
-        // VALIDACIÓN: El monto total mixto no puede superar el precio final
-        if ($pagoMixto && isset($validated['total_mixto'])) {
-            $totalMixto = (float) $validated['total_mixto'];
-            if ($totalMixto > $precioFinal) {
-                return back()->withErrors([
-                    'total_mixto' => 'El monto total de pagos mixtos ($' . number_format($totalMixto, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
-                ])->withInput();
-            }
-            
-            // Validar también los montos individuales del detalle
-            $detallePagos = json_decode($validated['detalle_pagos_mixto'] ?? '[]', true);
-            $sumaDetalles = 0;
-            foreach ($detallePagos as $detalle) {
-                $monto = (float) ($detalle['monto'] ?? 0);
-                if ($monto < 0) {
-                    return back()->withErrors([
-                        'detalle_pagos_mixto' => 'No se permiten montos negativos en los pagos.'
-                    ])->withInput();
-                }
-                $sumaDetalles += $monto;
-            }
-            
-            // Verificar que la suma de detalles coincida con total_mixto
-            if (abs($sumaDetalles - $totalMixto) > 1) { // Tolerancia de $1 por redondeos
-                return back()->withErrors([
-                    'detalle_pagos_mixto' => 'La suma de los pagos ($' . number_format($sumaDetalles, 0, ',', '.') . ') no coincide con el total indicado ($' . number_format($totalMixto, 0, ',', '.') . ').'
-                ])->withInput();
-            }
-        }
-
-        // Calcular fecha de vencimiento
-        $fechaInicio = Carbon::parse($validated['fecha_inicio']);
-        $fechaVencimiento = $this->calcularFechaVencimiento($fechaInicio, $membresia);
-
-        // Crear inscripción con datos validados y calculados
-        $validated['precio_base'] = $precioBase;
-        $validated['precio_final'] = $precioFinal;
-        $validated['descuento_aplicado'] = $descuentoTotal;
-        $validated['fecha_inscripcion'] = now()->format('Y-m-d');
-        $validated['fecha_vencimiento'] = $fechaVencimiento->format('Y-m-d');
-        $validated['id_precio_acordado'] = 1;
-        $validated['max_pausas_permitidas'] = $membresia->max_pausas ?? 2;
-
-        $inscripcion = Inscripcion::create($validated);
-
-        // Crear pago(s) según tipo de pago
-        $tipoPago = $validated['tipo_pago'] ?? 'completo';
-        
-        if ($tipoPago === 'mixto') {
-            // Pago mixto: crear múltiples pagos con diferentes métodos
-            $this->crearPagoMixto($inscripcion, $validated, $precioFinal);
-        } elseif ($pagoPendiente) {
-            // Pago pendiente: crear registro con estado Pendiente (200)
-            $this->crearPagoPendiente($inscripcion, $validated, $precioFinal);
-        } else {
-            // Pago completo o abono: crear un solo pago inicial
-            if (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
-                $this->crearPagoInicial($inscripcion, $validated, $precioFinal);
-            }
-        }
-
-        // Invalidar token para prevenir doble envío
-        $this->invalidateFormToken($request, 'inscripcion_create');
-
-        // 🎉 ENVIAR NOTIFICACIONES AUTOMÁTICAS
         try {
-            $notificacionService = app(NotificacionService::class);
-            
-            // Enviar notificación de bienvenida (siempre)
-            $notificacionService->enviarNotificacionBienvenida($inscripcion);
-            Log::info("Notificación de bienvenida enviada para inscripción #{$inscripcion->id}");
-            
-            // Si es menor de edad, enviar también confirmación al tutor legal
-            if ($inscripcion->cliente->es_menor_edad && !empty($inscripcion->cliente->apoderado_email)) {
-                $resultadoTutor = $notificacionService->enviarNotificacionTutorLegal($inscripcion);
-                if ($resultadoTutor['enviada']) {
-                    Log::info("Notificación de tutor legal enviada a: {$inscripcion->cliente->apoderado_email}");
-                } else {
-                    Log::warning("No se pudo enviar notificación de tutor legal: {$resultadoTutor['mensaje']}");
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error("Error al enviar notificaciones: " . $e->getMessage());
-            // No interrumpir el flujo si falla el envío del email
+            $inscripcion = $registro->registrar($resultado);
+        } catch (\Throwable $e) {
+            Log::error('Error al crear inscripcion: ' . $e->getMessage());
+            $this->releaseFormToken($request, 'inscripcion_create');
+
+            return back()->withInput()->with('error', 'No se pudo crear la inscripcion. Intentelo nuevamente.');
         }
 
         return redirect()->route('admin.inscripciones.show', $inscripcion)
-            ->with('success', 'Inscripción creada exitosamente' . ($pagoPendiente ? ' - Pago pendiente de registrar' : ' con pago registrado'));
+            ->with('success', $resultado['abonos'] === []
+                ? 'Inscripcion creada - Pago pendiente de registrar'
+                : 'Inscripcion creada con pago registrado');
     }
 
     /**
@@ -497,8 +364,17 @@ class InscripcionController extends Controller
             ->where('fecha_vigencia_desde', '<=', now())
             ->orderBy('fecha_vigencia_desde', 'desc')
             ->first();
-        
-        return $precioMembresia->precio_normal ?? 0;
+
+        // Si el plan no tiene precio vigente hay que PARAR, no cobrar cero.
+        // Antes esto devolvia 0 sin decir nada: un plan al que se le olvido
+        // cargar el precio renovaba gratis y no se notaba hasta cuadrar caja.
+        if (!$precioMembresia) {
+            throw ValidationException::withMessages([
+                'id_membresia' => "El plan «{$membresia->nombre}» no tiene un precio vigente cargado.",
+            ]);
+        }
+
+        return $precioMembresia->precio_normal;
     }
 
     /**
@@ -569,6 +445,8 @@ class InscripcionController extends Controller
             'monto_abonado' => $montoAbonado,
             'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
             'id_estado' => $idEstadoPago,
+            // La base dice «parcial» donde la pantalla dice «abono».
+            'tipo_pago' => $idEstadoPago === 202 ? 'parcial' : 'completo',
             'id_metodo_pago' => $validated['id_metodo_pago'],
             'fecha_pago' => $validated['fecha_pago'],
             'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
@@ -594,8 +472,18 @@ class InscripcionController extends Controller
             'monto_abonado' => 0,
             'monto_pendiente' => $precioFinal,
             'id_estado' => 200, // Pendiente
-            'id_metodo_pago' => 1, // Efectivo por defecto (se actualizará cuando pague)
-            'fecha_pago' => null,
+            // Sin esto la fila quedaba con el default de la columna,
+            // 'completo', o sea marcada como pagada entera sin un peso.
+            'tipo_pago' => 'pendiente',
+            // Sin metodo: todavia no se ha pagado, y poner «Efectivo» por
+            // defecto hacia que en los informes de caja apareciera efectivo
+            // que nadie entrego. La columna admite NULL.
+            'id_metodo_pago' => null,
+            // NO va NULL: la columna es NOT NULL y la fila entera se rechazaba,
+            // asi que elegir «pago pendiente» reventaba SIEMPRE. Se anota el
+            // dia en que nace la deuda, que es lo que hace falta para saber
+            // cuanto lleva sin pagar; el dia del cobro va en su propio pago.
+            'fecha_pago' => $validated['fecha_pago'] ?? now()->format('Y-m-d'),
             'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
             'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
             'observaciones' => 'Pago pendiente - Sin abono al momento de inscripción',
@@ -643,6 +531,7 @@ class InscripcionController extends Controller
                     'monto_abonado' => $monto,
                     'monto_pendiente' => max(0, $montoPendienteRestante),
                     'id_estado' => $idEstadoPago,
+                    'tipo_pago' => 'mixto',
                     'id_metodo_pago' => $idMetodo,
                     'fecha_pago' => $validated['fecha_pago'],
                     'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
