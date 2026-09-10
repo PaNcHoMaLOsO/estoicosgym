@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Services\CorreoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Mail;
@@ -184,8 +185,33 @@ class LandingController extends Controller
         // 5. Log del contacto (en producción: guardar en BD o enviar email)
         Log::channel('daily')->info('Nuevo contacto desde landing', $datos);
 
-        // TODO: En producción, descomentar para enviar email
-        // Mail::to('contacto@estoicosgym.cl')->send(new ContactoLanding($datos));
+        /*
+         * EL MENSAJE SE ENVIA DE VERDAD.
+         *
+         * Aqui habia un TODO con el envio comentado, asi que al visitante se le
+         * decia «te responderemos pronto» y el mensaje no llegaba a nadie: moria
+         * en el fichero de registro. Cada persona que escribia desde el sitio
+         * publico se perdia.
+         *
+         * El registro de arriba se queda igual: es lo unico que guarda el
+         * mensaje si el envio falla, porque no hay tabla de contactos.
+         */
+        $destino = config('correo.contacto') ?: config('mail.from.address');
+
+        try {
+            app(CorreoService::class)->enviar(
+                $destino,
+                "Contacto web · {$datos['nombre']}",
+                view('emails.contacto', ['datos' => $datos])->render(),
+            );
+        } catch (\Throwable $e) {
+            // Al visitante no se le dice que fallo: el hizo su parte y el
+            // mensaje sigue en el registro para recuperarlo a mano.
+            Log::error('No se pudo enviar el contacto de la web: ' . $e->getMessage(), [
+                'destino' => $destino,
+                'de' => $datos['email'],
+            ]);
+        }
 
         // 6. Respuesta exitosa
         return back()->with('success', '¡Gracias por contactarnos! Te responderemos pronto.');

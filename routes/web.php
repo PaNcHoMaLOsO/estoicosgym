@@ -261,10 +261,28 @@ Route::middleware('guest')->group(function () {
             return back()->withErrors(['email' => 'El token de recuperación es inválido o ha expirado.']);
         }
         
-        // Verificar que no haya expirado (1 hora)
-        if (now()->diffInMinutes($record->created_at) > 60) {
+        /*
+         * EL ENLACE CADUCA A LA HORA.
+         *
+         * Aqui se comparaba `now()->diffInMinutes($record->created_at) > 60`, y
+         * eso NUNCA se cumplia: Carbon devuelve la diferencia CON SIGNO, asi que
+         * para una fecha pasada da un numero negativo —hace dos horas son −120—
+         * y ningun negativo es mayor que 60. El enlace de recuperacion no
+         * caducaba jamas.
+         *
+         * Comprobado: un token de hace SIETE DIAS cambiaba la contraseña sin
+         * chistar. Un correo reenviado, olvidado en un buzon viejo o leido en un
+         * equipo compartido seguia abriendo la cuenta meses despues.
+         *
+         * Se compara sumando la hora al momento de creacion, que no depende del
+         * signo y se lee como lo que es.
+         */
+        $caduca = \Illuminate\Support\Carbon::parse($record->created_at)->addHour();
+
+        if ($caduca->isPast()) {
             \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();
-            return back()->withErrors(['email' => 'El token de recuperación ha expirado.']);
+
+            return back()->withErrors(['email' => 'El enlace de recuperación caducó. Pide uno nuevo.']);
         }
         
         // Actualizar contraseña

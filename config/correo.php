@@ -54,6 +54,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | A dónde llegan los mensajes del formulario de contacto
+    |--------------------------------------------------------------------------
+    |
+    | Si se deja vacío se usa la dirección del remitente, que es la del propio
+    | gimnasio: el mensaje llega igual y nadie se queda sin respuesta.
+    |
+    */
+
+    'contacto' => env('MAIL_CONTACTO'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Espera máxima, en segundos
     |--------------------------------------------------------------------------
     |
