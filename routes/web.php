@@ -423,6 +423,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/notificaciones/enviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'store'])->name('notificaciones.enviar-individual');
         Route::post('/notificaciones/{notificacion}/reenviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'reenviar'])->name('notificaciones.reenviar');
         Route::post('/notificaciones/{notificacion}/cancelar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'cancelar'])->name('notificaciones.cancelar');
+        Route::get('/notificaciones/masivo', [\App\Http\Controllers\Panel\NotificacionMasivaController::class, 'create'])->name('notificaciones.crear-masivo');
+        Route::post('/notificaciones/masivo/destinatarios', [\App\Http\Controllers\Panel\NotificacionMasivaController::class, 'destinatarios'])->name('notificaciones.obtener-destinatarios');
+        Route::post('/notificaciones/masivo/vista-previa', [\App\Http\Controllers\Panel\NotificacionMasivaController::class, 'vistaPrevia'])->name('notificaciones.preview-masivo');
+        Route::post('/notificaciones/masivo', [\App\Http\Controllers\Panel\NotificacionMasivaController::class, 'store'])->name('notificaciones.enviar-masivo');
         Route::get('/notificaciones/plantillas', [\App\Http\Controllers\Panel\PlantillaController::class, 'index'])->name('notificaciones.plantillas');
         Route::put('/notificaciones/plantillas/{tipoNotificacion}', [\App\Http\Controllers\Panel\PlantillaController::class, 'update'])->name('notificaciones.plantillas.actualizar');
         Route::get('/notificaciones/plantillas/{tipoNotificacion}/vista-previa', [\App\Http\Controllers\Panel\PlantillaController::class, 'vistaPrevia'])->name('notificaciones.plantillas.preview');

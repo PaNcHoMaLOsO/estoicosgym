@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { FileTextIcon, SendIcon } from 'lucide-react';
+import { FileTextIcon, SendIcon, UsersIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
@@ -56,6 +56,14 @@ export default function Index({ notificaciones, filtros, resumen }) {
                 >
                     <FileTextIcon className="size-4" aria-hidden="true" />
                     Plantillas
+                </Link>
+
+                <Link
+                    href="/panel/notificaciones/masivo"
+                    className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                >
+                    <UsersIcon className="size-4" aria-hidden="true" />
+                    Aviso a un grupo
                 </Link>
 
                 <Link
