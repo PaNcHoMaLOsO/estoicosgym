@@ -32,6 +32,8 @@ class Permisos
     private const EDITAR = [
         'edit', 'update', 'activate', 'deactivate', 'reactivate',
         'restore', 'actualizar', 'programar', 'guardar-programada',
+        // Activar y desactivar un catalogo desde su listado.
+        'alternar',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
@@ -71,6 +73,8 @@ class Permisos
         'convenios' => 'configuracion',
         'metodos-pago' => 'configuracion',
         'motivos-descuento' => 'configuracion',
+        // Activar y desactivar, que valen para los cuatro a la vez.
+        'catalogos' => 'configuracion',
         'resumen' => 'clientes',
     ];
 

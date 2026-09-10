@@ -407,6 +407,23 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/convenios/{convenio}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'convenio'])->name('convenios.show');
         Route::get('/metodos-pago', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'metodosPago'])->name('metodos-pago.index');
         Route::get('/motivos-descuento', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'motivosDescuento'])->name('motivos-descuento.index');
+
+        /*
+         * Alta y edicion de los cuatro catalogos.
+         *
+         * No hay `destroy`: un plan o un metodo que ya se uso esta referenciado
+         * por inscripciones y pagos, y borrarlo dejaria fichas apuntando al
+         * vacio. `alternar` lo desactiva, que es lo que de verdad se quiere.
+         */
+        Route::post('/membresias', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMembresia'])->name('membresias.store');
+        Route::put('/membresias/{membresia}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMembresia'])->name('membresias.update');
+        Route::post('/convenios', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarConvenio'])->name('convenios.store');
+        Route::put('/convenios/{convenio}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarConvenio'])->name('convenios.update');
+        Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
+        Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
+        Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');
+        Route::put('/motivos-descuento/{motivoDescuento}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMotivo'])->name('motivos-descuento.update');
+        Route::patch('/catalogos/{catalogo}/{id}/alternar', [\App\Http\Controllers\Panel\CatalogoController::class, 'alternar'])->name('catalogos.alternar');
     });
 
     // Rutas Admin - Grupo con prefijo 'admin'

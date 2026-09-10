@@ -36,9 +36,12 @@ use Illuminate\Database\Eloquent\Model;
 class PrecioMembresia extends Model
 {
     protected $table = 'precios_membresias';
-    protected $primaryKey = 'id';
-    public $incrementing = false;
-    protected $keyType = 'int';
+    // La clave es `id` y la pone la base sola, como en todas las demas:
+    // aqui decia `$incrementing = false`, que le dice a Eloquent que NO
+    // recoja el id despues de insertar. El modelo que devolvia create()
+    // salia sin id, asi que ->fresh(), ->refresh() y cualquier relacion
+    // sobre esa instancia no encontraban nada. La fila se escribia bien:
+    // fallaba solo el objeto que quedaba en la mano.
     public $timestamps = true;
 
     protected $fillable = [
