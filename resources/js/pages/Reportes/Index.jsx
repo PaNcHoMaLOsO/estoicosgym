@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     BanknoteIcon,
     CalendarClockIcon,
@@ -45,13 +45,10 @@ const INFORMES = [
         Icono: ScrollTextIcon,
     },
     {
-        // Sigue en Blade: arma consultas a medida y no se parece a los otros
-        // cuatro. `externa` evita que Inertia lo trate como página suya.
-        href: '/admin/reportes/builder',
+        href: '/panel/reportes/constructor',
         titulo: 'Constructor',
-        pregunta: 'Arma un informe a medida eligiendo campos y filtros.',
+        pregunta: 'Arma un informe a medida eligiendo columnas y filtros.',
         Icono: SlidersHorizontalIcon,
-        externa: true,
     },
 ];
 
@@ -92,11 +89,9 @@ export default function Index({ cifras }) {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-                {INFORMES.map(({ href, titulo, pregunta, Icono, externa }) => {
-                    const Componente = externa ? 'a' : Link;
-
+                {INFORMES.map(({ href, titulo, pregunta, Icono }) => {
                     return (
-                        <Componente
+                        <Link
                             key={href}
                             href={href}
                             className="flex gap-3 rounded-panel border border-line bg-surface p-4 transition-colors hover:border-line-strong hover:bg-surface-2"
@@ -106,7 +101,7 @@ export default function Index({ cifras }) {
                                 <p className="text-sm font-medium text-chalk">{titulo}</p>
                                 <p className="apoyo mt-0.5 text-fog">{pregunta}</p>
                             </div>
-                        </Componente>
+                        </Link>
                     );
                 })}
             </div>

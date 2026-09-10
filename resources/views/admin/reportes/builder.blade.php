@@ -588,15 +588,6 @@
                         </select>
                     </div>
 
-                    <div class="filtro-grupo">
-                        <label>Género</label>
-                        <select name="filtros[genero]">
-                            <option value="">Todos</option>
-                            <option value="M">Masculino</option>
-                            <option value="F">Femenino</option>
-                            <option value="O">Otro</option>
-                        </select>
-                    </div>
                     @endif
 
                     @if($moduloSeleccionado == 'inscripciones')

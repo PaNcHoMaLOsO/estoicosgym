@@ -121,7 +121,7 @@ class ReporteController extends Controller
                 'id' => ['label' => 'ID', 'tipo' => 'numero'],
                 'nombre' => ['label' => 'Nombre', 'tipo' => 'texto'],
                 'descripcion' => ['label' => 'Descripción', 'tipo' => 'texto'],
-                'porcentaje_descuento' => ['label' => '% Descuento', 'tipo' => 'numero'],
+                'descuento_porcentaje' => ['label' => '% Descuento', 'tipo' => 'numero'],
                 'activo' => ['label' => 'Activo', 'tipo' => 'booleano'],
             ],
             'relaciones' => ['clientes'],
@@ -595,9 +595,20 @@ class ReporteController extends Controller
     {
         foreach ($filtros as $campo => $valor) {
             if (empty($valor) && $valor !== '0') continue;
-            
-            $tipoCampo = $config['campos'][$campo]['tipo'] ?? 'texto';
-            
+
+            // Solo se filtra por campos DECLARADOS en el modulo.
+            //
+            // Antes, un campo que no estuviera en la lista caia en el `?? 'texto'`
+            // de abajo y se metia igual en el WHERE. El formulario ofrecia un
+            // filtro «Genero» y esa columna no existe en la tabla, asi que usarlo
+            // daba un 500 con el SQL en pantalla. Cualquier clave inventada en la
+            // URL hacia lo mismo.
+            if (!isset($config['campos'][$campo])) {
+                continue;
+            }
+
+            $tipoCampo = $config['campos'][$campo]['tipo'];
+
             switch ($tipoCampo) {
                 case 'texto':
                     $query->where($campo, 'like', "%{$valor}%");
