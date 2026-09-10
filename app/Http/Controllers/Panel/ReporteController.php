@@ -54,12 +54,28 @@ class ReporteController extends Controller
     {
         $anio = (int) $request->query('anio', Carbon::today()->year);
 
+        /*
+         * El mes se saca EN PHP, no con MONTH() de SQL.
+         *
+         * MONTH() y YEAR() son de MySQL: en SQLite —el de las pruebas— no
+         * existen y la consulta revienta, asi que esta pantalla no se podia
+         * probar. Y como es la pantalla del dinero, es justo la que mas falta
+         * hace tener cubierta.
+         *
+         * Se traen los pagos del año y se agrupan aqui: son los de un año, no
+         * los de toda la vida del gimnasio.
+         */
         $totalPorMes = Pago::ingresos()
-            ->selectRaw('MONTH(fecha_pago) as mes, SUM(monto_abonado) as total, COUNT(*) as cantidad')
-            ->whereYear('fecha_pago', $anio)
-            ->groupByRaw('MONTH(fecha_pago)')
-            ->get()
-            ->keyBy('mes');
+            ->whereBetween('fecha_pago', [
+                Carbon::create($anio, 1, 1)->startOfDay(),
+                Carbon::create($anio, 12, 31)->endOfDay(),
+            ])
+            ->get(['fecha_pago', 'monto_abonado'])
+            ->groupBy(fn (Pago $p) => (int) Carbon::parse($p->fecha_pago)->month)
+            ->map(fn ($pagos) => (object) [
+                'total' => (int) $pagos->sum('monto_abonado'),
+                'cantidad' => $pagos->count(),
+            ]);
 
         // Los doce meses SIEMPRE, aunque no haya movimiento: un hueco en la
         // serie se lee como «no se cobró», y un mes que falta parece un error.
@@ -206,12 +222,15 @@ class ReporteController extends Controller
     /** Años en los que hubo movimiento, para el selector. */
     private function aniosConMovimiento(): array
     {
+        // El año tambien en PHP, por lo mismo que arriba: YEAR() no existe
+        // fuera de MySQL. Es una columna de fechas, no la tabla entera.
         $anios = Pago::ingresos()
-            ->selectRaw('YEAR(fecha_pago) as anio')
-            ->groupByRaw('YEAR(fecha_pago)')
-            ->orderByDesc('anio')
-            ->pluck('anio')
-            ->map(fn ($a) => (int) $a)
+            ->whereNotNull('fecha_pago')
+            ->pluck('fecha_pago')
+            ->map(fn ($fecha) => (int) Carbon::parse($fecha)->year)
+            ->unique()
+            ->sortDesc()
+            ->values()
             ->all();
 
         // El año en curso va siempre, aunque todavía no se haya cobrado nada:
