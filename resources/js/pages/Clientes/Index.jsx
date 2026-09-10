@@ -17,8 +17,9 @@ export default function Index({ clientes, filtros, resumen }) {
                 <div>
                     <h1 className="text-lg font-semibold text-chalk">Clientes</h1>
                     <p className="apoyo text-fog">
-                        {resumen.total} socios · {resumen.activos} al día · {resumen.pausados} pausados ·{' '}
-                        {resumen.vencidos} vencidos
+                        {filtros.bajas
+                            ? `${resumen.bajas} ${resumen.bajas === 1 ? 'socio dado' : 'socios dados'} de baja`
+                            : `${resumen.total} socios · ${resumen.activos} al día · ${resumen.pausados} pausados · ${resumen.vencidos} vencidos`}
                     </p>
                 </div>
 
@@ -36,7 +37,30 @@ export default function Index({ clientes, filtros, resumen }) {
                     ruta="/panel/clientes"
                     valor={filtros.buscar}
                     etiqueta="Buscar por nombre, RUT, correo o celular"
+                    /* Se mantiene mientras se busca: si no, escribir un nombre
+                       devolveria al listado de activos y el socio dado de baja
+                       que se estaba buscando desapareceria. */
+                    extra={filtros.bajas ? { bajas: 1 } : {}}
                 />
+
+                {/* Sin esto, dar de baja a alguien lo hace desaparecer del panel
+                    entero y no hay forma de reactivarlo salvo sabiendose la URL
+                    de su ficha. Solo se ofrece cuando hay alguno. */}
+                {filtros.bajas ? (
+                    <Link
+                        href="/panel/clientes"
+                        className="inline-flex items-center rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        Ver los activos
+                    </Link>
+                ) : resumen.bajas > 0 ? (
+                    <Link
+                        href="/panel/clientes?bajas=1"
+                        className="inline-flex items-center rounded-control border border-line px-3 py-1.5 text-sm text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
+                    >
+                        Ver {resumen.bajas} {resumen.bajas === 1 ? 'dado' : 'dados'} de baja
+                    </Link>
+                ) : null}
             </div>
 
             <Tabla
@@ -45,7 +69,9 @@ export default function Index({ clientes, filtros, resumen }) {
                 mensajeVacio={
                     filtros.buscar
                         ? `Ningún socio coincide con «${filtros.buscar}».`
-                        : 'Todavía no hay clientes registrados.'
+                        : filtros.bajas
+                          ? 'No hay ningún socio dado de baja.'
+                          : 'Todavía no hay clientes registrados.'
                 }
             >
                 {clientes.data.map((cliente) => (

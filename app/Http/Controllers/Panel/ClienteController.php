@@ -36,8 +36,18 @@ class ClienteController extends Controller
     {
         $busqueda = trim((string) $request->query('buscar', ''));
 
+        /*
+         * Los dados de baja se ven aparte, no mezclados.
+         *
+         * El listado ensena solo a quien esta activo, que es a quien se
+         * atiende. Pero si no hubiera forma de ver a los otros, dar de baja a
+         * alguien lo haria desaparecer del panel entero y no habria manera de
+         * reactivarlo salvo sabiendose la URL de su ficha.
+         */
+        $verBajas = $request->boolean('bajas');
+
         $clientes = Cliente::query()
-            ->where('activo', true)
+            ->where('activo', ! $verBajas)
             ->when($busqueda !== '', function ($q) use ($busqueda) {
                 $q->where(function ($q) use ($busqueda) {
                     $q->where('nombres', 'like', "%{$busqueda}%")
@@ -72,7 +82,7 @@ class ClienteController extends Controller
 
         return Inertia::render('Clientes/Index', [
             'clientes' => $clientes,
-            'filtros' => ['buscar' => $busqueda],
+            'filtros' => ['buscar' => $busqueda, 'bajas' => $verBajas],
             'resumen' => $this->resumen(),
         ]);
     }
@@ -294,6 +304,8 @@ class ClienteController extends Controller
             'activos' => $conEstado(100),
             'pausados' => $conEstado(101),
             'vencidos' => $conEstado(102),
+            // Para poder ofrecer el enlace solo cuando hay alguno.
+            'bajas' => Cliente::where('activo', false)->count(),
         ];
     }
 }

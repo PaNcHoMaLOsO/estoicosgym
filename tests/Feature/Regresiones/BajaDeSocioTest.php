@@ -177,6 +177,31 @@ class BajaDeSocioTest extends CasoConCatalogos
         $this->assertNotNull(Cliente::find($socio->id));
     }
 
+    /**
+     * A quien se da de baja tiene que poder encontrarse.
+     *
+     * El listado enseña solo a los activos. Sin una forma de ver a los otros,
+     * dar de baja a alguien lo hace desaparecer del panel entero y no hay
+     * manera de reactivarlo salvo sabiendose la URL de su ficha.
+     */
+    public function test_los_dados_de_baja_se_pueden_ver(): void
+    {
+        $activo = $this->socio(['nombres' => 'Sigue']);
+        $baja = $this->socio(['nombres' => 'Sedespidio', 'activo' => false]);
+
+        $normal = $this->actingAs($this->administrador())->get('/panel/clientes');
+        $nombres = collect($normal->viewData('page')['props']['clientes']['data'])->pluck('nombre');
+
+        $this->assertTrue($nombres->contains(fn (string $n) => str_contains($n, 'Sigue')));
+        $this->assertFalse($nombres->contains(fn (string $n) => str_contains($n, 'Sedespidio')));
+
+        $conBajas = $this->actingAs($this->administrador())->get('/panel/clientes?bajas=1');
+        $deBaja = collect($conBajas->viewData('page')['props']['clientes']['data'])->pluck('nombre');
+
+        $this->assertTrue($deBaja->contains(fn (string $n) => str_contains($n, 'Sedespidio')));
+        $this->assertFalse($deBaja->contains(fn (string $n) => str_contains($n, 'Sigue')));
+    }
+
     /** Y lo eliminado aparece en la papelera, listo para volver. */
     public function test_lo_eliminado_se_puede_recuperar(): void
     {
