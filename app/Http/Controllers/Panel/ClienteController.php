@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Cliente;
@@ -186,6 +187,94 @@ class ClienteController extends Controller
         return redirect()
             ->route('panel.clientes.show', $cliente->uuid)
             ->with('success', 'Ficha actualizada.');
+    }
+
+    /**
+     * Lo deja fuera de la lista sin borrar nada.
+     *
+     * Es para quien dejó de venir: sigue estando su ficha, su historial y sus
+     * pagos, pero no aparece al inscribir ni al cobrar.
+     */
+    public function desactivar(Cliente $cliente)
+    {
+        if (! $cliente->activo) {
+            return back()->with('error', 'Ese socio ya estaba desactivado.');
+        }
+
+        if ($motivo = $this->porQueSigueEnActivo($cliente)) {
+            return back()->with('error', $motivo);
+        }
+
+        $cliente->update(['activo' => false]);
+
+        return back()->with(
+            'success',
+            "{$cliente->nombres} {$cliente->apellido_paterno} queda desactivado. Su ficha y su historial siguen ahí."
+        );
+    }
+
+    public function reactivar(Cliente $cliente)
+    {
+        if ($cliente->activo) {
+            return back()->with('error', 'Ese socio ya estaba activo.');
+        }
+
+        $cliente->update(['activo' => true]);
+
+        return back()->with(
+            'success',
+            "{$cliente->nombres} {$cliente->apellido_paterno} vuelve a estar activo."
+        );
+    }
+
+    /**
+     * A la papelera, de donde se puede sacar.
+     *
+     * NO se borra la foto. El de Blade la borraba del disco antes del borrado
+     * suave, así que restaurar al socio devolvía la ficha pero no la foto: se
+     * perdía para siempre en una acción que se presenta como reversible.
+     */
+    public function eliminar(Cliente $cliente)
+    {
+        if ($motivo = $this->porQueSigueEnActivo($cliente)) {
+            return back()->with('error', $motivo);
+        }
+
+        $nombre = trim("{$cliente->nombres} {$cliente->apellido_paterno}");
+        $cliente->delete();
+
+        return redirect()->route('panel.clientes.index')->with(
+            'success',
+            "{$nombre} está en la papelera. Se puede recuperar desde ahí."
+        );
+    }
+
+    /**
+     * Lo que impide darlo de baja, o null.
+     *
+     * Las dos razones son de dinero y de acceso: una membresía viva le deja
+     * entrar al gimnasio, y un saldo sin cobrar desaparecería del listado de
+     * «por cobrar» en cuanto el socio dejara de estar activo.
+     */
+    private function porQueSigueEnActivo(Cliente $cliente): ?string
+    {
+        $vigente = $cliente->inscripciones()
+            ->whereIn('id_estado', EstadosCodigo::INSCRIPCION_REQUIERE_CLIENTE_ACTIVO)
+            ->exists();
+
+        if ($vigente) {
+            return 'Tiene una membresía vigente o pausada. Espera a que venza, o cancélala primero.';
+        }
+
+        $debe = $cliente->pagos()
+            ->whereIn('id_estado', EstadosCodigo::PAGO_PENDIENTES_COBRO)
+            ->exists();
+
+        if ($debe) {
+            return 'Tiene pagos pendientes. Cóbralos o cancélalos antes de darlo de baja.';
+        }
+
+        return null;
     }
 
     /**

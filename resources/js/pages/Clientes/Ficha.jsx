@@ -1,6 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeftIcon, PencilIcon, PlusIcon } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { ArrowLeftIcon, PencilIcon, PlusIcon, UserMinusIcon, UserPlusIcon } from 'lucide-react';
 
+import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -49,6 +51,9 @@ function Vigencia({ dias }) {
 }
 
 export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
+    // null = ningun dialogo abierto.
+    const [confirmando, setConfirmando] = useState(null);
+
     const vigente = inscripciones.find((i) => i.vigente);
 
     return (
@@ -88,6 +93,28 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
                             <PencilIcon className="size-4" aria-hidden="true" />
                             Editar
                         </Link>
+                        {/* Dar de baja o volver a dar de alta: nunca las dos,
+                            porque solo una tiene sentido en cada momento. */}
+                        {cliente.activo ? (
+                            <button
+                                type="button"
+                                onClick={() => setConfirmando('desactivar')}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
+                            >
+                                <UserMinusIcon className="size-4" aria-hidden="true" />
+                                Dar de baja
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => router.patch(`/panel/clientes/${cliente.uuid}/reactivar`, {}, { preserveScroll: true })}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                            >
+                                <UserPlusIcon className="size-4" aria-hidden="true" />
+                                Reactivar
+                            </button>
+                        )}
+
                         <Link
                             href={`/panel/pagos/cobrar?inscripcion=${vigente?.uuid ?? ''}`}
                             className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
@@ -244,6 +271,17 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
                     </Bloque>
                 </div>
             </div>
+            <Dialogo
+                abierto={confirmando === 'desactivar'}
+                alCerrar={() => setConfirmando(null)}
+                titulo="Dar de baja al socio"
+                descripcion={`${cliente.nombre} dejará de aparecer al inscribir y al cobrar. Su ficha, su historial y sus pagos siguen ahí, y se puede reactivar cuando vuelva.`}
+                accion={`/panel/clientes/${cliente.uuid}/desactivar`}
+                via="inertia"
+                metodo="patch"
+                etiquetaConfirmar="Dar de baja"
+            />
+
         </>
     );
 }

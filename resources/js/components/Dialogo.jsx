@@ -29,12 +29,43 @@ export default function Dialogo({
     etiquetaConfirmar = 'Confirmar',
     peligrosa = false,
     puedeConfirmar = true,
+    /*
+     * Como se llama al servidor.
+     *
+     * 'json' es lo de siempre: las cuatro acciones de membresia viven en el
+     * controlador de Blade y responden JSON.
+     *
+     * 'inertia' es para las rutas del panel nuevo, que responden con una
+     * redireccion y su aviso. Ahi NO sirve el fetch de arriba: seguiria la
+     * redireccion por su cuenta y se comeria el aviso, asi que la pantalla
+     * volveria sin decir si salio bien.
+     */
+    via = 'json',
+    metodo = 'patch',
     children,
 }) {
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState(null);
 
+    function confirmarPorInertia() {
+        setEnviando(true);
+
+        router[metodo](accion, datos, {
+            preserveScroll: true,
+            onFinish: () => {
+                setEnviando(false);
+                alCerrar();
+            },
+        });
+    }
+
     async function confirmar() {
+        if (via === 'inertia') {
+            confirmarPorInertia();
+
+            return;
+        }
+
         setEnviando(true);
         setError(null);
 

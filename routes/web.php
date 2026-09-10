@@ -338,6 +338,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/clientes/{cliente}', \App\Http\Controllers\Panel\ClienteFichaController::class)->name('clientes.show');
         Route::get('/clientes/{cliente}/editar', [\App\Http\Controllers\Panel\ClienteController::class, 'edit'])->name('clientes.edit');
         Route::put('/clientes/{cliente}', [\App\Http\Controllers\Panel\ClienteController::class, 'update'])->name('clientes.update');
+        Route::patch('/clientes/{cliente}/desactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'desactivar'])->name('clientes.deactivate');
+        Route::patch('/clientes/{cliente}/reactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'reactivar'])->name('clientes.reactivate');
+        // A la papelera, no al vacio: se recupera desde /panel/papelera.
+        Route::delete('/clientes/{cliente}', [\App\Http\Controllers\Panel\ClienteController::class, 'eliminar'])->name('clientes.destroy');
         Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
         Route::get('/inscripciones/crear', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'create'])->name('inscripciones.create');
         Route::get('/inscripciones/buscar-socio', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'buscar'])->name('inscripciones.buscar-socio');
