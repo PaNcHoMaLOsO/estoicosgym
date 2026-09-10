@@ -51,7 +51,7 @@ export default function Index({ clientes, filtros, resumen }) {
                 {clientes.data.map((cliente) => (
                     <Fila key={cliente.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/admin/clientes/${cliente.uuid}`} className="hover:underline">
+                            <Link href={`/panel/clientes/${cliente.uuid}`} className="hover:underline">
                                 {cliente.nombre}
                             </Link>
                         </Celda>
