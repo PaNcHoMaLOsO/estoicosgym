@@ -17,43 +17,11 @@ use App\Models\Pago;
 use App\Models\Cliente;
 use App\Models\Membresia;
 use App\Models\Convenio;
-use Illuminate\Support\Facades\Storage;
 
 // Model Route Bindings - Buscar por UUID o ID
 Route::model('inscripcion', Inscripcion::class);
 Route::model('pago', Pago::class);
 
-// ==== RUTA DE PRUEBA PARA PREVIEW DE PLANTILLAS ====
-Route::get('/test-preview-directo/{id}', function($id) {
-    $archivos = [
-        1 => '01_bienvenida.html', 2 => '02_pago_completado.html',
-        3 => '03_membresia_por_vencer.html', 4 => '04_membresia_vencida.html',
-        5 => '05_pausa_inscripcion.html', 6 => '06_activacion_inscripcion.html',
-        7 => '07_pago_pendiente.html', 8 => '08_renovacion.html',
-        9 => '09_confirmacion_tutor_legal.html',
-    ];
-    
-    $archivo = $archivos[$id] ?? null;
-    if (!$archivo || !Storage::disk('local')->exists("test_emails/{$archivo}")) {
-        return response('<h1>Plantilla no encontrada</h1>', 404);
-    }
-    
-    $contenido = Storage::disk('local')->get("test_emails/{$archivo}");
-    $datos = [
-        'nombre' => 'Juan Pérez González', 'nombre_cliente' => 'Juan Pérez González',
-        'email_cliente' => 'juan.perez@ejemplo.cl', 'run_cliente' => '12.345.678-9',
-        'nombre_membresia' => 'Trimestral', 'precio_membresia' => '$65.000',
-        'fecha_inicio' => now()->format('d/m/Y'), 'fecha_vencimiento' => now()->addMonths(3)->format('d/m/Y'),
-        'tipo_pago' => 'Completo', 'monto_pagado' => '$65.000', 'monto_pendiente' => '$0',
-        'monto_total' => '$65.000', 'metodo_pago' => 'Transferencia Bancaria', 'dias_restantes' => '7',
-    ];
-    
-    foreach ($datos as $variable => $valor) {
-        $contenido = str_replace("{{$variable}}", $valor, $contenido);
-    }
-    
-    return response($contenido)->header('Content-Type', 'text/html');
-});
 Route::model('cliente', Cliente::class);
 Route::model('membresia', Membresia::class);
 Route::model('convenio', Convenio::class);
@@ -111,7 +79,7 @@ Route::middleware('guest')->group(function () {
         return back()->withErrors([
             'email' => 'Las credenciales no coinciden con nuestros registros.',
         ])->onlyInput('email');
-    });
+    })->middleware('throttle:8,1'); // 8 intentos por minuto por IP: frena el probar claves en masa sin estorbar a quien se equivoca un par de veces.
     
     // ===== 2FA - Verificación de dos factores =====
     Route::get('/verify-2fa', function () {
@@ -168,25 +136,33 @@ Route::middleware('guest')->group(function () {
         }
         
         return back()->withErrors(['code' => $result['message']]);
-    })->name('2fa.verify');
+    })->middleware('throttle:6,1')->name('2fa.verify');
     
     Route::post('/resend-2fa', function () {
-        $userId = request('user_id') ?: session('2fa_user_id');
-        
-        if (!$userId) {
-            return response()->json(['success' => false, 'message' => 'Sesión expirada']);
+        // El usuario SOLO sale de la sesion del login a medias, nunca del
+        // request. Antes se aceptaba `user_id` del formulario, asi que un
+        // visitante anonimo probaba ids y el sistema respondia distinto segun
+        // existieran o no: enumeracion de usuarios sin estar autenticado.
+        $userId = session('2fa_user_id');
+
+        $neutro = response()->json([
+            'success' => true,
+            'message' => 'Si tu sesión sigue activa, reenviamos el código.',
+        ]);
+
+        if (! $userId) {
+            return $neutro;
         }
-        
+
         $user = \App\Models\User::find($userId);
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Usuario no encontrado']);
+
+        if ($user) {
+            (new \App\Services\TwoFactorService())->sendVerificationCode($user, 'login');
         }
-        
-        $twoFactorService = new \App\Services\TwoFactorService();
-        $result = $twoFactorService->sendVerificationCode($user, request('type', 'login'));
-        
-        return response()->json($result);
-    })->name('2fa.resend');
+
+        // Misma respuesta pase lo que pase: no se revela si el codigo salio.
+        return $neutro;
+    })->middleware('throttle:4,1')->name('2fa.resend');
     
     // Recuperar contraseña - Solicitar enlace
     Route::get('/forgot-password', function () {
@@ -195,30 +171,52 @@ Route::middleware('guest')->group(function () {
     
     Route::post('/forgot-password', function () {
         request()->validate(['email' => 'required|email']);
-        
+
+        // MISMA respuesta exista o no el correo. Antes, cuando no existia se
+        // devolvia «No encontramos un usuario con ese correo», y eso le confirma
+        // a cualquiera —sin sesion— que direcciones estan registradas.
+        $neutro = 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
+
         $user = \App\Models\User::where('email', request('email'))->first();
-        
-        if (!$user) {
-            return back()->withErrors(['email' => 'No encontramos un usuario con ese correo.']);
+
+        if ($user) {
+            // El token viaja EN CLARO en el enlace y se guarda hasheado: quien
+            // lea la tabla no puede armar el enlace con lo que hay ahi.
+            $token = \Illuminate\Support\Str::random(64);
+
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                ['email' => $user->email, 'token' => bcrypt($token), 'created_at' => now()]
+            );
+
+            $enlace = route('password.reset', ['token' => $token, 'email' => $user->email]);
+
+            // EL TOKEN SE MANDA POR CORREO, no se pinta en pantalla. Antes se
+            // devolvia en el mensaje, asi que cualquiera que supiera el correo
+            // del admin reseteaba su clave SIN entrar a su buzon: toma de cuenta
+            // completa. Si el correo no esta configurado el envio falla y queda
+            // en el log, pero el token JAMAS vuelve al navegador.
+            try {
+                app(\App\Services\CorreoService::class)->enviar(
+                    $user->email,
+                    'Restablece tu contraseña · PRO GYM',
+                    view('emails.reset-password', ['enlace' => $enlace, 'nombre' => $user->name])->render(),
+                    $user->name,
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('No se pudo enviar el correo de recuperación: ' . $e->getMessage());
+            }
+
+            // Solo en desarrollo, y siguiendo el mismo criterio que el dev_code
+            // del 2FA: en local el enlace se muestra para poder probar sin correo
+            // configurado. En produccion esta rama no existe.
+            if (app()->environment('local', 'development')) {
+                return back()->with('status', $neutro . ' [dev] ' . $enlace);
+            }
         }
-        
-        // Generar token
-        $token = \Illuminate\Support\Str::random(64);
-        
-        // Guardar en password_reset_tokens
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => request('email')],
-            [
-                'email' => request('email'),
-                'token' => bcrypt($token),
-                'created_at' => now()
-            ]
-        );
-        
-        // Por ahora, mostrar el token (en producción enviar por email)
-        // En un entorno real, usarías Mail::to($user)->send(new ResetPasswordMail($token));
-        return back()->with('status', 'Si el correo existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña. (Token de prueba: ' . $token . ')');
-    })->name('password.email');
+
+        return back()->with('status', $neutro);
+    })->middleware('throttle:4,1')->name('password.email');
     
     // Restablecer contraseña - Formulario
     Route::get('/reset-password/{token}', function ($token) {
@@ -260,7 +258,7 @@ Route::middleware('guest')->group(function () {
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();
         
         return redirect()->route('login')->with('status', '¡Contraseña actualizada! Ya puedes iniciar sesión.');
-    })->name('password.update');
+    })->middleware('throttle:6,1')->name('password.update');
 });
 
 Route::post('/logout', function () {
