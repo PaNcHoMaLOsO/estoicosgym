@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { SendIcon } from 'lucide-react';
+import { FileTextIcon, SendIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
@@ -35,6 +35,15 @@ export default function Index({ notificaciones, filtros, resumen }) {
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <h1 className="text-lg font-semibold text-chalk">Notificaciones</h1>
 
+                <div className="flex gap-2">
+                <Link
+                    href="/panel/notificaciones/plantillas"
+                    className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                >
+                    <FileTextIcon className="size-4" aria-hidden="true" />
+                    Plantillas
+                </Link>
+
                 <Link
                     href="/panel/notificaciones/enviar"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
@@ -42,6 +51,7 @@ export default function Index({ notificaciones, filtros, resumen }) {
                     <SendIcon className="size-4" aria-hidden="true" />
                     Escribir a un socio
                 </Link>
+                </div>
             </header>
 
             <div className="mb-4 grid gap-3 sm:grid-cols-3">

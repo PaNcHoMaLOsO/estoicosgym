@@ -236,7 +236,24 @@ class EnvioManualService
      */
     private function datosDelSocio(Cliente $cliente, ?Inscripcion $inscripcion): array
     {
-        $datos = [
+        /*
+         * TODAS las variables se definen SIEMPRE, aunque no haya con qué
+         * llenarlas.
+         *
+         * Una variable sin valor y una variable que no existe son cosas
+         * distintas: la primera es «este socio no tiene plan», la segunda es
+         * «alguien escribió mal la plantilla». Si las que no aplican se
+         * quedaran sin definir, el aviso de plantilla rota saltaría con una
+         * plantilla correcta cada vez que el socio no tuviera inscripción.
+         */
+        $datos = array_fill_keys([
+            'membresia', 'precio', 'fecha_inicio', 'fecha_vencimiento', 'dias_restantes',
+            'monto_total', 'monto_pagado', 'total_pagado', 'monto_pendiente', 'saldo_pendiente',
+            'fecha_pago', 'monto_ultimo_pago',
+            'fecha_pausa', 'fecha_reactivacion', 'fecha_activacion',
+        ], '');
+
+        $datos += [
             'nombre' => $cliente->nombre_completo,
             // Las plantillas de vencimiento la usan y NADIE la rellenaba en el
             // envio manual: el correo salia diciendo «la membresia de
@@ -262,7 +279,9 @@ class EnvioManualService
         $total = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base ?? 0);
         $pendiente = max(0, $total - $pagado);
 
-        $datos += [
+        // array_merge y no `+=`: los valores de arriba estan puestos en blanco
+        // a proposito y `+=` no pisa lo que ya existe, asi que se quedarian.
+        $datos = array_merge($datos, [
             // El plan pudo darse de baja: entonces no hay nombre que poner.
             'membresia' => $inscripcion->membresia?->nombre ?? 'Sin plan',
             'precio' => $this->pesos($total),
@@ -274,7 +293,7 @@ class EnvioManualService
             'total_pagado' => $this->pesos($pagado),
             'monto_pendiente' => $this->pesos($pendiente),
             'saldo_pendiente' => $this->pesos($pendiente),
-        ];
+        ]);
 
         if ($inscripcion->fecha_pausa_inicio) {
             $datos['fecha_pausa'] = Carbon::parse($inscripcion->fecha_pausa_inicio)->format('d/m/Y');
