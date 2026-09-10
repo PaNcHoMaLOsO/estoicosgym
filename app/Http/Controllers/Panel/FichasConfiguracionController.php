@@ -49,7 +49,12 @@ class FichasConfiguracionController extends Controller
                 'max_pausas' => (int) $membresia->max_pausas,
                 'activo' => (bool) $membresia->activo,
                 'precio' => (int) ($precioVigente->precio_normal ?? 0),
-                'precio_convenio' => (int) ($precioVigente->precio_convenio ?? 0),
+                // null y no 0: «sin precio de convenio» y «gratis con
+                // convenio» no son lo mismo, y el formulario de editar
+                // necesita distinguirlos.
+                'precio_convenio' => $precioVigente?->precio_convenio !== null
+                    ? (int) $precioVigente->precio_convenio
+                    : null,
             ],
 
             'cifras' => [
@@ -132,6 +137,10 @@ class FichasConfiguracionController extends Controller
                 'contacto_nombre' => $convenio->contacto_nombre,
                 'contacto_email' => $convenio->contacto_email,
                 'contacto_telefono' => $convenio->contacto_telefono,
+                // En bruto ademas del texto de arriba: «15 %» se lee bien
+                // pero no se puede meter en el formulario de editar.
+                'descuento_porcentaje' => (float) $convenio->descuento_porcentaje,
+                'descuento_monto' => (int) $convenio->descuento_monto,
             ],
 
             'cifras' => [

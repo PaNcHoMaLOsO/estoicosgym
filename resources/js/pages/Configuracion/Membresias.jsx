@@ -1,11 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
-import { PlusIcon } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { PencilIcon, PlusIcon } from 'lucide-react';
 
-import Externo from '@/components/Externo';
 import Activo from '@/components/Activo';
+import FormularioCatalogo, { CAMPOS_PLAN, valoresDePlan } from '@/components/FormularioCatalogo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
-const COLUMNAS = ['Membresía', 'Duración', 'Precio', 'Pausas', 'Inscripciones', 'Estado'];
+const COLUMNAS = ['Membresía', 'Duración', 'Precio', 'Pausas', 'Inscripciones', 'Estado', ''];
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -13,7 +14,29 @@ const pesos = new Intl.NumberFormat('es-CL', {
     maximumFractionDigits: 0,
 });
 
+const NUEVA = {
+    nombre: '',
+    descripcion: '',
+    duracion_meses: 1,
+    duracion_dias: 0,
+    max_pausas: 1,
+    precio: '',
+    precio_convenio: '',
+    activo: true,
+};
+
 export default function Membresias({ membresias }) {
+    // null = cerrado; una fila = editando esa; NUEVA = creando.
+    const [editando, setEditando] = useState(null);
+
+    // Desactivar, no borrar: las inscripciones vendidas apuntan al plan y
+    // borrarlo las dejaria sin decir que se vendio.
+    function alternar(membresia) {
+        router.patch(`/panel/catalogos/membresias/${membresia.uuid}/alternar`, {}, {
+            preserveScroll: true,
+        });
+    }
+
     return (
         <>
             <Head title="Membresías" />
@@ -24,13 +47,14 @@ export default function Membresias({ membresias }) {
                     <p className="apoyo text-fog">Los planes que se pueden vender</p>
                 </div>
 
-                <Externo
-                    href="/admin/membresias/create"
+                <button
+                    type="button"
+                    onClick={() => setEditando(NUEVA)}
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
                     Nueva membresía
-                </Externo>
+                </button>
             </header>
 
             <Tabla
@@ -53,16 +77,54 @@ export default function Membresias({ membresias }) {
                         </Celda>
                         <Celda>{membresia.duracion}</Celda>
                         <Cifra className="text-chalk">
-                            {membresia.precio > 0 ? pesos.format(membresia.precio) : '—'}
+                            {membresia.precio > 0 ? pesos.format(membresia.precio) : (
+                                // Sin precio no se puede vender: el alta lo rechaza.
+                                <span className="text-warn">Sin precio</span>
+                            )}
                         </Cifra>
                         <Cifra>{membresia.max_pausas}</Cifra>
                         <Cifra>{membresia.inscripciones}</Cifra>
                         <Celda>
                             <Activo valor={membresia.activo} />
                         </Celda>
+                        <Celda className="text-right">
+                            <div className="inline-flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditando(membresia)}
+                                    aria-label={`Editar ${membresia.nombre}`}
+                                    className="text-fog transition-colors hover:text-chalk"
+                                >
+                                    <PencilIcon className="size-4" aria-hidden="true" />
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => alternar(membresia)}
+                                    className="apoyo text-fog transition-colors hover:text-chalk"
+                                >
+                                    {membresia.activo ? 'Desactivar' : 'Activar'}
+                                </button>
+                            </div>
+                        </Celda>
                     </Fila>
                 ))}
             </Tabla>
+
+            <FormularioCatalogo
+                abierto={editando !== null}
+                alCerrar={() => setEditando(null)}
+                titulo={editando?.uuid ? 'Editar plan' : 'Nuevo plan'}
+                descripcion={
+                    editando?.uuid
+                        ? 'Las inscripciones ya vendidas conservan su precio.'
+                        : 'Aparecerá como opción al inscribir.'
+                }
+                accion={editando?.uuid ? `/panel/membresias/${editando.uuid}` : '/panel/membresias'}
+                metodo={editando?.uuid ? 'put' : 'post'}
+                campos={CAMPOS_PLAN}
+                valores={valoresDePlan(editando)}
+            />
         </>
     );
 }

@@ -26,6 +26,133 @@ import {
  * fetch, y esto es un formulario de Inertia con validacion por campo. Meter uno
  * dentro del otro dejaria dos botones de guardar.
  */
+/**
+ * Los campos de cada catalogo.
+ *
+ * Viven AQUI y no en cada pantalla porque un plan se edita desde dos sitios
+ * —el listado y su propia ficha— y si cada uno declarara sus campos, el dia que
+ * se añada uno se añadiria en uno solo y el otro lo dejaria en blanco al
+ * guardar.
+ */
+export const CAMPOS_PLAN = [
+    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Mensual, Trimestral…' },
+    {
+        nombre: 'descripcion',
+        etiqueta: 'Descripción',
+        tipo: 'area',
+        ayuda: 'Opcional. Qué incluye el plan.',
+    },
+    {
+        nombre: 'duracion_meses',
+        etiqueta: 'Dura (meses)',
+        tipo: 'number',
+        min: 0,
+        requerido: true,
+        ayuda: 'Pon los meses o los días, lo que corresponda. Si pones días, mandan los días.',
+    },
+    { nombre: 'duracion_dias', etiqueta: 'Dura (días)', tipo: 'number', min: 0, requerido: true },
+    {
+        nombre: 'max_pausas',
+        etiqueta: 'Pausas permitidas',
+        tipo: 'number',
+        min: 0,
+        requerido: true,
+        ayuda: 'Cuántas veces puede congelar la membresía.',
+    },
+    {
+        nombre: 'precio',
+        etiqueta: 'Precio',
+        tipo: 'number',
+        min: 0,
+        requerido: true,
+        /* Un plan sin precio vigente no se puede vender: el alta de inscripcion
+           lo rechaza. Cambiarlo NO pisa el anterior, abre un tramo nuevo. */
+        ayuda: 'Al cambiarlo, lo que ya se cobró no se toca: queda como histórico.',
+    },
+    {
+        nombre: 'precio_convenio',
+        etiqueta: 'Precio con convenio',
+        tipo: 'number',
+        min: 0,
+        ayuda: 'Opcional. Lo que paga quien viene por un convenio. Tiene que ser menor que el normal.',
+    },
+    { nombre: 'activo', etiqueta: 'Disponibilidad', tipo: 'si-no', textoCasilla: 'Se puede vender' },
+];
+
+export const TIPOS_CONVENIO = [
+    { valor: 'empresa', etiqueta: 'Empresa' },
+    { valor: 'institucion_educativa', etiqueta: 'Institución educativa' },
+    { valor: 'organizacion', etiqueta: 'Organización' },
+    { valor: 'otro', etiqueta: 'Otro' },
+];
+
+export const CAMPOS_CONVENIO = [
+    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'INACAP, Banco Santander…' },
+    { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'opciones', opciones: TIPOS_CONVENIO, requerido: true },
+    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'area' },
+    {
+        nombre: 'descuento_porcentaje',
+        etiqueta: 'Descuento (%)',
+        tipo: 'number',
+        min: 0,
+        max: 100,
+        /*
+         * AVISO IMPORTANTE. La rebaja que se aplica al inscribir NO sale de
+         * aqui: sale del «precio con convenio» que tenga cargado cada plan. Un
+         * plan sin ese precio no rebaja nada, se ponga aqui lo que se ponga.
+         */
+        ayuda: 'Informativo. La rebaja real sale del «precio con convenio» de cada plan.',
+    },
+    {
+        nombre: 'descuento_monto',
+        etiqueta: 'Descuento fijo',
+        tipo: 'number',
+        min: 0,
+        ayuda: 'También informativo, para dejar por escrito lo acordado.',
+    },
+    { nombre: 'contacto_nombre', etiqueta: 'Persona de contacto' },
+    { nombre: 'contacto_telefono', etiqueta: 'Teléfono' },
+    { nombre: 'contacto_email', etiqueta: 'Correo', tipo: 'email' },
+    {
+        nombre: 'activo',
+        etiqueta: 'Disponibilidad',
+        tipo: 'si-no',
+        textoCasilla: 'Se puede elegir al inscribir',
+    },
+];
+
+/** Lo que hay que mandar para guardar un plan, a partir de su ficha o su fila. */
+export function valoresDePlan(plan) {
+    return {
+        nombre: plan?.nombre ?? '',
+        descripcion: plan?.descripcion ?? '',
+        duracion_meses: plan?.duracion_meses ?? 1,
+        duracion_dias: plan?.duracion_dias ?? 0,
+        max_pausas: plan?.max_pausas ?? 1,
+        precio: plan?.precio ?? '',
+        // El precio de convenio puede no existir, y 0 no es lo mismo que «no
+        // tiene»: uno significa gratis con convenio y el otro, sin convenio.
+        precio_convenio: plan?.precio_convenio ?? '',
+        activo: plan?.uuid ? Boolean(plan.activo) : true,
+    };
+}
+
+/** Lo mismo para un convenio. */
+export function valoresDeConvenio(convenio) {
+    return {
+        nombre: convenio?.nombre ?? '',
+        tipo: convenio?.tipo ?? 'empresa',
+        descripcion: convenio?.descripcion ?? '',
+        descuento_porcentaje: convenio?.descuento_porcentaje || '',
+        descuento_monto: convenio?.descuento_monto || '',
+        // El listado lo llama `contacto` y la ficha `contacto_nombre`.
+        contacto_nombre: convenio?.contacto_nombre ?? convenio?.contacto ?? '',
+        contacto_telefono: convenio?.contacto_telefono ?? '',
+        contacto_email: convenio?.contacto_email ?? '',
+        activo: convenio?.uuid ? Boolean(convenio.activo) : true,
+    };
+}
+
 export default function FormularioCatalogo({
     abierto,
     alCerrar,

@@ -1,7 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import { ArrowLeftIcon, PencilIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
+import FormularioCatalogo, { CAMPOS_PLAN } from '@/components/FormularioCatalogo';
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -36,6 +38,8 @@ function duracion({ duracion_meses, duracion_dias }) {
 }
 
 export default function FichaMembresia({ membresia, cifras, precios, inscripciones }) {
+    const [editando, setEditando] = useState(false);
+
     return (
         <>
             <Head title={membresia.nombre} />
@@ -63,13 +67,14 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                         </p>
                     </div>
 
-                    <a
-                        href={`/admin/membresias/${membresia.uuid}/edit`}
+                    <button
+                        type="button"
+                        onClick={() => setEditando(true)}
                         className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                     >
                         <PencilIcon className="size-4" aria-hidden="true" />
                         Editar
-                    </a>
+                    </button>
                 </div>
             </header>
 
@@ -162,6 +167,16 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                     </Bloque>
                 </div>
             </div>
+            <FormularioCatalogo
+                abierto={editando}
+                alCerrar={() => setEditando(false)}
+                titulo="Editar plan"
+                descripcion="Las inscripciones ya vendidas conservan su precio."
+                accion={`/panel/membresias/${membresia.uuid}`}
+                metodo="put"
+                campos={CAMPOS_PLAN}
+                valores={valoresDePlan(membresia)}
+            />
         </>
     );
 }

@@ -37,6 +37,13 @@ class ConfiguracionController extends Controller
                 'precio' => (int) ($m->precios->first()->precio_normal ?? 0),
                 'inscripciones' => $m->inscripciones_count,
                 'activo' => (bool) $m->activo,
+                // Los dos numeros por separado ademas del texto: «3 meses» se
+                // lee bien en la tabla pero no se puede meter en el formulario.
+                'duracion_meses' => (int) $m->duracion_meses,
+                'duracion_dias' => (int) $m->duracion_dias,
+                'precio_convenio' => $m->precios->first()?->precio_convenio !== null
+                    ? (int) $m->precios->first()->precio_convenio
+                    : null,
             ]);
 
         return Inertia::render('Configuracion/Membresias', ['membresias' => $membresias]);
@@ -60,6 +67,13 @@ class ConfiguracionController extends Controller
                 'contacto' => $c->contacto_nombre,
                 'clientes' => $c->clientes_count,
                 'activo' => (bool) $c->activo,
+                // Los valores en bruto, para poder rellenar el formulario de
+                // editar sin volver a pedirlos al servidor.
+                'descripcion' => $c->descripcion,
+                'descuento_porcentaje' => (float) $c->descuento_porcentaje,
+                'descuento_monto' => (int) $c->descuento_monto,
+                'contacto_telefono' => $c->contacto_telefono,
+                'contacto_email' => $c->contacto_email,
             ]);
 
         return Inertia::render('Configuracion/Convenios', ['convenios' => $convenios]);

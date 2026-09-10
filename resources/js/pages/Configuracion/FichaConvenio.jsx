@@ -1,7 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import { ArrowLeftIcon, PencilIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
+import FormularioCatalogo, { CAMPOS_CONVENIO, valoresDeConvenio } from '@/components/FormularioCatalogo';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
 function Bloque({ titulo, children }) {
@@ -23,6 +25,8 @@ function Dato({ etiqueta, children }) {
 }
 
 export default function FichaConvenio({ convenio, cifras, socios }) {
+    const [editando, setEditando] = useState(false);
+
     return (
         <>
             <Head title={convenio.nombre} />
@@ -47,13 +51,14 @@ export default function FichaConvenio({ convenio, cifras, socios }) {
                         </p>
                     </div>
 
-                    <a
-                        href={`/admin/convenios/${convenio.uuid}/edit`}
+                    <button
+                        type="button"
+                        onClick={() => setEditando(true)}
                         className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                     >
                         <PencilIcon className="size-4" aria-hidden="true" />
                         Editar
-                    </a>
+                    </button>
                 </div>
             </header>
 
@@ -128,6 +133,16 @@ export default function FichaConvenio({ convenio, cifras, socios }) {
                     </Bloque>
                 </div>
             </div>
+            <FormularioCatalogo
+                abierto={editando}
+                alCerrar={() => setEditando(false)}
+                titulo="Editar convenio"
+                descripcion="Los socios que ya vinieron por este convenio no cambian."
+                accion={`/panel/convenios/${convenio.uuid}`}
+                metodo="put"
+                campos={CAMPOS_CONVENIO}
+                valores={valoresDeConvenio(convenio)}
+            />
         </>
     );
 }
