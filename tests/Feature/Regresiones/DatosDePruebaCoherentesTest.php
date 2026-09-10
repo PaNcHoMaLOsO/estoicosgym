@@ -142,6 +142,37 @@ class DatosDePruebaCoherentesTest extends CasoConCatalogos
         }
     }
 
+    /**
+     * Un pago mixto tiene DOS metodos y el reparto cuadra.
+     *
+     * La factory dejaba el segundo metodo y los dos montos en null, asi que
+     * salian pagos «mixtos» con una sola via y sin repartir nada: un registro
+     * que no puede existir, y que en la ficha se veia como un pago sin metodo.
+     */
+    public function test_un_pago_mixto_reparte_entre_dos_metodos(): void
+    {
+        Cliente::factory()->count(5)->create();
+        Inscripcion::factory()->count(5)->create();
+
+        $mixtos = Pago::factory()->count(40)->create()->where('tipo_pago', 'mixto');
+
+        $this->assertGreaterThan(0, $mixtos->count(), 'No se generó ningún pago mixto.');
+
+        foreach ($mixtos as $pago) {
+            $this->assertNotNull($pago->id_metodo_pago2, 'Un mixto sin segundo método.');
+            $this->assertNotSame(
+                (int) $pago->id_metodo_pago,
+                (int) $pago->id_metodo_pago2,
+                'Los dos métodos de un mixto son el mismo.'
+            );
+            $this->assertSame(
+                (int) $pago->monto_abonado,
+                (int) $pago->monto_metodo1 + (int) $pago->monto_metodo2,
+                'El reparto del mixto no suma lo abonado.'
+            );
+        }
+    }
+
     /** Ningún pago puede estar fechado en el futuro. */
     public function test_ningun_pago_se_fecha_en_el_futuro(): void
     {

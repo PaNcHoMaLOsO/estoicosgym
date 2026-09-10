@@ -343,6 +343,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // El alta no cuelga de POST /pagos porque ese nombre ya lo ocupa el
         // listado y `Permisos` deduce la accion del nombre de la ruta.
         Route::post('/pagos/registrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'store'])->name('pagos.store');
+        // Va al final del bloque de pagos: si {pago} se declarara antes,
+        // /panel/pagos/cobrar entraria por ahi buscando un pago con uuid «cobrar».
+        Route::get('/pagos/{pago}', \App\Http\Controllers\Panel\PagoFichaController::class)->name('pagos.show');
         Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
 
         // Informes. El constructor dinamico sigue en /admin: arma consultas a

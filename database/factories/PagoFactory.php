@@ -49,6 +49,12 @@ class PagoFactory extends Factory
     {
         $metodoPago = MetodoPago::inRandomOrder()->first() ?? MetodoPago::factory()->create();
 
+        // Un mixto necesita DOS vias distintas: es lo que significa la palabra.
+        // Antes se dejaba el segundo metodo y el reparto en null, asi que
+        // salian pagos «mixtos» con un solo metodo y sin repartir nada, que es
+        // un registro que no puede existir.
+        $segundoMetodo = MetodoPago::where('id', '!=', $metodoPago->id)->inRandomOrder()->first();
+
         $total = (int) ($inscripcion->precio_final ?? 20000);
 
         $tipo = $this->faker->randomElement(['completo', 'parcial', 'pendiente', 'mixto']);
@@ -91,6 +97,10 @@ class PagoFactory extends Factory
             'monto_pendiente' => $pendiente,
             'fecha_pago' => $fechaPago,
             'id_metodo_pago' => $metodoPago->id,
+            // Solo el mixto reparte; en los demas estas columnas van vacias.
+            'id_metodo_pago2' => $tipo === 'mixto' ? $segundoMetodo?->id : null,
+            'monto_metodo1' => $tipo === 'mixto' && $segundoMetodo ? intdiv($abonado, 2) : null,
+            'monto_metodo2' => $tipo === 'mixto' && $segundoMetodo ? $abonado - intdiv($abonado, 2) : null,
             'referencia_pago' => $this->faker->optional()->bothify('REF-####-????'),
             'cantidad_cuotas' => 1,
             'numero_cuota' => 1,

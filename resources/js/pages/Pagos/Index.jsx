@@ -74,7 +74,7 @@ export default function Index({ pagos, filtros, resumen }) {
                 {pagos.data.map((pago) => (
                     <Fila key={pago.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/admin/pagos/${pago.uuid}`} className="hover:underline">
+                            <Link href={`/panel/pagos/${pago.uuid}`} className="hover:underline">
                                 {pago.socio}
                             </Link>
                         </Celda>

@@ -226,7 +226,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
                             {pagos.map((p) => (
                                 <Fila key={p.uuid}>
                                     <Celda className="tabular-nums text-chalk">
-                                        <Link href={`/admin/pagos/${p.uuid}`} className="hover:underline">
+                                        <Link href={`/panel/pagos/${p.uuid}`} className="hover:underline">
                                             {p.fecha ?? '—'}
                                         </Link>
                                     </Celda>
