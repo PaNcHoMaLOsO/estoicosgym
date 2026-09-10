@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeftIcon, BanknoteIcon, ReceiptTextIcon } from 'lucide-react';
+import { ArrowLeftIcon, BanknoteIcon, PencilIcon, ReceiptTextIcon } from 'lucide-react';
 
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
@@ -70,15 +70,27 @@ export default function Ficha({
                         </p>
                     </div>
 
-                    {pago.pendiente > 0 && inscripcion ? (
+                    <div className="flex gap-2">
+                        {/* Corregir el error de tecleo: 40.000 donde iba 4.000,
+                            la tarjeta donde iba el efectivo. */}
                         <Link
-                            href={`/panel/pagos/cobrar?inscripcion=${inscripcion.uuid}`}
-                            className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                            href={`/panel/pagos/${pago.uuid}/editar`}
+                            className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                         >
-                            <BanknoteIcon className="size-4" aria-hidden="true" />
-                            Cobrar el saldo
+                            <PencilIcon className="size-4" aria-hidden="true" />
+                            Corregir
                         </Link>
-                    ) : null}
+
+                        {pago.pendiente > 0 && inscripcion ? (
+                            <Link
+                                href={`/panel/pagos/cobrar?inscripcion=${inscripcion.uuid}`}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                            >
+                                <BanknoteIcon className="size-4" aria-hidden="true" />
+                                Cobrar el saldo
+                            </Link>
+                        ) : null}
+                    </div>
                 </div>
             </header>
 

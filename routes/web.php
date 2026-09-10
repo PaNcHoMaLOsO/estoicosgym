@@ -383,6 +383,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Va al final del bloque de pagos: si {pago} se declarara antes,
         // /panel/pagos/cobrar entraria por ahi buscando un pago con uuid «cobrar».
         Route::get('/pagos/{pago}', \App\Http\Controllers\Panel\PagoFichaController::class)->name('pagos.show');
+        Route::get('/pagos/{pago}/editar', [\App\Http\Controllers\Panel\PagoEditarController::class, 'edit'])->name('pagos.edit');
+        Route::put('/pagos/{pago}', [\App\Http\Controllers\Panel\PagoEditarController::class, 'update'])->name('pagos.update');
+        // A la papelera: un cobro anulado por error se recupera desde ahi.
+        Route::delete('/pagos/{pago}', [\App\Http\Controllers\Panel\PagoEditarController::class, 'eliminar'])->name('pagos.destroy');
         Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
 
         /*
