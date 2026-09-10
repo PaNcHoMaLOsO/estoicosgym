@@ -80,7 +80,7 @@ export default function Index({ inscripciones, filtros, resumen }) {
                     <Fila key={inscripcion.uuid}>
                         <Celda className="font-medium text-chalk">
                             <Link
-                                href={`/admin/inscripciones/${inscripcion.uuid}`}
+                                href={`/panel/inscripciones/${inscripcion.uuid}`}
                                 className="hover:underline"
                             >
                                 {inscripcion.socio}
