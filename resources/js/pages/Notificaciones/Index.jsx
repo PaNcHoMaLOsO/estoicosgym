@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { FileTextIcon, SendIcon, UsersIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
+import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
@@ -32,6 +33,15 @@ export default function Index({ notificaciones, filtros, resumen }) {
     // Cual se esta reintentando, para no dejar el boton pulsable dos veces:
     // la segunda pulsacion mandaria el mismo correo otra vez.
     const [enCurso, setEnCurso] = useState(null);
+
+    /*
+     * Reenviar SE CONFIRMA; cancelar no.
+     *
+     * Mandar un correo no se deshace: le llega al socio y ya esta. Cancelar, en
+     * cambio, solo evita que salga uno que todavia no ha salido, asi que el
+     * peor caso de equivocarse es que haya que volver a mandarlo.
+     */
+    const [reenviando, setReenviando] = useState(null);
 
     function actuar(uuid, accion) {
         setEnCurso(uuid);
@@ -130,7 +140,7 @@ export default function Index({ notificaciones, filtros, resumen }) {
                             {n.puede_reenviar ? (
                                 <button
                                     type="button"
-                                    onClick={() => actuar(n.uuid, 'reenviar')}
+                                    onClick={() => setReenviando(n)}
                                     disabled={enCurso === n.uuid}
                                     className="apoyo text-fog transition-colors hover:text-chalk disabled:opacity-50"
                                 >
@@ -152,6 +162,30 @@ export default function Index({ notificaciones, filtros, resumen }) {
             </Tabla>
 
             <Paginacion paginador={notificaciones} />
+
+            {/* Dice A QUIEN y QUE, no «¿seguro?»: el error de este boton es
+                pulsar en la fila de al lado, y ahi es donde se nota. */}
+            <Dialogo
+                abierto={reenviando !== null}
+                alCerrar={() => setReenviando(null)}
+                titulo="Volver a mandar el correo"
+                descripcion={
+                    reenviando
+                        ? `Se le manda otra vez a ${reenviando.email}. Un correo no se puede recoger.`
+                        : ''
+                }
+                accion={reenviando ? `/panel/notificaciones/${reenviando.uuid}/reenviar` : ''}
+                via="inertia"
+                metodo="post"
+                etiquetaConfirmar="Mandarlo"
+            >
+                {reenviando ? (
+                    <div className="rounded-control border border-line bg-surface-2 px-3 py-2">
+                        <p className="text-sm text-chalk">{reenviando.asunto}</p>
+                        <p className="apoyo text-fog">para {reenviando.socio}</p>
+                    </div>
+                ) : null}
+            </Dialogo>
         </>
     );
 }

@@ -1,9 +1,17 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeftIcon, PencilIcon, PlusIcon, UserMinusIcon, UserPlusIcon } from 'lucide-react';
+import {
+    ArrowLeftIcon,
+    PencilIcon,
+    PlusIcon,
+    ShoppingBagIcon,
+    UserMinusIcon,
+    UserPlusIcon,
+} from 'lucide-react';
 
 import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
+import { Reservado } from '@/Privado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -50,7 +58,7 @@ function Vigencia({ dias }) {
     return <span className="text-fog">Quedan {dias} días</span>;
 }
 
-export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
+export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado }) {
     // null = ningun dialogo abierto.
     const [confirmando, setConfirmando] = useState(null);
 
@@ -125,6 +133,39 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen }) {
                     </div>
                 </div>
             </header>
+
+            {/* EL AVISO DE LO FIADO, arriba de todo y antes de las cifras.
+                Si viene a pagar su mensualidad y ademas debe tres bebidas, hay
+                que saberlo con la persona delante, no dos semanas despues.
+
+                Va aparte de lo que debe de su membresia a proposito: son dos
+                deudas que se cobran por sitios distintos, y sumarlas daria una
+                cifra que no se puede cobrar de una vez. */}
+            {fiado ? (
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-panel border border-warn/40 bg-warn/5 px-3 py-2.5">
+                    <p className="flex items-start gap-2 text-sm text-warn">
+                        <ShoppingBagIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                        <span>
+                            Debe{' '}
+                            <span className="font-semibold tabular-nums">
+                                <Reservado ancho="w-14">{pesos.format(fiado.total)}</Reservado>
+                            </span>{' '}
+                            del mesón · {fiado.cuantas}{' '}
+                            {fiado.cuantas === 1 ? 'cosa' : 'cosas'} desde {fiado.desde}
+                            <span className="apoyo block text-fog">
+                                {fiado.lineas.map((l) => l.concepto).join(', ')}
+                            </span>
+                        </span>
+                    </p>
+
+                    <Link
+                        href="/panel/fiados"
+                        className="apoyo shrink-0 rounded-control border border-warn/40 px-2.5 py-1 text-warn transition-colors hover:bg-warn/10"
+                    >
+                        Cobrarlo
+                    </Link>
+                </div>
+            ) : null}
 
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-panel border border-line bg-surface p-3">

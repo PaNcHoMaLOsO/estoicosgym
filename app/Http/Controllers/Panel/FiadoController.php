@@ -133,6 +133,54 @@ class FiadoController extends Controller
     }
 
     /**
+     * Vuelve a abrir una cuenta que se dio por pagada sin serlo.
+     *
+     * Hace falta. «Pagó» es un botón y equivocarse de fila es un clic: sin esto,
+     * la deuda de esa persona desaparece y la única forma de recuperarla es
+     * apuntársela otra vez a mano, inventando conceptos y montos que ya nadie
+     * recuerda. Se reabre lo que se saldó EN ESE MISMO COBRO —no todo su
+     * histórico— mirando la marca de tiempo del pago.
+     */
+    public function reabrir(Request $request, Fiado $fiado)
+    {
+        if (! $fiado->pagado) {
+            return back()->with('error', 'Esa cuenta ya estaba abierta.');
+        }
+
+        // Las líneas que se cobraron a la vez que esta: un cobro es un gesto,
+        // y deshacerlo tiene que deshacer el gesto entero.
+        $delMismoCobro = Fiado::where('pagado', true)
+            ->where('pagado_en', $fiado->pagado_en)
+            ->when(
+                $fiado->id_cliente,
+                fn ($q) => $q->where('id_cliente', $fiado->id_cliente),
+                fn ($q) => $q->whereNull('id_cliente')->where('nombre', $fiado->nombre)
+            )
+            ->get();
+
+        DB::transaction(function () use ($delMismoCobro) {
+            foreach ($delMismoCobro as $linea) {
+                $linea->update([
+                    'pagado' => false,
+                    'pagado_en' => null,
+                    'id_usuario_cobro' => null,
+                ]);
+            }
+        });
+
+        $total = $delMismoCobro->sum('monto');
+
+        return back()->with(
+            'success',
+            sprintf(
+                '%s vuelve a deber $%s.',
+                $fiado->aNombreDe(),
+                number_format($total, 0, ',', '.')
+            )
+        );
+    }
+
+    /**
      * Quita una línea apuntada por error.
      *
      * Se borra de verdad: un «bebida $1.500» que nunca ocurrió no es un dato

@@ -2,6 +2,7 @@ import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckIcon, PlusIcon, TrashIcon, UndoIcon } from 'lucide-react';
 
+import ConfirmarDinero from '@/components/ConfirmarDinero';
 import { Reservado } from '@/Privado';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -165,15 +166,17 @@ export function Notas({ notas }) {
 export function Fiados({ fiados }) {
     const [abierta, setAbierta] = useState(null);
     const [anotando, setAnotando] = useState(false);
+    /*
+     * Cual se esta cobrando.
+     *
+     * «Pago» mueve dinero y NO se dispara de un clic. El error de ese boton es
+     * siempre el mismo —pulsar en la fila de al lado—, y para eso no vale un
+     * «¿seguro?»: quien se equivoco de fila tambien dice que si. Lo que lo
+     * evita es que el aviso diga el nombre y la cantidad.
+     */
+    const [cobrando, setCobrando] = useState(null);
 
     const total = fiados.reduce((t, f) => t + f.total, 0);
-
-    function saldar(cuenta) {
-        router.post('/panel/fiados/saldar', {
-            id_cliente: cuenta.id_cliente,
-            nombre: cuenta.nombre,
-        }, { preserveScroll: true });
-    }
 
     return (
         <section className="rounded-panel border border-line bg-surface p-4">
@@ -247,7 +250,7 @@ export function Fiados({ fiados }) {
                                         del martes. */}
                                     <button
                                         type="button"
-                                        onClick={() => saldar(cuenta)}
+                                        onClick={() => setCobrando(cuenta)}
                                         className="apoyo rounded-control border border-line px-2 py-1 text-fog transition-colors hover:text-chalk"
                                     >
                                         Pagó
@@ -274,6 +277,25 @@ export function Fiados({ fiados }) {
                     ))}
                 </ul>
             )}
+
+            {/* El aviso dice el nombre y la cantidad, no «¿seguro?». */}
+            <ConfirmarDinero
+                abierto={cobrando !== null}
+                alCerrar={() => setCobrando(null)}
+                titulo="Cobrar lo fiado"
+                quien={cobrando?.quien ?? ''}
+                monto={cobrando?.total ?? 0}
+                detalle={cobrando?.lineas}
+                consecuencia="Su cuenta queda saldada. Esto no entra en la caja del gimnasio."
+                etiquetaConfirmar="Pagó"
+                accion="/panel/fiados/saldar"
+                metodo="post"
+                datos={{
+                    id_cliente: cobrando?.id_cliente ?? null,
+                    nombre: cobrando?.nombre ?? null,
+                }}
+            />
+
         </section>
     );
 }

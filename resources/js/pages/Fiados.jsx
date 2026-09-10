@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { AlertTriangleIcon, PlusIcon, SearchIcon, TrashIcon } from 'lucide-react';
+import { AlertTriangleIcon, PlusIcon, SearchIcon, TrashIcon, UndoIcon } from 'lucide-react';
 
+import ConfirmarDinero from '@/components/ConfirmarDinero';
 import { ApuntarFiado } from '@/components/Libreta';
 import { Reservado } from '@/Privado';
 
@@ -70,16 +71,17 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
         [cobrado, filtro],
     );
 
-    function saldar(cuenta) {
-        router.post('/panel/fiados/saldar', {
-            id_cliente: cuenta.id_cliente,
-            nombre: cuenta.nombre,
-        }, { preserveScroll: true });
-    }
-
-    function quitar(linea) {
-        router.delete(`/panel/fiados/${linea.uuid}`, { preserveScroll: true });
-    }
+    /*
+     * Nada que mueva dinero se dispara de un clic.
+     *
+     * El error de estos botones es siempre el mismo —pulsar en la fila de al
+     * lado— y para eso no vale un «¿seguro?»: quien se equivoco de fila tambien
+     * dice que si. Lo que lo evita es que el aviso diga el nombre y la
+     * cantidad, que es lo que hace <ConfirmarDinero>.
+     */
+    const [cobrando, setCobrando] = useState(null);
+    const [quitando, setQuitando] = useState(null);
+    const [reabriendo, setReabriendo] = useState(null);
 
     return (
         <>
@@ -236,7 +238,7 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                                             bebida del martes. */}
                                         <button
                                             type="button"
-                                            onClick={() => saldar(cuenta)}
+                                            onClick={() => setCobrando(cuenta)}
                                             className="rounded-control border border-line px-2.5 py-1 text-sm text-chalk transition-colors hover:bg-surface-2"
                                         >
                                             Pagó
@@ -270,7 +272,7 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                                                         para cobrar a medias. */}
                                                     <button
                                                         type="button"
-                                                        onClick={() => quitar(l)}
+                                                        onClick={() => setQuitando({ ...l, quien: cuenta.quien })}
                                                         aria-label={`Quitar ${l.concepto}`}
                                                         className="rounded-control p-0.5 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
                                                     >
@@ -311,6 +313,9 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                                 <th scope="col" className="px-3 py-2 text-right font-medium text-fog">
                                     Monto
                                 </th>
+                                <th scope="col" className="px-3 py-2 text-right font-medium text-fog">
+                                    <span className="sr-only">Deshacer</span>
+                                </th>
                             </tr>
                         </thead>
 
@@ -334,6 +339,21 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                                     <td className="px-3 py-2 text-right tabular-nums text-chalk">
                                         <Reservado ancho="w-14">{pesos.format(c.monto)}</Reservado>
                                     </td>
+                                    <td className="px-3 py-2 text-right">
+                                        {/* Deshacer un «Pago» mal dado. Sin esto la
+                                            deuda desaparece y hay que volver a
+                                            apuntarla a mano, inventando conceptos y
+                                            montos que ya nadie recuerda. */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setReabriendo(c)}
+                                            aria-label={`Deshacer el cobro a ${c.quien}`}
+                                            className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
+                                        >
+                                            <UndoIcon className="size-3.5" aria-hidden="true" />
+                                            Deshacer
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -346,6 +366,49 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                     ) : null}
                 </div>
             )}
+
+            <ConfirmarDinero
+                abierto={cobrando !== null}
+                alCerrar={() => setCobrando(null)}
+                titulo="Cobrar lo fiado"
+                quien={cobrando?.quien ?? ''}
+                monto={cobrando?.total ?? 0}
+                detalle={cobrando?.lineas}
+                consecuencia="Su cuenta queda saldada. Esto no entra en la caja del gimnasio."
+                etiquetaConfirmar="Pagó"
+                accion="/panel/fiados/saldar"
+                metodo="post"
+                datos={{
+                    id_cliente: cobrando?.id_cliente ?? null,
+                    nombre: cobrando?.nombre ?? null,
+                }}
+            />
+
+            <ConfirmarDinero
+                abierto={quitando !== null}
+                alCerrar={() => setQuitando(null)}
+                titulo="Quitar de la cuenta"
+                quien={quitando?.quien ?? ''}
+                monto={quitando?.monto ?? 0}
+                detalle={quitando ? [{ concepto: quitando.concepto, monto: quitando.monto }] : []}
+                consecuencia="Esto es para lo que se apuntó por error: deja de deberlo y no queda rastro. Si lo pagó, usa «Pagó»."
+                etiquetaConfirmar="Quitar"
+                peligrosa
+                accion={quitando ? `/panel/fiados/${quitando.uuid}` : ''}
+                metodo="delete"
+            />
+
+            <ConfirmarDinero
+                abierto={reabriendo !== null}
+                alCerrar={() => setReabriendo(null)}
+                titulo="Deshacer el cobro"
+                quien={reabriendo?.quien ?? ''}
+                monto={reabriendo?.monto ?? 0}
+                consecuencia="Vuelve a deberlo. Se reabre todo lo que se cobró en ese mismo momento, no solo esta línea."
+                etiquetaConfirmar="Vuelve a deber"
+                accion={reabriendo ? `/panel/fiados/${reabriendo.uuid}/reabrir` : ''}
+                metodo="patch"
+            />
         </>
     );
 }

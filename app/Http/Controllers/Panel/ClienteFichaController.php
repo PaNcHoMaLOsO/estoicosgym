@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use Illuminate\Support\Carbon;
@@ -112,6 +113,50 @@ class ClienteFichaController extends Controller
                         (int) ($i->precio_final ?? $i->precio_base) - (int) ($i->abonado ?? 0),
                     )),
             ],
+
+            /*
+             * Lo que debe del meson, SEPARADO de lo de arriba.
+             *
+             * Son dos deudas distintas y se cobran distinto: la membresia por
+             * Pagos, y esto en la libreta. Sumarlas daria una cifra que no se
+             * puede cobrar de una vez y que no cuadra con ningun informe.
+             *
+             * Va en la ficha porque es donde se mira cuando la persona esta
+             * delante: si viene a pagar su mensualidad y ademas debe tres
+             * bebidas, hay que saberlo en ese momento y no dos semanas despues.
+             */
+            'fiado' => $this->loQueDebeDelMeson($cliente),
         ]);
+    }
+
+    /**
+     * Lo que este socio debe de la libreta del mesón.
+     *
+     * Devuelve null cuando no debe nada: así la pantalla no tiene que decidir
+     * si un cero se enseña o no, y un aviso que dice «debe $0» es peor que
+     * ninguno.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function loQueDebeDelMeson(Cliente $cliente): ?array
+    {
+        $lineas = Fiado::debiendo()
+            ->where('id_cliente', $cliente->id)
+            ->orderBy('created_at')
+            ->get();
+
+        if ($lineas->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'total' => (int) $lineas->sum('monto'),
+            'cuantas' => $lineas->count(),
+            'desde' => $lineas->min('created_at')?->format('d/m/Y'),
+            'lineas' => $lineas->map(fn (Fiado $f) => [
+                'concepto' => $f->concepto,
+                'monto' => $f->monto,
+            ])->values()->all(),
+        ];
     }
 }

@@ -349,6 +349,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/fiados/buscar-socio', [\App\Http\Controllers\Panel\FiadoController::class, 'buscar'])->name('fiados.buscar');
         Route::post('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'store'])->name('fiados.store');
         Route::post('/fiados/saldar', [\App\Http\Controllers\Panel\FiadoController::class, 'saldar'])->name('fiados.saldar');
+        // Deshacer un «Pago» mal dado: sin esto, la deuda desaparece y hay que
+        // volver a apuntarla a mano inventando conceptos y montos.
+        Route::patch('/fiados/{fiado}/reabrir', [\App\Http\Controllers\Panel\FiadoController::class, 'reabrir'])->name('fiados.reabrir');
         Route::delete('/fiados/{fiado}', [\App\Http\Controllers\Panel\FiadoController::class, 'destroy'])->name('fiados.destroy');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/crear', [\App\Http\Controllers\Panel\ClienteController::class, 'create'])->name('clientes.create');

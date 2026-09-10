@@ -408,6 +408,124 @@ class LibretaDelMesonTest extends CasoConCatalogos
         );
     }
 
+    // ---------- Deshacer un cobro ----------
+
+    /**
+     * HACE FALTA PODER DESHACERLO.
+     *
+     * «Pago» es un boton y equivocarse de fila es un clic. Sin esto, la deuda
+     * de esa persona desaparece y la unica forma de recuperarla es apuntarsela
+     * otra vez a mano, inventando conceptos y montos que ya nadie recuerda.
+     */
+    public function test_se_puede_deshacer_un_cobro_mal_dado(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+        $this->assertSame(0, Fiado::debiendo()->count());
+
+        $unaLinea = Fiado::where('id_cliente', $socio->id)->first();
+
+        $this->como()->patch("/panel/fiados/{$unaLinea->uuid}/reabrir")
+            ->assertSessionHasNoErrors();
+
+        // Se reabre el COBRO ENTERO, no solo la linea que se pulso: cobrar es
+        // un gesto y deshacerlo tiene que deshacer el gesto entero.
+        $this->assertSame(4000, (int) Fiado::debiendo()->sum('monto'));
+    }
+
+    /** Deshacer a uno no reabre la cuenta de otro. */
+    public function test_deshacer_no_toca_el_cobro_de_otra_persona(): void
+    {
+        $uno = Cliente::factory()->create(['activo' => true]);
+        $otro = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $uno->id, 'nombre' => null, 'monto' => 1000]);
+        $this->fiar(['id_cliente' => $otro->id, 'nombre' => null, 'monto' => 2000]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $otro->id]);
+
+        $deUno = Fiado::where('id_cliente', $uno->id)->first();
+        $this->como()->patch("/panel/fiados/{$deUno->uuid}/reabrir");
+
+        $this->assertSame(1000, (int) Fiado::debiendo()->sum('monto'));
+        $this->assertTrue(Fiado::where('id_cliente', $otro->id)->first()->pagado);
+    }
+
+    public function test_no_se_reabre_algo_que_no_estaba_cobrado(): void
+    {
+        $this->fiar();
+        $fiado = Fiado::firstOrFail();
+
+        $this->como()->patch("/panel/fiados/{$fiado->uuid}/reabrir")
+            ->assertSessionHas('error');
+    }
+
+    // ---------- El aviso en la ficha del socio ----------
+
+    /**
+     * Si viene a pagar su mensualidad y ademas debe tres bebidas, hay que
+     * saberlo con la persona delante, no dos semanas despues.
+     */
+    public function test_la_ficha_del_socio_avisa_de_lo_que_debe_del_meson(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Barra', 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Bebida', 'monto' => 1500]);
+
+        $fiado = $this->como()->get("/panel/clientes/{$socio->uuid}")
+            ->viewData('page')['props']['fiado'];
+
+        $this->assertSame(4000, $fiado['total']);
+        $this->assertSame(2, $fiado['cuantas']);
+    }
+
+    /** Sin deuda no hay aviso: uno que diga «debe $0» es peor que ninguno. */
+    public function test_la_ficha_no_avisa_si_no_debe_nada(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->assertNull(
+            $this->como()->get("/panel/clientes/{$socio->uuid}")->viewData('page')['props']['fiado']
+        );
+    }
+
+    /** Y lo ya cobrado deja de avisar. */
+    public function test_la_ficha_deja_de_avisar_cuando_paga(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+
+        $this->assertNull(
+            $this->como()->get("/panel/clientes/{$socio->uuid}")->viewData('page')['props']['fiado']
+        );
+    }
+
+    /**
+     * La deuda del meson NO se suma a la de su membresia.
+     *
+     * Son dos deudas que se cobran por sitios distintos: sumarlas daria una
+     * cifra que no se puede cobrar de una vez y que no cuadra con ningun
+     * informe.
+     */
+    public function test_la_deuda_del_meson_va_aparte_de_la_de_la_membresia(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 3000]);
+
+        $props = $this->como()->get("/panel/clientes/{$socio->uuid}")->viewData('page')['props'];
+
+        $this->assertSame(3000, $props['fiado']['total']);
+        $this->assertSame(0, $props['resumen']['debe'], 'Lo fiado se colo en la deuda de membresias.');
+    }
+
     // ---------- El dinero y quién lo ve ----------
 
     /**
