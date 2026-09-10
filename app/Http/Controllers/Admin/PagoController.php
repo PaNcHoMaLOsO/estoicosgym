@@ -9,6 +9,7 @@ use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Services\RegistroPagoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -281,210 +282,37 @@ class PagoController extends Controller
      * Store a newly created resource in storage.
      * Soporta tres modos: abono parcial, pago completo, pago mixto
      */
-    public function store(Request $request)
+    /**
+     * Registra un pago.
+     *
+     * Las validaciones, los saldos y las tres formas de cobrar viven en
+     * RegistroPagoService: el panel de React hace este mismo cobro y no puede
+     * haber dos copias de doscientas lineas que se separen a la primera
+     * correccion.
+     */
+    public function store(Request $request, RegistroPagoService $registro)
     {
+        // Se valida ANTES de reservar el turno del envio. Si se reservase antes,
+        // un formulario rechazado por un dato mal lo dejaria pillado y quien lo
+        // corrige no podria reenviar.
+        $resultado = $registro->validar($request);
 
-        // VALIDACIÓN: Verificar estado de inscripción antes de crear pago
-        $inscripcionCheck = Inscripcion::find($request->input('id_inscripcion'));
-        if ($inscripcionCheck) {
-            // No permitir pagos en inscripciones finalizadas (Cancelada, Cambiada, Traspasada)
-            if (in_array($inscripcionCheck->id_estado, EstadosCodigo::INSCRIPCION_FINALIZADOS)) {
-                $estadoNombre = EstadosCodigo::getNombre($inscripcionCheck->id_estado);
-                return back()->with('error', "No se puede registrar pago para una inscripción con estado '{$estadoNombre}'.");
-            }
-            // Verificar que el cliente esté activo
-            if ($inscripcionCheck->cliente && !$inscripcionCheck->cliente->activo) {
-                return back()->with('error', 'No se puede registrar pago para un cliente inactivo.');
-            }
-
-            // DETECCIÓN DE PAGO DUPLICADO: mismo monto + misma inscripción + misma fecha (ventana de 5 min)
-            $montoEnviado = intval($request->input('monto_abonado', 0));
-            $fechaEnviada = $request->input('fecha_pago');
-            if ($montoEnviado > 0 && $fechaEnviada) {
-                $pagoReciente = Pago::where('id_inscripcion', $inscripcionCheck->id)
-                    ->where('monto_abonado', $montoEnviado)
-                    ->where('fecha_pago', $fechaEnviada)
-                    ->where('created_at', '>=', now()->subMinutes(5))
-                    ->exists();
-                if ($pagoReciente) {
-                    return back()->with('error', 'Ya se registró un pago idéntico (mismo monto y fecha) hace menos de 5 minutos para esta inscripción. Si es intencional, espere unos minutos e inténtelo de nuevo.')
-                        ->withInput();
-                }
-            }
-        }
-
-        $tipoPago = $request->input('tipo_pago', 'abono');
-        
-        // Validaciones base
-        $baseRules = [
-            'id_inscripcion' => 'required|exists:inscripciones,id',
-            'tipo_pago' => 'required|in:abono,completo,mixto',
-            'fecha_pago' => 'required|date|before_or_equal:today',
-            'referencia_pago' => 'nullable|string|max:100',
-            'observaciones' => 'nullable|string|max:500',
-            'cantidad_cuotas' => 'nullable|integer|min:1|max:12',
-        ];
-        
-        // Método de pago requerido solo para abono y completo
-        if ($tipoPago !== 'mixto') {
-            $baseRules['id_metodo_pago'] = 'required|exists:metodos_pago,id';
-        } else {
-            // Para mixto, validar los dos métodos
-            $baseRules['id_metodo_pago1'] = 'required|exists:metodos_pago,id';
-            $baseRules['id_metodo_pago2'] = 'required|exists:metodos_pago,id|different:id_metodo_pago1';
-            $baseRules['monto_metodo1'] = 'required|integer|min:1';
-            $baseRules['monto_metodo2'] = 'required|integer|min:1';
-        }
-        
-        $validated = $request->validate($baseRules);
-
-        $inscripcion = Inscripcion::findOrFail($validated['id_inscripcion']);
-        $montoTotal = $inscripcion->precio_final ?? $inscripcion->precio_base;
-
-        // Validar que hay saldo pendiente
-        $montoPagado = $inscripcion->pagos()->sum('monto_abonado');
-        if ($montoPagado >= $montoTotal) {
-            return back()->withErrors([
-                'id_inscripcion' => "Esta inscripción ya está pagada completamente"
-            ])->withInput();
-        }
-
-        $montoAbonado = 0;
-        $montoPendiente = $montoTotal - $montoPagado;
-
-        // ABONO PARCIAL
-        if ($tipoPago === 'abono') {
-            $request->validate([
-                'monto_abonado' => 'required|integer|min:1000|max:' . intval($montoPendiente),
-            ]);
-
-            $montoAbonado = $request->input('monto_abonado');
-
-            if ($montoAbonado < 1000 || $montoAbonado > $montoPendiente) {
-                return back()->withErrors([
-                    'monto_abonado' => "El monto debe ser entre $1.000 y $" . number_format($montoPendiente, 0, ',', '.') . " (saldo pendiente)"
-                ])->withInput();
-            }
-        }
-        // PAGO COMPLETO
-        else if ($tipoPago === 'completo') {
-            // Validación ya hecha arriba
-
-            $montoAbonado = $montoPendiente;
-        }
-        // PAGO MIXTO
-        else if ($tipoPago === 'mixto') {
-            $monto1 = intval($request->input('monto_metodo1', 0));
-            $monto2 = intval($request->input('monto_metodo2', 0));
-            
-            // Validar que cada monto individual sea positivo y no exceda el saldo pendiente
-            if ($monto1 <= 0 || $monto2 <= 0) {
-                return back()->withErrors([
-                    'monto_metodo1' => "Ambos montos deben ser mayores a $0"
-                ])->withInput();
-            }
-            
-            if ($monto1 > $montoPendiente || $monto2 > $montoPendiente) {
-                return back()->withErrors([
-                    'monto_metodo1' => "Ningún monto puede exceder el saldo pendiente ($" . number_format($montoPendiente, 0, ',', '.') . ")"
-                ])->withInput();
-            }
-            
-            $montoAbonado = $monto1 + $monto2;
-
-            if ($montoAbonado != intval($montoPendiente)) {
-                return back()->withErrors([
-                    'monto_metodo1' => "La suma de los montos debe ser exactamente " . number_format($montoPendiente, 0, ',', '.') . " (saldo pendiente)"
-                ])->withInput();
-            }
-            
-            // Validar que los métodos sean diferentes (respaldo servidor)
-            if ($validated['id_metodo_pago1'] == $validated['id_metodo_pago2']) {
-                return back()->withErrors([
-                    'id_metodo_pago2' => "Los métodos de pago deben ser diferentes"
-                ])->withInput();
-            }
-        }
-
-        $cantidadCuotas = $validated['cantidad_cuotas'] ?? 1;
-        $montoCuota = $montoAbonado / $cantidadCuotas;
-
-        // Obtener códigos de estados (la FK referencia a codigo, no a id)
-        $nuevoSaldoPendiente = $montoPendiente - $montoAbonado;
-        $idEstado = $nuevoSaldoPendiente <= 0 ? 201 : 202; // 201=Pagado, 202=Parcial
-
-        // Crear pago
-        // monto_total SIEMPRE es el precio total de la inscripción (no el saldo parcial)
-        $idCliente = $inscripcion->id_cliente;
-        $precioTotalInscripcion = $inscripcion->precio_final ?? $inscripcion->precio_base;
-        
-        // Preparar datos del pago
-        $datosPago = [
-            'id_inscripcion' => $validated['id_inscripcion'],
-            'id_cliente' => $idCliente,
-            'monto_total' => $precioTotalInscripcion,
-            'monto_abonado' => $montoAbonado,
-            'monto_pendiente' => $nuevoSaldoPendiente,
-            'cantidad_cuotas' => $cantidadCuotas,
-            'numero_cuota' => 1,
-            'monto_cuota' => $montoCuota,
-            'fecha_pago' => $validated['fecha_pago'],
-            'periodo_inicio' => $inscripcion->fecha_inicio,
-            'periodo_fin' => $inscripcion->fecha_vencimiento,
-            // La UI usa 'abono'; la BD guarda ese caso como 'parcial' (enum de la tabla pagos)
-            'tipo_pago' => $tipoPago === 'abono' ? 'parcial' : $tipoPago,
-            'referencia_pago' => $validated['referencia_pago'] ?? null,
-            'observaciones' => $validated['observaciones'] ?? null,
-            'id_estado' => $idEstado,
-        ];
-        
-        // Agregar campos según tipo de pago
-        if ($tipoPago === 'mixto') {
-            $datosPago['id_metodo_pago'] = $validated['id_metodo_pago1'];
-            $datosPago['id_metodo_pago2'] = $validated['id_metodo_pago2'];
-            $datosPago['monto_metodo1'] = $request->input('monto_metodo1');
-            $datosPago['monto_metodo2'] = $request->input('monto_metodo2');
-        } else {
-            $datosPago['id_metodo_pago'] = $validated['id_metodo_pago'];
-        }
-        
-        // El turno del envio se reserva AQUI, justo antes de escribir, y no al
-        // entrar: asi un formulario rechazado por validacion no deja el turno
-        // pillado y se puede corregir y reenviar. Cache::add() decide el empate
-        // en una sola operacion, que es lo que faltaba cuando los pagos se
-        // duplicaban con el doble clic.
         if (! $this->validateFormToken($request, 'pago_create')) {
             return back()->with('error', 'Este pago ya se registró. Revísalo en el listado antes de repetirlo.');
         }
 
-        $pago = Pago::create($datosPago);
+        try {
+            $pago = $registro->registrar($resultado);
+        } catch (\Throwable $e) {
+            Log::error('Error al registrar pago: ' . $e->getMessage());
+            // No se creo nada: se devuelve el turno para poder reintentar.
+            $this->releaseFormToken($request, 'pago_create');
 
-        // 📧 ENVIAR NOTIFICACIÓN SI EL PAGO ESTÁ COMPLETO
-        if ($idEstado == 201) { // Pago completado
-            try {
-                $notificacionService = app(\App\Services\NotificacionService::class);
-                $inscripcion->load(['cliente', 'membresia', 'pagos']);
-                
-                // Usar crearNotificacion para que use la plantilla HTML con datos dinámicos
-                $tipoNotificacion = \App\Models\TipoNotificacion::where('codigo', \App\Models\TipoNotificacion::PAGO_COMPLETADO)
-                    ->where('activo', true)
-                    ->first();
-                    
-                if ($tipoNotificacion && $inscripcion->cliente->email) {
-                    $notificacionService->crearNotificacion($tipoNotificacion, $inscripcion);
-                    \Illuminate\Support\Facades\Log::info("Notificación de pago completado programada para inscripción #{$inscripcion->id}");
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Error al programar notificación de pago completado: " . $e->getMessage());
-                // No interrumpir el flujo si falla el envío del email
-            }
+            return back()->withInput()->with('error', 'No se pudo registrar el pago. Inténtalo nuevamente.');
         }
 
-        // Invalidar token para prevenir doble envío
-        $this->invalidateFormToken($request, 'pago_create');
-
         return redirect()->route('admin.pagos.show', $pago->uuid)
-            ->with('success', "Pago registrado exitosamente ({$tipoPago}). Verifica los detalles abajo.");
+            ->with('success', "Pago registrado exitosamente ({$resultado['tipo']}). Verifica los detalles abajo.");
     }
 
     /**

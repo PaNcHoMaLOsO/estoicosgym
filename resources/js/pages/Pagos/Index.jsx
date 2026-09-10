@@ -42,7 +42,7 @@ export default function Index({ pagos, filtros, resumen }) {
                 <h1 className="text-lg font-semibold text-chalk">Pagos</h1>
 
                 <Link
-                    href="/admin/pagos/create"
+                    href="/panel/pagos/cobrar"
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />

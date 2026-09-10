@@ -160,6 +160,102 @@ class RegistroDePagosTest extends CasoConCatalogos
     }
 
     /**
+     * El panel nuevo cobra por el MISMO servicio que el de Blade.
+     *
+     * Es lo que se gana al sacar las doscientas lineas del controlador: si
+     * manana se corrige una regla, se corrige para los dos. Estas pruebas
+     * fallarian si alguien volviera a copiar la logica en uno de los dos.
+     */
+    public function test_el_panel_nuevo_registra_un_cobro_completo(): void
+    {
+        $inscripcion = $this->inscripcionDe(50000);
+
+        $this->actingAs($this->administrador())
+            ->post('/panel/pagos/registrar', $this->datosDePago($inscripcion, [
+                'tipo_pago' => 'completo',
+            ]));
+
+        $pago = Pago::latest('id')->first();
+
+        $this->assertNotNull($pago, 'El panel no registró el cobro.');
+        $this->assertSame(50000, (int) $pago->monto_abonado, 'Un cobro completo debe saldar el total.');
+        $this->assertSame(0, (int) $pago->monto_pendiente);
+        $this->assertSame(self::ESTADO_PAGADO, (int) $pago->id_estado);
+    }
+
+    /** Un mixto que suma el saldo exacto queda Pagado, tambien desde el panel. */
+    public function test_el_panel_nuevo_registra_un_mixto_que_salda_la_deuda(): void
+    {
+        $inscripcion = $this->inscripcionDe(60000);
+        $metodos = MetodoPago::take(2)->pluck('id');
+
+        $this->actingAs($this->administrador())
+            ->post('/panel/pagos/registrar', [
+                'form_submit_token' => uniqid('mix', true),
+                'id_inscripcion' => $inscripcion->id,
+                'tipo_pago' => 'mixto',
+                'id_metodo_pago1' => $metodos[0],
+                'id_metodo_pago2' => $metodos[1],
+                'monto_metodo1' => 40000,
+                'monto_metodo2' => 20000,
+                'fecha_pago' => now()->format('Y-m-d'),
+            ]);
+
+        $pago = Pago::latest('id')->first();
+
+        $this->assertNotNull($pago, 'No se registró el pago mixto.');
+        $this->assertSame(self::ESTADO_PAGADO, (int) $pago->id_estado);
+        $this->assertSame(0, (int) $pago->monto_pendiente);
+    }
+
+    /** Los dos montos de un mixto tienen que sumar el saldo, ni mas ni menos. */
+    public function test_un_mixto_que_no_suma_el_saldo_se_rechaza(): void
+    {
+        $inscripcion = $this->inscripcionDe(60000);
+        $metodos = MetodoPago::take(2)->pluck('id');
+
+        $this->actingAs($this->administrador())
+            ->post('/panel/pagos/registrar', [
+                'form_submit_token' => uniqid('mix', true),
+                'id_inscripcion' => $inscripcion->id,
+                'tipo_pago' => 'mixto',
+                'id_metodo_pago1' => $metodos[0],
+                'id_metodo_pago2' => $metodos[1],
+                'monto_metodo1' => 1000,
+                'monto_metodo2' => 1000,
+                'fecha_pago' => now()->format('Y-m-d'),
+            ])
+            ->assertSessionHasErrors('monto_metodo1');
+
+        $this->assertSame(0, Pago::count());
+    }
+
+    /** No se cobra sobre una membresia cancelada: el dinero iria a la nada. */
+    public function test_no_se_cobra_sobre_una_inscripcion_cancelada(): void
+    {
+        $inscripcion = $this->inscripcionDe();
+        $inscripcion->update(['id_estado' => 103]);
+
+        $this->actingAs($this->administrador())
+            ->post('/panel/pagos/registrar', $this->datosDePago($inscripcion))
+            ->assertSessionHasErrors('id_inscripcion');
+
+        $this->assertSame(0, Pago::count());
+    }
+
+    /** Ni a un socio dado de baja. */
+    public function test_no_se_cobra_a_un_socio_inactivo(): void
+    {
+        $inscripcion = $this->inscripcionDe();
+        $inscripcion->cliente->update(['activo' => false]);
+
+        $this->actingAs($this->administrador())
+            ->post('/panel/pagos/registrar', $this->datosDePago($inscripcion))
+            ->assertSessionHasErrors('id_inscripcion');
+
+        $this->assertSame(0, Pago::count());
+    }
+    /**
      * Estado que el servicio le pone a un pago mixto.
      *
      * Se llama al metodo privado con reflexion en vez de dar el alta completa:

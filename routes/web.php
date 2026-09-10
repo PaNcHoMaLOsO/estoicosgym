@@ -297,6 +297,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'store'])->name('clientes.store');
         Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
         Route::get('/pagos', [\App\Http\Controllers\Panel\PagoController::class, 'index'])->name('pagos.index');
+        Route::get('/pagos/cobrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'create'])->name('pagos.create');
+        // El alta no cuelga de POST /pagos porque ese nombre ya lo ocupa el
+        // listado y `Permisos` deduce la accion del nombre de la ruta.
+        Route::post('/pagos/registrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'store'])->name('pagos.store');
         Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
         Route::get('/notificaciones', [\App\Http\Controllers\Panel\NotificacionController::class, 'index'])->name('notificaciones.index');
 
