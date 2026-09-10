@@ -11,6 +11,7 @@ use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
 use App\Services\RegistroInscripcionService;
+use App\Support\Ajustes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -25,15 +26,19 @@ use Inertia\Inertia;
  */
 class InscripcionRenovarController extends Controller
 {
+    use ValidatesFormToken;
+
     /**
-     * Con más de un mes por delante no hay nada que renovar.
+     * Con demasiado por delante no hay nada que renovar.
      *
      * Renovar antes de tiempo corta la membresía en curso: el socio pierde los
-     * días que le quedaban.
+     * días que le quedaban. Cuántos son sale de Configuración: cada gimnasio lo
+     * lleva distinto y antes estaba escrito aquí, donde nadie podía cambiarlo.
      */
-    private const DIAS_PARA_PODER_RENOVAR = 30;
-
-    use ValidatesFormToken;
+    private function diasParaPoderRenovar(): int
+    {
+        return Ajustes::numero('reglas.dias_para_renovar');
+    }
 
     public function create(Inscripcion $inscripcion)
     {
@@ -120,8 +125,10 @@ class InscripcionRenovarController extends Controller
 
         $dias = $this->diasQueQuedan($inscripcion);
 
-        if ($inscripcion->id_estado === EstadosCodigo::INSCRIPCION_ACTIVA && $dias > self::DIAS_PARA_PODER_RENOVAR) {
-            return "Todavía le quedan {$dias} días. Se puede renovar cuando falten " . self::DIAS_PARA_PODER_RENOVAR . ' o menos.';
+        $margen = $this->diasParaPoderRenovar();
+
+        if ($inscripcion->id_estado === EstadosCodigo::INSCRIPCION_ACTIVA && $dias > $margen) {
+            return "Todavía le quedan {$dias} días. Se puede renovar cuando falten {$margen} o menos.";
         }
 
         return null;

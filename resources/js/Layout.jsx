@@ -1,8 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    BadgePercentIcon,
     BellIcon,
-    Building2Icon,
     ChartNoAxesColumnIcon,
     ClipboardListIcon,
     CreditCardIcon,
@@ -13,11 +11,9 @@ import {
     MonitorIcon,
     NotebookPenIcon,
     MoonIcon,
-    ScrollTextIcon,
+    SettingsIcon,
     SunIcon,
-    Trash2Icon,
     UsersIcon,
-    WalletIcon,
     XIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -81,14 +77,16 @@ const GRUPOS = [
  * escondidas tras un desplegable: son pocas y quien entra a crear una membresia
  * nueva no deberia tener que adivinar donde vive.
  */
+/*
+ * UNA sola entrada, no cinco.
+ *
+ * Antes estaban sueltas —planes, convenios, metodos, motivos y papelera— sin
+ * nada que dijera que van juntas, y ocupaban la mitad del carril siendo lo que
+ * menos se abre. Ahora se entra por Configuracion y dentro esta todo, con sus
+ * cuentas a la vista para saber si algo falta antes de necesitarlo.
+ */
 const CONFIGURACION = [
-    { href: '/panel/membresias', etiqueta: 'Membresías', Icono: ScrollTextIcon, permiso: 'configuracion.ver' },
-    { href: '/panel/convenios', etiqueta: 'Convenios', Icono: Building2Icon, permiso: 'configuracion.ver' },
-    { href: '/panel/metodos-pago', etiqueta: 'Métodos de pago', Icono: WalletIcon, permiso: 'configuracion.ver' },
-    { href: '/panel/motivos-descuento', etiqueta: 'Motivos de descuento', Icono: BadgePercentIcon, permiso: 'configuracion.ver' },
-    // La ultima del grupo a proposito: se entra buscando algo que se
-    // borro por error, no todos los dias.
-    { href: '/panel/papelera', etiqueta: 'Papelera', Icono: Trash2Icon, permiso: 'configuracion.ver' },
+    { href: '/panel/configuracion', etiqueta: 'Configuración', Icono: SettingsIcon, permiso: 'configuracion.ver' },
 ];
 
 const TEMAS = [

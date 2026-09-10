@@ -82,6 +82,9 @@ class Permisos
         // catalogos— y devolver algo borrado no es tarea de meson: cae en
         // configuracion, como el resto de lo que se toca de tarde en tarde.
         'papelera' => 'configuracion',
+        // La pantalla de ajustes: quien cambia el nombre del gimnasio o
+        // cada cuantos dias se avisa de un vencimiento.
+        'configuracion' => 'configuracion',
         'resumen' => 'clientes',
         // El bloc de notas del meson va con el trabajo de meson: quien
         // atiende apunta lo que hay que hacer hoy.

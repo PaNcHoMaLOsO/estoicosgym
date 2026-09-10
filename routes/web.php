@@ -462,6 +462,16 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/notificaciones/{notificacion}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'notificacion'])->name('notificaciones.show');
 
         // Catalogos de configuracion.
+        /*
+         * Configuracion: UNA sola puerta.
+         *
+         * Antes eran cinco entradas sueltas en el menu sin nada que dijera que
+         * van juntas. Los cuatro catalogos siguen teniendo su pantalla —cada
+         * uno es una tabla con su alta y su edicion— pero se entra por aqui.
+         */
+        Route::get('/configuracion', [\App\Http\Controllers\Panel\AjustesController::class, 'index'])->name('configuracion.index');
+        Route::put('/configuracion', [\App\Http\Controllers\Panel\AjustesController::class, 'update'])->name('configuracion.update');
+
         Route::get('/membresias', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'membresias'])->name('membresias.index');
         Route::get('/membresias/{membresia}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'membresia'])->name('membresias.show');
         Route::get('/convenios', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'convenios'])->name('convenios.index');

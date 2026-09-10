@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Notificacion;
 use App\Models\TipoNotificacion;
+use App\Support\Ajustes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -29,8 +30,15 @@ class EnvioMasivoService
      * No es un capricho: los correos salen uno a uno en la misma petición, y
      * pasado ese número el servidor corta antes de terminar. Con un gimnasio
      * más grande esto tiene que irse a una cola.
+     *
+     * Sale de Configuración por si el servidor de otro aguanta más, pero
+     * subirlo sin saberlo es como quitarle el tope: la lista se corta igual,
+     * solo que más tarde.
      */
-    public const TOPE = 150;
+    public static function tope(): int
+    {
+        return Ajustes::numero('correo.tope_masivo');
+    }
 
     public function __construct(private readonly CorreoService $correo)
     {
@@ -108,12 +116,14 @@ class EnvioMasivoService
             ]);
         }
 
-        if ($socios->count() > self::TOPE) {
+        $tope = self::tope();
+
+        if ($socios->count() > $tope) {
             throw ValidationException::withMessages([
                 'grupo' => sprintf(
                     'Ese grupo son %d socios y de una vez caben %d. Elige un grupo más pequeño.',
                     $socios->count(),
-                    self::TOPE
+                    $tope
                 ),
             ]);
         }

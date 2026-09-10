@@ -37,7 +37,7 @@ class NotificacionMasivaController extends Controller
                 ->orderBy('nombre')
                 ->get(['id', 'nombre']),
             'variables' => EnvioMasivoService::variables(),
-            'tope' => EnvioMasivoService::TOPE,
+            'tope' => EnvioMasivoService::tope(),
             'formToken' => (string) Str::uuid(),
         ]);
     }

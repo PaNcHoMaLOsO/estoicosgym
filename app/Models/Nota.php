@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Ajustes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,10 +57,13 @@ class Nota extends Model
     /**
      * A partir de cuántos días una nota pendiente pide una decisión.
      *
-     * Tres: lo que se apunta en el mesón se hace ese día o al siguiente. Lo que
-     * lleva tres días ahí ya no se va a hacer solo.
+     * Sale de Configuración: lo que en un gimnasio son tres días en otro son
+     * diez, y antes estaba escrito aquí donde nadie podía tocarlo.
      */
-    public const DIAS_PARA_ENVEJECER = 3;
+    private static function diasParaEnvejecer(): int
+    {
+        return Ajustes::numero('meson.dias_nota_vieja');
+    }
 
     /**
      * ¿Lleva demasiado sin que nadie la toque?
@@ -75,7 +79,7 @@ class Nota extends Model
             return false;
         }
 
-        return $this->created_at->startOfDay()->diffInDays(today()) >= self::DIAS_PARA_ENVEJECER;
+        return $this->created_at->startOfDay()->diffInDays(today()) >= self::diasParaEnvejecer();
     }
 
     /**

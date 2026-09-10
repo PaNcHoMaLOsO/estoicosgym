@@ -232,7 +232,7 @@ class EnvioMasivoTest extends CasoConCatalogos
         $this->fingirCorreo();
 
         Cliente::factory()
-            ->count(EnvioMasivoService::TOPE + 1)
+            ->count(EnvioMasivoService::tope() + 1)
             ->create(['activo' => true]);
 
         $this->enviar(['grupo' => 'todos'])->assertSessionHasErrors('grupo');
