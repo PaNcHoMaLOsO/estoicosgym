@@ -41,7 +41,7 @@ export default function Membresias({ membresias }) {
                     <Fila key={membresia.uuid}>
                         <Celda className="font-medium text-chalk">
                             <Link
-                                href={`/admin/membresias/${membresia.uuid}`}
+                                href={`/panel/membresias/${membresia.uuid}`}
                                 className="hover:underline"
                             >
                                 {membresia.nombre}

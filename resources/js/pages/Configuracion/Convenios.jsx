@@ -34,7 +34,7 @@ export default function Convenios({ convenios }) {
                 {convenios.map((convenio) => (
                     <Fila key={convenio.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/admin/convenios/${convenio.uuid}`} className="hover:underline">
+                            <Link href={`/panel/convenios/${convenio.uuid}`} className="hover:underline">
                                 {convenio.nombre}
                             </Link>
                         </Celda>

@@ -71,7 +71,7 @@ export default function Index({ notificaciones, filtros, resumen }) {
                 {notificaciones.data.map((n) => (
                     <Fila key={n.uuid}>
                         <Celda className="text-chalk">
-                            <Link href={`/admin/notificaciones/${n.uuid}`} className="hover:underline">
+                            <Link href={`/panel/notificaciones/${n.uuid}`} className="hover:underline">
                                 {n.socio}
                             </Link>
                             <span className="apoyo block text-fog">{n.email}</span>
