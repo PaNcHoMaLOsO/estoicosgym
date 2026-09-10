@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadosCodigo;
 use App\Models\Cliente;
+use App\Models\HistorialCambio;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Models\Pago;
@@ -43,14 +44,21 @@ class RegistroInscripcionService
      *
      * @throws ValidationException
      */
-    public function validar(Request $request): array
+    public function validar(Request $request, bool $exigirQuePuedaInscribirse = true): array
     {
         $forma = (string) $request->input('tipo_pago', 'completo');
 
         $datos = $request->validate($this->reglas($forma), $this->mensajes());
 
         $cliente = Cliente::find($datos['id_cliente']);
-        $this->exigirClienteInscribible($cliente);
+
+        // Al renovar NO se comprueba: el socio tiene una membresia vigente
+        // justamente porque la esta renovando.
+        if ($exigirQuePuedaInscribirse) {
+            $this->exigirClienteInscribible($cliente);
+        } elseif (! $cliente) {
+            throw ValidationException::withMessages(['id_cliente' => 'Ese socio no existe.']);
+        }
 
         $membresia = Membresia::findOrFail($datos['id_membresia']);
         $precio = $this->precioVigente($membresia);
@@ -105,6 +113,44 @@ class RegistroInscripcionService
     }
 
     /**
+     * Lo mismo, pero encadenando con la membresía que termina.
+     *
+     * El socio ya está: no se elige ni se comprueba que pueda inscribirse —tiene
+     * una membresía, por eso la está renovando—. El resto del cálculo es
+     * idéntico, así que se reutiliza entero.
+     *
+     * @return array<string,mixed>
+     *
+     * @throws ValidationException
+     */
+    public function validarRenovacion(Request $request, Inscripcion $anterior): array
+    {
+        $cliente = $anterior->cliente;
+
+        if (! $cliente) {
+            throw ValidationException::withMessages([
+                'id_cliente' => 'Esa membresía no tiene socio: no se puede renovar.',
+            ]);
+        }
+
+        // El formulario de renovar no pregunta a quién: se sabe. Se inyecta para
+        // que las reglas de validar() encuentren el campo que esperan.
+        $request->merge(['id_cliente' => $cliente->id]);
+
+        $resultado = $this->validar($request, exigirQuePuedaInscribirse: false);
+
+        $resultado['inscripcion'] += [
+            'es_cambio_plan' => true,
+            'tipo_cambio' => 'renovacion',
+            'id_inscripcion_anterior' => $anterior->id,
+        ];
+
+        $resultado['anterior'] = $anterior;
+
+        return $resultado;
+    }
+
+    /**
      * Guarda la inscripción y sus pagos en una sola transacción.
      *
      * @param array<string,mixed> $resultado lo que devolvió validar()
@@ -118,12 +164,41 @@ class RegistroInscripcionService
                 Pago::create($fila);
             }
 
+            if (isset($resultado['anterior'])) {
+                $this->cerrarLaAnterior($resultado['anterior'], $inscripcion);
+            }
+
             return $inscripcion;
         });
 
         $this->avisarAlSocio($inscripcion);
 
         return $inscripcion;
+    }
+
+    /**
+     * La membresía que se renueva DEJA DE ESTAR VIGENTE.
+     *
+     * Renovar no la cerraba: creaba la nueva y dejaba la vieja tal cual. Como se
+     * puede renovar hasta 30 días antes de que venza, el socio se quedaba con
+     * DOS membresías activas a la vez —contadas dos veces en el panel y en los
+     * informes— y encima la comprobación de «ya tiene una membresía activa»
+     * impedía volver a inscribirlo más adelante.
+     *
+     * Se marca Vencida y no Cancelada: su periodo terminó, no se anuló. Cancelar
+     * es otra cosa y se hace a mano.
+     */
+    private function cerrarLaAnterior(Inscripcion $anterior, Inscripcion $nueva): void
+    {
+        // El ayudante del modelo, que sabe qué columnas tiene la tabla.
+        // Escribirlo a mano era justo lo que fallaba: se ponían cuatro que no
+        // existen y se dejaban sin poner cuatro que son NOT NULL.
+        //
+        // ANTES de cerrarla: el historial anota de qué estado venía, y si se
+        // cerrara primero anotaría «de Vencida a Activa», que no dice nada.
+        HistorialCambio::registrarRenovacion($anterior, $nueva);
+
+        $anterior->update(['id_estado' => EstadosCodigo::INSCRIPCION_VENCIDA]);
     }
 
     /**

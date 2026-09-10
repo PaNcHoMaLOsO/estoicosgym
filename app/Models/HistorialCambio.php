@@ -133,6 +133,39 @@ class HistorialCambio extends Model
     /**
      * Registrar una pausa de inscripción
      */
+    /**
+     * Anota que una membresía se renovó en otra.
+     *
+     * Renovar escribía a mano cuatro columnas que NO EXISTEN en esta tabla
+     * —descripcion, datos_anteriores, datos_nuevos, id_usuario— y se dejaba sin
+     * poner cuatro que son NOT NULL. La fila se rechazaba siempre, y como iba
+     * dentro de la misma transacción que la renovación, se llevaba la
+     * renovación entera por delante.
+     */
+    public static function registrarRenovacion(Inscripcion $anterior, Inscripcion $nueva, $usuarioId = null)
+    {
+        return self::create([
+            'tipo_cambio' => 'renovacion',
+            'entidad' => 'inscripcion',
+            'entidad_id' => $nueva->id,
+            'cliente_id' => $nueva->id_cliente,
+            'inscripcion_id' => $nueva->id,
+            'estado_anterior' => $anterior->id_estado,
+            'estado_nuevo' => EstadosCodigo::INSCRIPCION_ACTIVA,
+            'detalles' => [
+                'inscripcion_anterior_id' => $anterior->id,
+                'plan_anterior' => $anterior->membresia?->nombre,
+                'vencia' => $anterior->fecha_vencimiento?->format('Y-m-d'),
+                'plan_nuevo' => $nueva->membresia?->nombre,
+                'empieza' => $nueva->fecha_inicio?->format('Y-m-d'),
+                'vence' => $nueva->fecha_vencimiento?->format('Y-m-d'),
+                'precio_final' => (int) $nueva->precio_final,
+            ],
+            'motivo' => "Renovación de la membresía #{$anterior->id}.",
+            'usuario_id' => $usuarioId ?? auth()->id(),
+        ]);
+    }
+
     public static function registrarPausa(Inscripcion $inscripcion, array $datosPausa, $usuarioId = null)
     {
         return self::create([

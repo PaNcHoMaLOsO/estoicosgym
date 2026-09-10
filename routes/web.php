@@ -340,6 +340,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/inscripciones/crear', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'create'])->name('inscripciones.create');
         Route::get('/inscripciones/buscar-socio', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'buscar'])->name('inscripciones.buscar-socio');
         Route::post('/inscripciones', [\App\Http\Controllers\Panel\InscripcionCrearController::class, 'store'])->name('inscripciones.store');
+        Route::get('/inscripciones/{inscripcion}/renovar', [\App\Http\Controllers\Panel\InscripcionRenovarController::class, 'create'])->name('inscripciones.renovar');
+        Route::post('/inscripciones/{inscripcion}/renovar', [\App\Http\Controllers\Panel\InscripcionRenovarController::class, 'store'])->name('inscripciones.renovar.store');
         // La ficha va DESPUES del alta, igual que en clientes: si fuera antes,
         // /inscripciones/crear entraria por {inscripcion} y buscaria una
         // membresia con uuid «crear».

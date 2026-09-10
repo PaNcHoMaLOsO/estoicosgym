@@ -15,7 +15,6 @@ use App\Models\Pago;
 use App\Models\HistorialTraspaso;
 use App\Models\HistorialCambio;
 use App\Models\TipoNotificacion;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Support\Facades\DB;
@@ -350,197 +349,11 @@ class InscripcionController extends Controller
                 : 'Inscripcion creada con pago registrado');
     }
 
-    /**
-     * Obtener el precio vigente de la membresía
-     *
-     * @param \App\Models\Membresia $membresia
-     * @param array $validated
-     * @return float
-     */
-    protected function obtenerPrecioMembresia(Membresia $membresia, array $validated)
-    {
-        $precioMembresia = $membresia->precios()
-            ->where('activo', true)
-            ->where('fecha_vigencia_desde', '<=', now())
-            ->orderBy('fecha_vigencia_desde', 'desc')
-            ->first();
 
-        // Si el plan no tiene precio vigente hay que PARAR, no cobrar cero.
-        // Antes esto devolvia 0 sin decir nada: un plan al que se le olvido
-        // cargar el precio renovaba gratis y no se notaba hasta cuadrar caja.
-        if (!$precioMembresia) {
-            throw ValidationException::withMessages([
-                'id_membresia' => "El plan «{$membresia->nombre}» no tiene un precio vigente cargado.",
-            ]);
-        }
 
-        return $precioMembresia->precio_normal;
-    }
 
-    /**
-     * Calcular el descuento total (convenio + adicional)
-     *
-     * @param \App\Models\Membresia $membresia
-     * @param array $validated
-     * @param float $precioBase
-     * @return float
-     */
-    protected function calcularDescuentoTotal(Membresia $membresia, array $validated, float $precioBase)
-    {
-        $descuentoConvenio = 0;
-        
-        // Descuento automático del convenio (si tiene precio_convenio definido)
-        if (!empty($validated['id_convenio'])) {
-            $precioMembresia = $membresia->precios()
-                ->where('activo', true)
-                ->where('fecha_vigencia_desde', '<=', now())
-                ->orderBy('fecha_vigencia_desde', 'desc')
-                ->first();
-            
-            if ($precioMembresia && $precioMembresia->precio_convenio) {
-                $descuentoConvenio = $precioBase - $precioMembresia->precio_convenio;
-            }
-        }
-        
-        $descuentoAdicional = (float) ($validated['descuento_aplicado'] ?? 0);
-        return max(0, $descuentoConvenio + $descuentoAdicional);
-    }
 
-    /**
-     * Calcular la fecha de vencimiento según duración de membresía
-     *
-     * @param \Carbon\Carbon $fechaInicio
-     * @param \App\Models\Membresia $membresia
-     * @return \Carbon\Carbon
-     */
-    protected function calcularFechaVencimiento(Carbon $fechaInicio, Membresia $membresia)
-    {
-        if ($membresia->duracion_dias && $membresia->duracion_dias > 0) {
-            return $fechaInicio->clone()->addDays($membresia->duracion_dias)->subDay();
-        }
-        
-        $duracionMeses = $membresia->duracion_meses ?? 1;
-        return $fechaInicio->clone()->addMonths($duracionMeses)->subDay();
-    }
 
-    /**
-     * Crear pago inicial para la inscripción
-     *
-     * @param \App\Models\Inscripcion $inscripcion
-     * @param array $validated
-     * @param float $precioFinal
-     * @return void
-     */
-    protected function crearPagoInicial(Inscripcion $inscripcion, array $validated, float $precioFinal)
-    {
-        // Ya NO hay cuotas - Los abonos se irán acumulando en la tabla pagos
-        $montoAbonado = $validated['monto_abonado'];
-        // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
-        $idEstadoPago = $montoAbonado >= $precioFinal ? 201 : 202;
-
-        Pago::create([
-            'id_inscripcion' => $inscripcion->id,
-            'id_cliente' => $validated['id_cliente'],
-            'monto_total' => $precioFinal,
-            'monto_abonado' => $montoAbonado,
-            'monto_pendiente' => max(0, $precioFinal - $montoAbonado),
-            'id_estado' => $idEstadoPago,
-            // La base dice «parcial» donde la pantalla dice «abono».
-            'tipo_pago' => $idEstadoPago === 202 ? 'parcial' : 'completo',
-            'id_metodo_pago' => $validated['id_metodo_pago'],
-            'fecha_pago' => $validated['fecha_pago'],
-            'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
-            'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
-        ]);
-    }
-
-    /**
-     * Crear pago pendiente cuando el cliente no paga al inscribirse
-     *
-     * @param \App\Models\Inscripcion $inscripcion
-     * @param array $validated
-     * @param float $precioFinal
-     * @return void
-     */
-    protected function crearPagoPendiente(Inscripcion $inscripcion, array $validated, float $precioFinal)
-    {
-        // Estado de PAGO: 200=Pendiente
-        Pago::create([
-            'id_inscripcion' => $inscripcion->id,
-            'id_cliente' => $validated['id_cliente'],
-            'monto_total' => $precioFinal,
-            'monto_abonado' => 0,
-            'monto_pendiente' => $precioFinal,
-            'id_estado' => 200, // Pendiente
-            // Sin esto la fila quedaba con el default de la columna,
-            // 'completo', o sea marcada como pagada entera sin un peso.
-            'tipo_pago' => 'pendiente',
-            // Sin metodo: todavia no se ha pagado, y poner «Efectivo» por
-            // defecto hacia que en los informes de caja apareciera efectivo
-            // que nadie entrego. La columna admite NULL.
-            'id_metodo_pago' => null,
-            // NO va NULL: la columna es NOT NULL y la fila entera se rechazaba,
-            // asi que elegir «pago pendiente» reventaba SIEMPRE. Se anota el
-            // dia en que nace la deuda, que es lo que hace falta para saber
-            // cuanto lleva sin pagar; el dia del cobro va en su propio pago.
-            'fecha_pago' => $validated['fecha_pago'] ?? now()->format('Y-m-d'),
-            'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
-            'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
-            'observaciones' => 'Pago pendiente - Sin abono al momento de inscripción',
-        ]);
-    }
-
-    /**
-     * Crear pagos mixtos (múltiples métodos de pago)
-     *
-     * @param \App\Models\Inscripcion $inscripcion
-     * @param array $validated
-     * @param float $precioFinal
-     * @return void
-     */
-    protected function crearPagoMixto(Inscripcion $inscripcion, array $validated, float $precioFinal)
-    {
-        // El detalle viene como JSON desde el formulario
-        $detallePagos = json_decode($validated['detalle_pagos_mixto'] ?? '[]', true);
-        
-        if (empty($detallePagos)) {
-            return;
-        }
-
-        $montoTotalAbonado = 0;
-        foreach ($detallePagos as $detalle) {
-            $montoTotalAbonado += (float) ($detalle['monto'] ?? 0);
-        }
-        
-        // Estados de PAGO: 201=Pagado, 202=Parcial (NO confundir con estados de inscripción 102/103)
-        $idEstadoPago = $montoTotalAbonado >= $precioFinal ? 201 : 202;
-        $montoPendienteRestante = $precioFinal;
-
-        foreach ($detallePagos as $index => $detalle) {
-            $monto = (float) ($detalle['monto'] ?? 0);
-            $idMetodo = $detalle['id_metodo_pago'] ?? null;
-            $metodoNombre = $detalle['metodo_nombre'] ?? 'Método ' . ($index + 1);
-            
-            if ($monto > 0 && $idMetodo) {
-                $montoPendienteRestante -= $monto;
-                
-                Pago::create([
-                    'id_inscripcion' => $inscripcion->id,
-                    'id_cliente' => $validated['id_cliente'],
-                    'monto_total' => $precioFinal,
-                    'monto_abonado' => $monto,
-                    'monto_pendiente' => max(0, $montoPendienteRestante),
-                    'id_estado' => $idEstadoPago,
-                    'tipo_pago' => 'mixto',
-                    'id_metodo_pago' => $idMetodo,
-                    'fecha_pago' => $validated['fecha_pago'],
-                    'periodo_inicio' => $inscripcion->fecha_inicio->format('Y-m-d'),
-                    'periodo_fin' => $inscripcion->fecha_vencimiento->format('Y-m-d'),
-                    'observaciones' => 'Pago mixto - ' . $metodoNombre,
-                ]);
-            }
-        }
-    }
 
     /**
      * Display the specified resource.
@@ -1533,145 +1346,36 @@ class InscripcionController extends Controller
      * @param Inscripcion $inscripcionAnterior La inscripción que se está renovando
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function renovar(Request $request, Inscripcion $inscripcionAnterior)
+    /**
+     * Renovacion desde el panel de Blade.
+     *
+     * Pasa por RegistroInscripcionService, el mismo que usa el panel nuevo. Ahi
+     * esta el arreglo que aqui faltaba: la membresia anterior SE CIERRA. Antes
+     * se creaba la nueva y se dejaba la vieja tal cual, asi que renovando antes
+     * de que venciera el socio se quedaba con DOS membresias activas.
+     */
+    public function renovar(Request $request, Inscripcion $inscripcionAnterior, RegistroInscripcionService $registro)
     {
+        try {
+            $resultado = $registro->validarRenovacion($request, $inscripcionAnterior);
+        } catch (ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors());
+        }
+
         if (!$this->validateFormToken($request, 'inscripcion_renovar')) {
             return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
         }
 
-        $tipoPago = $request->input('tipo_pago', 'completo');
-        $pagoMixto = $tipoPago === 'mixto';
-
-        // Validación base
-        $rules = [
-            'id_membresia' => 'required|exists:membresias,id',
-            'id_convenio' => 'nullable|exists:convenios,id',
-            'fecha_inicio' => 'required|date',
-            'descuento_aplicado' => 'nullable|numeric|min:0',
-            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-            'observaciones' => 'nullable|string|max:500',
-            'tipo_pago' => 'required|in:completo,abono,mixto,pendiente',
-            'monto_abonado' => 'nullable|numeric|min:0',
-            'id_metodo_pago' => 'nullable|exists:metodos_pago,id',
-            'fecha_pago' => 'nullable|date',
-        ];
-
-        // Agregar reglas para pago mixto
-        if ($pagoMixto) {
-            $rules['detalle_pagos_mixto'] = 'required|string';
-            $rules['total_mixto'] = 'required|numeric|min:1';
-        }
-
-        $validated = $request->validate($rules);
-
-        $cliente = $inscripcionAnterior->cliente;
-        $membresia = Membresia::findOrFail($validated['id_membresia']);
-        
-        // Calcular precios
-        $precioBase = $this->obtenerPrecioMembresia($membresia, $validated);
-        
-        // VALIDACIÓN: El descuento no puede superar el precio base
-        $descuentoAplicado = (float) ($validated['descuento_aplicado'] ?? 0);
-        if ($descuentoAplicado > $precioBase) {
-            return back()->withErrors([
-                'descuento_aplicado' => 'El descuento ($' . number_format($descuentoAplicado, 0, ',', '.') . ') no puede superar el precio base ($' . number_format($precioBase, 0, ',', '.') . ').'
-            ])->withInput();
-        }
-        
-        $descuentoTotal = $this->calcularDescuentoTotal($membresia, $validated, $precioBase);
-        $precioFinal = max(0, $precioBase - $descuentoTotal);
-
-        // VALIDACIÓN: El monto mixto no puede superar el precio final
-        if ($pagoMixto && isset($validated['total_mixto'])) {
-            $totalMixto = (float) $validated['total_mixto'];
-            if ($totalMixto > $precioFinal) {
-                return back()->withErrors([
-                    'total_mixto' => 'El monto total de pagos mixtos ($' . number_format($totalMixto, 0, ',', '.') . ') no puede superar el precio final ($' . number_format($precioFinal, 0, ',', '.') . ').'
-                ])->withInput();
-            }
-        }
-
-        // Calcular fecha de vencimiento
-        $fechaInicio = Carbon::parse($validated['fecha_inicio']);
-        $fechaVencimiento = $this->calcularFechaVencimiento($fechaInicio, $membresia);
-
-        DB::beginTransaction();
         try {
-            // Crear nueva inscripción
-            $nuevaInscripcion = Inscripcion::create([
-                'id_cliente' => $cliente->id,
-                'id_membresia' => $validated['id_membresia'],
-                'id_convenio' => $validated['id_convenio'] ?? null,
-                'id_estado' => EstadosCodigo::INSCRIPCION_ACTIVA,
-                'fecha_inscripcion' => now()->format('Y-m-d'),
-                'fecha_inicio' => $fechaInicio->format('Y-m-d'),
-                'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
-                'precio_base' => $precioBase,
-                'descuento_aplicado' => $descuentoTotal,
-                'precio_final' => $precioFinal,
-                'id_motivo_descuento' => $validated['id_motivo_descuento'] ?? null,
-                'id_precio_acordado' => 1,
-                'max_pausas_permitidas' => $membresia->max_pausas ?? 2,
-                'observaciones' => ($validated['observaciones'] ?? '') . "\n[Renovación de inscripción #{$inscripcionAnterior->id}]",
-                // Campos de renovación (usa estructura de cambio de plan)
-                'es_cambio_plan' => true,
-                'tipo_cambio' => 'renovacion',
-                'id_inscripcion_anterior' => $inscripcionAnterior->id,
-            ]);
+            $nueva = $registro->registrar($resultado);
+        } catch (\Throwable $e) {
+            Log::error('Error en renovacion: ' . $e->getMessage());
+            $this->releaseFormToken($request, 'inscripcion_renovar');
 
-            // Crear pago según tipo
-            $tipoPago = $validated['tipo_pago'];
-            if ($tipoPago === 'mixto') {
-                // Pago mixto: crear múltiples pagos con diferentes métodos
-                $this->crearPagoMixto($nuevaInscripcion, $validated, $precioFinal);
-            } elseif ($tipoPago === 'pendiente') {
-                $this->crearPagoPendiente($nuevaInscripcion, $validated, $precioFinal);
-            } else {
-                // Pago completo o abono: crear un solo pago inicial
-                if (isset($validated['monto_abonado']) && $validated['monto_abonado'] > 0) {
-                    $this->crearPagoInicial($nuevaInscripcion, $validated, $precioFinal);
-                }
-            }
-
-            // Registrar en historial
-            HistorialCambio::create([
-                'inscripcion_id' => $nuevaInscripcion->id,
-                'tipo_cambio' => 'renovacion',
-                'descripcion' => "Renovación de membresía. Inscripción anterior: #{$inscripcionAnterior->id}",
-                'datos_anteriores' => json_encode([
-                    'inscripcion_anterior_id' => $inscripcionAnterior->id,
-                    'membresia_anterior' => $inscripcionAnterior->membresia->nombre ?? 'N/A',
-                    'fecha_vencimiento_anterior' => $inscripcionAnterior->fecha_vencimiento->format('Y-m-d'),
-                ]),
-                'datos_nuevos' => json_encode([
-                    'nueva_inscripcion_id' => $nuevaInscripcion->id,
-                    'membresia' => $membresia->nombre,
-                    'fecha_inicio' => $fechaInicio->format('Y-m-d'),
-                    'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
-                    'precio_final' => $precioFinal,
-                ]),
-                'id_usuario' => auth()->id(),
-            ]);
-
-            // Enviar notificación de renovación exitosa
-            try {
-                $notificacionService = app(\App\Services\NotificacionService::class);
-                $notificacionService->enviarNotificacionRenovacion($nuevaInscripcion);
-            } catch (\Exception $e) {
-                Log::warning('No se pudo enviar notificación de renovación: ' . $e->getMessage());
-            }
-
-            DB::commit();
-
-            $this->invalidateFormToken($request, 'inscripcion_renovar');
-
-            return redirect()->route('admin.inscripciones.show', $nuevaInscripcion)
-                ->with('success', '¡Membresía renovada exitosamente! Nueva vigencia hasta ' . $fechaVencimiento->format('d/m/Y'));
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error en renovación: ' . $e->getMessage());
-            return back()->with('error', 'Error al procesar la renovación: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'No se pudo renovar. Intentelo nuevamente.');
         }
+
+        return redirect()->route('admin.inscripciones.show', $nueva)
+            ->with('success', 'Membresia renovada. Nueva vigencia hasta ' . $nueva->fecha_vencimiento->format('d/m/Y'));
     }
 }

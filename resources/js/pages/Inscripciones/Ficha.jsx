@@ -115,9 +115,10 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             primaria: true,
         },
         puede.renovar && {
-            // Renovar sigue en Blade: es un formulario con precios, convenios y
-            // descuentos, no una accion de un clic como las otras tres.
-            href: `/admin/inscripciones/${inscripcion.uuid}/renovar`,
+            // Va a su propia pantalla y no a un dialogo como las otras tres:
+            // hay que elegir plan, convenio y forma de pago, que no cabe en un
+            // recuadro sin dejarlo apretado.
+            href: `/panel/inscripciones/${inscripcion.uuid}/renovar`,
             etiqueta: 'Renovar',
             Icono: RefreshCwIcon,
         },

@@ -201,16 +201,25 @@ class InscripcionModuleTest extends TestCase
      * Test: Controlador tiene métodos de cálculo
      * Verifica que los métodos de cálculo de precios existan
      */
-    public function test_controlador_tiene_metodos_de_calculo()
+    /**
+     * Los calculos ya NO viven en el controlador: se movieron a
+     * RegistroInscripcionService para que los usen los dos paneles. Lo que se
+     * comprueba aqui es que ese servicio siga siendo el que los tiene, y que
+     * el controlador no se los vuelva a llevar a casa.
+     */
+    public function test_los_calculos_viven_en_el_servicio_y_no_en_el_controlador()
     {
-        $controller = new InscripcionController();
-        
-        // Usar reflection para acceder a métodos protegidos
-        $reflection = new \ReflectionClass($controller);
-        
-        $this->assertTrue($reflection->hasMethod('obtenerPrecioMembresia'));
-        $this->assertTrue($reflection->hasMethod('calcularDescuentoTotal'));
-        $this->assertTrue($reflection->hasMethod('calcularFechaVencimiento'));
-        $this->assertTrue($reflection->hasMethod('crearPagoInicial'));
+        $servicio = new \ReflectionClass(\App\Services\RegistroInscripcionService::class);
+
+        $this->assertTrue($servicio->hasMethod('validar'));
+        $this->assertTrue($servicio->hasMethod('validarRenovacion'));
+        $this->assertTrue($servicio->hasMethod('registrar'));
+        $this->assertTrue($servicio->hasMethod('precioVigente'));
+        $this->assertTrue($servicio->hasMethod('vencimiento'));
+
+        $controlador = new \ReflectionClass(InscripcionController::class);
+
+        $this->assertFalse($controlador->hasMethod('obtenerPrecioMembresia'));
+        $this->assertFalse($controlador->hasMethod('crearPagoInicial'));
     }
 }
