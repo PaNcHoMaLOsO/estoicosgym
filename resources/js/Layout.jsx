@@ -91,6 +91,19 @@ const TEMAS = [
 function esActiva(href, url) {
     const ruta = url.split('?')[0].replace(/\/$/, '') || '/panel';
 
+    /*
+     * La portada del panel se marca SOLO en su propia ruta.
+     *
+     * Con la regla de prefijo a secas, «/panel/clientes» empieza por «/panel/»
+     * y encendia tambien Resumen: las dos secciones salian marcadas a la vez y
+     * el carril dejaba de decir donde estas, que es lo unico que hace.
+     */
+    if (href === '/panel') {
+        return ruta === '/panel';
+    }
+
+    // El resto SI usa el prefijo, para que una ficha marque su seccion:
+    // /panel/clientes/{uuid} tiene que encender «Clientes».
     return ruta === href || ruta.startsWith(`${href}/`);
 }
 
