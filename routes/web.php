@@ -359,6 +359,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/inscripciones/{inscripcion}/info-cambio-plan', [\App\Http\Controllers\Admin\InscripcionController::class, 'infoCambioPlan'])->name('inscripciones.info-cambio-plan');
         Route::get('/pagos', [\App\Http\Controllers\Panel\PagoController::class, 'index'])->name('pagos.index');
         Route::get('/pagos/cobrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'create'])->name('pagos.create');
+        // Buscador del socio al que se le cobra. Cuelga de /pagos/buscar y no
+        // de {pago} porque va antes en el fichero: si no, «buscar» entraria
+        // por la ficha como si fuera un uuid.
+        Route::get('/pagos/buscar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'buscar'])->name('pagos.buscar');
         // El alta no cuelga de POST /pagos porque ese nombre ya lo ocupa el
         // listado y `Permisos` deduce la accion del nombre de la ruta.
         Route::post('/pagos/registrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'store'])->name('pagos.store');

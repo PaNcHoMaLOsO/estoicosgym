@@ -14,35 +14,78 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /**
- * Cobro de una inscripcion desde el panel nuevo.
+ * Cobro de una inscripción desde el panel nuevo.
  *
  * Va aparte de Panel\PagoController —que solo lista— porque el listado y el
  * cobro no comparten nada: uno pagina y el otro valida saldos.
  *
- * Las validaciones y los calculos viven en RegistroPagoService, el mismo que
- * usa el panel de Blade.
+ * Las validaciones y los cálculos viven en RegistroPagoService, el mismo que usa
+ * el panel de Blade.
  */
 class PagoCrearController extends Controller
 {
     use ValidatesFormToken;
 
+    /** Cuántos socios se devuelven por búsqueda. */
+    private const RESULTADOS = 15;
+
     public function create(Request $request)
     {
         return Inertia::render('Pagos/Crear', [
-            'inscripciones' => $this->inscripcionesConSaldo(),
+            /*
+             * NO se manda la lista entera de inscripciones.
+             *
+             * Antes iban todas las que tuvieran saldo —sesenta hoy, miles en un
+             * gimnasio en marcha— dentro de un <select>, que con ese volumen no
+             * sirve para encontrar a nadie. Ahora se busca, y solo viaja lo que
+             * se escribe.
+             */
+            'preseleccionada' => $this->preseleccionada($request->query('inscripcion')),
             'metodosPago' => MetodoPago::where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'requiere_comprobante']),
-            // Se llega aqui desde el boton «Cobrar» de una inscripcion concreta.
-            'preseleccion' => $request->query('inscripcion'),
             'formToken' => (string) Str::uuid(),
         ]);
+    }
+
+    /**
+     * Busca a quién cobrarle.
+     *
+     * Devuelve solo inscripciones CON SALDO: cobrarle a quien no debe nada es
+     * el error que esta pantalla tiene que hacer difícil, no fácil.
+     */
+    public function buscar(Request $request)
+    {
+        $texto = trim((string) $request->query('q', ''));
+
+        // Con una letra saldría medio padrón y no serviría para elegir.
+        if (mb_strlen($texto) < 2) {
+            return response()->json(['inscripciones' => []]);
+        }
+
+        $encontradas = $this->conSaldo()
+            ->whereHas('cliente', function ($q) use ($texto) {
+                $q->where('nombres', 'like', "%{$texto}%")
+                    ->orWhere('apellido_paterno', 'like', "%{$texto}%")
+                    ->orWhere('apellido_materno', 'like', "%{$texto}%")
+                    ->orWhere('run_pasaporte', 'like', "%{$texto}%")
+                    ->orWhere('email', 'like', "%{$texto}%");
+            })
+            ->orderByDesc('id')
+            ->limit(self::RESULTADOS * 3)
+            ->get()
+            ->map(fn (Inscripcion $i) => $this->resumir($i))
+            ->filter(fn (?array $i) => $i !== null && $i['pendiente'] > 0)
+            ->take(self::RESULTADOS)
+            ->values();
+
+        return response()->json(['inscripciones' => $encontradas]);
     }
 
     public function store(Request $request, RegistroPagoService $registro)
     {
         // Validar PRIMERO: reservando el turno antes, un formulario rechazado lo
-        // dejaria pillado y al corregirlo no se podria reenviar.
+        // dejaría pillado y al corregirlo no se podría reenviar.
         $resultado = $registro->validar($request);
 
         if (! $this->validateFormToken($request, 'pago_create')) {
@@ -61,7 +104,7 @@ class PagoCrearController extends Controller
         $socio = $resultado['inscripcion']->cliente;
         $nombre = $socio ? trim("{$socio->nombres} {$socio->apellido_paterno}") : 'el socio';
 
-        return redirect()->route('panel.pagos.index')->with(
+        return redirect()->route('panel.pagos.show', $pago->uuid)->with(
             'success',
             $resultado['completa']
                 ? "Pago registrado. La membresía de {$nombre} queda al día."
@@ -70,41 +113,55 @@ class PagoCrearController extends Controller
     }
 
     /**
-     * Inscripciones que todavia deben algo.
+     * La inscripción con la que se llega desde una ficha.
      *
-     * El saldo se calcula con withSum, en UNA consulta. La version de Blade
-     * recorre las inscripciones llamando a `$insc->pagos()->sum()` dentro de un
-     * filter, o sea una consulta por fila: con doscientas inscripciones son
-     * doscientas consultas para pintar un desplegable.
+     * El enlace trae el UUID, y antes se pasaba tal cual a un desplegable cuyas
+     * opciones eran ids numéricos: no coincidía nunca, así que pulsar «Cobrar»
+     * en una ficha dejaba el formulario vacío y había que buscar al socio a
+     * mano, justo lo que el botón venía a evitar.
      */
-    private function inscripcionesConSaldo()
+    private function preseleccionada(?string $uuid): ?array
+    {
+        if (! $uuid) {
+            return null;
+        }
+
+        $inscripcion = $this->conSaldo()->where('uuid', $uuid)->first();
+
+        return $inscripcion ? $this->resumir($inscripcion) : null;
+    }
+
+    /** Inscripciones vivas de socios activos. El saldo se filtra al resumir. */
+    private function conSaldo()
     {
         return Inscripcion::query()
             ->with(['cliente:id,nombres,apellido_paterno,apellido_materno,run_pasaporte', 'membresia:id,nombre'])
+            // El saldo en UNA consulta: pedirlo por fila serían tantas como
+            // inscripciones devuelva la búsqueda.
             ->withSum('pagos as abonado', 'monto_abonado')
             ->whereNotIn('id_estado', EstadosCodigo::INSCRIPCION_FINALIZADOS)
-            ->whereHas('cliente', fn ($q) => $q->where('activo', true))
-            ->orderByDesc('id')
-            ->get()
-            ->map(function (Inscripcion $inscripcion) {
-                $total = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base);
-                $abonado = (int) ($inscripcion->abonado ?? 0);
-                $cliente = $inscripcion->cliente;
+            ->whereHas('cliente', fn ($q) => $q->where('activo', true));
+    }
 
-                return [
-                    'id' => $inscripcion->id,
-                    'socio' => $cliente
-                        ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
-                        : 'Socio eliminado',
-                    'rut' => $cliente?->run_pasaporte,
-                    'membresia' => $inscripcion->membresia?->nombre,
-                    'total' => $total,
-                    'abonado' => $abonado,
-                    'pendiente' => $total - $abonado,
-                    'vence' => $inscripcion->fecha_vencimiento?->format('d/m/Y'),
-                ];
-            })
-            ->filter(fn (array $i) => $i['pendiente'] > 0)
-            ->values();
+    /** @return array<string,mixed>|null */
+    private function resumir(Inscripcion $inscripcion): ?array
+    {
+        $cliente = $inscripcion->cliente;
+        $total = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base);
+        $abonado = (int) ($inscripcion->abonado ?? 0);
+
+        return [
+            'id' => $inscripcion->id,
+            'uuid' => $inscripcion->uuid,
+            'socio' => $cliente
+                ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
+                : 'Socio eliminado',
+            'rut' => $cliente?->run_pasaporte,
+            'membresia' => $inscripcion->membresia?->nombre,
+            'total' => $total,
+            'abonado' => $abonado,
+            'pendiente' => max(0, $total - $abonado),
+            'vence' => $inscripcion->fecha_vencimiento?->format('d/m/Y'),
+        ];
     }
 }

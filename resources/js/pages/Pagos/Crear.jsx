@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
@@ -25,10 +26,16 @@ const FORMAS = [
  * —cuanto se puede abonar, cuanto tienen que sumar los dos metodos— y sin saber
  * de quien hablamos esos campos no significan nada.
  */
-export default function Crear({ inscripciones, metodosPago, preseleccion, formToken }) {
+export default function Crear({ preseleccionada, metodosPago, formToken }) {
+    // A quién se le cobra. Si se llega desde una ficha, ya viene resuelta.
+    const [elegida, setElegida] = useState(preseleccionada ?? null);
+    const [busqueda, setBusqueda] = useState('');
+    const [resultados, setResultados] = useState(null);
+    const [buscando, setBuscando] = useState(false);
+
     const { data, setData, post, processing, errors } = useForm({
         form_submit_token: formToken,
-        id_inscripcion: preseleccion ?? '',
+        id_inscripcion: preseleccionada?.id ?? '',
         tipo_pago: 'completo',
         monto_abonado: '',
         id_metodo_pago: '',
@@ -41,13 +48,54 @@ export default function Crear({ inscripciones, metodosPago, preseleccion, formTo
         observaciones: '',
     });
 
-    const elegida = inscripciones.find((i) => String(i.id) === String(data.id_inscripcion));
     const pendiente = elegida?.pendiente ?? 0;
 
-    const opcionesInscripcion = inscripciones.map((i) => ({
-        valor: String(i.id),
-        etiqueta: `${i.socio} — ${i.membresia ?? 'sin plan'} — debe ${pesos.format(i.pendiente)}`,
-    }));
+    /*
+     * Al socio se le BUSCA, no se le elige de una lista.
+     *
+     * Antes iban todas las inscripciones con saldo dentro de un <select>
+     * —sesenta hoy, miles en un gimnasio en marcha—, y con ese volumen encontrar
+     * a alguien es imposible. Se espera a que deje de escribir: sin la espera,
+     * cada tecla seria una consulta.
+     */
+    useEffect(() => {
+        if (busqueda.trim().length < 2) {
+            setResultados(null);
+
+            return undefined;
+        }
+
+        setBuscando(true);
+
+        const temporizador = setTimeout(async () => {
+            try {
+                const r = await fetch(
+                    `/panel/pagos/buscar?q=${encodeURIComponent(busqueda)}`,
+                    { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
+                );
+                const j = await r.json();
+                setResultados(j.inscripciones ?? []);
+            } catch (e) {
+                setResultados([]);
+            } finally {
+                setBuscando(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(temporizador);
+    }, [busqueda]);
+
+    function elegir(inscripcion) {
+        setElegida(inscripcion);
+        setData('id_inscripcion', inscripcion.id);
+        setBusqueda('');
+        setResultados(null);
+    }
+
+    function cambiarSocio() {
+        setElegida(null);
+        setData('id_inscripcion', '');
+    }
 
     const opcionesMetodo = metodosPago.map((m) => ({ valor: String(m.id), etiqueta: m.nombre }));
 
@@ -79,31 +127,25 @@ export default function Crear({ inscripciones, metodosPago, preseleccion, formTo
 
             <form onSubmit={enviar} className="max-w-3xl space-y-5">
                 <Grupo titulo="¿A quién se le cobra?">
-                    <Campo
-                        etiqueta="Inscripción"
-                        nombre="id_inscripcion"
-                        error={errors.id_inscripcion}
-                        requerido
-                        ayuda={
-                            inscripciones.length === 0
-                                ? 'No hay inscripciones con saldo pendiente.'
-                                : undefined
-                        }
-                    >
-                        <Seleccion
-                            nombre="id_inscripcion"
-                            valor={data.id_inscripcion}
-                            alCambiar={(v) => setData('id_inscripcion', v)}
-                            opciones={opcionesInscripcion}
-                            error={errors.id_inscripcion}
-                            vacio="Busca al socio…"
-                        />
-                    </Campo>
-
                     {elegida ? (
                         <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">
-                            <p className="font-medium text-chalk">{elegida.socio}</p>
-                            <dl className="apoyo mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-fog sm:grid-cols-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="font-medium text-chalk">
+                                    {elegida.socio}
+                                    {elegida.rut ? (
+                                        <span className="apoyo block text-fog">{elegida.rut}</span>
+                                    ) : null}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={cambiarSocio}
+                                    className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
+                                >
+                                    Cambiar
+                                </button>
+                            </div>
+
+                            <dl className="apoyo mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 text-fog sm:grid-cols-4">
                                 <div>
                                     <dt className="inline">Plan: </dt>
                                     <dd className="inline text-chalk">{elegida.membresia ?? '—'}</dd>
@@ -124,7 +166,61 @@ export default function Crear({ inscripciones, metodosPago, preseleccion, formTo
                                 </div>
                             </dl>
                         </div>
-                    ) : null}
+                    ) : (
+                        <Campo
+                            etiqueta="Busca al socio"
+                            nombre="buscar_socio"
+                            error={errors.id_inscripcion}
+                            requerido
+                            ayuda="Por nombre, RUT o correo. Solo aparece quien tiene saldo por pagar."
+                        >
+                            <Texto
+                                nombre="buscar_socio"
+                                tipo="search"
+                                valor={busqueda}
+                                alCambiar={setBusqueda}
+                                placeholder="Escribe al menos dos letras"
+                                autoFocus
+                            />
+
+                            {busqueda.trim().length >= 2 ? (
+                                buscando ? (
+                                    <p className="apoyo mt-2 text-fog">Buscando…</p>
+                                ) : resultados && resultados.length === 0 ? (
+                                    <p className="apoyo mt-2 text-fog">
+                                        Nadie coincide, o a quien buscas no le queda nada por pagar.
+                                    </p>
+                                ) : resultados ? (
+                                    <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto rounded-control border border-line">
+                                        {resultados.map((i) => (
+                                            <li key={i.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => elegir(i)}
+                                                    className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2"
+                                                >
+                                                    <span className="min-w-0">
+                                                        <span className="block truncate text-chalk">
+                                                            {i.socio}
+                                                        </span>
+                                                        <span className="apoyo block text-fog">
+                                                            {i.membresia ?? 'sin plan'}
+                                                            {i.rut ? ` · ${i.rut}` : ''}
+                                                        </span>
+                                                    </span>
+                                                    {/* Lo que debe va a la derecha: es el dato
+                                                        que decide a cuál de dos homónimos cobrar. */}
+                                                    <span className="shrink-0 font-medium tabular-nums text-warn">
+                                                        {pesos.format(i.pendiente)}
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : null
+                            ) : null}
+                        </Campo>
+                    )}
                 </Grupo>
 
                 {/* El resto no aparece hasta que hay socio: sin saldo conocido,
