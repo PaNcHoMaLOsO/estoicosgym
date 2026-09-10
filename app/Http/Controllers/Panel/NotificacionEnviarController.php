@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Cliente;
+use App\Models\Notificacion;
 use App\Models\TipoNotificacion;
 use App\Services\EnvioManualService;
 use Illuminate\Http\Request;
@@ -105,6 +107,36 @@ class NotificacionEnviarController extends Controller
         return redirect()
             ->route('panel.notificaciones.show', $notificacion->uuid)
             ->with('success', "Correo enviado a {$notificacion->email_destino}.");
+    }
+
+    /**
+     * Vuelve a intentar uno que no salió.
+     *
+     * SOLO ESE. El del panel viejo llamaba a «enviar todas las pendientes», así
+     * que reintentar un correo fallido disparaba de golpe todos los demás que
+     * hubiera en cola.
+     */
+    public function reenviar(Notificacion $notificacion, EnvioManualService $envio)
+    {
+        if ((int) $notificacion->id_estado === EstadosCodigo::NOTIFICACION_ENVIADA) {
+            return back()->with('error', 'Ese correo ya se envió.');
+        }
+
+        $envio->reenviar($notificacion);
+
+        return back()->with('success', "Correo enviado a {$notificacion->email_destino}.");
+    }
+
+    /** Uno que todavía no ha salido se puede parar. */
+    public function cancelar(Notificacion $notificacion)
+    {
+        if ((int) $notificacion->id_estado !== EstadosCodigo::NOTIFICACION_PENDIENTE) {
+            return back()->with('error', 'Solo se puede cancelar un correo que todavía no ha salido.');
+        }
+
+        $notificacion->cancelar('Cancelada a mano desde el panel');
+
+        return back()->with('success', 'El correo no se enviará.');
     }
 
     /** @return array<string,mixed>|null */

@@ -52,6 +52,11 @@ class NotificacionController extends Controller
                     // Solo interesa el motivo cuando fallo; en el resto de los
                     // casos la columna estaria siempre vacia ocupando ancho.
                     'error' => $n->id_estado === self::FALLIDA ? $n->error_mensaje : null,
+                    // Que se puede hacer con esta fila. Se decide aqui
+                    // y no en la pantalla: son reglas del estado, no de
+                    // como se pinta.
+                    'puede_reenviar' => $n->id_estado === self::FALLIDA,
+                    'puede_cancelar' => $n->id_estado === self::PENDIENTE,
                 ];
             });
 

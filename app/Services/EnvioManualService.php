@@ -139,6 +139,46 @@ class EnvioManualService
     }
 
     /**
+     * Vuelve a intentar UN correo que no salió.
+     *
+     * Solo ese. El reenvío del panel viejo ponía esta notificación en pendiente
+     * y a continuación llamaba a «enviar todas las pendientes»: reintentar un
+     * correo fallido disparaba de golpe todos los demás que estuvieran en cola,
+     * que es lo último que quiere quien solo intentaba arreglar uno. Y después
+     * decía «reenviada correctamente» sin haber mirado si esta había salido.
+     *
+     * @throws ValidationException
+     */
+    public function reenviar(Notificacion $notificacion): Notificacion
+    {
+        if (empty($notificacion->email_destino)) {
+            throw ValidationException::withMessages([
+                'envio' => 'Esa notificación no tiene destinatario.',
+            ]);
+        }
+
+        $notificacion->registrarLog('reintentando', 'Reenvío manual desde el panel');
+
+        try {
+            $this->correo->enviar(
+                $notificacion->email_destino,
+                $notificacion->asunto,
+                $notificacion->contenido
+            );
+        } catch (\Throwable $e) {
+            $notificacion->marcarComoFallida($e->getMessage());
+
+            throw ValidationException::withMessages([
+                'envio' => 'Tampoco salió esta vez: ' . $e->getMessage(),
+            ]);
+        }
+
+        $notificacion->marcarComoEnviada();
+
+        return $notificacion;
+    }
+
+    /**
      * A quién se le puede escribir.
      *
      * Solo socios CON correo: los que no tienen no se pueden avisar por aquí y

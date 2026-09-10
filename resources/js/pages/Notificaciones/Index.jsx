@@ -1,4 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import { FileTextIcon, SendIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
@@ -6,7 +7,7 @@ import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
-const COLUMNAS = ['Destinatario', 'Asunto', 'Tipo', 'Envío', 'Estado', 'Programada', 'Enviada'];
+const COLUMNAS = ['Destinatario', 'Asunto', 'Tipo', 'Envío', 'Estado', 'Programada', 'Enviada', ''];
 
 function Cabecera({ etiqueta, valor, destacada = false }) {
     return (
@@ -28,6 +29,19 @@ function Cabecera({ etiqueta, valor, destacada = false }) {
 }
 
 export default function Index({ notificaciones, filtros, resumen }) {
+    // Cual se esta reintentando, para no dejar el boton pulsable dos veces:
+    // la segunda pulsacion mandaria el mismo correo otra vez.
+    const [enCurso, setEnCurso] = useState(null);
+
+    function actuar(uuid, accion) {
+        setEnCurso(uuid);
+
+        router.post(`/panel/notificaciones/${uuid}/${accion}`, {}, {
+            preserveScroll: true,
+            onFinish: () => setEnCurso(null),
+        });
+    }
+
     return (
         <>
             <Head title="Notificaciones" />
@@ -101,6 +115,30 @@ export default function Index({ notificaciones, filtros, resumen }) {
                         </Celda>
                         <Celda className="tabular-nums">{n.programada ?? '—'}</Celda>
                         <Celda className="tabular-nums">{n.enviada ?? '—'}</Celda>
+                        <Celda className="text-right">
+                            {/* Reintentar una que no salio, o parar una que
+                                todavia no ha salido. Sobre una ya enviada no
+                                hay nada que hacer: un correo no se recoge. */}
+                            {n.puede_reenviar ? (
+                                <button
+                                    type="button"
+                                    onClick={() => actuar(n.uuid, 'reenviar')}
+                                    disabled={enCurso === n.uuid}
+                                    className="apoyo text-fog transition-colors hover:text-chalk disabled:opacity-50"
+                                >
+                                    {enCurso === n.uuid ? 'Enviando…' : 'Reintentar'}
+                                </button>
+                            ) : n.puede_cancelar ? (
+                                <button
+                                    type="button"
+                                    onClick={() => actuar(n.uuid, 'cancelar')}
+                                    disabled={enCurso === n.uuid}
+                                    className="apoyo text-fog transition-colors hover:text-danger disabled:opacity-50"
+                                >
+                                    No enviarlo
+                                </button>
+                            ) : null}
+                        </Celda>
                     </Fila>
                 ))}
             </Tabla>

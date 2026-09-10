@@ -251,6 +251,100 @@ class EnvioManualTest extends CasoConCatalogos
         $this->assertSame(0, Notificacion::where('id_cliente', $socio->id)->count());
     }
 
+    /**
+     * EL BUG DEL REENVIO.
+     *
+     * El del panel viejo ponia ESTA notificacion en pendiente y a continuacion
+     * llamaba a «enviar todas las pendientes»: reintentar un correo fallido
+     * disparaba de golpe todos los demas que hubiera en cola, que es lo ultimo
+     * que quiere quien solo intentaba arreglar uno.
+     */
+    public function test_reintentar_uno_no_manda_los_demas(): void
+    {
+        $this->fingirCorreo();
+
+        $fallida = $this->notificacionEn(EstadosCodigo::NOTIFICACION_FALLIDA);
+        $enCola = $this->notificacionEn(EstadosCodigo::NOTIFICACION_PENDIENTE);
+        $otraEnCola = $this->notificacionEn(EstadosCodigo::NOTIFICACION_PENDIENTE);
+
+        $this->actingAs($this->usuario())
+            ->post("/panel/notificaciones/{$fallida->uuid}/reenviar")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(EstadosCodigo::NOTIFICACION_ENVIADA, (int) $fallida->fresh()->id_estado);
+
+        // Las que estaban en cola siguen en cola.
+        $this->assertSame(EstadosCodigo::NOTIFICACION_PENDIENTE, (int) $enCola->fresh()->id_estado);
+        $this->assertSame(EstadosCodigo::NOTIFICACION_PENDIENTE, (int) $otraEnCola->fresh()->id_estado);
+    }
+
+    /** Si tampoco sale, se dice y queda anotado otra vez. */
+    public function test_si_el_reintento_tampoco_sale_se_dice(): void
+    {
+        $this->fingirCorreo(new \RuntimeException('Sigue sin responder.'));
+
+        $fallida = $this->notificacionEn(EstadosCodigo::NOTIFICACION_FALLIDA);
+
+        $this->actingAs($this->usuario())
+            ->post("/panel/notificaciones/{$fallida->uuid}/reenviar")
+            ->assertSessionHasErrors('envio');
+
+        $this->assertSame(EstadosCodigo::NOTIFICACION_FALLIDA, (int) $fallida->fresh()->id_estado);
+        $this->assertStringContainsString('Sigue sin responder', $fallida->fresh()->error_mensaje);
+    }
+
+    /** Un correo que ya salio no se reenvia: no se recoge y no se repite. */
+    public function test_no_se_reenvia_uno_que_ya_salio(): void
+    {
+        $this->fingirCorreo();
+
+        $enviada = $this->notificacionEn(EstadosCodigo::NOTIFICACION_ENVIADA);
+
+        $this->actingAs($this->usuario())
+            ->post("/panel/notificaciones/{$enviada->uuid}/reenviar")
+            ->assertSessionHas('error');
+    }
+
+    /** Uno que todavia no ha salido se puede parar. */
+    public function test_se_cancela_uno_que_no_ha_salido(): void
+    {
+        $pendiente = $this->notificacionEn(EstadosCodigo::NOTIFICACION_PENDIENTE);
+
+        $this->actingAs($this->usuario())
+            ->post("/panel/notificaciones/{$pendiente->uuid}/cancelar")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(EstadosCodigo::NOTIFICACION_CANCELADA, (int) $pendiente->fresh()->id_estado);
+    }
+
+    public function test_no_se_cancela_uno_que_ya_salio(): void
+    {
+        $enviada = $this->notificacionEn(EstadosCodigo::NOTIFICACION_ENVIADA);
+
+        $this->actingAs($this->usuario())
+            ->post("/panel/notificaciones/{$enviada->uuid}/cancelar")
+            ->assertSessionHas('error');
+
+        $this->assertSame(EstadosCodigo::NOTIFICACION_ENVIADA, (int) $enviada->fresh()->id_estado);
+    }
+
+    /** Una notificacion cualquiera, en el estado que haga falta. */
+    private function notificacionEn(int $estado): Notificacion
+    {
+        $socio = $this->socio();
+
+        return Notificacion::create([
+            'id_tipo_notificacion' => $this->plantilla()->id,
+            'id_cliente' => $socio->id,
+            'email_destino' => $socio->email,
+            'asunto' => 'Un aviso',
+            'contenido' => '<p>Hola</p>',
+            'id_estado' => $estado,
+            'fecha_programada' => today(),
+            'tipo_envio' => 'manual',
+        ]);
+    }
+
     /** Los estados de una notificación tienen nombre, no salen «Desconocido». */
     public function test_los_estados_de_notificacion_tienen_nombre(): void
     {

@@ -421,6 +421,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/notificaciones/buscar-socio', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'buscar'])->name('notificaciones.buscar-cliente');
         Route::post('/notificaciones/vista-previa', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'vistaPrevia'])->name('notificaciones.preview');
         Route::post('/notificaciones/enviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'store'])->name('notificaciones.enviar-individual');
+        Route::post('/notificaciones/{notificacion}/reenviar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'reenviar'])->name('notificaciones.reenviar');
+        Route::post('/notificaciones/{notificacion}/cancelar', [\App\Http\Controllers\Panel\NotificacionEnviarController::class, 'cancelar'])->name('notificaciones.cancelar');
         Route::get('/notificaciones/plantillas', [\App\Http\Controllers\Panel\PlantillaController::class, 'index'])->name('notificaciones.plantillas');
         Route::put('/notificaciones/plantillas/{tipoNotificacion}', [\App\Http\Controllers\Panel\PlantillaController::class, 'update'])->name('notificaciones.plantillas.actualizar');
         Route::get('/notificaciones/plantillas/{tipoNotificacion}/vista-previa', [\App\Http\Controllers\Panel\PlantillaController::class, 'vistaPrevia'])->name('notificaciones.plantillas.preview');
