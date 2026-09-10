@@ -86,23 +86,26 @@ class ResumenController extends Controller
      */
     private function altasPorMes(Carbon $hoy): array
     {
-        $desde = $hoy->copy()->subMonths(self::MESES - 1)->startOfMonth();
-
-        $conteo = Cliente::query()
-            ->where('created_at', '>=', $desde)
-            ->selectRaw('YEAR(created_at) as anio, MONTH(created_at) as mes, COUNT(*) as total')
-            ->groupByRaw('YEAR(created_at), MONTH(created_at)')
-            ->get()
-            ->keyBy(fn ($f) => "{$f->anio}-{$f->mes}");
-
+        /*
+         * Se cuenta mes a mes con un rango de fechas, y NO agrupando por
+         * YEAR(created_at) / MONTH(created_at).
+         *
+         * Esas dos funciones son de MySQL y SQLite no las tiene, asi que la
+         * consulta reventaba con un 500 en cuanto se ejecutaba fuera de
+         * produccion —lo cazaron las pruebas, que corren sobre SQLite—. Con un
+         * whereBetween la consulta vale en los dos motores, y son seis
+         * COUNT diminutos: no compensa complicarlo por eso.
+         */
         return collect(range(self::MESES - 1, 0))
-            ->map(function (int $atras) use ($hoy, $conteo) {
+            ->map(function (int $atras) use ($hoy) {
                 $mes = $hoy->copy()->subMonths($atras);
-                $clave = "{$mes->year}-{$mes->month}";
 
                 return [
                     'mes' => $mes->translatedFormat('M'),
-                    'total' => (int) ($conteo[$clave]->total ?? 0),
+                    'total' => Cliente::whereBetween('created_at', [
+                        $mes->copy()->startOfMonth(),
+                        $mes->copy()->endOfMonth(),
+                    ])->count(),
                 ];
             })
             ->all();
