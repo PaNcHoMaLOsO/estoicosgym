@@ -103,6 +103,10 @@ export default function Editar({ pago, metodosPago, formToken }) {
                                 valor: String(m.id),
                                 etiqueta: m.nombre,
                             }))}
+                            /* Sin opcion vacia cuando ya hay metodo: elegirla
+                               dejaria el campo sin valor, que aqui no significa
+                               nada. Un pago pendiente si llega sin metodo. */
+                            vacio={pago.id_metodo_pago ? null : 'Elige cómo pagó…'}
                         />
                     </Campo>
 
