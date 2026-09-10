@@ -59,15 +59,10 @@ const GRUPOS = [
         secciones: [
             { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon, permiso: 'historial.ver' },
             { href: '/panel/notificaciones', etiqueta: 'Notificaciones', Icono: BellIcon, permiso: 'notificaciones.ver' },
-            // Reportes es lo unico que todavia no se migro: el constructor de
-            // informes es un formulario grande y no un listado. Apunta al Blade
-            // para que el enlace funcione; `externa` evita que Inertia intente
-            // resolverlo como pagina suya y devuelva un 404.
             {
-                href: '/admin/reportes',
+                href: '/panel/reportes',
                 etiqueta: 'Reportes',
                 Icono: ChartNoAxesColumnIcon,
-                externa: true,
                 permiso: 'reportes.ver',
             },
         ],

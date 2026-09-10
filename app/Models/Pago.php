@@ -140,7 +140,10 @@ class Pago extends Model
      */
     public function scopeIngresos($query)
     {
-        return $query->whereIn('id_estado', self::ESTADOS_CON_INGRESO);
+        // La columna va CALIFICADA con su tabla: los informes cruzan pagos con
+        // inscripciones, que tiene su propio id_estado, y sin el prefijo MySQL
+        // rechaza la consulta por ambigua.
+        return $query->whereIn('pagos.id_estado', self::ESTADOS_CON_INGRESO);
     }
 
     public function inscripcion()

@@ -302,6 +302,14 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // listado y `Permisos` deduce la accion del nombre de la ruta.
         Route::post('/pagos/registrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'store'])->name('pagos.store');
         Route::get('/historial', [\App\Http\Controllers\Panel\HistorialController::class, 'index'])->name('historial.index');
+
+        // Informes. El constructor dinamico sigue en /admin: arma consultas a
+        // medida y no se parece a estas cuatro pantallas.
+        Route::get('/reportes', [\App\Http\Controllers\Panel\ReporteController::class, 'index'])->name('reportes.index');
+        Route::get('/reportes/ingresos', [\App\Http\Controllers\Panel\ReporteController::class, 'ingresos'])->name('reportes.ingresos');
+        Route::get('/reportes/membresias', [\App\Http\Controllers\Panel\ReporteController::class, 'membresias'])->name('reportes.membresias');
+        Route::get('/reportes/por-vencer', [\App\Http\Controllers\Panel\ReporteController::class, 'porVencer'])->name('reportes.por-vencer');
+        Route::get('/reportes/pendientes', [\App\Http\Controllers\Panel\ReporteController::class, 'pendientes'])->name('reportes.pendientes');
         Route::get('/notificaciones', [\App\Http\Controllers\Panel\NotificacionController::class, 'index'])->name('notificaciones.index');
 
         // Catalogos de configuracion.
