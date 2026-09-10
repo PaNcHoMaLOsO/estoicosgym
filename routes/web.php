@@ -338,6 +338,25 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/clientes/{cliente}', \App\Http\Controllers\Panel\ClienteFichaController::class)->name('clientes.show');
         Route::get('/inscripciones', [\App\Http\Controllers\Panel\InscripcionController::class, 'index'])->name('inscripciones.index');
         Route::get('/inscripciones/{inscripcion}', \App\Http\Controllers\Panel\InscripcionFichaController::class)->name('inscripciones.show');
+
+        /*
+         * Acciones sobre una membresia ya vendida.
+         *
+         * Apuntan a los MISMOS metodos del controlador de Blade: la logica de
+         * pausas, saldos y traspasos son cientos de lineas y duplicarlas para el
+         * panel dejaria dos versiones que se separan a la primera correccion.
+         * Los cuatro ya devolvian JSON, asi que React los llama tal cual.
+         *
+         * El nombre de la ruta importa: `panel.inscripciones.pausar` cae en
+         * `inscripciones.gestionar` por App\Support\Permisos, que es el permiso
+         * que tiene recepcion.
+         */
+        Route::post('/inscripciones/{inscripcion}/pausar', [\App\Http\Controllers\Admin\InscripcionController::class, 'pausar'])->name('inscripciones.pausar');
+        Route::post('/inscripciones/{inscripcion}/reanudar', [\App\Http\Controllers\Admin\InscripcionController::class, 'reanudar'])->name('inscripciones.reanudar');
+        Route::post('/inscripciones/{inscripcion}/cambiar-plan', [\App\Http\Controllers\Admin\InscripcionController::class, 'cambiarPlan'])->name('inscripciones.cambiar-plan');
+        Route::post('/inscripciones/{inscripcion}/traspasar', [\App\Http\Controllers\Admin\InscripcionController::class, 'traspasar'])->name('inscripciones.traspasar');
+        Route::get('/inscripciones/{inscripcion}/buscar-clientes-traspaso', [\App\Http\Controllers\Admin\InscripcionController::class, 'buscarClientesTraspaso'])->name('inscripciones.buscar-clientes-traspaso');
+        Route::get('/inscripciones/{inscripcion}/info-cambio-plan', [\App\Http\Controllers\Admin\InscripcionController::class, 'infoCambioPlan'])->name('inscripciones.info-cambio-plan');
         Route::get('/pagos', [\App\Http\Controllers\Panel\PagoController::class, 'index'])->name('pagos.index');
         Route::get('/pagos/cobrar', [\App\Http\Controllers\Panel\PagoCrearController::class, 'create'])->name('pagos.create');
         // El alta no cuelga de POST /pagos porque ese nombre ya lo ocupa el

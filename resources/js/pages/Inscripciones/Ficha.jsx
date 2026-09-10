@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     ArrowLeftIcon,
     ArrowRightLeftIcon,
@@ -8,7 +9,9 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 
+import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
+import { Campo, Seleccion, Texto } from '@/components/Campo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -57,9 +60,53 @@ function Vigencia({ dias }) {
 }
 
 export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, movimientos }) {
-    // Las acciones siguen en Blade. Se ofrecen SOLO las que el servidor
-    // aceptaría ahora mismo: un botón que lleva a un error enseña a desconfiar
-    // de lo que hay en pantalla.
+    // Cual esta abierto: null, 'pausar', 'reanudar' o 'traspasar'.
+    const [dialogo, setDialogo] = useState(null);
+    const [dias, setDias] = useState('30');
+    const [razon, setRazon] = useState('');
+    const [destino, setDestino] = useState('');
+    const [motivoTraspaso, setMotivoTraspaso] = useState('');
+    const [ignorarDeuda, setIgnorarDeuda] = useState(false);
+    const [candidatos, setCandidatos] = useState(null);
+    const [busqueda, setBusqueda] = useState('');
+    const [nombreDestino, setNombreDestino] = useState('');
+
+    const cerrar = () => setDialogo(null);
+
+    /*
+     * A quién se le traspasa se BUSCA, no se elige de una lista.
+     *
+     * El servidor devuelve solo socios sin membresía vigente, que con un padrón
+     * de cientos siguen siendo demasiados para un desplegable. Se consulta al
+     * escribir y no al abrir el diálogo: la mayoría de las visitas a la ficha no
+     * traspasan nada.
+     */
+    async function buscarDestinatario(texto) {
+        setBusqueda(texto);
+        setDestino('');
+
+        // El servidor pide dos letras: con menos, la busqueda devolveria medio
+        // padron y no serviria para elegir a nadie.
+        if (texto.trim().length < 2) {
+            setCandidatos(null);
+
+            return;
+        }
+
+        try {
+            const r = await fetch(
+                `/panel/inscripciones/${inscripcion.uuid}/buscar-clientes-traspaso?q=${encodeURIComponent(texto)}`,
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
+            );
+            const j = await r.json();
+            setCandidatos(j.clientes ?? []);
+        } catch (e) {
+            setCandidatos([]);
+        }
+    }
+
+    // Se ofrecen SOLO las acciones que el servidor aceptaria ahora mismo: un
+    // boton que lleva a un error enseña a desconfiar de lo que hay en pantalla.
     const acciones = [
         puede.cobrar && {
             href: `/panel/pagos/cobrar?inscripcion=${inscripcion.uuid}`,
@@ -68,22 +115,24 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             primaria: true,
         },
         puede.renovar && {
+            // Renovar sigue en Blade: es un formulario con precios, convenios y
+            // descuentos, no una accion de un clic como las otras tres.
             href: `/admin/inscripciones/${inscripcion.uuid}/renovar`,
             etiqueta: 'Renovar',
             Icono: RefreshCwIcon,
         },
         puede.pausar && {
-            href: `/admin/inscripciones/${inscripcion.uuid}`,
+            alPulsar: () => setDialogo('pausar'),
             etiqueta: 'Pausar',
             Icono: PauseIcon,
         },
         puede.reanudar && {
-            href: `/admin/inscripciones/${inscripcion.uuid}`,
+            alPulsar: () => setDialogo('reanudar'),
             etiqueta: 'Reanudar',
             Icono: PlayIcon,
         },
         puede.traspasar && {
-            href: `/admin/inscripciones/${inscripcion.uuid}`,
+            alPulsar: () => setDialogo('traspasar'),
             etiqueta: 'Traspasar',
             Icono: ArrowRightLeftIcon,
         },
@@ -125,20 +174,27 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        {acciones.map(({ href, etiqueta, Icono, primaria }) => (
-                            <a
-                                key={etiqueta}
-                                href={href}
-                                className={`inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm transition-colors ${
-                                    primaria
-                                        ? 'bg-volt font-medium text-on-volt hover:opacity-90'
-                                        : 'border border-line text-chalk hover:bg-surface-2'
-                                }`}
-                            >
-                                <Icono className="size-4" aria-hidden="true" />
-                                {etiqueta}
-                            </a>
-                        ))}
+                        {acciones.map(({ href, alPulsar, etiqueta, Icono, primaria }) => {
+                            const estilo = `inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm transition-colors ${
+                                primaria
+                                    ? 'bg-volt font-medium text-on-volt hover:opacity-90'
+                                    : 'border border-line text-chalk hover:bg-surface-2'
+                            }`;
+
+                            // Las que se resuelven aquí mismo abren un diálogo;
+                            // las que siguen en Blade son enlaces normales.
+                            return alPulsar ? (
+                                <button key={etiqueta} type="button" onClick={alPulsar} className={estilo}>
+                                    <Icono className="size-4" aria-hidden="true" />
+                                    {etiqueta}
+                                </button>
+                            ) : (
+                                <a key={etiqueta} href={href} className={estilo}>
+                                    <Icono className="size-4" aria-hidden="true" />
+                                    {etiqueta}
+                                </a>
+                            );
+                        })}
                     </div>
                 </div>
             </header>
@@ -279,6 +335,167 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                     </Bloque>
                 </div>
             </div>
+
+            <Dialogo
+                abierto={dialogo === 'pausar'}
+                alCerrar={cerrar}
+                titulo="Pausar la membresía"
+                descripcion="Los días de pausa se suman al final: la membresía no pierde tiempo."
+                accion={`/panel/inscripciones/${inscripcion.uuid}/pausar`}
+                datos={{ dias_pausa: Number(dias), razon_pausa: razon }}
+                etiquetaConfirmar="Pausar"
+                puedeConfirmar={Number(dias) >= 1 && Number(dias) <= 90}
+            >
+                <Campo
+                    etiqueta="Cuántos días"
+                    nombre="dias"
+                    requerido
+                    ayuda={`A este plan le ${pausa.disponibles === 1 ? 'queda' : 'quedan'} ${pausa.disponibles} ${pausa.disponibles === 1 ? 'pausa' : 'pausas'}.`}
+                >
+                    <Seleccion
+                        nombre="dias"
+                        valor={dias}
+                        alCambiar={setDias}
+                        opciones={[
+                            { valor: '7', etiqueta: '7 días' },
+                            { valor: '14', etiqueta: '14 días' },
+                            { valor: '30', etiqueta: '30 días' },
+                            { valor: '60', etiqueta: '60 días' },
+                            { valor: '90', etiqueta: '90 días' },
+                        ]}
+                        vacio="Elige…"
+                    />
+                </Campo>
+
+                <Campo etiqueta="Motivo" nombre="razon" ayuda="Queda registrado en el historial.">
+                    <Texto
+                        nombre="razon"
+                        valor={razon}
+                        alCambiar={setRazon}
+                        placeholder="Viaje, lesión…"
+                    />
+                </Campo>
+            </Dialogo>
+
+            <Dialogo
+                abierto={dialogo === 'reanudar'}
+                alCerrar={cerrar}
+                titulo="Reanudar la membresía"
+                descripcion={
+                    pausa.hasta
+                        ? `Estaba pausada hasta el ${pausa.hasta}. Al reanudar se le devuelven los días que le quedaban.`
+                        : 'Al reanudar se le devuelven los días que le quedaban.'
+                }
+                accion={`/panel/inscripciones/${inscripcion.uuid}/reanudar`}
+                etiquetaConfirmar="Reanudar"
+            />
+
+            <Dialogo
+                abierto={dialogo === 'traspasar'}
+                alCerrar={cerrar}
+                titulo="Traspasar la membresía"
+                descripcion="El socio actual la pierde y pasa entera al nuevo titular."
+                accion={`/panel/inscripciones/${inscripcion.uuid}/traspasar`}
+                datos={{
+                    id_cliente_destino: destino,
+                    motivo_traspaso: motivoTraspaso,
+                    ignorar_deuda: ignorarDeuda,
+                }}
+                etiquetaConfirmar="Traspasar"
+                peligrosa
+                puedeConfirmar={destino !== '' && motivoTraspaso.trim().length > 0}
+            >
+                {destino ? (
+                    // Ya elegido: se enseña a quién y se deja deshacer, en vez
+                    // de dejar la lista abierta invitando a cambiarlo sin querer.
+                    <div className="flex items-center justify-between gap-3 rounded-control border border-line bg-surface-2 px-3 py-2 text-sm">
+                        <span className="text-chalk">{nombreDestino}</span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setDestino('');
+                                setNombreDestino('');
+                                setBusqueda('');
+                                setCandidatos(null);
+                            }}
+                            className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
+                        >
+                            Cambiar
+                        </button>
+                    </div>
+                ) : (
+                    <Campo
+                        etiqueta="Nuevo titular"
+                        nombre="destino"
+                        requerido
+                        ayuda="Solo aparecen socios SIN membresía vigente: nadie puede tener dos a la vez."
+                    >
+                        <Texto
+                            nombre="destino"
+                            tipo="search"
+                            valor={busqueda}
+                            alCambiar={buscarDestinatario}
+                            placeholder="Nombre, RUT o correo"
+                        />
+
+                        {candidatos === null ? null : candidatos.length === 0 ? (
+                            <p className="apoyo mt-2 text-fog">
+                                Nadie coincide, o quien buscas ya tiene una membresía vigente.
+                            </p>
+                        ) : (
+                            <ul className="mt-2 max-h-40 divide-y divide-line overflow-y-auto rounded-control border border-line">
+                                {candidatos.map((c) => (
+                                    <li key={c.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDestino(String(c.id));
+                                                setNombreDestino(
+                                                    c.nombre_completo ?? c.nombre ?? `Socio ${c.id}`,
+                                                );
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm text-chalk transition-colors hover:bg-surface-2"
+                                        >
+                                            {c.nombre_completo ?? c.nombre ?? `Socio ${c.id}`}
+                                            {c.run_pasaporte ? (
+                                                <span className="apoyo block text-fog">{c.run_pasaporte}</span>
+                                            ) : null}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Campo>
+                )}
+
+                <Campo etiqueta="Motivo" nombre="motivo_traspaso" requerido>
+                    <Texto
+                        nombre="motivo_traspaso"
+                        valor={motivoTraspaso}
+                        alCambiar={setMotivoTraspaso}
+                        placeholder="Por qué se traspasa"
+                    />
+                </Campo>
+
+                {/* La casilla solo aparece si hay deuda: sin saldo pendiente
+                    sería una pregunta sin sentido. */}
+                {pago.pendiente > 0 ? (
+                    <label className="flex items-start gap-2 text-sm text-chalk">
+                        <input
+                            type="checkbox"
+                            checked={ignorarDeuda}
+                            onChange={(e) => setIgnorarDeuda(e.target.checked)}
+                            className="mt-0.5"
+                        />
+                        <span>
+                            Traspasar aunque queden {pesos.format(pago.pendiente)} por cobrar.
+                            <span className="apoyo block text-fog">
+                                La deuda se va con la membresía al nuevo titular.
+                            </span>
+                        </span>
+                    </label>
+                ) : null}
+            </Dialogo>
         </>
     );
 }
