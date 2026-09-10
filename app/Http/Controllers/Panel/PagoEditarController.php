@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Panel;
 
-use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
-use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Pago;
 use Illuminate\Http\Request;
@@ -92,7 +90,7 @@ class PagoEditarController extends Controller
         DB::transaction(function () use ($pago, $datos) {
             $pago->update($datos);
 
-            $this->recalcularLaMembresia($pago->inscripcion);
+            $pago->inscripcion?->recalcularSusPagos();
         });
 
         return redirect()
@@ -113,7 +111,7 @@ class PagoEditarController extends Controller
         DB::transaction(function () use ($pago, $inscripcion) {
             $pago->delete();
 
-            $this->recalcularLaMembresia($inscripcion);
+            $inscripcion?->recalcularSusPagos();
         });
 
         return redirect()
@@ -143,46 +141,5 @@ class PagoEditarController extends Controller
             ->sum('monto_abonado');
 
         return max(0, $precio - $otros);
-    }
-
-    /**
-     * Vuelve a escribir el saldo y el estado de TODOS los pagos de la membresía.
-     *
-     * El saldo de cada fila es lo que quedaba por pagar después de ella, así que
-     * cambiar o quitar un pago invalida a todos los que vengan detrás. El de
-     * Blade actualizaba solo el editado, y los demás se quedaban diciendo un
-     * saldo que ya no era: en la ficha del socio se veían tres pagos que no
-     * cuadraban entre sí.
-     */
-    private function recalcularLaMembresia(?Inscripcion $inscripcion): void
-    {
-        if (! $inscripcion) {
-            return;
-        }
-
-        $precio = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base ?? 0);
-
-        $pagos = $inscripcion->pagos()->orderBy('fecha_pago')->orderBy('id')->get();
-        $total = (int) $pagos->sum('monto_abonado');
-
-        // El estado es de la membresía entera, no de cada pago suelto: o está
-        // saldada o no lo está.
-        $estado = match (true) {
-            $total <= 0 => EstadosCodigo::PAGO_PENDIENTE,
-            $total >= $precio => EstadosCodigo::PAGO_PAGADO,
-            default => EstadosCodigo::PAGO_PARCIAL,
-        };
-
-        $restante = $precio;
-
-        foreach ($pagos as $pago) {
-            $restante -= (int) $pago->monto_abonado;
-
-            $pago->update([
-                'monto_total' => $precio,
-                'monto_pendiente' => max(0, $restante),
-                'id_estado' => $estado,
-            ]);
-        }
     }
 }

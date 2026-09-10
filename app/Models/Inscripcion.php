@@ -171,6 +171,47 @@ class Inscripcion extends Model
     }
 
     /**
+     * Vuelve a escribir el saldo y el estado de TODOS sus pagos.
+     *
+     * El saldo que guarda cada pago es lo que quedaba por cobrar DESPUES de él,
+     * así que cualquier cosa que mueva la cuenta —corregir un monto, anular un
+     * cobro, cambiarle el precio a la membresía— invalida a todos los que vengan
+     * detrás. Actualizar solo el que se tocó deja las demás filas diciendo un
+     * saldo que ya no es, y en la ficha del socio se ven pagos que no cuadran
+     * entre sí.
+     *
+     * Vive en el modelo y no en un controlador porque son SUS pagos: lo llaman
+     * la corrección de un pago y la de la propia membresía.
+     */
+    public function recalcularSusPagos(): void
+    {
+        $precio = (int) ($this->precio_final ?? $this->precio_base ?? 0);
+
+        $pagos = $this->pagos()->orderBy('fecha_pago')->orderBy('id')->get();
+        $cobrado = (int) $pagos->sum('monto_abonado');
+
+        // El estado es de la membresía entera, no de cada pago suelto: o está
+        // saldada o no lo está.
+        $estado = match (true) {
+            $cobrado <= 0 => EstadosCodigo::PAGO_PENDIENTE,
+            $cobrado >= $precio => EstadosCodigo::PAGO_PAGADO,
+            default => EstadosCodigo::PAGO_PARCIAL,
+        };
+
+        $restante = $precio;
+
+        foreach ($pagos as $pago) {
+            $restante -= (int) $pago->monto_abonado;
+
+            $pago->update([
+                'monto_total' => $precio,
+                'monto_pendiente' => max(0, $restante),
+                'id_estado' => $estado,
+            ]);
+        }
+    }
+
+    /**
      * Obtener el estado actual de pago de la inscripción
      */
     public function obtenerEstadoPago()

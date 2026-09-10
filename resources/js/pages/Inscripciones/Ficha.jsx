@@ -5,6 +5,7 @@ import {
     ArrowRightLeftIcon,
     BanknoteIcon,
     PauseIcon,
+    PencilIcon,
     PlayIcon,
     RefreshCwIcon,
 } from 'lucide-react';
@@ -121,6 +122,14 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             href: `/panel/inscripciones/${inscripcion.uuid}/renovar`,
             etiqueta: 'Renovar',
             Icono: RefreshCwIcon,
+        },
+        {
+            // Corregir el error de tecleo: la fecha de inicio del mes pasado en
+            // vez de la de este. Se ofrece SIEMPRE porque un dato mal escrito
+            // hay que poder arreglarlo este la membresia como este.
+            href: `/panel/inscripciones/${inscripcion.uuid}/editar`,
+            etiqueta: 'Corregir',
+            Icono: PencilIcon,
         },
         puede.pausar && {
             alPulsar: () => setDialogo('pausar'),

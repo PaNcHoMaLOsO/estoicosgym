@@ -352,6 +352,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // /inscripciones/crear entraria por {inscripcion} y buscaria una
         // membresia con uuid «crear».
         Route::get('/inscripciones/{inscripcion}', \App\Http\Controllers\Panel\InscripcionFichaController::class)->name('inscripciones.show');
+        Route::get('/inscripciones/{inscripcion}/editar', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'edit'])->name('inscripciones.edit');
+        Route::put('/inscripciones/{inscripcion}', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'update'])->name('inscripciones.update');
 
         /*
          * Acciones sobre una membresia ya vendida.
