@@ -181,8 +181,12 @@ class PaginasPublicasTest extends CasoConCatalogos
         $html = $this->get('/contacto')->assertOk()->getContent();
 
         $this->assertStringContainsString('07:00 – 22:00', $html);
-        // «9:00» se escribe como «09:00», y la pausa del mediodía se respeta.
-        $this->assertStringContainsString('09:00 – 13:00 · 15:00 – 18:00', $html);
+        // «9:00» se escribe como «09:00», y la pausa del mediodía se respeta: el
+        // día con dos tramos muestra los dos. Desde que cada día es una tarjeta,
+        // los tramos van en líneas aparte, así que se piden de a uno: unidos por
+        // el punto era cómo se veían antes, no lo que hay que garantizar.
+        $this->assertStringContainsString('09:00 – 13:00', $html);
+        $this->assertStringContainsString('15:00 – 18:00', $html);
         $this->assertStringContainsString('Festivos de 9:00 a 14:00', $html);
         $this->assertStringContainsString('Cerrado', $html);
 
