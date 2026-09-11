@@ -152,8 +152,15 @@ class InscripcionRenovarController extends Controller
 
         // Si ya vencio, empieza hoy: retomar desde una fecha pasada regalaria
         // los dias que estuvo sin membresia.
-        if (! $vence || $vence->isPast()) {
-            return now()->format('Y-m-d');
+        //
+        // SE COMPARA DE DIA A DIA, NO POR INSTANTE. `fecha_vencimiento` se guarda
+        // a medianoche, asi que `isPast()` daba «pasada» durante todo el dia del
+        // vencimiento y proponia empezar hoy, encima del ultimo dia que el socio
+        // ya tenia pagado: justo el solape que este metodo existe para evitar.
+        // Para el resto del sistema —la tarea nocturna, los avisos y
+        // `esta_vencida`— la que vence hoy sigue vigente hoy.
+        if (! $vence || $vence->copy()->startOfDay()->isBefore(today())) {
+            return today()->format('Y-m-d');
         }
 
         return $vence->copy()->addDay()->format('Y-m-d');

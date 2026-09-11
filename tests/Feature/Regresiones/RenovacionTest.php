@@ -232,6 +232,35 @@ class RenovacionTest extends CasoConCatalogos
         );
     }
 
+    /**
+     * La que vence HOY todavía sirve hoy: la nueva empieza mañana.
+     *
+     * `fecha_vencimiento` se guarda a medianoche y se miraba con `isPast()`, que
+     * compara el instante: desde las 00:01 del día del vencimiento la pantalla
+     * proponía empezar hoy, encima del último día que el socio ya tenía pagado.
+     * El resto del sistema no lo ve así —la tarea nocturna, los avisos y
+     * `esta_vencida` la dan por vigente hasta el día siguiente—, y era el único
+     * borde que las pruebas no miraban: estaban el de cinco días y el de veinte
+     * pasados, nunca el cero.
+     */
+    public function test_la_que_vence_hoy_empieza_manana_y_no_se_solapa(): void
+    {
+        $anterior = $this->porVencer(diasQueQuedan: 0);
+        // A medianoche, que es como la escribe el alta de verdad.
+        $anterior->update(['fecha_vencimiento' => today()]);
+
+        $respuesta = $this->actingAs($this->administrador())
+            ->get("/panel/inscripciones/{$anterior->uuid}/renovar");
+
+        $respuesta->assertOk();
+
+        $this->assertSame(
+            today()->addDay()->format('Y-m-d'),
+            $respuesta->viewData('page')['props']['inscripcion']['empieza_sugerido'],
+            'Empezar hoy pisa el último día que el socio ya pagó.'
+        );
+    }
+
     /** Si ya venció, empieza hoy: retomar desde una fecha pasada regala días. */
     public function test_si_ya_vencio_la_nueva_empieza_hoy(): void
     {
