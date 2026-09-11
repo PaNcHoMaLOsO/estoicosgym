@@ -73,7 +73,10 @@ export default function MarcoConfiguracion({ children }) {
                 </div>
 
                 <nav aria-label="Secciones de la configuración" className="hidden lg:block">
-                    <div className="sticky top-6 space-y-5">
+                    {/* Con sus seis grupos el menú es más alto que la pantalla:
+                        se desplaza por su cuenta, o lo de abajo —Usuarios,
+                        Papelera— quedaría fuera de alcance en una pantalla corta. */}
+                    <div className="sticky top-6 max-h-[calc(100dvh-3rem)] space-y-5 overflow-y-auto pr-1 pb-4">
                         <p className="px-2 text-sm font-semibold text-chalk">Configuración</p>
 
                         {grupos.map((g) => (
