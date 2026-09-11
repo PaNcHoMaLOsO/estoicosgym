@@ -40,6 +40,32 @@ class ContratoController extends Controller
     }
 
     /**
+     * El contrato de este socio con sus datos y los de su plan de hoy, para
+     * leerlo o imprimirlo y firmarlo en el mesón.
+     *
+     * Es el mismo texto que se firma por correo, rellenado ahora. No crea
+     * ningún enlace ni cambia nada.
+     */
+    public function ver(Cliente $cliente, ContratoDigitalService $contratos)
+    {
+        if ($cliente->datos_borrados_en) {
+            return redirect()->route('panel.clientes.show', $cliente->uuid)
+                ->with('error', 'Sus datos personales se borraron: ya no hay un contrato que mostrar.');
+        }
+
+        return view('contrato.imprimir', $contratos->borrador($cliente, now()) + [
+            'cliente' => $cliente,
+            'fecha' => now(),
+            // Si ya firmó por correo se avisa: lo que firmó es ESE documento.
+            'firmado' => $cliente->contratos()
+                ->whereNotNull('firmado_en')
+                ->whereNull('datos_borrados_en')
+                ->latest('firmado_en')
+                ->first(),
+        ]);
+    }
+
+    /**
      * El contrato firmado, para leerlo o imprimirlo, con la constancia de la
      * firma.
      *

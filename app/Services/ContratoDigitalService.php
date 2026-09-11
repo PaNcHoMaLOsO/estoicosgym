@@ -249,6 +249,24 @@ class ContratoDigitalService
     }
 
     /**
+     * El contrato de un socio tal como se le haría firmar hoy: el texto
+     * vigente con sus datos y los de su plan. No crea enlaces ni guarda nada.
+     *
+     * Es lo que se ve con «Ver e imprimir el contrato» en su ficha: para
+     * leerlo con él delante, o imprimirlo y firmarlo en el mesón.
+     *
+     * @return array<string,mixed>
+     */
+    public function borrador(Cliente $cliente, Carbon $fecha): array
+    {
+        $contrato = (new Contrato())->forceFill(['id_cliente' => $cliente->id]);
+        $contrato->setRelation('cliente', $cliente);
+        $contrato->setRelation('inscripcion', null);
+
+        return $this->documento($contrato, $fecha);
+    }
+
+    /**
      * Firma.
      *
      * @param array{nombre:string, rut:string, firma:string, consentimiento_imagen:bool, consentimiento_difusion:bool, version_contrato:int, version_terminos:int, version_privacidad:int} $datos

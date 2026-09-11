@@ -24,6 +24,8 @@ class Permisos
         'buscar-cliente-individual', 'contar-destinatarios', 'obtener-destinatarios',
         'buscar',
         'preview', 'plantillas', 'editar', 'traspaso.show',
+        // Ver e imprimir el contrato de un socio: solo se mira.
+        'contrato.ver',
     ];
 
     /** Dar de alta. */

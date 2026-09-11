@@ -260,6 +260,11 @@ class BorrarDatosDelSocioTest extends CasoConCatalogos
             ->post("/panel/clientes/{$cliente->uuid}/contrato/enviar")
             ->assertSessionHas('error');
 
+        // Ni se le arma un contrato: sería «Socio Borrado #N» firmando algo.
+        $this->actingAs($admin)
+            ->get("/panel/clientes/{$cliente->uuid}/contrato/ver")
+            ->assertRedirect("/panel/clientes/{$cliente->uuid}");
+
         $this->assertSame(1, Contrato::where('id_cliente', $cliente->id)->count());
     }
 

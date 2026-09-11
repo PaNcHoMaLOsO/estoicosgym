@@ -375,6 +375,42 @@ class ContratoPorCorreoTest extends CasoConCatalogos
             ->assertSee('su huella cuadra');
     }
 
+    /**
+     * Desde la ficha se ve su contrato, con sus datos, para imprimirlo.
+     *
+     * Solo se mira: no crea enlaces ni manda correos, y recepción también
+     * puede, porque es con el socio delante en el mesón.
+     */
+    public function test_desde_la_ficha_se_ve_su_contrato_para_imprimir(): void
+    {
+        $socio = $this->socio();
+
+        $this->actingAs($this->recepcionista())
+            ->get("/panel/clientes/{$socio->uuid}/contrato/ver")
+            ->assertOk()
+            ->assertSee('Camila Rojas Soto')
+            ->assertSee(Membresia::find(4)->nombre)
+            ->assertSee('$40.000')
+            ->assertSee('Imprimir o guardar como PDF');
+
+        $this->assertSame(0, Contrato::count());
+        $this->assertSame([], $this->enviados);
+    }
+
+    /** Si ya firmó por correo, la hoja para imprimir lo dice y lleva a lo firmado. */
+    public function test_la_hoja_para_imprimir_avisa_si_ya_firmo_por_correo(): void
+    {
+        $socio = $this->socio();
+        $token = $this->mandar($socio);
+        $this->post("/contrato/{$token}", $this->datosDeFirma());
+
+        $this->actingAs($this->administrador())
+            ->get("/panel/clientes/{$socio->uuid}/contrato/ver")
+            ->assertOk()
+            ->assertSee('Ya firmó por correo')
+            ->assertSee('/panel/contratos/' . Contrato::sole()->uuid, false);
+    }
+
     /** Al dar de alta, con una casilla, le llega el contrato. */
     public function test_al_dar_de_alta_se_le_puede_mandar_el_contrato(): void
     {

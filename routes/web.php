@@ -386,6 +386,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/clientes/{cliente}/contrato', [\App\Http\Controllers\Panel\ClienteController::class, 'contrato'])->name('clientes.contrato');
         // El contrato por correo: le llega un enlace para leerlo y firmarlo en su celular.
         Route::post('/clientes/{cliente}/contrato/enviar', [\App\Http\Controllers\Panel\ContratoController::class, 'enviar'])->name('clientes.contrato.enviar');
+        // El contrato con sus datos, para leerlo o imprimirlo y firmarlo en el mesón.
+        Route::get('/clientes/{cliente}/contrato/ver', [\App\Http\Controllers\Panel\ContratoController::class, 'ver'])->name('clientes.contrato.ver');
         Route::get('/contratos/{contrato}', [\App\Http\Controllers\Panel\ContratoController::class, 'show'])->name('contratos.show');
         Route::post('/contratos/{contrato}/anular', [\App\Http\Controllers\Panel\ContratoController::class, 'anular'])->name('contratos.anular');
         // Borrar sus datos personales (Ley 21.719): sus pagos se quedan en las cuentas, sin nombre.

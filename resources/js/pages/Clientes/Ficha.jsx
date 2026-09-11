@@ -260,7 +260,24 @@ function ContratoDelSocio({ cliente }) {
                     </Dato>
                 </dl>
 
-                {cliente.datos_borrados ? null : <FirmaPorCorreo cliente={cliente} />}
+                {cliente.datos_borrados ? null : (
+                    <>
+                        {/* El contrato con sus datos: para leerlo con él delante,
+                            o imprimirlo y firmarlo en el mesón. Se abre aparte
+                            porque es una hoja para imprimir, no una pantalla. */}
+                        <a
+                            href={`/panel/clientes/${cliente.uuid}/contrato/ver`}
+                            target="_blank"
+                            rel="noopener"
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1 text-sm text-chalk transition-colors hover:bg-surface-2"
+                        >
+                            <FileTextIcon className="size-3.5" aria-hidden="true" />
+                            Ver e imprimir el contrato
+                        </a>
+
+                        <FirmaPorCorreo cliente={cliente} />
+                    </>
+                )}
             </Bloque>
         );
     }
