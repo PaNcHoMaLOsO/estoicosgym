@@ -401,11 +401,7 @@ class RegistroInscripcionService
     /** El último día que la membresía sigue sirviendo. */
     private function vencimiento(Carbon $inicio, Membresia $membresia): Carbon
     {
-        if ($membresia->duracion_dias > 0) {
-            return $inicio->clone()->addDays($membresia->duracion_dias)->subDay();
-        }
-
-        return $inicio->clone()->addMonths($membresia->duracion_meses ?? 1)->subDay();
+        return $membresia->vencimientoDesde($inicio);
     }
 
     /**

@@ -181,9 +181,13 @@ class Inscripcion extends Model
      * entre sí.
      *
      * Vive en el modelo y no en un controlador porque son SUS pagos: lo llaman
-     * la corrección de un pago y la de la propia membresía.
+     * la corrección de un pago, la de la propia membresía y la revisión de cada
+     * noche (pagos:sincronizar-estados).
+     *
+     * Devuelve cuántos pagos no cuadraban. Con `$guardar` en false solo los
+     * cuenta, sin tocar nada.
      */
-    public function recalcularSusPagos(): void
+    public function recalcularSusPagos(bool $guardar = true): int
     {
         $precio = (int) ($this->precio_final ?? $this->precio_base ?? 0);
 
@@ -199,16 +203,29 @@ class Inscripcion extends Model
         };
 
         $restante = $precio;
+        $descuadrados = 0;
 
         foreach ($pagos as $pago) {
             $restante -= (int) $pago->monto_abonado;
 
-            $pago->update([
+            $pago->fill([
                 'monto_total' => $precio,
                 'monto_pendiente' => max(0, $restante),
                 'id_estado' => $estado,
             ]);
+
+            // Solo se escribe lo que no cuadraba: la revisión de la noche pasa
+            // por todas las membresías y no tiene por qué tocar las que están bien.
+            if ($pago->isDirty()) {
+                $descuadrados++;
+
+                if ($guardar) {
+                    $pago->save();
+                }
+            }
         }
+
+        return $descuadrados;
     }
 
     /**
@@ -240,7 +257,10 @@ class Inscripcion extends Model
         if (!$this->fecha_vencimiento) {
             return 0;
         }
-        return (int) now()->diffInDays($this->fecha_vencimiento, false);
+        // De día a día. Con now() y la hora del momento, una membresía que
+        // vence mañana daba 0 —el (int) corta los 0,4 días— y ya no se podía
+        // traspasar: a cualquier hora que no fuera medianoche se restaba uno.
+        return (int) today()->diffInDays($this->fecha_vencimiento->copy()->startOfDay(), false);
     }
 
     /**
@@ -569,7 +589,7 @@ class Inscripcion extends Model
     public function getDiasConsumidosAttribute()
     {
         if (!$this->fecha_inicio) return 0;
-        return max(0, $this->fecha_inicio->diffInDays(now()));
+        return max(0, (int) $this->fecha_inicio->copy()->startOfDay()->diffInDays(today(), false));
     }
 
     /**

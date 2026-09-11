@@ -272,4 +272,35 @@ class ConstructorDeInformesTest extends CasoConCatalogos
             $this->assertArrayNotHasKey('relaciones', $modulo);
         }
     }
+
+
+    /**
+     * Un texto que empieza por «=» no llega al CSV como fórmula.
+     *
+     * Excel ejecuta lo que empieza por = + - @ al abrir el archivo: un socio
+     * anotado con un nombre así corría una fórmula en el computador del gimnasio.
+     */
+    public function test_el_csv_no_deja_pasar_formulas(): void
+    {
+        Cliente::factory()->create(['nombres' => '=1+1', 'activo' => true]);
+
+        $csv = $this->actingAs($this->administrador())
+            ->get('/panel/reportes/constructor/clientes/csv?' . http_build_query(['columnas' => ['nombres']]))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString("'=1+1", $csv);
+        $this->assertDoesNotMatchRegularExpression('/^=1\+1/m', $csv);
+    }
+
+    /** Un filtro de texto que llega como lista —?filtros[nombres][]=a— no revienta el informe. */
+    public function test_un_filtro_de_texto_como_lista_no_revienta(): void
+    {
+        Cliente::factory()->create(['activo' => true]);
+
+        $this->ver('clientes', [
+            'columnas' => ['nombres'],
+            'filtros' => ['nombres' => ['a', 'b']],
+        ])->assertOk();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -82,5 +83,28 @@ class Membresia extends Model
     public function inscripciones()
     {
         return $this->hasMany(Inscripcion::class, 'id_membresia');
+    }
+
+    /**
+     * El último día que sirve una membresía de este plan que empieza en $inicio.
+     *
+     * UNA sola regla para todo lo que crea una membresía —inscribir, renovar,
+     * cambiar de plan y registrar a un socio nuevo—. El registro de socio nuevo
+     * llevaba la suya (inicio + días, sin descontar el primero y sin mirar los
+     * meses): daba un día de más, un pase diario de dos días, y un plan cargado
+     * solo en meses vencía el mismo día en que empezaba.
+     *
+     * Con días mandan los días: inicio + días − 1, porque el primero cuenta.
+     * Con meses: inicio + meses − 1 día.
+     */
+    public function vencimientoDesde(CarbonInterface $inicio): CarbonInterface
+    {
+        $dia = $inicio->copy()->startOfDay();
+
+        if ((int) $this->duracion_dias > 0) {
+            return $dia->addDays((int) $this->duracion_dias)->subDay();
+        }
+
+        return $dia->addMonths(max(1, (int) $this->duracion_meses))->subDay();
     }
 }

@@ -564,7 +564,8 @@ class RegistroClienteService
             'observaciones' => $datos['inscripcion']['observaciones_inscripcion'] ?? null,
             'fecha_inscripcion' => Carbon::now(),
             'fecha_inicio' => $inicio,
-            'fecha_vencimiento' => $inicio->clone()->addDays($datos['membresia']->duracion_dias),
+            // La misma regla que inscribir y renovar: ver Membresia::vencimientoDesde().
+            'fecha_vencimiento' => $datos['membresia']->vencimientoDesde($inicio),
             'precio_base' => (int) $datos['precio']->precio_normal,
             'descuento_aplicado' => $datos['descuento_total'],
             'precio_final' => $datos['precio_final'],

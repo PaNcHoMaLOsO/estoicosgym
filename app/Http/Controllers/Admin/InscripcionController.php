@@ -883,12 +883,7 @@ class InscripcionController extends Controller
 
             // Calcular nueva fecha de vencimiento
             $fechaInicio = now();
-            if ($nuevaMembresia->duracion_dias && $nuevaMembresia->duracion_dias > 0) {
-                $fechaVencimiento = $fechaInicio->clone()->addDays($nuevaMembresia->duracion_dias)->subDay();
-            } else {
-                $duracionMeses = $nuevaMembresia->duracion_meses ?? 1;
-                $fechaVencimiento = $fechaInicio->clone()->addMonths($duracionMeses)->subDay();
-            }
+            $fechaVencimiento = $nuevaMembresia->vencimientoDesde($fechaInicio);
 
             // Usar transacción para mantener integridad
             DB::beginTransaction();

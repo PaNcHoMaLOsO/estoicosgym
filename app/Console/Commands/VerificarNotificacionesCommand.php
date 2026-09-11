@@ -185,7 +185,8 @@ class VerificarNotificacionesCommand extends Command
 
         // Verificar por fecha de vencimiento
         $fechaVencimiento = \Carbon\Carbon::parse($inscripcion->fecha_vencimiento ?? $inscripcion->fecha_fin);
-        $diasRestantes = $hoy->diffInDays($fechaVencimiento, false);
+        // De día a día: con Carbon 3 la diferencia trae signo y decimales.
+        $diasRestantes = (int) $hoy->copy()->startOfDay()->diffInDays($fechaVencimiento->copy()->startOfDay(), false);
 
         // Si está vencida por fecha (aunque el estado no esté actualizado)
         if ($diasRestantes < 0) {
@@ -200,7 +201,8 @@ class VerificarNotificacionesCommand extends Command
         // PRIORIDAD 2: Si fue reactivada recientemente
         if ($inscripcion->fecha_pausa_fin && isset($inscripcion->id_estado) && $inscripcion->id_estado == 100) {
             $fechaReactivacion = \Carbon\Carbon::parse($inscripcion->fecha_pausa_fin);
-            if ($hoy->diffInDays($fechaReactivacion) <= 2) {
+            $diasDesdeReactivacion = (int) $fechaReactivacion->copy()->startOfDay()->diffInDays($hoy->copy()->startOfDay(), false);
+            if ($diasDesdeReactivacion >= 0 && $diasDesdeReactivacion <= 2) {
                 return 'activacion_inscripcion';
             }
         }
@@ -236,12 +238,14 @@ class VerificarNotificacionesCommand extends Command
         
         // Si tiene deuda y la inscripción tiene más de 7 días
         $fechaInicio = \Carbon\Carbon::parse($inscripcion->fecha_inicio ?? $inscripcion->fecha_inscripcion);
-        if ($saldoPendiente > 0 && $hoy->diffInDays($fechaInicio) > 7) {
+        // Días desde que empezó: al revés, con signo, nunca pasaba de 7.
+        $diasDesdeInicio = (int) $fechaInicio->copy()->startOfDay()->diffInDays($hoy->copy()->startOfDay(), false);
+        if ($saldoPendiente > 0 && $diasDesdeInicio > 7) {
             return 'pago_pendiente';
         }
 
         // PRIORIDAD 5: Si es inscripción reciente (bienvenida) - últimos 7 días
-        if ($hoy->diffInDays($fechaInicio) <= 7) {
+        if ($diasDesdeInicio >= 0 && $diasDesdeInicio <= 7) {
             return 'bienvenida';
         }
 

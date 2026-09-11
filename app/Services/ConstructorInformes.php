@@ -420,6 +420,12 @@ class ConstructorInformes
                 continue;
             }
 
+            // Solo las fechas llegan como rango. Un filtro de texto que llega
+            // como lista —?filtros[nombre][]=x— reventaba el informe.
+            if (is_array($valor) !== ($columna['tipo'] === 'fecha')) {
+                continue;
+            }
+
             match ($columna['tipo']) {
                 'texto' => $consulta->where($campo, 'like', '%' . $valor . '%'),
                 'numero', 'moneda' => $consulta->where($campo, $valor),

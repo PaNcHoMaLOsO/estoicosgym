@@ -101,7 +101,18 @@ class ConstructorController extends Controller
             // Los decimales van con coma: en un Excel en español, «40000.5»
             // entra como texto y no se puede sumar.
             is_float($valor) => number_format($valor, $valor == (int) $valor ? 0 : 2, ',', ''),
-            default => (string) $valor,
+            is_int($valor) => (string) $valor,
+            default => $this->sinFormula((string) $valor),
         };
+    }
+
+    /**
+     * Un texto que empieza por = + - @ Excel lo abre como FÓRMULA: un socio
+     * anotado como «=HIPERVINCULO(...)» se ejecutaría al abrir el informe en el
+     * computador del gimnasio. Con un apóstrofo delante se lee tal cual.
+     */
+    private function sinFormula(string $texto): string
+    {
+        return preg_match('/^[=+\-@\t\r]/', $texto) && ! is_numeric($texto) ? "'" . $texto : $texto;
     }
 }

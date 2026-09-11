@@ -260,7 +260,7 @@ class NotificacionController extends Controller
 
             if ($ultimaNotificacion && $ultimaNotificacion->created_at->diffInHours(now()) < 2) {
                 $rechazadas++;
-                $minutosRestantes = 120 - $ultimaNotificacion->created_at->diffInMinutes(now());
+                $minutosRestantes = (int) ceil(120 - $ultimaNotificacion->created_at->diffInMinutes(now()));
                 $errores[] = "Cliente {$cliente->nombre_completo}: Debe esperar {$minutosRestantes} minutos";
                 continue;
             }
@@ -312,7 +312,8 @@ class NotificacionController extends Controller
                     'nombre_cliente' => $cliente->nombre_completo,
                     'membresia' => $inscripcion->membresia->nombre,
                     'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-                    'dias_restantes' => max(0, $inscripcion->fecha_vencimiento->diffInDays(now(), false)),
+                    // Hoy → vencimiento, de día a día. Al revés daba siempre 0: «te quedan 0 días».
+                    'dias_restantes' => max(0, (int) today()->diffInDays($inscripcion->fecha_vencimiento->copy()->startOfDay(), false)),
                     'es_menor_edad' => $cliente->es_menor_edad,
                 ];
 

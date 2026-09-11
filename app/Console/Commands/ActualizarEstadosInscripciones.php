@@ -45,8 +45,8 @@ class ActualizarEstadosInscripciones extends Command
                 // De dia a dia y entero: fecha_vencimiento se guarda a medianoche,
                 // asi que restarle la hora actual dejaba decimales en pantalla.
                 $diasVencida = (int) $insc->fecha_vencimiento->startOfDay()->diffInDays($hoy->copy()->startOfDay());
-                $this->line("     - ID #{$insc->id}: {$insc->cliente->nombres} {$insc->cliente->apellido_paterno}");
-                $this->line("       Membresía: {$insc->membresia->nombre}, Venció hace {$diasVencida} días");
+                $this->line("     - ID #{$insc->id}: {$this->quien($insc)}");
+                $this->line("       Membresía: {$insc->membresia?->nombre}, Venció hace {$diasVencida} días");
                 
                 if (!$dryRun) {
                     $insc->update([
@@ -81,7 +81,7 @@ class ActualizarEstadosInscripciones extends Command
             
             foreach ($pausasTerminadas as $insc) {
                 $diasPasados = (int) $insc->fecha_pausa_fin->startOfDay()->diffInDays($hoy->copy()->startOfDay());
-                $this->line("     - ID #{$insc->id}: {$insc->cliente->nombres} {$insc->cliente->apellido_paterno}");
+                $this->line("     - ID #{$insc->id}: {$this->quien($insc)}");
                 $this->line("       Pausa terminó hace {$diasPasados} días (fecha_pausa_fin: {$insc->fecha_pausa_fin->format('d/m/Y')})");
                 
                 if (!$dryRun) {
@@ -110,5 +110,20 @@ class ActualizarEstadosInscripciones extends Command
         }
 
         return 0;
+    }
+
+    /**
+     * El nombre del socio, o una marca si está en la papelera.
+     *
+     * Leerlo sin mirar tumbaba la tarea entera con el primer socio borrado:
+     * las membresías que venían detrás no se marcaban nunca como vencidas.
+     */
+    private function quien(Inscripcion $inscripcion): string
+    {
+        $cliente = $inscripcion->cliente;
+
+        return $cliente
+            ? trim("{$cliente->nombres} {$cliente->apellido_paterno}")
+            : "socio #{$inscripcion->id_cliente} (en la papelera)";
     }
 }
