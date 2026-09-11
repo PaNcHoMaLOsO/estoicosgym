@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Pago;
+use App\Models\MetodoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -43,8 +44,7 @@ class ReporteController extends Controller
                     ->whereYear('fecha_pago', $hoy->year)
                     ->whereMonth('fecha_pago', $hoy->month)
                     ->sum('monto_abonado'),
-                'por_cobrar' => (int) Pago::whereIn('id_estado', [self::PAGO_PENDIENTE, self::PAGO_PARCIAL])
-                    ->sum('monto_pendiente'),
+                'por_cobrar' => Inscripcion::porCobrar(),
             ],
         ]);
     }
@@ -85,13 +85,37 @@ class ReporteController extends Controller
             'pagos' => (int) ($totalPorMes[$mes]->cantidad ?? 0),
         ]);
 
-        $porMetodo = Pago::ingresos()
-            ->selectRaw('metodos_pago.nombre, SUM(pagos.monto_abonado) as total, COUNT(*) as cantidad')
-            ->join('metodos_pago', 'pagos.id_metodo_pago', '=', 'metodos_pago.id')
+        /*
+         * Un pago MIXTO se reparte entre sus dos métodos. Antes iba entero al
+         * primero: 20.000 en efectivo y 10.000 por transferencia se leían como
+         * 30.000 en efectivo, y la caja no cuadraba con el banco.
+         */
+        $mixto = 'pagos.id_metodo_pago2 IS NOT NULL AND pagos.monto_metodo1 IS NOT NULL';
+
+        $primero = Pago::ingresos()
             ->whereYear('fecha_pago', $anio)
-            ->groupBy('metodos_pago.id', 'metodos_pago.nombre')
-            ->orderByDesc('total')
+            ->selectRaw("pagos.id_metodo_pago as metodo, SUM(CASE WHEN {$mixto} THEN pagos.monto_metodo1 ELSE pagos.monto_abonado END) as total, COUNT(*) as cantidad")
+            ->groupBy('pagos.id_metodo_pago')
             ->get();
+
+        $segundo = Pago::ingresos()
+            ->whereYear('fecha_pago', $anio)
+            ->whereRaw($mixto)
+            ->selectRaw('pagos.id_metodo_pago2 as metodo, SUM(pagos.monto_abonado - pagos.monto_metodo1) as total, COUNT(*) as cantidad')
+            ->groupBy('pagos.id_metodo_pago2')
+            ->get();
+
+        $nombres = MetodoPago::query()->withoutGlobalScopes()->pluck('nombre', 'id');
+
+        $porMetodo = $primero->concat($segundo)
+            ->groupBy('metodo')
+            ->map(fn ($filas, $metodo) => (object) [
+                'nombre' => $nombres[$metodo] ?? 'Sin método',
+                'total' => (int) $filas->sum('total'),
+                'cantidad' => (int) $filas->sum('cantidad'),
+            ])
+            ->sortByDesc('total')
+            ->values();
 
         $porMembresia = Pago::ingresos()
             ->selectRaw('membresias.nombre, SUM(pagos.monto_abonado) as total, COUNT(*) as cantidad')
@@ -190,32 +214,38 @@ class ReporteController extends Controller
     /** Lo que el gimnasio tiene por cobrar. */
     public function pendientes()
     {
-        $pagos = Pago::with(['cliente', 'inscripcion.membresia', 'metodoPago'])
-            ->whereIn('id_estado', [self::PAGO_PENDIENTE, self::PAGO_PARCIAL])
-            ->where('monto_pendiente', '>', 0)
-            ->orderByDesc('monto_pendiente')
-            ->get()
-            ->map(function (Pago $p) {
-                $cliente = $p->cliente;
+        /*
+         * UNA FILA POR MEMBRESÍA. Antes era una por pago: quien abonó dos veces
+         * salía dos veces, cada una con «lo que quedaba después de ese pago»,
+         * y el total sumaba la misma deuda dos veces. Quien no había pagado ni
+         * una cuota no salía.
+         */
+        $filas = Inscripcion::conDeuda()
+            ->load(['cliente', 'membresia', 'pagos.metodoPago'])
+            ->map(function (Inscripcion $i) {
+                $cliente = $i->cliente;
+                $ultimo = $i->pagos->sortByDesc(fn (Pago $p) => sprintf('%s-%010d', $p->fecha_pago?->format('Y-m-d'), $p->id))->first();
 
                 return [
-                    'uuid' => $p->uuid,
+                    'uuid' => $i->uuid,
                     'socio' => $cliente
                         ? trim("{$cliente->nombres} {$cliente->apellido_paterno}")
                         : 'Socio eliminado',
-                    'membresia' => $p->inscripcion?->membresia?->nombre,
-                    'metodo' => $p->metodoPago?->nombre,
-                    'fecha' => $p->fecha_pago?->format('d/m/Y'),
-                    'total' => (int) $p->monto_total,
-                    'abonado' => (int) $p->monto_abonado,
-                    'pendiente' => (int) $p->monto_pendiente,
+                    'membresia' => $i->membresia?->nombre,
+                    'metodo' => $ultimo?->metodoPago?->nombre,
+                    'fecha' => $ultimo?->fecha_pago?->format('d/m/Y'),
+                    'total' => (int) $i->precio_final,
+                    'abonado' => (int) $i->abonado,
+                    'pendiente' => $i->deuda,
                 ];
-            });
+            })
+            ->sortByDesc('pendiente')
+            ->values();
 
         return Inertia::render('Reportes/Pendientes', [
-            'pagos' => $pagos->values(),
-            'total' => (int) $pagos->sum('pendiente'),
-            'abonado' => (int) $pagos->sum('abonado'),
+            'pagos' => $filas,
+            'total' => (int) $filas->sum('pendiente'),
+            'abonado' => (int) $filas->sum('abonado'),
         ]);
     }
 

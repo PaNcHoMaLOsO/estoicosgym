@@ -57,7 +57,7 @@ export default function Pendientes({ pagos, total, abonado }) {
                 {pagos.map((p) => (
                     <Fila key={p.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/panel/pagos/${p.uuid}`} className="hover:underline">
+                            <Link href={`/panel/inscripciones/${p.uuid}`} className="hover:underline">
                                 {p.socio}
                             </Link>
                         </Celda>

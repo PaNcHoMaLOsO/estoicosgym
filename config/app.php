@@ -65,7 +65,13 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    /*
+     * LA HORA DE CHILE, no la de Greenwich. Con UTC, a las 21:00 de Los Ángeles
+     * ya era «mañana»: no se podía inscribir a nadie con la fecha de hoy
+     * después de esa hora, lo cobrado en la noche caía al día siguiente, y las
+     * tareas automáticas corrían tres horas antes de lo que dice Configuración.
+     */
+    'timezone' => env('APP_TIMEZONE', 'America/Santiago'),
 
     /*
     |--------------------------------------------------------------------------

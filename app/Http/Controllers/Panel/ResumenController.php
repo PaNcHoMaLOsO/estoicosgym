@@ -125,10 +125,10 @@ class ResumenController extends Controller
                 ])
                 ->sum('monto_abonado'),
 
-            // Lo que los socios deben de sus membresías. No incluye lo fiado
-            // del mesón, que es otra libreta y se cuenta aparte.
-            'por_cobrar' => (int) Pago::whereIn('id_estado', [200, 202, 203])
-                ->sum('monto_pendiente'),
+            // Lo que los socios deben de sus membresías, contado membresía por
+            // membresía. No incluye lo fiado del mesón, que es otra libreta y
+            // se cuenta aparte.
+            'por_cobrar' => Inscripcion::porCobrar(),
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pago;
+use App\Models\Inscripcion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -70,7 +71,8 @@ class PagoController extends Controller
                     ->whereMonth('fecha_pago', $hoy->month)
                     ->sum('monto_abonado'),
                 // Lo que queda por cobrar es la cifra que mueve a actuar.
-                'por_cobrar' => (int) Pago::where('id_estado', self::PARCIAL)->sum('monto_pendiente'),
+                // De las membresías, no de los pagos: ver Inscripcion::conDeuda().
+                'por_cobrar' => Inscripcion::porCobrar(),
                 'completados' => Pago::where('id_estado', self::PAGADO)->count(),
             ],
         ]);

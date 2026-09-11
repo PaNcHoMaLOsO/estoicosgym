@@ -574,6 +574,48 @@ class Inscripcion extends Model
         return $this->monto_pagado >= $this->precio_final;
     }
 
+    /** Las membresías cuya deuda todavía se sale a cobrar. Las canceladas, no. */
+    public const ESTADOS_CON_DEUDA = [100, 101, 102];
+
+    /**
+     * Lo que debe esta membresía: su precio menos todo lo abonado.
+     *
+     * Usa la suma de `withSum('pagos as abonado', ...)` si viene cargada, para
+     * no hacer una consulta por membresía al listar.
+     */
+    public function getDeudaAttribute(): int
+    {
+        $abonado = array_key_exists('abonado', $this->attributes)
+            ? (int) $this->attributes['abonado']
+            : (int) $this->monto_pagado;
+
+        return max(0, (int) $this->precio_final - $abonado);
+    }
+
+    /**
+     * Las membresías que deben algo, con lo abonado ya sumado.
+     *
+     * LA DEUDA ES DE LA MEMBRESÍA, NO DE CADA PAGO. Cada pago guarda en
+     * `monto_pendiente` lo que quedaba DESPUÉS de él, así que sumar esa columna
+     * contaba dos veces a quien abonó dos veces, y nada a quien no había pagado
+     * ni una cuota. El resumen, Pagos y Reportes daban tres cifras distintas y
+     * ninguna era lo que se debía.
+     */
+    public static function conDeuda(): \Illuminate\Database\Eloquent\Collection
+    {
+        return static::whereIn('id_estado', self::ESTADOS_CON_DEUDA)
+            ->withSum('pagos as abonado', 'monto_abonado')
+            ->get()
+            ->filter(fn (self $inscripcion) => $inscripcion->deuda > 0)
+            ->values();
+    }
+
+    /** El total que se debe, para las cifras de arriba de cada pantalla. */
+    public static function porCobrar(): int
+    {
+        return (int) static::conDeuda()->sum(fn (self $inscripcion) => $inscripcion->deuda);
+    }
+
     /**
      * Calcular el crédito disponible para cambio de plan
      * Es el monto que ya pagó el cliente

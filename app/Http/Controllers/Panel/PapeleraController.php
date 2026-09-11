@@ -170,6 +170,12 @@ class PapeleraController extends Controller
         $fila = $config['modelo']::onlyTrashed()->findOrFail($id);
         $fila->restore();
 
+        // Un pago que vuelve cambia el saldo de todos los de su membresía:
+        // sin recalcular, los demás seguían diciendo lo que se debía sin él.
+        if ($fila instanceof \App\Models\Pago) {
+            $fila->inscripcion?->recalcularSusPagos();
+        }
+
         $como = ($config['describir'])($fila);
 
         return back()->with('success', "«{$como['que']}» vuelve a estar disponible.");
