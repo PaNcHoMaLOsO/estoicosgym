@@ -382,6 +382,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/inscripciones/{inscripcion}', \App\Http\Controllers\Panel\InscripcionFichaController::class)->name('inscripciones.show');
         Route::get('/inscripciones/{inscripcion}/editar', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'edit'])->name('inscripciones.edit');
         Route::put('/inscripciones/{inscripcion}', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'update'])->name('inscripciones.update');
+        // A la papelera, que ya la listaba sin que nada pudiera llegar ahi.
+        Route::delete('/inscripciones/{inscripcion}', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'eliminar'])->name('inscripciones.destroy');
 
         /*
          * Acciones sobre una membresia ya vendida.

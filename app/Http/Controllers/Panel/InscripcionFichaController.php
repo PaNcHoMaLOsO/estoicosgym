@@ -93,6 +93,11 @@ class InscripcionFichaController extends Controller
                 'cobrar' => ! $finalizada && $pago['pendiente'] > 0,
                 'renovar' => ! $finalizada,
                 'traspasar' => $inscripcion->puedeTraspasarse(true),
+                // Borrar es para la membresia que no deberia existir —la
+                // apuntada dos veces—, no para cancelar una real. Con dinero
+                // cobrado no se ofrece: el pago se quedaria suelto, apuntando a
+                // una membresia que ya no se lista. Primero se anula el pago.
+                'borrar' => (int) $pago['total_abonado'] === 0,
             ],
 
             'pagos' => $inscripcion->pagos()

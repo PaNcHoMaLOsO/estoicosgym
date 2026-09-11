@@ -125,4 +125,38 @@ class InscripcionEditarController extends Controller
             ->route('panel.inscripciones.show', $inscripcion->uuid)
             ->with('success', 'Membresía corregida.');
     }
+
+    /**
+     * Manda una membresía vendida a la papelera.
+     *
+     * Es para la que no debería existir: la que se apuntó dos veces, o la del
+     * socio equivocado recién creada. NO es para cancelar una membresía real
+     * —eso es un estado, y el socio la tuvo— ni para corregirla, que se hace
+     * arriba.
+     *
+     * SI SE COBRÓ ALGO, NO SE BORRA. La inscripción se iría a la papelera y el
+     * pago se quedaría fuera, apuntando a una membresía que ya no se lista:
+     * el dinero seguiría contando en los informes y nadie sabría de qué era.
+     * Primero se anula el pago —que tiene su pantalla y recalcula el saldo— y
+     * después se borra esto. En ese orden las cuentas cuadran en cada paso.
+     */
+    public function eliminar(Inscripcion $inscripcion)
+    {
+        $cobrado = (int) $inscripcion->pagos()->sum('monto_abonado');
+
+        if ($cobrado > 0) {
+            return back()->with('error', sprintf(
+                'No se puede borrar: esta membresía tiene $%s cobrados. Anula primero sus pagos.',
+                number_format($cobrado, 0, ',', '.')
+            ));
+        }
+
+        $socio = $inscripcion->cliente;
+
+        $inscripcion->delete();
+
+        return redirect()
+            ->route('panel.clientes.show', $socio?->uuid)
+            ->with('success', 'Membresía borrada. Está en la papelera por si hay que recuperarla.');
+    }
 }

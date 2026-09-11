@@ -8,6 +8,7 @@ import {
     PencilIcon,
     PlayIcon,
     RefreshCwIcon,
+    TrashIcon,
 } from 'lucide-react';
 
 import Dialogo from '@/components/Dialogo';
@@ -146,6 +147,14 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             etiqueta: 'Traspasar',
             Icono: ArrowRightLeftIcon,
         },
+        puede.borrar && {
+            // Solo aparece si no se cobró nada. Es para la membresía apuntada
+            // dos veces, no para cancelar una real: eso es un estado.
+            alPulsar: () => setDialogo('borrar'),
+            etiqueta: 'Borrar',
+            Icono: TrashIcon,
+            peligrosa: true,
+        },
     ].filter(Boolean);
 
     return (
@@ -184,11 +193,13 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        {acciones.map(({ href, alPulsar, etiqueta, Icono, primaria }) => {
+                        {acciones.map(({ href, alPulsar, etiqueta, Icono, primaria, peligrosa }) => {
                             const estilo = `inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm transition-colors ${
                                 primaria
                                     ? 'bg-volt font-medium text-on-volt hover:opacity-90'
-                                    : 'border border-line text-chalk hover:bg-surface-2'
+                                    : peligrosa
+                                      ? 'border border-line text-fog hover:bg-surface-2 hover:text-danger'
+                                      : 'border border-line text-chalk hover:bg-surface-2'
                             }`;
 
                             // Las que se resuelven aquí mismo abren un diálogo;
@@ -386,6 +397,21 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                     />
                 </Campo>
             </Dialogo>
+
+            {/* Se dice QUÉ se borra —de quién y de qué plan— y no un «¿seguro?»:
+                quien llegó aquí desde la ficha equivocada también diría que sí
+                a un «¿seguro?». */}
+            <Dialogo
+                abierto={dialogo === 'borrar'}
+                alCerrar={cerrar}
+                titulo="¿Borrar esta membresía?"
+                descripcion={`${inscripcion.membresia ?? 'La membresía'} de ${socio?.nombre ?? 'este socio'}. No se cobró nada por ella. Queda en la papelera por si hay que recuperarla.`}
+                accion={`/panel/inscripciones/${inscripcion.uuid}`}
+                via="inertia"
+                metodo="delete"
+                etiquetaConfirmar="Borrar"
+                peligrosa
+            />
 
             <Dialogo
                 abierto={dialogo === 'reanudar'}
