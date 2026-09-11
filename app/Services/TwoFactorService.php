@@ -94,7 +94,7 @@ class TwoFactorService
      */
     protected function sendWhatsApp(string $phone, string $code): bool
     {
-        $message = "🔐 *Estoicos Gym*\n\nTu código de verificación es:\n\n*{$code}*\n\nExpira en 10 minutos.\n\n_Si no solicitaste este código, ignora este mensaje._";
+        $message = "🔐 *" . \App\Support\Ajustes::obtener('gimnasio.nombre') . "*\n\nTu código de verificación es:\n\n*{$code}*\n\nExpira en 10 minutos.\n\n_Si no solicitaste este código, ignora este mensaje._";
 
         // Opción 1: Twilio WhatsApp API
         if (config('services.twilio.whatsapp_enabled')) {
@@ -141,7 +141,7 @@ class TwoFactorService
      */
     protected function sendSms(string $phone, string $code): bool
     {
-        $message = "Estoicos Gym - Tu código de verificación es: {$code}. Expira en 10 minutos.";
+        $message = \App\Support\Ajustes::obtener('gimnasio.nombre') . " - Tu código de verificación es: {$code}. Expira en 10 minutos.";
 
         // Opción 1: Twilio SMS
         if (config('services.twilio.sms_enabled')) {

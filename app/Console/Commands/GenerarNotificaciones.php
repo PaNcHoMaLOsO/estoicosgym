@@ -315,6 +315,17 @@ class GenerarNotificaciones extends Command
     /**
      * Genera contenido HTML para membresía próxima a vencer
      */
+    /**
+     * La firma de los avisos: el nombre del gimnasio, el de Configuracion.
+     *
+     * Estaba escrita a mano como «Estoicos Gym Los Angeles - Tu templo del
+     * fitness» en los tres avisos, y la leian los socios.
+     */
+    private function pieDeCorreo(): string
+    {
+        return e(\App\Support\Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM') . ' · Profesionales del deporte';
+    }
+
     private function generarContenidoMembresiaProxima(Cliente $cliente, Inscripcion $inscripcion): string
     {
         $nombre = $cliente->es_menor_edad ? $cliente->apoderado_nombre : $cliente->nombres;
@@ -333,7 +344,7 @@ class GenerarNotificaciones extends Command
             </p>
             <p>¡Visítanos o contáctanos para renovar!</p>
             <hr>
-            <small style="color: #666;">Estoicos Gym Los Ángeles - Tu templo del fitness</small>
+            <small style="color: #666;">{$this->pieDeCorreo()}</small>
         </div>
         HTML;
     }
@@ -353,7 +364,7 @@ class GenerarNotificaciones extends Command
             <p>Para poder seguir entrenando, necesitas renovar tu membresía lo antes posible.</p>
             <p>¡Te esperamos!</p>
             <hr>
-            <small style="color: #666;">Estoicos Gym Los Ángeles - Tu templo del fitness</small>
+            <small style="color: #666;">{$this->pieDeCorreo()}</small>
         </div>
         HTML;
     }
@@ -378,7 +389,7 @@ class GenerarNotificaciones extends Command
             </p>
             <p>Por favor, acércate al gimnasio para regularizar tu pago.</p>
             <hr>
-            <small style="color: #666;">Estoicos Gym Los Ángeles - Tu templo del fitness</small>
+            <small style="color: #666;">{$this->pieDeCorreo()}</small>
         </div>
         HTML;
     }

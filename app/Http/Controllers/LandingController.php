@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Inscripcion;
+use App\Models\Membresia;
+use App\Support\Ajustes;
 use App\Services\CorreoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -16,108 +19,114 @@ use Carbon\Carbon;
 class LandingController extends Controller
 {
     /**
-     * Mostrar la landing page principal
+     * Lo que puede escribir el cliente en «Interes», y como llega al correo.
+     */
+    private const INTERESES = [
+        'informacion' => 'Información general',
+        'inscripcion' => 'Quiero inscribirme',
+        'convenio' => 'Convenio de empresa',
+        'otro' => 'Otro',
+    ];
+
+    /**
+     * La portada del gimnasio: la que ven los clientes.
+     *
+     * TODO LO QUE MUESTRA SALE DEL SISTEMA. Los planes y sus precios son los
+     * del catalogo —los mismos que se cobran en el meson— y los datos de
+     * contacto son los de Configuracion -> El gimnasio. Antes era todo
+     * inventado: tres planes que no existian («Plan Elite» con sauna, spa y
+     * estacionamiento), testimonios escritos a mano, una direccion y un
+     * telefono de ejemplo y una «garantia de 7 dias» que ningun gimnasio
+     * deberia prometer sin haberla decidido. Un cliente que llegaba con el
+     * precio de la web se encontraba con otro en el meson.
      */
     public function index()
     {
-        // Datos dinámicos para la landing (puedes obtenerlos de BD después)
-        $planes = [
-            [
-                'nombre' => 'Plan Básico',
-                'precio' => 29990,
-                'periodo' => 'mes',
-                'caracteristicas' => [
-                    'Acceso a sala de musculación',
-                    'Horario completo (6:00 - 22:00)',
-                    'Casillero incluido',
-                    'Evaluación inicial gratuita',
-                ],
-                'destacado' => false,
-            ],
-            [
-                'nombre' => 'Plan Premium',
-                'precio' => 44990,
-                'periodo' => 'mes',
-                'caracteristicas' => [
-                    'Todo del Plan Básico',
-                    'Clases grupales ilimitadas',
-                    'Acceso a área de cardio premium',
-                    'Seguimiento nutricional básico',
-                    '1 sesión de entrenador personal/mes',
-                ],
-                'destacado' => true,
-            ],
-            [
-                'nombre' => 'Plan Elite',
-                'precio' => 69990,
-                'periodo' => 'mes',
-                'caracteristicas' => [
-                    'Todo del Plan Premium',
-                    '4 sesiones de entrenador personal/mes',
-                    'Plan nutricional personalizado',
-                    'Acceso a sauna y spa',
-                    'Parking gratuito',
-                    'Invitaciones para amigos (2/mes)',
-                ],
-                'destacado' => false,
-            ],
+        $gimnasio = [
+            'nombre' => Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM',
+            'direccion' => Ajustes::obtener('gimnasio.direccion'),
+            'telefono' => Ajustes::obtener('gimnasio.telefono'),
+            'email' => Ajustes::obtener('gimnasio.email'),
+            'horario' => Ajustes::obtener('gimnasio.horario'),
         ];
 
-        $testimonios = [
-            [
-                'nombre' => 'Carlos M.',
-                'texto' => 'En 6 meses transformé mi cuerpo completamente. Los entrenadores son excelentes y el ambiente es muy motivador.',
-                'rating' => 5,
-                'imagen' => null,
-            ],
-            [
-                'nombre' => 'María P.',
-                'texto' => 'El mejor gimnasio de la zona. Las clases grupales son increíbles y siempre hay equipos disponibles.',
-                'rating' => 5,
-                'imagen' => null,
-            ],
-            [
-                'nombre' => 'Roberto S.',
-                'texto' => 'Llevo 2 años entrenando aquí. El equipo es de primera calidad y el personal muy profesional.',
-                'rating' => 5,
-                'imagen' => null,
-            ],
-        ];
+        return view('landing.index', [
+            'gimnasio' => $gimnasio,
+            'planes' => $this->planesALaVenta(),
+            'servicios' => $this->servicios(),
+        ]);
+    }
 
-        $servicios = [
-            [
-                'icono' => 'dumbbell',
-                'titulo' => 'Musculación',
-                'descripcion' => 'Equipos de última generación para tu entrenamiento de fuerza.',
-            ],
-            [
-                'icono' => 'heartbeat',
-                'titulo' => 'Cardio',
-                'descripcion' => 'Área completa de cardio con cintas, bicicletas y elípticas.',
-            ],
-            [
-                'icono' => 'users',
-                'titulo' => 'Clases Grupales',
-                'descripcion' => 'Spinning, CrossFit, Yoga, Zumba y más de 20 clases semanales.',
-            ],
-            [
-                'icono' => 'user-tie',
-                'titulo' => 'Personal Training',
-                'descripcion' => 'Entrenadores certificados para alcanzar tus objetivos.',
-            ],
-            [
-                'icono' => 'apple-alt',
-                'titulo' => 'Nutrición',
-                'descripcion' => 'Asesoría nutricional personalizada con profesionales.',
-            ],
-            [
-                'icono' => 'spa',
-                'titulo' => 'Wellness',
-                'descripcion' => 'Sauna, spa y área de relajación para tu recuperación.',
-            ],
-        ];
+    /**
+     * Los planes que se pueden comprar hoy, del mas barato al mas caro.
+     *
+     * Solo los activos y con precio vigente: un plan sin precio no se puede
+     * vender, y ensenarlo seria prometer algo que el meson no puede cobrar.
+     */
+    private function planesALaVenta(): array
+    {
+        // «El mas elegido» se CUENTA, no se decide: el plan con mas membresias
+        // activas. Sin datos, ninguno lleva la marca.
+        $masElegido = Inscripcion::where('id_estado', 100)
+            ->selectRaw('id_membresia, count(*) as total')
+            ->groupBy('id_membresia')
+            ->orderByDesc('total')
+            ->value('id_membresia');
 
-        return view('landing.index', compact('planes', 'testimonios', 'servicios'));
+        return Membresia::where('activo', true)
+            ->with(['precios' => fn ($q) => $q->where('activo', true)
+                ->where('fecha_vigencia_desde', '<=', now())
+                ->orderByDesc('fecha_vigencia_desde')])
+            ->get()
+            ->filter(fn (Membresia $m) => $m->precios->isNotEmpty())
+            ->map(function (Membresia $m) use ($masElegido) {
+                $precio = $m->precios->first();
+
+                return [
+                    'nombre' => $m->nombre,
+                    'descripcion' => $m->descripcion,
+                    'duracion' => $this->duracion($m),
+                    'precio' => (int) $precio->precio_normal,
+                    'precio_convenio' => $precio->precio_convenio ? (int) $precio->precio_convenio : null,
+                    'destacado' => $masElegido !== null && $m->id === (int) $masElegido,
+                ];
+            })
+            ->sortBy('precio')
+            ->values()
+            ->all();
+    }
+
+    /** «1 mes», «3 meses», «1 año», «1 día». */
+    private function duracion(Membresia $m): string
+    {
+        $meses = (int) $m->duracion_meses;
+        $dias = (int) $m->duracion_dias;
+
+        return match (true) {
+            $meses === 12 => '1 año',
+            $meses === 1 => '1 mes',
+            $meses > 1 => "{$meses} meses",
+            $dias === 1 => '1 día',
+            $dias > 1 => "{$dias} días",
+            default => '',
+        };
+    }
+
+    /**
+     * Lo que se ofrece.
+     *
+     * GENERICO A PROPOSITO. La lista anterior prometia cosas que nadie
+     * comprobo —«mas de 20 clases semanales», «sauna, spa», nutricionistas—.
+     * Esto es lo que tiene cualquier sala de musculacion; lo que PRO GYM
+     * tiene de propio lo tiene que escribir quien lo conoce.
+     */
+    private function servicios(): array
+    {
+        return [
+            ['icono' => 'dumbbell', 'titulo' => 'Musculación', 'descripcion' => 'Máquinas y peso libre para entrenar la fuerza a tu ritmo.'],
+            ['icono' => 'heartbeat', 'titulo' => 'Cardio', 'descripcion' => 'Equipos de cardio para calentar, quemar y ganar resistencia.'],
+            ['icono' => 'user-check', 'titulo' => 'Orientación en sala', 'descripcion' => 'Te enseñamos a usar los equipos para que entrenes seguro.'],
+        ];
     }
 
     /**
@@ -153,7 +162,7 @@ class LandingController extends Controller
             'email' => ['required', 'email:rfc,dns', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[\d\s\+\-\(\)]+$/'],
             'mensaje' => ['required', 'string', 'min:10', 'max:1000'],
-            'servicio' => ['nullable', 'string', 'in:informacion,inscripcion,clases,personal,otro'],
+            'servicio' => ['nullable', 'string', 'in:' . implode(',', array_keys(self::INTERESES))],
         ], [
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.regex' => 'El nombre solo puede contener letras.',
@@ -176,7 +185,7 @@ class LandingController extends Controller
             'email' => filter_var(trim($request->email), FILTER_SANITIZE_EMAIL),
             'telefono' => $request->telefono ? preg_replace('/[^\d\+\-\s]/', '', $request->telefono) : null,
             'mensaje' => strip_tags(trim($request->mensaje)),
-            'servicio' => $request->servicio ?? 'informacion',
+            'servicio' => self::INTERESES[$request->servicio ?? 'informacion'] ?? self::INTERESES['informacion'],
             'ip' => $request->ip(),
             'user_agent' => Str::limit($request->userAgent(), 255),
             'fecha' => now()->format('Y-m-d H:i:s'),
@@ -196,7 +205,8 @@ class LandingController extends Controller
          * El registro de arriba se queda igual: es lo unico que guarda el
          * mensaje si el envio falla, porque no hay tabla de contactos.
          */
-        $destino = config('correo.contacto') ?: config('mail.from.address');
+        // Primero el correo de Configuracion: es el que el gimnasio dice que lee.
+        $destino = Ajustes::obtener('gimnasio.email') ?: config('correo.contacto') ?: config('mail.from.address');
 
         try {
             app(CorreoService::class)->enviar(
