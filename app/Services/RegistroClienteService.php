@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,23 @@ use Illuminate\Validation\ValidationException;
  */
 class RegistroClienteService
 {
+    /**
+     * Que se acepta como foto de perfil.
+     *
+     * 2 MB y solo jpeg/png/webp, lo mismo que exigia el panel de Blade: una
+     * foto de meson no necesita mas y la del telefono de alguien pesa cuatro
+     * veces eso. `image` a secas no basta —deja pasar formatos que el navegador
+     * no siempre pinta—, asi que la lista va escrita.
+     */
+    public const REGLAS_FOTO = ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'];
+
+    /** Lo que se le dice a quien sube algo que no vale. */
+    public const MENSAJES_FOTO = [
+        'foto_perfil.image' => 'Ese archivo no es una imagen.',
+        'foto_perfil.mimes' => 'La foto tiene que ser JPG, PNG o WEBP.',
+        'foto_perfil.max' => 'La foto no puede pesar más de 2 MB.',
+    ];
+
     /** Codigos de la tabla `estados` (la columna guarda el CODIGO, no el id). */
     private const INSCRIPCION_ACTIVA = 100;
     private const PAGO_PENDIENTE = 200;
@@ -50,6 +68,18 @@ class RegistroClienteService
         $flujo = $request->input('flujo_cliente', 'completo');
 
         $cliente = $request->validate($this->reglasCliente(), $this->mensajesCliente());
+
+        /*
+         * La foto se comprueba APARTE y no dentro de reglasCliente().
+         *
+         * Metida ahi volveria dentro de $cliente, y `validated()` devuelve la
+         * clave siempre que venga en la peticion —aunque venga vacia—. El panel
+         * de Blade manda su <input type="file"> este o no elegido, asi que
+         * `actualizar()` recibiria 'foto_perfil' => null y borraria la foto
+         * cada vez que alguien corrigiera un telefono. Aqui solo se valida;
+         * guardarla es cosa de `registrar()` y de `cambiarFoto()`.
+         */
+        $request->validate(['foto_perfil' => self::REGLAS_FOTO], self::MENSAJES_FOTO);
 
         $esMenor = $request->boolean('es_menor_edad');
 
@@ -142,11 +172,49 @@ class RegistroClienteService
      */
     public function actualizar(Cliente $cliente, array $datos): Cliente
     {
+        $campos = $datos['cliente'];
+
+        // LA FOTO NO SE TOCA AQUI, pase lo que pase. Un <input type="file">
+        // vacio llega igual en la peticion, y si se colara en estos campos la
+        // ficha se guardaria con 'foto_perfil' => null: corregir un telefono
+        // dejaria al socio sin cara. Se pone y se quita en `cambiarFoto()`.
+        unset($campos['foto_perfil']);
+
         $cliente->update(
-            $datos['cliente']
+            $campos
             + ['es_menor_edad' => $datos['es_menor']]
             + $datos['apoderado']
         );
+
+        return $cliente->refresh();
+    }
+
+    /**
+     * Pone, cambia o quita la foto de un socio.
+     *
+     * EL ARCHIVO VIEJO SE BORRA al reemplazarlo o al quitarlo. Son caras de
+     * personas: cuando alguien pide que se vaya la suya, tiene que irse del
+     * disco y no quedarse ahi de sobra. Lo que NO se borra es la foto de quien
+     * se da de baja, porque esa baja se deshace desde la papelera y el socio
+     * volveria sin cara.
+     */
+    public function cambiarFoto(Cliente $cliente, ?UploadedFile $nueva, bool $quitar = false): Cliente
+    {
+        $anterior = $cliente->foto_perfil;
+
+        if ($quitar) {
+            $cliente->update(['foto_perfil' => null]);
+        } elseif ($nueva) {
+            $cliente->update(['foto_perfil' => $nueva->store('clientes', 'public')]);
+        } else {
+            return $cliente;
+        }
+
+        // El borrado va DESPUES de guardar, no antes: si el update fallara,
+        // borrar primero dejaria la ficha apuntando a un archivo que ya no esta.
+        if ($anterior && $anterior !== $cliente->foto_perfil) {
+            Storage::disk('public')->delete($anterior);
+        }
 
         return $cliente->refresh();
     }

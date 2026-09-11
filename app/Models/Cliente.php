@@ -297,6 +297,19 @@ class Cliente extends Model
         return $nombre;
     }
 
+    /**
+     * La direccion publica de la foto, o null si no tiene.
+     *
+     * La columna guarda una ruta relativa dentro de storage/app/public y el
+     * navegador necesita una URL. Se hace aqui y no en cada controlador porque
+     * ya estaba escrito a mano en cuatro sitios, y el dia que cambie el disco
+     * habria que acordarse de los cuatro.
+     */
+    public function urlDeFoto(): ?string
+    {
+        return $this->foto_perfil ? asset('storage/' . $this->foto_perfil) : null;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('activo', true);

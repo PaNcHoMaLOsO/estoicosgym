@@ -37,6 +37,8 @@ class Permisos
         'alternar',
         // Cobrar lo fiado: se marca como pagado, no se crea nada.
         'saldar',
+        // La foto del socio. Es editar su ficha, aunque vaya por su cuenta.
+        'foto',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */

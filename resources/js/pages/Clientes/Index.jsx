@@ -4,6 +4,7 @@ import { UserPlusIcon } from 'lucide-react';
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
+import Retrato from '@/components/Retrato';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
 const COLUMNAS = ['Socio', 'RUT', 'Contacto', 'Membresía', 'Estado', 'Vence'];
@@ -77,7 +78,18 @@ export default function Index({ clientes, filtros, resumen }) {
                 {clientes.data.map((cliente) => (
                     <Fila key={cliente.uuid}>
                         <Celda className="font-medium text-chalk">
-                            <Link href={`/panel/clientes/${cliente.uuid}`} className="hover:underline">
+                            {/* La cara en la lista, no solo en la ficha: es
+                                buscando donde hace falta distinguir entre dos
+                                socios que se llaman casi igual. */}
+                            <Link
+                                href={`/panel/clientes/${cliente.uuid}`}
+                                className="flex items-center gap-2 hover:underline"
+                            >
+                                <Retrato
+                                    nombre={cliente.nombre}
+                                    foto={cliente.foto}
+                                    tamano="sm"
+                                />
                                 {cliente.nombre}
                             </Link>
                         </Celda>

@@ -1,7 +1,92 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeftIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeftIcon, CameraIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
+import Retrato from '@/components/Retrato';
+
+/**
+ * La foto del socio al darlo de alta.
+ *
+ * ES OPCIONAL, y se dice que lo es. Sirve para reconocer a quien llega al
+ * mesón sin tener que preguntarle el RUT, pero nadie debería quedarse sin
+ * inscribirse por no querer que le retraten: sin foto la ficha sale con sus
+ * iniciales y funciona igual.
+ */
+function CampoFoto({ archivo, nombre, error, alElegir }) {
+    const selector = useRef(null);
+    const [vistaPrevia, setVistaPrevia] = useState(null);
+
+    // La vista previa se crea y se SUELTA: cada createObjectURL reserva
+    // memoria hasta que alguien la libera, y elegir cinco fotos seguidas
+    // dejaría cuatro colgadas.
+    useEffect(() => {
+        if (! archivo) {
+            setVistaPrevia(null);
+
+            return undefined;
+        }
+
+        const url = URL.createObjectURL(archivo);
+        setVistaPrevia(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [archivo]);
+
+    return (
+        <div className="flex items-center gap-3">
+            <Retrato nombre={nombre} foto={vistaPrevia} tamano="md" />
+
+            <div>
+                <input
+                    ref={selector}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    id="foto_perfil"
+                    onChange={(e) => alElegir(e.target.files?.[0] ?? null)}
+                    className="hidden"
+                    tabIndex={-1}
+                />
+
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => selector.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        <CameraIcon className="size-4" aria-hidden="true" />
+                        {archivo ? 'Cambiar' : 'Elegir foto'}
+                    </button>
+
+                    {archivo ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                alElegir(null);
+                                // Sin vaciarlo, volver a elegir EL MISMO
+                                // archivo no dispara el evento.
+                                if (selector.current) {
+                                    selector.current.value = '';
+                                }
+                            }}
+                            className="apoyo text-fog transition-colors hover:text-danger"
+                        >
+                            Quitar
+                        </button>
+                    ) : null}
+                </div>
+
+                {error ? (
+                    <p className="apoyo mt-1 text-danger">{error}</p>
+                ) : (
+                    <p className="apoyo mt-1 text-fog">
+                        Opcional. Solo se ve dentro del panel. JPG, PNG o WEBP, hasta 2 MB.
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
 
 const hoy = new Date().toISOString().slice(0, 10);
 
@@ -36,6 +121,9 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
         contacto_emergencia: '',
         telefono_emergencia: '',
         observaciones: '',
+        // null y no '': Inertia manda el formulario como multipart solo si
+        // encuentra un File dentro, y una cadena vacía no lo es.
+        foto_perfil: null,
 
         es_menor_edad: false,
         consentimiento_apoderado: false,
@@ -224,6 +312,17 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                 valor={data.observaciones}
                                 alCambiar={(v) => setData('observaciones', v)}
                                 error={errors.observaciones}
+                            />
+                        </Campo>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <Campo etiqueta="Foto" nombre="foto_perfil" error={errors.foto_perfil}>
+                            <CampoFoto
+                                archivo={data.foto_perfil}
+                                nombre={`${data.nombres} ${data.apellido_paterno}`}
+                                error={errors.foto_perfil}
+                                alElegir={(f) => setData('foto_perfil', f)}
                             />
                         </Campo>
                     </div>

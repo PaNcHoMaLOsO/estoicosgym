@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     ArrowLeftIcon,
+    CameraIcon,
     PencilIcon,
     PlusIcon,
     ShoppingBagIcon,
@@ -11,6 +12,7 @@ import {
 
 import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
+import Retrato from '@/components/Retrato';
 import { Reservado } from '@/Privado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -58,6 +60,101 @@ function Vigencia({ dias }) {
     return <span className="text-fog">Quedan {dias} días</span>;
 }
 
+/**
+ * La foto del socio, con lo justo para ponerla, cambiarla y quitarla.
+ *
+ * SE SUBE SOLA al elegir el archivo, sin un «guardar» de por medio: cambiar
+ * una foto no tiene nada que confirmar y se hace con la persona delante
+ * esperando. Quitarla SI pregunta, porque el archivo se borra del disco y eso
+ * no se deshace.
+ */
+function FotoDelSocio({ cliente }) {
+    const selector = useRef(null);
+    const [subiendo, setSubiendo] = useState(false);
+    const [error, setError] = useState(null);
+    const [confirmandoQuitar, setConfirmandoQuitar] = useState(false);
+
+    function elegida(e) {
+        const archivo = e.target.files?.[0];
+
+        if (! archivo) {
+            return;
+        }
+
+        setError(null);
+        setSubiendo(true);
+
+        router.post(
+            `/panel/clientes/${cliente.uuid}/foto`,
+            { foto_perfil: archivo },
+            {
+                preserveScroll: true,
+                onError: (errores) => setError(errores.foto_perfil ?? 'No se pudo subir la foto.'),
+                onFinish: () => {
+                    setSubiendo(false);
+                    // Se vacía a mano: si no, volver a elegir EL MISMO archivo
+                    // no dispara el evento y parecería que el botón no hace nada.
+                    if (selector.current) {
+                        selector.current.value = '';
+                    }
+                },
+            },
+        );
+    }
+
+    return (
+        <div className="flex shrink-0 flex-col items-center gap-1">
+            <Retrato nombre={cliente.nombre} foto={cliente.foto} tamano="lg" />
+
+            <div className="flex flex-col items-center gap-0.5">
+                <input
+                    ref={selector}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={elegida}
+                    className="hidden"
+                    tabIndex={-1}
+                />
+
+                <button
+                    type="button"
+                    disabled={subiendo}
+                    onClick={() => selector.current?.click()}
+                    className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk disabled:opacity-50"
+                >
+                    <CameraIcon className="size-3.5" aria-hidden="true" />
+                    {subiendo ? 'Subiendo…' : cliente.foto ? 'Cambiar foto' : 'Poner foto'}
+                </button>
+
+                {cliente.foto ? (
+                    <button
+                        type="button"
+                        onClick={() => setConfirmandoQuitar(true)}
+                        className="apoyo text-fog transition-colors hover:text-danger"
+                    >
+                        Quitar
+                    </button>
+                ) : null}
+
+                {error ? <p className="apoyo max-w-40 text-danger">{error}</p> : null}
+            </div>
+
+            <Dialogo
+                abierto={confirmandoQuitar}
+                alCerrar={() => setConfirmandoQuitar(false)}
+                titulo="¿Quitar la foto?"
+                descripcion={`Se borra la foto de ${cliente.nombre}. El archivo se elimina y no se puede recuperar.`}
+                accion={`/panel/clientes/${cliente.uuid}/foto`}
+                datos={{ quitar: true }}
+                via="inertia"
+                metodo="post"
+                etiquetaConfirmar="Quitar foto"
+                peligrosa
+            />
+        </div>
+    );
+}
+
 export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado }) {
     // null = ningun dialogo abierto.
     const [confirmando, setConfirmando] = useState(null);
@@ -78,19 +175,23 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                 </Link>
 
                 <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h1 className="text-lg font-semibold text-chalk">
-                            {cliente.nombre}
-                            {! cliente.activo ? (
-                                <span className="ml-2 rounded-pill border border-line bg-surface-2 px-2 py-0.5 align-middle text-xs text-fog">
-                                    Dado de baja
-                                </span>
-                            ) : null}
-                        </h1>
-                        <p className="apoyo text-fog">
-                            {cliente.rut ?? 'Sin RUT'} · socio desde {cliente.desde ?? '—'}
-                            {vigente ? <> · <Vigencia dias={vigente.dias} /></> : null}
-                        </p>
+                    <div className="flex items-start gap-3">
+                        <FotoDelSocio cliente={cliente} />
+
+                        <div>
+                            <h1 className="text-lg font-semibold text-chalk">
+                                {cliente.nombre}
+                                {! cliente.activo ? (
+                                    <span className="ml-2 rounded-pill border border-line bg-surface-2 px-2 py-0.5 align-middle text-xs text-fog">
+                                        Dado de baja
+                                    </span>
+                                ) : null}
+                            </h1>
+                            <p className="apoyo text-fog">
+                                {cliente.rut ?? 'Sin RUT'} · socio desde {cliente.desde ?? '—'}
+                                {vigente ? <> · <Vigencia dias={vigente.dias} /></> : null}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex gap-2">

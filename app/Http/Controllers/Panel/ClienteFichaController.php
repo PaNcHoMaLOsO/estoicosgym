@@ -42,6 +42,8 @@ class ClienteFichaController extends Controller
                 'uuid' => $cliente->uuid,
                 'nombre' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
                 'rut' => $cliente->run_pasaporte,
+                // Para reconocer a quien esta delante sin preguntarle el RUT.
+                'foto' => $cliente->urlDeFoto(),
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
                 'direccion' => $cliente->direccion,

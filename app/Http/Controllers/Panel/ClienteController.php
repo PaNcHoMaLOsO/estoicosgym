@@ -72,6 +72,7 @@ class ClienteController extends Controller
                     'uuid' => $cliente->uuid,
                     'run_pasaporte' => $cliente->run_pasaporte,
                     'nombre' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
+                    'foto' => $cliente->urlDeFoto(),
                     'email' => $cliente->email,
                     'celular' => $cliente->celular,
                     'membresia' => $inscripcion?->membresia?->nombre,
@@ -197,6 +198,35 @@ class ClienteController extends Controller
         return redirect()
             ->route('panel.clientes.show', $cliente->uuid)
             ->with('success', 'Ficha actualizada.');
+    }
+
+    /**
+     * La foto del socio: ponerla, cambiarla o quitarla.
+     *
+     * VA POR SU CUENTA y no dentro de la edicion de la ficha. Mandar un archivo
+     * obliga a enviar el formulario como multipart, e Inertia no sabe hacer eso
+     * con un PUT: habria que falsear el metodo en todo el formulario de edicion
+     * —veinte campos— por un campo que casi nunca se toca. Ademas se pone donde
+     * tiene sentido: en la ficha, con la persona delante.
+     */
+    public function foto(Request $request, Cliente $cliente, RegistroClienteService $registro)
+    {
+        $quitar = $request->boolean('quitar');
+
+        $request->validate(
+            ['foto_perfil' => RegistroClienteService::REGLAS_FOTO],
+            RegistroClienteService::MENSAJES_FOTO
+        );
+
+        // Sin archivo y sin querer quitarla no hay nada que hacer. Se avisa en
+        // vez de callar: un «guardado» sin cambios es peor que un error.
+        if (! $quitar && ! $request->hasFile('foto_perfil')) {
+            return back()->with('error', 'No llegó ninguna foto.');
+        }
+
+        $registro->cambiarFoto($cliente, $request->file('foto_perfil'), $quitar);
+
+        return back()->with('success', $quitar ? 'Foto quitada.' : 'Foto guardada.');
     }
 
     /**
