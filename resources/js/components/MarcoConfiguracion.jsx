@@ -73,13 +73,24 @@ export default function MarcoConfiguracion({ children }) {
                 </div>
 
                 <nav aria-label="Secciones de la configuración" className="hidden lg:block">
-                    <div className="sticky top-6 space-y-4">
+                    <div className="sticky top-6 space-y-5">
                         <p className="px-2 text-sm font-semibold text-chalk">Configuración</p>
 
                         {grupos.map((g) => (
-                            <div key={g.titulo ?? 'inicio'} className="space-y-0.5">
-                                {g.titulo ? <p className="rotulo px-2 pb-1">{g.titulo}</p> : null}
+                            <div key={g.titulo ?? 'inicio'}>
+                                {/* El título del grupo NO es un enlace y tiene que
+                                    notarse: claro, en negrita y con su raya hasta el
+                                    borde. Lo que cuelga de él va sangrado bajo una
+                                    línea, para que un apartado no se confunda con el
+                                    título de su grupo. */}
+                                {g.titulo ? (
+                                    <p className="mb-1.5 flex items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.12em] text-chalk uppercase">
+                                        <span className="shrink-0">{g.titulo}</span>
+                                        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+                                    </p>
+                                ) : null}
 
+                                <div className={g.titulo ? 'ml-2.5 space-y-0.5 border-l border-line pl-2' : 'space-y-0.5'}>
                                 {g.secciones.map((s) => {
                                     const activa = seccionActiva(s, url);
                                     const aviso = avisos[s.href];
@@ -106,6 +117,7 @@ export default function MarcoConfiguracion({ children }) {
                                         </Link>
                                     );
                                 })}
+                                </div>
                             </div>
                         ))}
                     </div>
