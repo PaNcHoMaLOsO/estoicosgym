@@ -996,7 +996,7 @@ class InscripcionController extends Controller
                         // Ya no se suma deuda al cambio (ver arriba): decir otra cosa seria falso.
                         'deuda_incluida' => 0,
                     ],
-                    'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
+                    'redirect_url' => route('panel.inscripciones.show', $nuevaInscripcion),
                 ]);
 
             } catch (\Exception $e) {
@@ -1278,7 +1278,7 @@ class InscripcionController extends Controller
                         'dias_restantes' => $infoTraspaso['dias_restantes'],
                         'deuda_transferida' => $infoTraspaso['monto_pendiente'],
                     ],
-                    'redirect_url' => route('admin.inscripciones.show', $inscripcion),
+                    'redirect_url' => route('panel.inscripciones.show', $inscripcion),
                 ]);
 
             } catch (\Exception $e) {

@@ -24,8 +24,8 @@ class PermisosPorRolTest extends CasoConCatalogos
             '/panel/convenios',
             '/panel/metodos-pago',
             '/panel/motivos-descuento',
-            '/admin/membresias',
-            '/admin/membresias/create',
+            '/panel/configuracion',
+            '/panel/usuarios',
         ];
 
         foreach ($vetadas as $ruta) {
@@ -38,7 +38,7 @@ class PermisosPorRolTest extends CasoConCatalogos
     public function test_recepcion_no_ve_los_informes_de_ingresos(): void
     {
         $this->actingAs($this->recepcionista())
-            ->get('/admin/reportes')
+            ->get('/panel/reportes/ingresos')
             ->assertForbidden();
     }
 
@@ -66,7 +66,7 @@ class PermisosPorRolTest extends CasoConCatalogos
         $cliente = \App\Models\Cliente::factory()->create();
 
         $this->actingAs($this->recepcionista())
-            ->delete("/admin/clientes/{$cliente->uuid}")
+            ->delete("/panel/clientes/{$cliente->uuid}")
             ->assertForbidden();
 
         $this->assertNotSoftDeleted('clientes', ['id' => $cliente->id]);
@@ -78,8 +78,8 @@ class PermisosPorRolTest extends CasoConCatalogos
             '/panel',
             '/panel/membresias',
             '/panel/convenios',
-            '/admin/reportes',
-            '/admin/clientes',
+            '/panel/reportes',
+            '/panel/clientes',
         ];
 
         foreach ($todas as $ruta) {
@@ -112,5 +112,20 @@ class PermisosPorRolTest extends CasoConCatalogos
         }
 
         $this->assertSame([], $sinClasificar, 'Hay rutas del panel que no exigen ningún permiso.');
+    }
+
+    /**
+     * El panel viejo ya no existe: ni para mirar ni para cobrar.
+     *
+     * Calculaba saldos y fechas a su manera y se entraba escribiendo la
+     * dirección; un pago hecho ahí podía descuadrar lo del panel nuevo.
+     */
+    public function test_el_panel_viejo_ya_no_existe(): void
+    {
+        $admin = $this->administrador();
+
+        $this->actingAs($admin)->get('/admin/clientes')->assertNotFound();
+        $this->actingAs($admin)->get('/admin/pagos/create')->assertNotFound();
+        $this->actingAs($admin)->post('/admin/pagos', [])->assertNotFound();
     }
 }

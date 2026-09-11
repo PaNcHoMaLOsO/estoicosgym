@@ -60,7 +60,7 @@ class RegistroDePagosTest extends CasoConCatalogos
         $inscripcion = $this->inscripcionDe();
 
         $this->actingAs($this->administrador())
-            ->post('/admin/pagos', $this->datosDePago($inscripcion));
+            ->post('/panel/pagos/registrar', $this->datosDePago($inscripcion));
 
         $pago = Pago::latest('id')->first();
 
@@ -116,8 +116,8 @@ class RegistroDePagosTest extends CasoConCatalogos
         // MISMO token en los dos: es lo que manda un formulario al reenviarse.
         $datos = $this->datosDePago($inscripcion, ['form_submit_token' => 'token-repetido']);
 
-        $this->actingAs($usuario)->post('/admin/pagos', $datos);
-        $this->actingAs($usuario)->post('/admin/pagos', $datos);
+        $this->actingAs($usuario)->post('/panel/pagos/registrar', $datos);
+        $this->actingAs($usuario)->post('/panel/pagos/registrar', $datos);
 
         $this->assertSame(
             1,
@@ -138,8 +138,8 @@ class RegistroDePagosTest extends CasoConCatalogos
         $inscripcion = $this->inscripcionDe();
         $usuario = $this->administrador();
 
-        // Por debajo del minimo de 1000 que exige el controlador.
-        $this->actingAs($usuario)->post('/admin/pagos', $this->datosDePago($inscripcion, [
+        // Por debajo del minimo de 1000 que exige el servicio de pagos.
+        $this->actingAs($usuario)->post('/panel/pagos/registrar', $this->datosDePago($inscripcion, [
             'form_submit_token' => 'token-reintento',
             'monto_abonado' => 1,
         ]));
@@ -147,7 +147,7 @@ class RegistroDePagosTest extends CasoConCatalogos
         $this->assertSame(0, Pago::where('id_inscripcion', $inscripcion->id)->count());
 
         // Mismo token, monto corregido: TIENE que guardar.
-        $this->actingAs($usuario)->post('/admin/pagos', $this->datosDePago($inscripcion, [
+        $this->actingAs($usuario)->post('/panel/pagos/registrar', $this->datosDePago($inscripcion, [
             'form_submit_token' => 'token-reintento',
             'monto_abonado' => 20000,
         ]));
@@ -160,11 +160,11 @@ class RegistroDePagosTest extends CasoConCatalogos
     }
 
     /**
-     * El panel nuevo cobra por el MISMO servicio que el de Blade.
+     * Un cobro completo salda el total.
      *
-     * Es lo que se gana al sacar las doscientas lineas del controlador: si
-     * manana se corrige una regla, se corrige para los dos. Estas pruebas
-     * fallarian si alguien volviera a copiar la logica en uno de los dos.
+     * Todos los cobros entran por aqui: el panel viejo de Blade, que tenia su
+     * propia copia de las reglas, ya no existe. Si manana se corrige una regla,
+     * se corrige en un solo lugar (RegistroPagoService).
      */
     public function test_el_panel_nuevo_registra_un_cobro_completo(): void
     {
@@ -255,6 +255,7 @@ class RegistroDePagosTest extends CasoConCatalogos
 
         $this->assertSame(0, Pago::count());
     }
+
     /**
      * Estado que el servicio le pone a un pago mixto.
      *

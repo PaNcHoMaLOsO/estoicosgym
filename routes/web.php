@@ -6,10 +6,6 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
 use App\Http\Controllers\Admin\PagoController;
-use App\Http\Controllers\Admin\MembresiaController;
-use App\Http\Controllers\Admin\ConvenioController;
-use App\Http\Controllers\Admin\MetodoPagoController;
-use App\Http\Controllers\Admin\MotivoDescuentoController;
 use App\Http\Controllers\Admin\NotificacionController;
 use App\Models\Inscripcion;
 use App\Models\Pago;
@@ -537,143 +533,13 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::patch('/catalogos/{catalogo}/{id}/alternar', [\App\Http\Controllers\Panel\CatalogoController::class, 'alternar'])->name('catalogos.alternar');
     });
 
-    // Rutas Admin - Grupo con prefijo 'admin'
-    Route::prefix('admin')->name('admin.')->group(function () {
-    // Rutas personalizadas de clientes (deben ir antes del resource)
-    Route::get('clientes-desactivados/ver', [ClienteController::class, 'showInactive'])->name('clientes.inactive');
-    Route::patch('clientes/{cliente}/reactivar', [ClienteController::class, 'reactivate'])->name('clientes.reactivate');
-    Route::patch('clientes/{cliente}/desactivar', [ClienteController::class, 'deactivate'])->name('clientes.deactivate');
-    
-    // Papelera de clientes (SoftDeletes)
-    Route::get('clientes/papelera', [ClienteController::class, 'trashed'])->name('clientes.trashed');
-    Route::patch('clientes/{id}/restaurar', [ClienteController::class, 'restore'])->name('clientes.restore');
-    Route::delete('clientes/{id}/eliminar-permanente', [ClienteController::class, 'forceDelete'])->name('clientes.force-delete');
-    
-    // RUTA SIMPLE DE DEBUG
-    Route::get('clientes/create-simple', function() {
-        $convenios = \App\Models\Convenio::where('activo', true)->get();
-        $membresias = \App\Models\Membresia::where('activo', true)->get();
-        $metodos_pago = \App\Models\MetodoPago::all();
-        return view('admin.clientes.create_simple', compact('convenios', 'membresias', 'metodos_pago'));
-    })->name('clientes.create-simple');
-    
-    // CRUD Clientes
-    Route::resource('clientes', ClienteController::class);
-
-    // CRUD Inscripciones
-    Route::resource('inscripciones', InscripcionController::class)->parameters(['inscripciones' => 'inscripcion']);
-    
-    // Papelera de inscripciones (SoftDeletes)
-    Route::get('inscripciones-papelera', [InscripcionController::class, 'trashed'])->name('inscripciones.trashed');
-    Route::patch('inscripciones/{id}/restaurar', [InscripcionController::class, 'restore'])->name('inscripciones.restore');
-    Route::delete('inscripciones/{id}/eliminar-permanente', [InscripcionController::class, 'forceDelete'])->name('inscripciones.force-delete');
-    
-    // Pausar y Reanudar inscripciones
-    Route::post('inscripciones/{inscripcion}/pausar', [InscripcionController::class, 'pausar'])->name('inscripciones.pausar');
-    Route::post('inscripciones/{inscripcion}/reanudar', [InscripcionController::class, 'reanudar'])->name('inscripciones.reanudar');
-    
-    // Mejora de Plan (Upgrade)
-    Route::get('inscripciones/{inscripcion}/info-cambio-plan', [InscripcionController::class, 'infoCambioPlan'])->name('inscripciones.info-cambio-plan');
-    Route::post('inscripciones/{inscripcion}/cambiar-plan', [InscripcionController::class, 'cambiarPlan'])->name('inscripciones.cambiar-plan');
-    
-    // Traspaso de Membresía
-    Route::get('inscripciones/{inscripcion}/buscar-clientes-traspaso', [InscripcionController::class, 'buscarClientesTraspaso'])->name('inscripciones.buscar-clientes-traspaso');
-    Route::post('inscripciones/{inscripcion}/traspasar', [InscripcionController::class, 'traspasar'])->name('inscripciones.traspasar');
-    
-    // Renovación de Membresía
-    Route::get('inscripciones/{inscripcion}/renovar', [InscripcionController::class, 'showRenovar'])->name('inscripciones.renovar');
-    Route::post('inscripciones/{inscripcion}/renovar', [InscripcionController::class, 'renovar'])->name('inscripciones.renovar.store');
-    
-    // Módulo Historial (traspasos, cambios, etc.)
-    Route::get('historial', [\App\Http\Controllers\Admin\HistorialController::class, 'index'])->name('historial.index');
-    Route::get('historial/traspaso/{traspaso}', [\App\Http\Controllers\Admin\HistorialController::class, 'showTraspaso'])->name('historial.traspaso.show');
-
-    // Módulo Reportes
-    Route::prefix('reportes')->name('reportes.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\ReporteController::class, 'index'])->name('index');
-        Route::get('/builder', [\App\Http\Controllers\Admin\ReporteController::class, 'builder'])->name('builder');
-        Route::match(['get', 'post'], '/generar', [\App\Http\Controllers\Admin\ReporteController::class, 'generar'])->name('generar');
-        Route::get('/predefinido/{tipo}', [\App\Http\Controllers\Admin\ReporteController::class, 'predefinido'])->name('predefinido');
-        Route::get('/campos/{modulo}', [\App\Http\Controllers\Admin\ReporteController::class, 'getCamposModulo'])->name('campos');
-    });
-
-    // CRUD Pagos
-    Route::get('pagos/json', [PagoController::class, 'getPagosJson'])->name('pagos.json');
-    Route::resource('pagos', PagoController::class)->parameters(['pagos' => 'pago']);
-    Route::get('pagos/historial/{id}', [PagoController::class, 'historial'])->name('pagos.historial');
-    
-    // Papelera de pagos (SoftDeletes)
-    Route::get('pagos-papelera', [PagoController::class, 'trashed'])->name('pagos.trashed');
-    Route::patch('pagos/{id}/restaurar', [PagoController::class, 'restore'])->name('pagos.restore');
-    Route::delete('pagos/{id}/eliminar-permanente', [PagoController::class, 'forceDelete'])->name('pagos.force-delete');
-
-    // ===== CONFIGURACIÓN (Sección inferior) =====
-    
-    // CRUD Convenios
-    Route::resource('convenios', ConvenioController::class);
-    Route::patch('convenios/{convenio}/desactivar', [ConvenioController::class, 'deactivate'])->name('convenios.deactivate');
-    Route::patch('convenios/{convenio}/activar', [ConvenioController::class, 'activate'])->name('convenios.activate');
-    
-    // Papelera de convenios (SoftDeletes)
-    Route::get('convenios-papelera', [ConvenioController::class, 'trashed'])->name('convenios.trashed');
-    Route::patch('convenios/{id}/restaurar', [ConvenioController::class, 'restore'])->name('convenios.restore');
-    Route::delete('convenios/{id}/eliminar-permanente', [ConvenioController::class, 'forceDelete'])->name('convenios.force-delete');
-
-    // CRUD Membresias (configuración)
-    Route::resource('membresias', MembresiaController::class);
-    Route::patch('membresias/{membresia}/activar', [MembresiaController::class, 'activate'])->name('membresias.activate');
-    
-    // Papelera de membresías (SoftDeletes) - Nota: Las membresías solo se desactivan, no van a papelera
-    Route::get('membresias-papelera', [MembresiaController::class, 'trashed'])->name('membresias.trashed');
-    Route::patch('membresias/{id}/restaurar', [MembresiaController::class, 'restore'])->name('membresias.restore');
-    Route::delete('membresias/{id}/eliminar-permanente', [MembresiaController::class, 'forceDelete'])->name('membresias.force-delete');
-
-    // CRUD Métodos de Pago
-    // Nota: el parámetro se renombra a {metodoPago} para que coincida con el
-    // type-hint del controlador (MetodoPago $metodoPago) y funcione el binding.
-    Route::resource('metodos-pago', MetodoPagoController::class)
-        ->parameters(['metodos-pago' => 'metodoPago']);
-
-    // CRUD Motivos de Descuento
-    // Nota: el parámetro se renombra a {motivoDescuento} para que coincida con el
-    // type-hint del controlador (MotivoDescuento $motivoDescuento).
-    Route::resource('motivos-descuento', MotivoDescuentoController::class)
-        ->parameters(['motivos-descuento' => 'motivoDescuento']);
-
-    // ===== NOTIFICACIONES =====
-    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
-        // Rutas específicas PRIMERO (antes de las rutas con parámetros)
-        Route::get('/', [NotificacionController::class, 'index'])->name('index');
-        Route::get('/historial', [NotificacionController::class, 'historial'])->name('historial');
-        
-        // Programar notificaciones masivas (NUEVO)
-        Route::get('/programar', [NotificacionController::class, 'programar'])->name('programar');
-        Route::post('/guardar-programada', [NotificacionController::class, 'guardarProgramada'])->name('guardar-programada');
-        Route::get('/contar-destinatarios', [NotificacionController::class, 'contarDestinatarios'])->name('contar-destinatarios');
-        
-        // Enviar a cliente individual
-        Route::get('/enviar-cliente', [NotificacionController::class, 'enviarCliente'])->name('enviar-cliente');
-        Route::post('/buscar-cliente-individual', [NotificacionController::class, 'buscarClienteIndividual'])->name('buscar-cliente-individual');
-        Route::post('/preview', [NotificacionController::class, 'preview'])->name('preview');
-        Route::post('/enviar-individual', [NotificacionController::class, 'enviarIndividual'])->name('enviar-individual');
-        
-        // Crear notificación masiva
-        Route::get('/crear', [NotificacionController::class, 'crear'])->name('crear');
-        Route::get('/obtener-destinatarios', [NotificacionController::class, 'obtenerDestinatarios'])->name('obtener-destinatarios');
-        Route::post('/enviar-masivo', [NotificacionController::class, 'enviarMasivo'])->name('enviar-masivo');
-        
-        // Plantillas (rutas específicas)
-        Route::get('/plantillas', [NotificacionController::class, 'plantillas'])->name('plantillas');
-        Route::get('/plantillas/{tipoNotificacion}/editar', [NotificacionController::class, 'editarPlantilla'])->name('plantillas.editar');
-        Route::put('/plantillas/{tipoNotificacion}', [NotificacionController::class, 'actualizarPlantilla'])->name('plantillas.actualizar');
-        
-        // Rutas con parámetros AL FINAL
-        Route::get('/{notificacion}', [NotificacionController::class, 'show'])->name('show');
-        Route::post('/{notificacion}/reenviar', [NotificacionController::class, 'reenviar'])->name('reenviar');
-        Route::post('/{notificacion}/cancelar', [NotificacionController::class, 'cancelar'])->name('cancelar');
-        Route::get('/{notificacion}/logs', [NotificacionController::class, 'logs'])->name('logs');
-    });
-}); // Fin rutas admin
+    /*
+     * EL PANEL VIEJO (/admin/...) YA NO EXISTE. Sus pantallas de Blade calculaban
+     * saldos, estados y fechas a su manera, y cualquiera que entrara escribiendo
+     * la dirección podía dejar descuadrado lo que hace el panel nuevo. Todo vive
+     * en /panel. Los controladores Admin que siguen en uso —pausar, reanudar,
+     * cambiar de plan y traspasar— tienen sus rutas dentro del panel.
+     */
 
 }); // Fin middleware('auth')
 
