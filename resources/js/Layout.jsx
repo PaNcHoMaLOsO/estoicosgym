@@ -1,6 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    GlobeIcon,
     BellIcon,
     ChartNoAxesColumnIcon,
     ClipboardListIcon,
@@ -31,6 +30,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { PREFIJOS_CONFIGURACION } from '@/lib/configuracion';
 import { puede } from '@/lib/permisos';
 import { fijarTema, usarPreferenciaDeTema } from '@/lib/tema';
 import { BotonPrivado, ProveedorPrivado } from '@/Privado';
@@ -62,7 +62,15 @@ const GRUPOS = [
         titulo: 'Seguimiento',
         secciones: [
             { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon, permiso: 'historial.ver' },
-            { href: '/panel/notificaciones', etiqueta: 'Notificaciones', Icono: BellIcon, permiso: 'notificaciones.ver' },
+            {
+                href: '/panel/notificaciones',
+                etiqueta: 'Notificaciones',
+                Icono: BellIcon,
+                permiso: 'notificaciones.ver',
+                // Las plantillas de correo se ven dentro de Configuración: ahí
+                // se marca esa, no las dos a la vez.
+                excepto: ['/panel/notificaciones/plantillas'],
+            },
             {
                 href: '/panel/reportes',
                 etiqueta: 'Reportes',
@@ -74,22 +82,22 @@ const GRUPOS = [
 ];
 
 /*
- * Configuracion va ANCLADA ABAJO y con sus cuatro entradas a la vista en vez de
- * escondidas tras un desplegable: son pocas y quien entra a crear una membresia
- * nueva no deberia tener que adivinar donde vive.
- */
-/*
- * UNA sola entrada, no cinco.
+ * UNA sola entrada, anclada abajo.
  *
- * Antes estaban sueltas —planes, convenios, metodos, motivos y papelera— sin
- * nada que dijera que van juntas, y ocupaban la mitad del carril siendo lo que
- * menos se abre. Ahora se entra por Configuracion y dentro esta todo, con sus
- * cuentas a la vista para saber si algo falta antes de necesitarlo.
+ * Adentro está todo lo que se toca de tarde en tarde —datos del gimnasio,
+ * planes, convenios, la página web, usuarios—, cada cosa con su menú a la
+ * izquierda. Se enciende en CUALQUIERA de esas pantallas y no solo en
+ * /panel/configuracion: antes, estando en Convenios el carril no marcaba nada
+ * y no había cómo saber dónde se estaba.
  */
 const CONFIGURACION = [
-    // Lo que ven los clientes: servicios, fotos, preguntas, horario, aviso...
-    { href: '/panel/web', etiqueta: 'Página web', Icono: GlobeIcon, permiso: 'configuracion.ver' },
-    { href: '/panel/configuracion', etiqueta: 'Configuración', Icono: SettingsIcon, permiso: 'configuracion.ver' },
+    {
+        href: '/panel/configuracion',
+        etiqueta: 'Configuración',
+        Icono: SettingsIcon,
+        permiso: 'configuracion.ver',
+        tambien: PREFIJOS_CONFIGURACION,
+    },
 ];
 
 const TEMAS = [
@@ -99,8 +107,9 @@ const TEMAS = [
 ];
 
 /** Activo tambien en las fichas: /panel/clientes/{uuid} marca "Clientes". */
-function esActiva(href, url) {
+function esActiva(seccion, url) {
     const ruta = url.split('?')[0].replace(/\/$/, '') || '/panel';
+    const coincide = (href) => ruta === href || ruta.startsWith(`${href}/`);
 
     /*
      * La portada del panel se marca SOLO en su propia ruta.
@@ -109,13 +118,18 @@ function esActiva(href, url) {
      * y encendia tambien Resumen: las dos secciones salian marcadas a la vez y
      * el carril dejaba de decir donde estas, que es lo unico que hace.
      */
-    if (href === '/panel') {
+    if (seccion.href === '/panel') {
         return ruta === '/panel';
     }
 
+    if ((seccion.excepto ?? []).some(coincide)) {
+        return false;
+    }
+
     // El resto SI usa el prefijo, para que una ficha marque su seccion:
-    // /panel/clientes/{uuid} tiene que encender «Clientes».
-    return ruta === href || ruta.startsWith(`${href}/`);
+    // /panel/clientes/{uuid} tiene que encender «Clientes». `tambien` suma
+    // las otras direcciones que son la misma seccion.
+    return [seccion.href, ...(seccion.tambien ?? [])].some(coincide);
 }
 
 /**
@@ -145,7 +159,7 @@ function Marca({ className = '' }) {
 }
 
 function Enlace({ seccion, url, onIr }) {
-    const activa = esActiva(seccion.href, url);
+    const activa = esActiva(seccion, url);
     const { Icono } = seccion;
 
     // Las secciones que siguen en Blade se visitan con una carga normal: un

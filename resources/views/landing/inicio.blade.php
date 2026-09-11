@@ -10,10 +10,10 @@
         @if($fotoPortada)
             <div class="absolute inset-0" aria-hidden="true">
                 <img src="{{ $fotoPortada['imagen'] }}" alt="" class="portada-foto w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-b from-pg-negro/85 via-pg-negro/70 to-pg-negro"></div>
+                <div class="absolute inset-0 bg-linear-to-b from-pg-negro/85 via-pg-negro/70 to-pg-negro"></div>
             </div>
         @else
-            <div class="absolute inset-0 bg-gradient-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>
         @endif
         <div class="absolute top-1/4 left-10 w-72 h-72 bg-pg-rojo/25 rounded-full blur-3xl brillo" aria-hidden="true"></div>
         <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-pg-plata/10 rounded-full blur-3xl brillo" style="animation-delay: -4s" aria-hidden="true"></div>
@@ -30,7 +30,7 @@
                 </h1>
                 <p class="text-lg sm:text-xl text-pg-tiza/75 max-w-3xl mx-auto mb-10 font-modern">{{ $portada['subtitulo'] }}</p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="{{ route('landing.planes') }}" class="w-full sm:w-auto bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro text-white font-bold px-10 py-4 rounded-lg text-lg transition-all btn-glow font-modern">
+                    <a href="{{ route('landing.planes') }}" class="w-full sm:w-auto bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro text-white font-bold px-10 py-4 rounded-lg text-lg transition-all btn-glow font-modern">
                         <i class="fas fa-bolt mr-2" aria-hidden="true"></i>Ver planes
                     </a>
                     <a href="{{ route('landing.gimnasio') }}" class="w-full sm:w-auto border-2 border-pg-tiza/30 hover:border-pg-rojo text-pg-tiza hover:text-pg-rojo-claro px-10 py-4 rounded-lg text-lg transition-all font-modern">
@@ -47,7 +47,9 @@
 
     {{-- ===== ACCESOS: una tarjeta por pagina ===== --}}
     <section id="accesos" class="py-20 bg-pg-negro">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-{{ min(4, count($destacados)) }}">
+        @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][min(4, max(2, count($destacados)))])
+        {{-- Las clases van escritas enteras: el CSS compilado solo trae las que encuentra tal cual. --}}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 sm:grid-cols-2 {{ $columnas }}">
             @foreach($destacados as $i => $d)
                 <a href="{{ $d['href'] }}" class="animate-on-scroll group card-hover block bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-2xl p-7 transition-colors" style="animation-delay: {{ $i * 0.1 }}s">
                     <div class="w-14 h-14 rounded-xl bg-pg-rojo/10 flex items-center justify-center mb-5 transition-all duration-300 group-hover:bg-pg-rojo/25 group-hover:scale-110">

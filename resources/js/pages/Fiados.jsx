@@ -12,9 +12,6 @@ const pesos = new Intl.NumberFormat('es-CL', {
     maximumFractionDigits: 0,
 });
 
-/** A partir de aquí una cuenta lleva demasiado sin cobrarse. */
-const DIAS_PARA_INSISTIR = 14;
-
 function Cifra({ etiqueta, valor, pie, alerta = false }) {
     return (
         <div
@@ -46,7 +43,9 @@ function Cifra({ etiqueta, valor, pie, alerta = false }) {
  * los ingresos, el saldo de un socio ni ningun informe de membresias: es una
  * libreta aparte y se lleva aparte a proposito.
  */
-export default function Fiados({ cuentas, cobrado, cifras }) {
+// `diasParaInsistir`: a partir de cuántos días una cuenta se marca. Sale de
+// Configuración → Mesón.
+export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14 }) {
     const [pestana, setPestana] = useState('deben');
     const [abierta, setAbierta] = useState(null);
     const [anotando, setAnotando] = useState(false);
@@ -205,7 +204,7 @@ export default function Fiados({ cuentas, cobrado, cifras }) {
                                             {cuenta.desde}
                                             {/* Una cuenta de hace tres semanas no
                                                 se cobra sola: conviene que se note. */}
-                                            {cuenta.dias >= DIAS_PARA_INSISTIR ? (
+                                            {cuenta.dias >= diasParaInsistir ? (
                                                 <span className="ml-1 inline-flex items-center gap-1 text-warn">
                                                     <AlertTriangleIcon
                                                         className="size-3"

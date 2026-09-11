@@ -30,8 +30,6 @@ class ContenidosWebTest extends CasoConCatalogos
 
     public function test_la_seccion_se_abre_desde_el_panel(): void
     {
-        $this->admin()->get('/panel/web')->assertOk();
-
         foreach (array_keys(ContenidoWeb::TIPOS) as $tipo) {
             $this->admin()->get("/panel/web/{$tipo}")->assertOk();
         }
@@ -44,7 +42,7 @@ class ContenidosWebTest extends CasoConCatalogos
 
     public function test_recepcion_no_toca_la_pagina_web(): void
     {
-        $this->actingAs($this->recepcionista())->get('/panel/web')->assertForbidden();
+        $this->actingAs($this->recepcionista())->get('/panel/web/servicio')->assertForbidden();
 
         $this->actingAs($this->recepcionista())->post('/panel/web/pregunta', [
             'titulo' => '¿Abren los domingos?',

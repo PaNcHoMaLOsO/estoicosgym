@@ -23,14 +23,21 @@ class SecurityHeaders
 
         // 1. Content-Security-Policy (CSP)
         // Previene XSS, clickjacking, inyección de código
+        // Con `npm run dev` los estilos llegan del servidor de Vite, que no es
+        // «self»: sin sumarlo, la política los bloquea y la web sale sin estilos.
+        $servidor = $this->servidorDeVite();
+        $vite = $servidor ? ' ' . $servidor : '';
+        $viteEnVivo = $servidor ? ' ' . $servidor . ' ' . preg_replace('#^http#', 'ws', $servidor) : '';
+
         $csp = implode('; ', [
             "default-src 'self'",
             // Google Analytics: solo se carga si hay un ID en Configuracion -> Web.
-            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.googletagmanager.com",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com",
+            // Tailwind ya no viene de su CDN: la web usa su hoja compilada.
+            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com{$vite}",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com{$vite}",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
             "img-src 'self' data: https:",
-            "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+            "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com{$viteEnVivo}",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
@@ -73,5 +80,19 @@ class SecurityHeaders
         }
 
         return $response;
+    }
+
+    /** La dirección del servidor de Vite si está corriendo (`npm run dev`), o null. */
+    private function servidorDeVite(): ?string
+    {
+        $archivo = public_path('hot');
+
+        if (! is_file($archivo)) {
+            return null;
+        }
+
+        $origen = rtrim(trim((string) file_get_contents($archivo)), '/');
+
+        return preg_match('#^https?://#', $origen) ? $origen : null;
     }
 }

@@ -8,9 +8,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
     plugins: [
         laravel({
-            // app.jsx es el panel nuevo (Inertia + React). Las vistas Blade que
-            // siguen vivas no pasan por Vite: cargan AdminLTE por su cuenta.
-            input: ['resources/css/app.css', 'resources/js/app.jsx'],
+            // app.jsx es el panel nuevo (Inertia + React) y landing.css, la web
+            // de los clientes. Las vistas Blade del panel viejo que siguen vivas
+            // no pasan por Vite: cargan AdminLTE por su cuenta.
+            input: ['resources/css/app.css', 'resources/js/app.jsx', 'resources/css/landing.css'],
             refresh: true,
         }),
         react(),

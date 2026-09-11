@@ -69,7 +69,9 @@ Route::middleware('guest')->group(function () {
             'password' => ['required'],
         ]);
         
-        if (Auth::attempt($credentials, request()->boolean('remember'))) {
+        // Solo cuentas activas: una desactivada en Configuración → Usuarios no
+        // entra, aunque la contraseña sea la correcta.
+        if (Auth::attempt([...$credentials, 'activo' => true], request()->boolean('remember'))) {
             $user = Auth::user();
             
             // Verificar si tiene 2FA habilitado
@@ -225,16 +227,9 @@ Route::middleware('guest')->group(function () {
         $user = \App\Models\User::where('email', request('email'))->first();
 
         if ($user) {
-            // El token viaja EN CLARO en el enlace y se guarda hasheado: quien
-            // lea la tabla no puede armar el enlace con lo que hay ahi.
-            $token = \Illuminate\Support\Str::random(64);
-
-            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $user->email],
-                ['email' => $user->email, 'token' => bcrypt($token), 'created_at' => now()]
-            );
-
-            $enlace = route('password.reset', ['token' => $token, 'email' => $user->email]);
+            // Token nuevo, guardado hasheado y que caduca a la hora: el mismo
+            // camino que usa el administrador desde Configuración → Usuarios.
+            $enlace = \App\Support\EnlaceDeClave::crear($user);
 
             // EL TOKEN SE MANDA POR CORREO, no se pinta en pantalla. Antes se
             // devolvia en el mensaje, asi que cualquiera que supiera el correo
@@ -242,12 +237,7 @@ Route::middleware('guest')->group(function () {
             // completa. Si el correo no esta configurado el envio falla y queda
             // en el log, pero el token JAMAS vuelve al navegador.
             try {
-                app(\App\Services\CorreoService::class)->enviar(
-                    $user->email,
-                    'Restablece tu contraseña · PRO GYM',
-                    view('emails.reset-password', ['enlace' => $enlace, 'nombre' => $user->name])->render(),
-                    $user->name,
-                );
+                \App\Support\EnlaceDeClave::mandar($user, $enlace);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('No se pudo enviar el correo de recuperación: ' . $e->getMessage());
             }
@@ -501,6 +491,14 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          */
         Route::get('/configuracion', [\App\Http\Controllers\Panel\AjustesController::class, 'index'])->name('configuracion.index');
         Route::put('/configuracion', [\App\Http\Controllers\Panel\AjustesController::class, 'update'])->name('configuracion.update');
+        // Cada tema de ajustes en su propia página: /panel/configuracion/horario.
+        Route::get('/configuracion/{grupo}', [\App\Http\Controllers\Panel\AjustesController::class, 'show'])->whereIn('grupo', array_keys(\App\Support\Ajustes::grupos()))->name('configuracion.show');
+
+        // Las cuentas del panel. Permiso propio, usuarios.*: ver App\Support\Permisos.
+        Route::get('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'index'])->name('usuarios.index');
+        Route::post('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'store'])->name('usuarios.store');
+        Route::put('/usuarios/{usuario}', [\App\Http\Controllers\Panel\UsuarioController::class, 'update'])->whereNumber('usuario')->name('usuarios.update');
+        Route::post('/usuarios/{usuario}/enlace', [\App\Http\Controllers\Panel\UsuarioController::class, 'enlace'])->whereNumber('usuario')->name('usuarios.enlace');
 
         Route::get('/membresias', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'membresias'])->name('membresias.index');
         Route::get('/membresias/{membresia}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'membresia'])->name('membresias.show');
@@ -525,7 +523,6 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
         Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
         // La pagina web: servicios, fotos, preguntas y testimonios. Se ocultan con catalogos.alternar.
-        Route::get('/web', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'index'])->name('web.index');
         Route::get('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'show'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.show');
         Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.store');
         Route::put('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'update'])->name('web.update');

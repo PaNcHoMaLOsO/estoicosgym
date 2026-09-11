@@ -11,20 +11,26 @@
     <meta name="description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '. Revisa los planes y consulta tu membresía en línea.')">
     <meta name="keywords" content="gimnasio, fitness, musculación, cardio, entrenamiento">
     <meta name="author" content="{{ $nombreGimnasio }}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0a0a0b">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="@yield('title', $nombreGimnasio)">
     <meta property="og:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
-    <meta property="og:image" content="{{ asset('images/progym-logo.png') }}">
+    {{-- Al compartir la página sale la primera foto del gimnasio; sin fotos, el logo. --}}
+    <meta property="og:image" content="{{ $web['imagen'] ?? asset('images/progym-logo.png') }}">
+    <meta property="og:image:alt" content="{{ $nombreGimnasio }}{{ !empty($web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}">
+    <meta property="og:site_name" content="{{ $nombreGimnasio }}">
+    <meta property="og:locale" content="es_CL">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ url()->current() }}">
     <meta property="twitter:title" content="@yield('title', $nombreGimnasio)">
     <meta property="twitter:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
+    <meta property="twitter:image" content="{{ $web['imagen'] ?? asset('images/progym-logo.png') }}">
 
     <!-- Favicon: el isotipo del logotipo -->
     <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
@@ -35,10 +41,17 @@
     @if(!empty($web['search_console']))
         <meta name="google-site-verification" content="{{ $web['search_console'] }}">
     @endif
+    @if(!empty($web['bing']))
+        <meta name="msvalidate.01" content="{{ $web['bing'] }}">
+    @endif
 
     <!-- La ficha que lee Google: sale de los planes y de Configuracion. JSON_HEX_TAG impide cerrar el <script> desde un ajuste. -->
     @if(!empty($web['json_ld']))
         <script type="application/ld+json">{!! json_encode($web['json_ld'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+    @endif
+    {{-- Las migas de cada página: «PRO GYM › Planes y precios». --}}
+    @if(!empty($web['migas']))
+        <script type="application/ld+json">{!! json_encode($web['migas'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
     @endif
 
     @if(!empty($web['google_analytics']))
@@ -77,36 +90,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Paleta PRO GYM: los mismos valores que el panel (tema oscuro)
-                        'pg-rojo': '#dd2a32',
-                        'pg-rojo-oscuro': '#b81e25',
-                        'pg-rojo-claro': '#ef4a51',
-                        'pg-tiza': '#f2f2f4',
-                        'pg-tiza-clara': '#ffffff',
-                        'pg-tiza-oscura': '#c9c9ce',
-                        'pg-negro': '#0a0a0b',
-                        'pg-carbon': '#121214',
-                        'pg-grafito': '#1a1a1e',
-                        'pg-gris': '#3d3d44',
-                        'pg-plata': '#c7cad1',
-                        'pg-acero': '#8b8f98',
-                    },
-                    fontFamily: {
-                        'display': ['Oswald', 'sans-serif'],
-                        'body': ['Poppins', 'sans-serif'],
-                        'modern': ['Poppins', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <!-- Los estilos de la web, compilados: ver resources/css/landing.css -->
+    @vite('resources/css/landing.css')
     
     <!-- Custom Styles -->
     <style>
@@ -291,7 +276,7 @@
 </head>
 <body class="bg-pg-negro text-pg-tiza font-body antialiased">
     <!-- Skip to content (Accessibility) -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-pg-rojo text-white px-4 py-2 rounded z-50">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-pg-rojo text-white px-4 py-2 rounded-sm z-50">
         Saltar al contenido principal
     </a>
 

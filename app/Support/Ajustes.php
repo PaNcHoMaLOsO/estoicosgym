@@ -11,16 +11,38 @@ use Illuminate\Support\Facades\DB;
  * LO QUE ESTABA ESCRITO A MANO Y AHORA SE PUEDE CAMBIAR: el nombre del gimnasio
  * —que iba dentro de las plantillas de correo—, «se puede renovar 30 días
  * antes», «una nota lleva 3 días sin hacerse», «un fiado lleva 14 días sin
- * cobrarse» y el tope del envío masivo. Ninguno de los cinco lo podía tocar
- * nadie del gimnasio sin abrir el código.
+ * cobrarse», el tope del envío masivo y las horas de las tareas automáticas.
+ * Nada de eso lo podía tocar nadie del gimnasio sin abrir el código.
+ *
+ * UN AJUSTE QUE NADIE LEE NO SE DEFINE. «Avisar del vencimiento, 7 días» vivió
+ * aquí sin que ningún código lo mirara —los avisos usan los días de su
+ * plantilla de correo— y quien lo cambiaba se quedaba creyendo que hizo algo.
+ * Lo mismo el horario en texto libre, que reemplazó el horario día por día.
  *
  * SE LEEN MUCHÍSIMO —el nombre del gimnasio sale en cada correo— así que van a
- * caché. Se olvida entera al guardar cualquiera: son diez filas, y mantener una
- * entrada por clave sería más código del que ahorra.
+ * caché. Se olvida entera al guardar cualquiera: son pocas filas, y mantener
+ * una entrada por clave sería más código del que ahorra.
+ *
+ * Los tipos: «texto» (una línea, hasta `largo`), «area» (varias líneas),
+ * «numero» (entero entre `min` y `max`), «fecha» (AAAA-MM-DD) y «hora» (HH:MM).
+ * `seccion` agrupa los campos de un tema largo bajo un subtítulo.
  */
 class Ajustes
 {
     private const CACHE = 'ajustes:todos';
+
+    /** Un tramo de horario: 07:00-22:00. */
+    private const TRAMO = '(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])';
+
+    private const DIAS = [
+        'lunes' => 'Lunes',
+        'martes' => 'Martes',
+        'miercoles' => 'Miércoles',
+        'jueves' => 'Jueves',
+        'viernes' => 'Viernes',
+        'sabado' => 'Sábado',
+        'domingo' => 'Domingo',
+    ];
 
     /**
      * Qué se puede ajustar, qué significa y qué vale si nadie lo tocó.
@@ -32,45 +54,50 @@ class Ajustes
      */
     public static function definiciones(): array
     {
-        return [
+        static $definiciones = null;
+
+        return $definiciones ??= [
             // ---- Quién es el gimnasio ----
             'gimnasio.nombre' => [
                 'grupo' => 'gimnasio',
                 'etiqueta' => 'Nombre',
-                'ayuda' => 'Sale en los correos que reciben los socios.',
+                'ayuda' => 'Sale en los correos, en la página web y en Google.',
                 'tipo' => 'texto',
+                'largo' => 80,
                 'defecto' => 'PRO GYM',
             ],
             'gimnasio.direccion' => [
                 'grupo' => 'gimnasio',
                 'etiqueta' => 'Dirección',
-                'ayuda' => 'Para los correos y los comprobantes.',
+                'ayuda' => 'Calle y número, como en Google Maps. Sale en los correos, en la web y en la ficha de Google.',
+                'ejemplo' => 'Colón 123',
                 'tipo' => 'texto',
                 'defecto' => '',
             ],
             'gimnasio.telefono' => [
                 'grupo' => 'gimnasio',
                 'etiqueta' => 'Teléfono',
-                'ayuda' => 'El que se le da al socio para llamar.',
+                'ayuda' => 'El que se le da al socio para llamar. Sale en la web y en Google.',
+                'ejemplo' => '+56 43 212 3456',
                 'tipo' => 'texto',
+                'largo' => 30,
                 'defecto' => '',
             ],
             'gimnasio.email' => [
                 'grupo' => 'gimnasio',
                 'etiqueta' => 'Correo de contacto',
-                'ayuda' => 'A dónde responde el socio si contesta un aviso.',
+                'ayuda' => 'A dónde responde el socio si contesta un aviso, y a dónde llegan los mensajes de la web.',
+                'ejemplo' => 'contacto@progym.cl',
                 'tipo' => 'texto',
-                'defecto' => '',
-            ],
-            'gimnasio.horario' => [
-                'grupo' => 'gimnasio',
-                'etiqueta' => 'Horario',
-                'ayuda' => 'Tal cual se quiere que se lea. Ej: «Lun a Vie 7:00–22:00 · Sáb 9:00–14:00».',
-                'tipo' => 'texto',
+                'patron' => '/^[^@\s]+@[^@\s]+\.[^@\s]+$/',
+                'mensaje' => 'Revisa el correo: le falta la @ o el punto.',
                 'defecto' => '',
             ],
 
-            // ---- Cómo funciona el gimnasio ----
+            // ---- El horario, día por día ----
+            ...self::horario(),
+
+            // ---- Cómo funcionan las membresías ----
             'reglas.dias_para_renovar' => [
                 'grupo' => 'reglas',
                 'etiqueta' => 'Renovar como mucho antes de',
@@ -86,17 +113,8 @@ class Ajustes
                 'etiqueta' => 'Versión del contrato',
                 'ayuda' => 'La que se le hace firmar hoy a quien se inscribe. Súbela cada vez que cambie el texto: es lo que permite saber después qué firmó cada socio, y quién firmó una versión vieja.',
                 'tipo' => 'texto',
+                'largo' => 20,
                 'defecto' => '1',
-            ],
-            'reglas.dias_aviso_vencimiento' => [
-                'grupo' => 'reglas',
-                'etiqueta' => 'Avisar del vencimiento',
-                'ayuda' => 'Con cuántos días de antelación se le manda el aviso al socio.',
-                'tipo' => 'numero',
-                'min' => 1,
-                'max' => 60,
-                'defecto' => 7,
-                'unidad' => 'días antes',
             ],
 
             // ---- El mesón ----
@@ -113,7 +131,7 @@ class Ajustes
             'meson.dias_fiado_viejo' => [
                 'grupo' => 'meson',
                 'etiqueta' => 'Marcar un fiado sin cobrar',
-                'ayuda' => 'A los cuántos días una cuenta del mesón sale marcada. Una cuenta vieja no se cobra sola.',
+                'ayuda' => 'A los cuántos días una cuenta del mesón sale marcada para insistir. Una cuenta vieja no se cobra sola.',
                 'tipo' => 'numero',
                 'min' => 1,
                 'max' => 90,
@@ -121,9 +139,34 @@ class Ajustes
                 'unidad' => 'días',
             ],
 
-            // ---- Correo ----
+            // ---- Lo automático ----
+            'tareas.hora_revision' => [
+                'grupo' => 'tareas',
+                'seccion' => 'A qué hora',
+                'etiqueta' => 'Revisar vencimientos y pagos',
+                'ayuda' => 'Marca las membresías vencidas, pone al día los pagos y desactiva a quien quedó sin membresía. Tiene que ser una hora en que el computador del mesón esté prendido.',
+                'tipo' => 'hora',
+                'defecto' => '01:00',
+            ],
+            'tareas.hora_avisos' => [
+                'grupo' => 'tareas',
+                'seccion' => 'A qué hora',
+                'etiqueta' => 'Mandar los avisos por correo',
+                'ayuda' => 'Los de «tu membresía vence pronto» y «venció», y los envíos programados para ese día.',
+                'tipo' => 'hora',
+                'defecto' => '08:00',
+            ],
+            'tareas.hora_reintento' => [
+                'grupo' => 'tareas',
+                'seccion' => 'A qué hora',
+                'etiqueta' => 'Reintentar los que fallaron',
+                'ayuda' => 'Una segunda oportunidad para los correos que no salieron en la mañana.',
+                'tipo' => 'hora',
+                'defecto' => '14:00',
+            ],
             'correo.tope_masivo' => [
-                'grupo' => 'correo',
+                'grupo' => 'tareas',
+                'seccion' => 'Envíos a un grupo',
                 'etiqueta' => 'Máximo por envío a un grupo',
                 'ayuda' => 'Los correos salen uno a uno dentro de la petición: pasado cierto número el servidor corta a mitad de la lista y nadie sabe a quién le llegó. Súbelo solo si el servidor aguanta.',
                 'tipo' => 'numero',
@@ -133,9 +176,64 @@ class Ajustes
                 'unidad' => 'socios',
             ],
 
-            // ---- La web publica ----
+            // ---- La portada de la web ----
+            'portada.titulo_1' => [
+                'grupo' => 'portada',
+                'seccion' => 'El título',
+                'etiqueta' => 'Primera línea',
+                'ayuda' => 'En letras grandes y blancas.',
+                'tipo' => 'texto',
+                'largo' => 30,
+                'defecto' => 'TRANSFORMA',
+            ],
+            'portada.titulo_2' => [
+                'grupo' => 'portada',
+                'seccion' => 'El título',
+                'etiqueta' => 'Segunda línea',
+                'ayuda' => 'En letras plateadas con brillo, debajo de la primera.',
+                'tipo' => 'texto',
+                'largo' => 30,
+                'defecto' => 'TU CUERPO',
+            ],
+            'portada.subtitulo' => [
+                'grupo' => 'portada',
+                'seccion' => 'El título',
+                'etiqueta' => 'Texto de bienvenida',
+                'ayuda' => 'Una o dos frases debajo del título.',
+                'tipo' => 'area',
+                'largo' => 220,
+                'defecto' => 'Musculación, cardio y un equipo que te orienta desde el primer día. Elige tu plan y empieza hoy.',
+            ],
+            'portada.aviso' => [
+                'grupo' => 'portada',
+                'seccion' => 'Aviso destacado',
+                'etiqueta' => 'Aviso',
+                'ayuda' => 'Una franja roja arriba de todas las páginas: «Este sábado cerramos a las 14:00». Vacío = no hay aviso.',
+                'tipo' => 'texto',
+                'largo' => 160,
+                'defecto' => '',
+            ],
+            'portada.aviso_desde' => [
+                'grupo' => 'portada',
+                'seccion' => 'Aviso destacado',
+                'etiqueta' => 'Aparece desde',
+                'ayuda' => 'Vacío = desde ya.',
+                'tipo' => 'fecha',
+                'defecto' => '',
+            ],
+            'portada.aviso_hasta' => [
+                'grupo' => 'portada',
+                'seccion' => 'Aviso destacado',
+                'etiqueta' => 'Aparece hasta',
+                'ayuda' => 'Incluido ese día. Después se va solo.',
+                'tipo' => 'fecha',
+                'defecto' => '',
+            ],
+
+            // ---- Google y las redes ----
             'web.ciudad' => [
                 'grupo' => 'web',
+                'seccion' => 'Dónde está',
                 'etiqueta' => 'Ciudad',
                 'ayuda' => 'La que la gente escribe en Google: «gimnasio en Los Ángeles». Va en el título de la página y en la ficha que lee Google.',
                 'tipo' => 'texto',
@@ -143,21 +241,73 @@ class Ajustes
             ],
             'web.region' => [
                 'grupo' => 'web',
+                'seccion' => 'Dónde está',
                 'etiqueta' => 'Región',
                 'ayuda' => 'Para que Google no la confunda con Los Ángeles de California.',
                 'tipo' => 'texto',
                 'defecto' => 'Biobío',
             ],
+            'web.comunas' => [
+                'grupo' => 'web',
+                'seccion' => 'Dónde está',
+                'etiqueta' => 'Comunas cercanas',
+                'ayuda' => 'Separadas por coma. Le dice a Google que también atiendes a quien vive ahí.',
+                'ejemplo' => 'Nacimiento, Mulchén, Santa Bárbara',
+                'tipo' => 'texto',
+                'defecto' => '',
+            ],
+            'web.coordenadas' => [
+                'grupo' => 'web',
+                'seccion' => 'Dónde está',
+                'etiqueta' => 'Ubicación exacta',
+                'ayuda' => 'En Google Maps, clic derecho sobre el gimnasio: son los números de arriba del menú. Con ellos Google lo ubica en el mapa sin adivinar.',
+                'ejemplo' => '-37.46973, -72.35366',
+                'tipo' => 'texto',
+                'patron' => '/^-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/',
+                'mensaje' => 'Pégalas como salen en Google Maps: -37.46973, -72.35366.',
+                'defecto' => '',
+            ],
             'web.google_maps' => [
                 'grupo' => 'web',
+                'seccion' => 'Dónde está',
                 'etiqueta' => 'Enlace de Google Maps',
                 'ayuda' => 'El de la ficha del gimnasio en Google Maps (Compartir → Copiar enlace). Sale como botón «Cómo llegar».',
                 'tipo' => 'texto',
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            'web.descripcion' => [
+                'grupo' => 'web',
+                'seccion' => 'Cómo se ve en Google',
+                'etiqueta' => 'Descripción para Google',
+                'ayuda' => 'El texto que sale bajo el título en los resultados. Google muestra unos 155 caracteres. Vacío = se arma solo con la ciudad y los precios.',
+                'tipo' => 'area',
+                'largo' => 300,
+                'defecto' => '',
+            ],
+            'web.resenas' => [
+                'grupo' => 'web',
+                'seccion' => 'Cómo se ve en Google',
+                'etiqueta' => 'Enlace para dejar una reseña',
+                'ayuda' => 'En tu Perfil de Empresa de Google: «Pedir reseñas» → copiar el enlace. Sale como botón en la web. Las reseñas son lo que más ayuda a salir primero en el mapa.',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'web.whatsapp' => [
+                'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
+                'etiqueta' => 'WhatsApp del gimnasio',
+                'ayuda' => 'Sale como un botón verde flotante en todas las páginas. Vacío = no aparece.',
+                'ejemplo' => '9 1234 5678',
+                'tipo' => 'texto',
+                'patron' => '/^(\+?56)?\s?9\s?[0-9]{4}\s?[0-9]{4}$/',
+                'mensaje' => 'Tiene que ser un celular chileno: 9 1234 5678.',
+                'defecto' => '',
+            ],
             'web.instagram' => [
                 'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
                 'etiqueta' => 'Instagram',
                 'ayuda' => 'El enlace completo del perfil. Vacío = no se muestra.',
                 'tipo' => 'texto',
@@ -166,14 +316,34 @@ class Ajustes
             ],
             'web.facebook' => [
                 'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
                 'etiqueta' => 'Facebook',
                 'ayuda' => 'El enlace completo de la página. Vacío = no se muestra.',
                 'tipo' => 'texto',
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            'web.tiktok' => [
+                'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
+                'etiqueta' => 'TikTok',
+                'ayuda' => 'El enlace completo del perfil. Vacío = no se muestra.',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'web.youtube' => [
+                'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
+                'etiqueta' => 'YouTube',
+                'ayuda' => 'El enlace completo del canal. Vacío = no se muestra.',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
             'web.google_analytics' => [
                 'grupo' => 'web',
+                'seccion' => 'Medición y verificación',
                 'etiqueta' => 'Google Analytics',
                 'ayuda' => 'El ID de medición, con la forma G-XXXXXXXXXX. Vacío = no se mide nada y no aparece el aviso de cookies.',
                 'tipo' => 'texto',
@@ -183,6 +353,7 @@ class Ajustes
             ],
             'web.search_console' => [
                 'grupo' => 'web',
+                'seccion' => 'Medición y verificación',
                 'etiqueta' => 'Verificación de Search Console',
                 'ayuda' => 'Solo el código de la etiqueta «google-site-verification», sin comillas ni el resto.',
                 'tipo' => 'texto',
@@ -190,145 +361,55 @@ class Ajustes
                 'mensaje' => 'Pega solo el código, sin comillas ni la etiqueta completa.',
                 'defecto' => '',
             ],
-            'web.whatsapp' => [
+            'web.bing' => [
                 'grupo' => 'web',
-                'etiqueta' => 'WhatsApp del gimnasio',
-                'ayuda' => 'Sale como un botón verde flotante en todas las páginas. Vacío = no aparece.',
+                'seccion' => 'Medición y verificación',
+                'etiqueta' => 'Verificación de Bing',
+                'ayuda' => 'Opcional. El código de la etiqueta «msvalidate.01» de Bing Webmaster Tools, sin comillas.',
                 'tipo' => 'texto',
-                'patron' => '/^(\+?56)?\s?9\s?[0-9]{4}\s?[0-9]{4}$/',
-                'mensaje' => 'Tiene que ser un celular chileno: 9 1234 5678.',
-                'defecto' => '',
-            ],
-
-            // ---- La portada ----
-            'portada.titulo_1' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'Título, primera línea',
-                'ayuda' => 'En letras grandes y blancas.',
-                'tipo' => 'texto',
-                'defecto' => 'TRANSFORMA',
-            ],
-            'portada.titulo_2' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'Título, segunda línea',
-                'ayuda' => 'En letras plateadas con brillo, debajo de la primera.',
-                'tipo' => 'texto',
-                'defecto' => 'TU CUERPO',
-            ],
-            'portada.subtitulo' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'Texto de bienvenida',
-                'ayuda' => 'Una o dos frases debajo del título.',
-                'tipo' => 'texto',
-                'defecto' => 'Musculación, cardio y un equipo que te orienta desde el primer día. Elige tu plan y empieza hoy.',
-            ],
-            'portada.aviso' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'Aviso destacado',
-                'ayuda' => 'Una franja roja arriba de todas las páginas: «Este sábado cerramos a las 14:00». Vacío = no hay aviso.',
-                'tipo' => 'texto',
-                'defecto' => '',
-            ],
-            'portada.aviso_desde' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'El aviso aparece desde',
-                'ayuda' => 'Vacío = desde ya.',
-                'tipo' => 'fecha',
-                'defecto' => '',
-            ],
-            'portada.aviso_hasta' => [
-                'grupo' => 'portada',
-                'etiqueta' => 'El aviso aparece hasta',
-                'ayuda' => 'Incluido ese día. Después se va solo.',
-                'tipo' => 'fecha',
-                'defecto' => '',
-            ],
-
-            // ---- El horario ----
-            'horario.lunes' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Lunes',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.martes' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Martes',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.miercoles' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Miércoles',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.jueves' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Jueves',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.viernes' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Viernes',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.sabado' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Sábado',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.domingo' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Domingo',
-                'ayuda' => 'Ej: 07:00-22:00. Con pausa: 07:00-13:00, 16:00-22:00. Vacío = cerrado.',
-                'tipo' => 'texto',
-                'patron' => '/^(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])(\s*,\s*(([01]?[0-9]|2[0-3]):[0-5][0-9])\s*-\s*(([01]?[0-9]|2[0-3]):[0-5][0-9]))?$/',
-                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
-                'defecto' => '',
-            ],
-            'horario.nota' => [
-                'grupo' => 'horario',
-                'etiqueta' => 'Nota',
-                'ayuda' => 'Ej: «Festivos de 9:00 a 14:00».',
-                'tipo' => 'texto',
+                'patron' => '/^[A-Za-z0-9]{16,64}$/',
+                'mensaje' => 'Pega solo el código, sin comillas ni la etiqueta completa.',
                 'defecto' => '',
             ],
         ];
     }
 
-    /** Cómo se llama cada grupo en la pantalla. */
+    /**
+     * Cómo se llama cada tema y qué hay adentro. El orden es el de la pantalla.
+     *
+     * @return array<string,array{titulo:string, descripcion:string}>
+     */
     public static function grupos(): array
     {
         return [
-            'gimnasio' => ['titulo' => 'El gimnasio', 'descripcion' => 'Lo que ve el socio en los correos'],
-            'reglas' => ['titulo' => 'Reglas', 'descripcion' => 'Cómo se comportan las membresías'],
-            'meson' => ['titulo' => 'Mesón', 'descripcion' => 'Las notas y lo fiado'],
-            'correo' => ['titulo' => 'Correo', 'descripcion' => 'Límites de los envíos'],
-            'web' => ['titulo' => 'Web', 'descripcion' => 'La página pública: cómo la encuentra Google y cómo se mide'],
-            'portada' => ['titulo' => 'Portada', 'descripcion' => 'Lo primero que se lee en la página, y un aviso con fecha'],
-            'horario' => ['titulo' => 'Horario', 'descripcion' => 'Día por día. Sale en la página y lo lee Google'],
+            'gimnasio' => [
+                'titulo' => 'Datos del gimnasio',
+                'descripcion' => 'Cómo se llama, dónde está y cómo se le escribe. Sale en los correos, en la página web y en Google.',
+            ],
+            'horario' => [
+                'titulo' => 'Horario',
+                'descripcion' => 'Día por día: 07:00-22:00, o con pausa al mediodía: 07:00-13:00, 16:00-22:00. Vacío = cerrado. Sale en la página web y lo lee Google.',
+            ],
+            'reglas' => [
+                'titulo' => 'Reglas de las membresías',
+                'descripcion' => 'Cuándo se puede renovar y qué contrato firma quien se inscribe.',
+            ],
+            'meson' => [
+                'titulo' => 'Mesón',
+                'descripcion' => 'Cuándo se marcan las notas y lo fiado que llevan tiempo esperando.',
+            ],
+            'tareas' => [
+                'titulo' => 'Correos y tareas automáticas',
+                'descripcion' => 'A qué hora corre lo automático y cuántos correos salen de una vez.',
+            ],
+            'portada' => [
+                'titulo' => 'Portada y aviso',
+                'descripcion' => 'Lo primero que se lee en la página web, y un aviso con fecha que se quita solo.',
+            ],
+            'web' => [
+                'titulo' => 'Google y redes',
+                'descripcion' => 'Cómo encuentra Google al gimnasio, sus redes sociales y cómo se miden las visitas.',
+            ],
         ];
     }
 
@@ -381,6 +462,40 @@ class Ajustes
         }
 
         Cache::forget(self::CACHE);
+    }
+
+    /**
+     * Los siete días y la nota del horario.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    private static function horario(): array
+    {
+        $horario = [];
+
+        foreach (self::DIAS as $clave => $nombre) {
+            $horario["horario.{$clave}"] = [
+                'grupo' => 'horario',
+                'etiqueta' => $nombre,
+                'ejemplo' => '07:00-22:00',
+                'tipo' => 'texto',
+                'patron' => '/^' . self::TRAMO . '(\s*,\s*' . self::TRAMO . ')?$/',
+                'mensaje' => 'Escríbelo como 07:00-22:00, o con pausa: 07:00-13:00, 16:00-22:00.',
+                'defecto' => '',
+            ];
+        }
+
+        $horario['horario.nota'] = [
+            'grupo' => 'horario',
+            'etiqueta' => 'Nota',
+            'ayuda' => 'Sale debajo del horario.',
+            'ejemplo' => 'Festivos de 9:00 a 14:00',
+            'tipo' => 'texto',
+            'largo' => 120,
+            'defecto' => '',
+        ];
+
+        return $horario;
     }
 
     /**

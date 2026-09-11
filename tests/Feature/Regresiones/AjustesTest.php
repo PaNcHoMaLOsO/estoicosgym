@@ -8,6 +8,7 @@ use App\Models\Membresia;
 use App\Models\Nota;
 use App\Services\EnvioMasivoService;
 use App\Support\Ajustes;
+use Illuminate\Support\Facades\File;
 use Tests\CasoConCatalogos;
 
 /**
@@ -32,6 +33,16 @@ class AjustesTest extends CasoConCatalogos
     {
         return $this->actingAs($this->administrador())
             ->put('/panel/configuracion', $valores);
+    }
+
+    /** Un punto de la portada de Configuración. */
+    private function punto(string $clave): array
+    {
+        return collect(
+            $this->actingAs($this->administrador())
+                ->get('/panel/configuracion')
+                ->viewData('page')['props']['puntos']
+        )->firstWhere('clave', $clave);
     }
 
     public function test_un_ajuste_sin_tocar_vale_su_defecto(): void
@@ -65,6 +76,18 @@ class AjustesTest extends CasoConCatalogos
 
         Ajustes::olvidar();
         $this->assertSame(30, Ajustes::numero('reglas.dias_para_renovar'));
+    }
+
+    public function test_una_hora_mal_escrita_se_rechaza(): void
+    {
+        $this->guardar(['tareas.hora_avisos' => '8 de la mañana'])
+            ->assertSessionHasErrors('tareas.hora_avisos');
+    }
+
+    public function test_un_correo_de_contacto_sin_arroba_se_rechaza(): void
+    {
+        $this->guardar(['gimnasio.email' => 'contacto.progym.cl'])
+            ->assertSessionHasErrors('gimnasio.email');
     }
 
     /**
@@ -115,6 +138,26 @@ class AjustesTest extends CasoConCatalogos
         $this->assertFalse($nota->refresh()->estaVieja());
     }
 
+    /**
+     * Y con los días de un fiado sin cobrar.
+     *
+     * Estaban escritos en la pantalla de Fiado —un 14 fijo— mientras el ajuste
+     * de Configuración no lo leía nadie.
+     */
+    public function test_cambiar_los_dias_de_un_fiado_cambia_la_pantalla(): void
+    {
+        $dias = fn () => $this->actingAs($this->administrador())
+            ->get('/panel/fiados')
+            ->viewData('page')['props']['diasParaInsistir'];
+
+        $this->assertSame(14, $dias());
+
+        $this->guardar(['meson.dias_fiado_viejo' => 5]);
+        Ajustes::olvidar();
+
+        $this->assertSame(5, $dias());
+    }
+
     /** Y con el tope del envío masivo. */
     public function test_cambiar_el_tope_del_envio_cambia_cuantos_caben(): void
     {
@@ -126,28 +169,69 @@ class AjustesTest extends CasoConCatalogos
         $this->assertSame(40, EnvioMasivoService::tope());
     }
 
+    /**
+     * EL CANARIO: no queda ningún ajuste que nadie lea.
+     *
+     * «Avisar del vencimiento, 7 días» estuvo en la pantalla sin que ningún
+     * código lo mirara: los avisos usan los días de su plantilla. Esta prueba
+     * busca cada clave en el código —fuera de su propia definición y de la
+     * portada de Configuración, que solo mira si está puesta— y falla si alguna
+     * no la usa nadie.
+     */
+    public function test_no_queda_ningun_ajuste_que_nadie_lea(): void
+    {
+        $excluidos = ['Support/Ajustes.php', 'Support/EstadoDeConfiguracion.php'];
+
+        $codigo = collect(File::allFiles(app_path()))
+            ->merge(File::allFiles(resource_path('views')))
+            ->map(fn ($archivo) => str_replace('\\', '/', $archivo->getPathname()))
+            ->push(str_replace('\\', '/', base_path('routes/console.php')))
+            ->reject(fn (string $ruta) => collect($excluidos)->contains(fn ($fin) => str_ends_with($ruta, $fin)))
+            ->map(fn (string $ruta) => file_get_contents($ruta))
+            ->implode("\n");
+
+        $sinUso = collect(array_keys(Ajustes::definiciones()))
+            // Los días del horario se leen de a uno con «horario.{$dia}».
+            ->reject(fn (string $clave) => str_starts_with($clave, 'horario.') && $clave !== 'horario.nota')
+            ->reject(fn (string $clave) => str_contains($codigo, "'{$clave}'"))
+            ->values()
+            ->all();
+
+        $this->assertSame([], $sinUso, 'Ajustes que no lee nadie: ' . implode(', ', $sinUso));
+    }
+
     // ---------- La pantalla ----------
 
-    public function test_la_pantalla_trae_los_ajustes_agrupados(): void
+    /** Cada tema tiene su dirección: «atrás» vuelve al tema anterior y no fuera de Configuración. */
+    public function test_cada_tema_abre_en_su_propia_direccion(): void
     {
-        $props = $this->actingAs($this->administrador())
-            ->get('/panel/configuracion')
-            ->viewData('page')['props'];
+        $admin = $this->administrador();
 
-        $claves = collect($props['grupos'])->pluck('clave');
+        foreach (array_keys(Ajustes::grupos()) as $grupo) {
+            $props = $this->actingAs($admin)
+                ->get("/panel/configuracion/{$grupo}")
+                ->assertOk()
+                ->viewData('page')['props'];
 
-        $this->assertTrue($claves->contains('gimnasio'));
-        $this->assertTrue($claves->contains('reglas'));
-        $this->assertTrue($claves->contains('meson'));
+            $this->assertSame($grupo, $props['grupo']['clave']);
+            $this->assertNotEmpty($props['grupo']['ajustes'], "El tema «{$grupo}» no trae ningún ajuste.");
+        }
+    }
+
+    public function test_un_tema_que_no_existe_no_abre(): void
+    {
+        $this->actingAs($this->administrador())
+            ->get('/panel/configuracion/inventado')
+            ->assertNotFound();
     }
 
     /**
-     * La pantalla avisa de lo que impide trabajar.
+     * La portada avisa de lo que impide trabajar.
      *
      * Un plan activo sin precio no se puede vender —el alta lo rechaza— y eso
      * hay que verlo aquí, que es donde se arregla, y no con el socio delante.
      */
-    public function test_la_pantalla_avisa_de_un_plan_sin_precio(): void
+    public function test_la_portada_avisa_de_un_plan_sin_precio(): void
     {
         Membresia::create([
             'nombre' => 'Plan a medias',
@@ -156,38 +240,28 @@ class AjustesTest extends CasoConCatalogos
             'activo' => true,
         ]);
 
-        $catalogos = collect(
-            $this->actingAs($this->administrador())
-                ->get('/panel/configuracion')
-                ->viewData('page')['props']['catalogos']
-        );
+        $planes = $this->punto('planes');
 
-        $planes = $catalogos->firstWhere('titulo', 'Planes');
-
-        $this->assertNotNull($planes['aviso']);
-        $this->assertStringContainsString('no tiene precio', $planes['aviso']);
+        $this->assertSame('falta', $planes['estado']);
+        $this->assertStringContainsString('no tiene precio', $planes['detalle']);
+        $this->assertSame('/panel/membresias', $planes['href']);
     }
 
-    /** Y la cuenta de cada catálogo, para saber si falta algo. */
-    public function test_la_pantalla_cuenta_lo_que_hay_en_cada_catalogo(): void
+    /** Y cuenta lo que hay, para saber si falta algo. */
+    public function test_la_portada_cuenta_los_metodos_de_pago(): void
     {
-        $catalogos = collect(
-            $this->actingAs($this->administrador())
-                ->get('/panel/configuracion')
-                ->viewData('page')['props']['catalogos']
-        );
+        $metodos = $this->punto('metodos');
 
-        $metodos = $catalogos->firstWhere('titulo', 'Métodos de pago');
-
-        $this->assertSame(3, $metodos['activos']);
-        $this->assertNull($metodos['aviso']);
+        $this->assertSame('ok', $metodos['estado']);
+        $this->assertStringContainsString('3 formas de pago', $metodos['detalle']);
     }
 
     /** Recepción no entra a la configuración: es lo que define lo que se cobra. */
     public function test_recepcion_no_entra_a_la_configuracion(): void
     {
-        $this->actingAs($this->recepcionista())
-            ->get('/panel/configuracion')
-            ->assertForbidden();
+        $recepcion = $this->recepcionista();
+
+        $this->actingAs($recepcion)->get('/panel/configuracion')->assertForbidden();
+        $this->actingAs($recepcion)->get('/panel/configuracion/gimnasio')->assertForbidden();
     }
 }

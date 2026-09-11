@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { AlertTriangleIcon, ArrowLeftIcon, EyeIcon } from 'lucide-react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
+import { useEnConfiguracion } from '@/components/MarcoConfiguracion';
 
 /**
  * Los textos de los correos que manda el gimnasio.
@@ -15,6 +16,8 @@ import { Area, Campo, Texto } from '@/components/Campo';
  */
 export default function Plantillas({ plantillas, variables }) {
     const [abierta, setAbierta] = useState(null);
+    // Dentro de Configuración el menú de la izquierda ya dice dónde se está.
+    const enConfiguracion = useEnConfiguracion();
 
     const rotas = plantillas.filter((p) => p.rotas.length > 0);
 
@@ -23,14 +26,16 @@ export default function Plantillas({ plantillas, variables }) {
             <Head title="Plantillas de correo" />
 
             <header className="mb-5">
-                <Link
-                    href="/panel/notificaciones"
-                    className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
-                >
-                    <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                    Notificaciones
-                </Link>
-                <h1 className="mt-1 text-lg font-semibold text-chalk">Plantillas de correo</h1>
+                {enConfiguracion ? null : (
+                    <Link
+                        href="/panel/notificaciones"
+                        className="apoyo mb-1 inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
+                    >
+                        <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
+                        Notificaciones
+                    </Link>
+                )}
+                <h1 className="text-lg font-semibold text-chalk">Plantillas de correo</h1>
                 <p className="apoyo text-fog">Lo que se le escribe al socio en cada ocasión</p>
             </header>
 

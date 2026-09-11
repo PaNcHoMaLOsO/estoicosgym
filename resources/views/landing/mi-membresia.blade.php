@@ -6,7 +6,7 @@
 @section('content')
         <!-- ===== CONSULTA MEMBRESÍA SECTION ===== -->
         <section id="consulta" class="pt-36 pb-24 bg-pg-carbon relative overflow-hidden">
-            <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pg-rojo/30 to-transparent"></div>
+            <div class="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pg-rojo/30 to-transparent"></div>
             
             <!-- Glow decorativo -->
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pg-rojo/10 rounded-full blur-3xl"></div>
@@ -50,7 +50,7 @@
                                         id="rut-consulta" 
                                         placeholder="12.345.678-9"
                                         maxlength="12"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
                                     >
                                 </div>
                                 <div>
@@ -64,7 +64,7 @@
                                         autocomplete="off"
                                         placeholder="••••"
                                         maxlength="4"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-[0.5em]"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-[0.5em]"
                                     >
                                     <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">El que registraste en el gimnasio: así nadie más puede ver tu membresía.</p>
                                 </div>
@@ -81,7 +81,7 @@
                                         id="celular-consulta" 
                                         placeholder="9 1234 5678"
                                         maxlength="12"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
                                     >
                                 </div>
                                 <div>
@@ -93,7 +93,7 @@
                                         id="nombre-consulta" 
                                         placeholder="Tu nombre"
                                         maxlength="50"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center"
                                     >
                                     <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">Para verificar tu identidad</p>
                                 </div>
@@ -102,7 +102,7 @@
                             <button 
                                 type="button"
                                 id="btn-consultar"
-                                class="w-full bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                                class="w-full bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
                             >
                                 <i class="fas fa-search mr-2"></i>
                                 Consultar
@@ -121,7 +121,7 @@
                     <div class="bg-pg-negro/50 border border-pg-rojo/30 rounded-2xl p-8">
                         <!-- Header con nombre -->
                         <div class="text-center mb-6 pb-6 border-b border-pg-tiza/10">
-                            <div class="w-16 h-16 bg-gradient-to-br from-pg-rojo/30 to-pg-rojo-oscuro/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div class="w-16 h-16 bg-linear-to-br from-pg-rojo/30 to-pg-rojo-oscuro/30 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i class="fas fa-user text-pg-rojo-claro text-2xl"></i>
                             </div>
                             <h3 id="resultado-nombre" class="font-display text-2xl text-pg-tiza">-</h3>
@@ -149,7 +149,7 @@
                                 <div class="text-pg-tiza/50 text-xs font-modern mb-1">Vencimiento</div>
                                 <div id="resultado-fin" class="text-pg-tiza font-modern">-</div>
                             </div>
-                            <div class="bg-gradient-to-br from-pg-rojo/20 to-pg-rojo-oscuro/20 border border-pg-rojo/30 rounded-xl p-4 text-center">
+                            <div class="bg-linear-to-br from-pg-rojo/20 to-pg-rojo-oscuro/20 border border-pg-rojo/30 rounded-xl p-4 text-center">
                                 <div class="text-pg-rojo-claro text-xs font-modern mb-1">Días Restantes</div>
                                 <div id="resultado-dias" class="text-3xl font-bold text-pg-rojo-claro">-</div>
                             </div>

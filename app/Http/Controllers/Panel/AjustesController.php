@@ -3,36 +3,61 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
-use App\Models\Convenio;
-use App\Models\Especialista;
-use App\Models\Membresia;
-use App\Models\MetodoPago;
-use App\Models\MotivoDescuento;
 use App\Support\Ajustes;
+use App\Support\EstadoDeConfiguracion;
+use App\Support\Programador;
+use App\Support\WebPublica;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
- * Configuración: una sola puerta.
+ * Configuración: una portada con lo que falta, y una página por tema.
  *
- * Antes eran cinco entradas sueltas en el menú —planes, convenios, métodos,
- * motivos y papelera— sin nada que dijera que van juntas. Ahora hay una, y
- * dentro está todo lo que se toca de tarde en tarde.
+ * ANTES era una sola pantalla con pestañas, y una de ellas —«Catálogos»— eran
+ * tarjetas que llevaban a otras pantallas. Las pestañas no dejaban rastro en el
+ * historial —«atrás» sacaba de Configuración entera— y desde un catálogo no
+ * había cómo volver: el menú no marcaba nada. Quien entraba se perdía.
  *
- * LOS CATÁLOGOS NO SE METEN AQUÍ DENTRO, se enlazan. Cada uno es una tabla con
- * su propio alta y su propia edición, y apilar cuatro tablas en una pantalla la
- * haría el doble de larga sin que nada se encuentre antes. Lo que sí vive aquí
- * son los ajustes, que son formularios cortos y no tenían sitio en ninguna
- * parte: hasta ahora estaban escritos a mano dentro del código.
+ * AHORA cada tema tiene su dirección —/panel/configuracion/horario— y todas las
+ * pantallas de Configuración, catálogos incluidos, se ven dentro del mismo
+ * marco con el menú de secciones a la izquierda. «Atrás» vuelve a la sección
+ * anterior, y siempre se ve dónde se está.
  */
 class AjustesController extends Controller
 {
+    /** La portada: lo que falta configurar, con el camino a donde se arregla. */
     public function index()
     {
+        return Inertia::render('Configuracion/Inicio', [
+            'puntos' => EstadoDeConfiguracion::puntos(),
+        ]);
+    }
+
+    /** Un tema de ajustes, en su propia página. */
+    public function show(string $grupo)
+    {
         return Inertia::render('Configuracion', [
-            'grupos' => $this->ajustesPorGrupo(),
-            'catalogos' => $this->catalogos(),
+            'grupo' => Ajustes::grupos()[$grupo] + [
+                'clave' => $grupo,
+                'ajustes' => $this->ajustesDe($grupo),
+            ],
+            // Lo que cada tema enseña además de sus campos.
+            'extra' => match ($grupo) {
+                'tareas' => [
+                    'tareas' => Programador::estado(),
+                    'correoConfigurado' => EstadoDeConfiguracion::correoConfigurado(),
+                ],
+                'web' => [
+                    // Cómo sale la portada en Google, para verlo antes de guardar.
+                    'vistaGoogle' => [
+                        'titulo' => WebPublica::tituloDeInicio(),
+                        'url' => url('/'),
+                        'descripcionAutomatica' => WebPublica::descripcionAutomatica(WebPublica::precioDesde()),
+                    ],
+                ],
+                default => null,
+            },
         ]);
     }
 
@@ -41,6 +66,7 @@ class AjustesController extends Controller
         $definiciones = Ajustes::definiciones();
 
         $reglas = [];
+        $mensajes = [];
 
         foreach ($definiciones as $clave => $definicion) {
             // El punto de la clave se escapa: en las reglas de Laravel separa
@@ -52,11 +78,21 @@ class AjustesController extends Controller
                 'numero' => ['nullable', 'integer', 'min:' . ($definicion['min'] ?? 0), 'max:' . ($definicion['max'] ?? 999999)],
                 // Las fechas del aviso: llegan del selector de fecha como AAAA-MM-DD.
                 'fecha' => ['nullable', 'date_format:Y-m-d'],
-                default => ['nullable', 'string', 'max:255'],
+                'hora' => ['nullable', 'date_format:H:i'],
+                'area' => ['nullable', 'string', 'max:' . ($definicion['largo'] ?? 500)],
+                default => ['nullable', 'string', 'max:' . ($definicion['largo'] ?? 255)],
             };
+
+            $mensajes["{$campo}.date_format"] = $definicion['tipo'] === 'hora'
+                ? 'Escribe la hora como 08:00.'
+                : 'Elige la fecha en el calendario.';
+            $mensajes["{$campo}.max"] = $definicion['tipo'] === 'numero'
+                ? 'Como mucho ' . ($definicion['max'] ?? 999999) . '.'
+                : 'Es muy largo: hasta ' . ($definicion['largo'] ?? 255) . ' caracteres.';
+            $mensajes["{$campo}.min"] = 'Como mínimo ' . ($definicion['min'] ?? 0) . '.';
         }
 
-        $request->validate($reglas);
+        $request->validate($reglas, $mensajes);
 
         /*
          * Se lee del array TAL CUAL, no con $request->input().
@@ -114,121 +150,40 @@ class AjustesController extends Controller
 
         Ajustes::guardar($valores);
 
-        return back()->with('success', 'Configuración guardada.');
+        return back()->with('success', 'Guardado.');
     }
 
     /**
-     * Los ajustes listos para pintar, con su valor actual.
+     * Los ajustes de un tema listos para pintar, con su valor actual.
      *
      * @return list<array<string,mixed>>
      */
-    private function ajustesPorGrupo(): array
+    private function ajustesDe(string $grupo): array
     {
-        $porGrupo = [];
+        $ajustes = [];
 
         foreach (Ajustes::definiciones() as $clave => $definicion) {
-            $porGrupo[$definicion['grupo']][] = [
+            if ($definicion['grupo'] !== $grupo) {
+                continue;
+            }
+
+            $ajustes[] = [
                 'clave' => $clave,
                 'etiqueta' => $definicion['etiqueta'],
                 'ayuda' => $definicion['ayuda'] ?? null,
+                'seccion' => $definicion['seccion'] ?? null,
+                'ejemplo' => $definicion['ejemplo'] ?? null,
                 'tipo' => $definicion['tipo'],
                 'unidad' => $definicion['unidad'] ?? null,
                 'min' => $definicion['min'] ?? null,
                 'max' => $definicion['max'] ?? null,
+                'largo' => $definicion['largo'] ?? null,
                 'valor' => Ajustes::obtener($clave),
                 // Para poder decir «lo dejaste en 10, por defecto son 3».
                 'defecto' => $definicion['defecto'],
             ];
         }
 
-        return collect(Ajustes::grupos())
-            ->map(fn (array $g, string $clave) => $g + [
-                'clave' => $clave,
-                'ajustes' => $porGrupo[$clave] ?? [],
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Los cuatro catálogos, con cuántos hay activos.
-     *
-     * La cuenta importa: un gimnasio sin ningún plan activo no puede inscribir
-     * a nadie, y eso hay que verlo desde aquí y no descubrirlo con el socio
-     * delante.
-     *
-     * @return list<array<string,mixed>>
-     */
-    private function catalogos(): array
-    {
-        return [
-            [
-                'href' => '/panel/membresias',
-                'titulo' => 'Planes',
-                'descripcion' => 'Lo que se vende y a qué precio',
-                'activos' => Membresia::where('activo', true)->count(),
-                'total' => Membresia::count(),
-                // Un plan sin precio vigente no se puede vender: el alta lo
-                // rechaza. Se avisa aqui, que es donde se arregla.
-                'aviso' => $this->planesSinPrecio(),
-            ],
-            [
-                'href' => '/panel/convenios',
-                'titulo' => 'Convenios',
-                'descripcion' => 'Empresas e instituciones con descuento',
-                'activos' => Convenio::where('activo', true)->count(),
-                'total' => Convenio::count(),
-                // Un convenio en la web sin logo sale como un recuadro con su
-                // nombre: funciona, pero se ve a medio hacer.
-                'aviso' => ($sinLogo = Convenio::where('activo', true)->where('mostrar_en_web', true)->whereNull('logo')->count())
-                    ? ($sinLogo === 1
-                        ? 'Un convenio de la web no tiene logo.'
-                        : "{$sinLogo} convenios de la web no tienen logo.")
-                    : null,
-            ],
-            [
-                'href' => '/panel/metodos-pago',
-                'titulo' => 'Métodos de pago',
-                'descripcion' => 'Cómo se puede pagar en el mesón',
-                'activos' => MetodoPago::where('activo', true)->count(),
-                'total' => MetodoPago::count(),
-                'aviso' => MetodoPago::where('activo', true)->count() === 0
-                    ? 'Sin ningún método activo no se puede cobrar.'
-                    : null,
-            ],
-            [
-                'href' => '/panel/motivos-descuento',
-                'titulo' => 'Motivos de descuento',
-                'descripcion' => 'Por qué se rebaja el precio',
-                'activos' => MotivoDescuento::where('activo', true)->count(),
-                'total' => MotivoDescuento::count(),
-                'aviso' => null,
-            ],
-            [
-                'href' => '/panel/especialistas',
-                'titulo' => 'Especialistas',
-                'descripcion' => 'Los profesionales que aparecen en la web',
-                'activos' => Especialista::where('activo', true)->count(),
-                'total' => Especialista::count(),
-                'aviso' => null,
-            ],
-        ];
-    }
-
-    private function planesSinPrecio(): ?string
-    {
-        $sinPrecio = Membresia::where('activo', true)
-            ->whereDoesntHave('precios', fn ($q) => $q
-                ->where('activo', true)
-                ->where('fecha_vigencia_desde', '<=', now()))
-            ->count();
-
-        if ($sinPrecio === 0) {
-            return null;
-        }
-
-        return $sinPrecio === 1
-            ? 'Un plan activo no tiene precio: no se puede vender.'
-            : "{$sinPrecio} planes activos no tienen precio: no se pueden vender.";
+        return $ajustes;
     }
 }

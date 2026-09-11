@@ -54,6 +54,7 @@ class User extends Authenticatable
         'phone',
         'two_factor_enabled',
         'two_factor_channel',
+        'activo',
     ];
 
     /**

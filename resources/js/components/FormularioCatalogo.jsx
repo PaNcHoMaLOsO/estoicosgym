@@ -406,6 +406,9 @@ export default function FormularioCatalogo({
                                     valor={data[campo.nombre] ?? ''}
                                     alCambiar={(v) => setData(campo.nombre, v)}
                                     placeholder={campo.ejemplo}
+                                    // «new-password» en las contraseñas de una cuenta ajena: sin
+                                    // él, el navegador rellena la del administrador que tiene guardada.
+                                    autoComplete={campo.autocompletar}
                                 />
                             )}
                         </Campo>

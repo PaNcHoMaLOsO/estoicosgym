@@ -41,6 +41,8 @@ class Permisos
         'foto',
         // Anotar que firmo el contrato y que permisos dio. Tambien es su ficha.
         'contrato',
+        // Mandarle a una cuenta del panel el enlace para poner su contraseña.
+        'enlace',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
@@ -85,6 +87,10 @@ class Permisos
         'especialistas' => 'configuracion',
         // La pagina web: lo que ven los clientes lo cambia quien configura.
         'web' => 'configuracion',
+        // Las cuentas del panel: quien entra y con que rol. Modulo PROPIO y no
+        // «configuracion»: quien puede cambiar un precio no por eso puede
+        // crearse otra cuenta de administrador.
+        'usuarios' => 'usuarios',
         // Activar y desactivar, que valen para los cuatro a la vez.
         'catalogos' => 'configuracion',
         // La papelera cruza todos los modulos —socios, membresias, pagos,

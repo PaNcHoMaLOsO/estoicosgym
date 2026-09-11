@@ -30,7 +30,7 @@
                     @foreach($fotos as $i => $foto)
                         <figure class="animate-on-scroll group relative overflow-hidden rounded-2xl bg-pg-negro {{ $i === 0 ? 'col-span-2 row-span-2' : '' }}" style="animation-delay: {{ ($i % 3) * 0.1 }}s">
                             <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" loading="lazy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                            <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4 text-sm text-pg-tiza font-modern opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">{{ $foto['titulo'] }}</figcaption>
+                            <figcaption class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 to-transparent p-4 text-sm text-pg-tiza font-modern opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">{{ $foto['titulo'] }}</figcaption>
                         </figure>
                     @endforeach
                 </div>

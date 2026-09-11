@@ -1,304 +1,357 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
-import { AlertTriangleIcon, ChevronRightIcon, Trash2Icon } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { AlertTriangleIcon, CheckIcon, CopyIcon } from 'lucide-react';
+
+import { haceCuanto } from '@/lib/tiempo';
 
 /**
- * Configuracion: una sola puerta, con sus apartados arriba.
+ * Un tema de ajustes: sus campos y un solo «Guardar».
  *
- * Antes eran cinco entradas sueltas en el menu —planes, convenios, metodos,
- * motivos y papelera— sin nada que dijera que van juntas.
+ * Cada tema tiene su dirección —/panel/configuracion/horario— y se ve dentro
+ * del marco de Configuración, con el menú de secciones a la izquierda. Antes
+ * eran pestañas de una misma pantalla: no dejaban rastro en el historial y
+ * «atrás» sacaba de Configuración entera.
  *
- * LOS CATALOGOS SE ENLAZAN, no se meten aqui dentro: cada uno es una tabla con
- * su alta y su edicion. Lo que si vive aqui son los ajustes, que son
- * formularios cortos y hasta ahora no tenian sitio: estaban escritos a mano
- * dentro del codigo.
+ * IRSE CON CAMBIOS SIN GUARDAR PREGUNTA: con un formulario por página, pasar a
+ * otra sección se llevaría lo escrito sin avisar.
  */
-/** «Reglas y Mesón», «El gimnasio, Reglas y Mesón». No «A y B y C». */
-function enumerar(nombres) {
-    if (nombres.length <= 1) {
-        return nombres.join('');
-    }
+export default function Configuracion({ grupo, extra }) {
+    const inicial = Object.fromEntries(grupo.ajustes.map((a) => [a.clave, a.valor ?? '']));
+    const { data, setData, put, processing, errors } = useForm(inicial);
 
-    return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
-}
+    // Contra lo guardado y no contra lo que había al abrir: después de guardar
+    // la página recibe los valores nuevos y el aviso se apaga solo.
+    const sinGuardar = grupo.ajustes.some((a) => String(data[a.clave] ?? '') !== String(a.valor ?? ''));
 
-export default function Configuracion({ grupos, catalogos }) {
-    /*
-     * Se puede entrar directo a un apartado con «?apartado=horario»: así la
-     * sección «Página web» lleva al horario sin obligar a buscar la pestaña.
-     */
-    const [apartado, setApartado] = useState(() => {
-        const pedido = typeof window !== 'undefined'
-            ? new URLSearchParams(window.location.search).get('apartado')
-            : null;
-
-        return pedido && ['catalogos', 'papelera', ...grupos.map((g) => g.clave)].includes(pedido)
-            ? pedido
-            : 'catalogos';
-    });
-
-    /*
-     * UN SOLO formulario para todos los apartados, aunque se vean de uno en uno.
-     *
-     * Las pestañas solo cambian lo que se enseña: lo escrito en «El gimnasio»
-     * sigue ahi al volver de «Reglas», y un unico «Guardar» las manda todas. Con
-     * un formulario por pestaña, cambiar dos cosas en dos sitios serian dos
-     * viajes al servidor y dos ocasiones de irse sin guardar una.
-     *
-     * Por eso el <form> envuelve TAMBIEN las pestañas: si solo rodeara el
-     * apartado visible, cambiar de pestaña con algo escrito se llevaria por
-     * delante el boton de guardar.
-     */
-    const valoresIniciales = Object.fromEntries(
-        grupos.flatMap((g) => g.ajustes.map((a) => [a.clave, a.valor])),
-    );
-
-    const { data, setData, put, processing, errors, isDirty } = useForm(valoresIniciales);
-
-    /** Que apartados tienen algo sin guardar, para poder decirlo desde otro. */
-    const sinGuardar = grupos
-        .filter((g) => g.ajustes.some((a) => String(data[a.clave] ?? '') !== String(a.valor ?? '')))
-        .map((g) => g.clave);
-
-    // Un error de validacion puede caer en un apartado que no se esta viendo:
-    // sin marcarlo en su pestaña, la pantalla no diria nada y pareceria que el
-    // guardado no hizo nada.
-    const conErrores = grupos
-        .filter((g) => g.ajustes.some((a) => errors[a.clave]))
-        .map((g) => g.clave);
-
-    const pestanas = [
-        { clave: 'catalogos', titulo: 'Catálogos' },
-        ...grupos.map((g) => ({ clave: g.clave, titulo: g.titulo })),
-        { clave: 'papelera', titulo: 'Papelera' },
-    ];
-
-    // Los catalogos avisan de lo que impide trabajar —un plan sin precio, un
-    // gimnasio sin metodos de pago—. Desde otra pestaña eso no se ve, asi que
-    // la pestaña lo lleva encima.
-    const hayAvisoEnCatalogos = catalogos.some((c) => c.aviso);
-
-    const grupoVisible = grupos.find((g) => g.clave === apartado);
+    useAvisoAlSalir(sinGuardar && !processing);
 
     function guardar(e) {
         e.preventDefault();
         put('/panel/configuracion', { preserveScroll: true });
     }
 
+    // Los campos de un tema largo, bajo su subtítulo.
+    const bloques = [];
+
+    for (const ajuste of grupo.ajustes) {
+        const ultimo = bloques[bloques.length - 1];
+
+        if (ultimo && ultimo.seccion === ajuste.seccion) {
+            ultimo.ajustes.push(ajuste);
+        } else {
+            bloques.push({ seccion: ajuste.seccion, ajustes: [ajuste] });
+        }
+    }
+
     return (
-        <form onSubmit={guardar}>
-            <Head title="Configuración" />
+        <form onSubmit={guardar} className="max-w-3xl">
+            <Head title={grupo.titulo} />
 
             <header className="mb-4">
-                <h1 className="text-lg font-semibold text-chalk">Configuración</h1>
-                <p className="apoyo text-fog">Lo que se toca de tarde en tarde</p>
+                <h1 className="text-lg font-semibold text-chalk">{grupo.titulo}</h1>
+                <p className="apoyo text-fog">{grupo.descripcion}</p>
             </header>
 
-            {/* Los apartados, arriba. Cada uno lleva su marca si tiene algo sin
-                guardar o algun aviso: estando en uno no se ve lo que pasa en los
-                otros, y sin la marca se guardaria a medias sin notarlo. */}
-            <div
-                role="tablist"
-                aria-label="Apartados de la configuración"
-                className="mb-4 flex flex-wrap gap-1 border-b border-line pb-3"
-            >
-                {pestanas.map((p) => {
-                    const activa = apartado === p.clave;
-                    const alerta =
-                        p.clave === 'catalogos' ? hayAvisoEnCatalogos : conErrores.includes(p.clave);
-                    const tieneCambios = sinGuardar.includes(p.clave);
+            {grupo.clave === 'tareas' && extra ? (
+                <EstadoDeTareas tareas={extra.tareas} correoConfigurado={extra.correoConfigurado} />
+            ) : null}
 
-                    return (
-                        <button
-                            key={p.clave}
-                            type="button"
-                            role="tab"
-                            aria-selected={activa}
-                            onClick={() => setApartado(p.clave)}
-                            className={`inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm transition-colors ${
-                                activa
-                                    ? 'border-volt bg-volt text-on-volt'
-                                    : alerta
-                                      ? 'border-warn/40 text-warn hover:bg-surface-2'
-                                      : 'border-line text-fog hover:text-chalk'
-                            }`}
-                        >
-                            {p.titulo}
+            {grupo.clave === 'web' && extra ? (
+                <VistaEnGoogle vista={extra.vistaGoogle} descripcion={data['web.descripcion']} />
+            ) : null}
 
-                            {alerta ? (
-                                <AlertTriangleIcon className="size-3.5" aria-hidden="true" />
-                            ) : tieneCambios ? (
-                                <span
-                                    title="tiene cambios sin guardar"
-                                    className={`size-1.5 rounded-full ${activa ? 'bg-on-volt' : 'bg-warn'}`}
+            <div className="space-y-4">
+                {bloques.map((bloque, i) => (
+                    <section key={bloque.seccion ?? i} className="rounded-panel border border-line bg-surface p-4">
+                        {bloque.seccion ? <h2 className="rotulo mb-3">{bloque.seccion}</h2> : null}
+
+                        <div className="space-y-3">
+                            {bloque.ajustes.map((ajuste) => (
+                                <Ajuste
+                                    key={ajuste.clave}
+                                    ajuste={ajuste}
+                                    valor={data[ajuste.clave]}
+                                    error={errors[ajuste.clave]}
+                                    alCambiar={(v) => setData(ajuste.clave, v)}
                                 />
-                            ) : null}
-                        </button>
-                    );
-                })}
+                            ))}
+                        </div>
+                    </section>
+                ))}
             </div>
 
-            {/* La barra de guardar va FUERA del apartado y siempre en el mismo
-                sitio: lo escrito en «Reglas» se guarda igual estando en
-                «Catálogos», y quien cambia de pestaña no se queda sin botón. */}
-            {grupoVisible || isDirty ? (
-                <div className="mb-4 flex flex-wrap items-center gap-3">
-                    {/* Deshabilitado mientras no se cambie nada: un botón que
-                        siempre se puede pulsar invita a guardar sin haber
-                        tocado nada y a dudar de si se guardó. */}
-                    <button
-                        type="submit"
-                        disabled={processing || ! isDirty}
-                        className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
-                    >
-                        {processing ? 'Guardando…' : 'Guardar'}
-                    </button>
+            {/* Pegada abajo: en un tema largo, como Google y redes, el botón
+                no se pierde al bajar. */}
+            <div className="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface/95 px-4 py-3 backdrop-blur">
+                <button
+                    type="submit"
+                    disabled={processing || !sinGuardar}
+                    className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                    {processing ? 'Guardando…' : 'Guardar'}
+                </button>
 
-                    {/* Un «Guardar» manda TODOS los apartados, no solo el que se
-                        está viendo: si hay cambios en otro, se dice, o
-                        parecería que se guardó solo esto. */}
-                    {sinGuardar.length > 0 ? (
-                        <span className="apoyo text-warn">
-                            {sinGuardar.length === 1 && sinGuardar[0] === apartado
-                                ? 'Hay cambios sin guardar.'
-                                : `Sin guardar en ${enumerar(
-                                      sinGuardar.map(
-                                          (c) => grupos.find((g) => g.clave === c)?.titulo,
-                                      ),
-                                  )}. Se guardan todos a la vez.`}
-                        </span>
-                    ) : null}
-                </div>
-            ) : null}
+                {sinGuardar ? (
+                    <span className="apoyo text-warn">Hay cambios sin guardar.</span>
+                ) : (
+                    <span className="apoyo text-fog">Todo guardado.</span>
+                )}
 
-            {apartado === 'catalogos' ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {catalogos.map((c) => (
-                        <Link
-                            key={c.href}
-                            href={c.href}
-                            className={`group flex items-start justify-between gap-3 rounded-panel border bg-surface p-4 transition-colors hover:bg-surface-2 ${
-                                c.aviso ? 'border-warn/40' : 'border-line hover:border-line-strong'
-                            }`}
-                        >
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium text-chalk">{c.titulo}</p>
-                                <p className="apoyo mt-0.5 text-fog">{c.descripcion}</p>
-
-                                <p className="apoyo mt-1 text-fog">
-                                    {c.activos} en uso
-                                    {/* Lo desactivado se dice solo cuando lo
-                                        hay: un «y 0 desactivados» es ruido. */}
-                                    {c.total > c.activos ? ` · ${c.total - c.activos} desactivados` : ''}
-                                </p>
-
-                                {/* Un plan sin precio no se puede vender y un
-                                    gimnasio sin métodos no puede cobrar: eso
-                                    hay que verlo aquí, no con el socio
-                                    delante. */}
-                                {c.aviso ? (
-                                    <p className="apoyo mt-1 flex items-start gap-1 text-warn">
-                                        <AlertTriangleIcon
-                                            className="mt-0.5 size-3 shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        {c.aviso}
-                                    </p>
-                                ) : null}
-                            </div>
-
-                            <ChevronRightIcon
-                                className="mt-0.5 size-4 shrink-0 text-fog transition-transform group-hover:translate-x-0.5"
-                                aria-hidden="true"
-                            />
-                        </Link>
-                    ))}
-                </div>
-            ) : apartado === 'papelera' ? (
-                <section className="max-w-3xl rounded-panel border border-line bg-surface p-4">
-                    <h2 className="rotulo mb-1">Papelera</h2>
-                    <p className="apoyo mb-3 text-fog">
-                        Lo que se borró y todavía se puede recuperar: socios, planes, pagos.
-                    </p>
-
-                    <Link
-                        href="/panel/papelera"
-                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
-                    >
-                        <Trash2Icon className="size-4" aria-hidden="true" />
-                        Ver la papelera
-                    </Link>
-                </section>
-            ) : grupoVisible ? (
-                <section className="max-w-3xl rounded-panel border border-line bg-surface p-4">
-                    <p className="apoyo mb-4 text-fog">{grupoVisible.descripcion}</p>
-
-                    <div className="space-y-3">
-                        {grupoVisible.ajustes.map((ajuste) => (
-                            <Ajuste
-                                key={ajuste.clave}
-                                ajuste={ajuste}
-                                valor={data[ajuste.clave]}
-                                error={errors[ajuste.clave]}
-                                alCambiar={(v) => setData(ajuste.clave, v)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            ) : null}
+                {errors.ajustes ? <span className="apoyo text-danger">{errors.ajustes}</span> : null}
+            </div>
         </form>
     );
 }
 
+/**
+ * Pregunta antes de irse con cambios sin guardar: al pasar a otra sección y al
+ * cerrar la pestaña. Guardar no pregunta: es un PUT, no es irse.
+ */
+function useAvisoAlSalir(activo) {
+    useEffect(() => {
+        if (!activo) {
+            return undefined;
+        }
+
+        const quitar = router.on('before', (evento) => {
+            if (String(evento.detail.visit.method).toLowerCase() !== 'get') {
+                return;
+            }
+
+            if (!window.confirm('Hay cambios sin guardar. ¿Salir igual y perderlos?')) {
+                evento.preventDefault();
+            }
+        });
+
+        const alCerrar = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', alCerrar);
+
+        return () => {
+            quitar();
+            window.removeEventListener('beforeunload', alCerrar);
+        };
+    }, [activo]);
+}
+
 /** Un ajuste: su etiqueta, su campo y por qué existe. */
 function Ajuste({ ajuste, valor, error, alCambiar }) {
-    const cambiado = String(valor ?? '') !== String(ajuste.defecto ?? '');
+    const texto = String(valor ?? '');
+    const cambiado = texto !== String(ajuste.defecto ?? '');
+    const borde = error ? 'border-danger' : 'border-line focus:border-line-strong';
+
+    const comun = {
+        id: ajuste.clave,
+        name: ajuste.clave,
+        value: valor ?? '',
+        onChange: (e) => alCambiar(e.target.value),
+        placeholder: ajuste.ejemplo ?? undefined,
+        'aria-invalid': error ? 'true' : undefined,
+        'aria-describedby': `${ajuste.clave}-ayuda`,
+    };
 
     return (
-        <div className="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-start sm:gap-4">
+        <div className="grid gap-1 sm:grid-cols-[14rem_1fr] sm:items-start sm:gap-4">
             <label htmlFor={ajuste.clave} className="pt-1.5 text-sm text-chalk">
                 {ajuste.etiqueta}
             </label>
 
             <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                    <input
-                        id={ajuste.clave}
-                        name={ajuste.clave}
-                        type={ajuste.tipo === 'numero' ? 'number' : ajuste.tipo === 'fecha' ? 'date' : 'text'}
-                        min={ajuste.min ?? undefined}
-                        max={ajuste.max ?? undefined}
-                        value={valor ?? ''}
-                        onChange={(e) => alCambiar(e.target.value)}
-                        aria-invalid={error ? 'true' : undefined}
-                        className={`min-w-0 rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:outline-none ${
-                            ajuste.tipo === 'numero' ? 'w-28 tabular-nums' : 'w-full'
-                        } ${error ? 'border-danger' : 'border-line focus:border-line-strong'}`}
-                    />
+                    {ajuste.tipo === 'area' ? (
+                        <textarea
+                            {...comun}
+                            rows={3}
+                            className={`w-full min-w-0 rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:outline-none ${borde}`}
+                        />
+                    ) : (
+                        <input
+                            {...comun}
+                            type={{ numero: 'number', fecha: 'date', hora: 'time' }[ajuste.tipo] ?? 'text'}
+                            min={ajuste.min ?? undefined}
+                            max={ajuste.max ?? undefined}
+                            maxLength={ajuste.tipo === 'texto' && ajuste.largo ? ajuste.largo : undefined}
+                            className={`min-w-0 rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:outline-none ${
+                                ajuste.tipo === 'numero'
+                                    ? 'w-28 tabular-nums'
+                                    : ajuste.tipo === 'hora' || ajuste.tipo === 'fecha'
+                                      ? 'w-40 tabular-nums'
+                                      : 'w-full'
+                            } ${borde}`}
+                        />
+                    )}
 
-                    {ajuste.unidad ? (
-                        <span className="apoyo shrink-0 text-fog">{ajuste.unidad}</span>
-                    ) : null}
+                    {ajuste.unidad ? <span className="apoyo shrink-0 text-fog">{ajuste.unidad}</span> : null}
 
                     {/* Decir cuál era el valor de fábrica ahorra tener que
                         buscarlo en otra parte para volver atrás. */}
-                    {cambiado ? (
+                    {cambiado && ajuste.tipo !== 'area' ? (
                         <button
                             type="button"
-                            onClick={() => alCambiar(String(ajuste.defecto))}
+                            onClick={() => alCambiar(String(ajuste.defecto ?? ''))}
                             className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
                         >
-                            volver a {ajuste.defecto || '(vacío)'}
+                            {ajuste.defecto === '' || ajuste.defecto === null ? 'vaciar' : `volver a ${ajuste.defecto}`}
                         </button>
                     ) : null}
                 </div>
 
-                {error ? (
-                    <p className="apoyo mt-0.5 text-danger">{error}</p>
-                ) : ajuste.ayuda ? (
-                    <p className="apoyo mt-0.5 text-fog">{ajuste.ayuda}</p>
-                ) : null}
+                <div id={`${ajuste.clave}-ayuda`} className="mt-0.5 flex items-start justify-between gap-3">
+                    {error ? (
+                        <p className="apoyo text-danger">{error}</p>
+                    ) : ajuste.ayuda ? (
+                        <p className="apoyo text-fog">{ajuste.ayuda}</p>
+                    ) : (
+                        <span />
+                    )}
+
+                    {ajuste.tipo === 'area' && ajuste.largo ? (
+                        <span
+                            className={`apoyo shrink-0 tabular-nums ${texto.length > ajuste.largo ? 'text-danger' : 'text-fog'}`}
+                        >
+                            {texto.length}/{ajuste.largo}
+                        </span>
+                    ) : null}
+                </div>
             </div>
         </div>
+    );
+}
+
+/**
+ * Cómo están las tareas automáticas y, si no corren, cómo activarlas.
+ *
+ * Sin esto no hay forma de saberlo: una tarea que no corre no da ningún error,
+ * simplemente no pasa nada —los vencimientos no se marcan, los avisos no
+ * salen— y parece que el sistema funciona.
+ */
+function EstadoDeTareas({ tareas, correoConfigurado }) {
+    const [copiado, setCopiado] = useState(false);
+
+    async function copiar() {
+        try {
+            await navigator.clipboard.writeText(tareas.comando);
+            setCopiado(true);
+            setTimeout(() => setCopiado(false), 2500);
+        } catch {
+            // Sin permiso para el portapapeles: la orden queda a la vista para
+            // copiarla a mano.
+        }
+    }
+
+    return (
+        <section className="mb-4 space-y-3 rounded-panel border border-line bg-surface p-4">
+            <h2 className="rotulo">Cómo están</h2>
+
+            <Estado bien={tareas.corriendo}>
+                {tareas.corriendo
+                    ? `Funcionando. La última vuelta fue ${haceCuanto(tareas.ultimo_latido)}.`
+                    : tareas.ultimo_latido
+                      ? `No están corriendo: la última vuelta fue ${haceCuanto(tareas.ultimo_latido)}.`
+                      : 'Nunca han corrido en este computador: no se marcan los vencimientos ni salen los avisos por correo.'}
+            </Estado>
+
+            <ul className="divide-y divide-line rounded-control border border-line">
+                {tareas.tareas.map((t) => (
+                    <li key={t.clave} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2">
+                        <span className="text-sm text-chalk">{t.nombre}</span>
+                        <span className="apoyo text-fog">
+                            todos los días a las {t.hora} ·{' '}
+                            {t.ultima ? `última vez ${haceCuanto(t.ultima)}` : 'todavía no ha corrido'}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+
+            {tareas.corriendo ? null : (
+                <div className="space-y-2 rounded-control border border-warn/40 bg-warn/5 p-3">
+                    <p className="text-sm text-chalk">Para activarlas, una sola vez en el computador del mesón:</p>
+                    <ol className="apoyo list-decimal space-y-1 pl-5 text-fog">
+                        <li>
+                            Abre el menú Inicio, escribe «cmd» y, en «Símbolo del sistema», elige «Ejecutar como
+                            administrador».
+                        </li>
+                        <li>Pega esta orden y presiona Enter:</li>
+                    </ol>
+
+                    <div className="flex items-start gap-2">
+                        <code className="block min-w-0 flex-1 overflow-x-auto rounded-control bg-surface-2 px-2 py-1.5 font-mono text-xs whitespace-pre text-chalk">
+                            {tareas.comando}
+                        </code>
+                        <button
+                            type="button"
+                            onClick={copiar}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                        >
+                            {copiado ? (
+                                <CheckIcon className="size-4 text-ok" aria-hidden="true" />
+                            ) : (
+                                <CopyIcon className="size-4" aria-hidden="true" />
+                            )}
+                            {copiado ? 'Copiada' : 'Copiar'}
+                        </button>
+                    </div>
+
+                    <p className="apoyo text-fog">
+                        En un par de minutos esta página debería decir «Funcionando». Si el computador se apaga de
+                        noche, cambia abajo la hora de la revisión a una en que esté prendido.
+                    </p>
+                </div>
+            )}
+
+            <Estado bien={correoConfigurado}>
+                {correoConfigurado
+                    ? 'El correo de salida está configurado.'
+                    : 'El correo de salida no está configurado: los avisos no le llegan a nadie. Lo configura quien instaló el sistema.'}
+            </Estado>
+        </section>
+    );
+}
+
+function Estado({ bien, children }) {
+    return (
+        <p className={`flex items-start gap-2 text-sm ${bien ? 'text-ok' : 'text-warn'}`}>
+            {bien ? (
+                <CheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            ) : (
+                <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            )}
+            <span>{children}</span>
+        </p>
+    );
+}
+
+/**
+ * La portada tal como sale en los resultados de Google, mientras se escribe.
+ *
+ * Los colores son los de Google a propósito, sobre blanco: se trata de
+ * reconocerlo de un vistazo, no de que combine con el panel.
+ */
+function VistaEnGoogle({ vista, descripcion }) {
+    const escrita = String(descripcion ?? '').trim();
+    const texto = escrita || vista.descripcionAutomatica;
+    const corto = texto.length > 158 ? `${texto.slice(0, 155).trimEnd()}…` : texto;
+    const sitio = vista.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+    return (
+        <section className="mb-4 rounded-panel border border-line bg-surface p-4">
+            <h2 className="rotulo mb-2">Así sale la portada en Google</h2>
+
+            <div className="max-w-xl rounded-control bg-white p-3">
+                <p className="truncate text-xs text-[#202124]">{sitio}</p>
+                <p className="truncate text-lg leading-snug text-[#1a0dab]">{vista.titulo}</p>
+                <p className="text-sm text-[#4d5156]">{corto}</p>
+            </div>
+
+            <p className="apoyo mt-2 text-fog">
+                {escrita
+                    ? 'Con la descripción que escribiste abajo.'
+                    : 'Con la descripción que se arma sola; abajo puedes escribir la tuya.'}{' '}
+                Google a veces elige otro texto de la página.
+            </p>
+        </section>
     );
 }

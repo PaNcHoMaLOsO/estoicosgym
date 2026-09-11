@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Support\Ajustes;
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Fiado;
@@ -48,6 +49,9 @@ class FiadoController extends Controller
                 'personas' => Fiado::debiendo()->get()->groupBy(fn (Fiado $f) => $f->claveDeCuenta())->count(),
                 'cobrado_mes' => $cobradoEsteMes,
             ],
+            // Desde Configuración → Mesón: a partir de cuántos días se insiste.
+            // Estaba escrito en la pantalla, y el ajuste no lo leía nadie.
+            'diasParaInsistir' => Ajustes::numero('meson.dias_fiado_viejo'),
         ]);
     }
 

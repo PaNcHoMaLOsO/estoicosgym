@@ -1,4 +1,4 @@
-<section class="relative py-24 bg-gradient-to-r from-pg-rojo-oscuro via-pg-rojo to-pg-rojo-oscuro overflow-hidden">
+<section class="relative py-24 bg-linear-to-r from-pg-rojo-oscuro via-pg-rojo to-pg-rojo-oscuro overflow-hidden">
     <div class="absolute inset-0 franjas opacity-25" aria-hidden="true"></div>
     <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
         <h2 class="font-display text-4xl md:text-6xl text-white mb-6">¿LISTO PARA EMPEZAR?</h2>

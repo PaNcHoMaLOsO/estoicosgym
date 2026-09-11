@@ -1,0 +1,42 @@
+/**
+ * La web de los clientes, compilada.
+ *
+ * Antes cargaba Tailwind desde su CDN de pruebas: un script de más de cien KB
+ * que armaba los estilos EN EL NAVEGADOR de cada visita, con la página un
+ * instante sin estilo mientras tanto. Google mide esa velocidad y la usa para
+ * ordenar los resultados. Compilado, es un archivo chico que queda en caché.
+ *
+ * Solo mira las vistas de la web: el panel tiene su propia hoja.
+ */
+@import 'tailwindcss' source(none);
+
+@source '../views/landing';
+@source '../views/layouts/landing.blade.php';
+
+@theme {
+    /* Paleta PRO GYM: los mismos valores que el panel en tema oscuro. */
+    --color-pg-rojo: #dd2a32;
+    --color-pg-rojo-oscuro: #b81e25;
+    --color-pg-rojo-claro: #ef4a51;
+    --color-pg-tiza: #f2f2f4;
+    --color-pg-tiza-clara: #ffffff;
+    --color-pg-tiza-oscura: #c9c9ce;
+    --color-pg-negro: #0a0a0b;
+    --color-pg-carbon: #121214;
+    --color-pg-grafito: #1a1a1e;
+    --color-pg-gris: #3d3d44;
+    --color-pg-plata: #c7cad1;
+    --color-pg-acero: #8b8f98;
+
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Poppins', sans-serif;
+    --font-modern: 'Poppins', sans-serif;
+}
+
+/* Tailwind 4 deja los botones con la flecha; en la web siempre tuvieron la mano. */
+@layer base {
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+}

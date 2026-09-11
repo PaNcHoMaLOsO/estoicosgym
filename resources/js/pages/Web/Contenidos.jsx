@@ -1,6 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { ArrowLeftIcon, PencilIcon, PlusIcon } from 'lucide-react';
+import { PencilIcon, PlusIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
@@ -132,14 +132,7 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
 
             <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <Link
-                        href="/panel/web"
-                        className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
-                    >
-                        <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                        Página web
-                    </Link>
-                    <h1 className="mt-1 text-lg font-semibold text-chalk">{datos.titulo}</h1>
+                    <h1 className="text-lg font-semibold text-chalk">{datos.titulo}</h1>
                     <p className="apoyo text-fog">{datos.descripcion}</p>
                 </div>
 

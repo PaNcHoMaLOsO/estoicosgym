@@ -100,6 +100,8 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'convenio' => $convenio->uuid,
             // La página web: cualquiera de sus cuatro tipos.
             'tipo' => 'servicio',
+            // Un tema de Configuración: cualquiera de ellos.
+            'grupo' => 'gimnasio',
             'notificacion' => $notificacion->uuid,
             'tipoNotificacion' => (string) $plantilla->id,
             'modulo' => 'pagos',

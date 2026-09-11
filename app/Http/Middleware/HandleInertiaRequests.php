@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\EstadoDeConfiguracion;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -62,6 +63,34 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
             ],
+
+            // El menú de Configuración marca las secciones con algo pendiente.
+            // Solo se calcula ahí adentro y para quien la puede ver: son varias
+            // cuentas, y no hace falta pagarlas en cada pantalla del mesón.
+            'configuracion' => fn () => $this->configuracion($request),
         ];
+    }
+
+    /** @return array{avisos: array<string,string>}|null */
+    private function configuracion(Request $request): ?array
+    {
+        $usuario = $request->user();
+
+        if (! $usuario || ! $usuario->puede('configuracion.ver') || ! $request->routeIs(
+            'panel.configuracion.*',
+            'panel.membresias.*',
+            'panel.convenios.*',
+            'panel.metodos-pago.*',
+            'panel.motivos-descuento.*',
+            'panel.notificaciones.plantillas*',
+            'panel.web.*',
+            'panel.especialistas.*',
+            'panel.usuarios.*',
+            'panel.papelera.*',
+        )) {
+            return null;
+        }
+
+        return ['avisos' => EstadoDeConfiguracion::avisosDelMenu()];
     }
 }

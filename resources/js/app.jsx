@@ -7,11 +7,18 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
+import MarcoConfiguracion from './components/MarcoConfiguracion';
 import Layout from './Layout';
 
 const paginas = import.meta.glob('./pages/**/*.jsx');
 
 const NOMBRE = 'PRO GYM';
+
+/**
+ * Las pantallas que viven dentro de Configuración: se ven con su menú de
+ * secciones a la izquierda, que no se desmonta al pasar de una a otra.
+ */
+const DE_CONFIGURACION = /^(Configuracion(\/.+)?|Web\/.+|Usuarios\/.+|Papelera|Notificaciones\/Plantillas)$/;
 
 createInertiaApp({
     title: (titulo) => (titulo ? `${titulo} · ${NOMBRE}` : NOMBRE),
@@ -21,7 +28,13 @@ createInertiaApp({
 
         // El Layout se aplica aqui y no dentro de cada pagina: asi la barra
         // lateral no se vuelve a montar al navegar y conserva su scroll.
-        pagina.default.layout ??= (hoja) => <Layout>{hoja}</Layout>;
+        pagina.default.layout ??= DE_CONFIGURACION.test(nombre)
+            ? (hoja) => (
+                  <Layout>
+                      <MarcoConfiguracion>{hoja}</MarcoConfiguracion>
+                  </Layout>
+              )
+            : (hoja) => <Layout>{hoja}</Layout>;
 
         return pagina;
     },

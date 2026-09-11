@@ -12,15 +12,18 @@
                 @if($gimnasio['direccion'])
                     <p class="text-pg-tiza/55 font-modern text-sm mt-1">{{ $gimnasio['direccion'] }}</p>
                 @endif
-                @if($web['instagram'] || $web['facebook'])
+                @if($redes)
                     <div class="flex gap-3 mt-5">
-                        @if($web['instagram'])
-                            <a href="{{ $web['instagram'] }}" target="_blank" rel="noopener" aria-label="Instagram" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="fab fa-instagram text-lg" aria-hidden="true"></i></a>
-                        @endif
-                        @if($web['facebook'])
-                            <a href="{{ $web['facebook'] }}" target="_blank" rel="noopener" aria-label="Facebook" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="fab fa-facebook-f text-lg" aria-hidden="true"></i></a>
-                        @endif
+                        @foreach($redes as $red)
+                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-lg" aria-hidden="true"></i></a>
+                        @endforeach
                     </div>
+                @endif
+                @if($web['resenas'])
+                    {{-- Las reseñas son lo que más pesa para salir primero en el mapa. --}}
+                    <a href="{{ $web['resenas'] }}" target="_blank" rel="noopener" data-evento="resena_google" class="inline-flex items-center gap-2 mt-5 text-sm font-modern text-pg-tiza/70 hover:text-pg-tiza transition-colors">
+                        <i class="fas fa-star text-yellow-400" aria-hidden="true"></i> Déjanos tu reseña en Google
+                    </a>
                 @endif
             </div>
 
@@ -52,8 +55,6 @@
                             </li>
                         @endforeach
                     </ul>
-                @elseif($gimnasio['horario'])
-                    <p class="text-pg-tiza/55 font-modern text-sm">{{ $gimnasio['horario'] }}</p>
                 @else
                     <p class="text-pg-tiza/55 font-modern text-sm">Pregunta en el mesón.</p>
                 @endif

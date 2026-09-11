@@ -9,6 +9,7 @@ use App\Models\Especialista;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Support\Ajustes;
+use App\Support\WebPublica;
 use App\Services\CorreoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -47,6 +48,17 @@ class LandingController extends Controller
         'viernes' => ['Viernes', 'Friday'],
         'sabado' => ['Sábado', 'Saturday'],
         'domingo' => ['Domingo', 'Sunday'],
+    ];
+
+    /** El nombre corto de cada página, para las migas que muestra Google. */
+    private const MIGAS = [
+        'landing.gimnasio' => 'El gimnasio',
+        'landing.planes' => 'Planes y precios',
+        'landing.convenios' => 'Convenios',
+        'landing.especialistas' => 'Especialistas',
+        'landing.contacto' => 'Contacto',
+        'landing.membresia' => 'Mi membresía',
+        'landing.privacidad' => 'Privacidad',
     ];
 
     /**
@@ -184,19 +196,26 @@ class LandingController extends Controller
             'direccion' => Ajustes::obtener('gimnasio.direccion'),
             'telefono' => Ajustes::obtener('gimnasio.telefono'),
             'email' => Ajustes::obtener('gimnasio.email'),
-            'horario' => Ajustes::obtener('gimnasio.horario'),
         ];
 
         $planes = $this->planesALaVenta();
         $convenios = $this->conveniosEnLaWeb();
         $especialistas = $this->especialistasEnLaWeb($gimnasio['nombre']);
+        $web = $this->datosParaGoogle($gimnasio, $planes);
 
         return [
             'gimnasio' => $gimnasio,
             'planes' => $planes,
             'convenios' => $convenios,
             'especialistas' => $especialistas,
-            'web' => $this->datosParaGoogle($gimnasio, $planes),
+            'web' => $web,
+            // Las redes que tienen enlace, para el pie y para Contacto.
+            'redes' => array_values(array_filter([
+                $web['instagram'] ? ['nombre' => 'Instagram', 'url' => $web['instagram'], 'icono' => 'fab fa-instagram'] : null,
+                $web['facebook'] ? ['nombre' => 'Facebook', 'url' => $web['facebook'], 'icono' => 'fab fa-facebook-f'] : null,
+                $web['tiktok'] ? ['nombre' => 'TikTok', 'url' => $web['tiktok'], 'icono' => 'fab fa-tiktok'] : null,
+                $web['youtube'] ? ['nombre' => 'YouTube', 'url' => $web['youtube'], 'icono' => 'fab fa-youtube'] : null,
+            ])),
             // El menú solo enlaza lo que tiene algo que mostrar.
             'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== []],
             'aviso' => $this->avisoVigente(),
@@ -226,6 +245,17 @@ class LandingController extends Controller
         $web['canonical'] = route($ruta);
         $web['json_ld'] = $datos['json_ld'] ?? null;
         unset($datos['json_ld']);
+
+        // Las migas: Google las muestra en vez de la dirección —«PRO GYM ›
+        // Planes y precios»— y dicen de qué parte del sitio es cada página.
+        $web['migas'] = isset(self::MIGAS[$ruta]) ? [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => $comun['gimnasio']['nombre'], 'item' => route('landing')],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => self::MIGAS[$ruta], 'item' => route($ruta)],
+            ],
+        ] : null;
 
         return view($vista, ['web' => $web] + $datos + $comun);
     }
@@ -476,10 +506,35 @@ class LandingController extends Controller
         $maps = Ajustes::obtener('web.google_maps') ?: null;
         $instagram = Ajustes::obtener('web.instagram') ?: null;
         $facebook = Ajustes::obtener('web.facebook') ?: null;
+        $tiktok = Ajustes::obtener('web.tiktok') ?: null;
+        $youtube = Ajustes::obtener('web.youtube') ?: null;
 
         $precios = array_column($planes, 'precio');
-        $pesos = fn (int $monto) => '$' . number_format($monto, 0, ',', '.');
         $inicio = url('/');
+        $logo = asset('images/progym-logo.png');
+
+        // La ciudad y las comunas vecinas: quien vive en Nacimiento también
+        // busca un gimnasio, y el de Los Ángeles le queda a veinte minutos.
+        $comunas = array_values(array_unique(array_filter(array_map(
+            'trim',
+            explode(',', $ciudad . ',' . Ajustes::obtener('web.comunas'))
+        ))));
+
+        // «-37.46973, -72.35366», tal como la entrega Google Maps.
+        $geo = null;
+        if (preg_match('/^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/', trim((string) Ajustes::obtener('web.coordenadas')), $m)) {
+            $geo = ['@type' => 'GeoCoordinates', 'latitude' => (float) $m[1], 'longitude' => (float) $m[2]];
+        }
+
+        // Las fotos del gimnasio, con dirección completa: la primera es la que
+        // sale al compartir la página por WhatsApp o Facebook.
+        $fotos = $this->contenidos('foto')
+            ->take(5)
+            ->pluck('imagen')
+            ->filter()
+            ->map(fn (string $foto) => url($foto))
+            ->values()
+            ->all();
 
         $vacio = fn ($valor) => $valor !== null && $valor !== '' && $valor !== [];
 
@@ -489,8 +544,8 @@ class LandingController extends Controller
             'name' => $gimnasio['nombre'],
             'slogan' => 'Profesionales del deporte',
             'url' => $inicio,
-            'logo' => asset('images/progym-logo.png'),
-            'image' => asset('images/progym-logo.png'),
+            'logo' => $logo,
+            'image' => $fotos ?: [$logo],
             'telephone' => $gimnasio['telefono'] ?: null,
             'email' => $gimnasio['email'] ?: null,
             'address' => array_filter([
@@ -500,10 +555,11 @@ class LandingController extends Controller
                 'addressRegion' => $region ?: null,
                 'addressCountry' => 'CL',
             ], $vacio),
-            'areaServed' => $ciudad ?: null,
+            'geo' => $geo,
+            'areaServed' => array_map(fn (string $comuna) => ['@type' => 'City', 'name' => $comuna], $comunas),
             'hasMap' => $maps,
-            'sameAs' => array_values(array_filter([$instagram, $facebook])),
-            'priceRange' => $precios ? $pesos(min($precios)) . ' - ' . $pesos(max($precios)) : null,
+            'sameAs' => array_values(array_filter([$instagram, $facebook, $tiktok, $youtube])),
+            'priceRange' => $precios ? $this->pesos(min($precios)) . ' - ' . $this->pesos(max($precios)) : null,
             'makesOffer' => array_map(fn (array $plan) => [
                 '@type' => 'Offer',
                 'name' => 'Plan ' . $plan['nombre'],
@@ -513,22 +569,24 @@ class LandingController extends Controller
             'openingHoursSpecification' => $this->horarioParaGoogle(),
         ], $vacio);
 
-        $donde = $ciudad ? "Gimnasio en {$ciudad}" : 'Gimnasio';
-
         return [
             'ciudad' => $ciudad,
             'region' => $region,
-            'titulo' => $gimnasio['nombre'] . ($ciudad ? " | Gimnasio en {$ciudad}" . ($region ? ", {$region}" : '') : ''),
-            'descripcion' => "{$donde}: musculación, cardio y orientación en sala."
-                . ($precios ? ' Planes desde ' . $pesos(min($precios)) . '.' : '')
-                . ' Revisa los precios y consulta tu membresía en línea.',
+            // Los mismos que enseña la vista previa de Configuración.
+            'titulo' => WebPublica::tituloDeInicio(),
+            'descripcion' => WebPublica::descripcion($precios ? min($precios) : null),
             'canonical' => $inicio,
             'json_ld' => $ficha,
+            'imagen' => $fotos[0] ?? $logo,
             'google_analytics' => Ajustes::obtener('web.google_analytics') ?: null,
             'search_console' => Ajustes::obtener('web.search_console') ?: null,
+            'bing' => Ajustes::obtener('web.bing') ?: null,
             'google_maps' => $maps,
+            'resenas' => Ajustes::obtener('web.resenas') ?: null,
             'instagram' => $instagram,
             'facebook' => $facebook,
+            'tiktok' => $tiktok,
+            'youtube' => $youtube,
         ];
     }
 

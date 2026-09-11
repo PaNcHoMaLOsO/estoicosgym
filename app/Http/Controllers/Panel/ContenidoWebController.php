@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContenidoWeb;
-use App\Models\Convenio;
-use App\Models\Especialista;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -16,77 +14,12 @@ use Inertia\Inertia;
 /**
  * La página web, manejada desde el panel.
  *
- * Una entrada para todo lo que ve el cliente: los contenidos que se escriben
- * aquí —servicios, fotos, preguntas y testimonios— y el camino a lo que vive
- * en otra parte —especialistas, convenios, textos de la portada, horario—.
+ * Los contenidos que se escriben aquí —servicios, fotos, preguntas y
+ * testimonios—. Se ven dentro de Configuración, en «Página web», junto a lo
+ * que vive en otra parte: especialistas, portada y horario.
  */
 class ContenidoWebController extends Controller
 {
-    /** La portada de la sección: qué hay y dónde se cambia cada cosa. */
-    public function index()
-    {
-        $cuentas = ContenidoWeb::query()
-            ->selectRaw('tipo, count(*) as total, sum(case when activo then 1 else 0 end) as activos')
-            ->groupBy('tipo')
-            ->get()
-            ->keyBy('tipo');
-
-        $tarjetas = [];
-
-        foreach (ContenidoWeb::TIPOS as $tipo => $datos) {
-            $tarjetas[] = [
-                'href' => "/panel/web/{$tipo}",
-                'titulo' => $datos['titulo'],
-                'descripcion' => $datos['descripcion'],
-                'activos' => (int) ($cuentas[$tipo]->activos ?? 0),
-                'total' => (int) ($cuentas[$tipo]->total ?? 0),
-            ];
-        }
-
-        $tarjetas[] = [
-            'href' => '/panel/especialistas',
-            'titulo' => 'Especialistas',
-            'descripcion' => 'Personal trainer, preparador físico, nutricionista: con su WhatsApp e Instagram.',
-            'activos' => Especialista::where('activo', true)->count(),
-            'total' => Especialista::count(),
-        ];
-
-        $tarjetas[] = [
-            'href' => '/panel/convenios',
-            'titulo' => 'Convenios en la web',
-            'descripcion' => 'Los que tienen marcada «mostrar en la web», con su logo.',
-            'activos' => Convenio::where('activo', true)->where('mostrar_en_web', true)->count(),
-            'total' => Convenio::where('activo', true)->count(),
-        ];
-
-        return Inertia::render('Web/Inicio', [
-            'tarjetas' => $tarjetas,
-            'ajustes' => [
-                [
-                    'href' => '/panel/configuracion?apartado=portada',
-                    'titulo' => 'Portada y aviso',
-                    'descripcion' => 'El título grande, el texto de bienvenida y un aviso con fecha que se va solo.',
-                ],
-                [
-                    'href' => '/panel/configuracion?apartado=horario',
-                    'titulo' => 'Horario',
-                    'descripcion' => 'Día por día. Sale en la web y lo lee Google.',
-                ],
-                [
-                    'href' => '/panel/configuracion?apartado=web',
-                    'titulo' => 'Google, redes y WhatsApp',
-                    'descripcion' => 'Ciudad, Google Maps, Instagram, Facebook, el WhatsApp flotante y Analytics.',
-                ],
-                [
-                    'href' => '/panel/configuracion?apartado=gimnasio',
-                    'titulo' => 'Datos del gimnasio',
-                    'descripcion' => 'Nombre, dirección, teléfono y correo.',
-                ],
-            ],
-            'urlSitio' => url('/'),
-        ]);
-    }
-
     /** Los contenidos de un tipo. */
     public function show(string $tipo)
     {

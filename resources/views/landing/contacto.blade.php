@@ -21,7 +21,7 @@
                         <div class="space-y-6">
                             @if($gimnasio['direccion'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
                                         <i class="fas fa-map-marker-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
                                     </div>
                                     <div>
@@ -32,7 +32,7 @@
                             @endif
                             @if($gimnasio['telefono'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
                                         <i class="fas fa-phone-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
                                     </div>
                                     <div>
@@ -43,7 +43,7 @@
                             @endif
                             @if($gimnasio['email'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
                                         <i class="fas fa-envelope text-pg-rojo-claro text-xl" aria-hidden="true"></i>
                                     </div>
                                     <div>
@@ -52,20 +52,9 @@
                                     </div>
                                 </div>
                             @endif
-                            @if($gimnasio['horario'])
-                                <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                                        <i class="fas fa-clock text-pg-rojo-claro text-xl" aria-hidden="true"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold mb-1 text-pg-tiza">Horario</h4>
-                                        <p class="text-pg-tiza/60 font-modern text-sm">{{ $gimnasio['horario'] }}</p>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
 
-                        @if($web['google_maps'] || $web['instagram'] || $web['facebook'])
+                        @if($web['google_maps'] || $web['resenas'] || $redes)
                             <div class="mt-10 flex flex-wrap items-center gap-3">
                                 @if($web['google_maps'])
                                     <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
@@ -73,18 +62,19 @@
                                         <i class="fas fa-route" aria-hidden="true"></i> Cómo llegar
                                     </a>
                                 @endif
-                                @if($web['instagram'])
-                                    <a href="{{ $web['instagram'] }}" target="_blank" rel="noopener" aria-label="Instagram"
-                                       class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
-                                        <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                                @if($web['resenas'])
+                                    {{-- Se pide la reseña donde ya hay confianza: es lo que más ayuda a salir primero en el mapa. --}}
+                                    <a href="{{ $web['resenas'] }}" target="_blank" rel="noopener" data-evento="resena_google"
+                                       class="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-pg-tiza/20 hover:border-yellow-400/60 text-pg-tiza font-modern text-sm font-semibold transition-colors">
+                                        <i class="fas fa-star text-yellow-400" aria-hidden="true"></i> Déjanos tu reseña
                                     </a>
                                 @endif
-                                @if($web['facebook'])
-                                    <a href="{{ $web['facebook'] }}" target="_blank" rel="noopener" aria-label="Facebook"
+                                @foreach($redes as $red)
+                                    <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}"
                                        class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
-                                        <i class="fab fa-facebook-f text-xl" aria-hidden="true"></i>
+                                        <i class="{{ $red['icono'] }} text-xl" aria-hidden="true"></i>
                                     </a>
-                                @endif
+                                @endforeach
                             </div>
                         @endif
                     </div>
@@ -139,7 +129,7 @@
                                             required
                                             minlength="2"
                                             maxlength="100"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="Tu nombre"
                                         >
                                     </div>
@@ -153,7 +143,7 @@
                                             value="{{ old('email') }}"
                                             required
                                             maxlength="255"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="tu@email.com"
                                         >
                                     </div>
@@ -168,7 +158,7 @@
                                             id="telefono" 
                                             value="{{ old('telefono') }}"
                                             maxlength="20"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="+56 9 1234 5678"
                                         >
                                     </div>
@@ -178,7 +168,7 @@
                                         <select 
                                             name="servicio" 
                                             id="servicio"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                         >
                                             <option value="informacion">Información general</option>
                                             <option value="inscripcion">Quiero inscribirme</option>
@@ -197,14 +187,14 @@
                                         required
                                         minlength="10"
                                         maxlength="1000"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 resize-none font-modern"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 resize-none font-modern"
                                         placeholder="¿En qué podemos ayudarte?"
                                     >{{ old('mensaje') }}</textarea>
                                 </div>
                                 
                                 <button 
                                     type="submit" 
-                                    class="w-full bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                                    class="w-full bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
                                 >
                                     <i class="fas fa-paper-plane mr-2"></i>
                                     Enviar Mensaje
