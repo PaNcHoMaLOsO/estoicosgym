@@ -30,15 +30,30 @@ class DesactivarClientesPorVencimiento extends Command
     {
         $hoy = Carbon::now();
 
-        // Obtener inscripciones vencidas
-        $inscripcionesVencidas = Inscripcion::where('fecha_vencimiento', '<', $hoy)
-            ->where('id_estado', 102) // Estado VENCIDA
+        /*
+         * SE MIRA AL SOCIO, NO A CADA MEMBRESIA VENCIDA.
+         *
+         * Se recorrian las inscripciones vencidas una por una y se desactivaba
+         * a su socio sin mirar nada mas. Pero una membresia vencida es lo
+         * normal en quien RENUEVA: la de antes se cierra como vencida y la
+         * nueva queda activa. Asi, quien acababa de pagar amanecia dado de
+         * baja —fuera del listado, fuera del buscador del meson—, y si alguien
+         * lo reactivaba a mano, la noche siguiente volvia a pasar. Lo mismo
+         * con quien tiene la membresia en pausa.
+         *
+         * Se da de baja a quien tiene alguna vencida Y ninguna vigente.
+         */
+        $clientes = \App\Models\Cliente::where('activo', true)
+            ->whereHas('inscripciones', fn ($q) => $q
+                ->where('id_estado', 102) // Vencida
+                ->where('fecha_vencimiento', '<', $hoy))
+            ->whereDoesntHave('inscripciones', fn ($q) => $q
+                ->whereIn('id_estado', [100, 101])) // Activa o pausada
             ->get();
 
         $clientesDesactivados = 0;
 
-        foreach ($inscripcionesVencidas as $inscripcion) {
-            $cliente = $inscripcion->cliente;
+        foreach ($clientes as $cliente) {
 
             // Solo desactivar si está activo
             if ($cliente->activo) {

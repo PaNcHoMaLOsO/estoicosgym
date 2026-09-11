@@ -652,8 +652,15 @@ class InscripcionController extends Controller
             // pantalla como «Estuvo pausada 0.95361123678241 días»— y ademas
             // fecha_pausa_inicio se guarda a medianoche, asi que la parte
             // decimal no era tiempo pausado sino la hora del reloj.
+            // Hasta el fin de la pausa si ya paso, igual que el modelo: una
+            // pausa de 7 dias reanudada tarde no «estuvo pausada 30 dias».
+            $hastaCuando = ($inscripcion->fecha_pausa_fin && $inscripcion->fecha_pausa_fin->copy()->startOfDay()->lt(now()->startOfDay()))
+                ? $inscripcion->fecha_pausa_fin->copy()->startOfDay()
+                : now()->startOfDay();
+            $terminoAntes = $hastaCuando->lt(now()->startOfDay());
+
             $diasEnPausa = $inscripcion->fecha_pausa_inicio
-                ? (int) $inscripcion->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay())
+                ? (int) $inscripcion->fecha_pausa_inicio->copy()->startOfDay()->diffInDays($hastaCuando)
                 : 0;
                 
             // Obtener días restantes guardados antes de reanudar
@@ -690,7 +697,10 @@ class InscripcionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Membresía reanudada. Estuvo pausada {$tiempoPausada}. Se restauraron {$diasRestaurados} de membresía.",
+                'message' => "Membresía reanudada. Estuvo pausada {$tiempoPausada}. Se restauraron {$diasRestaurados} de membresía."
+                    . ($terminoAntes
+                        ? " La pausa terminaba el {$hastaCuando->format('d/m/Y')}: los días se cuentan desde esa fecha."
+                        : ''),
             ]);
         } catch (\Exception $e) {
             Log::error('Error al reanudar inscripción: ' . $e->getMessage());

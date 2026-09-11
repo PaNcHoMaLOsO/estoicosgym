@@ -350,10 +350,28 @@ class Inscripcion extends Model
             return false;
         }
 
+        /*
+         * DESDE CUANDO SE REANUDA: el dia en que acababa la pausa, si ya paso.
+         *
+         * Se contaba siempre desde HOY. Pero la pausa tiene fecha de fin, y si
+         * se reanuda tarde —la tarea nocturna corre al dia siguiente, o nadie
+         * pulso «Reanudar» a tiempo— los dias de retraso se le regalaban al
+         * socio encima de su membresia: una pausa de 7 dias reanudada a las
+         * tres semanas le daba dos semanas gratis. Pidio 7, y 7 son.
+         *
+         * Reanudar ANTES de tiempo sigue contando desde hoy: ahi la pausa se
+         * corta, que es justo lo que se pidio al pulsar el boton.
+         */
+        $desde = ($this->fecha_pausa_fin && $this->fecha_pausa_fin->copy()->startOfDay()->lt(now()->startOfDay()))
+            ? $this->fecha_pausa_fin->copy()->startOfDay()
+            : now()->startOfDay();
+
         // Calcular días que estuvo pausado (solo para información/historial)
         $diasEnPausa = 0;
         if ($this->fecha_pausa_inicio) {
-            $diasEnPausa = (int) $this->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay());
+            // Hasta $desde y no hasta hoy: el historial diria «estuvo pausada
+            // 21 dias» de una pausa de 7 que se reanudo tarde.
+            $diasEnPausa = (int) $this->fecha_pausa_inicio->copy()->startOfDay()->diffInDays($desde);
         }
 
         // Los días que tenía guardados al momento de pausar
@@ -362,7 +380,7 @@ class Inscripcion extends Model
         // NUEVA FECHA DE VENCIMIENTO = HOY + días que le quedaban
         // Esto es todo lo que importa. No sumamos días de pausa ni nada extra.
         if ($diasRestantesGuardados > 0) {
-            $this->fecha_vencimiento = now()->startOfDay()->addDays($diasRestantesGuardados);
+            $this->fecha_vencimiento = $desde->copy()->addDays($diasRestantesGuardados);
         }
 
         // Limpiar todos los campos de pausa
