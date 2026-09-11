@@ -325,22 +325,44 @@ los términos de este documento.
 
 ---
 
-## Qué falta en el sistema para que esto funcione de verdad
+## Lo que el sistema ya guarda
 
 Un contrato firmado que no queda registrado en ninguna parte sirve la mitad:
-cuando alguien reclame, vas a estar buscando una carpeta.
+cuando alguien reclame, estarías buscando una carpeta. Eso ya está hecho, **en
+la modalidad de papel**: el socio firma, y el panel anota la constancia.
 
-Lo que faltaría guardar en la ficha del socio:
+En la ficha de cada socio, bloque **«Contrato y permisos»**:
 
-1. **Que firmó**, con la fecha y **qué versión** firmó. La versión importa: si
-   cambias el contrato el próximo año, tienes que saber cuál aceptó cada uno.
-2. **Si autorizó la foto**, como casilla propia. Hoy la foto se puede subir sin
-   que conste que la persona dijo que sí.
-3. **Si autorizó redes sociales**, separado de lo anterior.
+| Qué se guarda | Dónde se pone |
+|---|---|
+| Que firmó, con la fecha | En el alta, o después desde la ficha |
+| **Qué versión** firmó | Se toma sola de Configuración |
+| Si autorizó la foto de su ficha | Casilla propia |
+| Si autorizó redes sociales | Casilla aparte de la anterior |
 
-No está hecho. Es media hora de trabajo y no lo hice todavía porque antes hay
-que decidir si el contrato se firma en papel —y el panel solo anota «firmado el
-día tal»— o si quieres que se acepte en pantalla. Son dos cosas distintas de
-construir.
+Tres cosas que conviene saber:
 
-Dime cuál y lo agrego.
+1. **La versión se sube en Configuración → Reglas → «Versión del contrato».**
+   Cada vez que cambies el texto de este documento, súbela. A partir de ahí,
+   quien se inscriba firma la nueva, y la ficha de quien firmó la vieja lo dice:
+   *«Firmado el 10/01/2026 · versión 1 — hoy se firma la 2»*. Sin eso, la
+   respuesta a «¿qué firmó este socio?» es «alguna de las dos».
+
+2. **Retirar el permiso de la foto la borra de verdad.** Si desmarcas esa
+   casilla y el socio tenía foto, el archivo se elimina del disco al guardar. El
+   panel avisa antes. Eso es lo que hace verdad la frase «puedes retirar tu
+   consentimiento cuando quieras»: si la foto se quedara ahí, sería mentira.
+
+3. **La ficha avisa si hay foto sin permiso.** Si alguien sube una foto y nadie
+   marcó la casilla, el bloque lo dice en naranjo. No lo bloquea —puede que el
+   papel esté firmado y falte anotarlo— pero no deja que se olvide.
+
+### Si prefieres firmar en pantalla
+
+No está hecho, y no hace falta rehacer nada para hacerlo: son las mismas cuatro
+columnas, solo cambia quién las rellena. Dilo y lo agrego.
+
+Mi recomendación es dejarlo en papel por ahora. Una firma en pantalla que no
+identifica bien a quien firma vale menos que un papel firmado a mano, y montar
+una que valga —firma electrónica avanzada— es un problema distinto y más caro
+del que tienes.
