@@ -14,7 +14,9 @@
     <section id="convenios" class="pb-24 bg-pg-negro">
         <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             @foreach($conConvenio as $p)
-                <div class="animate-on-scroll inline-flex flex-wrap items-baseline gap-x-3 gap-y-1 bg-pg-carbon border border-pg-rojo/30 rounded-2xl px-6 py-4 mb-4 mr-3">
+                {{-- Centrado, como el título de la página: pegado a la izquierda
+                     quedaba suelto en medio de la nada. --}}
+                <div class="animate-on-scroll mx-auto w-fit flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1 bg-pg-carbon border border-pg-rojo/30 rounded-2xl px-6 py-4 mb-4 text-center">
                     <p class="text-pg-tiza/75 font-modern text-lg">Con convenio, el plan {{ $p['nombre'] }} queda en <span class="font-display text-3xl text-pg-tiza">${{ number_format($p['precio_convenio'], 0, ',', '.') }}</span> <span class="text-pg-tiza/40 line-through">${{ number_format($p['precio'], 0, ',', '.') }}</span></p>
                 </div>
             @endforeach

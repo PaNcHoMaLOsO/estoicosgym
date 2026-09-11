@@ -11,7 +11,7 @@
             <!-- Glow decorativo -->
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pg-rojo/10 rounded-full blur-3xl"></div>
             
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="text-center mb-12 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
                     <h1 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h1>
@@ -20,8 +20,10 @@
                     </p>
                 </div>
                 
-                <!-- Formulario de consulta -->
-                <div class="max-w-md mx-auto animate-on-scroll">
+                {{-- El formulario con un acompañante al lado: solo, en una pantalla
+                     ancha quedaba un recuadro angosto en medio de todo negro. --}}
+                <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+                <div class="max-w-md w-full mx-auto animate-on-scroll">
                     <div class="bg-pg-negro/50 border border-pg-tiza/10 rounded-2xl p-8">
                         <!-- Tabs de consulta -->
                         <div class="flex mb-6 bg-pg-carbon/50 rounded-lg p-1">
@@ -180,6 +182,48 @@
                         <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
                         <span id="error-mensaje" class="text-red-400 font-modern"></span>
                     </div>
+                </div>
+
+                    {{-- Lo que sirve mientras se consulta: cuándo está abierto hoy,
+                         por dónde escribir y qué hacer si todavía no es socio. --}}
+                    <aside class="animate-on-scroll rounded-2xl border border-pg-tiza/10 bg-pg-negro/50 p-8">
+                        <h2 class="font-display text-2xl uppercase text-pg-tiza">¿Dudas con tu membresía?</h2>
+                        <p class="mt-3 text-pg-tiza/60 font-modern text-sm leading-relaxed">
+                            Si el RUT no aparece o los datos no calzan, escríbenos y lo revisamos en el momento.
+                            También puedes pasar por el mesón.
+                        </p>
+
+                        @if($horario['configurado'])
+                            @php($hoy = collect($horario['dias'])->firstWhere('clave', $horario['hoy']))
+                            @if($hoy)
+                                <div class="mt-6 flex items-center gap-3 rounded-xl border border-pg-tiza/10 bg-pg-carbon/60 px-4 py-3">
+                                    <i class="fas fa-clock text-pg-rojo-claro" aria-hidden="true"></i>
+                                    <p class="font-modern text-sm text-pg-tiza/80">
+                                        Hoy {{ mb_strtolower($hoy['nombre']) }}:
+                                        <span class="text-pg-tiza tabular-nums">{{ $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' – ' . $t[1], $hoy['tramos'])) : 'cerrado' }}</span>
+                                    </p>
+                                </div>
+                            @endif
+                        @endif
+
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            @if($whatsapp)
+                                <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
+                                   class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
+                                    <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Escríbenos por WhatsApp
+                                </a>
+                            @endif
+                            <a href="{{ route('landing.contacto') }}"
+                               class="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-pg-tiza/20 hover:border-pg-rojo/50 text-pg-tiza font-modern text-sm font-semibold transition-colors">
+                                <i class="fas fa-envelope" aria-hidden="true"></i> Contacto
+                            </a>
+                        </div>
+
+                        <p class="mt-6 border-t border-pg-tiza/10 pt-5 font-modern text-sm text-pg-tiza/60">
+                            ¿Todavía no eres socio?
+                            <a href="{{ route('landing.planes') }}" class="text-pg-rojo-claro hover:underline">Mira los planes</a>.
+                        </p>
+                    </aside>
                 </div>
             </div>
         </section>
