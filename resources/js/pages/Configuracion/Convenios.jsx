@@ -10,7 +10,7 @@ import FormularioCatalogo, {
 } from '@/components/FormularioCatalogo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
-const COLUMNAS = ['Convenio', 'Tipo', 'Descuento', 'Contacto', 'Socios', 'Estado', ''];
+const COLUMNAS = ['Convenio', 'Tipo', 'Descuento', 'Contacto', 'Socios', 'En la web', 'Estado', ''];
 
 /** Cómo se lee un tipo en la tabla. */
 const NOMBRE_TIPO = Object.fromEntries(TIPOS_CONVENIO.map((t) => [t.valor, t.etiqueta]));
@@ -75,6 +75,7 @@ export default function Convenios({ convenios }) {
                         <Celda className="tabular-nums">{convenio.descuento}</Celda>
                         <Celda>{convenio.contacto ?? '—'}</Celda>
                         <Cifra>{convenio.clientes}</Cifra>
+                        <Celda>{convenio.mostrar_en_web ? (convenio.logo_url ? 'Sí' : 'Sí, sin logo') : '—'}</Celda>
                         <Celda>
                             <Activo valor={convenio.activo} />
                         </Celda>

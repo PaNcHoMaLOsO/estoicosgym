@@ -80,6 +80,9 @@ class Permisos
         'convenios' => 'configuracion',
         'metodos-pago' => 'configuracion',
         'motivos-descuento' => 'configuracion',
+        // Los especialistas de la web: un catalogo mas, lo toca quien
+        // configura, no el meson.
+        'especialistas' => 'configuracion',
         // Activar y desactivar, que valen para los cuatro a la vez.
         'catalogos' => 'configuracion',
         // La papelera cruza todos los modulos —socios, membresias, pagos,

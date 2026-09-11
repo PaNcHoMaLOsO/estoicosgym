@@ -141,6 +141,10 @@ class FichasConfiguracionController extends Controller
                 // pero no se puede meter en el formulario de editar.
                 'descuento_porcentaje' => (float) $convenio->descuento_porcentaje,
                 'descuento_monto' => (int) $convenio->descuento_monto,
+                // La pagina publica, para el formulario de editar.
+                'mostrar_en_web' => (bool) $convenio->mostrar_en_web,
+                'requisito_web' => $convenio->requisito_web,
+                'logo_url' => $convenio->urlDeLogo(),
             ],
 
             'cifras' => [

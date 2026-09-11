@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Convenio;
+use App\Models\Especialista;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
@@ -174,7 +175,13 @@ class AjustesController extends Controller
                 'descripcion' => 'Empresas e instituciones con descuento',
                 'activos' => Convenio::where('activo', true)->count(),
                 'total' => Convenio::count(),
-                'aviso' => null,
+                // Un convenio en la web sin logo sale como un recuadro con su
+                // nombre: funciona, pero se ve a medio hacer.
+                'aviso' => ($sinLogo = Convenio::where('activo', true)->where('mostrar_en_web', true)->whereNull('logo')->count())
+                    ? ($sinLogo === 1
+                        ? 'Un convenio de la web no tiene logo.'
+                        : "{$sinLogo} convenios de la web no tienen logo.")
+                    : null,
             ],
             [
                 'href' => '/panel/metodos-pago',
@@ -192,6 +199,14 @@ class AjustesController extends Controller
                 'descripcion' => 'Por qué se rebaja el precio',
                 'activos' => MotivoDescuento::where('activo', true)->count(),
                 'total' => MotivoDescuento::count(),
+                'aviso' => null,
+            ],
+            [
+                'href' => '/panel/especialistas',
+                'titulo' => 'Especialistas',
+                'descripcion' => 'Los profesionales que aparecen en la web',
+                'activos' => Especialista::where('activo', true)->count(),
+                'total' => Especialista::count(),
                 'aviso' => null,
             ],
         ];

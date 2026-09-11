@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Convenio;
+use App\Models\Especialista;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Support\Ajustes;
@@ -20,6 +22,14 @@ class LandingController extends Controller
     /**
      * Lo que puede escribir el cliente en «Interes», y como llega al correo.
      */
+    /** Las categorias de convenio, en el orden en que se leen en la web. */
+    private const CATEGORIAS_DE_CONVENIO = [
+        'institucion_educativa' => 'Universidades e institutos',
+        'organizacion' => 'Instituciones',
+        'empresa' => 'Empresas',
+        'otro' => 'Otros convenios',
+    ];
+
     private const INTERESES = [
         'informacion' => 'Información general',
         'inscripcion' => 'Quiero inscribirme',
@@ -56,6 +66,8 @@ class LandingController extends Controller
             'planes' => $planes,
             'servicios' => $this->servicios(),
             'web' => $this->datosParaGoogle($gimnasio, $planes),
+            'convenios' => $this->conveniosEnLaWeb(),
+            'especialistas' => $this->especialistasEnLaWeb($gimnasio['nombre']),
         ]);
     }
 
@@ -205,6 +217,65 @@ class LandingController extends Controller
             'instagram' => $instagram,
             'facebook' => $facebook,
         ];
+    }
+
+    /**
+     * Los convenios que se muestran, agrupados por categoria.
+     *
+     * Solo los activos y MARCADOS para la web: el catalogo trae de ejemplo
+     * instituciones con las que el gimnasio no tiene acuerdo, y hay convenios
+     * que no se anuncian. Una categoria sin convenios no aparece.
+     *
+     * @return list<array{titulo:string, convenios:list<array<string,?string>>}>
+     */
+    private function conveniosEnLaWeb(): array
+    {
+        $porTipo = Convenio::where('activo', true)
+            ->where('mostrar_en_web', true)
+            ->orderBy('nombre')
+            ->get()
+            ->groupBy('tipo');
+
+        $grupos = [];
+
+        foreach (self::CATEGORIAS_DE_CONVENIO as $tipo => $titulo) {
+            if (! isset($porTipo[$tipo])) {
+                continue;
+            }
+
+            $grupos[] = [
+                'titulo' => $titulo,
+                'convenios' => $porTipo[$tipo]->map(fn (Convenio $c) => [
+                    'nombre' => $c->nombre,
+                    'logo' => $c->urlDeLogo(),
+                    'requisito' => $c->requisito_web,
+                ])->values()->all(),
+            ];
+        }
+
+        return $grupos;
+    }
+
+    /**
+     * Los especialistas que se muestran, en el orden que se les dio.
+     *
+     * @return list<array<string,?string>>
+     */
+    private function especialistasEnLaWeb(string $gimnasio): array
+    {
+        return Especialista::where('activo', true)
+            ->orderBy('orden')
+            ->orderBy('nombre')
+            ->get()
+            ->map(fn (Especialista $e) => [
+                'nombre' => $e->nombre,
+                'especialidad' => $e->especialidad,
+                'descripcion' => $e->descripcion,
+                'foto' => $e->urlDeFoto(),
+                'whatsapp' => $e->enlaceWhatsapp($gimnasio),
+                'instagram' => $e->enlaceInstagram(),
+            ])
+            ->all();
     }
 
     /**

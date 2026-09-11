@@ -10,6 +10,7 @@ use App\Models\MotivoDescuento;
 use App\Models\PrecioMembresia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -79,6 +80,7 @@ class CatalogoController extends Controller
     public function guardarConvenio(Request $request)
     {
         $convenio = Convenio::create($this->validarConvenio($request));
+        $this->ponerLogo($convenio, $request);
 
         return redirect()
             ->route('panel.convenios.show', $convenio->uuid)
@@ -88,6 +90,7 @@ class CatalogoController extends Controller
     public function actualizarConvenio(Request $request, Convenio $convenio)
     {
         $convenio->update($this->validarConvenio($request, $convenio));
+        $this->ponerLogo($convenio, $request);
 
         return back()->with('success', 'Convenio actualizado.');
     }
@@ -134,12 +137,13 @@ class CatalogoController extends Controller
             'convenios' => Convenio::class,
             'metodos-pago' => MetodoPago::class,
             'motivos-descuento' => MotivoDescuento::class,
+            'especialistas' => \App\Models\Especialista::class,
         ];
 
         abort_unless(isset($modelos[$catalogo]), 404);
 
         $fila = $modelos[$catalogo]::where(
-            in_array($catalogo, ['membresias', 'convenios'], true) ? 'uuid' : 'id',
+            in_array($catalogo, ['membresias', 'convenios', 'especialistas'], true) ? 'uuid' : 'id',
             $id
         )->firstOrFail();
 
@@ -249,13 +253,31 @@ class CatalogoController extends Controller
             'contacto_nombre' => 'nullable|string|max:100',
             'contacto_telefono' => 'nullable|string|max:20',
             'contacto_email' => 'nullable|email|max:100',
+            // La pagina publica. El logo sin SVG: puede llevar codigo y se
+            // ejecutaria al abrir el archivo desde la web.
+            'mostrar_en_web' => 'boolean',
+            'requisito_web' => 'nullable|string|max:150',
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'quitar_logo' => 'boolean',
             'activo' => 'boolean',
         ], [
             'nombre.unique' => 'Ya hay un convenio con ese nombre.',
+            'logo.image' => 'Ese archivo no es una imagen.',
+            'logo.mimes' => 'El logo tiene que ser PNG, JPG o WEBP.',
+            'logo.max' => 'El logo no puede pesar más de 2 MB.',
         ]);
 
         $datos['descuento_porcentaje'] = $datos['descuento_porcentaje'] ?? 0;
         $datos['descuento_monto'] = $datos['descuento_monto'] ?? 0;
+
+        // Si no llega, no se toca: un formulario que no lo conozca no puede
+        // esconder de la web un convenio que otro marco.
+        if (array_key_exists('mostrar_en_web', $datos)) {
+            $datos['mostrar_en_web'] = (bool) $datos['mostrar_en_web'];
+        }
+
+        // El logo NO va con los demas datos: lo pone ponerLogo().
+        unset($datos['logo'], $datos['quitar_logo']);
         $datos['activo'] = (bool) ($datos['activo'] ?? true);
 
         return $datos;
@@ -293,5 +315,29 @@ class CatalogoController extends Controller
         $datos['activo'] = (bool) ($datos['activo'] ?? true);
 
         return $datos;
+    }
+
+    /**
+     * El logo del convenio, aparte de los demas datos.
+     *
+     * Aparte a proposito: si fuera un campo mas, editar el nombre sin volver a
+     * subir el logo lo dejaria vacio. Solo se toca si llega un archivo nuevo o
+     * si se pide quitarlo, y el archivo viejo se borra DESPUES de guardar.
+     */
+    private function ponerLogo(Convenio $convenio, Request $request): void
+    {
+        $anterior = $convenio->logo;
+
+        if ($request->hasFile('logo')) {
+            $convenio->update(['logo' => $request->file('logo')->store('convenios', 'public')]);
+        } elseif ($request->boolean('quitar_logo')) {
+            $convenio->update(['logo' => null]);
+        } else {
+            return;
+        }
+
+        if ($anterior && $anterior !== $convenio->logo) {
+            Storage::disk('public')->delete($anterior);
+        }
     }
 }

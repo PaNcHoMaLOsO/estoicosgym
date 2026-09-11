@@ -20,7 +20,13 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#inicio" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Inicio</a>
                     <a href="#servicios" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Servicios</a>
+                    @if(count($especialistas))
+                        <a href="#especialistas" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Especialistas</a>
+                    @endif
                     <a href="#planes" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Planes</a>
+                    @if(count($convenios))
+                        <a href="#convenios" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Convenios</a>
+                    @endif
                     <a href="#consulta" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Mi Membresía</a>
                     <a href="#contacto" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Contacto</a>
                 </div>
@@ -36,7 +42,13 @@
                 <div class="flex flex-col space-y-4 px-4">
                     <a href="#inicio" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Inicio</a>
                     <a href="#servicios" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Servicios</a>
+                    @if(count($especialistas))
+                        <a href="#especialistas" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Especialistas</a>
+                    @endif
                     <a href="#planes" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Planes</a>
+                    @if(count($convenios))
+                        <a href="#convenios" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Convenios</a>
+                    @endif
                     <a href="#consulta" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Mi Membresía</a>
                     <a href="#contacto" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Contacto</a>
                 </div>
@@ -126,6 +138,61 @@
             </div>
         </section>
 
+        <!-- ===== ESPECIALISTAS ===== -->
+        {{-- Salen de Configuracion -> Catalogos -> Especialistas. Sin ninguno activo, la seccion no existe. --}}
+        @if(count($especialistas))
+        <section id="especialistas" class="py-24 bg-pg-negro relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 animate-on-scroll">
+                    <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Con quién entrenas</span>
+                    <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">NUESTROS ESPECIALISTAS</h2>
+                    <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
+                        Profesionales que trabajan con {{ $gimnasio['nombre'] }}. Escríbeles directo.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    @foreach($especialistas as $index => $e)
+                        <article class="animate-on-scroll card-hover h-full flex flex-col bg-pg-carbon/70 border border-pg-tiza/10 rounded-2xl p-8 text-center" style="animation-delay: {{ $index * 0.1 }}s">
+                            @if($e['foto'])
+                                <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}" loading="lazy" width="112" height="112"
+                                     class="w-28 h-28 rounded-full object-cover mx-auto border-2 border-pg-rojo/40">
+                            @else
+                                <div class="w-28 h-28 rounded-full mx-auto bg-pg-grafito border-2 border-pg-rojo/40 flex items-center justify-center font-display text-4xl text-pg-tiza" aria-hidden="true">
+                                    {{ mb_strtoupper(mb_substr($e['nombre'], 0, 1)) }}
+                                </div>
+                            @endif
+
+                            <p class="mt-5 text-pg-rojo-claro font-modern text-xs uppercase tracking-widest">{{ $e['especialidad'] }}</p>
+                            <h3 class="font-display text-2xl uppercase text-pg-tiza mt-1">{{ $e['nombre'] }}</h3>
+
+                            @if($e['descripcion'])
+                                <p class="text-pg-tiza/60 font-modern text-sm mt-3">{{ $e['descripcion'] }}</p>
+                            @endif
+
+                            @if($e['whatsapp'] || $e['instagram'])
+                                <div class="mt-auto pt-6 flex flex-wrap justify-center gap-3">
+                                    @if($e['whatsapp'])
+                                        <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
+                                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-pg-tiza/20 text-pg-tiza hover:border-[#25D366] hover:text-[#25D366] transition-colors font-modern text-sm">
+                                            <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> WhatsApp
+                                        </a>
+                                    @endif
+                                    @if($e['instagram'])
+                                        <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
+                                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro transition-colors font-modern text-sm">
+                                            <i class="fab fa-instagram text-lg" aria-hidden="true"></i> Instagram
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+        @endif
+
         <!-- ===== PLANES SECTION ===== -->
         <section id="planes" class="py-24 bg-pg-negro relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -185,6 +252,56 @@
                 @endif
             </div>
         </section>
+
+        <!-- ===== CONVENIOS ===== -->
+        {{-- Salen de Configuracion -> Catalogos -> Convenios, los marcados para la web. Sin ninguno, la seccion no existe. --}}
+        @if(count($convenios))
+        @php($conConvenio = collect($planes)->filter(fn ($p) => $p['precio_convenio'])->values())
+        <section id="convenios" class="py-24 bg-pg-carbon relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-14 animate-on-scroll">
+                    <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Estudiantes, empresas e instituciones</span>
+                    <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">CONVENIOS</h2>
+                    @forelse($conConvenio as $p)
+                        <p class="text-pg-tiza/70 mt-4 max-w-2xl mx-auto font-modern text-lg">Con convenio, el plan {{ $p['nombre'] }} queda en <span class="text-pg-tiza font-semibold">${{ number_format($p['precio_convenio'], 0, ',', '.') }}</span> <span class="text-pg-tiza/40 line-through">${{ number_format($p['precio'], 0, ',', '.') }}</span></p>
+                    @empty
+                        <p class="text-pg-tiza/70 mt-4 max-w-2xl mx-auto font-modern">Precios especiales para estas instituciones. Consulta en el mesón.</p>
+                    @endforelse
+                </div>
+
+                @foreach($convenios as $grupo)
+                    <div class="mb-12 last:mb-0 animate-on-scroll">
+                        <h3 class="font-display text-2xl uppercase tracking-wide text-pg-tiza mb-6">{{ $grupo['titulo'] }}</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                            @foreach($grupo['convenios'] as $c)
+                                <div class="flex flex-col">
+                                    {{-- Fondo blanco: los logos de las instituciones estan hechos para blanco y sobre negro no se ven. --}}
+                                    <div class="bg-white rounded-xl h-28 p-4 flex items-center justify-center">
+                                        @if($c['logo'])
+                                            <img src="{{ $c['logo'] }}" alt="{{ $c['nombre'] }}" loading="lazy" class="max-h-20 max-w-full w-auto object-contain">
+                                        @else
+                                            <span class="text-neutral-800 font-semibold text-center font-modern">{{ $c['nombre'] }}</span>
+                                        @endif
+                                    </div>
+                                    @if($c['logo'])
+                                        <p class="mt-2 text-pg-tiza/80 text-sm font-modern text-center">{{ $c['nombre'] }}</p>
+                                    @endif
+                                    @if($c['requisito'])
+                                        <p class="text-pg-tiza/50 text-xs font-modern text-center {{ $c['logo'] ? '' : 'mt-2' }}">{{ $c['requisito'] }}</p>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
+
+                <p class="mt-12 text-center text-pg-tiza/60 font-modern text-sm">
+                    Presenta tu credencial vigente en el mesón al inscribirte.
+                    ¿Tu empresa o institución quiere un convenio? <a href="#contacto" class="text-pg-rojo-claro hover:underline">Escríbenos</a>.
+                </p>
+            </div>
+        </section>
+        @endif
 
         <!-- ===== CTA SECTION ===== -->
         <section class="py-24 bg-gradient-to-r from-pg-rojo-oscuro via-pg-rojo to-pg-rojo-oscuro relative overflow-hidden">
@@ -630,6 +747,12 @@
                             <li><a href="#inicio" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Inicio</a></li>
                             <li><a href="#servicios" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Servicios</a></li>
                             <li><a href="#planes" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Planes</a></li>
+                            @if(count($convenios))
+                                <li><a href="#convenios" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>
+                            @endif
+                            @if(count($especialistas))
+                                <li><a href="#especialistas" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Especialistas</a></li>
+                            @endif
                             <li><a href="#contacto" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
                         </ul>
                     </div>

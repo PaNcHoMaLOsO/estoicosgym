@@ -57,12 +57,17 @@ class Convenio extends Model
         'contacto_email',
         'id_estado',
         'activo',
+        // La pagina publica.
+        'logo',
+        'mostrar_en_web',
+        'requisito_web',
     ];
 
     protected $casts = [
         'descuento_porcentaje' => 'decimal:2',
         'descuento_monto' => 'integer',
         'activo' => 'boolean',
+        'mostrar_en_web' => 'boolean',
     ];
 
     protected static function boot()
@@ -79,6 +84,12 @@ class Convenio extends Model
     public function getRouteKeyName()
     {
         return 'uuid';
+    }
+
+    /** La direccion publica del logo, o null si no tiene. */
+    public function urlDeLogo(): ?string
+    {
+        return $this->logo ? asset('storage/' . $this->logo) : null;
     }
 
     public function clientes()

@@ -74,6 +74,10 @@ class ConfiguracionController extends Controller
                 'descuento_monto' => (int) $c->descuento_monto,
                 'contacto_telefono' => $c->contacto_telefono,
                 'contacto_email' => $c->contacto_email,
+                // La pagina publica, para el formulario de editar.
+                'mostrar_en_web' => (bool) $c->mostrar_en_web,
+                'requisito_web' => $c->requisito_web,
+                'logo_url' => $c->urlDeLogo(),
             ]);
 
         return Inertia::render('Configuracion/Convenios', ['convenios' => $convenios]);

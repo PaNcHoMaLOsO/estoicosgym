@@ -294,8 +294,10 @@
         document.addEventListener('click', function (e) {
             var el = e.target.closest ? e.target.closest('[data-evento]') : null;
             if (el) {
-                var plan = el.getAttribute('data-plan');
-                window.pgEvento(el.getAttribute('data-evento'), plan ? { plan: plan } : {});
+                var datos = {};
+                if (el.getAttribute('data-plan')) { datos.plan = el.getAttribute('data-plan'); }
+                if (el.getAttribute('data-detalle')) { datos.detalle = el.getAttribute('data-detalle'); }
+                window.pgEvento(el.getAttribute('data-evento'), datos);
             }
         });
     </script>

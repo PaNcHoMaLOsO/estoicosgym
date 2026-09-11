@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
 import {
@@ -114,6 +114,26 @@ export const CAMPOS_CONVENIO = [
     { nombre: 'contacto_telefono', etiqueta: 'Teléfono' },
     { nombre: 'contacto_email', etiqueta: 'Correo', tipo: 'email' },
     {
+        nombre: 'mostrar_en_web',
+        etiqueta: 'Página web',
+        tipo: 'si-no',
+        textoCasilla: 'Mostrarlo en la sección de convenios de la web',
+    },
+    {
+        nombre: 'requisito_web',
+        etiqueta: 'Quién accede',
+        ejemplo: 'Estudiantes con credencial vigente',
+        ayuda: 'Se lee debajo del logo en la web.',
+    },
+    {
+        nombre: 'logo',
+        etiqueta: 'Logo',
+        tipo: 'imagen',
+        actual: 'logo_url',
+        quitar: 'quitar_logo',
+        ayuda: 'PNG, JPG o WEBP, hasta 2 MB. Mejor con fondo blanco o transparente.',
+    },
+    {
         nombre: 'activo',
         etiqueta: 'Disponibilidad',
         tipo: 'si-no',
@@ -149,8 +169,132 @@ export function valoresDeConvenio(convenio) {
         contacto_nombre: convenio?.contacto_nombre ?? convenio?.contacto ?? '',
         contacto_telefono: convenio?.contacto_telefono ?? '',
         contacto_email: convenio?.contacto_email ?? '',
+        // La pagina publica. El logo solo viaja si se elige uno nuevo.
+        mostrar_en_web: Boolean(convenio?.mostrar_en_web),
+        requisito_web: convenio?.requisito_web ?? '',
+        logo: null,
+        quitar_logo: false,
+        logo_url: convenio?.logo_url ?? null,
         activo: convenio?.uuid ? Boolean(convenio.activo) : true,
     };
+}
+
+export const CAMPOS_ESPECIALISTA = [
+    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Camila Rojas' },
+    {
+        nombre: 'especialidad',
+        etiqueta: 'Especialidad',
+        requerido: true,
+        ejemplo: 'Personal trainer, preparador físico, nutricionista…',
+    },
+    {
+        nombre: 'descripcion',
+        etiqueta: 'Descripción',
+        tipo: 'area',
+        ayuda: 'Una o dos líneas: en qué te puede ayudar. Hasta 300 caracteres.',
+    },
+    {
+        nombre: 'foto',
+        etiqueta: 'Foto',
+        tipo: 'imagen',
+        actual: 'foto_url',
+        quitar: 'quitar_foto',
+        ayuda: 'JPG, PNG o WEBP, hasta 2 MB. Mejor cuadrada y con la cara centrada.',
+    },
+    { nombre: 'whatsapp', etiqueta: 'WhatsApp', ejemplo: '9 1234 5678', ayuda: 'Sale como botón «WhatsApp» con un saludo ya escrito.' },
+    { nombre: 'instagram', etiqueta: 'Instagram', ejemplo: '@usuario o el enlace del perfil' },
+    {
+        nombre: 'orden',
+        etiqueta: 'Orden',
+        tipo: 'number',
+        min: 0,
+        ayuda: 'Los de número más bajo salen primero.',
+    },
+    { nombre: 'activo', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Se muestra en la web' },
+];
+
+/** Lo que hay que mandar para guardar un especialista. */
+export function valoresDeEspecialista(especialista) {
+    return {
+        nombre: especialista?.nombre ?? '',
+        especialidad: especialista?.especialidad ?? '',
+        descripcion: especialista?.descripcion ?? '',
+        foto: null,
+        quitar_foto: false,
+        foto_url: especialista?.foto_url ?? null,
+        whatsapp: especialista?.whatsapp ?? '',
+        instagram: especialista?.instagram ?? '',
+        orden: especialista?.orden ?? 0,
+        activo: especialista?.uuid ? Boolean(especialista.activo) : true,
+    };
+}
+
+/**
+ * Una imagen del catálogo: el logo de un convenio, la foto de un especialista.
+ *
+ * Se ve la que hay, se puede cambiar por otra o quitar. El recuadro es blanco
+ * a propósito: los logos de las instituciones están hechos para fondo blanco.
+ */
+function CampoImagen({ campo, data, setData }) {
+    const archivo = data[campo.nombre];
+    const [vista, setVista] = useState(null);
+
+    // La vista previa se crea y se suelta: cada createObjectURL reserva memoria.
+    useEffect(() => {
+        if (! (archivo instanceof File)) {
+            setVista(null);
+
+            return undefined;
+        }
+
+        const url = URL.createObjectURL(archivo);
+        setVista(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [archivo]);
+
+    const actual = campo.actual ? data[campo.actual] : null;
+    const quitando = campo.quitar ? Boolean(data[campo.quitar]) : false;
+    const mostrar = vista ?? (quitando ? null : actual);
+
+    return (
+        <div className="flex items-center gap-3">
+            <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-white p-1">
+                {mostrar ? (
+                    <img src={mostrar} alt="" className="max-h-full max-w-full object-contain" />
+                ) : (
+                    <span className="text-center text-[10px] leading-tight text-neutral-500">Sin imagen</span>
+                )}
+            </div>
+
+            <div className="flex min-w-0 flex-col items-start gap-1">
+                <input
+                    id={campo.nombre}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => {
+                        setData(campo.nombre, e.target.files?.[0] ?? null);
+                        if (campo.quitar) {
+                            setData(campo.quitar, false);
+                        }
+                    }}
+                    className="apoyo max-w-full text-fog file:mr-2 file:rounded-control file:border file:border-line file:bg-surface-2 file:px-2 file:py-1 file:text-chalk"
+                />
+
+                {campo.quitar && actual && ! (archivo instanceof File) ? (
+                    <label className="apoyo flex items-center gap-1.5 text-fog">
+                        <input
+                            type="checkbox"
+                            checked={quitando}
+                            onChange={(e) => setData(campo.quitar, e.target.checked)}
+                            className="size-3.5 accent-[var(--color-volt)]"
+                        />
+                        Quitar la imagen
+                    </label>
+                ) : null}
+            </div>
+        </div>
+    );
 }
 
 export default function FormularioCatalogo({
@@ -163,7 +307,7 @@ export default function FormularioCatalogo({
     campos,
     valores,
 }) {
-    const { data, setData, post, put, processing, errors, clearErrors } = useForm(valores);
+    const { data, setData, post, put, processing, errors, clearErrors, transform } = useForm(valores);
 
     /*
      * Al abrirlo se rellena con lo que toque. Sin esto, editar una fila y
@@ -183,12 +327,23 @@ export default function FormularioCatalogo({
     function enviar(e) {
         e.preventDefault();
 
-        const enviarlo = metodo === 'put' ? put : post;
+        const opciones = { preserveScroll: true, onSuccess: () => alCerrar() };
+        const conArchivo = Object.values(data).some((valor) => valor instanceof File);
 
-        enviarlo(accion, {
-            preserveScroll: true,
-            onSuccess: () => alCerrar(),
-        });
+        /*
+         * Con un archivo, el formulario viaja como multipart, y eso PHP no lo
+         * lee en un PUT. Se manda como POST diciendo que es un PUT: Laravel lo
+         * entiende y la ruta es la misma.
+         */
+        if (metodo === 'put' && conArchivo) {
+            transform((datos) => ({ ...datos, _method: 'put' }));
+            post(accion, opciones);
+
+            return;
+        }
+
+        transform((datos) => datos);
+        (metodo === 'put' ? put : post)(accion, opciones);
     }
 
     return (
@@ -226,6 +381,8 @@ export default function FormularioCatalogo({
                                     />
                                     {campo.textoCasilla}
                                 </label>
+                            ) : campo.tipo === 'imagen' ? (
+                                <CampoImagen campo={campo} data={data} setData={setData} />
                             ) : campo.tipo === 'opciones' ? (
                                 <select
                                     id={campo.nombre}

@@ -507,6 +507,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::put('/membresias/{membresia}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMembresia'])->name('membresias.update');
         Route::post('/convenios', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarConvenio'])->name('convenios.store');
         Route::put('/convenios/{convenio}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarConvenio'])->name('convenios.update');
+        // Los especialistas que aparecen en la web. Se ocultan con catalogos.alternar.
+        Route::get('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'index'])->name('especialistas.index');
+        Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
+        Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
         Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
         Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');
