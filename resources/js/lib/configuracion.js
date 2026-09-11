@@ -51,6 +51,14 @@ export const SECCIONES_CONFIGURACION = [
         ],
     },
     {
+        titulo: 'Contrato y privacidad',
+        secciones: [
+            { href: '/panel/textos-legales/contrato', etiqueta: 'Contrato', permiso: 'configuracion.ver' },
+            { href: '/panel/textos-legales/terminos', etiqueta: 'Términos y condiciones', permiso: 'configuracion.ver' },
+            { href: '/panel/textos-legales/privacidad', etiqueta: 'Política de privacidad', permiso: 'configuracion.ver' },
+        ],
+    },
+    {
         titulo: 'Sistema',
         secciones: [
             { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
@@ -71,6 +79,7 @@ export const PREFIJOS_CONFIGURACION = [
     '/panel/especialistas',
     '/panel/usuarios',
     '/panel/papelera',
+    '/panel/textos-legales',
 ];
 
 /** La ruta sin la consulta ni la barra final: «/panel/convenios». */

@@ -108,13 +108,18 @@ class Ajustes
                 'defecto' => 30,
                 'unidad' => 'días',
             ],
-            'reglas.version_contrato' => [
+            // La versión del contrato ya no se escribe aquí: la lleva el propio
+            // texto (Configuración → Contrato), y sube sola al cambiar uno que
+            // alguien ya firmó.
+            'reglas.dias_para_firmar' => [
                 'grupo' => 'reglas',
-                'etiqueta' => 'Versión del contrato',
-                'ayuda' => 'La que se le hace firmar hoy a quien se inscribe. Súbela cada vez que cambie el texto: es lo que permite saber después qué firmó cada socio, y quién firmó una versión vieja.',
-                'tipo' => 'texto',
-                'largo' => 20,
-                'defecto' => '1',
+                'etiqueta' => 'Plazo para firmar el contrato por correo',
+                'ayuda' => 'Cuántos días sirve el enlace que le llega al socio. Si vence sin firmar, se le manda otro desde su ficha.',
+                'tipo' => 'numero',
+                'min' => 1,
+                'max' => 60,
+                'defecto' => 7,
+                'unidad' => 'días',
             ],
 
             // ---- El mesón ----
@@ -392,7 +397,7 @@ class Ajustes
             ],
             'reglas' => [
                 'titulo' => 'Reglas de las membresías',
-                'descripcion' => 'Cuándo se puede renovar y qué contrato firma quien se inscribe.',
+                'descripcion' => 'Cuándo se puede renovar y cuánto dura el enlace para firmar el contrato por correo.',
             ],
             'meson' => [
                 'titulo' => 'Mesón',

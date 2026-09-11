@@ -12,6 +12,9 @@
 
 @source '../views/landing';
 @source '../views/layouts/landing.blade.php';
+/* El contrato por firmar y su copia: páginas sueltas con la misma marca. */
+@source '../views/layouts/documento.blade.php';
+@source '../views/contrato';
 
 @theme {
     /* Paleta PRO GYM: los mismos valores que el panel en tema oscuro. */
@@ -40,3 +43,80 @@
         cursor: pointer;
     }
 }
+
+/*
+ * Los textos legales que escribe el gimnasio en Configuración: el contrato,
+ * los términos y la privacidad. Llegan como HTML sencillo —títulos, párrafos,
+ * listas—, sin clases: el estilo lo pone quien los muestra.
+ */
+.documento {
+    line-height: 1.65;
+}
+
+.documento h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.6rem;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0 0 1.1rem;
+}
+
+.documento h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 1.7rem 0 0.5rem;
+}
+
+.documento h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.3rem 0 0.4rem;
+}
+
+.documento p {
+    margin: 0 0 0.85rem;
+}
+
+.documento ul,
+.documento ol {
+    margin: 0 0 0.95rem;
+    padding-left: 1.3rem;
+}
+
+.documento ul {
+    list-style: disc;
+}
+
+.documento ol {
+    list-style: decimal;
+}
+
+.documento li {
+    margin: 0.25rem 0;
+}
+
+.documento a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.documento hr {
+    margin: 1.6rem 0;
+    border: 0;
+    border-top: 1px solid currentColor;
+    opacity: 0.15;
+}
+
+/* Sobre el fondo negro de la web. */
+.documento.en-oscuro h1,
+.documento.en-oscuro h2,
+.documento.en-oscuro h3,
+.documento.en-oscuro strong {
+    color: #f2f2f4;
+}
+
+.documento.en-oscuro a {
+    color: #ef4a51;
+}
+

@@ -10,10 +10,15 @@ use App\Models\Convenio;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
+use App\Services\BorradoDeDatosService;
+use App\Services\ContratoDigitalService;
 use App\Services\RegistroClienteService;
 use App\Support\Ajustes;
+use App\Support\TextosLegales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -49,6 +54,9 @@ class ClienteController extends Controller
 
         $clientes = Cliente::query()
             ->where('activo', ! $verBajas)
+            // Una ficha con los datos borrados ya no es nadie a quien atender:
+            // sus pagos siguen en los informes, pero aquí no aparece.
+            ->whereNull('datos_borrados_en')
             ->when($busqueda !== '', function ($q) use ($busqueda) {
                 $q->where(function ($q) use ($busqueda) {
                     $q->where('nombres', 'like', "%{$busqueda}%")
@@ -125,7 +133,7 @@ class ClienteController extends Controller
      * Blade: validaciones, calculo de precios y la transaccion de las tres
      * tablas. Aqui solo se decide a donde volver.
      */
-    public function store(Request $request, RegistroClienteService $registro)
+    public function store(Request $request, RegistroClienteService $registro, ContratoDigitalService $contratos)
     {
         // Validar PRIMERO. Si se reservase el turno antes, un formulario con un
         // error de dato lo dejaria pillado y al corregirlo no se podria enviar.
@@ -145,7 +153,23 @@ class ClienteController extends Controller
             return back()->withInput()->with('error', 'Error al procesar el registro. Por favor intente nuevamente.');
         }
 
-        return redirect()->route('panel.clientes.index')->with('success', $resultado['mensaje']);
+        $mensaje = $resultado['mensaje'];
+        $problema = null;
+
+        // El contrato por correo, si se pidió. Que no salga NO deshace el alta:
+        // el socio queda registrado y el contrato se manda después desde su ficha.
+        if ($request->boolean('enviar_contrato')) {
+            try {
+                $contrato = $contratos->enviar($resultado['cliente']);
+                $mensaje .= " Le mandamos el contrato para firmar a {$contrato->email_destino}.";
+            } catch (ValidationException $e) {
+                $problema = 'El contrato no salió: ' . collect($e->errors())->flatten()->first() . ' Mándalo desde su ficha.';
+            }
+        }
+
+        return redirect()->route('panel.clientes.index')
+            ->with('success', $mensaje)
+            ->with('error', $problema);
     }
 
     /**
@@ -157,6 +181,10 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
+        if ($cerrada = $this->fichaCerrada($cliente)) {
+            return $cerrada;
+        }
+
         return Inertia::render('Clientes/Editar', [
             'cliente' => [
                 'uuid' => $cliente->uuid,
@@ -186,6 +214,10 @@ class ClienteController extends Controller
 
     public function update(Request $request, Cliente $cliente, RegistroClienteService $registro)
     {
+        if ($cerrada = $this->fichaCerrada($cliente)) {
+            return $cerrada;
+        }
+
         $datos = $registro->validarEdicion($request, $cliente);
 
         try {
@@ -210,6 +242,10 @@ class ClienteController extends Controller
      */
     public function contrato(Request $request, Cliente $cliente, RegistroClienteService $registro)
     {
+        if ($cerrada = $this->fichaCerrada($cliente)) {
+            return $cerrada;
+        }
+
         $datos = $request->validate([
             'contrato_version' => ['nullable', 'string', 'max:20'],
             // Una firma con fecha futura es un dedazo, no un contrato.
@@ -223,7 +259,7 @@ class ClienteController extends Controller
         // Si se anota la fecha pero no la version, se toma la que se esta
         // haciendo firmar hoy: es lo que acaba de pasar en el meson.
         if (($datos['contrato_firmado_en'] ?? null) && empty($datos['contrato_version'])) {
-            $datos['contrato_version'] = Ajustes::obtener('reglas.version_contrato');
+            $datos['contrato_version'] = (string) TextosLegales::vigente('contrato')->version;
         }
 
         $registro->registrarContrato($cliente, $datos + [
@@ -247,6 +283,10 @@ class ClienteController extends Controller
      */
     public function foto(Request $request, Cliente $cliente, RegistroClienteService $registro)
     {
+        if ($cerrada = $this->fichaCerrada($cliente)) {
+            return $cerrada;
+        }
+
         $quitar = $request->boolean('quitar');
 
         $request->validate(
@@ -291,6 +331,10 @@ class ClienteController extends Controller
 
     public function reactivar(Cliente $cliente)
     {
+        if ($cliente->datos_borrados_en) {
+            return back()->with('error', 'Sus datos personales se borraron: esa ficha ya no es de nadie. Si vuelve, se inscribe como socio nuevo.');
+        }
+
         if ($cliente->activo) {
             return back()->with('error', 'Ese socio ya estaba activo.');
         }
@@ -323,6 +367,50 @@ class ClienteController extends Controller
             'success',
             "{$nombre} está en la papelera. Se puede recuperar desde ahí."
         );
+    }
+
+    /**
+     * Borra sus datos personales (Ley 21.719) y deja sus pagos en las cuentas.
+     *
+     * Se confirma escribiendo BORRAR: no se deshace, y un clic de más en el
+     * mesón no puede costarle a nadie su historial.
+     */
+    public function borrarDatos(Request $request, Cliente $cliente, BorradoDeDatosService $borrado)
+    {
+        $request->merge(['confirmacion' => mb_strtoupper(trim((string) $request->input('confirmacion')))]);
+
+        $datos = $request->validate([
+            'motivo' => ['required', Rule::in(array_keys(BorradoDeDatosService::MOTIVOS))],
+            'confirmacion' => ['required', 'in:BORRAR'],
+        ], [
+            'motivo.required' => 'Elige por qué se borran.',
+            'confirmacion.required' => 'Escribe BORRAR para confirmar.',
+            'confirmacion.in' => 'Escribe BORRAR para confirmar.',
+        ]);
+
+        try {
+            $borrado->borrar($cliente, $request->user()?->id, $datos['motivo']);
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return redirect()
+            ->route('panel.clientes.show', $cliente->uuid)
+            ->with('success', 'Se borraron sus datos personales. Sus membresías y pagos siguen en las cuentas, sin nombre.');
+    }
+
+    /**
+     * A una ficha con los datos borrados no se le vuelve a poner nada.
+     *
+     * Editarla, ponerle foto o anotarle un contrato le devolvería un nombre a
+     * pagos que ya no son de nadie.
+     */
+    private function fichaCerrada(Cliente $cliente)
+    {
+        return $cliente->datos_borrados_en
+            ? redirect()->route('panel.clientes.show', $cliente->uuid)
+                ->with('error', 'Sus datos personales se borraron: esta ficha ya no se puede cambiar.')
+            : null;
     }
 
     /**
@@ -371,7 +459,7 @@ class ClienteController extends Controller
             'pausados' => $conEstado(101),
             'vencidos' => $conEstado(102),
             // Para poder ofrecer el enlace solo cuando hay alguno.
-            'bajas' => Cliente::where('activo', false)->count(),
+            'bajas' => Cliente::where('activo', false)->whereNull('datos_borrados_en')->count(),
         ];
     }
 }

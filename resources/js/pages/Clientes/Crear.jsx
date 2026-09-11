@@ -128,6 +128,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
         contrato_firmado_en: '',
         consentimiento_imagen: false,
         consentimiento_difusion: false,
+        // Mandarle el contrato por correo apenas se guarde el alta.
+        enviar_contrato: false,
 
         es_menor_edad: false,
         consentimiento_apoderado: false,
@@ -353,10 +355,32 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                 }`}
                             />
                             <p className="apoyo mt-1 text-fog">
-                                Déjalo vacío si todavía no lo firma. La versión se toma de
-                                Configuración.
+                                Si lo firmó en papel. Déjalo vacío si todavía no lo firma.
                             </p>
                         </Campo>
+                    </div>
+
+                    {/* O que lo firme en su celular: le llega un enlace por correo.
+                        Si es menor, al de su apoderado, que es quien firma. */}
+                    <div className="sm:col-span-2">
+                        <label className="flex items-start gap-2 text-sm text-chalk">
+                            <input
+                                type="checkbox"
+                                checked={data.enviar_contrato}
+                                onChange={(e) => setData('enviar_contrato', e.target.checked)}
+                                className="mt-0.5 size-4 rounded-[4px] border-line-strong"
+                            />
+                            <span>
+                                Mandarle el contrato por correo para que lo firme en su celular
+                                <span className="apoyo block text-fog">
+                                    {data.es_menor_edad
+                                        ? 'Le llega al correo del apoderado, que es quien firma.'
+                                        : data.email
+                                          ? `Le llega a ${data.email} apenas se guarde el alta.`
+                                          : 'Necesita un correo para llegarle.'}
+                                </span>
+                            </span>
+                        </label>
                     </div>
 
                     {/* Dos casillas y no una: «la ve el mesón» y «sale en

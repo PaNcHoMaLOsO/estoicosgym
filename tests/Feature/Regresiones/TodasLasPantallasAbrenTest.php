@@ -88,6 +88,19 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'tipo_envio' => 'manual',
         ]);
 
+        // Un contrato firmado, para la copia que se imprime desde el panel.
+        $contrato = \App\Models\Contrato::create([
+            'id_cliente' => $socio->id,
+            'token_hash' => hash('sha256', 'prueba'),
+            'firmante_tipo' => 'socio',
+            'email_destino' => $socio->email,
+            'vence_en' => now()->addDays(7),
+            'firmado_en' => now(),
+            'firmante_nombre' => 'Socio de prueba',
+            'contenido' => '<p>Contrato</p>',
+            'huella' => hash('sha256', '<p>Contrato</p>'),
+        ]);
+
         // Algo en la papelera, para que esa pantalla tenga filas.
         $borrable = Cliente::factory()->create(['activo' => true]);
         $borrable->delete();
@@ -105,6 +118,9 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'notificacion' => $notificacion->uuid,
             'tipoNotificacion' => (string) $plantilla->id,
             'modulo' => 'pagos',
+            // Un texto legal: cualquiera de los tres.
+            'texto' => 'terminos',
+            'contrato' => $contrato->uuid,
         ];
     }
 

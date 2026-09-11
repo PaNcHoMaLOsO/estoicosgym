@@ -116,7 +116,7 @@ export default function Plantillas({ plantillas, variables }) {
             {abierta ? (
                 <Editor
                     plantilla={abierta}
-                    variables={variables}
+                    variables={{ ...variables, ...(abierta.extras ?? {}) }}
                     alCerrar={() => setAbierta(null)}
                 />
             ) : null}

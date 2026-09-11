@@ -4,6 +4,7 @@ namespace Tests\Feature\Regresiones;
 
 use App\Console\Commands\EmpezarDeCero;
 use App\Models\Cliente;
+use App\Models\Contrato;
 use App\Models\Convenio;
 use App\Models\Fiado;
 use App\Models\Inscripcion;
@@ -64,6 +65,20 @@ class EmpezarDeCeroTest extends CasoConCatalogos
 
         Fiado::create(['id_cliente' => $cliente->id, 'concepto' => 'Agua', 'monto' => 1000, 'id_usuario' => $admin->id]);
         Nota::create(['texto' => 'Llamar a Camila', 'id_usuario' => $admin->id]);
+
+        // Un contrato firmado: apunta al socio y a su membresía, y si se
+        // quedara después del borrado sería un contrato de nadie.
+        Contrato::create([
+            'id_cliente' => $cliente->id,
+            'id_inscripcion' => $inscripcion->id,
+            'token_hash' => hash('sha256', 'enlace-de-camila'),
+            'firmante_tipo' => 'socio',
+            'email_destino' => 'camila@correo.cl',
+            'vence_en' => now()->addDays(7),
+            'firmado_en' => now(),
+            'contenido' => '<p>Contrato de Camila</p>',
+            'huella' => hash('sha256', '<p>Contrato de Camila</p>'),
+        ]);
     }
 
     public function test_sin_confirmar_solo_cuenta(): void
@@ -133,6 +148,7 @@ class EmpezarDeCeroTest extends CasoConCatalogos
         $this->assertSame(1, Inscripcion::count());
         $this->assertSame(40000, (int) Pago::first()->monto_abonado);
         $this->assertSame(1, Fiado::count());
+        $this->assertTrue(Contrato::sole()->integro(), 'El contrato volvió cambiado.');
     }
 
     /** Con socios de verdad no se puede correr por un descuido. */

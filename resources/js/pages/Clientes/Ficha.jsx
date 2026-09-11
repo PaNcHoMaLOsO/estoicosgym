@@ -1,12 +1,16 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import {
     AlertTriangleIcon,
     ArrowLeftIcon,
     CameraIcon,
+    FileTextIcon,
     PencilIcon,
     PlusIcon,
+    SendIcon,
+    ShieldCheckIcon,
     ShoppingBagIcon,
+    Trash2Icon,
     UserMinusIcon,
     UserPlusIcon,
 } from 'lucide-react';
@@ -16,6 +20,7 @@ import Estado from '@/components/Estado';
 import Retrato from '@/components/Retrato';
 import { Reservado } from '@/Privado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { puede } from '@/lib/permisos';
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -199,13 +204,15 @@ function ContratoDelSocio({ cliente }) {
             <Bloque
                 titulo="Contrato y permisos"
                 accion={
-                    <button
-                        type="button"
-                        onClick={() => setEditando(true)}
-                        className="apoyo text-fog transition-colors hover:text-chalk"
-                    >
-                        {firmado ? 'Cambiar' : 'Anotar'}
-                    </button>
+                    cliente.datos_borrados ? null : (
+                        <button
+                            type="button"
+                            onClick={() => setEditando(true)}
+                            className="apoyo text-fog transition-colors hover:text-chalk"
+                        >
+                            {firmado ? 'Cambiar' : 'Anotar'}
+                        </button>
+                    )
                 }
             >
                 <dl className="space-y-3">
@@ -252,6 +259,8 @@ function ContratoDelSocio({ cliente }) {
                         )}
                     </Dato>
                 </dl>
+
+                {cliente.datos_borrados ? null : <FirmaPorCorreo cliente={cliente} />}
             </Bloque>
         );
     }
@@ -358,7 +367,189 @@ function ContratoDelSocio({ cliente }) {
     );
 }
 
+/**
+ * El contrato por correo: le llega un enlace, lo lee en su celular y lo firma
+ * con el dedo. Aquí se ve cómo va el último que se mandó y se manda otro.
+ *
+ * Mandar uno nuevo deja sin efecto el enlace anterior: un solo contrato
+ * pendiente por socio, para que no firme dos versiones distintas.
+ */
+function FirmaPorCorreo({ cliente }) {
+    const firma = cliente.firma_digital;
+    const ultimo = firma.ultimo;
+    const [confirmando, setConfirmando] = useState(false);
+
+    const estados = {
+        pendiente: {
+            texto: `Enviado a ${ultimo?.enviado_a} el ${ultimo?.enviado_el}. Falta que lo firme: el enlace sirve hasta el ${ultimo?.vence}.`,
+            clase: 'text-warn',
+        },
+        vencido: { texto: `El enlace venció el ${ultimo?.vence} sin que lo firmara.`, clase: 'text-warn' },
+        firmado: { texto: `Lo firmó ${ultimo?.firmante} el ${ultimo?.firmado_el}.`, clase: 'text-chalk' },
+        anulado: { texto: 'El último enlace se anuló.', clase: 'text-fog' },
+        fallido: { texto: `El correo no salió: ${ultimo?.error}`, clase: 'text-danger' },
+        borrado: { texto: 'Del contrato queda solo su huella.', clase: 'text-fog' },
+    };
+    const estado = ultimo ? estados[ultimo.estado] : null;
+    const pendiente = ultimo?.estado === 'pendiente';
+
+    return (
+        <div className="mt-4 border-t border-line pt-3">
+            <p className="rotulo">Firma por correo</p>
+
+            <p className={`mt-0.5 text-sm ${estado ? estado.clase : 'text-fog'}`}>
+                {estado ? estado.texto : 'Todavía no se le ha mandado.'}
+            </p>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+                {ultimo?.estado === 'firmado' ? (
+                    <a
+                        href={`/panel/contratos/${ultimo.uuid}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        <FileTextIcon className="size-3.5" aria-hidden="true" />
+                        Ver el contrato firmado
+                    </a>
+                ) : null}
+
+                {firma.no_se_puede ? null : (
+                    <button
+                        type="button"
+                        onClick={() => setConfirmando(true)}
+                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        <SendIcon className="size-3.5" aria-hidden="true" />
+                        {ultimo ? 'Mandar otro' : 'Mandar para firmar'}
+                    </button>
+                )}
+
+                {pendiente ? (
+                    <button
+                        type="button"
+                        onClick={() => router.post(`/panel/contratos/${ultimo.uuid}/anular`, {}, { preserveScroll: true })}
+                        className="apoyo text-fog transition-colors hover:text-danger"
+                    >
+                        Anular el enlace
+                    </button>
+                ) : null}
+            </div>
+
+            {firma.no_se_puede ? <p className="apoyo mt-1 text-fog">{firma.no_se_puede}</p> : null}
+
+            <Dialogo
+                abierto={confirmando}
+                alCerrar={() => setConfirmando(false)}
+                titulo="Mandar el contrato para firmar"
+                descripcion={`Le llega a ${firma.destino}${
+                    firma.para_apoderado ? ', su apoderado, que es quien firma' : ''
+                }: un enlace para leer el contrato con sus datos y firmarlo con el dedo.${
+                    pendiente ? ' El enlace anterior deja de servir.' : ''
+                }`}
+                accion={`/panel/clientes/${cliente.uuid}/contrato/enviar`}
+                via="inertia"
+                metodo="post"
+                etiquetaConfirmar="Mandar"
+            />
+        </div>
+    );
+}
+
+/**
+ * Borrar sus datos personales, como da derecho la ley (Ley 21.719).
+ *
+ * Sus membresías y pagos se quedan —sin nombre— para que las cuentas no se
+ * muevan hacia atrás. No se deshace: se confirma escribiendo BORRAR.
+ */
+function BorrarDatos({ cliente }) {
+    const [abierto, setAbierto] = useState(false);
+    const [motivo, setMotivo] = useState('solicitud');
+    const [confirmacion, setConfirmacion] = useState('');
+    const bloqueado = cliente.borrar_bloqueado;
+
+    return (
+        <Bloque titulo="Datos personales">
+            <p className="apoyo text-fog">
+                Si pide que se borren sus datos, se borran aquí: nombre, RUT, contacto, foto, correos y
+                contratos. Sus membresías y pagos se quedan en las cuentas, sin nombre.
+            </p>
+
+            {/* Lo que lo impide se dice ANTES, no al intentarlo. */}
+            {bloqueado ? (
+                <p className="apoyo mt-2 flex items-start gap-1 text-warn">
+                    <AlertTriangleIcon className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                    {bloqueado}
+                </p>
+            ) : null}
+
+            <button
+                type="button"
+                disabled={Boolean(bloqueado)}
+                onClick={() => setAbierto(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-control border border-danger/40 px-2.5 py-1 text-sm text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+                <Trash2Icon className="size-3.5" aria-hidden="true" />
+                Borrar sus datos personales
+            </button>
+
+            <Dialogo
+                abierto={abierto}
+                alCerrar={() => {
+                    setAbierto(false);
+                    setConfirmacion('');
+                }}
+                titulo="Borrar sus datos personales"
+                descripcion={`Se borran para siempre el nombre, el RUT, el contacto, la foto, los correos y los contratos de ${cliente.nombre}. Sus membresías y pagos se quedan en las cuentas como «Socio Borrado». No se puede deshacer.`}
+                accion={`/panel/clientes/${cliente.uuid}/borrar-datos`}
+                datos={{ motivo, confirmacion }}
+                via="inertia"
+                metodo="post"
+                etiquetaConfirmar="Borrar para siempre"
+                peligrosa
+                puedeConfirmar={confirmacion.trim().toUpperCase() === 'BORRAR'}
+            >
+                <fieldset className="space-y-1.5">
+                    <legend className="rotulo mb-1">Por qué</legend>
+                    <label className="flex items-center gap-2 text-sm text-chalk">
+                        <input
+                            type="radio"
+                            name="motivo"
+                            value="solicitud"
+                            checked={motivo === 'solicitud'}
+                            onChange={() => setMotivo('solicitud')}
+                        />
+                        Lo pidió la persona
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-chalk">
+                        <input
+                            type="radio"
+                            name="motivo"
+                            value="plazo"
+                            checked={motivo === 'plazo'}
+                            onChange={() => setMotivo('plazo')}
+                        />
+                        Ya no hacía falta guardarlos
+                    </label>
+                </fieldset>
+
+                <label className="mt-3 block text-sm text-chalk">
+                    Escribe <strong>BORRAR</strong> para confirmar
+                    <input
+                        type="text"
+                        value={confirmacion}
+                        onChange={(e) => setConfirmacion(e.target.value)}
+                        autoComplete="off"
+                        className="mt-1 w-full rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+                    />
+                </label>
+            </Dialogo>
+        </Bloque>
+    );
+}
+
 export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado }) {
+    const { auth } = usePage().props;
     // null = ningun dialogo abierto.
     const [confirmando, setConfirmando] = useState(null);
 
@@ -379,14 +570,18 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
 
                 <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                        <FotoDelSocio cliente={cliente} />
+                        {cliente.datos_borrados ? (
+                            <Retrato nombre={cliente.nombre} foto={null} tamano="lg" />
+                        ) : (
+                            <FotoDelSocio cliente={cliente} />
+                        )}
 
                         <div>
                             <h1 className="text-lg font-semibold text-chalk">
                                 {cliente.nombre}
                                 {! cliente.activo ? (
                                     <span className="ml-2 rounded-pill border border-line bg-surface-2 px-2 py-0.5 align-middle text-xs text-fog">
-                                        Dado de baja
+                                        {cliente.datos_borrados ? 'Datos borrados' : 'Dado de baja'}
                                     </span>
                                 ) : null}
                             </h1>
@@ -397,6 +592,8 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                         </div>
                     </div>
 
+                    {/* Una ficha borrada no se edita, no se reactiva y no se cobra. */}
+                    {cliente.datos_borrados ? null : (
                     <div className="flex gap-2">
                         <Link
                             href={`/panel/clientes/${cliente.uuid}/editar`}
@@ -435,8 +632,23 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                             Cobrar
                         </Link>
                     </div>
+                    )}
                 </div>
             </header>
+
+            {/* Una ficha sin dueño: se abre desde un pago o una membresía
+                antigua, y tiene que decir por qué no tiene nombre. */}
+            {cliente.datos_borrados ? (
+                <div className="mb-4 flex items-start gap-2 rounded-panel border border-line bg-surface-2 px-3 py-2.5 text-sm text-fog">
+                    <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <span>
+                        Sus datos personales se borraron el {cliente.datos_borrados.el}
+                        {cliente.datos_borrados.por ? ` (lo hizo ${cliente.datos_borrados.por})` : ''}
+                        {cliente.datos_borrados.motivo ? `: ${cliente.datos_borrados.motivo.toLowerCase()}` : ''}.
+                        Sus membresías y pagos siguen en las cuentas, sin nombre.
+                    </span>
+                </div>
+            ) : null}
 
             {/* EL AVISO DE LO FIADO, arriba de todo y antes de las cifras.
                 Si viene a pagar su mensualidad y ademas debe tres bebidas, hay
@@ -557,6 +769,12 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                         <Bloque titulo="Observaciones">
                             <p className="text-sm whitespace-pre-line text-fog">{cliente.observaciones}</p>
                         </Bloque>
+                    ) : null}
+
+                    {/* Solo quien puede borrar para siempre: recepción da de baja,
+                        pero esto no se deshace. */}
+                    {! cliente.datos_borrados && puede(auth, 'clientes.eliminar') ? (
+                        <BorrarDatos cliente={cliente} />
                     ) : null}
                 </div>
 

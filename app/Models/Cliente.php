@@ -94,6 +94,10 @@ class Cliente extends Model
         'contrato_firmado_en',
         'consentimiento_imagen',
         'consentimiento_difusion',
+        // Constancia de que se borraron sus datos personales (Ley 21.719).
+        'datos_borrados_en',
+        'datos_borrados_por',
+        'datos_borrados_motivo',
     ];
 
     protected $dates = [
@@ -108,6 +112,7 @@ class Cliente extends Model
         'contrato_firmado_en' => 'date',
         'consentimiento_imagen' => 'boolean',
         'consentimiento_difusion' => 'boolean',
+        'datos_borrados_en' => 'datetime',
     ];
 
     // ===== MUTATORS PARA SANITIZACIÓN DE DATOS =====
@@ -316,6 +321,18 @@ class Cliente extends Model
     public function urlDeFoto(): ?string
     {
         return $this->foto_perfil ? asset('storage/' . $this->foto_perfil) : null;
+    }
+
+    /** Los contratos que se le mandaron a firmar por correo. */
+    public function contratos()
+    {
+        return $this->hasMany(Contrato::class, 'id_cliente');
+    }
+
+    /** Solo los que conservan sus datos: a una ficha borrada ya no se la atiende. */
+    public function scopeConDatos($query)
+    {
+        return $query->whereNull('datos_borrados_en');
     }
 
     public function scopeActive($query)

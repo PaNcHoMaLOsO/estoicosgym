@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\TipoNotificacion;
+use App\Services\ContratoDigitalService;
 use App\Services\EnvioManualService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -73,6 +74,8 @@ class PlantillaController extends Controller
                     // Las que usa y no se saben rellenar: salen con las llaves
                     // puestas en el correo del socio.
                     'rotas' => $this->variablesQueNadieRellena($t),
+                    // Las del contrato saben rellenar además su enlace.
+                    'extras' => $this->extras($t->codigo),
                 ]),
             'variables' => self::VARIABLES,
         ]);
@@ -100,7 +103,7 @@ class PlantillaController extends Controller
          * a la persona con las llaves puestas. El sitio para darse cuenta es
          * este, no la bandeja del socio.
          */
-        $rotas = $this->variablesSueltas($datos['asunto_email'] . ' ' . $datos['plantilla_email']);
+        $rotas = $this->variablesSueltas($datos['asunto_email'] . ' ' . $datos['plantilla_email'], $tipoNotificacion->codigo);
 
         if ($rotas !== []) {
             throw ValidationException::withMessages([
@@ -136,25 +139,41 @@ class PlantillaController extends Controller
             ], 422);
         }
 
+        // Las del contrato llevan un enlace que solo existe al mandarlas: se
+        // muestran con uno de muestra.
+        $extra = in_array($tipoNotificacion->codigo, ContratoDigitalService::PLANTILLAS, true)
+            ? app(ContratoDigitalService::class)->variablesDeEjemplo($socio)
+            : [];
+
         return response()->json(
-            $envio->componer($socio, $tipoNotificacion) + ['socio' => $socio->nombre_completo]
+            $envio->componer($socio, $tipoNotificacion, null, $extra) + ['socio' => $socio->nombre_completo]
         );
+    }
+
+    /**
+     * Lo que saben rellenar además las dos plantillas del contrato.
+     *
+     * @return array<string,string>
+     */
+    private function extras(?string $codigo): array
+    {
+        return in_array($codigo, ContratoDigitalService::PLANTILLAS, true) ? ContratoDigitalService::VARIABLES : [];
     }
 
     /** @return list<string> */
     private function variablesQueNadieRellena(TipoNotificacion $tipo): array
     {
-        return $this->variablesSueltas($tipo->asunto_email . ' ' . $tipo->plantilla_email);
+        return $this->variablesSueltas($tipo->asunto_email . ' ' . $tipo->plantilla_email, $tipo->codigo);
     }
 
     /** @return list<string> */
-    private function variablesSueltas(string $texto): array
+    private function variablesSueltas(string $texto, ?string $codigo = null): array
     {
         preg_match_all('/\{([a-z_]+)\}/i', $texto, $encontradas);
 
         return array_values(array_diff(
             array_unique($encontradas[1]),
-            array_keys(self::VARIABLES)
+            [...array_keys(self::VARIABLES), ...array_keys($this->extras($codigo))]
         ));
     }
 }

@@ -43,10 +43,18 @@ class Permisos
         'contrato',
         // Mandarle a una cuenta del panel el enlace para poner su contraseña.
         'enlace',
+        // Mandarle al socio el contrato por correo, y anular un enlace que no
+        // se firmó. Es trabajo de mesón, como anotar la firma en papel.
+        'contrato.enviar',
+        'anular',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
-    private const ELIMINAR = ['destroy', 'force-delete'];
+    private const ELIMINAR = [
+        'destroy', 'force-delete',
+        // Los datos personales de un socio (Ley 21.719): tampoco se deshace.
+        'borrar-datos',
+    ];
 
     /**
      * Acciones del dia a dia sobre una membresia ya vendida. No son «editar»:
@@ -108,6 +116,11 @@ class Permisos
         // con `pagos` a proposito —una bebida de $1.500 no es el dinero de las
         // membresias— ni con `reportes`, que es lo que recepcion no ve.
         'fiados' => 'clientes',
+        // El contrato firmado por correo es del socio: lo manda y lo mira el mesón.
+        'contratos' => 'clientes',
+        // Lo que se le hace firmar a todos y se publica en la web lo cambia
+        // quien configura.
+        'textos-legales' => 'configuracion',
     ];
 
     /**

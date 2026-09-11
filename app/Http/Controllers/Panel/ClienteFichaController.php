@@ -7,7 +7,10 @@ use App\Models\Cliente;
 use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Pago;
-use App\Support\Ajustes;
+use App\Models\User;
+use App\Services\BorradoDeDatosService;
+use App\Services\ContratoDigitalService;
+use App\Support\TextosLegales;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
@@ -22,7 +25,7 @@ class ClienteFichaController extends Controller
 {
     private const ACTIVA = 100;
 
-    public function __invoke(Cliente $cliente)
+    public function __invoke(Cliente $cliente, ContratoDigitalService $contratos, BorradoDeDatosService $borrado)
     {
         $cliente->load([
             'convenio:id,nombre,tipo,descuento_porcentaje,descuento_monto',
@@ -55,13 +58,24 @@ class ClienteFichaController extends Controller
                  */
                 'contrato' => [
                     'version' => $cliente->contrato_version,
-                    'version_vigente' => (string) Ajustes::obtener('reglas.version_contrato'),
+                    'version_vigente' => (string) TextosLegales::vigente('contrato')->version,
                     'firmado_en' => $cliente->contrato_firmado_en?->format('d/m/Y'),
                     // Para el <input type="date"> de la pantalla.
                     'firmado_iso' => $cliente->contrato_firmado_en?->format('Y-m-d'),
                     'imagen' => (bool) $cliente->consentimiento_imagen,
                     'difusion' => (bool) $cliente->consentimiento_difusion,
                 ],
+                // El contrato por correo: cómo va el último que se mandó y a
+                // quién le llegaría uno nuevo.
+                'firma_digital' => $this->firmaDigital($cliente, $contratos),
+                // Si se borraron sus datos (Ley 21.719): cuándo, quién y por qué.
+                'datos_borrados' => $cliente->datos_borrados_en ? [
+                    'el' => $cliente->datos_borrados_en->format('d/m/Y'),
+                    'por' => $cliente->datos_borrados_por ? User::find($cliente->datos_borrados_por)?->name : null,
+                    'motivo' => BorradoDeDatosService::MOTIVOS[$cliente->datos_borrados_motivo] ?? null,
+                ] : null,
+                // Si todavía no se pueden borrar, por qué: se dice antes de intentarlo.
+                'borrar_bloqueado' => $cliente->datos_borrados_en ? null : $borrado->porQueNoSePuede($cliente),
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
                 'direccion' => $cliente->direccion,
@@ -147,6 +161,33 @@ class ClienteFichaController extends Controller
              */
             'fiado' => $this->loQueDebeDelMeson($cliente),
         ]);
+    }
+
+    /**
+     * El contrato por correo de este socio.
+     *
+     * @return array<string,mixed>
+     */
+    private function firmaDigital(Cliente $cliente, ContratoDigitalService $contratos): array
+    {
+        $ultimo = $cliente->contratos()->latest('id')->first();
+        $firmante = $contratos->firmante($cliente);
+
+        return [
+            'no_se_puede' => $contratos->porQueNoSePuedeEnviar($cliente),
+            'destino' => $firmante['email'],
+            'para_apoderado' => $firmante['tipo'] === 'apoderado',
+            'ultimo' => $ultimo ? [
+                'uuid' => $ultimo->uuid,
+                'estado' => $ultimo->estado(),
+                'enviado_a' => $ultimo->email_destino,
+                'enviado_el' => ($ultimo->enviado_en ?? $ultimo->created_at)?->format('d/m/Y H:i'),
+                'vence' => $ultimo->vence_en?->format('d/m/Y'),
+                'firmado_el' => $ultimo->firmado_en?->format('d/m/Y H:i'),
+                'firmante' => $ultimo->firmante_nombre,
+                'error' => $ultimo->error_envio,
+            ] : null,
+        ];
     }
 
     /**

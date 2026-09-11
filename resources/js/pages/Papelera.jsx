@@ -56,6 +56,14 @@ export default function Papelera({ grupos }) {
                             <h2 className="rotulo mb-2">
                                 {grupo.titulo} ({grupo.cuantos})
                             </h2>
+                            {/* Borrar de verdad no se hace aquí: sus pagos se
+                                quedarían apuntando a nada. Se hace en la ficha. */}
+                            {grupo.clave === 'clientes' ? (
+                                <p className="apoyo mb-2 text-fog">
+                                    ¿Pidió que se borren sus datos? Restáuralo y usa «Borrar sus datos
+                                    personales» en su ficha: sus pagos se quedan en las cuentas, sin nombre.
+                                </p>
+                            ) : null}
 
                             <ul className="divide-y divide-line overflow-hidden rounded-panel border border-line">
                                 {grupo.filas.map((fila) => (

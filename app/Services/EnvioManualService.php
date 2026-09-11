@@ -34,12 +34,14 @@ class EnvioManualService
      *
      * @throws ValidationException
      */
-    public function componer(Cliente $cliente, TipoNotificacion $plantilla, ?string $nota = null): array
+    public function componer(Cliente $cliente, TipoNotificacion $plantilla, ?string $nota = null, array $extra = []): array
     {
         $this->exigirCorreo($cliente);
 
         $inscripcion = $this->ultimaInscripcion($cliente);
-        $datos = $this->datosDelSocio($cliente, $inscripcion);
+        // Lo que traiga quien llama —el enlace de un contrato, por ejemplo— se
+        // suma a lo del socio.
+        $datos = array_merge($this->datosDelSocio($cliente, $inscripcion), $extra);
 
         $contenido = $this->rellenar($plantilla->plantilla_email, $datos);
 
@@ -55,6 +57,38 @@ class EnvioManualService
             'destino' => $cliente->email,
             // Lo que la plantilla pide y este servicio no sabe dar. Va a la
             // vista previa para que se vea, y enviar() lo rechaza.
+            'pendientes' => $this->variablesSinRellenar($asunto . ' ' . $contenido),
+        ];
+    }
+
+    /**
+     * Las variables de un socio, más las que traiga quien llama.
+     *
+     * Para los correos que no salen de aquí pero usan las mismas plantillas:
+     * el contrato por firmar suma su enlace a lo de siempre.
+     *
+     * @param array<string,string> $extra
+     * @return array<string,string>
+     */
+    public function variables(Cliente $cliente, array $extra = []): array
+    {
+        return array_merge($this->datosDelSocio($cliente, $this->ultimaInscripcion($cliente)), $extra);
+    }
+
+    /**
+     * Rellena una plantilla con variables ya armadas.
+     *
+     * @param array<string,string> $datos
+     * @return array{asunto:string, contenido:string, pendientes:list<string>}
+     */
+    public function componerCon(TipoNotificacion $plantilla, array $datos): array
+    {
+        $asunto = $this->rellenar($plantilla->asunto_email, $datos);
+        $contenido = $this->rellenar($plantilla->plantilla_email, $datos);
+
+        return [
+            'asunto' => $asunto,
+            'contenido' => $contenido,
             'pendientes' => $this->variablesSinRellenar($asunto . ' ' . $contenido),
         ];
     }
@@ -154,6 +188,14 @@ class EnvioManualService
         if (empty($notificacion->email_destino)) {
             throw ValidationException::withMessages([
                 'envio' => 'Esa notificación no tiene destinatario.',
+            ]);
+        }
+
+        // El del contrato quedó guardado SIN su enlace, a propósito: reenviarlo
+        // mandaría un correo para firmar sin dónde firmar.
+        if (in_array($notificacion->tipoNotificacion?->codigo, ContratoDigitalService::PLANTILLAS, true)) {
+            throw ValidationException::withMessages([
+                'envio' => 'Los contratos se vuelven a mandar desde la ficha del socio: cada envío lleva un enlace nuevo.',
             ]);
         }
 

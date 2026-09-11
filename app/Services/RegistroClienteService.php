@@ -105,7 +105,7 @@ class RegistroClienteService
                 // se esta haciendo firmar hoy, y escribirla a mano en el alta
                 // seria una ocasion mas de teclear mal un numero.
                 'contrato_version' => $firmado
-                    ? (string) Ajustes::obtener('reglas.version_contrato')
+                    ? (string) \App\Support\TextosLegales::vigente('contrato')->version
                     : null,
                 'contrato_firmado_en' => $firmado,
                 'consentimiento_imagen' => $request->boolean('consentimiento_imagen'),

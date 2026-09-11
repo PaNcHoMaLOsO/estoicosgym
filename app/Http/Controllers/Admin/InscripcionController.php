@@ -1046,6 +1046,8 @@ class InscripcionController extends Controller
 
             // Incluir todos los clientes (activos e inactivos) que no tienen membresía activa
             $clientes = Cliente::where('id', '!=', $inscripcion->id_cliente)
+                // Una ficha con los datos borrados ya no es nadie a quien traspasar.
+                ->whereNull('datos_borrados_en')
                 ->whereNotIn('id', $clientesConMembresiaActiva)
                 ->where(function($q) use ($query) {
                     $q->where('nombres', 'LIKE', "%{$query}%")

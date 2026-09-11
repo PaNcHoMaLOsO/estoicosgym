@@ -32,6 +32,9 @@ class NotificacionEnviarController extends Controller
              */
             'preseleccionado' => $this->preseleccionado($request->query('cliente'), $envio),
             'plantillas' => TipoNotificacion::where('activo', true)
+                // Las del contrato llevan un enlace que solo se crea al mandarlo
+                // desde la ficha: elegidas aquí saldrían sin dónde firmar.
+                ->whereNotIn('codigo', \App\Services\ContratoDigitalService::PLANTILLAS)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'descripcion'])
                 ->map(fn (TipoNotificacion $t) => [

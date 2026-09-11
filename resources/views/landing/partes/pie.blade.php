@@ -63,7 +63,10 @@
 
         <div class="border-t border-pg-tiza/5 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
             <p class="text-pg-tiza/40 text-sm font-modern">&copy; {{ date('Y') }} {{ $gimnasio['nombre'] }}. Todos los derechos reservados.</p>
-            <a href="{{ route('landing.privacidad') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Privacidad y cookies</a>
+            <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                <a href="{{ route('landing.terminos') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Términos y condiciones</a>
+                <a href="{{ route('landing.privacidad') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Privacidad y cookies</a>
+            </div>
         </div>
     </div>
 </footer>

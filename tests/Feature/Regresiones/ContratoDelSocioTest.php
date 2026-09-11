@@ -3,6 +3,7 @@
 namespace Tests\Feature\Regresiones;
 
 use App\Models\Cliente;
+use App\Models\TextoLegal;
 use App\Support\Ajustes;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -78,8 +79,8 @@ class ContratoDelSocioTest extends CasoConCatalogos
      */
     public function test_sin_version_toma_la_vigente(): void
     {
-        Ajustes::guardar(['reglas.version_contrato' => '3']);
-        Ajustes::olvidar();
+        // La vigente es la última versión guardada del contrato.
+        TextoLegal::create(['tipo' => 'contrato', 'version' => 3, 'contenido' => 'Contrato, versión 3']);
 
         $socio = $this->socio();
 
@@ -178,8 +179,8 @@ class ContratoDelSocioTest extends CasoConCatalogos
 
     public function test_el_alta_guarda_la_firma_y_los_permisos(): void
     {
-        Ajustes::guardar(['reglas.version_contrato' => '2']);
-        Ajustes::olvidar();
+        // La vigente es la última versión guardada del contrato.
+        TextoLegal::create(['tipo' => 'contrato', 'version' => 2, 'contenido' => 'Contrato, versión 2']);
 
         $this->actingAs($this->administrador())->post('/panel/clientes', [
             'flujo_cliente' => 'solo_cliente',
@@ -229,8 +230,8 @@ class ContratoDelSocioTest extends CasoConCatalogos
         $this->anotar($socio, ['contrato_firmado_en' => '2026-01-10']);
 
         // El gimnasio cambia el contrato.
-        Ajustes::guardar(['reglas.version_contrato' => '2']);
-        Ajustes::olvidar();
+        // La vigente es la última versión guardada del contrato.
+        TextoLegal::create(['tipo' => 'contrato', 'version' => 2, 'contenido' => 'Contrato, versión 2']);
 
         $contrato = $this->actingAs($this->administrador())
             ->get("/panel/clientes/{$socio->uuid}")

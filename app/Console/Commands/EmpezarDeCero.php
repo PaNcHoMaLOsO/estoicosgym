@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Deja el sistema en cero: sin socios de prueba ni nada de lo que cuelga de ellos.
  *
- * Borra los socios, sus membresías, sus pagos, los avisos por correo, lo
- * fiado, las notas del mesón y el historial de cambios y traspasos, con las
- * fotos de los socios. NO toca la configuración: planes y precios, convenios,
- * métodos de pago, motivos, especialistas, la página web, los ajustes, las
- * plantillas de correo ni las cuentas del panel.
+ * Borra los socios, sus membresías, sus pagos, los avisos por correo, los
+ * contratos firmados, lo fiado, las notas del mesón y el historial de cambios
+ * y traspasos, con las fotos de los socios. NO toca la configuración: planes y
+ * precios, convenios, métodos de pago, motivos, especialistas, la página web,
+ * los ajustes, las plantillas de correo, el contrato, los términos, la
+ * privacidad ni las cuentas del panel.
  *
  * ANTES DE BORRAR GUARDA UN RESPALDO —un .sql con todo lo que se va, y las
  * fotos— en storage/app/private/respaldos. Un sistema en marcha no tiene
@@ -42,6 +43,9 @@ class EmpezarDeCero extends Command
         'notificaciones',
         'historial_traspasos',
         'historial_cambios',
+        // Apuntan a socios y membresías: si se quedaran, serían contratos de
+        // nadie.
+        'contratos',
         'pagos',
         'fiados',
         'notas',

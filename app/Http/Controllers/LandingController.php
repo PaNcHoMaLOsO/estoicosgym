@@ -59,6 +59,7 @@ class LandingController extends Controller
         'landing.contacto' => 'Contacto',
         'landing.membresia' => 'Mi membresía',
         'landing.privacidad' => 'Privacidad',
+        'landing.terminos' => 'Términos y condiciones',
     ];
 
     /**
@@ -180,7 +181,18 @@ class LandingController extends Controller
     {
         return $this->pagina('landing.privacidad', 'landing.privacidad', 'Privacidad y cookies',
             'Qué datos guarda el gimnasio, para qué, y cómo pedir que se corrijan o se borren.',
-            [], $this->comun());
+            ['legal' => \App\Support\TextosLegales::publicado('privacidad')], $this->comun());
+    }
+
+    /**
+     * Los términos y condiciones. Los escribe el gimnasio en Configuración, y
+     * son los mismos que acepta cada socio al firmar su contrato.
+     */
+    public function terminos()
+    {
+        return $this->pagina('landing.terminos', 'landing.terminos', 'Términos y condiciones',
+            'Las reglas del gimnasio: membresías, pagos, pausas, devoluciones y uso de las instalaciones.',
+            ['legal' => \App\Support\TextosLegales::publicado('terminos')], $this->comun());
     }
 
     /**
@@ -683,6 +695,7 @@ class LandingController extends Controller
             ['landing.contacto', '0.7'],
             ['landing.membresia', '0.5'],
             ['landing.privacidad', '0.2'],
+            ['landing.terminos', '0.2'],
         ]);
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"

@@ -40,6 +40,7 @@ class EstadoDeConfiguracion
             self::fichaDeGoogle(),
             self::fotos(),
             self::analitica(),
+            self::textosLegales(),
         ];
     }
 
@@ -266,6 +267,30 @@ class EstadoDeConfiguracion
             'analitica', 'Página web', 'Google Analytics', '/panel/configuracion/web',
             $id ? 'ok' : 'mejora',
             $id ? "Midiendo las visitas con {$id}." : 'Sin Google Analytics no se sabe cuánta gente entra a la web ni qué mira.'
+        );
+    }
+
+    /**
+     * El contrato, los términos y la privacidad.
+     *
+     * «Falta» mientras alguno siga siendo el texto base sin revisar: es lo que
+     * se le hace firmar a cada socio y lo que se publica en la web, y el texto
+     * base no conoce las reglas de este gimnasio.
+     */
+    private static function textosLegales(): array
+    {
+        $sinRevisar = collect(\App\Support\TextosLegales::TIPOS)
+            ->filter(fn (array $tipo, string $clave) => \App\Support\TextosLegales::esElTextoBase(\App\Support\TextosLegales::vigente($clave)))
+            ->map(fn (array $tipo) => mb_strtolower($tipo['titulo']))
+            ->values()
+            ->all();
+
+        return self::punto(
+            'textos_legales', 'Contrato y privacidad', 'Contrato, términos y privacidad', '/panel/textos-legales/contrato',
+            $sinRevisar ? 'falta' : 'ok',
+            $sinRevisar
+                ? 'Siguen con el texto base: ' . self::enumerar($sinRevisar) . '. Revísalos antes de mandar contratos a firmar.'
+                : 'Revisados por el gimnasio. La web publica los términos y la privacidad vigentes.'
         );
     }
 

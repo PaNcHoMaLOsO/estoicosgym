@@ -2,11 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ContratoPublicoController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\Admin\ClienteController;
-use App\Http\Controllers\Admin\InscripcionController;
-use App\Http\Controllers\Admin\PagoController;
-use App\Http\Controllers\Admin\NotificacionController;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\Cliente;
@@ -37,6 +34,7 @@ Route::middleware('security.headers')->group(function () {
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
     Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
     Route::get('/privacidad', [LandingController::class, 'privacidad'])->name('landing.privacidad');
+    Route::get('/terminos', [LandingController::class, 'terminos'])->name('landing.terminos');
     // Para Google: que hay y donde esta el mapa del sitio.
     Route::get('/robots.txt', [LandingController::class, 'robots'])->name('landing.robots');
     Route::get('/sitemap.xml', [LandingController::class, 'sitemap'])->name('landing.sitemap');
@@ -49,6 +47,13 @@ Route::middleware('security.headers')->group(function () {
      */
     Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:10,1')->name('landing.contacto.enviar');
     Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:10,1')->name('landing.consultar-membresia');
+
+    /*
+     * El contrato por firmar. El socio llega desde el correo, sin cuenta: la
+     * llave es el enlace (ver ContratoPublicoController).
+     */
+    Route::get('/contrato/{token}', [ContratoPublicoController::class, 'mostrar'])->middleware('throttle:30,1')->name('contrato.mostrar');
+    Route::post('/contrato/{token}', [ContratoPublicoController::class, 'firmar'])->middleware('throttle:10,1')->name('contrato.firmar');
 });
 
 // ===== AUTENTICACIÓN =====
@@ -379,6 +384,12 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/clientes/{cliente}/foto', [\App\Http\Controllers\Panel\ClienteController::class, 'foto'])->name('clientes.foto');
         // Constancia del contrato en papel y de los permisos que dio el socio.
         Route::post('/clientes/{cliente}/contrato', [\App\Http\Controllers\Panel\ClienteController::class, 'contrato'])->name('clientes.contrato');
+        // El contrato por correo: le llega un enlace para leerlo y firmarlo en su celular.
+        Route::post('/clientes/{cliente}/contrato/enviar', [\App\Http\Controllers\Panel\ContratoController::class, 'enviar'])->name('clientes.contrato.enviar');
+        Route::get('/contratos/{contrato}', [\App\Http\Controllers\Panel\ContratoController::class, 'show'])->name('contratos.show');
+        Route::post('/contratos/{contrato}/anular', [\App\Http\Controllers\Panel\ContratoController::class, 'anular'])->name('contratos.anular');
+        // Borrar sus datos personales (Ley 21.719): sus pagos se quedan en las cuentas, sin nombre.
+        Route::post('/clientes/{cliente}/borrar-datos', [\App\Http\Controllers\Panel\ClienteController::class, 'borrarDatos'])->name('clientes.borrar-datos');
         Route::patch('/clientes/{cliente}/desactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'desactivar'])->name('clientes.deactivate');
         Route::patch('/clientes/{cliente}/reactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'reactivar'])->name('clientes.reactivate');
         // A la papelera, no al vacio: se recupera desde /panel/papelera.
@@ -493,6 +504,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::put('/configuracion', [\App\Http\Controllers\Panel\AjustesController::class, 'update'])->name('configuracion.update');
         // Cada tema de ajustes en su propia página: /panel/configuracion/horario.
         Route::get('/configuracion/{grupo}', [\App\Http\Controllers\Panel\AjustesController::class, 'show'])->whereIn('grupo', array_keys(\App\Support\Ajustes::grupos()))->name('configuracion.show');
+        // El contrato, los términos y la privacidad. {texto} y no {tipo}: ese ya lo usa la página web.
+        Route::get('/textos-legales/{texto}', [\App\Http\Controllers\Panel\TextoLegalController::class, 'show'])->whereIn('texto', array_keys(\App\Support\TextosLegales::TIPOS))->name('textos-legales.show');
+        Route::put('/textos-legales/{texto}', [\App\Http\Controllers\Panel\TextoLegalController::class, 'update'])->whereIn('texto', array_keys(\App\Support\TextosLegales::TIPOS))->name('textos-legales.update');
+        Route::post('/textos-legales/{texto}/vista-previa', [\App\Http\Controllers\Panel\TextoLegalController::class, 'vistaPrevia'])->whereIn('texto', array_keys(\App\Support\TextosLegales::TIPOS))->name('textos-legales.preview');
 
         // Las cuentas del panel. Permiso propio, usuarios.*: ver App\Support\Permisos.
         Route::get('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'index'])->name('usuarios.index');
