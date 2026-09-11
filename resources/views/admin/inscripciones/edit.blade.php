@@ -1634,7 +1634,9 @@
                                     <label class="form-check-label fw-bold" for="ignorarDeudaMejora">
                                         <i class="fas fa-unlock me-1"></i> Permitir mejora de plan aunque exista deuda
                                     </label>
-                                    <small class="d-block text-muted mt-1">La deuda pendiente se sumará al nuevo plan</small>
+                                    {{-- Decia «se sumara al nuevo plan», y el servidor la sumaba ENCIMA de lo que
+                                         muestra el resumen: se cobraba dos veces. Ya no se suma. --}}
+                                    <small class="d-block text-muted mt-1">El crédito cuenta solo lo pagado: lo que falta del plan actual no se cobra aparte.</small>
                                 </div>
                             </div>
                         </div>

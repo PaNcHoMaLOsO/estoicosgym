@@ -842,15 +842,32 @@ class InscripcionController extends Controller
             
             // El admin decide si aplica el crédito del plan anterior
             $aplicarCredito = $request->boolean('aplicar_credito', false);
-            $creditoDisponible = $aplicarCredito ? (float) $inscripcion->monto_pagado : 0;
+            // Nunca mas que el plan nuevo: un credito mayor dejaria un precio
+            // negativo, y eso ya no es un cambio de plan sino una devolucion.
+            $creditoDisponible = $aplicarCredito ? min((float) $inscripcion->monto_pagado, $precioNuevoPlan) : 0;
             
             // Calcular diferencia base (nuevo plan - crédito)
             $diferencia = $precioNuevoPlan - $creditoDisponible;
             
-            // Si se ignoró la deuda, sumarla al total a pagar
-            if ($ignorarDeuda && $deudaAnterior > 0) {
-                $diferencia += $deudaAnterior;
-            }
+            /*
+             * LA DEUDA DEL PLAN VIEJO NO SE SUMA ENCIMA.
+             *
+             * Se sumaba, y estaba mal por dos lados:
+             *
+             * - Con credito, la deuda YA esta dentro de la cuenta. El credito es
+             *   lo pagado, no el precio del plan viejo: lo que faltaba por pagar
+             *   ya se esta cobrando al no descontarse. Sumarla otra vez la
+             *   cobraba dos veces. Quien debia $20.000 terminaba pagando $20.000
+             *   mas que quien pago el plan viejo entero antes de subir, por la
+             *   misma situacion.
+             * - La pantalla del cambio NUNCA la ensena: muestra «precio nuevo
+             *   menos credito» y eso es lo que se le cobra al socio. El pago
+             *   quedaba «parcial» por una cifra que nadie vio, que sumaba en
+             *   «por cobrar» y que la ficha no dejaba cobrar.
+             *
+             * Se cobra lo que muestra la pantalla.
+             */
+            $diferencia = max(0, $diferencia);
             
             $tipoCambio = 'upgrade';
 
@@ -878,8 +895,11 @@ class InscripcionController extends Controller
 
                 // 2. Crear nueva inscripción con los datos del cambio
                 $observaciones = "Cambio de plan desde: {$inscripcion->membresia->nombre}";
+                if ($creditoDisponible > 0) {
+                    $observaciones .= ". Crédito de lo pagado: $" . number_format($creditoDisponible, 0, ',', '.');
+                }
                 if ($ignorarDeuda && $deudaAnterior > 0) {
-                    $observaciones .= ". Incluye deuda anterior de $" . number_format($deudaAnterior, 0, ',', '.');
+                    $observaciones .= ". Al cambiar quedaban $" . number_format($deudaAnterior, 0, ',', '.') . " sin pagar del plan anterior";
                 }
                 
                 $nuevaInscripcion = Inscripcion::create([
@@ -890,9 +910,23 @@ class InscripcionController extends Controller
                     'fecha_inscripcion' => now()->format('Y-m-d'),
                     'fecha_inicio' => $fechaInicio->format('Y-m-d'),
                     'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
+                    /*
+                     * EL CREDITO VA COMO DESCUENTO, en el precio.
+                     *
+                     * Iba solo en `credito_plan_anterior`, una columna que nada
+                     * lee: el saldo, la ficha y los informes miran
+                     * `precio_final`. Con el precio entero ahi, quien pagaba la
+                     * diferencia quedaba debiendo otra vez lo que ya habia
+                     * pagado —la ficha le ofrecia cobrarselo—.
+                     *
+                     * Base menos descuento igual a final, a proposito: es lo que
+                     * vuelve a calcular la pantalla de correccion, y si no
+                     * cuadrara, corregir cualquier otra cosa de esta membresia
+                     * haria reaparecer la deuda.
+                     */
                     'precio_base' => $precioNuevoPlan,
-                    'descuento_aplicado' => 0,
-                    'precio_final' => $precioNuevoPlan,
+                    'descuento_aplicado' => $creditoDisponible,
+                    'precio_final' => $precioNuevoPlan - $creditoDisponible,
                     'id_estado' => 100, // Activa
                     'observaciones' => $observaciones,
                     'max_pausas_permitidas' => $nuevaMembresia->max_pausas ?? 2,
@@ -933,10 +967,14 @@ class InscripcionController extends Controller
                     $mensajeCredito = " Se aplicó crédito de $" . number_format($inscripcion->monto_pagado, 0, ',', '.') . " del plan anterior.";
                 }
                 
-                // Nota sobre deuda anterior incluida
+                // Lo que faltaba del plan viejo se dice, pero ya no se cobra
+                // aparte: con credito ya iba dentro de la cuenta, y sin credito
+                // la pantalla nunca lo ofrecio. Decir «se incluyo» era falso.
                 $mensajeDeuda = '';
                 if ($ignorarDeuda && $deudaAnterior > 0) {
-                    $mensajeDeuda = " Se incluyó deuda anterior de $" . number_format($deudaAnterior, 0, ',', '.') . ".";
+                    $mensajeDeuda = $aplicarCredito
+                        ? " Lo que faltaba del plan anterior ($" . number_format($deudaAnterior, 0, ',', '.') . ") ya va en la diferencia: el crédito solo cuenta lo pagado."
+                        : " Lo que faltaba del plan anterior ($" . number_format($deudaAnterior, 0, ',', '.') . ") no se cobra aparte.";
                 }
 
                 DB::commit();
@@ -950,7 +988,8 @@ class InscripcionController extends Controller
                         'fecha_vencimiento' => $fechaVencimiento->format('d/m/Y'),
                         'tipo_cambio' => $tipoCambio,
                         'diferencia' => $diferencia,
-                        'deuda_incluida' => $ignorarDeuda ? $deudaAnterior : 0,
+                        // Ya no se suma deuda al cambio (ver arriba): decir otra cosa seria falso.
+                        'deuda_incluida' => 0,
                     ],
                     'redirect_url' => route('admin.inscripciones.show', $nuevaInscripcion),
                 ]);
@@ -1185,12 +1224,41 @@ class InscripcionController extends Controller
                     ]);
                 }
 
+                /*
+                 * 4. Los avisos pendientes sobre esta membresia se CANCELAN.
+                 *
+                 * Estaban escritos con el nombre del titular viejo y a su
+                 * correo. Si salieran, le avisarian de un vencimiento que ya no
+                 * es suyo, y al nuevo titular —el que si tiene que renovar— no
+                 * le llegaria nada. Se cancelan en vez de redirigirlos porque
+                 * el texto ya lleva el nombre de quien era: mandarselo al nuevo
+                 * seria escribirle «Hola, Pedro» a la hermana de Pedro. El
+                 * aviso diario le escribe uno propio al nuevo titular: su
+                 * control de duplicados mira el socio, y este es otro.
+                 */
+                \App\Models\Notificacion::where('id_inscripcion', $inscripcion->id)
+                    ->where('id_cliente', $clienteOrigenId)
+                    ->where('id_estado', \App\Models\Notificacion::ESTADO_PENDIENTE)
+                    ->get()
+                    ->each(fn ($aviso) => $aviso->cancelar(
+                        "Membresía traspasada a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}"
+                    ));
+
                 DB::commit();
 
                 $mensajeExito = "Membresía transferida exitosamente a {$clienteDestino->nombres} {$clienteDestino->apellido_paterno}.";
-                // Solo culpar a la deuda si es realmente el motivo del bloqueo
-                if ($infoTraspaso['tiene_deuda'] && !$ignorarDeuda) {
-                    $mensajeExito .= " La deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . " fue transferida al nuevo titular.";
+
+                /*
+                 * Si se llega aqui CON deuda es porque se marco la casilla: sin
+                 * ella el traspaso se habria frenado arriba. La condicion pedia
+                 * justo lo contrario —deuda Y casilla sin marcar—, un caso que
+                 * no puede llegar hasta aqui, asi que este aviso no salia nunca
+                 * y el nuevo titular se enteraba de la deuda cuando se la
+                 * cobraban. Es el unico momento en que quien esta en el meson
+                 * puede decirselo.
+                 */
+                if ($infoTraspaso['tiene_deuda']) {
+                    $mensajeExito .= " Se lleva una deuda de $" . number_format($infoTraspaso['monto_pendiente'], 0, ',', '.') . ", que ahora debe el nuevo titular.";
                 }
 
                 return response()->json([
