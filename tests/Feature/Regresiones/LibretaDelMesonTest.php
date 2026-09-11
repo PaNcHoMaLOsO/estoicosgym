@@ -437,6 +437,42 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->assertSame(4000, (int) Fiado::debiendo()->sum('monto'));
     }
 
+    /**
+     * Un cobro deja UNA marca de tiempo, no una por línea.
+     *
+     * `pagado_en` es lo que agrupa las líneas de un mismo gesto, y es por ahí
+     * por donde se deshace entero. La hora se pedía dentro del bucle, así que un
+     * cobro que cruzara el cambio de segundo —la columna guarda segundos—
+     * quedaba partido en dos marcas: deshacerlo reabría solo una parte y el
+     * resto de la deuda se quedaba dada por pagada sin que nadie la volviera a
+     * ver.
+     *
+     * Esta prueba fija la invariante y no falla con el código anterior: para eso
+     * el cobro tendría que caer justo en el cambio de segundo. Lo que impide es
+     * que alguien vuelva a repartir la marca por línea.
+     */
+    public function test_un_cobro_deja_una_sola_marca_de_tiempo(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+
+        $marcas = Fiado::where('id_cliente', $socio->id)
+            ->get()
+            ->map(fn (Fiado $f) => (string) $f->pagado_en)
+            ->unique();
+
+        $this->assertCount(
+            1,
+            $marcas,
+            'Las líneas de un mismo cobro tienen que compartir la marca de tiempo, o deshacerlo solo reabre una parte.'
+        );
+    }
+
     /** Deshacer a uno no reabre la cuenta de otro. */
     public function test_deshacer_no_toca_el_cobro_de_otra_persona(): void
     {

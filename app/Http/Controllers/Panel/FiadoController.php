@@ -118,11 +118,19 @@ class FiadoController extends Controller
 
         $total = $pendientes->sum('monto');
 
-        DB::transaction(function () use ($pendientes, $request) {
+        // UNA SOLA MARCA DE TIEMPO PARA TODO EL COBRO. `pagado_en` es lo que
+        // agrupa las líneas de un mismo gesto, y es por ahí por donde reabrir()
+        // lo deshace entero. Pidiendo la hora dentro del bucle, un cobro que
+        // cruzara el cambio de segundo —la columna guarda segundos— quedaba
+        // partido en dos marcas: deshacerlo reabría solo una parte y el resto de
+        // la deuda se quedaba dada por pagada sin que nadie la volviera a ver.
+        $momento = now();
+
+        DB::transaction(function () use ($pendientes, $request, $momento) {
             foreach ($pendientes as $fiado) {
                 $fiado->update([
                     'pagado' => true,
-                    'pagado_en' => now(),
+                    'pagado_en' => $momento,
                     'id_usuario_cobro' => $request->user()->id,
                 ]);
             }
