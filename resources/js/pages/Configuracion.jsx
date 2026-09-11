@@ -13,6 +13,15 @@ import { AlertTriangleIcon, ChevronRightIcon, Trash2Icon } from 'lucide-react';
  * formularios cortos y hasta ahora no tenian sitio: estaban escritos a mano
  * dentro del codigo.
  */
+/** «Reglas y Mesón», «El gimnasio, Reglas y Mesón». No «A y B y C». */
+function enumerar(nombres) {
+    if (nombres.length <= 1) {
+        return nombres.join('');
+    }
+
+    return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
+}
+
 export default function Configuracion({ grupos, catalogos }) {
     const [apartado, setApartado] = useState('catalogos');
 
@@ -140,9 +149,11 @@ export default function Configuracion({ grupos, catalogos }) {
                         <span className="apoyo text-warn">
                             {sinGuardar.length === 1 && sinGuardar[0] === apartado
                                 ? 'Hay cambios sin guardar.'
-                                : `Sin guardar en ${sinGuardar
-                                      .map((c) => grupos.find((g) => g.clave === c)?.titulo)
-                                      .join(' y ')}. Se guardan todos a la vez.`}
+                                : `Sin guardar en ${enumerar(
+                                      sinGuardar.map(
+                                          (c) => grupos.find((g) => g.clave === c)?.titulo,
+                                      ),
+                                  )}. Se guardan todos a la vez.`}
                         </span>
                     ) : null}
                 </div>
