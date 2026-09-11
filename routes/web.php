@@ -29,6 +29,19 @@ Route::model('convenio', Convenio::class);
 // ===== LANDING PAGE PÚBLICA (con headers de seguridad) =====
 Route::middleware('security.headers')->group(function () {
     Route::get('/', [LandingController::class, 'index'])->name('landing');
+
+    /*
+     * Una pagina por tema, no todo en una. Cada una con su titulo para Google:
+     * «convenios estudiantes gimnasio Los Angeles» puede caer directo en la de
+     * convenios en vez de en una portada donde hay que buscarlo.
+     */
+    Route::get('/el-gimnasio', [LandingController::class, 'gimnasio'])->name('landing.gimnasio');
+    Route::get('/planes', [LandingController::class, 'planes'])->name('landing.planes');
+    Route::get('/convenios', [LandingController::class, 'convenios'])->name('landing.convenios');
+    Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
+    Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
+    Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
+    Route::get('/privacidad', [LandingController::class, 'privacidad'])->name('landing.privacidad');
     // Para Google: que hay y donde esta el mapa del sitio.
     Route::get('/robots.txt', [LandingController::class, 'robots'])->name('landing.robots');
     Route::get('/sitemap.xml', [LandingController::class, 'sitemap'])->name('landing.sitemap');
@@ -39,7 +52,7 @@ Route::middleware('security.headers')->group(function () {
      * tonto por si un dia fallan: nadie de verdad manda diez formularios en un
      * minuto.
      */
-    Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:10,1')->name('landing.contacto');
+    Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:10,1')->name('landing.contacto.enviar');
     Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:10,1')->name('landing.consultar-membresia');
 });
 
@@ -511,6 +524,11 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'index'])->name('especialistas.index');
         Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
         Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
+        // La pagina web: servicios, fotos, preguntas y testimonios. Se ocultan con catalogos.alternar.
+        Route::get('/web', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'index'])->name('web.index');
+        Route::get('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'show'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.show');
+        Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.store');
+        Route::put('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'update'])->name('web.update');
         Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
         Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');

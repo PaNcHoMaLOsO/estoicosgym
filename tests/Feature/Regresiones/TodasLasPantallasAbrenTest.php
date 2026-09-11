@@ -98,6 +98,8 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'pago' => $pago->uuid,
             'membresia' => Membresia::find(4)->uuid,
             'convenio' => $convenio->uuid,
+            // La página web: cualquiera de sus cuatro tipos.
+            'tipo' => 'servicio',
             'notificacion' => $notificacion->uuid,
             'tipoNotificacion' => (string) $plantilla->id,
             'modulo' => 'pagos',

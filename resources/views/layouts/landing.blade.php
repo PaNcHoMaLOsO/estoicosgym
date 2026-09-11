@@ -204,6 +204,87 @@
             pointer-events: none;
         }
         
+
+        /* ===== Movimiento: le da vida a la pagina. Se apaga si el equipo pide reducirlo. ===== */
+
+        /* Cinta de logos de convenios: pasa sola y se detiene con el mouse. */
+        .cinta {
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+        }
+        .cinta-pista { display: flex; width: max-content; animation: cinta linear infinite; }
+        .cinta:hover .cinta-pista { animation-play-state: paused; }
+        .cinta-logo {
+            flex: 0 0 auto;
+            width: 15rem;
+            height: 8.5rem;
+            margin-right: 1.25rem;
+            padding: 1.1rem 1.4rem;
+            background: #fff;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+            transition: transform 0.3s ease;
+        }
+        .cinta-logo:hover { transform: translateY(-4px) scale(1.04); }
+        .cinta-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .cinta-logo span { color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 1.05rem; text-align: center; }
+        @keyframes cinta { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* Con uno o dos logos no hay cinta: quedan quietos y centrados. */
+        .cinta-quieta { -webkit-mask-image: none; mask-image: none; }
+        .cinta-quieta .cinta-pista { animation: none; flex-wrap: wrap; justify-content: center; width: auto; }
+        .cinta-quieta .cinta-logo { margin: 0.625rem; }
+
+        /* Las fichas de los convenios flotan, cada una a su tiempo. */
+        .flotar { animation: flotar 6s ease-in-out infinite; }
+        @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* El titulo plateado de la portada: un brillo que recorre las letras. */
+        .brillo-texto {
+            background-image: linear-gradient(100deg, #8b8f98 0%, #ffffff 25%, #c7cad1 50%, #ffffff 75%, #8b8f98 100%);
+            background-size: 200% auto;
+            animation: brillo-texto 6s linear infinite;
+        }
+        @keyframes brillo-texto { to { background-position: 200% center; } }
+
+        /* Los resplandores de fondo respiran. */
+        .brillo { animation: latido 8s ease-in-out infinite; }
+        @keyframes latido { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.18); opacity: 1; } }
+
+        /* La foto de portada se acerca muy despacio. */
+        .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; }
+        @keyframes acercar { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+        /* Franjas que avanzan en la banda roja. */
+        .franjas {
+            background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 24px);
+            animation: franjas 20s linear infinite;
+        }
+        @keyframes franjas { to { background-position: 480px 0; } }
+
+        /* El boton de WhatsApp late. */
+        .pulso::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: #25D366;
+            z-index: -1;
+            animation: pulso 2.4s ease-out infinite;
+        }
+        @keyframes pulso { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.8); opacity: 0; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .cinta-pista, .brillo-texto, .brillo, .portada-foto, .franjas, .flotar, .pulso::before, .animate-bounce, .fade-in { animation: none !important; }
+            .cinta { -webkit-mask-image: none; mask-image: none; }
+            .cinta-pista { flex-wrap: wrap; justify-content: center; width: auto; }
+            .cinta-logo { margin: 0.625rem; }
+            .cinta-logo[data-repetido] { display: none; }
+        }
     </style>
     
     @yield('styles')
@@ -214,7 +295,13 @@
         Saltar al contenido principal
     </a>
 
-    @yield('content')
+    {{-- Menu, contenido, pie y el WhatsApp flotante: iguales en todas las paginas. --}}
+    @include('landing.partes.menu')
+    <main id="main-content">
+        @yield('content')
+    </main>
+    @include('landing.partes.pie')
+    @include('landing.partes.whatsapp')
 
     <!-- Scripts -->
     <script>
@@ -235,14 +322,35 @@
                         entry.target.classList.add('animate-visible');
                         entry.target.style.opacity = '1';
                         entry.target.style.transform = 'translateY(0)';
+                        // Al terminar de entrar se sueltan los estilos en linea: si se
+                        // quedan, pisan el efecto de pasar el mouse por las tarjetas.
+                        const el = entry.target;
+                        const soltar = (e) => {
+                            if (e.target !== el) {
+                                return;
+                            }
+                            el.removeEventListener('transitionend', soltar);
+                            el.style.transition = '';
+                            el.style.transform = '';
+                            el.style.opacity = '';
+                        };
+                        el.addEventListener('transitionend', soltar);
+                        observer.unobserve(el);
                     }
                 });
             }, observerOptions);
             
+            // Quien pidio menos movimiento ve todo de una vez.
+            const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             document.querySelectorAll('.animate-on-scroll').forEach(el => {
+                if (reducir) {
+                    return;
+                }
                 el.style.opacity = '0';
                 el.style.transform = 'translateY(30px)';
-                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                // El retraso escrito en cada tarjeta hace que entren de a una.
+                const retraso = el.style.animationDelay || '0s';
+                el.style.transition = `opacity 0.6s ease ${retraso}, transform 0.6s ease ${retraso}`;
                 observer.observe(el);
             });
             
@@ -307,7 +415,7 @@
         <div id="aviso-cookies" class="hidden fixed bottom-0 inset-x-0 z-50 p-4">
             <div class="max-w-3xl mx-auto bg-pg-carbon border border-pg-tiza/10 rounded-xl shadow-2xl p-4 flex flex-col sm:flex-row items-center gap-4">
                 <p class="text-pg-tiza/80 text-sm font-modern flex-1">
-                    Usamos cookies de analítica para saber qué partes de la página sirven. No las usamos para publicidad.
+                    Usamos cookies de analítica para saber qué partes de la página sirven. No las usamos para publicidad. <a href="{{ route('landing.privacidad') }}" class="underline hover:text-pg-tiza">Más información</a>
                 </p>
                 <div class="flex gap-2 shrink-0">
                     <button type="button" data-cookies="no" class="px-4 py-2 rounded-lg border border-pg-tiza/20 text-pg-tiza/80 hover:text-pg-tiza text-sm font-modern">No, gracias</button>

@@ -1,0 +1,258 @@
+@extends('layouts.landing')
+
+@section('title', $web['titulo'])
+@section('description', $web['descripcion'])
+
+@section('content')
+        <!-- ===== CONTACTO SECTION ===== -->
+        <section id="contacto" class="pt-36 pb-24 bg-pg-negro relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                    <!-- Contact Info -->
+                    <div class="animate-on-scroll">
+                        <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Contáctanos</span>
+                        <h1 class="font-display text-4xl md:text-5xl mt-4 mb-6 text-pg-tiza">HABLEMOS</h1>
+                        <p class="text-pg-tiza/60 font-modern mb-10">
+                            ¿Tienes dudas? ¿Quieres conocer nuestras instalaciones? 
+                            Contáctanos y te ayudaremos a dar el primer paso.
+                        </p>
+                        
+                        {{-- Salen de Configuración → El gimnasio. Lo vacío no se enseña: mejor nada que un teléfono de ejemplo. --}}
+                        <div class="space-y-6">
+                            @if($gimnasio['direccion'])
+                                <div class="flex items-start">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                        <i class="fas fa-map-marker-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-pg-tiza">Dirección</h4>
+                                        <p class="text-pg-tiza/60 font-modern text-sm">{{ $gimnasio['direccion'] }}</p>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($gimnasio['telefono'])
+                                <div class="flex items-start">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                        <i class="fas fa-phone-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-pg-tiza">Teléfono</h4>
+                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $gimnasio['telefono']) }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['telefono'] }}</a></p>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($gimnasio['email'])
+                                <div class="flex items-start">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                        <i class="fas fa-envelope text-pg-rojo-claro text-xl" aria-hidden="true"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-pg-tiza">Correo</h4>
+                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="mailto:{{ $gimnasio['email'] }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['email'] }}</a></p>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($gimnasio['horario'])
+                                <div class="flex items-start">
+                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                        <i class="fas fa-clock text-pg-rojo-claro text-xl" aria-hidden="true"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-pg-tiza">Horario</h4>
+                                        <p class="text-pg-tiza/60 font-modern text-sm">{{ $gimnasio['horario'] }}</p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($web['google_maps'] || $web['instagram'] || $web['facebook'])
+                            <div class="mt-10 flex flex-wrap items-center gap-3">
+                                @if($web['google_maps'])
+                                    <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
+                                       class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-modern text-sm font-semibold transition-colors">
+                                        <i class="fas fa-route" aria-hidden="true"></i> Cómo llegar
+                                    </a>
+                                @endif
+                                @if($web['instagram'])
+                                    <a href="{{ $web['instagram'] }}" target="_blank" rel="noopener" aria-label="Instagram"
+                                       class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
+                                        <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                                    </a>
+                                @endif
+                                @if($web['facebook'])
+                                    <a href="{{ $web['facebook'] }}" target="_blank" rel="noopener" aria-label="Facebook"
+                                       class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
+                                        <i class="fab fa-facebook-f text-xl" aria-hidden="true"></i>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Contact Form -->
+                    <div class="animate-on-scroll">
+                        <div class="bg-pg-carbon/50 border border-pg-tiza/10 rounded-2xl p-8 md:p-10">
+                            <h3 class="font-display text-2xl mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
+                            
+                            <!-- Alerts -->
+                            @if(session('success'))
+                                <div class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    {{ session('success') }}
+                                </div>
+                            @endif
+                            
+                            @if(session('error'))
+                                <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+                                    <i class="fas fa-exclamation-circle mr-2"></i>
+                                    {{ session('error') }}
+                                </div>
+                            @endif
+                            
+                            @if($errors->any())
+                                <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                                    <ul class="text-red-400 text-sm space-y-1">
+                                        @foreach($errors->all() as $error)
+                                            <li><i class="fas fa-times mr-2"></i>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                            
+                            <form action="{{ route('landing.contacto.enviar') }}" method="POST" class="space-y-6">
+                                @csrf
+                                
+                                <!-- Honeypot (anti-spam) -->
+                                <div class="hp-field" aria-hidden="true">
+                                    <label for="website">Website</label>
+                                    <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="nombre" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Nombre *</label>
+                                        <input 
+                                            type="text" 
+                                            name="nombre" 
+                                            id="nombre" 
+                                            value="{{ old('nombre') }}"
+                                            required
+                                            minlength="2"
+                                            maxlength="100"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            placeholder="Tu nombre"
+                                        >
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Email *</label>
+                                        <input 
+                                            type="email" 
+                                            name="email" 
+                                            id="email" 
+                                            value="{{ old('email') }}"
+                                            required
+                                            maxlength="255"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            placeholder="tu@email.com"
+                                        >
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="telefono" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Teléfono</label>
+                                        <input 
+                                            type="tel" 
+                                            name="telefono" 
+                                            id="telefono" 
+                                            value="{{ old('telefono') }}"
+                                            maxlength="20"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            placeholder="+56 9 1234 5678"
+                                        >
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="servicio" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Interés</label>
+                                        <select 
+                                            name="servicio" 
+                                            id="servicio"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                        >
+                                            <option value="informacion">Información general</option>
+                                            <option value="inscripcion">Quiero inscribirme</option>
+                                            <option value="convenio">Convenio de empresa</option>
+                                            <option value="otro">Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="mensaje" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Mensaje *</label>
+                                    <textarea 
+                                        name="mensaje" 
+                                        id="mensaje" 
+                                        rows="5"
+                                        required
+                                        minlength="10"
+                                        maxlength="1000"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 resize-none font-modern"
+                                        placeholder="¿En qué podemos ayudarte?"
+                                    >{{ old('mensaje') }}</textarea>
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    class="w-full bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                                >
+                                    <i class="fas fa-paper-plane mr-2"></i>
+                                    Enviar Mensaje
+                                </button>
+                                
+                                <p class="text-pg-tiza/40 text-sm text-center font-modern">
+                                    <i class="fas fa-lock mr-1"></i>
+                                    Tu información está segura y no será compartida.
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    @include('landing.partes.horario')
+
+    {{-- ===== PREGUNTAS FRECUENTES: salen de Pagina web -> Preguntas ===== --}}
+    @if(count($preguntas))
+        <section id="preguntas" class="py-24 bg-pg-negro">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12 animate-on-scroll">
+                    <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Antes de venir</span>
+                    <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
+                </div>
+                <div class="space-y-3">
+                    @foreach($preguntas as $pregunta)
+                        <details class="animate-on-scroll group bg-pg-carbon/70 border border-pg-tiza/10 rounded-xl p-5 open:border-pg-rojo/40 transition-colors">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-modern font-semibold text-pg-tiza">
+                                {{ $pregunta['titulo'] }}
+                                <i class="fas fa-plus text-pg-rojo-claro transition-transform duration-300 group-open:rotate-45" aria-hidden="true"></i>
+                            </summary>
+                            <p class="mt-3 text-pg-tiza/70 font-modern text-sm whitespace-pre-line">{{ $pregunta['texto'] }}</p>
+                        </details>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+@endsection
+
+@section('scripts')
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.pgEvento) window.pgEvento('generate_lead');
+    });
+</script>
+@endif
+@endsection

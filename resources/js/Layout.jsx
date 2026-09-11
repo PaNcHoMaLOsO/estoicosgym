@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    GlobeIcon,
     BellIcon,
     ChartNoAxesColumnIcon,
     ClipboardListIcon,
@@ -86,6 +87,8 @@ const GRUPOS = [
  * cuentas a la vista para saber si algo falta antes de necesitarlo.
  */
 const CONFIGURACION = [
+    // Lo que ven los clientes: servicios, fotos, preguntas, horario, aviso...
+    { href: '/panel/web', etiqueta: 'Página web', Icono: GlobeIcon, permiso: 'configuracion.ver' },
     { href: '/panel/configuracion', etiqueta: 'Configuración', Icono: SettingsIcon, permiso: 'configuracion.ver' },
 ];
 

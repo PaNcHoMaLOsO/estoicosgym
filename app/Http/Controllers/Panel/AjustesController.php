@@ -48,9 +48,12 @@ class AjustesController extends Controller
             // «nombre» dentro de «gimnasio».
             $campo = str_replace('.', '\.', $clave);
 
-            $reglas[$campo] = $definicion['tipo'] === 'numero'
-                ? ['nullable', 'integer', 'min:' . ($definicion['min'] ?? 0), 'max:' . ($definicion['max'] ?? 999999)]
-                : ['nullable', 'string', 'max:255'];
+            $reglas[$campo] = match ($definicion['tipo']) {
+                'numero' => ['nullable', 'integer', 'min:' . ($definicion['min'] ?? 0), 'max:' . ($definicion['max'] ?? 999999)],
+                // Las fechas del aviso: llegan del selector de fecha como AAAA-MM-DD.
+                'fecha' => ['nullable', 'date_format:Y-m-d'],
+                default => ['nullable', 'string', 'max:255'],
+            };
         }
 
         $request->validate($reglas);

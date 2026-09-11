@@ -95,11 +95,14 @@ class WebPublicaTest extends CasoConCatalogos
      */
     public function test_la_web_no_enlaza_al_panel(): void
     {
-        $this->get('/')
-            ->assertOk()
-            ->assertDontSee(route('login'), false)
-            ->assertDontSee('/panel', false)
-            ->assertDontSee('Acceder', false);
+        // Ninguna de las páginas: el menú y el pie son los mismos en todas.
+        foreach (['/', '/el-gimnasio', '/planes', '/convenios', '/especialistas', '/contacto', '/mi-membresia', '/privacidad'] as $pagina) {
+            $this->get($pagina)
+                ->assertOk()
+                ->assertDontSee(route('login'), false)
+                ->assertDontSee('/panel', false)
+                ->assertDontSee('Acceder', false);
+        }
     }
 
     /** robots.txt apunta al mapa del sitio y NO nombra el panel: ese archivo lo lee cualquiera. */
@@ -180,7 +183,12 @@ class WebPublicaTest extends CasoConCatalogos
         ])->assertSessionHasNoErrors();
         Ajustes::olvidar();
 
+        // Las redes van en el pie de todas las páginas; el mapa, en Contacto.
         $this->get('/')
+            ->assertOk()
+            ->assertSee('https://www.instagram.com/progym', false);
+
+        $this->get('/contacto')
             ->assertOk()
             ->assertSee('https://www.instagram.com/progym', false)
             ->assertSee('Cómo llegar', false);

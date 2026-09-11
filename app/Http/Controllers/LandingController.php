@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use App\Models\Convenio;
+use App\Models\ContenidoWeb;
 use App\Models\Especialista;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
@@ -19,9 +20,6 @@ use Carbon\Carbon;
 
 class LandingController extends Controller
 {
-    /**
-     * Lo que puede escribir el cliente en «Interes», y como llega al correo.
-     */
     /** Las categorias de convenio, en el orden en que se leen en la web. */
     private const CATEGORIAS_DE_CONVENIO = [
         'institucion_educativa' => 'Universidades e institutos',
@@ -30,6 +28,9 @@ class LandingController extends Controller
         'otro' => 'Otros convenios',
     ];
 
+    /**
+     * Lo que puede escribir el cliente en «Interes», y como llega al correo.
+     */
     private const INTERESES = [
         'informacion' => 'Información general',
         'inscripcion' => 'Quiero inscribirme',
@@ -37,19 +38,146 @@ class LandingController extends Controller
         'otro' => 'Otro',
     ];
 
+    /** Los dias de la semana: la clave del ajuste, como se lee y como lo pide Google. */
+    private const DIAS = [
+        'lunes' => ['Lunes', 'Monday'],
+        'martes' => ['Martes', 'Tuesday'],
+        'miercoles' => ['Miércoles', 'Wednesday'],
+        'jueves' => ['Jueves', 'Thursday'],
+        'viernes' => ['Viernes', 'Friday'],
+        'sabado' => ['Sábado', 'Saturday'],
+        'domingo' => ['Domingo', 'Sunday'],
+    ];
+
     /**
-     * La portada del gimnasio: la que ven los clientes.
+     * Inicio: quién es el gimnasio y el camino a cada página.
      *
-     * TODO LO QUE MUESTRA SALE DEL SISTEMA. Los planes y sus precios son los
-     * del catalogo —los mismos que se cobran en el meson— y los datos de
-     * contacto son los de Configuracion -> El gimnasio. Antes era todo
-     * inventado: tres planes que no existian («Plan Elite» con sauna, spa y
-     * estacionamiento), testimonios escritos a mano, una direccion y un
-     * telefono de ejemplo y una «garantia de 7 dias» que ningun gimnasio
-     * deberia prometer sin haberla decidido. Un cliente que llegaba con el
-     * precio de la web se encontraba con otro en el meson.
+     * UNA PÁGINA POR TEMA, no todo en una. La portada dice lo esencial y lleva
+     * a planes, convenios, especialistas y la consulta; cada tema tiene su
+     * página con su título, que es lo que Google muestra y lo que la gente
+     * busca: «convenios estudiantes gimnasio Los Ángeles» cae directo en la de
+     * convenios.
+     *
+     * TODO LO QUE MUESTRA SALE DEL SISTEMA: planes y precios del catálogo,
+     * contacto y textos de Configuración, servicios, fotos y testimonios de
+     * Página web. Nada escrito a mano en la vista.
      */
     public function index()
+    {
+        $comun = $this->comun();
+
+        return $this->pagina('landing.inicio', 'landing', null, null, [
+            'portada' => [
+                'titulo_1' => Ajustes::obtener('portada.titulo_1'),
+                'titulo_2' => Ajustes::obtener('portada.titulo_2'),
+                'subtitulo' => Ajustes::obtener('portada.subtitulo'),
+            ],
+            'fotoPortada' => $this->contenidos('foto')->first(),
+            'destacados' => $this->destacados($comun),
+            'logosConvenios' => collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all(),
+            'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
+            'testimonios' => $this->contenidos('testimonio')->all(),
+            'json_ld' => $comun['web']['json_ld'],
+        ], $comun);
+    }
+
+    public function gimnasio()
+    {
+        $comun = $this->comun();
+        $ciudad = $comun['web']['ciudad'];
+
+        return $this->pagina('landing.el-gimnasio', 'landing.gimnasio', 'El gimnasio',
+            "Cómo es {$comun['gimnasio']['nombre']} por dentro: servicios, fotos y horario" . ($ciudad ? " de nuestro gimnasio en {$ciudad}." : '.'),
+            [
+                'servicios' => $this->contenidos('servicio')->all(),
+                'fotos' => $this->contenidos('foto')->all(),
+            ], $comun);
+    }
+
+    public function planes()
+    {
+        $comun = $this->comun();
+        $precios = array_column($comun['planes'], 'precio');
+        $nombres = implode(', ', array_column($comun['planes'], 'nombre'));
+
+        return $this->pagina('landing.planes', 'landing.planes', 'Planes y precios',
+            "Planes de {$comun['gimnasio']['nombre']}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
+                . ($nombres ? ": {$nombres}." : '.')
+                . ($precios ? ' Desde ' . $this->pesos(min($precios)) . '.' : ''),
+            [], $comun);
+    }
+
+    public function convenios()
+    {
+        $comun = $this->comun();
+        $nombres = collect($comun['convenios'])
+            ->flatMap(fn (array $g) => array_column($g['convenios'], 'nombre'))
+            ->take(6)
+            ->implode(', ');
+        $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
+
+        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios para estudiantes, empresas e instituciones',
+            ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
+                . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : ''),
+            [], $comun);
+    }
+
+    public function especialistas()
+    {
+        $comun = $this->comun();
+        $especialidades = collect($comun['especialistas'])->pluck('especialidad')->unique()->implode(', ');
+
+        return $this->pagina('landing.especialistas', 'landing.especialistas', 'Especialistas',
+            ($especialidades
+                ? "{$especialidades} que trabajan con {$comun['gimnasio']['nombre']}."
+                : "Los profesionales que trabajan con {$comun['gimnasio']['nombre']}.")
+                . ' Escríbeles directo por WhatsApp o Instagram.',
+            [], $comun);
+    }
+
+    public function paginaContacto()
+    {
+        $comun = $this->comun();
+        $preguntas = $this->contenidos('pregunta')->all();
+
+        return $this->pagina('landing.contacto', 'landing.contacto', 'Contacto y horario',
+            "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar, el horario y las preguntas frecuentes. Escríbenos.",
+            [
+                'preguntas' => $preguntas,
+                // Las preguntas en el formato que Google puede mostrar en sus resultados.
+                'json_ld' => $preguntas ? [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'FAQPage',
+                    'mainEntity' => array_map(fn (array $p) => [
+                        '@type' => 'Question',
+                        'name' => $p['titulo'],
+                        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $p['texto']],
+                    ], $preguntas),
+                ] : null,
+            ], $comun);
+    }
+
+    public function miMembresia()
+    {
+        return $this->pagina('landing.mi-membresia', 'landing.membresia', 'Consulta tu membresía',
+            'Revisa cuándo vence tu membresía y si tienes algo pendiente, con tu RUT y los últimos 4 dígitos de tu celular.',
+            [], $this->comun());
+    }
+
+    public function privacidad()
+    {
+        return $this->pagina('landing.privacidad', 'landing.privacidad', 'Privacidad y cookies',
+            'Qué datos guarda el gimnasio, para qué, y cómo pedir que se corrijan o se borren.',
+            [], $this->comun());
+    }
+
+    /**
+     * Lo que usan todas las páginas: el gimnasio, los planes, el menú, el
+     * aviso, el horario y el WhatsApp flotante.
+     *
+     * @return array<string,mixed>
+     */
+    private function comun(): array
     {
         $gimnasio = [
             'nombre' => Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM',
@@ -60,15 +188,216 @@ class LandingController extends Controller
         ];
 
         $planes = $this->planesALaVenta();
+        $convenios = $this->conveniosEnLaWeb();
+        $especialistas = $this->especialistasEnLaWeb($gimnasio['nombre']);
 
-        return view('landing.index', [
+        return [
             'gimnasio' => $gimnasio,
             'planes' => $planes,
-            'servicios' => $this->servicios(),
+            'convenios' => $convenios,
+            'especialistas' => $especialistas,
             'web' => $this->datosParaGoogle($gimnasio, $planes),
-            'convenios' => $this->conveniosEnLaWeb(),
-            'especialistas' => $this->especialistasEnLaWeb($gimnasio['nombre']),
-        ]);
+            // El menú solo enlaza lo que tiene algo que mostrar.
+            'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== []],
+            'aviso' => $this->avisoVigente(),
+            'horario' => $this->horario(),
+            'whatsapp' => $this->whatsappDelGimnasio($gimnasio['nombre']),
+        ];
+    }
+
+    /**
+     * Arma una página con su título, su descripción y su dirección canónica.
+     *
+     * @param array<string,mixed> $datos
+     * @param array<string,mixed> $comun
+     */
+    private function pagina(string $vista, string $ruta, ?string $titulo, ?string $descripcion, array $datos, array $comun)
+    {
+        $web = $comun['web'];
+
+        if ($titulo !== null) {
+            $web['titulo'] = "{$titulo} | {$comun['gimnasio']['nombre']}" . ($web['ciudad'] ? " {$web['ciudad']}" : '');
+        }
+
+        if ($descripcion !== null) {
+            $web['descripcion'] = $descripcion;
+        }
+
+        $web['canonical'] = route($ruta);
+        $web['json_ld'] = $datos['json_ld'] ?? null;
+        unset($datos['json_ld']);
+
+        return view($vista, ['web' => $web] + $datos + $comun);
+    }
+
+    /** Lo que se escribió en Página web para un tipo, en su orden. */
+    private function contenidos(string $tipo): \Illuminate\Support\Collection
+    {
+        return ContenidoWeb::where('tipo', $tipo)
+            ->where('activo', true)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ContenidoWeb $c) => [
+                'titulo' => $c->titulo,
+                'texto' => $c->texto,
+                // Las tarjetas de servicio ya usaban «descripcion».
+                'descripcion' => $c->texto,
+                'icono' => $c->icono,
+                'imagen' => $c->urlDeImagen(),
+            ]);
+    }
+
+    /**
+     * Las tarjetas de la portada que llevan a cada página.
+     *
+     * @param array<string,mixed> $comun
+     * @return list<array<string,string>>
+     */
+    private function destacados(array $comun): array
+    {
+        $precios = array_column($comun['planes'], 'precio');
+        $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
+
+        $destacados = [[
+            'href' => route('landing.planes'),
+            'icono' => 'tags',
+            'titulo' => 'Planes',
+            'texto' => $precios
+                ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($comun['planes'], 'nombre'))) . '.'
+                : 'Pregunta por los planes en el mesón.',
+            'accion' => 'Ver planes',
+        ]];
+
+        if ($comun['navegacion']['convenios']) {
+            $destacados[] = [
+                'href' => route('landing.convenios'),
+                'icono' => 'graduation-cap',
+                'titulo' => 'Convenios',
+                'texto' => $conPrecio
+                    ? "Plan {$conPrecio['nombre']} a " . $this->pesos($conPrecio['precio_convenio']) . ' para estudiantes e instituciones con convenio.'
+                    : 'Precios especiales para estudiantes, empresas e instituciones.',
+                'accion' => 'Ver convenios',
+            ];
+        }
+
+        if ($comun['navegacion']['especialistas']) {
+            $destacados[] = [
+                'href' => route('landing.especialistas'),
+                'icono' => 'user-friends',
+                'titulo' => 'Especialistas',
+                'texto' => collect($comun['especialistas'])->pluck('especialidad')->unique()->take(3)->implode(', ') . '.',
+                'accion' => 'Conócelos',
+            ];
+        }
+
+        $destacados[] = [
+            'href' => route('landing.membresia'),
+            'icono' => 'id-card',
+            'titulo' => 'Mi membresía',
+            'texto' => 'Revisa cuándo vence y si tienes algo pendiente.',
+            'accion' => 'Consultar',
+        ];
+
+        return $destacados;
+    }
+
+    private function pesos(int $monto): string
+    {
+        return '$' . number_format($monto, 0, ',', '.');
+    }
+
+    /**
+     * El horario de la semana, día por día, desde Configuración -> Horario.
+     *
+     * @return array{dias: list<array<string,mixed>>, configurado: bool, nota: ?string, hoy: string}
+     */
+    private function horario(): array
+    {
+        $dias = [];
+
+        foreach (self::DIAS as $clave => [$nombre, $ingles]) {
+            $tramos = [];
+
+            foreach (array_filter(array_map('trim', explode(',', (string) Ajustes::obtener("horario.{$clave}")))) as $tramo) {
+                $partes = array_map('trim', explode('-', $tramo));
+
+                if (count($partes) === 2) {
+                    // «7:00» se lee y se entrega como «07:00».
+                    $tramos[] = array_map(
+                        fn (string $hora) => vsprintf('%02d:%02d', array_map('intval', array_pad(explode(':', $hora), 2, 0))),
+                        $partes
+                    );
+                }
+            }
+
+            $dias[] = ['clave' => $clave, 'nombre' => $nombre, 'ingles' => $ingles, 'tramos' => $tramos];
+        }
+
+        return [
+            'dias' => $dias,
+            'configurado' => collect($dias)->contains(fn (array $d) => $d['tramos'] !== []),
+            'nota' => Ajustes::obtener('horario.nota') ?: null,
+            'hoy' => array_keys(self::DIAS)[now()->dayOfWeekIso - 1],
+        ];
+    }
+
+    /** El horario en el formato que lee Google, para su ficha del gimnasio. */
+    private function horarioParaGoogle(): array
+    {
+        $especificacion = [];
+
+        foreach ($this->horario()['dias'] as $dia) {
+            foreach ($dia['tramos'] as [$abre, $cierra]) {
+                $especificacion[] = [
+                    '@type' => 'OpeningHoursSpecification',
+                    'dayOfWeek' => 'https://schema.org/' . $dia['ingles'],
+                    'opens' => $abre,
+                    'closes' => $cierra,
+                ];
+            }
+        }
+
+        return $especificacion;
+    }
+
+    /**
+     * El aviso destacado, si hoy está dentro de sus fechas.
+     *
+     * Se va solo al pasar la fecha de término: un «cerramos el sábado» que
+     * sigue ahí el lunes es peor que no avisar.
+     */
+    private function avisoVigente(): ?string
+    {
+        $texto = trim((string) Ajustes::obtener('portada.aviso'));
+
+        if ($texto === '') {
+            return null;
+        }
+
+        $hoy = today()->toDateString();
+        $desde = Ajustes::obtener('portada.aviso_desde');
+        $hasta = Ajustes::obtener('portada.aviso_hasta');
+
+        if (($desde && $hoy < $desde) || ($hasta && $hoy > $hasta)) {
+            return null;
+        }
+
+        return $texto;
+    }
+
+    /** El enlace del WhatsApp flotante, con un saludo ya escrito. */
+    private function whatsappDelGimnasio(string $gimnasio): ?string
+    {
+        $numero = preg_replace('/[^0-9]/', '', (string) Ajustes::obtener('web.whatsapp'));
+
+        if (strlen($numero) === 9) {
+            $numero = '56' . $numero;
+        }
+
+        return preg_match('/^569[0-9]{8}$/', $numero)
+            ? 'https://wa.me/' . $numero . '?text=' . rawurlencode("Hola, quiero información sobre {$gimnasio}.")
+            : null;
     }
 
     /**
@@ -127,23 +456,6 @@ class LandingController extends Controller
     }
 
     /**
-     * Lo que se ofrece.
-     *
-     * GENERICO A PROPOSITO. La lista anterior prometia cosas que nadie
-     * comprobo —«mas de 20 clases semanales», «sauna, spa», nutricionistas—.
-     * Esto es lo que tiene cualquier sala de musculacion; lo que PRO GYM
-     * tiene de propio lo tiene que escribir quien lo conoce.
-     */
-    private function servicios(): array
-    {
-        return [
-            ['icono' => 'dumbbell', 'titulo' => 'Musculación', 'descripcion' => 'Máquinas y peso libre para entrenar la fuerza a tu ritmo.'],
-            ['icono' => 'heartbeat', 'titulo' => 'Cardio', 'descripcion' => 'Equipos de cardio para calentar, quemar y ganar resistencia.'],
-            ['icono' => 'user-check', 'titulo' => 'Orientación en sala', 'descripcion' => 'Te enseñamos a usar los equipos para que entrenes seguro.'],
-        ];
-    }
-
-    /**
      * Lo que lee Google: el titulo, la descripcion y la ficha estructurada.
      *
      * PARA SALIR EN «GIMNASIO EN LOS ANGELES» lo que mas pesa no esta aqui:
@@ -198,6 +510,7 @@ class LandingController extends Controller
                 'price' => $plan['precio'],
                 'priceCurrency' => 'CLP',
             ], $planes),
+            'openingHoursSpecification' => $this->horarioParaGoogle(),
         ], $vacio);
 
         $donde = $ciudad ? "Gimnasio en {$ciudad}" : 'Gimnasio';
@@ -303,11 +616,26 @@ class LandingController extends Controller
         $cambio = \App\Models\PrecioMembresia::max('updated_at');
         $fecha = $cambio ? Carbon::parse($cambio)->toDateString() : now()->toDateString();
 
+        $paginas = array_filter([
+            ['landing', '1.0'],
+            ['landing.planes', '0.9'],
+            $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8'] : null,
+            ['landing.gimnasio', '0.8'],
+            Especialista::where('activo', true)->exists() ? ['landing.especialistas', '0.7'] : null,
+            ['landing.contacto', '0.7'],
+            ['landing.membresia', '0.5'],
+            ['landing.privacidad', '0.2'],
+        ]);
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n"
-            . '  <url><loc>' . e(url('/')) . '</loc><lastmod>' . $fecha . '</lastmod>'
-            . '<changefreq>weekly</changefreq><priority>1.0</priority></url>' . "\n"
-            . '</urlset>' . "\n";
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+        foreach ($paginas as [$ruta, $prioridad]) {
+            $xml .= '  <url><loc>' . e(route($ruta)) . '</loc><lastmod>' . $fecha . '</lastmod>'
+                . '<changefreq>weekly</changefreq><priority>' . $prioridad . '</priority></url>' . "\n";
+        }
+
+        $xml .= '</urlset>' . "\n";
 
         return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
     }

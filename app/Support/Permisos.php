@@ -83,6 +83,8 @@ class Permisos
         // Los especialistas de la web: un catalogo mas, lo toca quien
         // configura, no el meson.
         'especialistas' => 'configuracion',
+        // La pagina web: lo que ven los clientes lo cambia quien configura.
+        'web' => 'configuracion',
         // Activar y desactivar, que valen para los cuatro a la vez.
         'catalogos' => 'configuracion',
         // La papelera cruza todos los modulos —socios, membresias, pagos,

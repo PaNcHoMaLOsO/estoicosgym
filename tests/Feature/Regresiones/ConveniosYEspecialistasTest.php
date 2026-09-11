@@ -49,27 +49,36 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->convenio(['mostrar_en_web' => true, 'requisito_web' => 'Estudiantes con credencial vigente']);
         $this->convenio(['nombre' => 'Banco de Ejemplo', 'tipo' => 'empresa']);
 
-        $this->get('/')
+        $this->get('/convenios')
             ->assertOk()
             ->assertSee('id="convenios"', false)
             ->assertSee('Universidades e institutos')
             ->assertSee('UCSC')
             ->assertSee('Estudiantes con credencial vigente')
-            ->assertSee('href="#convenios"', false)
             // El que no se marcó no sale, ni su categoría.
             ->assertDontSee('Banco de Ejemplo')
             ->assertDontSee('>Empresas<', false);
+
+        // El menú de todas las páginas lleva a los convenios.
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('href="' . route('landing.convenios') . '"', false);
     }
 
-    /** Sin convenios marcados no hay sección ni enlace en el menú. */
+    /** Sin convenios marcados no hay enlace en el menú ni logos en la portada. */
     public function test_sin_convenios_marcados_no_hay_seccion(): void
     {
         $this->convenio();
 
         $this->get('/')
             ->assertOk()
-            ->assertDontSee('id="convenios"', false)
-            ->assertDontSee('href="#convenios"', false);
+            ->assertDontSee(route('landing.convenios'), false)
+            ->assertDontSee('Convenios con', false);
+
+        // Quien llega directo a la página ve que no hay, no una página rota.
+        $this->get('/convenios')
+            ->assertOk()
+            ->assertSee('Todavía no publicamos convenios');
     }
 
     /** El precio de convenio sale del catálogo de planes. */
@@ -77,7 +86,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
     {
         $this->convenio(['mostrar_en_web' => true]);
 
-        $this->get('/')
+        $this->get('/convenios')
             ->assertOk()
             ->assertSee('Con convenio, el plan Mensual queda en', false)
             ->assertSee('$25.000', false);
@@ -179,6 +188,48 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->assertSame(0, Convenio::where('nombre', 'UCSC')->count());
     }
 
+    /**
+     * El margen blanco del logo se recorta al subirlo.
+     *
+     * Era lo que hacía verse diminuto un logo en su recuadro: el espacio lo
+     * ocupaba el blanco de alrededor, no la marca.
+     */
+    public function test_el_margen_blanco_del_logo_se_recorta(): void
+    {
+        $imagen = imagecreatetruecolor(400, 300);
+        imagefill($imagen, 0, 0, imagecolorallocate($imagen, 255, 255, 255));
+        imagefilledrectangle($imagen, 150, 120, 249, 179, imagecolorallocate($imagen, 200, 20, 30));
+        ob_start();
+        imagepng($imagen);
+        $png = (string) ob_get_clean();
+
+        $this->admin()->post('/panel/convenios', [
+            'nombre' => 'UCSC',
+            'tipo' => 'institucion_educativa',
+            'activo' => true,
+            'logo' => UploadedFile::fake()->createWithContent('ucsc.png', $png),
+        ])->assertSessionHasNoErrors();
+
+        $logo = Convenio::where('nombre', 'UCSC')->firstOrFail()->logo;
+
+        $this->assertSame([100, 60], array_slice(getimagesize(Storage::disk('public')->path($logo)), 0, 2));
+    }
+
+    /** Un logo que ya llega justo no se toca. */
+    public function test_un_logo_sin_margen_queda_igual(): void
+    {
+        $this->admin()->post('/panel/convenios', [
+            'nombre' => 'UCSC',
+            'tipo' => 'institucion_educativa',
+            'activo' => true,
+            'logo' => UploadedFile::fake()->image('ucsc.png', 400, 150),
+        ])->assertSessionHasNoErrors();
+
+        $logo = Convenio::where('nombre', 'UCSC')->firstOrFail()->logo;
+
+        $this->assertSame([400, 150], array_slice(getimagesize(Storage::disk('public')->path($logo)), 0, 2));
+    }
+
     // ---------- Especialistas ----------
 
     public function test_se_crea_un_especialista_y_sus_enlaces_se_guardan_limpios(): void
@@ -213,22 +264,29 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $saludo = rawurlencode('Hola Diego Soto, te escribo desde la web de PRO GYM.');
 
-        $this->get('/')
+        $this->get('/especialistas')
             ->assertOk()
-            ->assertSee('NUESTROS ESPECIALISTAS')
-            ->assertSee('href="#especialistas"', false)
+            ->assertSee('Diego Soto')
+            ->assertSee('Personal trainer')
             ->assertSee('https://wa.me/56912345678?text=' . $saludo, false)
             ->assertSee('https://www.instagram.com/diego.fit/', false);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('href="' . route('landing.especialistas') . '"', false);
     }
 
     public function test_un_especialista_oculto_no_sale(): void
     {
         Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => false]);
 
+        $this->get('/especialistas')
+            ->assertOk()
+            ->assertDontSee('Diego Soto');
+
         $this->get('/')
             ->assertOk()
-            ->assertDontSee('Diego Soto')
-            ->assertDontSee('id="especialistas"', false);
+            ->assertDontSee(route('landing.especialistas'), false);
     }
 
     /** Ocultar y volver a mostrar va por el mismo interruptor que los otros catálogos. */

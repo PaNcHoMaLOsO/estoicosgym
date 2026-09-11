@@ -8,6 +8,7 @@ use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
 use App\Models\PrecioMembresia;
+use App\Support\Imagenes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -138,22 +139,26 @@ class CatalogoController extends Controller
             'metodos-pago' => MetodoPago::class,
             'motivos-descuento' => MotivoDescuento::class,
             'especialistas' => \App\Models\Especialista::class,
+            'contenidos' => \App\Models\ContenidoWeb::class,
         ];
 
         abort_unless(isset($modelos[$catalogo]), 404);
 
         $fila = $modelos[$catalogo]::where(
-            in_array($catalogo, ['membresias', 'convenios', 'especialistas'], true) ? 'uuid' : 'id',
+            in_array($catalogo, ['membresias', 'convenios', 'especialistas', 'contenidos'], true) ? 'uuid' : 'id',
             $id
         )->firstOrFail();
 
         $fila->update(['activo' => ! $fila->activo]);
 
+        // Los contenidos de la web no tienen nombre: tienen titulo.
+        $nombre = $fila->nombre ?? $fila->titulo;
+
         return back()->with(
             'success',
             $fila->activo
-                ? "«{$fila->nombre}» vuelve a estar disponible."
-                : "«{$fila->nombre}» ya no se ofrecerá. Lo que ya lo usaba no cambia."
+                ? "«{$nombre}» vuelve a estar disponible."
+                : "«{$nombre}» ya no se ofrecerá. Lo que ya lo usaba no cambia."
         );
     }
 
@@ -330,6 +335,8 @@ class CatalogoController extends Controller
 
         if ($request->hasFile('logo')) {
             $convenio->update(['logo' => $request->file('logo')->store('convenios', 'public')]);
+            // Sin el margen blanco que traen muchos logos: si no, la marca se ve diminuta.
+            Imagenes::recortarBordes(Storage::disk('public')->path($convenio->logo));
         } elseif ($request->boolean('quitar_logo')) {
             $convenio->update(['logo' => null]);
         } else {

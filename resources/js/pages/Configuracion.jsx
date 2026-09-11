@@ -23,7 +23,19 @@ function enumerar(nombres) {
 }
 
 export default function Configuracion({ grupos, catalogos }) {
-    const [apartado, setApartado] = useState('catalogos');
+    /*
+     * Se puede entrar directo a un apartado con «?apartado=horario»: así la
+     * sección «Página web» lleva al horario sin obligar a buscar la pestaña.
+     */
+    const [apartado, setApartado] = useState(() => {
+        const pedido = typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('apartado')
+            : null;
+
+        return pedido && ['catalogos', 'papelera', ...grupos.map((g) => g.clave)].includes(pedido)
+            ? pedido
+            : 'catalogos';
+    });
 
     /*
      * UN SOLO formulario para todos los apartados, aunque se vean de uno en uno.
@@ -253,7 +265,7 @@ function Ajuste({ ajuste, valor, error, alCambiar }) {
                     <input
                         id={ajuste.clave}
                         name={ajuste.clave}
-                        type={ajuste.tipo === 'numero' ? 'number' : 'text'}
+                        type={ajuste.tipo === 'numero' ? 'number' : ajuste.tipo === 'fecha' ? 'date' : 'text'}
                         min={ajuste.min ?? undefined}
                         max={ajuste.max ?? undefined}
                         value={valor ?? ''}
