@@ -81,6 +81,13 @@ class Ajustes
                 'defecto' => 30,
                 'unidad' => 'días',
             ],
+            'reglas.version_contrato' => [
+                'grupo' => 'reglas',
+                'etiqueta' => 'Versión del contrato',
+                'ayuda' => 'La que se le hace firmar hoy a quien se inscribe. Súbela cada vez que cambie el texto: es lo que permite saber después qué firmó cada socio, y quién firmó una versión vieja.',
+                'tipo' => 'texto',
+                'defecto' => '1',
+            ],
             'reglas.dias_aviso_vencimiento' => [
                 'grupo' => 'reglas',
                 'etiqueta' => 'Avisar del vencimiento',

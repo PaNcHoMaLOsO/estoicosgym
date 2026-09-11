@@ -8,6 +8,7 @@ use App\Models\Membresia;
 use App\Models\Pago;
 use App\Models\PrecioMembresia;
 use App\Rules\RutValido;
+use App\Support\Ajustes;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -81,16 +82,35 @@ class RegistroClienteService
          */
         $request->validate(['foto_perfil' => self::REGLAS_FOTO], self::MENSAJES_FOTO);
 
+        $request->validate([
+            'contrato_firmado_en' => ['nullable', 'date', 'before_or_equal:today'],
+            'consentimiento_imagen' => ['boolean'],
+            'consentimiento_difusion' => ['boolean'],
+        ], ['contrato_firmado_en.before_or_equal' => 'La fecha de la firma no puede ser futura.']);
+
         $esMenor = $request->boolean('es_menor_edad');
 
         if ($esMenor) {
             $request->validate($this->reglasApoderado(), $this->mensajesApoderado());
         }
 
+        $firmado = $request->input('contrato_firmado_en') ?: null;
+
         $datos = [
             'flujo' => $flujo,
             'cliente' => $cliente,
             'es_menor' => $esMenor,
+            'contrato' => [
+                // La version se toma de Ajustes y no del formulario: es la que
+                // se esta haciendo firmar hoy, y escribirla a mano en el alta
+                // seria una ocasion mas de teclear mal un numero.
+                'contrato_version' => $firmado
+                    ? (string) Ajustes::obtener('reglas.version_contrato')
+                    : null,
+                'contrato_firmado_en' => $firmado,
+                'consentimiento_imagen' => $request->boolean('consentimiento_imagen'),
+                'consentimiento_difusion' => $request->boolean('consentimiento_difusion'),
+            ],
             'apoderado' => $esMenor ? [
                 'consentimiento_apoderado' => $request->boolean('consentimiento_apoderado'),
                 'apoderado_nombre' => $request->input('apoderado_nombre'),
@@ -190,6 +210,41 @@ class RegistroClienteService
     }
 
     /**
+     * Deja constancia del contrato firmado y de lo que el socio autorizo.
+     *
+     * EL CONTRATO SE FIRMA EN PAPEL: aqui solo queda que firmo, que dia y QUE
+     * VERSION. La version es lo que hace falta el dia que cambie el texto, para
+     * poder saber cual acepto cada uno en vez de «alguna de las dos».
+     *
+     * @param array<string,mixed> $datos version, fecha y los dos permisos
+     */
+    public function registrarContrato(Cliente $cliente, array $datos): Cliente
+    {
+        $teniaPermiso = (bool) $cliente->consentimiento_imagen;
+
+        $cliente->update([
+            'contrato_version' => $datos['contrato_version'] ?: null,
+            'contrato_firmado_en' => $datos['contrato_firmado_en'] ?: null,
+            'consentimiento_imagen' => $datos['consentimiento_imagen'],
+            'consentimiento_difusion' => $datos['consentimiento_difusion'],
+        ]);
+
+        /*
+         * RETIRAR EL PERMISO SE LLEVA LA FOTO.
+         *
+         * El contrato dice que el socio puede retirarlo cuando quiera. Si al
+         * desmarcar la casilla la foto siguiera en el disco, esa frase seria
+         * mentira: quedaria guardada la cara de alguien que ya dijo que no.
+         * Se borra aqui y no se deja para que alguien se acuerde despues.
+         */
+        if ($teniaPermiso && ! $cliente->consentimiento_imagen && $cliente->foto_perfil) {
+            $this->cambiarFoto($cliente, null, quitar: true);
+        }
+
+        return $cliente->refresh();
+    }
+
+    /**
      * Pone, cambia o quita la foto de un socio.
      *
      * EL ARCHIVO VIEJO SE BORRA al reemplazarlo o al quitarlo. Son caras de
@@ -241,6 +296,7 @@ class RegistroClienteService
                 'apoderado_observaciones' => $datos['apoderado']['apoderado_observaciones'] ?? null,
                 'foto_perfil' => $foto?->store('clientes', 'public'),
                 'activo' => true,
+                ...($datos['contrato'] ?? []),
             ]);
 
             if ($datos['flujo'] === 'solo_cliente') {

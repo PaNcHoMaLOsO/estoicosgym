@@ -89,6 +89,11 @@ class Cliente extends Model
         'apoderado_parentesco',
         'apoderado_observaciones',
         'foto_perfil',
+        // Constancia del contrato en papel y lo que el socio autorizo.
+        'contrato_version',
+        'contrato_firmado_en',
+        'consentimiento_imagen',
+        'consentimiento_difusion',
     ];
 
     protected $dates = [
@@ -100,6 +105,9 @@ class Cliente extends Model
         'activo' => 'boolean',
         'es_menor_edad' => 'boolean',
         'consentimiento_apoderado' => 'boolean',
+        'contrato_firmado_en' => 'date',
+        'consentimiento_imagen' => 'boolean',
+        'consentimiento_difusion' => 'boolean',
     ];
 
     // ===== MUTATORS PARA SANITIZACIÓN DE DATOS =====

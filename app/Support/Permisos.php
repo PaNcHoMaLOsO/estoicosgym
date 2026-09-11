@@ -39,6 +39,8 @@ class Permisos
         'saldar',
         // La foto del socio. Es editar su ficha, aunque vaya por su cuenta.
         'foto',
+        // Anotar que firmo el contrato y que permisos dio. Tambien es su ficha.
+        'contrato',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */

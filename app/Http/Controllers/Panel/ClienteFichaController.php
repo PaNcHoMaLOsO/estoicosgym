@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Pago;
+use App\Support\Ajustes;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
@@ -44,6 +45,23 @@ class ClienteFichaController extends Controller
                 'rut' => $cliente->run_pasaporte,
                 // Para reconocer a quien esta delante sin preguntarle el RUT.
                 'foto' => $cliente->urlDeFoto(),
+
+                /*
+                 * El contrato y los permisos.
+                 *
+                 * `version_vigente` viaja para poder decir «firmo la 1 y hoy va
+                 * la 2»: sin ella la pantalla ensenaria un numero suelto que no
+                 * significa nada para quien lo mira.
+                 */
+                'contrato' => [
+                    'version' => $cliente->contrato_version,
+                    'version_vigente' => (string) Ajustes::obtener('reglas.version_contrato'),
+                    'firmado_en' => $cliente->contrato_firmado_en?->format('d/m/Y'),
+                    // Para el <input type="date"> de la pantalla.
+                    'firmado_iso' => $cliente->contrato_firmado_en?->format('Y-m-d'),
+                    'imagen' => (bool) $cliente->consentimiento_imagen,
+                    'difusion' => (bool) $cliente->consentimiento_difusion,
+                ],
                 'email' => $cliente->email,
                 'celular' => $cliente->celular,
                 'direccion' => $cliente->direccion,

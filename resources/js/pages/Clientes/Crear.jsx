@@ -125,6 +125,10 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
         // encuentra un File dentro, y una cadena vacía no lo es.
         foto_perfil: null,
 
+        contrato_firmado_en: '',
+        consentimiento_imagen: false,
+        consentimiento_difusion: false,
+
         es_menor_edad: false,
         consentimiento_apoderado: false,
         apoderado_nombre: '',
@@ -325,6 +329,71 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                 alElegir={(f) => setData('foto_perfil', f)}
                             />
                         </Campo>
+                    </div>
+
+                    {/* EL CONTRATO SE FIRMA EN PAPEL y se anota aquí, que es
+                        cuando pasa: la persona está delante con el lápiz en la
+                        mano. Dejarlo para después es dejarlo sin hacer. */}
+                    <div className="sm:col-span-2">
+                        <Campo
+                            etiqueta="Contrato firmado el"
+                            nombre="contrato_firmado_en"
+                            error={errors.contrato_firmado_en}
+                        >
+                            <input
+                                id="contrato_firmado_en"
+                                name="contrato_firmado_en"
+                                type="date"
+                                value={data.contrato_firmado_en}
+                                onChange={(e) => setData('contrato_firmado_en', e.target.value)}
+                                className={`w-full rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:outline-none ${
+                                    errors.contrato_firmado_en
+                                        ? 'border-danger'
+                                        : 'border-line focus:border-line-strong'
+                                }`}
+                            />
+                            <p className="apoyo mt-1 text-fog">
+                                Déjalo vacío si todavía no lo firma. La versión se toma de
+                                Configuración.
+                            </p>
+                        </Campo>
+                    </div>
+
+                    {/* Dos casillas y no una: «la ve el mesón» y «sale en
+                        Instagram» son finalidades distintas, y una firma para
+                        la primera no autoriza la segunda. */}
+                    <div className="space-y-2 sm:col-span-2">
+                        <label className="flex items-start gap-2 text-sm text-chalk">
+                            <input
+                                type="checkbox"
+                                checked={data.consentimiento_imagen}
+                                onChange={(e) => setData('consentimiento_imagen', e.target.checked)}
+                                className="mt-0.5 size-4 rounded-[4px] border-line-strong"
+                            />
+                            <span>
+                                Autoriza su foto en la ficha
+                                <span className="apoyo block text-fog">
+                                    La ve solo el personal, dentro del panel.
+                                </span>
+                            </span>
+                        </label>
+
+                        <label className="flex items-start gap-2 text-sm text-chalk">
+                            <input
+                                type="checkbox"
+                                checked={data.consentimiento_difusion}
+                                onChange={(e) =>
+                                    setData('consentimiento_difusion', e.target.checked)
+                                }
+                                className="mt-0.5 size-4 rounded-[4px] border-line-strong"
+                            />
+                            <span>
+                                Autoriza su imagen en redes sociales
+                                <span className="apoyo block text-fog">
+                                    Este sistema no la usa. Queda anotado para quien publique.
+                                </span>
+                            </span>
+                        </label>
                     </div>
 
                     <div className="sm:col-span-2">

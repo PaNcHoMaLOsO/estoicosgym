@@ -11,6 +11,7 @@ use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
 use App\Services\RegistroClienteService;
+use App\Support\Ajustes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -198,6 +199,41 @@ class ClienteController extends Controller
         return redirect()
             ->route('panel.clientes.show', $cliente->uuid)
             ->with('success', 'Ficha actualizada.');
+    }
+
+    /**
+     * Constancia del contrato firmado y de lo que el socio autorizo.
+     *
+     * SE FIRMA EN PAPEL. Esto solo anota que firmo, que dia y que version, mas
+     * los dos permisos —foto interna y difusion— que van separados porque un
+     * consentimiento sirve para una finalidad y no para la de al lado.
+     */
+    public function contrato(Request $request, Cliente $cliente, RegistroClienteService $registro)
+    {
+        $datos = $request->validate([
+            'contrato_version' => ['nullable', 'string', 'max:20'],
+            // Una firma con fecha futura es un dedazo, no un contrato.
+            'contrato_firmado_en' => ['nullable', 'date', 'before_or_equal:today'],
+            'consentimiento_imagen' => ['boolean'],
+            'consentimiento_difusion' => ['boolean'],
+        ], [
+            'contrato_firmado_en.before_or_equal' => 'La fecha de la firma no puede ser futura.',
+        ]);
+
+        // Si se anota la fecha pero no la version, se toma la que se esta
+        // haciendo firmar hoy: es lo que acaba de pasar en el meson.
+        if (($datos['contrato_firmado_en'] ?? null) && empty($datos['contrato_version'])) {
+            $datos['contrato_version'] = Ajustes::obtener('reglas.version_contrato');
+        }
+
+        $registro->registrarContrato($cliente, $datos + [
+            'contrato_version' => null,
+            'contrato_firmado_en' => null,
+            'consentimiento_imagen' => false,
+            'consentimiento_difusion' => false,
+        ]);
+
+        return back()->with('success', 'Contrato y permisos guardados.');
     }
 
     /**

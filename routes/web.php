@@ -364,6 +364,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // La foto va aparte de la edicion: un archivo obliga a multipart, e
         // Inertia no puede mandar eso con un PUT.
         Route::post('/clientes/{cliente}/foto', [\App\Http\Controllers\Panel\ClienteController::class, 'foto'])->name('clientes.foto');
+        // Constancia del contrato en papel y de los permisos que dio el socio.
+        Route::post('/clientes/{cliente}/contrato', [\App\Http\Controllers\Panel\ClienteController::class, 'contrato'])->name('clientes.contrato');
         Route::patch('/clientes/{cliente}/desactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'desactivar'])->name('clientes.deactivate');
         Route::patch('/clientes/{cliente}/reactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'reactivar'])->name('clientes.reactivate');
         // A la papelera, no al vacio: se recupera desde /panel/papelera.

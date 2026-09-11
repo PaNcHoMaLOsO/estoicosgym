@@ -1,6 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import {
+    AlertTriangleIcon,
     ArrowLeftIcon,
     CameraIcon,
     PencilIcon,
@@ -152,6 +153,208 @@ function FotoDelSocio({ cliente }) {
                 peligrosa
             />
         </div>
+    );
+}
+
+/**
+ * El contrato y los dos permisos.
+ *
+ * EL CONTRATO SE FIRMA EN PAPEL: aquí solo queda la constancia de que se firmó,
+ * qué día y qué versión. La versión importa el día que cambie el texto: sin
+ * ella, la respuesta a «¿qué firmó este socio?» es «alguna de las dos».
+ *
+ * Los dos permisos van SEPARADOS porque son cosas distintas. «Tu foto la ve
+ * quien atiende el mesón» y «tu foto sale en nuestro Instagram» no se autorizan
+ * con la misma firma, y juntarlas dejaría la segunda sin valer.
+ */
+function ContratoDelSocio({ cliente }) {
+    const contrato = cliente.contrato;
+    const [editando, setEditando] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        contrato_version: contrato.version ?? contrato.version_vigente,
+        contrato_firmado_en: contrato.firmado_iso ?? '',
+        consentimiento_imagen: contrato.imagen,
+        consentimiento_difusion: contrato.difusion,
+    });
+
+    const firmado = Boolean(contrato.firmado_en);
+    const versionVieja = firmado && contrato.version !== contrato.version_vigente;
+    // Hay cara guardada pero no consta que dijera que sí.
+    const fotoSinPermiso = Boolean(cliente.foto) && ! contrato.imagen;
+    // Desmarcar el permiso teniendo foto la borra: hay que decirlo antes.
+    const vaABorrarLaFoto = Boolean(cliente.foto) && contrato.imagen && ! data.consentimiento_imagen;
+
+    function guardar(e) {
+        e.preventDefault();
+
+        post(`/panel/clientes/${cliente.uuid}/contrato`, {
+            preserveScroll: true,
+            onSuccess: () => setEditando(false),
+        });
+    }
+
+    if (! editando) {
+        return (
+            <Bloque
+                titulo="Contrato y permisos"
+                accion={
+                    <button
+                        type="button"
+                        onClick={() => setEditando(true)}
+                        className="apoyo text-fog transition-colors hover:text-chalk"
+                    >
+                        {firmado ? 'Cambiar' : 'Anotar'}
+                    </button>
+                }
+            >
+                <dl className="space-y-3">
+                    <Dato etiqueta="Contrato">
+                        {firmado ? (
+                            <>
+                                Firmado el {contrato.firmado_en} · versión {contrato.version}
+                                {versionVieja ? (
+                                    <span className="mt-0.5 flex items-start gap-1 text-warn">
+                                        <AlertTriangleIcon
+                                            className="mt-0.5 size-3 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        Hoy se firma la {contrato.version_vigente}.
+                                    </span>
+                                ) : null}
+                            </>
+                        ) : (
+                            <span className="text-warn">No consta que haya firmado</span>
+                        )}
+                    </Dato>
+
+                    <Dato etiqueta="Foto en su ficha">
+                        {contrato.imagen ? (
+                            'Autorizada'
+                        ) : fotoSinPermiso ? (
+                            <span className="flex items-start gap-1 text-warn">
+                                <AlertTriangleIcon
+                                    className="mt-0.5 size-3 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                Tiene foto, pero no consta que la autorizara.
+                            </span>
+                        ) : (
+                            <span className="text-fog">No autorizada</span>
+                        )}
+                    </Dato>
+
+                    <Dato etiqueta="Redes sociales">
+                        {contrato.difusion ? (
+                            'Autorizada'
+                        ) : (
+                            <span className="text-fog">No autorizada</span>
+                        )}
+                    </Dato>
+                </dl>
+            </Bloque>
+        );
+    }
+
+    return (
+        <Bloque titulo="Contrato y permisos">
+            <form onSubmit={guardar} className="space-y-3">
+                <div>
+                    <label htmlFor="contrato_firmado_en" className="rotulo">
+                        Firmado el
+                    </label>
+                    <input
+                        id="contrato_firmado_en"
+                        type="date"
+                        value={data.contrato_firmado_en}
+                        onChange={(e) => setData('contrato_firmado_en', e.target.value)}
+                        className={`mt-0.5 w-full rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:outline-none ${
+                            errors.contrato_firmado_en
+                                ? 'border-danger'
+                                : 'border-line focus:border-line-strong'
+                        }`}
+                    />
+                    {errors.contrato_firmado_en ? (
+                        <p className="apoyo mt-0.5 text-danger">{errors.contrato_firmado_en}</p>
+                    ) : null}
+                </div>
+
+                <div>
+                    <label htmlFor="contrato_version" className="rotulo">
+                        Versión
+                    </label>
+                    <input
+                        id="contrato_version"
+                        type="text"
+                        value={data.contrato_version}
+                        onChange={(e) => setData('contrato_version', e.target.value)}
+                        className="mt-0.5 w-24 rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+                    />
+                    <p className="apoyo mt-0.5 text-fog">
+                        Hoy se firma la {contrato.version_vigente}.
+                    </p>
+                </div>
+
+                <label className="flex items-start gap-2 text-sm text-chalk">
+                    <input
+                        type="checkbox"
+                        checked={data.consentimiento_imagen}
+                        onChange={(e) => setData('consentimiento_imagen', e.target.checked)}
+                        className="mt-0.5"
+                    />
+                    <span>
+                        Autoriza su foto en la ficha
+                        <span className="apoyo block text-fog">
+                            La ve solo el personal, dentro del panel.
+                        </span>
+                    </span>
+                </label>
+
+                <label className="flex items-start gap-2 text-sm text-chalk">
+                    <input
+                        type="checkbox"
+                        checked={data.consentimiento_difusion}
+                        onChange={(e) => setData('consentimiento_difusion', e.target.checked)}
+                        className="mt-0.5"
+                    />
+                    <span>
+                        Autoriza su imagen en redes sociales
+                        <span className="apoyo block text-fog">
+                            Este sistema no la usa. Queda anotado para quien publique.
+                        </span>
+                    </span>
+                </label>
+
+                {/* Se avisa ANTES de guardar, no después: quien desmarca la
+                    casilla no tiene por qué saber que además borra un archivo. */}
+                {vaABorrarLaFoto ? (
+                    <p className="apoyo flex items-start gap-1 text-warn">
+                        <AlertTriangleIcon className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                        Al guardar se borrará su foto, porque retiró el permiso.
+                    </p>
+                ) : null}
+
+                <div className="flex items-center gap-3 pt-1">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
+                    >
+                        {processing ? 'Guardando…' : 'Guardar'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            reset();
+                            setEditando(false);
+                        }}
+                        className="apoyo text-fog transition-colors hover:text-chalk"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </Bloque>
     );
 }
 
@@ -347,6 +550,8 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                             </dl>
                         </Bloque>
                     ) : null}
+
+                    <ContratoDelSocio cliente={cliente} />
 
                     {cliente.observaciones ? (
                         <Bloque titulo="Observaciones">
