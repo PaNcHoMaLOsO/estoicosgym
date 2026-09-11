@@ -113,10 +113,23 @@ class Notificacion extends Model
         return $query->where('id_estado', self::ESTADO_FALLIDO);
     }
 
+    /**
+     * Las que ya toca mandar.
+     *
+     * SE COMPARA CONTRA EL FINAL DEL DIA, no contra la fecha a secas. La
+     * columna es DATE, pero el valor que se le pasa lleva hora —«hoy a las
+     * 00:00»— y quien decide si esa hora se guarda o se tira es el motor de la
+     * base: MySQL la trunca, SQLite la deja puesta. Con `<= '2026-09-11'`, la
+     * fila que dice «2026-09-11 00:00:00» se queda fuera de su propio dia y el
+     * correo sale al dia siguiente, o no sale.
+     *
+     * Con el final del dia entra igual en los dos, y sin perder el indice, que
+     * es lo que se perderia usando whereDate().
+     */
     public function scopeParaEnviarHoy($query)
     {
         return $query->where('id_estado', self::ESTADO_PENDIENTE)
-                     ->where('fecha_programada', '<=', now()->toDateString())
+                     ->where('fecha_programada', '<=', now()->endOfDay())
                      ->where('intentos', '<', \DB::raw('max_intentos'));
     }
 

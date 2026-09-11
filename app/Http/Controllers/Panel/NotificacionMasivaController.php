@@ -7,6 +7,7 @@ use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Membresia;
 use App\Services\EnvioMasivoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -95,11 +96,14 @@ class NotificacionMasivaController extends Controller
             'id_membresia' => 'nullable|integer|exists:membresias,id',
             'asunto' => 'required|string|min:5|max:255',
             'mensaje' => 'required|string|min:10|max:50000',
+            // Vacio = sale ya. Con fecha, la manda el comando de ese dia.
+            'cuando' => 'nullable|date|after_or_equal:today',
         ], [
             'asunto.required' => 'Ponle un asunto: es lo único que se ve en la bandeja.',
             'asunto.min' => 'El asunto se queda corto.',
             'mensaje.required' => 'Escribe el mensaje.',
             'mensaje.min' => 'El mensaje se queda corto.',
+            'cuando.after_or_equal' => 'No se puede programar un correo para ayer.',
         ]);
 
         // El turno se reserva DESPUES de validar, y aqui importa mas que en
@@ -113,7 +117,8 @@ class NotificacionMasivaController extends Controller
             $datos['grupo'],
             $datos['asunto'],
             $datos['mensaje'],
-            $datos['id_membresia'] ?? null
+            $datos['id_membresia'] ?? null,
+            ! empty($datos['cuando']) ? Carbon::parse($datos['cuando']) : null
         );
 
         return redirect()
@@ -122,10 +127,21 @@ class NotificacionMasivaController extends Controller
     }
 
     /**
-     * @param array{enviados:int,fallidos:int,motivos:list<string>} $resultado
+     * @param array{enviados:int,fallidos:int,programados:int,para:?string,motivos:list<string>} $resultado
      */
     private function contarLoQuePaso(array $resultado): string
     {
+        // Programado no es enviado, y decirlo igual seria mentir: nadie ha
+        // recibido nada todavia. Se dice cuantos y para cuando.
+        if ($resultado['programados'] > 0) {
+            $cuantos = $resultado['programados'] === 1
+                ? 'Queda 1 correo programado'
+                : "Quedan {$resultado['programados']} correos programados";
+
+            return "{$cuantos} para el {$resultado['para']}. Salen esa mañana."
+                . ' Hasta entonces se pueden cancelar desde el listado.';
+        }
+
         $aviso = $resultado['enviados'] === 1
             ? 'Se mandó 1 correo.'
             : "Se mandaron {$resultado['enviados']} correos.";

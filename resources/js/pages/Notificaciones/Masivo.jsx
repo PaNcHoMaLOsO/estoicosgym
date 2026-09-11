@@ -12,6 +12,8 @@ import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
  * personas no se puede recoger, y «182 socios» es un numero: los numeros no
  * dejan ver que ahi dentro esta quien se dio de baja ayer.
  */
+const hoy = new Date().toISOString().slice(0, 10);
+
 export default function Masivo({ grupos, membresias, variables, tope, formToken }) {
     const [lista, setLista] = useState(null);
     const [cargandoLista, setCargandoLista] = useState(false);
@@ -23,7 +25,11 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
         id_membresia: '',
         asunto: '',
         mensaje: '',
+        // Vacío = sale ya. Con fecha, lo manda el comando de esa mañana.
+        cuando: '',
     });
+
+    const programado = data.cuando !== '' && data.cuando > hoy;
 
     const elegido = grupos.find((g) => g.clave === data.grupo);
 
@@ -81,7 +87,17 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
     // Cuantos hay de verdad: la cuenta del grupo si no se ha filtrado por plan,
     // y la de la lista pedida si si.
     const cuantos = lista?.cuantos ?? (data.id_membresia ? null : elegido?.cuantos);
-    const sePasa = cuantos !== null && cuantos !== undefined && cuantos > tope;
+
+    /*
+     * El tope SOLO aplica a lo que sale ya.
+     *
+     * Existe porque los correos salen uno a uno dentro de esta misma petición y
+     * pasado ese número el servidor corta a mitad de la lista. Programado no
+     * pasa por aquí: se escriben las filas y las manda el comando después, sin
+     * navegador de por medio. Bloquearlo también sería negarse por un motivo
+     * que en ese caso no existe.
+     */
+    const sePasa = ! programado && cuantos !== null && cuantos !== undefined && cuantos > tope;
 
     return (
         <>
@@ -186,8 +202,9 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                     {sePasa ? (
                         <p className="flex items-start gap-2 rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
                             <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                            Son {cuantos} y de una vez caben {tope}. Acota el grupo por plan, o
-                            escoge uno más pequeño.
+                            Son {cuantos} y de una vez caben {tope}. Acota el grupo por plan,
+                            escoge uno más pequeño, o prográmalo para otro día: así los manda
+                            el sistema por la mañana y el tope no aplica.
                         </p>
                     ) : null}
                 </Grupo>
@@ -265,6 +282,42 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                 ) : null}
 
                 {data.grupo && data.asunto && data.mensaje ? (
+                    <Grupo titulo="¿Cuándo sale?">
+                        {/* SIN HORA, a propósito. El sistema manda los correos
+                            programados una vez al día, a las 08:00. Pedir una
+                            hora sería prometer algo que no se cumple: es lo que
+                            hacía el panel viejo, con un campo de hora
+                            obligatorio que ni siquiera se guardaba. */}
+                        <div className="sm:col-span-2">
+                            <Campo
+                                etiqueta="Día"
+                                nombre="cuando"
+                                error={errors.cuando}
+                            >
+                                <input
+                                    id="cuando"
+                                    name="cuando"
+                                    type="date"
+                                    min={hoy}
+                                    value={data.cuando}
+                                    onChange={(e) => setData('cuando', e.target.value)}
+                                    className={`w-full rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:outline-none ${
+                                        errors.cuando
+                                            ? 'border-danger'
+                                            : 'border-line focus:border-line-strong'
+                                    }`}
+                                />
+                                <p className="apoyo mt-1 text-fog">
+                                    {programado
+                                        ? 'Salen esa mañana, a las 08:00. Hasta entonces se pueden cancelar desde el listado.'
+                                        : 'Déjalo vacío y sale ahora mismo.'}
+                                </p>
+                            </Campo>
+                        </div>
+                    </Grupo>
+                ) : null}
+
+                {data.grupo && data.asunto && data.mensaje ? (
                     <div className="flex flex-wrap items-center gap-3">
                         <button
                             type="submit"
@@ -273,10 +326,14 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                         >
                             <SendIcon className="size-4" aria-hidden="true" />
                             {processing
-                                ? 'Enviando…'
-                                : cuantos
-                                  ? `Enviar a ${cuantos} ${cuantos === 1 ? 'socio' : 'socios'}`
-                                  : 'Enviar'}
+                                ? programado
+                                    ? 'Programando…'
+                                    : 'Enviando…'
+                                : programado
+                                  ? `Programar${cuantos ? ` ${cuantos}` : ''} para el ${data.cuando.split('-').reverse().join('/')}`
+                                  : cuantos
+                                    ? `Enviar a ${cuantos} ${cuantos === 1 ? 'socio' : 'socios'}`
+                                    : 'Enviar'}
                         </button>
 
                         <Link href="/panel/notificaciones" className="apoyo text-fog hover:text-chalk">

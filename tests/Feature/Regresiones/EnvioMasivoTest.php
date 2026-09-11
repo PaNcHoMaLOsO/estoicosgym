@@ -306,4 +306,128 @@ class EnvioMasivoTest extends CasoConCatalogos
         $this->assertStringNotContainsString('{nombre}', $respuesta->json('asunto'));
         $this->assertSame(0, Notificacion::count());
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Programar para otro día
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Programado NO se manda ahora: queda pendiente con su fecha.
+     *
+     * El correo fingido falla si alguien intenta enviarlo, que es la única
+     * forma de comprobar que de verdad no se tocó el servidor de correo.
+     */
+    public function test_programado_no_sale_hoy(): void
+    {
+        $doble = Mockery::mock(CorreoService::class);
+        $doble->shouldNotReceive('enviar');
+        $this->app->instance(CorreoService::class, $doble);
+
+        $this->socio();
+
+        $this->enviar([
+            'grupo' => 'todos',
+            'cuando' => now()->addDays(3)->format('Y-m-d'),
+        ])->assertSessionHasNoErrors();
+
+        $notificacion = Notificacion::firstOrFail();
+
+        $this->assertSame(Notificacion::ESTADO_PENDIENTE, $notificacion->id_estado);
+        $this->assertSame(
+            now()->addDays(3)->format('Y-m-d'),
+            $notificacion->fecha_programada->format('Y-m-d')
+        );
+    }
+
+    /** Y llegado el día, el comando de siempre lo recoge. */
+    public function test_llegado_el_dia_el_comando_lo_recoge(): void
+    {
+        $doble = Mockery::mock(CorreoService::class);
+        $doble->shouldNotReceive('enviar');
+        $this->app->instance(CorreoService::class, $doble);
+
+        $this->socio();
+        $this->enviar(['grupo' => 'todos', 'cuando' => now()->addDays(3)->format('Y-m-d')]);
+
+        // Hoy todavía no le toca.
+        $this->assertSame(0, Notificacion::paraEnviarHoy()->count());
+
+        $this->travel(3)->days();
+
+        $this->assertSame(1, Notificacion::paraEnviarHoy()->count());
+    }
+
+    /** Sin fecha sale en el momento, como siempre. */
+    public function test_sin_fecha_sale_ahora(): void
+    {
+        $this->fingirCorreo();
+        $this->socio();
+
+        $this->enviar(['grupo' => 'todos'])->assertSessionHasNoErrors();
+
+        $this->assertSame(Notificacion::ESTADO_ENVIADO, Notificacion::firstOrFail()->id_estado);
+    }
+
+    /**
+     * EL TOPE NO APLICA A LO PROGRAMADO.
+     *
+     * El tope existe porque los correos salen uno a uno dentro de la petición
+     * web. Un envío programado no pasa por ahí: solo escribe las filas, y las
+     * manda el comando después. Negarse también en ese caso sería rechazar por
+     * un motivo que ahí no existe.
+     */
+    public function test_el_tope_no_frena_un_envio_programado(): void
+    {
+        $doble = Mockery::mock(CorreoService::class);
+        $doble->shouldNotReceive('enviar');
+        $this->app->instance(CorreoService::class, $doble);
+
+        $cuantos = EnvioMasivoService::tope() + 1;
+        Cliente::factory()->count($cuantos)->create(['activo' => true]);
+
+        $this->enviar([
+            'grupo' => 'todos',
+            'cuando' => now()->addDay()->format('Y-m-d'),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($cuantos, Notificacion::count());
+    }
+
+    /** Una fecha pasada se rechaza: no se puede programar para ayer. */
+    public function test_una_fecha_pasada_se_rechaza(): void
+    {
+        $this->fingirCorreo();
+        $this->socio();
+
+        $this->enviar([
+            'grupo' => 'todos',
+            'cuando' => now()->subDay()->format('Y-m-d'),
+        ])->assertSessionHasErrors('cuando');
+
+        $this->assertSame(0, Notificacion::count());
+    }
+
+    /**
+     * El aviso dice «programados», no «enviados».
+     *
+     * Decir que se mandaron cuando nadie ha recibido nada todavía es la clase
+     * de mentira que se descubre tres días después.
+     */
+    public function test_el_aviso_no_dice_que_se_mandaron(): void
+    {
+        $doble = Mockery::mock(CorreoService::class);
+        $doble->shouldNotReceive('enviar');
+        $this->app->instance(CorreoService::class, $doble);
+
+        $this->socio();
+
+        $aviso = $this->enviar([
+            'grupo' => 'todos',
+            'cuando' => now()->addDays(2)->format('Y-m-d'),
+        ])->getSession()->get('success');
+
+        $this->assertStringContainsString('programado', $aviso);
+        $this->assertStringNotContainsString('Se mandó', $aviso);
+        $this->assertStringContainsString(now()->addDays(2)->format('d/m/Y'), $aviso);
+    }
 }

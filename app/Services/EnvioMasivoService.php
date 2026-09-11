@@ -100,14 +100,28 @@ class EnvioMasivoService
     }
 
     /**
-     * Manda el correo a todos, y cuenta lo que pasó con cada uno.
+     * Manda el correo al grupo, hoy o el día que se diga, y cuenta lo que pasó.
      *
-     * @return array{enviados:int,fallidos:int,motivos:list<string>}
+     * `$cuando` en null o con la fecha de hoy sale en el momento. Con una
+     * fecha posterior las filas quedan pendientes y las manda el comando
+     * diario.
+     *
+     * NO SE GUARDA UNA HORA, a propósito: el comando corre a las 08:00, así que
+     * pedirla sería prometer algo que el sistema no hace. Es justo lo que hacía
+     * el panel viejo —un campo de hora obligatorio, que además la columna, que
+     * es DATE, ni siquiera guardaba—.
+     *
+     * @return array{enviados:int,fallidos:int,programados:int,para:?string,motivos:list<string>}
      *
      * @throws ValidationException
      */
-    public function enviar(string $grupo, string $asunto, string $mensaje, ?int $idMembresia = null): array
-    {
+    public function enviar(
+        string $grupo,
+        string $asunto,
+        string $mensaje,
+        ?int $idMembresia = null,
+        ?Carbon $cuando = null
+    ): array {
         $socios = $this->destinatarios($grupo, $idMembresia);
 
         if ($socios->isEmpty()) {
@@ -116,12 +130,27 @@ class EnvioMasivoService
             ]);
         }
 
+        // Sin fecha, o con la de hoy, sale ya. Con una posterior queda anotado
+        // y lo manda el comando diario.
+        $dia = $cuando ? $cuando->copy()->startOfDay() : today();
+        $ahora = ! $dia->isAfter(today());
+
+        /*
+         * EL TOPE SOLO APLICA A LO QUE SALE YA.
+         *
+         * El tope existe porque los correos salen uno a uno DENTRO de la
+         * petición web, y pasado cierto número PHP corta a mitad de la lista.
+         * Un envío programado no tiene ese problema: aquí solo se escriben las
+         * filas —que es rápido— y quien las manda después es el comando, fuera
+         * del navegador. Aplicarle el tope sería negarse a programar un aviso
+         * a doscientos socios por un motivo que en ese caso no existe.
+         */
         $tope = self::tope();
 
-        if ($socios->count() > $tope) {
+        if ($ahora && $socios->count() > $tope) {
             throw ValidationException::withMessages([
                 'grupo' => sprintf(
-                    'Ese grupo son %d socios y de una vez caben %d. Elige un grupo más pequeño.',
+                    'Ese grupo son %d socios y de una vez caben %d. Elige un grupo más pequeño, o prográmalo para otro día.',
                     $socios->count(),
                     $tope
                 ),
@@ -132,6 +161,7 @@ class EnvioMasivoService
 
         $enviados = 0;
         $fallidos = 0;
+        $programados = 0;
         $motivos = [];
 
         foreach ($socios as $socio) {
@@ -145,10 +175,18 @@ class EnvioMasivoService
                 'asunto' => $correo['asunto'],
                 'contenido' => $correo['mensaje'],
                 'id_estado' => Notificacion::ESTADO_PENDIENTE,
-                'fecha_programada' => today(),
+                'fecha_programada' => $dia,
                 'tipo_envio' => 'manual',
                 'enviado_por_user_id' => auth()->id(),
             ]);
+
+            // Programado: la fila queda pendiente con su fecha y el comando
+            // diario la recoge. No se toca el correo ahora.
+            if (! $ahora) {
+                $programados++;
+
+                continue;
+            }
 
             try {
                 $this->correo->enviar($socio->email, $correo['asunto'], $correo['mensaje']);
@@ -174,6 +212,8 @@ class EnvioMasivoService
         return [
             'enviados' => $enviados,
             'fallidos' => $fallidos,
+            'programados' => $programados,
+            'para' => $ahora ? null : $dia->format('d/m/Y'),
             // Los primeros cinco: la lista entera no cabe en un aviso, y los
             // demás están en el listado de notificaciones con su motivo.
             'motivos' => array_slice($motivos, 0, 5),
