@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InscripcionController;
@@ -120,7 +119,8 @@ Route::middleware('guest')->group(function () {
             }
             
             request()->session()->regenerate();
-            return redirect()->intended('dashboard');
+            // Al panel de PRO GYM. «dashboard» era el tablero viejo de AdminLTE.
+            return redirect()->intended(route('panel.resumen'));
         }
         
         return back()->withErrors([
@@ -179,7 +179,8 @@ Route::middleware('guest')->group(function () {
             Auth::login($user, $remember);
             request()->session()->regenerate();
             
-            return redirect()->intended('dashboard');
+            // Al panel de PRO GYM. «dashboard» era el tablero viejo de AdminLTE.
+            return redirect()->intended(route('panel.resumen'));
         }
         
         return back()->withErrors(['code' => $result['message']]);
@@ -332,7 +333,10 @@ Route::post('/logout', function () {
 Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
     
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // El tablero viejo de AdminLTE —con el nombre de antes y sus cifras
+    // viejas— era adonde llevaba entrar al sistema. Ahora esa dirección
+    // lleva al Resumen del panel, y un marcador guardado también.
+    Route::redirect('/dashboard', '/panel')->name('dashboard');
 
     /*
      * PANEL NUEVO (Inertia + React).

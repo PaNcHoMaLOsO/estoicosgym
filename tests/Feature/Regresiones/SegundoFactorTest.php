@@ -82,7 +82,7 @@ class SegundoFactorTest extends CasoConCatalogos
         $this->post('/login', [
             'email' => $usuario->email,
             'password' => 'password',
-        ])->assertRedirect('/dashboard');
+        ])->assertRedirect('/panel');
 
         $this->assertAuthenticatedAs($usuario);
     }
