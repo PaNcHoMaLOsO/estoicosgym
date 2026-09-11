@@ -7,17 +7,19 @@ use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\TipoNotificacion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Registro de un pago sobre una inscripcion existente.
  *
- * POR QUE ESTO NO VIVE EN UN CONTROLADOR. Lo piden los dos paneles —el de Blade
- * en /admin y el de React en /panel— y son mas de doscientas lineas entre
- * validaciones, calculo de saldos y tres formas de cobrar. Copiarlas en el
- * segundo panel dejaria dos versiones que se separan a la primera correccion
- * que se haga solo en una, que es justo lo que ya paso con el valor 'abono'.
+ * POR QUE ESTO NO VIVE EN UN CONTROLADOR. Lo pedian los dos paneles —el de Blade
+ * en /admin, ya borrado, y el de React en /panel— y son mas de doscientas lineas
+ * entre validaciones, calculo de saldos y tres formas de cobrar. Copiarlas en el
+ * segundo panel habria dejado dos versiones que se separan a la primera
+ * correccion que se haga solo en una, que es justo lo que ya paso con el valor
+ * 'abono'.
  *
  * TODO ERROR SALE COMO ValidationException. Antes se mezclaban `withErrors()` y
  * `with('error')`, asi que segun cual saltara el aviso aparecia al lado del
@@ -109,12 +111,57 @@ class RegistroPagoService
     /**
      * Crea el pago y, si con el queda saldada la membresia, programa el aviso
      * al socio.
+     *
+     * EL SALDO SE VUELVE A MIRAR AQUI DENTRO, CON LA FILA TRABADA. Entre validar
+     * y escribir puede haberse cobrado por otra caja: las dos peticiones leian
+     * el mismo saldo, las dos lo daban por bueno y entre las dos entraba mas
+     * plata que lo que valia la membresia. El turno del formulario no lo
+     * atrapaba —son dos envios distintos, cada uno con su token— ni el corte al
+     * duplicado, que solo mira el mismo monto en la misma fecha. Y el recalculo
+     * de la noche tampoco lo arregla: los dos cobros son de verdad, y el socio
+     * queda con plata a favor que nadie le va a devolver.
+     *
+     * Al trabar la inscripcion, el segundo cobro espera al primero y ve lo que
+     * de verdad quedaba por pagar.
      */
     public function registrar(array $resultado): Pago
     {
-        $pago = Pago::create($resultado['datos']);
+        $pago = DB::transaction(function () use ($resultado) {
+            $inscripcion = Inscripcion::whereKey($resultado['inscripcion']->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($resultado['completa']) {
+            $datos = $resultado['datos'];
+            $abonado = (int) $datos['monto_abonado'];
+            $total = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base);
+            $pendiente = $total - (int) $inscripcion->pagos()->sum('monto_abonado');
+
+            if ($abonado > $pendiente) {
+                throw ValidationException::withMessages([
+                    'monto_abonado' => $pendiente > 0
+                        ? sprintf(
+                            'Mientras se llenaba este formulario se cobró sobre esta membresía: ahora el saldo es $%s. Revisa el monto antes de guardar.',
+                            number_format($pendiente, 0, ',', '.'),
+                        )
+                        : 'Mientras se llenaba este formulario esta membresía quedó pagada por completo. No queda saldo que cobrar.',
+                ]);
+            }
+
+            // El saldo y el estado se escriben con lo que hay AHORA, no con lo
+            // que se leyo al validar.
+            $saldo = $pendiente - $abonado;
+
+            return Pago::create([
+                'monto_total' => $total,
+                'monto_pendiente' => $saldo,
+                'id_estado' => $saldo <= 0 ? self::PAGO_PAGADO : self::PAGO_PARCIAL,
+            ] + $datos);
+        });
+
+        // El aviso, ya con el cobro escrito y confirmado: si se mandara dentro
+        // de la transaccion y esta se cayera, el socio tendria el correo de un
+        // pago que no existe.
+        if ((int) $pago->monto_pendiente <= 0) {
             $this->avisarPagoCompletado($resultado['inscripcion']);
         }
 

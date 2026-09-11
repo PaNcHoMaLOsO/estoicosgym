@@ -11,6 +11,7 @@ use App\Services\RegistroPagoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -19,8 +20,7 @@ use Inertia\Inertia;
  * Va aparte de Panel\PagoController —que solo lista— porque el listado y el
  * cobro no comparten nada: uno pagina y el otro valida saldos.
  *
- * Las validaciones y los cálculos viven en RegistroPagoService, el mismo que usa
- * el panel de Blade.
+ * Las validaciones y los cálculos viven en RegistroPagoService.
  */
 class PagoCrearController extends Controller
 {
@@ -94,6 +94,13 @@ class PagoCrearController extends Controller
 
         try {
             $pago = $registro->registrar($resultado);
+        } catch (ValidationException $e) {
+            // El saldo cambió entre validar y escribir. Eso tiene explicación y
+            // se arregla corrigiendo el monto, así que el aviso va al campo: como
+            // un «no se pudo, inténtalo otra vez» se reintentaría igual de mal.
+            $this->releaseFormToken($request, 'pago_create');
+
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Error al registrar pago desde el panel: ' . $e->getMessage());
             $this->releaseFormToken($request, 'pago_create');
@@ -104,9 +111,11 @@ class PagoCrearController extends Controller
         $socio = $resultado['inscripcion']->cliente;
         $nombre = $socio ? trim("{$socio->nombres} {$socio->apellido_paterno}") : 'el socio';
 
+        // Lo que quedó pendiente sale del pago ya escrito, no de lo que se leyó
+        // al validar: si entremedio entró otro cobro, el saldo es otro.
         return redirect()->route('panel.pagos.show', $pago->uuid)->with(
             'success',
-            $resultado['completa']
+            (int) $pago->monto_pendiente <= 0
                 ? "Pago registrado. La membresía de {$nombre} queda al día."
                 : "Abono registrado a {$nombre}. Queda saldo pendiente."
         );

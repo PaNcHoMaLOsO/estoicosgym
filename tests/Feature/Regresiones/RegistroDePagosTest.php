@@ -6,6 +6,9 @@ use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Pago;
+use App\Services\RegistroPagoService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Tests\CasoConCatalogos;
 
 /**
@@ -254,6 +257,53 @@ class RegistroDePagosTest extends CasoConCatalogos
             ->assertSessionHasErrors('id_inscripcion');
 
         $this->assertSame(0, Pago::count());
+    }
+
+    /**
+     * Dos cobros que se cruzan no pueden pasarse del precio.
+     *
+     * Las dos peticiones leen el saldo ANTES de que ninguna escriba —dos cajas a
+     * la vez, o el mismo formulario abierto en dos pestañas, cada una con SU
+     * token— y las dos lo daban por bueno: entre ambas entraba el doble de lo
+     * que valía la membresía. El corte al duplicado no lo ve, porque mira el
+     * mismo monto en la misma fecha, y el recálculo de la noche tampoco lo
+     * arregla, porque los dos cobros son de verdad: el socio queda con plata a
+     * favor que nadie le va a devolver.
+     *
+     * Se llama al servicio directo para poder cruzarlos: por HTTP las peticiones
+     * van una detrás de otra y la segunda ya vería el cobro de la primera, que
+     * es justo lo que aquí no puede pasar.
+     */
+    public function test_dos_cobros_que_se_cruzan_no_se_pasan_del_precio(): void
+    {
+        $inscripcion = $this->inscripcionDe(50000);
+        $servicio = app(RegistroPagoService::class);
+
+        $peticion = fn () => Request::create('/', 'POST', [
+            'id_inscripcion' => $inscripcion->id,
+            'tipo_pago' => 'completo',
+            'id_metodo_pago' => MetodoPago::first()->id,
+            'fecha_pago' => now()->format('Y-m-d'),
+        ]);
+
+        // Las dos validan mientras la membresía todavía debe los 50.000.
+        $primera = $servicio->validar($peticion());
+        $segunda = $servicio->validar($peticion());
+
+        $servicio->registrar($primera);
+
+        try {
+            $servicio->registrar($segunda);
+            $this->fail('El segundo cobro entró: la membresía quedó cobrada dos veces.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('monto_abonado', $e->errors());
+        }
+
+        $this->assertSame(
+            50000,
+            (int) Pago::where('id_inscripcion', $inscripcion->id)->sum('monto_abonado'),
+            'Entre los dos cobros se pasaron del precio de la membresía.'
+        );
     }
 
     /**
