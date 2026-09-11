@@ -18,7 +18,7 @@
         <div class="absolute top-1/4 left-10 w-72 h-72 bg-pg-rojo/25 rounded-full blur-3xl brillo" aria-hidden="true"></div>
         <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-pg-plata/10 rounded-full blur-3xl brillo" style="animation-delay: -4s" aria-hidden="true"></div>
 
-        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-28">
+        <div class="relative z-10 max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 text-center pt-28">
             <div class="fade-in">
                 <span class="inline-block px-4 py-2 bg-pg-rojo/20 border border-pg-rojo/40 rounded-full text-pg-rojo-claro text-sm font-modern mb-6">
                     <i class="fas fa-map-marker-alt mr-2" aria-hidden="true"></i>
@@ -49,7 +49,7 @@
     <section id="accesos" class="py-20 bg-pg-negro">
         @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][min(4, max(2, count($destacados)))])
         {{-- Las clases van escritas enteras: el CSS compilado solo trae las que encuentra tal cual. --}}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 sm:grid-cols-2 {{ $columnas }}">
+        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 sm:grid-cols-2 {{ $columnas }}">
             @foreach($destacados as $i => $d)
                 <a href="{{ $d['href'] }}" class="animate-on-scroll group card-hover block bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-2xl p-7 transition-colors" style="animation-delay: {{ $i * 0.1 }}s">
                     <div class="w-14 h-14 rounded-xl bg-pg-rojo/10 flex items-center justify-center mb-5 transition-all duration-300 group-hover:bg-pg-rojo/25 group-hover:scale-110">
@@ -79,7 +79,7 @@
     {{-- ===== SERVICIOS ===== --}}
     @if(count($servicios))
         <section id="servicios" class="py-24 bg-pg-negro">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Lo que ofrecemos</span>
                     <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">NUESTROS SERVICIOS</h2>
@@ -97,7 +97,7 @@
     {{-- ===== TESTIMONIOS: reales y con permiso ===== --}}
     @if(count($testimonios))
         <section class="py-24 bg-pg-carbon">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-14 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Nuestros socios</span>
                     <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">LO QUE DICEN</h2>

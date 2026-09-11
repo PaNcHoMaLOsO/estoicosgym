@@ -6,8 +6,10 @@
 @section('content')
         <!-- ===== CONTACTO SECTION ===== -->
         <section id="contacto" class="pt-36 pb-24 bg-pg-negro relative">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
+                {{-- El formulario se lleva más ancho que los datos: al medio y medio,
+                     la columna de la izquierda quedaba con un vacío enorme debajo. --}}
+                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-12">
                     <!-- Contact Info -->
                     <div class="animate-on-scroll">
                         <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Contáctanos</span>
@@ -54,8 +56,15 @@
                             @endif
                         </div>
 
-                        @if($web['google_maps'] || $web['resenas'] || $redes)
+                        @if($whatsapp || $web['google_maps'] || $web['resenas'] || $redes)
                             <div class="mt-10 flex flex-wrap items-center gap-3">
+                                {{-- El WhatsApp va primero: es por donde escribe casi todo el mundo. --}}
+                                @if($whatsapp)
+                                    <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
+                                       class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
+                                        <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Escríbenos por WhatsApp
+                                    </a>
+                                @endif
                                 @if($web['google_maps'])
                                     <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
                                        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-modern text-sm font-semibold transition-colors">

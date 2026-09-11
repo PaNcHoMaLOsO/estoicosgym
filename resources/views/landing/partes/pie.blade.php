@@ -1,10 +1,10 @@
 <footer class="bg-pg-carbon border-t border-pg-tiza/5">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
                 <picture>
                     <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-16 w-auto" loading="lazy">
+                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-20 w-auto" loading="lazy">
                 </picture>
                 <p class="text-pg-tiza/55 font-modern text-sm mt-5">
                     {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}

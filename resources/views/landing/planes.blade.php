@@ -11,7 +11,7 @@
     ])
 
     <section id="planes" class="pb-24 bg-pg-negro">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             {{-- Los planes y los precios son los del catálogo. --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 @forelse($planes as $index => $plan)

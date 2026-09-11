@@ -11,7 +11,7 @@
     ])
 
     <section id="especialistas" class="pb-24 bg-pg-negro">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             @if(count($especialistas))
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     @foreach($especialistas as $index => $e)
