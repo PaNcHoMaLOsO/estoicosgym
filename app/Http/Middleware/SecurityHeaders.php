@@ -25,11 +25,12 @@ class SecurityHeaders
         // Previene XSS, clickjacking, inyección de código
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com",
+            // Google Analytics: solo se carga si hay un ID en Configuracion -> Web.
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.googletagmanager.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
             "img-src 'self' data: https:",
-            "connect-src 'self'",
+            "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",

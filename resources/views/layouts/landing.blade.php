@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,6 +29,40 @@
     <!-- Favicon: el isotipo del logotipo -->
     <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/progym-isotipo.png') }}">
+
+    <!-- Una sola direccion para esta pagina: evita que Google la cuente dos veces -->
+    <link rel="canonical" href="{{ $web['canonical'] ?? url('/') }}">
+    @if(!empty($web['search_console']))
+        <meta name="google-site-verification" content="{{ $web['search_console'] }}">
+    @endif
+
+    <!-- La ficha que lee Google: sale de los planes y de Configuracion. JSON_HEX_TAG impide cerrar el <script> desde un ajuste. -->
+    @if(!empty($web['json_ld']))
+        <script type="application/ld+json">{!! json_encode($web['json_ld'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+    @endif
+
+    @if(!empty($web['google_analytics']))
+        <!-- Google Analytics con el consentimiento DENEGADO por defecto: hasta que la persona acepta, no guarda cookies. -->
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+                analytics_storage: 'denied',
+                wait_for_update: 500
+            });
+            try {
+                if (localStorage.getItem('pg-analitica') === 'si') {
+                    gtag('consent', 'update', { analytics_storage: 'granted' });
+                }
+            } catch (e) {}
+            gtag('js', new Date());
+            gtag('config', @json($web['google_analytics']));
+        </script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $web['google_analytics'] }}"></script>
+    @endif
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -250,6 +284,58 @@
         });
     </script>
     
+    <!-- Eventos para Analytics. Sin ID configurado no hacen nada. -->
+    <script>
+        window.pgEvento = function (nombre, datos) {
+            if (typeof window.gtag === 'function') {
+                window.gtag('event', nombre, datos || {});
+            }
+        };
+        document.addEventListener('click', function (e) {
+            var el = e.target.closest ? e.target.closest('[data-evento]') : null;
+            if (el) {
+                var plan = el.getAttribute('data-plan');
+                window.pgEvento(el.getAttribute('data-evento'), plan ? { plan: plan } : {});
+            }
+        });
+    </script>
+
+    @if(!empty($web['google_analytics']))
+        <!-- Aviso de cookies: aparece hasta que la persona elige, y su eleccion se respeta. -->
+        <div id="aviso-cookies" class="hidden fixed bottom-0 inset-x-0 z-50 p-4">
+            <div class="max-w-3xl mx-auto bg-pg-carbon border border-pg-tiza/10 rounded-xl shadow-2xl p-4 flex flex-col sm:flex-row items-center gap-4">
+                <p class="text-pg-tiza/80 text-sm font-modern flex-1">
+                    Usamos cookies de analítica para saber qué partes de la página sirven. No las usamos para publicidad.
+                </p>
+                <div class="flex gap-2 shrink-0">
+                    <button type="button" data-cookies="no" class="px-4 py-2 rounded-lg border border-pg-tiza/20 text-pg-tiza/80 hover:text-pg-tiza text-sm font-modern">No, gracias</button>
+                    <button type="button" data-cookies="si" class="px-4 py-2 rounded-lg bg-pg-rojo hover:bg-pg-rojo-oscuro text-white text-sm font-semibold font-modern">Aceptar</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var aviso = document.getElementById('aviso-cookies');
+                var elegido = null;
+                try { elegido = localStorage.getItem('pg-analitica'); } catch (e) {}
+                if (elegido !== 'si' && elegido !== 'no') {
+                    aviso.classList.remove('hidden');
+                }
+                aviso.addEventListener('click', function (e) {
+                    var opcion = e.target.getAttribute('data-cookies');
+                    if (!opcion) {
+                        return;
+                    }
+                    try { localStorage.setItem('pg-analitica', opcion); } catch (e2) {}
+                    if (opcion === 'si' && typeof window.gtag === 'function') {
+                        window.gtag('consent', 'update', { analytics_storage: 'granted' });
+                    }
+                    aviso.classList.add('hidden');
+                });
+            })();
+        </script>
+    @endif
+
     @yield('scripts')
 </body>
 </html>

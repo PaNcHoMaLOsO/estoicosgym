@@ -77,6 +77,37 @@ class AjustesController extends Controller
             ]);
         }
 
+        /*
+         * Lo que se pinta en la pagina publica se revisa por FORMA, no solo por
+         * largo. Un enlace de Instagram termina en un href: si fuera
+         * «javascript:...», cualquiera con acceso a Configuracion meteria
+         * codigo en la pagina que ven los clientes. Y un ID de Analytics mal
+         * copiado mediria en silencio contra ninguna parte.
+         */
+        $errores = [];
+
+        foreach ($valores as $clave => $valor) {
+            $definicion = $definiciones[$clave];
+            $valor = trim((string) $valor);
+
+            if ($valor === '') {
+                continue;
+            }
+
+            if (($definicion['formato'] ?? null) === 'url'
+                && (! filter_var($valor, FILTER_VALIDATE_URL) || ! preg_match('#^https?://#i', $valor))) {
+                $errores[$clave] = 'Tiene que ser un enlace completo, que empiece por https://';
+            }
+
+            if (isset($definicion['patron']) && ! preg_match($definicion['patron'], $valor)) {
+                $errores[$clave] = $definicion['mensaje'] ?? 'El formato no es válido.';
+            }
+        }
+
+        if ($errores !== []) {
+            throw ValidationException::withMessages($errores);
+        }
+
         Ajustes::guardar($valores);
 
         return back()->with('success', 'Configuración guardada.');

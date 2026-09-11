@@ -29,8 +29,18 @@ Route::model('convenio', Convenio::class);
 // ===== LANDING PAGE PÚBLICA (con headers de seguridad) =====
 Route::middleware('security.headers')->group(function () {
     Route::get('/', [LandingController::class, 'index'])->name('landing');
-    Route::post('/contacto', [LandingController::class, 'contacto'])->name('landing.contacto');
-    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->name('landing.consultar-membresia');
+    // Para Google: que hay y donde esta el mapa del sitio.
+    Route::get('/robots.txt', [LandingController::class, 'robots'])->name('landing.robots');
+    Route::get('/sitemap.xml', [LandingController::class, 'sitemap'])->name('landing.sitemap');
+
+    /*
+     * Un tope general encima de los que ya lleva cada metodo. Aquellos cuentan
+     * con criterio —fallos, bloqueos progresivos, por RUT—; este es el respaldo
+     * tonto por si un dia fallan: nadie de verdad manda diez formularios en un
+     * minuto.
+     */
+    Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:10,1')->name('landing.contacto');
+    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:10,1')->name('landing.consultar-membresia');
 });
 
 // ===== AUTENTICACIÓN =====

@@ -132,6 +132,64 @@ class Ajustes
                 'defecto' => 150,
                 'unidad' => 'socios',
             ],
+
+            // ---- La web publica ----
+            'web.ciudad' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Ciudad',
+                'ayuda' => 'La que la gente escribe en Google: «gimnasio en Los Ángeles». Va en el título de la página y en la ficha que lee Google.',
+                'tipo' => 'texto',
+                'defecto' => 'Los Ángeles',
+            ],
+            'web.region' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Región',
+                'ayuda' => 'Para que Google no la confunda con Los Ángeles de California.',
+                'tipo' => 'texto',
+                'defecto' => 'Biobío',
+            ],
+            'web.google_maps' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Enlace de Google Maps',
+                'ayuda' => 'El de la ficha del gimnasio en Google Maps (Compartir → Copiar enlace). Sale como botón «Cómo llegar».',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'web.instagram' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Instagram',
+                'ayuda' => 'El enlace completo del perfil. Vacío = no se muestra.',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'web.facebook' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Facebook',
+                'ayuda' => 'El enlace completo de la página. Vacío = no se muestra.',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'web.google_analytics' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Google Analytics',
+                'ayuda' => 'El ID de medición, con la forma G-XXXXXXXXXX. Vacío = no se mide nada y no aparece el aviso de cookies.',
+                'tipo' => 'texto',
+                'patron' => '/^G-[A-Z0-9]{4,12}$/',
+                'mensaje' => 'El ID de Google Analytics tiene la forma G-XXXXXXXXXX.',
+                'defecto' => '',
+            ],
+            'web.search_console' => [
+                'grupo' => 'web',
+                'etiqueta' => 'Verificación de Search Console',
+                'ayuda' => 'Solo el código de la etiqueta «google-site-verification», sin comillas ni el resto.',
+                'tipo' => 'texto',
+                'patron' => '/^[A-Za-z0-9_-]{10,100}$/',
+                'mensaje' => 'Pega solo el código, sin comillas ni la etiqueta completa.',
+                'defecto' => '',
+            ],
         ];
     }
 
@@ -143,6 +201,7 @@ class Ajustes
             'reglas' => ['titulo' => 'Reglas', 'descripcion' => 'Cómo se comportan las membresías'],
             'meson' => ['titulo' => 'Mesón', 'descripcion' => 'Las notas y lo fiado'],
             'correo' => ['titulo' => 'Correo', 'descripcion' => 'Límites de los envíos'],
+            'web' => ['titulo' => 'Web', 'descripcion' => 'La página pública: cómo la encuentra Google y cómo se mide'],
         ];
     }
 

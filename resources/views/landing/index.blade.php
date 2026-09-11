@@ -1,7 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', $gimnasio['nombre'] . ' — Profesionales del deporte')
-@section('description', 'Gimnasio ' . $gimnasio['nombre'] . '. Revisa los planes y consulta tu membresía en línea.')
+@section('title', $web['titulo'])
+@section('description', $web['descripcion'])
 
 @section('content')
     <!-- ===== NAVBAR ===== -->
@@ -23,9 +23,6 @@
                     <a href="#planes" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Planes</a>
                     <a href="#consulta" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Mi Membresía</a>
                     <a href="#contacto" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors font-modern text-sm">Contacto</a>
-                    <a href="{{ route('login') }}" class="bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-semibold px-6 py-2.5 rounded-lg transition-all btn-glow font-modern text-sm">
-                        Acceder
-                    </a>
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -42,9 +39,6 @@
                     <a href="#planes" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Planes</a>
                     <a href="#consulta" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Mi Membresía</a>
                     <a href="#contacto" class="text-pg-tiza/80 hover:text-pg-rojo-claro transition-colors py-2">Contacto</a>
-                    <a href="{{ route('login') }}" class="bg-gradient-to-r from-pg-rojo to-pg-rojo-oscuro text-white font-semibold px-6 py-3 rounded-lg text-center transition-all">
-                        Acceder
-                    </a>
                 </div>
             </div>
         </div>
@@ -68,8 +62,8 @@
             <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20">
                 <div class="fade-in">
                     <span class="inline-block px-4 py-2 bg-pg-rojo/20 border border-pg-rojo/40 rounded-full text-pg-rojo-claro text-sm font-modern mb-6">
-                        <i class="fas fa-fire mr-2"></i>
-                        Profesionales del deporte
+                        <i class="fas fa-map-marker-alt mr-2" aria-hidden="true"></i>
+                        {{ $web['ciudad'] ? 'Gimnasio en ' . $web['ciudad'] : 'Profesionales del deporte' }}
                     </span>
                     
                     <h1 class="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-wider mb-6">
@@ -113,7 +107,7 @@
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Lo que ofrecemos</span>
                     <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">NUESTROS SERVICIOS</h2>
                     <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
-                        Todo lo que necesitas para alcanzar tu mejor versión en un solo lugar.
+                        {{ $gimnasio['nombre'] }} es un gimnasio{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', región del ' . $web['region'] : '' }}. Esto es lo que encuentras al entrar.
                     </p>
                 </div>
                 
@@ -173,7 +167,7 @@
                                 @endif
 
                                 <div class="mt-auto pt-6">
-                                    <a href="#contacto" class="block w-full text-center py-3 rounded-lg font-semibold transition-all font-modern text-sm {{ $plan['destacado'] ? 'bg-pg-rojo hover:bg-pg-rojo-oscuro text-white btn-glow' : 'border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro' }}">
+                                    <a href="#contacto" data-evento="elegir_plan" data-plan="{{ $plan['nombre'] }}" class="block w-full text-center py-3 rounded-lg font-semibold transition-all font-modern text-sm {{ $plan['destacado'] ? 'bg-pg-rojo hover:bg-pg-rojo-oscuro text-white btn-glow' : 'border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro' }}">
                                         Lo quiero
                                     </a>
                                 </div>
@@ -246,7 +240,7 @@
                                     </div>
                                     <div>
                                         <h4 class="font-semibold mb-1 text-pg-tiza">Teléfono</h4>
-                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $gimnasio['telefono']) }}" class="hover:text-pg-tiza transition-colors">{{ $gimnasio['telefono'] }}</a></p>
+                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $gimnasio['telefono']) }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['telefono'] }}</a></p>
                                     </div>
                                 </div>
                             @endif
@@ -257,7 +251,7 @@
                                     </div>
                                     <div>
                                         <h4 class="font-semibold mb-1 text-pg-tiza">Correo</h4>
-                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="mailto:{{ $gimnasio['email'] }}" class="hover:text-pg-tiza transition-colors">{{ $gimnasio['email'] }}</a></p>
+                                        <p class="text-pg-tiza/60 font-modern text-sm"><a href="mailto:{{ $gimnasio['email'] }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['email'] }}</a></p>
                                     </div>
                                 </div>
                             @endif
@@ -273,6 +267,29 @@
                                 </div>
                             @endif
                         </div>
+
+                        @if($web['google_maps'] || $web['instagram'] || $web['facebook'])
+                            <div class="mt-10 flex flex-wrap items-center gap-3">
+                                @if($web['google_maps'])
+                                    <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
+                                       class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-modern text-sm font-semibold transition-colors">
+                                        <i class="fas fa-route" aria-hidden="true"></i> Cómo llegar
+                                    </a>
+                                @endif
+                                @if($web['instagram'])
+                                    <a href="{{ $web['instagram'] }}" target="_blank" rel="noopener" aria-label="Instagram"
+                                       class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
+                                        <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                                    </a>
+                                @endif
+                                @if($web['facebook'])
+                                    <a href="{{ $web['facebook'] }}" target="_blank" rel="noopener" aria-label="Facebook"
+                                       class="w-12 h-12 bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-xl flex items-center justify-center transition-all text-pg-tiza hover:text-pg-rojo-claro">
+                                        <i class="fab fa-facebook-f text-xl" aria-hidden="true"></i>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Contact Form -->
@@ -419,7 +436,7 @@
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
                     <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h2>
                     <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
-                        Ingresa tu RUT para ver el estado de tu membresía, días restantes y pagos.
+                        Ingresa tu RUT y los últimos 4 dígitos de tu celular para ver cómo está tu membresía.
                     </p>
                 </div>
                 
@@ -455,6 +472,21 @@
                                         maxlength="12"
                                         class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
                                     >
+                                </div>
+                                <div>
+                                    <label for="digitos-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
+                                        <i class="fas fa-mobile-alt mr-2 text-pg-rojo-claro"></i>Últimos 4 dígitos de tu celular
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="digitos-consulta"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        placeholder="••••"
+                                        maxlength="4"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder-pg-tiza/30 transition-colors focus:outline-none focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-[0.5em]"
+                                    >
+                                    <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">El que registraste en el gimnasio: así nadie más puede ver tu membresía.</p>
                                 </div>
                             </div>
                             
@@ -543,16 +575,14 @@
                             </div>
                         </div>
                         
-                        <!-- Últimos pagos -->
+                        <!-- Estado de pago: si queda algo por pagar. El historial se ve en el meson. -->
                         <div class="border-t border-pg-tiza/10 pt-6">
-                            <h4 class="text-pg-tiza font-semibold mb-4 font-modern">
-                                <i class="fas fa-receipt mr-2 text-pg-rojo-claro"></i>Últimos Pagos
+                            <h4 class="text-pg-tiza font-semibold mb-2 font-modern">
+                                <i class="fas fa-receipt mr-2 text-pg-rojo-claro"></i>Estado de pago
                             </h4>
-                            <div id="resultado-pagos" class="space-y-2">
-                                <!-- Pagos se insertan aquí -->
-                            </div>
+                            <p id="resultado-saldo" class="font-modern text-sm text-pg-tiza/70">-</p>
                         </div>
-                        
+
                         <!-- Botón cerrar -->
                         <button 
                             type="button"
@@ -601,7 +631,6 @@
                             <li><a href="#servicios" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Servicios</a></li>
                             <li><a href="#planes" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Planes</a></li>
                             <li><a href="#contacto" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
-                            <li><a href="{{ route('login') }}" class="text-pg-tiza/50 hover:text-pg-rojo-claro transition-colors">Acceder</a></li>
                         </ul>
                     </div>
                     
@@ -621,12 +650,20 @@
 @endsection
 
 @section('scripts')
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.pgEvento) window.pgEvento('generate_lead');
+    });
+</script>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos
     const btnConsultar = document.getElementById('btn-consultar');
     const btnCerrar = document.getElementById('btn-cerrar-resultado');
     const inputRut = document.getElementById('rut-consulta');
+    const inputDigitos = document.getElementById('digitos-consulta');
     const inputCelular = document.getElementById('celular-consulta');
     const inputNombre = document.getElementById('nombre-consulta');
     const resultadoDiv = document.getElementById('resultado-consulta');
@@ -699,12 +736,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') consultarMembresia();
     });
     
+    // Los 4 digitos: solo numeros, y con Enter se consulta igual que en el RUT.
+    inputDigitos.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+    inputDigitos.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') consultarMembresia();
+    });
+
     // Cerrar resultado
     btnCerrar.addEventListener('click', function() {
         resultadoDiv.classList.add('hidden');
         inputRut.value = '';
         inputCelular.value = '';
         inputNombre.value = '';
+        inputDigitos.value = '';
         if (modoConsulta === 'rut') {
             inputRut.focus();
         } else {
@@ -721,7 +767,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarError('Ingresa un RUT válido');
                 return;
             }
-            payload = { tipo: 'rut', rut: rut };
+            const digitos = inputDigitos.value.trim();
+            if (!/^[0-9]{4}$/.test(digitos)) {
+                mostrarError('Ingresa los últimos 4 dígitos de tu celular');
+                return;
+            }
+            payload = { tipo: 'rut', rut: rut, digitos: digitos };
         } else {
             const celular = inputCelular.value.replace(/\s/g, '').trim();
             const nombre = inputNombre.value.trim();
@@ -792,24 +843,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resultado-fin').textContent = data.fecha_fin || '-';
         document.getElementById('resultado-dias').textContent = data.dias_restantes !== null ? data.dias_restantes : '-';
         
-        // Pagos
-        const pagosContainer = document.getElementById('resultado-pagos');
-        pagosContainer.innerHTML = '';
-        
-        if (data.pagos && data.pagos.length > 0) {
-            data.pagos.forEach(pago => {
-                const pagoEl = document.createElement('div');
-                pagoEl.className = 'flex items-center justify-between bg-pg-carbon/50 rounded-lg px-4 py-2';
-                pagoEl.innerHTML = `
-                    <span class="text-pg-tiza/60 font-modern text-sm">${pago.fecha}</span>
-                    <span class="text-${pago.color}-400 font-modern text-sm font-semibold">${pago.estado}</span>
-                `;
-                pagosContainer.appendChild(pagoEl);
-            });
+        // Estado de pago: si queda algo por pagar, cuanto. Nada de historial.
+        const saldoEl = document.getElementById('resultado-saldo');
+        if (data.saldo && data.saldo > 0) {
+            saldoEl.textContent = 'Tienes un saldo pendiente de $' + Number(data.saldo).toLocaleString('es-CL') + '. Puedes pagarlo en el mesón.';
+            saldoEl.className = 'font-modern text-sm text-yellow-400';
+        } else if (data.membresia) {
+            saldoEl.textContent = 'Estás al día.';
+            saldoEl.className = 'font-modern text-sm text-green-400';
         } else {
-            pagosContainer.innerHTML = '<p class="text-pg-tiza/40 text-sm font-modern">Sin pagos registrados</p>';
+            saldoEl.textContent = 'No tienes una membresía activa en este momento.';
+            saldoEl.className = 'font-modern text-sm text-pg-tiza/60';
         }
-        
+
+        if (window.pgEvento) window.pgEvento('consulta_membresia');
+
         resultadoDiv.classList.remove('hidden');
         resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }

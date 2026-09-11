@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -50,10 +49,13 @@ class LandingController extends Controller
             'horario' => Ajustes::obtener('gimnasio.horario'),
         ];
 
+        $planes = $this->planesALaVenta();
+
         return view('landing.index', [
             'gimnasio' => $gimnasio,
-            'planes' => $this->planesALaVenta(),
+            'planes' => $planes,
             'servicios' => $this->servicios(),
+            'web' => $this->datosParaGoogle($gimnasio, $planes),
         ]);
     }
 
@@ -127,6 +129,116 @@ class LandingController extends Controller
             ['icono' => 'heartbeat', 'titulo' => 'Cardio', 'descripcion' => 'Equipos de cardio para calentar, quemar y ganar resistencia.'],
             ['icono' => 'user-check', 'titulo' => 'Orientación en sala', 'descripcion' => 'Te enseñamos a usar los equipos para que entrenes seguro.'],
         ];
+    }
+
+    /**
+     * Lo que lee Google: el titulo, la descripcion y la ficha estructurada.
+     *
+     * PARA SALIR EN «GIMNASIO EN LOS ANGELES» lo que mas pesa no esta aqui:
+     * es la ficha del gimnasio en Google Maps (Perfil de Empresa) y que la
+     * direccion y el telefono sean los mismos en todas partes. Esto hace que
+     * la pagina diga lo mismo, con las palabras que la gente escribe, y en el
+     * formato que Google entiende —schema.org ExerciseGym—, con los planes y
+     * los precios de verdad.
+     *
+     * @param array<string,mixed> $gimnasio
+     * @param list<array<string,mixed>> $planes
+     * @return array<string,mixed>
+     */
+    private function datosParaGoogle(array $gimnasio, array $planes): array
+    {
+        $ciudad = trim((string) Ajustes::obtener('web.ciudad'));
+        $region = trim((string) Ajustes::obtener('web.region'));
+        $maps = Ajustes::obtener('web.google_maps') ?: null;
+        $instagram = Ajustes::obtener('web.instagram') ?: null;
+        $facebook = Ajustes::obtener('web.facebook') ?: null;
+
+        $precios = array_column($planes, 'precio');
+        $pesos = fn (int $monto) => '$' . number_format($monto, 0, ',', '.');
+        $inicio = url('/');
+
+        $vacio = fn ($valor) => $valor !== null && $valor !== '' && $valor !== [];
+
+        $ficha = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'ExerciseGym',
+            'name' => $gimnasio['nombre'],
+            'slogan' => 'Profesionales del deporte',
+            'url' => $inicio,
+            'logo' => asset('images/progym-logo.png'),
+            'image' => asset('images/progym-logo.png'),
+            'telephone' => $gimnasio['telefono'] ?: null,
+            'email' => $gimnasio['email'] ?: null,
+            'address' => array_filter([
+                '@type' => 'PostalAddress',
+                'streetAddress' => $gimnasio['direccion'] ?: null,
+                'addressLocality' => $ciudad ?: null,
+                'addressRegion' => $region ?: null,
+                'addressCountry' => 'CL',
+            ], $vacio),
+            'areaServed' => $ciudad ?: null,
+            'hasMap' => $maps,
+            'sameAs' => array_values(array_filter([$instagram, $facebook])),
+            'priceRange' => $precios ? $pesos(min($precios)) . ' - ' . $pesos(max($precios)) : null,
+            'makesOffer' => array_map(fn (array $plan) => [
+                '@type' => 'Offer',
+                'name' => 'Plan ' . $plan['nombre'],
+                'price' => $plan['precio'],
+                'priceCurrency' => 'CLP',
+            ], $planes),
+        ], $vacio);
+
+        $donde = $ciudad ? "Gimnasio en {$ciudad}" : 'Gimnasio';
+
+        return [
+            'ciudad' => $ciudad,
+            'region' => $region,
+            'titulo' => $gimnasio['nombre'] . ($ciudad ? " | Gimnasio en {$ciudad}" . ($region ? ", {$region}" : '') : ''),
+            'descripcion' => "{$donde}: musculación, cardio y orientación en sala."
+                . ($precios ? ' Planes desde ' . $pesos(min($precios)) . '.' : '')
+                . ' Revisa los precios y consulta tu membresía en línea.',
+            'canonical' => $inicio,
+            'json_ld' => $ficha,
+            'google_analytics' => Ajustes::obtener('web.google_analytics') ?: null,
+            'search_console' => Ajustes::obtener('web.search_console') ?: null,
+            'google_maps' => $maps,
+            'instagram' => $instagram,
+            'facebook' => $facebook,
+        ];
+    }
+
+    /**
+     * Para los buscadores: todo se puede leer, y aqui esta el mapa del sitio.
+     *
+     * EL PANEL NO SE NOMBRA a proposito. robots.txt lo puede abrir cualquiera,
+     * y escribir «Disallow: /login» seria senalarle a todo el mundo donde esta
+     * la puerta. El panel ya queda fuera de Google por su cuenta: pide sesion,
+     * y la pantalla de acceso lleva «noindex».
+     */
+    public function robots()
+    {
+        $texto = "User-agent: *\nAllow: /\n\nSitemap: " . route('landing.sitemap') . "\n";
+
+        return response($texto, 200)->header('Content-Type', 'text/plain; charset=UTF-8');
+    }
+
+    /**
+     * El mapa del sitio. Hoy es una pagina, pero Search Console lo pide.
+     *
+     * La fecha es la del ultimo cambio de precios: es lo que cambia la pagina.
+     */
+    public function sitemap()
+    {
+        $cambio = \App\Models\PrecioMembresia::max('updated_at');
+        $fecha = $cambio ? Carbon::parse($cambio)->toDateString() : now()->toDateString();
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n"
+            . '  <url><loc>' . e(url('/')) . '</loc><lastmod>' . $fecha . '</lastmod>'
+            . '<changefreq>weekly</changefreq><priority>1.0</priority></url>' . "\n"
+            . '</urlset>' . "\n";
+
+        return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 
     /**
@@ -228,288 +340,278 @@ class LandingController extends Controller
     }
 
     /**
-     * Consulta simple de membresía (sin login)
-     * 
-     * SEGURIDAD IMPLEMENTADA:
-     * ✅ Rate limiting: 3 consultas por IP cada 5 minutos (bloqueo progresivo)
-     * ✅ Validación de RUT con dígito verificador
-     * ✅ Sanitización completa de inputs
-     * ✅ Logs de acceso (IP, fecha, RUT parcial)
-     * ✅ Honeypot anti-bot
-     * ✅ Headers de seguridad (via middleware)
-     * ✅ Datos encriptados en respuesta
-     * ✅ Bloqueo temporal por múltiples intentos fallidos
+     * «Mi membresía»: el socio mira cómo está su membresía desde su casa.
+     *
+     * PIDE DOS DATOS, NO UNO. Con el RUT solo, cualquiera que lo supiera —y
+     * un RUT sale en cualquier boleta— veía el nombre completo de la persona,
+     * si era socia, su plan y cuándo pagó. Ahora se pide además lo que sabe el
+     * socio y no un desconocido: los últimos 4 dígitos de su celular.
+     *
+     * RESPONDE LO JUSTO: el nombre de pila, el plan, el vencimiento y si debe
+     * algo. Ni apellido ni historial de pagos: eso se ve en el mesón.
+     *
+     * «RUT que no es socio» y «RUT con los dígitos equivocados» responden
+     * EXACTAMENTE lo mismo. Si respondieran distinto, la pregunta «¿esta
+     * persona es socia?» se contestaría sin saber los dígitos.
+     *
+     * Los frenos van en capas: por IP —3 consultas cada 5 minutos y bloqueo
+     * tras 5 fallos— y por RUT o celular —bloqueo tras 5 fallos, venga de
+     * donde venga—, para que cambiar de conexión no sirva para probar dígitos.
      */
     public function consultarMembresia(Request $request)
     {
-        $ip = $request->ip();
-        
-        // 1. HONEYPOT - Detectar bots
+        $ip = (string) $request->ip();
+
+        // 1. Trampa para bots: se les responde como a alguien que no existe.
         if ($request->filled('website') || $request->filled('url')) {
             Log::warning('Consulta membresía: Honeypot activado', ['ip' => $ip]);
-            // Simular respuesta normal para confundir bots
-            return response()->json([
-                'success' => false,
-                'message' => 'No encontramos tu membresía.',
-            ], 404);
+
+            return $this->noEncontrada();
         }
-        
-        // 2. RATE LIMITING PROGRESIVO
-        $keyConsultas = 'consulta_membresia:' . $ip;
+
+        // 2. Frenos por IP.
         $keyBloqueo = 'consulta_bloqueado:' . $ip;
-        $keyFallidos = 'consulta_fallidos:' . $ip;
-        
-        // Verificar si IP está bloqueada
+        $keyConsultas = 'consulta_membresia:' . $ip;
+
         if (RateLimiter::tooManyAttempts($keyBloqueo, 1)) {
-            $segundos = RateLimiter::availableIn($keyBloqueo);
-            $minutos = ceil($segundos / 60);
-            
+            $minutos = (int) ceil(RateLimiter::availableIn($keyBloqueo) / 60);
             Log::warning('Consulta membresía: IP bloqueada intentando acceder', ['ip' => $ip]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => "Tu acceso está temporalmente bloqueado. Intenta en {$minutos} minutos.",
                 'blocked' => true,
             ], 429);
         }
-        
-        // Rate limiting normal: 3 consultas cada 5 minutos
+
         if (RateLimiter::tooManyAttempts($keyConsultas, 3)) {
             $segundos = RateLimiter::availableIn($keyConsultas);
-            
             Log::info('Consulta membresía: Rate limit alcanzado', ['ip' => $ip]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => "Has realizado muchas consultas. Espera {$segundos} segundos.",
             ], 429);
         }
-        
-        RateLimiter::hit($keyConsultas, 300); // 5 minutos
 
-        // 3. DETERMINAR TIPO DE CONSULTA
-        $tipoConsulta = $request->input('tipo', 'rut');
-        $cliente = null;
-        
-        if ($tipoConsulta === 'rut') {
-            // ===== CONSULTA POR RUT =====
-            $rutInput = trim($request->input('rut', ''));
-            $rutInput = strip_tags($rutInput);
-            $rutInput = preg_replace('/[^0-9kK.\-]/', '', $rutInput);
-            
-            if (strlen($rutInput) < 7 || strlen($rutInput) > 12) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Formato de RUT inválido.',
-                ], 422);
-            }
-            
-            // Limpiar RUT para validación
-            $rutLimpio = strtoupper(preg_replace('/[^0-9kK]/', '', $rutInput));
-            
-            // VALIDAR DÍGITO VERIFICADOR
-            if (!$this->validarRutChileno($rutLimpio)) {
-                RateLimiter::hit($keyFallidos, 900);
-                
-                if (RateLimiter::attempts($keyFallidos) >= 5) {
-                    RateLimiter::hit($keyBloqueo, 1800);
-                    Log::warning('Consulta membresía: IP bloqueada por muchos RUTs inválidos', ['ip' => $ip]);
-                }
-                
-                Log::info('Consulta membresía: RUT inválido', ['ip' => $ip, 'rut_parcial' => substr($rutLimpio, 0, 3) . '****']);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El RUT ingresado no es válido.',
-                ], 422);
-            }
+        RateLimiter::hit($keyConsultas, 300);
 
-            // BUSCAR CLIENTE POR RUT
-            $cliente = Cliente::where('activo', true)
-                ->where(function ($query) use ($rutInput, $rutLimpio) {
-                    $query->where('run_pasaporte', $rutInput)
-                          ->orWhereRaw("UPPER(REPLACE(REPLACE(REPLACE(run_pasaporte, '.', ''), '-', ''), ' ', '')) = ?", [$rutLimpio]);
-                })
-                ->with(['inscripciones' => function ($q) {
-                    $q->with(['membresia', 'estado'])
-                      ->orderBy('fecha_inicio', 'desc')
-                      ->limit(3);
-                }, 'pagos' => function ($q) {
-                    $q->with('estado')
-                      ->orderBy('fecha_pago', 'desc')
-                      ->limit(5);
-                }])
-                ->first();
+        // 3. Quién es.
+        [$cliente, $llave, $respuesta] = $request->input('tipo', 'rut') === 'celular'
+            ? $this->buscarPorCelular($request, $ip)
+            : $this->buscarPorRut($request, $ip);
 
-            if (!$cliente) {
-                RateLimiter::hit($keyFallidos, 900);
-                
-                if (RateLimiter::attempts($keyFallidos) >= 5) {
-                    RateLimiter::hit($keyBloqueo, 1800);
-                    Log::warning('Consulta membresía: IP bloqueada por muchos RUTs no encontrados', ['ip' => $ip]);
-                }
-                
-                Log::info('Consulta membresía: RUT no encontrado', ['ip' => $ip, 'rut_parcial' => substr($rutLimpio, 0, 3) . '****']);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No encontramos tu membresía. Verifica tu RUT.',
-                ], 404);
-            }
-            
-        } else {
-            // ===== CONSULTA POR CELULAR + NOMBRE =====
-            $celularInput = preg_replace('/[^0-9]/', '', $request->input('celular', ''));
-            $nombreInput = trim(strip_tags($request->input('nombre', '')));
-            
-            if (strlen($celularInput) < 8 || strlen($celularInput) > 12) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Formato de celular inválido.',
-                ], 422);
-            }
-            
-            if (strlen($nombreInput) < 2 || strlen($nombreInput) > 50) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nombre inválido.',
-                ], 422);
-            }
-            
-            // Normalizar nombre para búsqueda (quitar tildes, minúsculas)
-            $nombreNormalizado = $this->normalizarTexto($nombreInput);
-
-            // BUSCAR CLIENTE POR CELULAR
-            $cliente = Cliente::where('activo', true)
-                ->where(function ($query) use ($celularInput) {
-                    // Buscar por últimos 8-9 dígitos del celular
-                    $query->whereRaw("RIGHT(REPLACE(REPLACE(celular, ' ', ''), '+56', ''), 9) = ?", [substr($celularInput, -9)])
-                          ->orWhereRaw("RIGHT(REPLACE(REPLACE(celular, ' ', ''), '+56', ''), 8) = ?", [substr($celularInput, -8)]);
-                })
-                ->with(['inscripciones' => function ($q) {
-                    $q->with(['membresia', 'estado'])
-                      ->orderBy('fecha_inicio', 'desc')
-                      ->limit(3);
-                }, 'pagos' => function ($q) {
-                    $q->with('estado')
-                      ->orderBy('fecha_pago', 'desc')
-                      ->limit(5);
-                }])
-                ->get();
-            
-            // Verificar nombre coincide (al menos parcialmente)
-            $cliente = $cliente->first(function ($c) use ($nombreNormalizado) {
-                $nombreCliente = $this->normalizarTexto($c->nombres);
-                // El nombre ingresado debe estar contenido en el nombre del cliente
-                return str_contains($nombreCliente, $nombreNormalizado) || 
-                       str_contains($nombreNormalizado, explode(' ', $nombreCliente)[0]);
-            });
-
-            if (!$cliente) {
-                RateLimiter::hit($keyFallidos, 900);
-                
-                if (RateLimiter::attempts($keyFallidos) >= 5) {
-                    RateLimiter::hit($keyBloqueo, 1800);
-                    Log::warning('Consulta membresía: IP bloqueada por muchos celulares no encontrados', ['ip' => $ip]);
-                }
-                
-                Log::info('Consulta membresía: Celular/nombre no coincide', [
-                    'ip' => $ip, 
-                    'celular_parcial' => '****' . substr($celularInput, -4),
-                ]);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No encontramos tu membresía. Verifica tu celular y nombre.',
-                ], 404);
-            }
+        if ($respuesta) {
+            return $respuesta;
         }
 
-        // 4. ÉXITO - Limpiar intentos fallidos
-        RateLimiter::clear($keyFallidos);
-        
-        // LOG de consulta exitosa
-        Log::info('Consulta membresía: Exitosa', [
-            'ip' => $ip,
-            'cliente_id' => $cliente->id,
-            'rut_parcial' => substr($rutLimpio, 0, 3) . '****',
-            'timestamp' => now()->toIso8601String(),
-        ]);
+        if (! $cliente) {
+            $this->contarFallo($ip, $llave);
 
-        // 7. Preparar datos seguros
-        $inscripcionActiva = $cliente->inscripciones
-            ->whereIn('id_estado', [100]) // Solo activas
-            ->first();
-
-        $diasRestantes = null;
-        $estadoMembresia = 'Sin membresía activa';
-        $fechaInicio = null;
-        $fechaFin = null;
-        $nombreMembresia = null;
-
-        if ($inscripcionActiva) {
-            $fechaFin = $inscripcionActiva->fecha_vencimiento; // Campo correcto
-            $fechaInicio = $inscripcionActiva->fecha_inicio;
-            $nombreMembresia = $inscripcionActiva->membresia?->nombre ?? 'Membresía';
-            
-            if ($fechaFin) {
-                $diasRestantes = max(0, (int) Carbon::now()->diffInDays($fechaFin, false));
-                
-                if ($diasRestantes > 0) {
-                    $estadoMembresia = 'Activa';
-                } elseif ($diasRestantes === 0) {
-                    $estadoMembresia = 'Vence hoy';
-                } else {
-                    $estadoMembresia = 'Vencida';
-                    $diasRestantes = 0;
-                }
-            } else {
-                $estadoMembresia = 'Activa (sin fecha fin)';
-            }
+            return $this->noEncontrada();
         }
 
-        // Últimos pagos (solo estado, sin montos)
-        $ultimosPagos = $cliente->pagos->map(function ($pago) {
-            return [
-                'fecha' => $pago->fecha_pago?->format('d/m/Y') ?? 'N/A',
-                'estado' => $pago->estado?->nombre ?? 'N/A',
-                'color' => $this->getColorPago($pago->estado?->codigo ?? 0),
-            ];
-        })->take(3)->toArray();
+        // 4. Encontrado: se olvidan los fallos de esta conexión y de esta llave.
+        RateLimiter::clear('consulta_fallidos:' . $ip);
+        RateLimiter::clear($llave);
 
-        // 5. Respuesta con datos encriptados para integridad
-        $datos = [
-            'nombre' => $cliente->nombres . ' ' . $cliente->apellido_paterno,
-            'membresia' => $nombreMembresia,
-            'estado' => $estadoMembresia,
-            'fecha_inicio' => $fechaInicio?->format('d/m/Y'),
-            'fecha_fin' => $fechaFin?->format('d/m/Y'),
-            'dias_restantes' => $diasRestantes,
-            'pagos' => $ultimosPagos,
-        ];
+        // Antes se registraba aquí «rut_parcial» con una variable que solo
+        // existe en la búsqueda por RUT: la búsqueda por celular reventaba
+        // con un error 500 justo al encontrar a la persona.
+        Log::info('Consulta membresía: Exitosa', ['ip' => $ip, 'cliente_id' => $cliente->id]);
 
         return response()->json([
             'success' => true,
-            'data' => $datos,
-            // Token de verificación encriptado
-            'token' => Crypt::encryptString(json_encode([
-                'id' => $cliente->id,
-                'ts' => time(),
-            ])),
+            'data' => $this->loQueSeMuestra($cliente),
         ]);
     }
 
     /**
-     * Helper para color de estado de pago
+     * Por RUT y los últimos 4 dígitos del celular.
+     *
+     * @return array{0: ?Cliente, 1: ?string, 2: ?\Illuminate\Http\JsonResponse}
      */
-    private function getColorPago(int $codigo): string
+    private function buscarPorRut(Request $request, string $ip): array
     {
-        return match(true) {
-            $codigo === 201 => 'green',  // Pagado
-            $codigo === 200 => 'yellow', // Pendiente
-            $codigo === 202 => 'blue',   // Parcial
-            default => 'red',            // Vencido/Cancelado
-        };
+        $rutInput = preg_replace('/[^0-9kK.-]/', '', strip_tags(trim((string) $request->input('rut', ''))));
+        $digitos = preg_replace('/[^0-9]/', '', (string) $request->input('digitos', ''));
+
+        if (strlen($rutInput) < 7 || strlen($rutInput) > 12) {
+            return [null, null, $this->invalido('Formato de RUT inválido.')];
+        }
+
+        if (strlen($digitos) !== 4) {
+            return [null, null, $this->invalido('Ingresa los últimos 4 dígitos de tu celular.')];
+        }
+
+        $rutLimpio = strtoupper(preg_replace('/[^0-9kK]/', '', $rutInput));
+        $llave = 'consulta_fallidos_llave:' . hash('sha256', 'rut:' . $rutLimpio);
+
+        if ($bloqueada = $this->llaveBloqueada($llave)) {
+            return [null, $llave, $bloqueada];
+        }
+
+        // Un RUT mal escrito se dice —el dígito verificador lo calcula
+        // cualquiera, no revela nada—, pero cuenta como fallo: probar RUTs al
+        // azar es justo lo que hace quien busca a alguien.
+        if (! $this->validarRutChileno($rutLimpio)) {
+            $this->contarFallo($ip, null);
+
+            return [null, $llave, $this->invalido('El RUT ingresado no es válido.')];
+        }
+
+        $cliente = Cliente::where('activo', true)
+            ->where(function ($q) use ($rutInput, $rutLimpio) {
+                $q->where('run_pasaporte', $rutInput)
+                    ->orWhereRaw("UPPER(REPLACE(REPLACE(REPLACE(run_pasaporte, '.', ''), '-', ''), ' ', '')) = ?", [$rutLimpio]);
+            })
+            ->first();
+
+        // El mismo camino exista o no: así la respuesta no distingue «no es
+        // socio» de «es socio pero los dígitos no son».
+        $celular = $cliente ? preg_replace('/[^0-9]/', '', (string) $cliente->celular) : '';
+        $coincide = $celular !== '' && hash_equals(substr($celular, -4), $digitos);
+
+        return [$coincide ? $cliente : null, $llave, null];
+    }
+
+    /**
+     * Por celular y primer nombre, para quien no tiene RUT.
+     *
+     * @return array{0: ?Cliente, 1: ?string, 2: ?\Illuminate\Http\JsonResponse}
+     */
+    private function buscarPorCelular(Request $request, string $ip): array
+    {
+        $celularInput = preg_replace('/[^0-9]/', '', (string) $request->input('celular', ''));
+        $nombreInput = trim(strip_tags((string) $request->input('nombre', '')));
+
+        if (strlen($celularInput) < 8 || strlen($celularInput) > 12) {
+            return [null, null, $this->invalido('Formato de celular inválido.')];
+        }
+
+        if (mb_strlen($nombreInput) < 2 || mb_strlen($nombreInput) > 50) {
+            return [null, null, $this->invalido('Nombre inválido.')];
+        }
+
+        $llave = 'consulta_fallidos_llave:' . hash('sha256', 'cel:' . substr($celularInput, -8));
+
+        if ($bloqueada = $this->llaveBloqueada($llave)) {
+            return [null, $llave, $bloqueada];
+        }
+
+        /*
+         * El celular se guarda normalizado —nueve dígitos, sin +56—, así que se
+         * compara tal cual. Antes se usaba RIGHT() de MySQL, que otras bases no
+         * tienen.
+         *
+         * Y el nombre tiene que ser EL PRIMER NOMBRE, entero. Antes bastaba con
+         * que las letras escritas estuvieran dentro del nombre: «an» abría la
+         * ficha de cualquier Juan, Ana o Daniela con ese celular.
+         */
+        $primero = fn (string $texto) => explode(' ', trim($this->normalizarTexto($texto)))[0] ?? '';
+        $buscado = $primero($nombreInput);
+
+        $cliente = Cliente::where('activo', true)
+            ->where(fn ($q) => $q
+                ->where('celular', substr($celularInput, -9))
+                ->orWhere('celular', 'like', '%' . substr($celularInput, -8)))
+            ->get()
+            ->first(fn (Cliente $c) => $buscado !== '' && $primero((string) $c->nombres) === $buscado);
+
+        return [$cliente, $llave, null];
+    }
+
+    /** Un fallo cuenta para la conexión y, si la hay, para la llave (el RUT o el celular). */
+    private function contarFallo(string $ip, ?string $llave): void
+    {
+        $keyFallidos = 'consulta_fallidos:' . $ip;
+
+        RateLimiter::hit($keyFallidos, 900);
+
+        if (RateLimiter::attempts($keyFallidos) >= 5) {
+            RateLimiter::hit('consulta_bloqueado:' . $ip, 1800);
+            Log::warning('Consulta membresía: IP bloqueada por muchos fallos', ['ip' => $ip]);
+        }
+
+        if ($llave) {
+            RateLimiter::hit($llave, 1800);
+        }
+    }
+
+    /** Cinco fallos para el mismo RUT o celular lo cierran 30 minutos, cambie o no la IP. */
+    private function llaveBloqueada(string $llave): ?\Illuminate\Http\JsonResponse
+    {
+        if (! RateLimiter::tooManyAttempts($llave, 5)) {
+            return null;
+        }
+
+        $minutos = (int) ceil(RateLimiter::availableIn($llave) / 60);
+
+        return response()->json([
+            'success' => false,
+            'message' => "Por seguridad, esta consulta quedó bloqueada. Intenta en {$minutos} minutos o pregunta en el mesón.",
+            'blocked' => true,
+        ], 429);
+    }
+
+    private function invalido(string $mensaje): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['success' => false, 'message' => $mensaje], 422);
+    }
+
+    /** Siempre la misma respuesta: no existe, no coincide o es un bot. */
+    private function noEncontrada(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'No encontramos tu membresía. Revisa los datos e intenta de nuevo.',
+        ], 404);
+    }
+
+    /**
+     * Lo que ve el socio: su nombre de pila, su plan y si debe algo.
+     *
+     * @return array<string,mixed>
+     */
+    private function loQueSeMuestra(Cliente $cliente): array
+    {
+        $activa = $cliente->inscripciones()
+            ->with('membresia')
+            ->where('id_estado', 100)
+            ->orderByDesc('fecha_vencimiento')
+            ->first();
+
+        $datos = [
+            'nombre' => explode(' ', trim((string) $cliente->nombres))[0] ?: 'Socio',
+            'membresia' => null,
+            'estado' => 'Sin membresía activa',
+            'fecha_inicio' => null,
+            'fecha_fin' => null,
+            'dias_restantes' => null,
+            'saldo' => 0,
+        ];
+
+        if (! $activa) {
+            return $datos;
+        }
+
+        $dias = $activa->fecha_vencimiento
+            ? (int) now()->startOfDay()->diffInDays($activa->fecha_vencimiento->copy()->startOfDay(), false)
+            : null;
+
+        return [
+            ...$datos,
+            'membresia' => $activa->membresia?->nombre ?? 'Membresía',
+            'estado' => match (true) {
+                $dias === null, $dias > 0 => 'Activa',
+                $dias === 0 => 'Vence hoy',
+                default => 'Vencida',
+            },
+            'fecha_inicio' => $activa->fecha_inicio?->format('d/m/Y'),
+            'fecha_fin' => $activa->fecha_vencimiento?->format('d/m/Y'),
+            'dias_restantes' => $dias === null ? null : max(0, $dias),
+            'saldo' => (int) $activa->obtenerEstadoPago()['pendiente'],
+        ];
     }
 
     /**
