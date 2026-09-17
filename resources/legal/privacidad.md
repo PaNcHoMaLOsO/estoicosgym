@@ -18,11 +18,11 @@ En **{gimnasio}** cuidamos los datos de nuestros socios y de quienes visitan est
 
 ## Por qué podemos tratarlos
 
-Porque son necesarios para cumplir el contrato de tu membresía, para cumplir obligaciones legales —por ejemplo, las tributarias sobre los pagos— y, en el caso de tu imagen, porque tú lo autorizas.
+Porque son necesarios para cumplir el contrato de tu membresía, para cumplir obligaciones legales (por ejemplo, las tributarias sobre los pagos) y, en el caso de tu imagen, porque tú lo autorizas.
 
 ## Con quién los compartimos
 
-No vendemos ni cedemos tus datos. Solo los conocen el personal del gimnasio y los proveedores que nos ayudan a operar —el servicio de correo y el de alojamiento del sistema—, que los usan únicamente para prestarnos ese servicio.
+No vendemos ni cedemos tus datos. Solo los conocen el personal del gimnasio y los proveedores que nos ayudan a operar (el servicio de correo y el de alojamiento del sistema), que los usan únicamente para prestarnos ese servicio.
 
 ## Cuánto tiempo los guardamos
 
