@@ -39,7 +39,7 @@
             </div>
 
             <button id="mobile-menu-btn" type="button" class="lg:hidden text-pg-tiza p-2" aria-label="Abrir el menú" aria-controls="mobile-menu">
-                <i class="fas fa-bars text-2xl" aria-hidden="true"></i>
+                <i class="fas fa-bars text-xl" aria-hidden="true"></i>
             </button>
         </div>
 

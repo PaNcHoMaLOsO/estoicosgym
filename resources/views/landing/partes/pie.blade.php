@@ -1,5 +1,5 @@
 <footer class="bg-pg-carbon border-t border-pg-tiza/5">
-    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
                 <picture>
@@ -15,7 +15,7 @@
                 @if($redes)
                     <div class="flex gap-3 mt-5">
                         @foreach($redes as $red)
-                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-lg" aria-hidden="true"></i></a>
+                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-base" aria-hidden="true"></i></a>
                         @endforeach
                     </div>
                 @endif
@@ -72,7 +72,7 @@
             </div>
         </div>
 
-        <div class="border-t border-pg-tiza/5 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div class="border-t border-pg-tiza/5 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
             <p class="text-pg-tiza/40 text-sm font-modern">&copy; {{ date('Y') }} {{ $gimnasio['nombre'] }}. Todos los derechos reservados.</p>
             <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                 <a href="{{ route('landing.terminos') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Términos y condiciones</a>

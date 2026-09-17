@@ -5,15 +5,15 @@
 
 @section('content')
         <!-- ===== CONSULTA MEMBRESÍA SECTION ===== -->
-        <section id="consulta" class="pt-36 pb-24 bg-pg-carbon relative overflow-hidden">
+        <section id="consulta" class="pt-28 pb-16 bg-pg-carbon relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pg-rojo/30 to-transparent"></div>
             
             <!-- Glow decorativo -->
             
             <div class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div class="text-center mb-12 animate-on-scroll">
+                <div class="text-center mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
-                    <h1 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h1>
+                    <h1 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h1>
                     <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
                         Ingresa tu RUT y los últimos 4 dígitos de tu celular para ver cómo está tu membresía.
                     </p>
@@ -23,7 +23,7 @@
                      ancha quedaba un recuadro angosto en medio de todo negro. --}}
                 <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
                 <div class="max-w-md w-full mx-auto animate-on-scroll">
-                    <div class="bg-pg-negro/50 border border-pg-tiza/10 rounded-2xl p-8">
+                    <div class="bg-pg-negro/50 border border-pg-tiza/10 rounded-2xl p-6">
                         <!-- Tabs de consulta -->
                         <div class="flex mb-6 bg-pg-carbon/50 rounded-lg p-1">
                             <button type="button" id="tab-rut" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all bg-pg-rojo text-white">
@@ -51,7 +51,7 @@
                                         id="rut-consulta" 
                                         placeholder="12.345.678-9"
                                         maxlength="12"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-wider"
                                     >
                                 </div>
                                 <div>
@@ -65,7 +65,7 @@
                                         autocomplete="off"
                                         placeholder="••••"
                                         maxlength="4"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-[0.5em]"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-[0.5em]"
                                     >
                                     <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">El que registraste en el gimnasio: así nadie más puede ver tu membresía.</p>
                                 </div>
@@ -82,7 +82,7 @@
                                         id="celular-consulta" 
                                         placeholder="9 1234 5678"
                                         maxlength="12"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-lg tracking-wider"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-wider"
                                     >
                                 </div>
                                 <div>
@@ -103,7 +103,7 @@
                             <button 
                                 type="button"
                                 id="btn-consultar"
-                                class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center font-modern"
+                                class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center font-modern"
                             >
                                 <i class="fas fa-search mr-2"></i>
                                 Consultar
@@ -119,13 +119,13 @@
                 
                 <!-- Resultado de la consulta (oculto inicialmente) -->
                 <div id="resultado-consulta" class="hidden mt-8 max-w-2xl mx-auto animate-on-scroll">
-                    <div class="bg-pg-negro/50 border border-pg-rojo/30 rounded-2xl p-8">
+                    <div class="bg-pg-negro/50 border border-pg-rojo/30 rounded-2xl p-6">
                         <!-- Header con nombre -->
                         <div class="text-center mb-6 pb-6 border-b border-pg-tiza/10">
-                            <div class="w-16 h-16 bg-linear-to-br from-pg-rojo/30 to-pg-rojo-oscuro/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-user text-pg-rojo-claro text-2xl"></i>
-                            </div>
-                            <h3 id="resultado-nombre" class="font-display text-2xl text-pg-tiza">-</h3>
+                            {{-- El icono suelto, sin el círculo con degradado: mismo
+                                 criterio que en el resto de la web. --}}
+                            <i class="fas fa-user text-pg-rojo-claro text-xl block mb-3" aria-hidden="true"></i>
+                            <h3 id="resultado-nombre" class="font-display text-xl text-pg-tiza">-</h3>
                         </div>
                         
                         <!-- Estado de membresía -->
@@ -152,7 +152,7 @@
                             </div>
                             <div class="bg-linear-to-br from-pg-rojo/20 to-pg-rojo-oscuro/20 border border-pg-rojo/30 rounded-xl p-4 text-center">
                                 <div class="text-pg-rojo-claro text-xs font-modern mb-1">Días Restantes</div>
-                                <div id="resultado-dias" class="text-3xl font-bold text-pg-rojo-claro">-</div>
+                                <div id="resultado-dias" class="text-2xl font-bold text-pg-rojo-claro">-</div>
                             </div>
                         </div>
                         
@@ -185,8 +185,8 @@
 
                     {{-- Lo que sirve mientras se consulta: cuándo está abierto hoy,
                          por dónde escribir y qué hacer si todavía no es socio. --}}
-                    <aside class="animate-on-scroll rounded-2xl border border-pg-tiza/10 bg-pg-negro/50 p-8">
-                        <h2 class="font-display text-2xl uppercase text-pg-tiza">¿Dudas con tu membresía?</h2>
+                    <aside class="animate-on-scroll rounded-2xl border border-pg-tiza/10 bg-pg-negro/50 p-6">
+                        <h2 class="font-display text-xl uppercase text-pg-tiza">¿Dudas con tu membresía?</h2>
                         <p class="mt-3 text-pg-tiza/60 font-modern text-sm leading-relaxed">
                             Si el RUT no aparece o los datos no calzan, escríbenos y lo revisamos en el momento.
                             También puedes pasar por el mesón.
@@ -209,7 +209,7 @@
                             @if($whatsapp)
                                 <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
                                    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
-                                    <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Escríbenos por WhatsApp
+                                    <i class="fab fa-whatsapp text-base" aria-hidden="true"></i> Escríbenos por WhatsApp
                                 </a>
                             @endif
                             <a href="{{ route('landing.contacto') }}"

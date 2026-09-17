@@ -10,7 +10,7 @@
         'bajada' => 'Precios vigentes, los mismos que se cobran en el mesón. Elige el que calce con tu ritmo.',
     ])
 
-    <section id="planes" class="pb-24 bg-pg-negro">
+    <section id="planes" class="pb-16 bg-pg-negro">
         <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             {{-- Los planes y los precios son los del catálogo. --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -34,13 +34,13 @@
                                 </span>
                             @endif
 
-                            <h2 class="font-display text-2xl uppercase tracking-wide text-pg-tiza">{{ $plan['nombre'] }}</h2>
+                            <h2 class="font-display text-xl uppercase tracking-wide text-pg-tiza">{{ $plan['nombre'] }}</h2>
                             @if($plan['duracion'])
                                 <p class="text-pg-tiza/50 font-modern text-sm mt-1">{{ $plan['duracion'] }}</p>
                             @endif
 
                             <div class="mt-6 pt-6 border-t border-pg-tiza/10">
-                                <p class="font-display text-4xl text-pg-tiza">${{ number_format($plan['precio'], 0, ',', '.') }}</p>
+                                <p class="font-display text-3xl text-pg-tiza">${{ number_format($plan['precio'], 0, ',', '.') }}</p>
 
                                 @if($plan['precio_convenio'])
                                     <p class="mt-2 text-pg-rojo-claro font-modern text-sm">Con convenio: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</p>
@@ -64,7 +64,7 @@
             </div>
 
             @if(collect($planes)->contains(fn ($p) => $p['precio_convenio']))
-                <p class="mt-12 text-center text-pg-tiza/60 font-modern">
+                <p class="mt-8 text-center text-pg-tiza/60 font-modern">
                     ¿Estudias o trabajas en una institución con convenio?
                     @if($navegacion['convenios'])
                         <a href="{{ route('landing.convenios') }}" class="text-pg-rojo-claro hover:underline">Mira los convenios</a>.

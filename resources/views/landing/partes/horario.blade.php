@@ -1,10 +1,10 @@
 {{-- El horario dia por dia, con el de hoy marcado. Sale de Configuracion -> Horario. --}}
 @if($horario['configurado'])
-    <section id="horario" class="py-20 bg-pg-carbon">
+    <section id="horario" class="py-14 bg-pg-carbon">
         <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-10 animate-on-scroll">
                 <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Cuándo venir</span>
-                <h2 class="font-display text-4xl md:text-5xl mt-3 text-pg-tiza">HORARIO</h2>
+                <h2 class="font-display text-3xl md:text-4xl mt-3 text-pg-tiza">HORARIO</h2>
             </div>
             {{-- Los siete días uno al lado del otro: en una lista angosta al centro
                  sobraba todo el ancho de la pantalla. --}}

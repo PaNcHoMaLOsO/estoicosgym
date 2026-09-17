@@ -5,7 +5,7 @@
 
 @section('content')
         <!-- ===== CONTACTO SECTION ===== -->
-        <section id="contacto" class="pt-36 pb-24 bg-pg-negro relative">
+        <section id="contacto" class="pt-28 pb-16 bg-pg-negro relative">
             <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
                 {{-- El formulario se lleva más ancho que los datos: al medio y medio,
                      la columna de la izquierda quedaba con un vacío enorme debajo. --}}
@@ -13,7 +13,7 @@
                     <!-- Contact Info -->
                     <div class="animate-on-scroll">
                         <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Contáctanos</span>
-                        <h1 class="font-display text-4xl md:text-5xl mt-4 mb-6 text-pg-tiza">HABLEMOS</h1>
+                        <h1 class="font-display text-3xl md:text-4xl mt-4 mb-6 text-pg-tiza">HABLEMOS</h1>
                         <p class="text-pg-tiza/60 font-modern mb-10">
                             ¿Tienes dudas? ¿Quieres conocer nuestras instalaciones? 
                             Contáctanos y te ayudaremos a dar el primer paso.
@@ -23,9 +23,9 @@
                         <div class="space-y-6">
                             @if($gimnasio['direccion'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
-                                        <i class="fas fa-map-marker-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
-                                    </div>
+                                    {{-- El icono suelto, como en el resto de la web: el
+                                         cuadradito de color es adorno de plantilla. --}}
+                                    <i class="fas fa-map-marker-alt text-pg-rojo-claro text-base w-5 mr-4 mt-1 shrink-0 text-center" aria-hidden="true"></i>
                                     <div>
                                         <h4 class="font-semibold mb-1 text-pg-tiza">Dirección</h4>
                                         <p class="text-pg-tiza/60 font-modern text-sm">{{ $gimnasio['direccion'] }}</p>
@@ -34,9 +34,7 @@
                             @endif
                             @if($gimnasio['telefono'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
-                                        <i class="fas fa-phone-alt text-pg-rojo-claro text-xl" aria-hidden="true"></i>
-                                    </div>
+                                    <i class="fas fa-phone-alt text-pg-rojo-claro text-base w-5 mr-4 mt-1 shrink-0 text-center" aria-hidden="true"></i>
                                     <div>
                                         <h4 class="font-semibold mb-1 text-pg-tiza">Teléfono</h4>
                                         <p class="text-pg-tiza/60 font-modern text-sm"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $gimnasio['telefono']) }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['telefono'] }}</a></p>
@@ -45,9 +43,7 @@
                             @endif
                             @if($gimnasio['email'])
                                 <div class="flex items-start">
-                                    <div class="w-14 h-14 bg-pg-rojo/10 border border-pg-rojo/20 rounded-xl flex items-center justify-center mr-4 shrink-0">
-                                        <i class="fas fa-envelope text-pg-rojo-claro text-xl" aria-hidden="true"></i>
-                                    </div>
+                                    <i class="fas fa-envelope text-pg-rojo-claro text-base w-5 mr-4 mt-1 shrink-0 text-center" aria-hidden="true"></i>
                                     <div>
                                         <h4 class="font-semibold mb-1 text-pg-tiza">Correo</h4>
                                         <p class="text-pg-tiza/60 font-modern text-sm"><a href="mailto:{{ $gimnasio['email'] }}" class="hover:text-pg-tiza transition-colors" data-evento="contacto_directo">{{ $gimnasio['email'] }}</a></p>
@@ -62,7 +58,7 @@
                                 @if($whatsapp)
                                     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
                                        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
-                                        <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Escríbenos por WhatsApp
+                                        <i class="fab fa-whatsapp text-base" aria-hidden="true"></i> Escríbenos por WhatsApp
                                     </a>
                                 @endif
                                 @if($web['google_maps'])
@@ -90,8 +86,8 @@
 
                     <!-- Contact Form -->
                     <div class="animate-on-scroll">
-                        <div class="bg-pg-carbon/50 border border-pg-tiza/10 rounded-2xl p-8 md:p-10">
-                            <h3 class="font-display text-2xl mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
+                        <div class="bg-pg-carbon/50 border border-pg-tiza/10 rounded-2xl p-6 md:p-10">
+                            <h3 class="font-display text-xl mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
                             
                             <!-- Alerts -->
                             @if(session('success'))
@@ -203,7 +199,7 @@
                                 
                                 <button 
                                     type="submit" 
-                                    class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center font-modern"
+                                    class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center font-modern"
                                 >
                                     <i class="fas fa-paper-plane mr-2"></i>
                                     Enviar Mensaje
@@ -224,11 +220,11 @@
 
     {{-- ===== PREGUNTAS FRECUENTES: salen de Pagina web -> Preguntas ===== --}}
     @if(count($preguntas))
-        <section id="preguntas" class="py-24 bg-pg-negro">
+        <section id="preguntas" class="py-16 bg-pg-negro">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12 animate-on-scroll">
+                <div class="text-center mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Antes de venir</span>
-                    <h2 class="font-display text-4xl md:text-5xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
+                    <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
                 </div>
                 <div class="space-y-3">
                     @foreach($preguntas as $pregunta)
