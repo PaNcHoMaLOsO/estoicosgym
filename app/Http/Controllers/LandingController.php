@@ -313,12 +313,15 @@ class LandingController extends Controller
         }
 
         $foto = collect(glob(storage_path('app/public/web/tienda.*')) ?: [])->first();
+        $icono = collect(glob(storage_path('app/public/web/tienda-icono.*')) ?: [])->first();
 
         return [
             'url' => $url,
             'titulo' => trim((string) Ajustes::obtener('tienda.titulo')) ?: 'Suplementos',
             'texto' => trim((string) Ajustes::obtener('tienda.texto')),
             'imagen' => $foto ? asset('storage/web/' . basename($foto)) : null,
+            // La marca sola —la columna y el laurel—, para el botón flotante.
+            'icono' => $icono ? asset('storage/web/' . basename($icono)) : null,
         ];
     }
 

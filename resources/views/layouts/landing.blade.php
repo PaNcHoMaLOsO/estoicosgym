@@ -235,20 +235,30 @@
         @keyframes acercar { from { transform: scale(1); } to { transform: scale(1.12); } }
 
 
-        /* El boton de WhatsApp late. */
-        .pulso::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 9999px;
-            background: #25D366;
-            z-index: -1;
+        /* Los botones flotantes laten.
+
+           EL HALO CRECE POR FUERA, con una sombra. Antes era un circulo hijo con
+           z-index negativo, y eso NO se pinta detras del boton: se pinta encima
+           de su fondo y debajo de su contenido. Con el de WhatsApp no se notaba
+           —halo verde sobre fondo verde—, pero el de la tienda es un circulo
+           oscuro y el halo morado se lo comia entero, dejando el laurel del
+           logotipo, que tambien es morado, sin contraste.
+
+           El color se cambia desde el propio boton: verde el de WhatsApp,
+           morado el de la tienda. Una sola animacion para los dos. */
+        .pulso {
             animation: pulso 2.4s ease-out infinite;
         }
-        @keyframes pulso { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.8); opacity: 0; } }
+        /* La sombra de siempre va DENTRO de la animacion: `box-shadow` es una
+           sola propiedad, y animarla a secas dejaba los botones planos. */
+        @keyframes pulso {
+            0% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 0 var(--color-pulso, #25D366); }
+            70% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 16px transparent; }
+            100% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 0 transparent; }
+        }
 
         @media (prefers-reduced-motion: reduce) {
-            .cinta-pista, .portada-foto, .flotar, .pulso::before, .animate-bounce, .fade-in { animation: none !important; }
+            .cinta-pista, .portada-foto, .flotar, .pulso, .animate-bounce, .fade-in { animation: none !important; }
             .cinta { -webkit-mask-image: none; mask-image: none; }
             .cinta-pista { flex-wrap: wrap; justify-content: center; width: auto; }
             .cinta-logo { margin: 0.625rem; }
@@ -271,6 +281,7 @@
     </main>
     @include('landing.partes.pie')
     @include('landing.partes.whatsapp')
+    @include('landing.partes.tienda-flotante')
 
     <!-- Scripts -->
     <script>
