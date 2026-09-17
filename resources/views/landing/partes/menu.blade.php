@@ -33,7 +33,7 @@
                     <a href="{{ route($e['ruta']) }}" @if(request()->routeIs($e['ruta'])) aria-current="page" @endif
                        class="relative font-modern text-sm transition-colors py-2 {{ request()->routeIs($e['ruta']) ? 'text-pg-tiza after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:bg-pg-rojo after:rounded-full' : 'text-pg-tiza/70 hover:text-pg-rojo-claro' }}">{{ $e['texto'] }}</a>
                 @endforeach
-                <a href="{{ route('landing.membresia') }}" class="bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-semibold px-5 py-2.5 rounded-lg transition-colors font-modern text-sm btn-glow">
+                <a href="{{ route('landing.membresia') }}" class="bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-semibold px-5 py-2.5 rounded-lg transition-colors font-modern text-sm">
                     <i class="fas fa-id-card mr-2" aria-hidden="true"></i>Mi membresía
                 </a>
             </div>

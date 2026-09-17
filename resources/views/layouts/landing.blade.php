@@ -146,31 +146,14 @@
             }
         }
         
-        /* Texto cromado, como el «GYM» del logotipo */
-        .gradient-text {
-            background: linear-gradient(100deg, #ffffff 0%, #c7cad1 45%, #8b8f98 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Boton con brillo rojo */
-        .btn-glow {
-            box-shadow: 0 0 20px rgba(221, 42, 50, 0.3);
-            transition: all 0.3s ease;
-        }
-        .btn-glow:hover {
-            box-shadow: 0 0 40px rgba(221, 42, 50, 0.5);
-            transform: translateY(-2px);
-        }
         
         /* Card hover */
         .card-hover {
             transition: all 0.3s ease;
         }
         .card-hover:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
         }
         
         /* Parallax effect */
@@ -228,28 +211,15 @@
         .flotar { animation: flotar 6s ease-in-out infinite; }
         @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* El titulo plateado de la portada: un brillo que recorre las letras. */
-        .brillo-texto {
-            background-image: linear-gradient(100deg, #8b8f98 0%, #ffffff 25%, #c7cad1 50%, #ffffff 75%, #8b8f98 100%);
-            background-size: 200% auto;
-            animation: brillo-texto 6s linear infinite;
-        }
-        @keyframes brillo-texto { to { background-position: 200% center; } }
 
-        /* Los resplandores de fondo respiran. */
-        .brillo { animation: latido 8s ease-in-out infinite; }
-        @keyframes latido { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.18); opacity: 1; } }
 
         /* La foto de portada se acerca muy despacio. */
-        .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; }
+        /* La foto de portada se encuadra por encima del centro. Las fotos del
+           gimnasio son verticales y la portada es ancha y baja, asi que el
+           recorte centrado de `object-cover` cortaba a la persona por la cabeza. */
+        .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; object-position: 50% 22%; }
         @keyframes acercar { from { transform: scale(1); } to { transform: scale(1.12); } }
 
-        /* Franjas que avanzan en la banda roja. */
-        .franjas {
-            background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 24px);
-            animation: franjas 20s linear infinite;
-        }
-        @keyframes franjas { to { background-position: 480px 0; } }
 
         /* El boton de WhatsApp late. */
         .pulso::before {
@@ -264,7 +234,7 @@
         @keyframes pulso { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.8); opacity: 0; } }
 
         @media (prefers-reduced-motion: reduce) {
-            .cinta-pista, .brillo-texto, .brillo, .portada-foto, .franjas, .flotar, .pulso::before, .animate-bounce, .fade-in { animation: none !important; }
+            .cinta-pista, .portada-foto, .flotar, .pulso::before, .animate-bounce, .fade-in { animation: none !important; }
             .cinta { -webkit-mask-image: none; mask-image: none; }
             .cinta-pista { flex-wrap: wrap; justify-content: center; width: auto; }
             .cinta-logo { margin: 0.625rem; }

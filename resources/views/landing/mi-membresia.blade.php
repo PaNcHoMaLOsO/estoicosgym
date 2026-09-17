@@ -9,7 +9,6 @@
             <div class="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pg-rojo/30 to-transparent"></div>
             
             <!-- Glow decorativo -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pg-rojo/10 rounded-full blur-3xl"></div>
             
             <div class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="text-center mb-12 animate-on-scroll">
@@ -104,7 +103,7 @@
                             <button 
                                 type="button"
                                 id="btn-consultar"
-                                class="w-full bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                                class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center font-modern"
                             >
                                 <i class="fas fa-search mr-2"></i>
                                 Consultar

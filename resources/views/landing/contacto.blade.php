@@ -203,7 +203,7 @@
                                 
                                 <button 
                                     type="submit" 
-                                    class="w-full bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro hover:from-pg-rojo-oscuro hover:to-pg-rojo text-white font-bold py-4 rounded-lg transition-all btn-glow flex items-center justify-center font-modern"
+                                    class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center font-modern"
                                 >
                                     <i class="fas fa-paper-plane mr-2"></i>
                                     Enviar Mensaje

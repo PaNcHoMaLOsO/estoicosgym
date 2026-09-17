@@ -82,12 +82,12 @@
 
             <div class="mt-9 flex flex-col sm:flex-row gap-4">
                 <a href="{{ route('landing.planes') }}"
-                   class="inline-flex items-center justify-center gap-2 bg-linear-to-r from-pg-rojo to-pg-rojo-oscuro text-white font-bold px-8 py-4 rounded-lg text-lg transition-all btn-glow font-modern">
-                    <i class="fas fa-bolt" aria-hidden="true"></i> Ver planes
+                   class="inline-flex items-center justify-center bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-4 rounded-lg text-lg transition-colors font-modern">
+                    Ver planes
                 </a>
                 @if($whatsapp)
                     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
-                       class="inline-flex items-center justify-center gap-2 border-2 border-pg-tiza/30 hover:border-pg-rojo text-pg-tiza hover:text-pg-rojo-claro px-8 py-4 rounded-lg text-lg transition-all font-modern">
+                       class="inline-flex items-center justify-center gap-2 border-2 border-pg-tiza/30 hover:border-pg-rojo text-pg-tiza hover:text-pg-rojo-claro px-8 py-4 rounded-lg text-lg transition-colors font-modern">
                         <i class="fab fa-whatsapp text-xl" aria-hidden="true"></i> Preguntar por WhatsApp
                     </a>
                 @endif
@@ -103,9 +103,9 @@
                     @php($etiqueta = ($dato['href'] ?? null) ? 'a' : 'div')
                     <{{ $etiqueta }} @if($dato['href'] ?? null) href="{{ $dato['href'] }}" @endif
                         class="flex items-center gap-4 px-2 lg:px-8 py-7 {{ ($dato['href'] ?? null) ? 'transition-colors hover:bg-pg-negro/40' : '' }}">
-                        <span class="w-12 h-12 shrink-0 rounded-xl bg-pg-rojo/10 border border-pg-rojo/20 flex items-center justify-center">
-                            <i class="fas fa-{{ $dato['icono'] }} text-pg-rojo-claro text-lg" aria-hidden="true"></i>
-                        </span>
+                        {{-- El icono solo, sin el cuadrado de color detrás: igual
+                             que en el resto de la web. --}}
+                        <i class="fas fa-{{ $dato['icono'] }} text-pg-rojo-claro text-lg w-5 shrink-0 text-center" aria-hidden="true"></i>
                         <span class="min-w-0">
                             <span class="block text-pg-tiza/50 font-modern text-xs uppercase tracking-widest">{{ $dato['rotulo'] }}</span>
                             <span class="block text-pg-tiza font-modern text-lg">{{ $dato['valor'] }}</span>

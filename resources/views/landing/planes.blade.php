@@ -15,8 +15,18 @@
             {{-- Los planes y los precios son los del catálogo. --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 @forelse($planes as $index => $plan)
+                    {{--
+                        La tarjeta respira: el nombre arriba, el precio separado
+                        por una línea y el botón abajo del todo, a la misma altura
+                        en todas. Iba todo apretado contra el borde con el mismo
+                        hueco entre cosas que no tienen nada que ver entre sí.
+
+                        El sello del destacado se monta sobre el borde, así que esa
+                        tarjeta lleva más aire arriba para que no le caiga encima
+                        del nombre.
+                    --}}
                     <div class="animate-on-scroll" style="animation-delay: {{ $index * 0.1 }}s">
-                        <div class="h-full flex flex-col bg-pg-carbon/70 border {{ $plan['destacado'] ? 'border-pg-rojo ring-2 ring-pg-rojo/30' : 'border-pg-tiza/10' }} rounded-2xl p-6 relative card-hover">
+                        <div class="h-full flex flex-col bg-pg-carbon/70 border {{ $plan['destacado'] ? 'border-pg-rojo pt-10' : 'border-pg-tiza/10 pt-8' }} rounded-2xl px-7 pb-8 relative card-hover">
                             @if($plan['destacado'])
                                 {{-- Se cuenta, no se decide: es el plan con más membresías activas. --}}
                                 <span class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-pg-rojo text-white text-xs font-bold px-3 py-1 rounded-full font-modern tracking-wide">
@@ -26,21 +36,23 @@
 
                             <h2 class="font-display text-2xl uppercase tracking-wide text-pg-tiza">{{ $plan['nombre'] }}</h2>
                             @if($plan['duracion'])
-                                <p class="text-pg-tiza/50 font-modern text-sm">{{ $plan['duracion'] }}</p>
+                                <p class="text-pg-tiza/50 font-modern text-sm mt-1">{{ $plan['duracion'] }}</p>
                             @endif
 
-                            <p class="mt-5 font-display text-4xl text-pg-tiza">${{ number_format($plan['precio'], 0, ',', '.') }}</p>
+                            <div class="mt-6 pt-6 border-t border-pg-tiza/10">
+                                <p class="font-display text-4xl text-pg-tiza">${{ number_format($plan['precio'], 0, ',', '.') }}</p>
 
-                            @if($plan['precio_convenio'])
-                                <p class="mt-1 text-pg-rojo-claro font-modern text-sm">Con convenio: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</p>
-                            @endif
+                                @if($plan['precio_convenio'])
+                                    <p class="mt-2 text-pg-rojo-claro font-modern text-sm">Con convenio: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</p>
+                                @endif
+                            </div>
 
                             @if($plan['descripcion'])
-                                <p class="mt-4 text-pg-tiza/60 font-modern text-sm">{{ $plan['descripcion'] }}</p>
+                                <p class="mt-5 text-pg-tiza/60 font-modern text-sm leading-relaxed">{{ $plan['descripcion'] }}</p>
                             @endif
 
-                            <div class="mt-auto pt-6">
-                                <a href="{{ route('landing.contacto') }}" data-evento="elegir_plan" data-plan="{{ $plan['nombre'] }}" class="block w-full text-center py-3 rounded-lg font-semibold transition-all font-modern text-sm {{ $plan['destacado'] ? 'bg-pg-rojo hover:bg-pg-rojo-oscuro text-white btn-glow' : 'border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro' }}">
+                            <div class="mt-auto pt-8">
+                                <a href="{{ route('landing.contacto') }}" data-evento="elegir_plan" data-plan="{{ $plan['nombre'] }}" class="block w-full text-center py-3 rounded-lg font-semibold transition-colors font-modern text-sm {{ $plan['destacado'] ? 'bg-pg-rojo hover:bg-pg-rojo-oscuro text-white' : 'border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro' }}">
                                     Lo quiero
                                 </a>
                             </div>
