@@ -320,8 +320,12 @@ class LandingController extends Controller
             'titulo' => trim((string) Ajustes::obtener('tienda.titulo')) ?: 'Suplementos',
             'texto' => trim((string) Ajustes::obtener('tienda.texto')),
             'imagen' => $foto ? asset('storage/web/' . basename($foto)) : null,
-            // La marca sola —la columna y el laurel—, para el botón flotante.
+            // La marca sola —la columna y el laurel— y el logotipo entero. El
+            // botón flotante usa el logotipo donde cabe, y la marca en el móvil.
             'icono' => $icono ? asset('storage/web/' . basename($icono)) : null,
+            'logo' => ($l = collect(glob(storage_path('app/public/web/tienda-logo.*')) ?: [])->first())
+                ? asset('storage/web/' . basename($l))
+                : null,
         ];
     }
 

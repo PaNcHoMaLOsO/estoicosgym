@@ -1,27 +1,42 @@
 {{--
-    El botón flotante de la tienda de suplementos, igual que el de WhatsApp pero
-    con la marca de Estoicos, en todas las páginas.
+    El acceso flotante a la tienda de suplementos, en todas las páginas.
 
-    VA CON LA MARCA SOLA, no con el logotipo entero: dentro de un círculo de 56
-    píxeles el «ESTOICOS SUPLEMENTOS» de al lado queda en un borrón ilegible.
+    ES UN RECUADRO CON EL LOGOTIPO ENTERO, no un círculo con un icono: un símbolo
+    suelto no dice a dónde lleva, y hay que pasar por encima para enterarse. Con
+    el logotipo completo se entiende sin hacer nada.
 
-    El círculo es oscuro y no blanco porque el logotipo está hecho para fondo
-    oscuro: sobre blanco, la columna —que es color crema— casi no se ve. El aro
-    morado es el color de su propia marca, sacado del archivo del logo, y es lo
-    que lo despega del fondo de la página, que también es oscuro.
+    En el móvil no cabe un recuadro ancho al lado del de WhatsApp, así que ahí se
+    queda la marca sola —la columna y el laurel— en un círculo del mismo tamaño
+    que el de WhatsApp.
 
-    Se sienta encima del de WhatsApp, no al lado: en un teléfono, dos botones
-    juntos abajo a la derecha se pulsan mal.
+    Y al pasar por encima sale una etiqueta que dice qué es, porque el logotipo
+    dice el nombre pero no que sea una tienda.
+
+    Se sienta ENCIMA del de WhatsApp, no al lado: en un teléfono, dos cosas
+    juntas abajo a la derecha se pulsan mal.
 --}}
-@if(($tienda ?? null) && $tienda['icono'])
+@if(($tienda ?? null) && ($tienda['logo'] || $tienda['icono']))
     <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener"
        data-evento="tienda_suplementos"
-       title="{{ $tienda['titulo'] }}"
-       aria-label="{{ $tienda['titulo'] }}: ir a la tienda, se abre en otra pestaña"
+       aria-label="{{ $tienda['titulo'] }}, tienda de suplementos: se abre en otra pestaña"
        {{-- El aro va como BORDE, no como `ring`: en Tailwind el ring se dibuja
             con `box-shadow`, que es justo lo que anima el pulso, y se lo comía. --}}
-       class="pulso fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-pg-carbon border-2 border-[#C142D1] flex items-center justify-center hover:scale-110 transition-transform"
+       class="pulso group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#C142D1] bg-pg-carbon transition-transform hover:scale-105
+              sm:h-auto sm:w-auto sm:rounded-2xl sm:px-4 sm:py-3"
        style="--color-pulso: #C142D1">
-        <img src="{{ $tienda['icono'] }}" alt="" class="w-9 h-9 object-contain">
+
+        {{-- La etiqueta sale a la izquierda: a la derecha se saldría de la pantalla. --}}
+        <span class="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg border border-pg-tiza/15 bg-pg-negro px-3 py-2 font-modern text-sm text-pg-tiza opacity-0 shadow-lg shadow-black/50 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 sm:block">
+            Tienda de suplementos
+        </span>
+
+        @if($tienda['icono'])
+            <img src="{{ $tienda['icono'] }}" alt="" class="h-9 w-9 object-contain sm:hidden">
+        @endif
+
+        @if($tienda['logo'])
+            <img src="{{ $tienda['logo'] }}" alt="{{ $tienda['titulo'] }}"
+                 class="{{ $tienda['icono'] ? 'hidden sm:block' : '' }} h-11 w-auto">
+        @endif
     </a>
 @endif

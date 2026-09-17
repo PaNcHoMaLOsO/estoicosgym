@@ -12,7 +12,11 @@
     $pista = collect(range(1, $vueltas))->flatMap(fn () => $logos)->values()->all();
     $duracion = max(24, count($pista) * 5);
 @endphp
-<div class="cinta {{ $enMovimiento ? '' : 'cinta-quieta' }}" role="region" aria-label="Logos de los convenios">
+{{-- La barra blanca va FUERA de la cinta: el degradado que difumina los
+     extremos se aplica a la cinta, y si el blanco estuviera ahí se desvanecería
+     con ella y la barra dejaría de ser una barra. --}}
+<div class="cinta-barra">
+    <div class="cinta {{ $enMovimiento ? '' : 'cinta-quieta' }}" role="region" aria-label="Logos de los convenios">
     <div class="cinta-pista" @if($enMovimiento) style="animation-duration: {{ $duracion }}s" @endif>
         @foreach($enMovimiento ? [false, true] : [false] as $copia)
             @foreach($pista as $i => $c)
@@ -26,5 +30,6 @@
                 </div>
             @endforeach
         @endforeach
+    </div>
     </div>
 </div>

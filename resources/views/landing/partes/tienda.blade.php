@@ -12,8 +12,10 @@
             <div class="grid gap-12 items-center {{ $tienda['imagen'] ? 'lg:grid-cols-2' : '' }}">
                 @if($tienda['imagen'])
                     <div class="animate-on-scroll overflow-hidden rounded-2xl border border-pg-tiza/10">
+                        {{-- Con su proporción, sin recortar: el recuadro fijo a 4:3
+                             le comía un trozo arriba y abajo. --}}
                         <img src="{{ $tienda['imagen'] }}" alt="{{ $tienda['titulo'] }}" loading="lazy"
-                             class="w-full aspect-4/3 object-cover">
+                             class="w-full h-auto">
                     </div>
                 @endif
 

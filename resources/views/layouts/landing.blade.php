@@ -183,29 +183,28 @@
         }
         .cinta-pista { display: flex; width: max-content; animation: cinta linear infinite; }
         .cinta:hover .cinta-pista { animation-play-state: paused; }
+        /* UNA BARRA BLANCA, NO UNA FILA DE TARJETAS. Cada logo iba en su propio
+           recuadro blanco con sombra: seis cajas seguidas pesaban más que los
+           logos que llevaban dentro. Ahora el blanco es el fondo de la franja y
+           los logos van sueltos encima. */
+        .cinta-barra { background: #fff; padding: 1.5rem 0; }
         .cinta-logo {
             flex: 0 0 auto;
-            width: 15rem;
-            height: 8.5rem;
-            margin-right: 1.25rem;
-            padding: 1.1rem 1.4rem;
-            background: #fff;
-            border-radius: 1rem;
+            height: 3.25rem;
+            min-width: 8rem;
+            margin-right: 3.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
-            transition: transform 0.3s ease;
         }
-        .cinta-logo:hover { transform: translateY(-4px) scale(1.04); }
-        .cinta-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .cinta-logo img { max-width: 100%; max-height: 100%; width: auto; object-fit: contain; }
         .cinta-logo span { color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 1.05rem; text-align: center; }
         @keyframes cinta { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         /* Con uno o dos logos no hay cinta: quedan quietos y centrados. */
         .cinta-quieta { -webkit-mask-image: none; mask-image: none; }
         .cinta-quieta .cinta-pista { animation: none; flex-wrap: wrap; justify-content: center; width: auto; }
-        .cinta-quieta .cinta-logo { margin: 0.625rem; }
+        .cinta-quieta .cinta-logo { margin: 0 1.75rem; }
 
         /* Las fichas de los convenios flotan, cada una a su tiempo. */
         .flotar { animation: flotar 6s ease-in-out infinite; }
@@ -261,7 +260,7 @@
             .cinta-pista, .portada-foto, .flotar, .pulso, .animate-bounce, .fade-in { animation: none !important; }
             .cinta { -webkit-mask-image: none; mask-image: none; }
             .cinta-pista { flex-wrap: wrap; justify-content: center; width: auto; }
-            .cinta-logo { margin: 0.625rem; }
+            .cinta-logo { margin: 0 1.75rem; }
             .cinta-logo[data-repetido] { display: none; }
         }
     </style>
