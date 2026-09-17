@@ -85,8 +85,12 @@
                     </div>
 
                     <!-- Contact Form -->
-                    <div class="animate-on-scroll">
-                        <div class="bg-pg-carbon/50 border border-pg-tiza/10 rounded-2xl p-6 md:p-10">
+                    {{-- El formulario ya no va dentro de un panel con borde: lo
+                         separa de los datos de contacto una línea, como en el resto
+                         de la web. Los campos sí llevan borde, que eso no es adorno
+                         sino la señal de dónde se escribe. --}}
+                    <div class="animate-on-scroll lg:border-l lg:border-pg-tiza/10">
+                        <div class="lg:pl-12">
                             <h3 class="font-display text-xl mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
                             
                             <!-- Alerts -->
@@ -226,9 +230,11 @@
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Antes de venir</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
                 </div>
-                <div class="space-y-3">
+                {{-- Una lista, no una pila de tarjetas: cada pregunta separada de
+                     la siguiente por una línea. --}}
+                <div class="divide-y divide-pg-tiza/10 border-y border-pg-tiza/10">
                     @foreach($preguntas as $pregunta)
-                        <details class="animate-on-scroll group bg-pg-carbon/70 border border-pg-tiza/10 rounded-xl p-5 open:border-pg-rojo/40 transition-colors">
+                        <details class="animate-on-scroll group py-5">
                             <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-modern font-semibold text-pg-tiza">
                                 {{ $pregunta['titulo'] }}
                                 <i class="fas fa-plus text-pg-rojo-claro transition-transform duration-300 group-open:rotate-45" aria-hidden="true"></i>

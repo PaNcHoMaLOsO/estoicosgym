@@ -32,26 +32,43 @@
             @forelse($convenios as $grupo)
                 <div class="mt-16">
                     <h2 class="animate-on-scroll font-display text-2xl uppercase tracking-wide text-pg-tiza mb-8">{{ $grupo['titulo'] }}</h2>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        @foreach($grupo['convenios'] as $i => $c)
-                            <div class="animate-on-scroll" style="animation-delay: {{ $i * 0.1 }}s">
-                                {{-- Flotan cada una a su tiempo; al pasar el mouse crecen. --}}
-                                <div class="group flotar" style="animation-delay: -{{ ($i % 4) * 1.5 }}s">
-                                    {{-- Más bajas y sin crecer al pasar por encima: eran
-                                         unos cuadros blancos enormes que se comían la
-                                         pantalla y daban el salto de plantilla. --}}
-                                    <div class="h-28 sm:h-32 bg-white rounded-2xl p-5 flex items-center justify-center shadow-lg shadow-black/30 ring-1 ring-white/10 transition-colors duration-300 group-hover:ring-2 group-hover:ring-pg-rojo/60">
-                                        @if($c['logo'])
-                                            <img src="{{ $c['logo'] }}" alt="{{ $c['nombre'] }}" loading="lazy" class="max-h-full max-w-full object-contain">
-                                        @else
-                                            <span class="text-gray-800 font-semibold font-modern text-base sm:text-xl text-center leading-tight">{{ $c['nombre'] }}</span>
-                                        @endif
-                                    </div>
-                                    <p class="mt-4 text-center font-modern font-semibold text-pg-tiza">{{ $c['nombre'] }}</p>
-                                    @if($c['requisito'])
-                                        <p class="text-center font-modern text-sm text-pg-tiza/50">{{ $c['requisito'] }}</p>
+                    {{--
+                        UNA SOLA FRANJA BLANCA, no una tarjeta por institución.
+
+                        El blanco no es decoración y por eso no se puede quitar del
+                        todo: estos logos son de otros y están hechos para fondo
+                        claro —el azul del AIEP o el de Virginio Gómez sobre negro
+                        no se ven—. Así que en vez de un recuadro blanco por cada
+                        uno, hay una franja para todos y una línea fina los separa,
+                        igual que la cinta de la portada.
+
+                        El nombre va debajo, ya sobre el fondo de la página, en las
+                        mismas columnas para que quede bajo su logo.
+
+                        Tampoco flotan ya cada una por su cuenta: con las tarjetas
+                        fuera, ese vaivén no tenía de dónde agarrarse.
+                    --}}
+                    <div class="animate-on-scroll overflow-hidden rounded-lg bg-white">
+                        <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-black/10">
+                            @foreach($grupo['convenios'] as $c)
+                                <div class="flex h-24 items-center justify-center px-6 py-4">
+                                    @if($c['logo'])
+                                        <img src="{{ $c['logo'] }}" alt="{{ $c['nombre'] }}" loading="lazy" class="max-h-full max-w-full object-contain">
+                                    @else
+                                        <span class="text-center font-modern font-semibold leading-tight text-gray-800">{{ $c['nombre'] }}</span>
                                     @endif
                                 </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-pg-tiza/10">
+                        @foreach($grupo['convenios'] as $c)
+                            <div class="px-4 py-4 text-center">
+                                <p class="font-modern font-semibold text-pg-tiza">{{ $c['nombre'] }}</p>
+                                @if($c['requisito'])
+                                    <p class="font-modern text-sm text-pg-tiza/50">{{ $c['requisito'] }}</p>
+                                @endif
                             </div>
                         @endforeach
                     </div>
