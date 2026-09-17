@@ -111,5 +111,6 @@
         </section>
     @endif
 
+    @include('landing.partes.tienda')
     @include('landing.partes.llamado')
 @endsection

@@ -223,12 +223,14 @@
            la vez marean. Va encuadrado al centro, que es como esta grabado. */
         .portada-video { object-position: 50% 50%; }
 
-        /* Las dos capas del fondo de la portada, una encima de otra: se pasa de
-           una a otra con el desvanecido, no de golpe. */
+        /* Las capas del fondo de la portada, una encima de otra. La que entra
+           aparece por delante de la que sale, asi que en medio no se ve ni un
+           hueco ni un parpadeo negro. Curva suave y sin prisa: un corte rapido
+           en un fondo a pantalla completa se nota como un parpadeo. */
         .portada-capa {
             position: absolute;
             inset: 0;
-            transition: opacity 1.2s ease;
+            transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @keyframes acercar { from { transform: scale(1); } to { transform: scale(1.12); } }
 

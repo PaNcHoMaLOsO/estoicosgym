@@ -41,6 +41,17 @@
                     @endif
                     <li><a href="{{ route('landing.contacto') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
                     <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
+                    @if($tienda ?? null)
+                        {{-- La tienda es otra web: se marca con el icono para que
+                             nadie pulse esperando quedarse en la del gimnasio. --}}
+                        <li>
+                            <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
+                               class="inline-flex items-center gap-2 text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">
+                                {{ $tienda['titulo'] }}
+                                <i class="fas fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </div>
 

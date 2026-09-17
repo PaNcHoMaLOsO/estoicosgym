@@ -346,6 +346,34 @@ class Ajustes
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            // La tienda de suplementos es OTRO negocio con su propia web. Aquí
+            // solo se enlaza: sin dirección, el apartado no sale en la página.
+            'tienda.url' => [
+                'grupo' => 'web',
+                'seccion' => 'Tienda de suplementos',
+                'etiqueta' => 'Dirección de la tienda',
+                'ayuda' => 'El enlace completo de la tienda. Vacío = el apartado no aparece en la web.',
+                'ejemplo' => 'https://estoicossuplementos.cl/',
+                'tipo' => 'texto',
+                'formato' => 'url',
+                'defecto' => '',
+            ],
+            'tienda.titulo' => [
+                'grupo' => 'web',
+                'seccion' => 'Tienda de suplementos',
+                'etiqueta' => 'Nombre de la tienda',
+                'ayuda' => 'El título del apartado en la página.',
+                'tipo' => 'texto',
+                'defecto' => 'Estoicos Suplementos',
+            ],
+            'tienda.texto' => [
+                'grupo' => 'web',
+                'seccion' => 'Tienda de suplementos',
+                'etiqueta' => 'Qué se dice de la tienda',
+                'ayuda' => 'Un par de frases. Sale bajo el título, antes del botón.',
+                'tipo' => 'area',
+                'defecto' => '',
+            ],
             'web.google_analytics' => [
                 'grupo' => 'web',
                 'seccion' => 'Medición y verificación',

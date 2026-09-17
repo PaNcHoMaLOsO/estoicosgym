@@ -231,6 +231,7 @@ class LandingController extends Controller
             ])),
             // El menú solo enlaza lo que tiene algo que mostrar.
             'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== []],
+            'tienda' => $this->tiendaDeSuplementos(),
             'aviso' => $this->avisoVigente(),
             'horario' => $this->horario(),
             'whatsapp' => $this->whatsappDelGimnasio($gimnasio['nombre']),
@@ -289,6 +290,36 @@ class LandingController extends Controller
                 'icono' => $c->icono,
                 'imagen' => $c->urlDeImagen(),
             ]);
+    }
+
+    /**
+     * La tienda de suplementos, para el apartado que enlaza con ella.
+     *
+     * Es OTRO negocio con su propia web: aquí solo se enlaza. Sale de
+     * Configuración → Página web, y sin dirección no hay apartado, porque
+     * enlazar a ninguna parte es peor que no enlazar.
+     *
+     * La foto se lee de la carpeta de archivos subidos, como los vídeos de la
+     * portada: si no hay, el apartado sale a una sola columna.
+     *
+     * @return array<string,?string>|null
+     */
+    private function tiendaDeSuplementos(): ?array
+    {
+        $url = trim((string) Ajustes::obtener('tienda.url'));
+
+        if ($url === '') {
+            return null;
+        }
+
+        $foto = collect(glob(storage_path('app/public/web/tienda.*')) ?: [])->first();
+
+        return [
+            'url' => $url,
+            'titulo' => trim((string) Ajustes::obtener('tienda.titulo')) ?: 'Suplementos',
+            'texto' => trim((string) Ajustes::obtener('tienda.texto')),
+            'imagen' => $foto ? asset('storage/web/' . basename($foto)) : null,
+        ];
     }
 
     /**
