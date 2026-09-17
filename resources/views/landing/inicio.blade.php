@@ -14,15 +14,9 @@
         decía de este gimnasio más de lo que dice la foto.
     --}}
     <section id="inicio" class="relative min-h-[82vh] flex items-end overflow-hidden">
-        {{-- De fondo, la primera foto de la galeria con un acercamiento lento. Sin fotos, el degradado. --}}
-        @if($fotoPortada)
-            <div class="absolute inset-0" aria-hidden="true">
-                <img src="{{ $fotoPortada['imagen'] }}" alt="" class="portada-foto w-full h-full object-cover">
-                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/75 to-pg-negro/30"></div>
-            </div>
-        @else
-            <div class="absolute inset-0 bg-linear-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>
-        @endif
+        {{-- El fondo va pasando solo: vídeo, foto, vídeo, foto. Sale de «Página
+             web» y de los vídeos que haya subidos. --}}
+        @include('landing.partes.portada-fondo')
 
         <div class="relative z-10 w-full max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 pt-40 pb-20 fade-in">
             <p class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">

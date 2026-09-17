@@ -218,6 +218,18 @@
            gimnasio son verticales y la portada es ancha y baja, asi que el
            recorte centrado de `object-cover` cortaba a la persona por la cabeza. */
         .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; object-position: 50% 22%; }
+
+        /* El video de portada NO se acerca: ya se mueve solo, y las dos cosas a
+           la vez marean. Va encuadrado al centro, que es como esta grabado. */
+        .portada-video { object-position: 50% 50%; }
+
+        /* Las dos capas del fondo de la portada, una encima de otra: se pasa de
+           una a otra con el desvanecido, no de golpe. */
+        .portada-capa {
+            position: absolute;
+            inset: 0;
+            transition: opacity 1.2s ease;
+        }
         @keyframes acercar { from { transform: scale(1); } to { transform: scale(1.12); } }
 
 
@@ -297,6 +309,17 @@
             
             // Quien pidio menos movimiento ve todo de una vez.
             const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            // Y el video de portada se queda quieto en su primer fotograma: un
+            // fondo que se mueve en bucle es justo lo que esa preferencia pide
+            // no ver, y el CSS no puede pararlo.
+            if (reducir) {
+                document.querySelectorAll('video.portada-video').forEach(video => {
+                    video.removeAttribute('autoplay');
+                    video.removeAttribute('loop');
+                    video.pause();
+                });
+            }
             document.querySelectorAll('.animate-on-scroll').forEach(el => {
                 if (reducir) {
                     return;

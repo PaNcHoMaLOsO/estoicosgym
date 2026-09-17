@@ -86,6 +86,7 @@ class LandingController extends Controller
                 'subtitulo' => Ajustes::obtener('portada.subtitulo'),
             ],
             'fotoPortada' => $this->contenidos('foto')->first(),
+            'fondoPortada' => $this->fondoDePortada(),
             'destacados' => $this->destacados($comun),
             'logosConvenios' => collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all(),
             'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
@@ -288,6 +289,47 @@ class LandingController extends Controller
                 'icono' => $c->icono,
                 'imagen' => $c->urlDeImagen(),
             ]);
+    }
+
+    /**
+     * El fondo de la portada: los vídeos y las fotos, uno detrás de otro.
+     *
+     * Van INTERCALADOS a propósito —vídeo, foto, vídeo, foto— y la portada los
+     * pasa en bucle. Un vídeo detrás de otro no deja mirar nada, y las fotos
+     * solas no enseñan el gimnasio en marcha.
+     *
+     * Los vídeos se leen de la carpeta de archivos subidos, por nombre: los que
+     * haya. Sin vídeos queda el pase de fotos, y sin nada de nada la portada cae
+     * al degradado, así que nunca se ve rota.
+     *
+     * @return list<array{tipo:string, src:string}>
+     */
+    private function fondoDePortada(): array
+    {
+        $fotos = $this->contenidos('foto')->pluck('imagen')->filter()->values()->all();
+
+        $videos = collect(glob(storage_path('app/public/web/portada*.mp4')) ?: [])
+            ->map(fn (string $ruta) => asset('storage/web/' . basename($ruta)))
+            ->values()
+            ->all();
+
+        if ($videos === []) {
+            return array_map(fn (string $src) => ['tipo' => 'foto', 'src' => $src], $fotos);
+        }
+
+        $escenas = [];
+
+        // Se recorre lo más largo de los dos: si hay un vídeo y cuatro fotos, el
+        // vídeo vuelve a salir entre foto y foto.
+        for ($i = 0; $i < max(count($videos), count($fotos)); $i++) {
+            $escenas[] = ['tipo' => 'video', 'src' => $videos[$i % count($videos)]];
+
+            if (isset($fotos[$i])) {
+                $escenas[] = ['tipo' => 'foto', 'src' => $fotos[$i]];
+            }
+        }
+
+        return $escenas;
     }
 
     /**
