@@ -42,12 +42,14 @@
     <section id="accesos" class="py-14 bg-pg-negro">
         @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][min(4, max(2, count($destacados)))])
         {{-- Las clases van escritas enteras: el CSS compilado solo trae las que encuentra tal cual. --}}
-        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 sm:grid-cols-2 {{ $columnas }}">
+        {{-- Sin tarjetas: una línea separa un acceso del siguiente. Tres cajas
+             iguales en fila es lo que hace que la página parezca de plantilla. --}}
+        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 divide-y {{ $columnas }} lg:divide-y-0 lg:divide-x divide-pg-tiza/10">
             @foreach($destacados as $i => $d)
                 {{-- El icono suelto y pequeño, al lado del título. Metido en un
                      cuadrado de color es el adorno que traen todas las plantillas
                      y le quitaba sitio a lo que hay que leer. --}}
-                <a href="{{ $d['href'] }}" class="animate-on-scroll group card-hover flex h-full flex-col bg-pg-carbon border border-pg-tiza/10 hover:border-pg-rojo/40 rounded-2xl p-6 transition-colors" style="animation-delay: {{ $i * 0.1 }}s">
+                <a href="{{ $d['href'] }}" class="animate-on-scroll group flex h-full flex-col py-7 lg:px-8 transition-colors hover:bg-pg-carbon/50" style="animation-delay: {{ $i * 0.1 }}s">
                     <h2 class="flex items-center gap-3 font-display text-xl uppercase text-pg-tiza">
                         <i class="fas fa-{{ $d['icono'] }} text-pg-rojo-claro text-base" aria-hidden="true"></i>
                         <span>{{ $d['titulo'] }}</span>
@@ -98,9 +100,10 @@
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Nuestros socios</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">LO QUE DICEN</h2>
                 </div>
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {{-- Separados por una línea, no metidos cada uno en su recuadro. --}}
+                <div class="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-y-0 lg:divide-x divide-pg-tiza/10">
                     @foreach($testimonios as $i => $t)
-                        <figure class="animate-on-scroll card-hover bg-pg-negro/70 border border-pg-tiza/10 rounded-2xl p-6" style="animation-delay: {{ $i * 0.1 }}s">
+                        <figure class="animate-on-scroll py-7 lg:px-8" style="animation-delay: {{ $i * 0.1 }}s">
                             <i class="fas fa-quote-left text-pg-rojo/60 text-2xl" aria-hidden="true"></i>
                             <blockquote class="mt-4 text-pg-tiza/85 font-modern leading-relaxed">{{ $t['texto'] }}</blockquote>
                             <figcaption class="mt-6 font-semibold text-pg-tiza font-modern">— {{ $t['titulo'] }}</figcaption>

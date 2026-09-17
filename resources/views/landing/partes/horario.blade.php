@@ -8,9 +8,12 @@
             </div>
             {{-- Los siete días uno al lado del otro: en una lista angosta al centro
                  sobraba todo el ancho de la pantalla. --}}
-            <dl class="animate-on-scroll grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            {{-- Siete días, siete líneas: no siete tarjetas. El de hoy se marca
+                 con el color del texto, que basta para encontrarlo de un vistazo
+                 sin meterle un recuadro rojo alrededor. --}}
+            <dl class="animate-on-scroll grid grid-cols-1 divide-y lg:grid-cols-7 lg:divide-y-0 lg:divide-x divide-pg-tiza/10">
                 @foreach($horario['dias'] as $dia)
-                    <div class="rounded-2xl border px-4 py-5 text-center {{ $dia['clave'] === $horario['hoy'] ? 'border-pg-rojo/50 bg-pg-rojo/10' : 'border-pg-tiza/10 bg-pg-negro/60' }}">
+                    <div class="flex items-baseline justify-between gap-3 py-4 lg:block lg:px-4 lg:text-center {{ $dia['clave'] === $horario['hoy'] ? 'lg:bg-pg-rojo/5' : '' }}">
                         <dt class="font-modern text-sm uppercase tracking-wider {{ $dia['clave'] === $horario['hoy'] ? 'text-pg-rojo-claro' : 'text-pg-tiza/55' }}">
                             {{ $dia['nombre'] }}
                             @if($dia['clave'] === $horario['hoy'])

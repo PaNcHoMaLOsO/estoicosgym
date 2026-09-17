@@ -13,7 +13,10 @@
     <section id="planes" class="pb-16 bg-pg-negro">
         <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
             {{-- Los planes y los precios son los del catálogo. --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {{-- Una tabla de precios, no cinco tarjetas: los planes se comparan
+                 mejor en columnas separadas por una línea que en cajas sueltas,
+                 y cinco recuadros iguales en fila es el sello de la plantilla. --}}
+            <div class="grid grid-cols-1 divide-y xl:grid-cols-5 xl:divide-y-0 xl:divide-x divide-pg-tiza/10">
                 @forelse($planes as $index => $plan)
                     {{--
                         La tarjeta respira: el nombre arriba, el precio separado
@@ -25,14 +28,22 @@
                         tarjeta lleva más aire arriba para que no le caiga encima
                         del nombre.
                     --}}
-                    <div class="animate-on-scroll" style="animation-delay: {{ $index * 0.1 }}s">
-                        <div class="h-full flex flex-col bg-pg-carbon/70 border {{ $plan['destacado'] ? 'border-pg-rojo pt-10' : 'border-pg-tiza/10 pt-8' }} rounded-2xl px-7 pb-8 relative card-hover">
-                            @if($plan['destacado'])
-                                {{-- Se cuenta, no se decide: es el plan con más membresías activas. --}}
-                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-pg-rojo text-white text-xs font-bold px-3 py-1 rounded-full font-modern tracking-wide">
-                                    EL MÁS ELEGIDO
-                                </span>
-                            @endif
+                    <div class="animate-on-scroll flex h-full flex-col py-7 xl:px-6" style="animation-delay: {{ $index * 0.1 }}s">
+                            {{-- Se cuenta, no se decide: es el plan con más membresías
+                                 activas. El sello va en línea, encima del nombre, porque
+                                 colgado del borde necesitaba una tarjeta de la que colgar.
+
+                                 La fila se reserva SIEMPRE, lleve sello o no: si solo la
+                                 ocupara el destacado, su columna bajaría y los precios
+                                 dejarían de alinearse entre sí, que es justo lo que uno
+                                 viene a comparar. --}}
+                            <span class="mb-3 flex h-6 items-center">
+                                @if($plan['destacado'])
+                                    <span class="whitespace-nowrap bg-pg-rojo text-white text-xs font-bold px-3 py-1 rounded-full font-modern tracking-wide">
+                                        EL MÁS ELEGIDO
+                                    </span>
+                                @endif
+                            </span>
 
                             <h2 class="font-display text-xl uppercase tracking-wide text-pg-tiza">{{ $plan['nombre'] }}</h2>
                             @if($plan['duracion'])
@@ -56,7 +67,6 @@
                                     Lo quiero
                                 </a>
                             </div>
-                        </div>
                     </div>
                 @empty
                     <p class="col-span-full text-center text-pg-tiza/60 font-modern">Pregunta por los planes en el mesón.</p>
