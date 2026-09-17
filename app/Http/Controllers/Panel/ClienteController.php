@@ -23,10 +23,6 @@ use Inertia\Inertia;
 
 /**
  * Clientes del panel nuevo (Inertia + React).
- *
- * Convive con Admin\ClienteController, que sigue sirviendo las vistas Blade
- * mientras dure la migracion. Cuando /panel cubra todo, /admin se redirige aqui
- * y aquel se borra.
  */
 class ClienteController extends Controller
 {

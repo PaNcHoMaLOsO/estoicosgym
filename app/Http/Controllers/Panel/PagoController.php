@@ -11,8 +11,6 @@ use Inertia\Inertia;
 
 /**
  * Pagos del panel nuevo (Inertia + React).
- *
- * Convive con Admin\PagoController mientras dure la migracion.
  */
 class PagoController extends Controller
 {

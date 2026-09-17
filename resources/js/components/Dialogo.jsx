@@ -13,7 +13,7 @@ import {
 /**
  * Diálogo para una acción que se hace y ya: pausar, reanudar, traspasar.
  *
- * Las cuatro acciones de membresía viven en el controlador de Blade y
+ * Las cuatro acciones de membresía viven en Admin\InscripcionController y
  * responden JSON, así que se llaman con fetch en vez de con un formulario de
  * Inertia. Al terminar bien se recarga la página para que la ficha refleje el
  * estado nuevo; el error del servidor se enseña DENTRO del diálogo, sin cerrarlo,
@@ -32,8 +32,8 @@ export default function Dialogo({
     /*
      * Como se llama al servidor.
      *
-     * 'json' es lo de siempre: las cuatro acciones de membresia viven en el
-     * controlador de Blade y responden JSON.
+     * 'json' es lo de siempre: las cuatro acciones de membresia viven en
+     * Admin\InscripcionController y responden JSON.
      *
      * 'inertia' es para las rutas del panel nuevo, que responden con una
      * redireccion y su aviso. Ahi NO sirve el fetch de arriba: seguiria la

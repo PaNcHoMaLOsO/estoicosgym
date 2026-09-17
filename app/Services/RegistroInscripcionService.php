@@ -17,10 +17,10 @@ use Illuminate\Validation\ValidationException;
 /**
  * Alta de una inscripción: el socio, el plan, el precio y el primer pago.
  *
- * Vive aparte del controlador porque lo usan los dos paneles, y porque son tres
- * cosas distintas metidas en una: calcular cuánto sale, crear la inscripción y
- * anotar cómo se pagó. Antes estaban las tres en un método de 345 líneas del
- * controlador de Blade.
+ * Vive aparte del controlador porque lo usan el alta y la renovación, y porque
+ * son tres cosas distintas metidas en una: calcular cuánto sale, crear la
+ * inscripción y anotar cómo se pagó. Antes estaban las tres en un método de 345
+ * líneas del controlador de Blade.
  *
  * TODO SE GUARDA JUNTO O NO SE GUARDA NADA. Antes no: la inscripción se creaba
  * primero y el pago después, sin transacción. Si el pago fallaba —y con «pago

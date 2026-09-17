@@ -342,9 +342,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
     /*
      * PANEL NUEVO (Inertia + React).
      *
-     * Vive bajo /panel y no reemplaza a /admin todavia: se migra pantalla por
-     * pantalla y las dos conviven mientras tanto. Cuando /panel cubra todos los
-     * modulos, /admin pasa a redirigir aqui.
+     * Vive bajo /panel y reemplazo por completo al panel viejo de Blade
+     * (/admin), que se cerro y cuyo codigo ya se borro.
      */
     Route::prefix('panel')->name('panel.')->group(function () {
         Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
@@ -414,10 +413,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         /*
          * Acciones sobre una membresia ya vendida.
          *
-         * Apuntan a los MISMOS metodos del controlador de Blade: la logica de
-         * pausas, saldos y traspasos son cientos de lineas y duplicarlas para el
-         * panel dejaria dos versiones que se separan a la primera correccion.
-         * Los cuatro ya devolvian JSON, asi que React los llama tal cual.
+         * Son lo unico que queda de Admin\InscripcionController, el controlador
+         * del panel viejo: la logica de pausas, saldos y traspasos son cientos
+         * de lineas y ya devolvian JSON, asi que React las llama tal cual en vez
+         * de tener una segunda version. El resto de ese controlador se borro.
          *
          * El nombre de la ruta importa: `panel.inscripciones.pausar` cae en
          * `inscripciones.gestionar` por App\Support\Permisos, que es el permiso
@@ -458,8 +457,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/papelera', [\App\Http\Controllers\Panel\PapeleraController::class, 'index'])->name('papelera.index');
         Route::patch('/papelera/{tipo}/{id}/restaurar', [\App\Http\Controllers\Panel\PapeleraController::class, 'restaurar'])->name('papelera.restore');
 
-        // Informes. El constructor dinamico sigue en /admin: arma consultas a
-        // medida y no se parece a estas cuatro pantallas.
+        // Informes. El constructor a medida va aparte, mas abajo: arma
+        // consultas a medida y no se parece a estas cuatro pantallas.
         Route::get('/reportes', [\App\Http\Controllers\Panel\ReporteController::class, 'index'])->name('reportes.index');
         Route::get('/reportes/ingresos', [\App\Http\Controllers\Panel\ReporteController::class, 'ingresos'])->name('reportes.ingresos');
         Route::get('/reportes/membresias', [\App\Http\Controllers\Panel\ReporteController::class, 'membresias'])->name('reportes.membresias');
@@ -554,8 +553,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
      * EL PANEL VIEJO (/admin/...) YA NO EXISTE. Sus pantallas de Blade calculaban
      * saldos, estados y fechas a su manera, y cualquiera que entrara escribiendo
      * la dirección podía dejar descuadrado lo que hace el panel nuevo. Todo vive
-     * en /panel. Los controladores Admin que siguen en uso —pausar, reanudar,
-     * cambiar de plan y traspasar— tienen sus rutas dentro del panel.
+     * en /panel y su código se borró. Solo queda Admin\InscripcionController
+     * —pausar, reanudar, cambiar de plan y traspasar—, con sus rutas dentro del
+     * panel.
      */
 
 }); // Fin middleware('auth')

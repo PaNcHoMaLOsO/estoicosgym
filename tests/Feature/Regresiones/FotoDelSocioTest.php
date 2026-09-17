@@ -133,7 +133,7 @@ class FotoDelSocioTest extends CasoConCatalogos
      * 'foto_perfil' se colara entre los campos de la ficha, guardar la
      * corrección de un teléfono haría `update(['foto_perfil' => null])` y el
      * socio se quedaría sin cara sin que nadie atara una cosa con la otra. Es
-     * lo que manda el panel de Blade en cada edición.
+     * lo que mandaba el panel de Blade en cada edición.
      *
      * Por eso la petición de esta prueba lleva el campo vacío a propósito.
      */

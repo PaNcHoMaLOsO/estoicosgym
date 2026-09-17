@@ -21,9 +21,9 @@ use Illuminate\Validation\ValidationException;
 /**
  * Alta de un socio, con su inscripcion y su primer pago.
  *
- * POR QUE ESTO NO VIVE EN UN CONTROLADOR. El alta la piden dos paneles —el de
- * Blade en /admin y el de React en /panel— y son casi trescientas lineas entre
- * validaciones, precios y una transaccion de tres tablas. Copiarlas en el
+ * POR QUE ESTO NO VIVE EN UN CONTROLADOR. El alta la pedian dos paneles —el de
+ * Blade en /admin, ya borrado, y el de React en /panel— y son casi trescientas
+ * lineas entre validaciones, precios y una transaccion de tres tablas. Copiarlas en el
  * segundo panel habria dejado dos versiones que se separan a la primera
  * correccion que se haga solo en una.
  *

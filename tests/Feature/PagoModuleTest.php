@@ -50,11 +50,6 @@ class PagoModuleTest extends TestCase
         $this->assertTrue($pago->timestamps);
     }
 
-    public function test_controlador_pagos_existe()
-    {
-        $this->assertTrue(class_exists(\App\Http\Controllers\Admin\PagoController::class));
-    }
-
     public function test_pago_tabla_esta_configurada()
     {
         $pago = new Pago();

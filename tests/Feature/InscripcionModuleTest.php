@@ -166,38 +166,6 @@ class InscripcionModuleTest extends TestCase
     }
 
     /**
-     * Test: Controlador tiene métodos CRUD
-     * Verifica que todos los métodos CRUD existan
-     */
-    public function test_controlador_tiene_metodos_crud()
-    {
-        $controller = new InscripcionController();
-        
-        $this->assertTrue(method_exists($controller, 'index'));
-        $this->assertTrue(method_exists($controller, 'create'));
-        $this->assertTrue(method_exists($controller, 'store'));
-        $this->assertTrue(method_exists($controller, 'show'));
-        $this->assertTrue(method_exists($controller, 'edit'));
-        $this->assertTrue(method_exists($controller, 'update'));
-        $this->assertTrue(method_exists($controller, 'destroy'));
-    }
-
-    /**
-     * Test: Controlador tiene métodos de filtrado
-     * Verifica que los métodos auxiliares para filtros existan
-     */
-    public function test_controlador_tiene_metodos_de_filtrado()
-    {
-        $controller = new InscripcionController();
-        
-        // Usar reflection para acceder a métodos protegidos
-        $reflection = new \ReflectionClass($controller);
-        
-        $this->assertTrue($reflection->hasMethod('aplicarFiltros'));
-        $this->assertTrue($reflection->hasMethod('aplicarOrdenamiento'));
-    }
-
-    /**
      * Test: Controlador tiene métodos de cálculo
      * Verifica que los métodos de cálculo de precios existan
      */

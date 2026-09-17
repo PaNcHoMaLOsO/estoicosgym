@@ -11,7 +11,9 @@ use Inertia\Inertia;
 /**
  * Inscripciones del panel nuevo (Inertia + React).
  *
- * Convive con Admin\InscripcionController mientras dure la migracion.
+ * Las acciones sobre una membresia ya vendida (pausar, reanudar, cambiar de
+ * plan, traspasar) siguen en Admin\InscripcionController, lo unico que queda
+ * del panel viejo.
  */
 class InscripcionController extends Controller
 {

@@ -2,544 +2,35 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Models\Inscripcion;
 use App\Models\Cliente;
-use App\Models\Estado;
 use App\Models\Membresia;
-use App\Models\Convenio;
-use App\Models\MotivoDescuento;
-use App\Models\MetodoPago;
 use App\Models\Pago;
 use App\Models\HistorialTraspaso;
-use App\Models\HistorialCambio;
 use App\Models\TipoNotificacion;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Traits\ValidatesFormToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotificacionService;
-use App\Services\RegistroInscripcionService;
-use Illuminate\Validation\ValidationException;
 
+/**
+ * Lo único que queda del panel viejo de Blade.
+ *
+ * Seis acciones sobre una membresía ya vendida que el panel llama tal cual:
+ * pausar, reanudar, cambiar de plan y traspasar, más las dos consultas que
+ * arman esos diálogos. Responden JSON porque la ficha las llama con fetch
+ * (resources/js/components/Dialogo.jsx), y sus rutas están en /panel.
+ *
+ * El resto de este controlador —listado, alta, edición, papelera y
+ * renovación— se borró con las pantallas de /admin: el panel hace todo eso
+ * con sus propios controladores.
+ */
 class InscripcionController extends Controller
 {
-    use ValidatesFormToken;
-
-    // Campos permitidos para ordenamiento
-    protected $camposValidos = [
-        'id', 'id_cliente', 'id_membresia', 'id_estado', 
-        'fecha_inicio', 'fecha_vencimiento', 'precio_base', 
-        'precio_final', 'created_at'
-    ];
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
-    {
-        // Si es una petición AJAX, devolver JSON para lazy loading
-        if ($request->ajax()) {
-            return $this->getInscripcionesJson($request);
-        }
-
-        // Cargar primeras 100 inscripciones para la vista inicial (todas, no excluir ninguna)
-        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio', 'pagos'])
-            ->orderBy('fecha_inicio', 'desc')
-            ->take(100)
-            ->get();
-        
-        // Estadísticas por estado
-        $totalInscripciones = Inscripcion::count();
-        $activas = Inscripcion::where('id_estado', 100)->count();
-        $vencidas = Inscripcion::where('id_estado', 102)->count();
-        $pausadas = Inscripcion::where('id_estado', 101)->count();
-        $canceladas = Inscripcion::where('id_estado', 103)->count();
-        $suspendidas = Inscripcion::where('id_estado', 104)->count();
-        $totalEliminadas = Inscripcion::onlyTrashed()->count();
-        
-        // Datos para los selects de filtro
-        $estados = Estado::where('categoria', 'membresia')->get();
-        $membresias = Membresia::all();
-
-        // Preparar datos para JavaScript
-        $inscripcionesData = $this->prepareInscripcionesData($inscripciones);
-        
-        return view('admin.inscripciones.index', compact(
-            'inscripcionesData',
-            'estados', 
-            'membresias',
-            'totalInscripciones',
-            'activas',
-            'vencidas',
-            'pausadas',
-            'canceladas',
-            'suspendidas',
-            'totalEliminadas'
-        ));
-    }
-
-    /**
-     * Obtener inscripciones en formato JSON para lazy loading
-     */
-    private function getInscripcionesJson(Request $request)
-    {
-        $offset = $request->input('offset', 0);
-        $limit = 100;
-
-        $inscripciones = Inscripcion::with(['cliente', 'estado', 'membresia', 'convenio', 'pagos'])
-            ->whereNotIn('id_estado', [103, 105, 106])
-            ->orderBy('fecha_inicio', 'desc')
-            ->skip($offset)
-            ->take($limit)
-            ->get();
-
-        $total = Inscripcion::whereNotIn('id_estado', [103, 105, 106])->count();
-        $hasMore = $total > ($offset + $limit);
-
-        return response()->json([
-            'inscripciones' => $this->prepareInscripcionesData($inscripciones),
-            'hasMore' => $hasMore,
-            'nextOffset' => $offset + $limit
-        ]);
-    }
-
-    /**
-     * Preparar datos de inscripciones para el frontend
-     */
-    private function prepareInscripcionesData($inscripciones)
-    {
-        return $inscripciones->map(function($inscripcion) {
-            $diasRestantes = (int) now()->diffInDays($inscripcion->fecha_vencimiento, false);
-            $estadoPago = $inscripcion->obtenerEstadoPago();
-            
-            // Estado base para filtros (el código del estado)
-            $estadoBase = $inscripcion->id_estado;
-            $estadoNombre = $inscripcion->estado?->nombre ?? 'Sin estado';
-            
-            // Estado visual compuesto para mostrar
-            $estadoDisplay = $estadoNombre;
-            $estadoClass = strtolower($estadoNombre);
-            $estadoIcon = 'fa-info-circle';
-            $estadoSecundario = null; // Para mostrar estado combinado
-            
-            // Determinar estado visual combinado
-            if ($inscripcion->estaPausada()) {
-                // Mostrar como estado combinado: "Activa / Pausada"
-                $estadoDisplay = 'Activa / Pausada';
-                $estadoSecundario = $inscripcion->pausa_indefinida ? 'Indefinida' : ($inscripcion->dias_pausa . ' días');
-                $estadoClass = 'pausada';
-                $estadoIcon = 'fa-pause-circle';
-            } else {
-                switch ($estadoBase) {
-                    case 100: // Activa
-                        $estadoDisplay = 'Activa';
-                        $estadoClass = 'activa';
-                        $estadoIcon = 'fa-check-circle';
-                        break;
-                    case 102: // Vencida
-                        $estadoDisplay = 'Vencida';
-                        $estadoClass = 'vencida';
-                        $estadoIcon = 'fa-clock';
-                        break;
-                    case 103: // Cancelada
-                        $estadoDisplay = 'Cancelada';
-                        $estadoClass = 'cancelada';
-                        $estadoIcon = 'fa-times-circle';
-                        break;
-                    case 104: // Suspendida
-                        $estadoDisplay = 'Suspendida';
-                        $estadoClass = 'suspendida';
-                        $estadoIcon = 'fa-ban';
-                        break;
-                    case 105: // Cambiada (upgrade)
-                        $estadoDisplay = 'Mejorada';
-                        $estadoClass = 'cambiada';
-                        $estadoIcon = 'fa-exchange-alt';
-                        break;
-                    case 106: // Traspasada
-                        $estadoDisplay = 'Traspasada';
-                        $estadoClass = 'traspasada';
-                        $estadoIcon = 'fa-share';
-                        break;
-                }
-            }
-            
-            return [
-                'id' => $inscripcion->id,
-                'uuid' => $inscripcion->uuid,
-                // Cliente
-                'cliente_id' => $inscripcion->cliente?->id,
-                'cliente_nombres' => $inscripcion->cliente?->nombres ?? 'Sin cliente',
-                'cliente_apellido' => $inscripcion->cliente?->apellido_paterno ?? '',
-                'cliente_rut' => $inscripcion->cliente?->run_pasaporte ?? 'Sin RUT',
-                'cliente_initials' => strtoupper(
-                    substr($inscripcion->cliente?->nombres ?? 'N', 0, 1) . 
-                    substr($inscripcion->cliente?->apellido_paterno ?? 'A', 0, 1)
-                ),
-                // Membresía
-                'membresia_nombre' => $inscripcion->membresia?->nombre ?? 'Sin membresía',
-                'convenio_nombre' => $inscripcion->convenio?->nombre ?? null,
-                // Fechas
-                'fecha_inicio' => $inscripcion->fecha_inicio?->format('d/m/Y') ?? 'N/A',
-                'fecha_vencimiento' => $inscripcion->fecha_vencimiento?->format('d/m/Y') ?? 'N/A',
-                'dias_restantes' => $diasRestantes,
-                // Precios
-                'precio_base' => $inscripcion->precio_base ?? 0,
-                'precio_final' => $inscripcion->precio_final ?? $inscripcion->precio_base ?? 0,
-                'descuento_aplicado' => $inscripcion->descuento_aplicado ?? 0,
-                // Estado pago
-                'estado_pago' => $estadoPago['estado'],
-                'total_abonado' => $estadoPago['total_abonado'],
-                'pago_pendiente' => $estadoPago['pendiente'],
-                'porcentaje_pagado' => $estadoPago['porcentaje_pagado'],
-                // Estado inscripción
-                'id_estado' => $estadoBase,                    // Código para filtrar (100, 101, 102, etc.)
-                'estado_nombre' => $estadoNombre,              // Nombre del estado en BD
-                'estado_display' => $estadoDisplay,            // Texto a mostrar (puede ser combinado)
-                'estado_secundario' => $estadoSecundario,      // Info adicional (ej: "14 días" para pausada)
-                'estado_class' => $estadoClass,                // Clase CSS para el badge
-                'estado_icon' => $estadoIcon,                  // Icono FontAwesome
-                'esta_pausada' => $inscripcion->estaPausada(),
-                'pausa_indefinida' => $inscripcion->pausa_indefinida ?? false,
-                'dias_pausa' => $inscripcion->dias_pausa ?? 0,
-                'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
-                'max_pausas_permitidas' => $inscripcion->max_pausas_permitidas ?? 2,
-                // URLs
-                'showUrl' => route('admin.inscripciones.show', $inscripcion),
-                'editUrl' => route('admin.inscripciones.edit', $inscripcion),
-                'deleteUrl' => route('admin.inscripciones.destroy', $inscripcion),
-                'pagoUrl' => route('admin.pagos.create', ['inscripcion_id' => $inscripcion->id]),
-                'renovarUrl' => route('admin.inscripciones.renovar', $inscripcion),
-                'dias_restantes' => $inscripcion->dias_restantes,
-            ];
-        })->values()->toArray();
-    }
-
-    /**
-     * Aplicar filtros a la query
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param \Illuminate\Http\Request $request
-     * @return void
-     */
-    protected function aplicarFiltros($query, Request $request)
-    {
-        // Filtro por cliente (nombres, apellido, email)
-        if ($request->filled('cliente')) {
-            $query->whereHas('cliente', function($q) use ($request) {
-                $busqueda = '%' . $request->cliente . '%';
-                $q->where('nombres', 'like', $busqueda)
-                  ->orWhere('apellido_paterno', 'like', $busqueda)
-                  ->orWhere('email', 'like', $busqueda);
-            });
-        }
-        
-        // Filtro por estado
-        if ($request->filled('estado')) {
-            $query->where('id_estado', $request->estado);
-        }
-        
-        // Filtro por membresía
-        if ($request->filled('membresia')) {
-            $query->where('id_membresia', $request->membresia);
-        }
-        
-        // Filtro por rango de fechas
-        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-            $query->whereBetween('fecha_inicio', [
-                $request->fecha_inicio,
-                $request->fecha_fin
-            ]);
-        }
-    }
-
-    /**
-     * Aplicar ordenamiento a la query
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param \Illuminate\Http\Request $request
-     * @return void
-     */
-    protected function aplicarOrdenamiento($query, Request $request)
-    {
-        $ordenar = $request->get('ordenar', 'fecha_inicio');
-        $direccion = $request->get('direccion', 'desc');
-        
-        // Validar que el campo sea válido
-        if (!in_array($ordenar, $this->camposValidos)) {
-            $ordenar = 'fecha_inicio';
-        }
-        
-        // Validar dirección
-        if (!in_array($direccion, ['asc', 'desc'])) {
-            $direccion = 'desc';
-        }
-        
-        $query->orderBy($ordenar, $direccion);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // Clientes que pueden tener una nueva inscripción:
-        // - Clientes activos
-        // - Se carga con inscripciones para filtrar en la vista
-        
-        $clientes = Cliente::where('activo', true)
-            ->with(['inscripciones' => function($q) {
-                $q->orderBy('fecha_vencimiento', 'desc');
-            }])
-            ->orderBy('nombres')
-            ->get();
-
-        $estados = Estado::where('categoria', 'membresia')->get();
-        $estadoActiva = Estado::where('codigo', 100)->first(); // Estado "Activa"
-        $membresias = Membresia::with('precios')->where('activo', true)->get();
-        $convenios = Convenio::where('activo', true)->get();
-        $motivos = MotivoDescuento::where('activo', true)->get();
-        $metodosPago = MetodoPago::where('activo', true)->get();
-
-        return view('admin.inscripciones.create', compact('clientes', 'estados', 'estadoActiva', 'membresias', 'convenios', 'motivos', 'metodosPago'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     * 
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    /**
-     * Alta de inscripcion desde el panel de Blade.
-     *
-     * Los calculos y las validaciones viven en RegistroInscripcionService, el
-     * mismo que usa el panel nuevo, para que las dos pantallas no se separen.
-     * Antes esto eran 168 lineas aqui dentro.
-     */
-    public function store(Request $request, RegistroInscripcionService $registro)
-    {
-        try {
-            $resultado = $registro->validar($request);
-        } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
-        }
-
-        if (!$this->validateFormToken($request, 'inscripcion_create')) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
-
-        try {
-            $inscripcion = $registro->registrar($resultado);
-        } catch (\Throwable $e) {
-            Log::error('Error al crear inscripcion: ' . $e->getMessage());
-            $this->releaseFormToken($request, 'inscripcion_create');
-
-            return back()->withInput()->with('error', 'No se pudo crear la inscripcion. Intentelo nuevamente.');
-        }
-
-        return redirect()->route('admin.inscripciones.show', $inscripcion)
-            ->with('success', $resultado['abonos'] === []
-                ? 'Inscripcion creada - Pago pendiente de registrar'
-                : 'Inscripcion creada con pago registrado');
-    }
-
-
-
-
-
-
-
-    /**
-     * Display the specified resource.
-     * 
-     * @param \App\Models\Inscripcion $inscripcion
-     * @return \Illuminate\View\View
-     */
-    public function show(Inscripcion $inscripcion)
-    {
-        $inscripcion->load([
-            'cliente',
-            'estado',
-            'membresia',
-            'convenio',
-            'motivoDescuento',
-            'pagos.metodoPago',
-            'pagos.estado',
-            // Relaciones de cambio de plan
-            'inscripcionAnterior.membresia',
-            'inscripcionesPosteriores.membresia',
-            // Relaciones de traspaso
-            'inscripcionOrigen.membresia',
-            'inscripcionOrigen.cliente',
-            'clienteOriginal',
-            'inscripcionesTraspasadas.cliente',
-            'inscripcionesTraspasadas.membresia',
-        ]);
-        
-        $estadoPago = $inscripcion->obtenerEstadoPago();
-        
-        // Obtener historial de cambios para esta inscripción
-        $historialCambios = HistorialCambio::where('inscripcion_id', $inscripcion->id)
-            ->orWhere('entidad_id', $inscripcion->id)
-            ->with(['usuario', 'estadoAnterior', 'estadoNuevo'])
-            ->orderByDesc('fecha_cambio')
-            ->get();
-        
-        // Información de pausas
-        $infoPausa = [
-            'esta_pausada' => $inscripcion->pausada ?? false,
-            'pausas_realizadas' => $inscripcion->pausas_realizadas ?? 0,
-            'max_pausas' => $inscripcion->max_pausas_permitidas ?? 1,
-            'pausas_disponibles' => max(0, ($inscripcion->max_pausas_permitidas ?? 1) - ($inscripcion->pausas_realizadas ?? 0)),
-            'fecha_ultima_pausa' => $inscripcion->fecha_pausa_inicio ?? null,
-            'fecha_fin_pausa' => $inscripcion->fecha_pausa_fin ?? null,
-            'dias_restantes_pausa' => $inscripcion->fecha_pausa_fin 
-                ? max(0, (int) now()->diffInDays($inscripcion->fecha_pausa_fin, false)) 
-                : 0,
-            'dias_restantes_al_pausar' => $inscripcion->dias_restantes_al_pausar ?? 0,
-            'pausa_indefinida' => $inscripcion->pausa_indefinida ?? false,
-            'razon_pausa' => $inscripcion->razon_pausa ?? null,
-        ];
-        
-        // Información financiera
-        $totalPagado = $inscripcion->pagos ? $inscripcion->pagos->sum('monto_abonado') : 0;
-        $precioFinal = $inscripcion->precio_final ?? 0;
-        $deudaPendiente = max(0, $precioFinal - $totalPagado);
-        
-        $infoFinanciera = [
-            'total_pagado' => $totalPagado,
-            'precio_final' => $precioFinal,
-            'deuda_pendiente' => $deudaPendiente,
-            'cantidad_pagos' => $inscripcion->pagos ? $inscripcion->pagos->count() : 0,
-            'porcentaje_pagado' => $precioFinal > 0 ? round(($totalPagado / $precioFinal) * 100) : 100,
-        ];
-        
-        // Puede editar si está activa, pausada o vencida
-        $canEdit = in_array($inscripcion->id_estado, [100, 101, 102]);
-        
-        // Métodos de pago para posibles acciones
-        $metodosPago = MetodoPago::where('activo', true)->get();
-        
-        return view('admin.inscripciones.show', compact(
-            'inscripcion', 
-            'estadoPago', 
-            'historialCambios',
-            'infoPausa',
-            'infoFinanciera',
-            'canEdit',
-            'metodosPago'
-        ));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     * 
-     * @param \App\Models\Inscripcion $inscripcion
-     * @return \Illuminate\View\View
-     */
-    public function edit(Inscripcion $inscripcion)
-    {
-        $inscripcion->load(['cliente', 'estado', 'membresia', 'convenio', 'motivoDescuento', 'pagos']);
-        $clientes = Cliente::active()->get();
-        $estados = Estado::where('categoria', 'membresia')->get();
-        $membresias = Membresia::all();
-        $convenios = Convenio::all();
-        $motivos = MotivoDescuento::all();
-        $metodosPago = MetodoPago::where('activo', true)->get();
-        
-        // Obtener información de traspaso para la sección de traspaso
-        $infoTraspaso = $inscripcion->getInfoTraspaso();
-        
-        // Información de deuda para mejora de plan
-        $infoMejora = [
-            'tiene_deuda' => $inscripcion->monto_pendiente > 0,
-            'monto_pendiente' => $inscripcion->monto_pendiente,
-            'monto_pagado' => $inscripcion->monto_pagado,
-            'precio_final' => $inscripcion->precio_final,
-            'porcentaje_pagado' => $inscripcion->precio_final > 0 
-                ? round(($inscripcion->monto_pagado / $inscripcion->precio_final) * 100) 
-                : 100,
-            'esta_pagada' => $inscripcion->esta_pagada,
-        ];
-        
-        return view('admin.inscripciones.edit', compact('inscripcion', 'clientes', 'estados', 'membresias', 'convenios', 'motivos', 'metodosPago', 'infoTraspaso', 'infoMejora'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     * 
-     * @param \Illuminate\Http\Request $request
-     * @param \App\Models\Inscripcion $inscripcion
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(Request $request, Inscripcion $inscripcion)
-    {
-        if (!$this->validateFormToken($request, 'inscripcion_update_' . $inscripcion->id)) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
-
-        $validated = $request->validate([
-            'id_cliente' => 'required|exists:clientes,id',
-            'id_membresia' => 'required|exists:membresias,id',
-            'id_convenio' => 'nullable|exists:convenios,id',
-            'id_estado' => 'required|exists:estados,codigo',
-            'fecha_inicio' => 'required|date',
-            'fecha_vencimiento' => 'required|date|after_or_equal:fecha_inicio',
-            'precio_base' => 'required|numeric|min:0',
-            'descuento_aplicado' => 'nullable|numeric|min:0',
-            'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-            'observaciones' => 'nullable|string|max:500',
-        ]);
-
-        // Calcular precio_final: precio_base - descuento
-        $validated['precio_final'] = $validated['precio_base'] - ($validated['descuento_aplicado'] ?? 0);
-
-        $inscripcion->update($validated);
-
-        // Invalidar token para prevenir doble envío
-        $this->invalidateFormToken($request, 'inscripcion_update_' . $inscripcion->id);
-
-        return redirect()->route('admin.inscripciones.show', $inscripcion)
-            ->with('success', 'Inscripción actualizada exitosamente');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     * Solo permite eliminar inscripciones canceladas, vencidas o sin pagos.
-     * 
-     * @param \App\Models\Inscripcion $inscripcion
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroy(Inscripcion $inscripcion)
-    {
-        try {
-            // Cargar relaciones necesarias para el mensaje
-            $inscripcion->load(['cliente', 'membresia']);
-            
-            $clienteNombre = $inscripcion->cliente->nombre_completo ?? 'Cliente';
-            $membresiaNombre = $inscripcion->membresia->nombre ?? 'Membresía';
-            
-            // Soft delete - la inscripción va a la papelera
-            $inscripcion->delete();
-            
-            return redirect()->route('admin.inscripciones.index')
-                ->with('success', "Inscripción de {$clienteNombre} ({$membresiaNombre}) enviada a la papelera.");
-                
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Error al eliminar la inscripción: ' . $e->getMessage());
-        }
-    }
-
     /**
      * Pausar una membresía
-     * POST /admin/inscripciones/{inscripcion}/pausar
+     * POST /panel/inscripciones/{inscripcion}/pausar
      * 
      * @param \Illuminate\Http\Request $request
      * @param \App\Models\Inscripcion $inscripcion
@@ -627,7 +118,7 @@ class InscripcionController extends Controller
 
     /**
      * Reanudar una membresía pausada
-     * POST /admin/inscripciones/{inscripcion}/reanudar
+     * POST /panel/inscripciones/{inscripcion}/reanudar
      * 
      * @param \App\Models\Inscripcion $inscripcion
      * @return \Illuminate\Http\JsonResponse
@@ -717,7 +208,7 @@ class InscripcionController extends Controller
 
     /**
      * Obtener información de precios para mejora de plan
-     * GET /admin/inscripciones/{inscripcion}/info-cambio-plan
+     * GET /panel/inscripciones/{inscripcion}/info-cambio-plan
      * 
      * @param \App\Models\Inscripcion $inscripcion
      * @return \Illuminate\Http\JsonResponse
@@ -783,7 +274,7 @@ class InscripcionController extends Controller
 
     /**
      * Ejecutar mejora de plan (upgrade)
-     * POST /admin/inscripciones/{inscripcion}/cambiar-plan
+     * POST /panel/inscripciones/{inscripcion}/cambiar-plan
      * 
      * @param \Illuminate\Http\Request $request
      * @param \App\Models\Inscripcion $inscripcion
@@ -1024,7 +515,7 @@ class InscripcionController extends Controller
 
     /**
      * Buscar clientes disponibles para recibir traspaso
-     * GET /admin/inscripciones/{inscripcion}/buscar-clientes-traspaso
+     * GET /panel/inscripciones/{inscripcion}/buscar-clientes-traspaso
      */
     public function buscarClientesTraspaso(Request $request, Inscripcion $inscripcion)
     {
@@ -1101,7 +592,7 @@ class InscripcionController extends Controller
 
     /**
      * Ejecutar traspaso de membresía
-     * POST /admin/inscripciones/{inscripcion}/traspasar
+     * POST /panel/inscripciones/{inscripcion}/traspasar
      */
     public function traspasar(Request $request, Inscripcion $inscripcion)
     {
@@ -1300,157 +791,5 @@ class InscripcionController extends Controller
                 'message' => 'Error al procesar el traspaso: ' . $e->getMessage(),
             ], 500);
         }
-    }
-
-    // ==========================================
-    // PAPELERA (SoftDeletes)
-    // ==========================================
-
-    /**
-     * Mostrar inscripciones eliminadas (papelera)
-     */
-    public function trashed()
-    {
-        $inscripciones = Inscripcion::onlyTrashed()
-            ->with(['cliente', 'membresia', 'estado'])
-            ->orderBy('deleted_at', 'desc')
-            ->paginate(20);
-
-        $totalEliminadas = Inscripcion::onlyTrashed()->count();
-
-        return view('admin.inscripciones.trashed', compact('inscripciones', 'totalEliminadas'));
-    }
-
-    /**
-     * Restaurar una inscripción eliminada
-     */
-    public function restore($id)
-    {
-        $inscripcion = Inscripcion::onlyTrashed()->findOrFail($id);
-        
-        // Verificar que el cliente no esté eliminado
-        if ($inscripcion->cliente && $inscripcion->cliente->trashed()) {
-            return redirect()->route('admin.inscripciones.trashed')
-                ->with('error', 'No se puede restaurar la inscripción porque el cliente está eliminado. Restaure primero al cliente.');
-        }
-
-        $inscripcion->restore();
-
-        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
-        return redirect()->route('admin.inscripciones.trashed')
-            ->with('success', "Inscripción de {$clienteNombre} restaurada exitosamente.");
-    }
-
-    /**
-     * Eliminar permanentemente una inscripción
-     */
-    public function forceDelete($id)
-    {
-        $inscripcion = Inscripcion::onlyTrashed()->findOrFail($id);
-        
-        // Verificar que no tenga pagos
-        if ($inscripcion->pagos()->withTrashed()->exists()) {
-            return redirect()->route('admin.inscripciones.trashed')
-                ->with('error', 'No se puede eliminar permanentemente. La inscripción tiene pagos asociados. Elimine primero los pagos.');
-        }
-
-        $clienteNombre = $inscripcion->cliente->nombres ?? 'Cliente';
-        $inscripcion->forceDelete();
-
-        return redirect()->route('admin.inscripciones.trashed')
-            ->with('success', "Inscripción de {$clienteNombre} eliminada permanentemente.");
-    }
-
-    // ==========================================
-    // RENOVACIÓN DE MEMBRESÍA
-    // ==========================================
-
-    /**
-     * Mostrar formulario de renovación pre-poblado
-     * 
-     * @param Inscripcion $inscripcion La inscripción vencida o por vencer a renovar
-     * @return \Illuminate\View\View
-     */
-    public function showRenovar(Inscripcion $inscripcion)
-    {
-        // Verificar que la inscripción sea renovable (vencida o próxima a vencer)
-        $diasRestantes = $inscripcion->dias_restantes;
-        
-        // Permitir renovar si: vencida, o le quedan 30 días o menos
-        if ($diasRestantes > 30 && $inscripcion->id_estado == 100) {
-            return redirect()->route('admin.inscripciones.show', $inscripcion)
-                ->with('warning', 'Esta inscripción aún tiene más de 30 días de vigencia. No es necesario renovar.');
-        }
-
-        // Solo lo que la vista usa de verdad. Antes se cargaban tres cosas mas
-        // que renovar.blade.php no menciona en ninguna linea:
-        //   - $clientes, que traia TODOS los clientes activos en cada apertura
-        //     de la pantalla (se renueva la inscripcion de un socio ya conocido,
-        //     no se elige uno de la lista);
-        //   - $estados, que ademas filtraba por la categoria 'inscripcion', que
-        //     no existe: en la tabla `estados` esos codigos son 'membresia', asi
-        //     que la consulta devolvia siempre una coleccion vacia;
-        //   - $estadoActiva, que nadie leia.
-        $membresias = Membresia::where('activo', true)->orderBy('nombre')->get();
-        $convenios = Convenio::where('activo', true)->get();
-        $motivos = MotivoDescuento::where('activo', true)->get();
-        $metodosPago = MetodoPago::where('activo', true)->get();
-
-        // Pre-cargar datos de la inscripción anterior
-        $datosRenovacion = [
-            'inscripcion_anterior' => $inscripcion,
-            'cliente' => $inscripcion->cliente,
-            'membresia' => $inscripcion->membresia,
-            'convenio' => $inscripcion->convenio,
-            'precio_anterior' => $inscripcion->precio_final,
-            'fecha_inicio_sugerida' => $inscripcion->fecha_vencimiento->addDay()->format('Y-m-d'),
-        ];
-
-        return view('admin.inscripciones.renovar', compact(
-            'inscripcion', 'membresias', 'convenios',
-            'motivos', 'metodosPago', 'datosRenovacion'
-        ));
-    }
-
-    /**
-     * Procesar la renovación de una membresía
-     * 
-     * Crea una nueva inscripción basada en la anterior y la marca como renovación.
-     * 
-     * @param Request $request
-     * @param Inscripcion $inscripcionAnterior La inscripción que se está renovando
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    /**
-     * Renovacion desde el panel de Blade.
-     *
-     * Pasa por RegistroInscripcionService, el mismo que usa el panel nuevo. Ahi
-     * esta el arreglo que aqui faltaba: la membresia anterior SE CIERRA. Antes
-     * se creaba la nueva y se dejaba la vieja tal cual, asi que renovando antes
-     * de que venciera el socio se quedaba con DOS membresias activas.
-     */
-    public function renovar(Request $request, Inscripcion $inscripcionAnterior, RegistroInscripcionService $registro)
-    {
-        try {
-            $resultado = $registro->validarRenovacion($request, $inscripcionAnterior);
-        } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
-        }
-
-        if (!$this->validateFormToken($request, 'inscripcion_renovar')) {
-            return back()->with('error', 'Formulario duplicado. Por favor, intente nuevamente.');
-        }
-
-        try {
-            $nueva = $registro->registrar($resultado);
-        } catch (\Throwable $e) {
-            Log::error('Error en renovacion: ' . $e->getMessage());
-            $this->releaseFormToken($request, 'inscripcion_renovar');
-
-            return back()->withInput()->with('error', 'No se pudo renovar. Intentelo nuevamente.');
-        }
-
-        return redirect()->route('admin.inscripciones.show', $nueva)
-            ->with('success', 'Membresia renovada. Nueva vigencia hasta ' . $nueva->fecha_vencimiento->format('d/m/Y'));
     }
 }

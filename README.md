@@ -5,30 +5,24 @@ Gestión de socios, membresías y pagos para el gimnasio.
 
 ---
 
-## Hay dos paneles, y conviven
+## Un solo panel
 
-El sistema está a mitad de una migración. Los dos funcionan y comparten la misma
-base de datos y la misma lógica de negocio.
+Todo el trabajo del gimnasio se hace en **`/panel`** (Inertia + React): alta de
+socios, inscribir, cobrar, corregir o anular un pago, renovar, pausar, reanudar,
+traspasar, cambiar de plan, dar de baja, papelera, informes con constructor a
+medida, configuración de planes y precios, y los correos —uno a un socio, un
+aviso a un grupo, y el texto de las plantillas—.
 
-| | Dónde | Estado |
-|---|---|---|
-| **Panel nuevo** | `/panel` | Inertia + React. El día a día completo del gimnasio |
-| **Panel antiguo** | `/admin` | Blade + AdminLTE. Se mantiene en pie, pero el panel nuevo ya no enlaza a él |
+El panel antiguo (`/admin`, Blade + AdminLTE) se cerró y su código se borró.
+Solo queda `Admin\InscripcionController` con las seis acciones de membresía que
+el panel llama tal cual: pausar, reanudar, cambiar de plan, traspasar y las dos
+consultas de esos diálogos.
 
-**El panel nuevo cubre el trabajo entero**: alta de socios, inscribir, cobrar,
-corregir o anular un pago, renovar, pausar, reanudar, traspasar, cambiar de
-plan, dar de baja, papelera, informes con constructor a medida, configuración de
-planes y precios, y los correos —uno a un socio, un aviso a un grupo, y el texto
-de las plantillas—.
-
-El panel antiguo sigue sirviendo las mismas pantallas por si hiciera falta
-volver a alguna, pero desde `/panel` ya no se llega a él por ningún enlace.
-
-La lógica compartida vive en servicios (`app/Services/`) y no en los
-controladores, justamente para que los dos paneles no se separen. `RegistroClienteService`
-da de alta socios, `RegistroInscripcionService` inscribe y renueva,
-`RegistroPagoService` cobra, `EnvioManualService` y `EnvioMasivoService` mandan
-los correos, y `ConstructorInformes` arma los informes a medida.
+La lógica de negocio vive en servicios (`app/Services/`) y no en los
+controladores. `RegistroClienteService` da de alta socios,
+`RegistroInscripcionService` inscribe y renueva, `RegistroPagoService` cobra,
+`EnvioManualService` y `EnvioMasivoService` mandan los correos, y
+`ConstructorInformes` arma los informes a medida.
 
 ---
 
@@ -168,13 +162,13 @@ al abrirse no la detecta ninguna prueba de negocio.
 
 ```
 app/
-  Http/Controllers/Admin/    panel antiguo (Blade)
-  Http/Controllers/Panel/    panel nuevo (Inertia)
-  Services/                  logica compartida por los dos paneles
+  Http/Controllers/Panel/    el panel (Inertia)
+  Http/Controllers/Admin/    lo que queda del panel antiguo: InscripcionController
+  Services/                  logica de negocio
   Support/Permisos.php       qué permiso exige cada ruta
 resources/
-  js/                        panel nuevo: paginas, componentes y tokens de diseno
-  views/admin/               panel antiguo
+  js/                        el panel: paginas, componentes y tokens de diseno
+  views/landing/             la web publica
   views/emails/              plantillas de correo
 ```
 

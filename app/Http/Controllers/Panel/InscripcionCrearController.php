@@ -23,7 +23,7 @@ use Inertia\Inertia;
  * nada: uno pagina y este calcula precios y cobra.
  *
  * Los cálculos y las validaciones están en RegistroInscripcionService, el mismo
- * que usa el panel de Blade, para que las dos pantallas no se separen.
+ * que usa la renovación, para que las dos pantallas no se separen.
  */
 class InscripcionCrearController extends Controller
 {
