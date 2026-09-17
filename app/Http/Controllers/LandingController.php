@@ -36,6 +36,7 @@ class LandingController extends Controller
         'informacion' => 'Información general',
         'inscripcion' => 'Quiero inscribirme',
         'convenio' => 'Convenio de empresa',
+        'arriendo' => 'Arriendo para instituciones',
         'otro' => 'Otro',
     ];
 
@@ -111,8 +112,12 @@ class LandingController extends Controller
     public function planes()
     {
         $comun = $this->comun();
-        $precios = array_column($comun['planes'], 'precio');
-        $nombres = implode(', ', array_column($comun['planes'], 'nombre'));
+
+        // Lo que Google enseña como «desde» tiene que ser una mensualidad: el
+        // pase de un día no es el precio de ser socio.
+        $mensualidades = $this->mensualidades($comun['planes']);
+        $precios = array_column($mensualidades, 'precio');
+        $nombres = implode(', ', array_column($mensualidades, 'nombre'));
 
         return $this->pagina('landing.planes', 'landing.planes', 'Planes y precios',
             "Planes de {$comun['gimnasio']['nombre']}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
@@ -130,9 +135,12 @@ class LandingController extends Controller
             ->implode(', ');
         $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
 
-        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios para estudiantes, empresas e instituciones',
+        // El arriendo por horas va en la descripcion: es lo que Google muestra
+        // bajo el titulo, y quien lo busca no escribe «convenio».
+        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios y arriendo de gimnasio para universidades e institutos',
             ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
-                . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : ''),
+                . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : '')
+                . ' Arriendo de gimnasio por horas para clases prácticas y talleres de universidades e institutos.',
             [], $comun);
     }
 
@@ -378,15 +386,18 @@ class LandingController extends Controller
      */
     private function destacados(array $comun): array
     {
-        $precios = array_column($comun['planes'], 'precio');
-        $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
+        // Sin los pases sueltos: el de un día no es un plan, y ponerlo el
+        // primero hacía que la portada anunciara «desde $5.000».
+        $mensualidades = $this->mensualidades($comun['planes']);
+        $precios = array_column($mensualidades, 'precio');
+        $conPrecio = collect($mensualidades)->first(fn (array $p) => $p['precio_convenio']);
 
         $destacados = [[
             'href' => route('landing.planes'),
             'icono' => 'tags',
             'titulo' => 'Planes',
             'texto' => $precios
-                ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($comun['planes'], 'nombre'))) . '.'
+                ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($mensualidades, 'nombre'))) . '.'
                 : 'Pregunta por los planes en el mesón.',
             'accion' => 'Ver planes',
         ]];
@@ -551,6 +562,14 @@ class LandingController extends Controller
                     'nombre' => $m->nombre,
                     'descripcion' => $m->descripcion,
                     'duracion' => $this->duracion($m),
+                    // Para sacar cuanto sale al mes y cuanto se ahorra frente al mensual.
+                    'meses' => (int) $m->duracion_meses,
+                    // UN PASE SUELTO NO ES UNA MENSUALIDAD. Dura días, no meses,
+                    // y no se compara con los planes: puesto en la misma fila, el
+                    // precio más barato de la web pasaba a ser el del pase de un
+                    // día, y «desde $5.000» daba a entender que eso es lo que
+                    // cuesta ser socio.
+                    'es_pase' => (int) $m->duracion_meses < 1,
                     'precio' => (int) $precio->precio_normal,
                     'precio_convenio' => $precio->precio_convenio ? (int) $precio->precio_convenio : null,
                     'destacado' => $masElegido !== null && $m->id === (int) $masElegido,
@@ -559,6 +578,21 @@ class LandingController extends Controller
             ->sortBy('precio')
             ->values()
             ->all();
+    }
+
+    /**
+     * Los planes que son membresía, sin los pases sueltos.
+     *
+     * El criterio se escribe UNA vez: si cada pantalla decidiera por su cuenta
+     * qué cuenta como plan, la portada diría un precio y la página de planes
+     * otro.
+     *
+     * @param list<array<string,mixed>> $planes
+     * @return list<array<string,mixed>>
+     */
+    private function mensualidades(array $planes): array
+    {
+        return array_values(array_filter($planes, fn (array $p) => ! $p['es_pase']));
     }
 
     /** «1 mes», «3 meses», «1 año», «1 día». */
@@ -602,6 +636,10 @@ class LandingController extends Controller
         $youtube = Ajustes::obtener('web.youtube') ?: null;
 
         $precios = array_column($planes, 'precio');
+        // El «desde» que lee Google tiene que ser una mensualidad. El rango de
+        // precios sí los incluye todos, pases incluidos, porque es lo que de
+        // verdad se vende en el mesón.
+        $desdeMensual = array_column($this->mensualidades($planes), 'precio');
         $inicio = url('/');
         $logo = asset('images/progym-logo.png');
 
@@ -666,7 +704,7 @@ class LandingController extends Controller
             'region' => $region,
             // Los mismos que enseña la vista previa de Configuración.
             'titulo' => WebPublica::tituloDeInicio(),
-            'descripcion' => WebPublica::descripcion($precios ? min($precios) : null),
+            'descripcion' => WebPublica::descripcion($desdeMensual ? min($desdeMensual) : null),
             'canonical' => $inicio,
             'json_ld' => $ficha,
             'imagen' => $fotos[0] ?? $logo,
@@ -818,6 +856,57 @@ class LandingController extends Controller
             return back()->with('success', '¡Mensaje enviado correctamente!');
         }
 
+        // El formulario de arriendo para instituciones (pagina de Convenios)
+        // entra por aqui mismo. Sus casillas propias se pliegan dentro del
+        // mensaje: asi el correo, el registro y la validacion son los de
+        // siempre, y no hay un segundo camino que mantener.
+        $esArriendo = $request->servicio === 'arriendo' && $request->has('institucion');
+        if ($esArriendo) {
+            // El calendario manda una casilla por hora: «martes-10» es martes de
+            // 10:00 a 11:00. Aqui se juntan las horas seguidas de cada dia para
+            // que el correo diga «martes: 10:00 a 12:00» y no una lista de casillas.
+            $porDia = [];
+            foreach ((array) $request->bloques as $bloque) {
+                if (preg_match('/^(lunes|martes|miércoles|jueves|viernes|sábado)-(\d{1,2})$/u', (string) $bloque, $m) && (int) $m[2] <= 23) {
+                    $porDia[$m[1]][] = (int) $m[2];
+                }
+            }
+            if (! $porDia) {
+                return redirect()->to(url()->previous() . '#instituciones')
+                    ->withErrors(['bloques' => 'Marca en el calendario al menos una hora.'])
+                    ->withInput();
+            }
+            $horario = [];
+            foreach (['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] as $dia) {
+                $horas = array_values(array_unique($porDia[$dia] ?? []));
+                sort($horas);
+                $tramos = [];
+                foreach ($horas as $i => $h) {
+                    if ($i === 0 || $h !== $horas[$i - 1] + 1) {
+                        $tramos[] = [$h, $h + 1];
+                    } else {
+                        $tramos[count($tramos) - 1][1] = $h + 1;
+                    }
+                }
+                if ($tramos) {
+                    $horario[] = $dia . ': ' . implode(' y ', array_map(fn ($t) => sprintf('%02d:00 a %02d:00', $t[0], $t[1]), $tramos));
+                }
+            }
+
+            $lineas = collect([
+                'Institución' => $request->institucion,
+                'Carrera o área' => $request->area,
+                'Alumnos por bloque' => $request->alumnos,
+            ])->map(fn ($v) => Str::limit(trim(strip_tags((string) $v)), 150, ''))
+                ->filter()
+                ->map(fn ($v, $k) => "{$k}: {$v}")
+                ->implode("\n");
+            $request->merge(['mensaje' => Str::limit(trim($lineas . "\nHorario que buscan:\n" . implode("\n", $horario)), 1000, '')]);
+        }
+        // Vuelve al apartado, no al principio de la pagina: si no, el aviso de
+        // «enviado» queda abajo y parece que no paso nada.
+        $volver = fn () => $esArriendo ? redirect()->to(url()->previous() . '#instituciones') : back();
+
         // 3. Validación estricta con sanitización
         $validator = Validator::make($request->all(), [
             'nombre' => ['required', 'string', 'min:2', 'max:100', 'regex:/^[\pL\s\-\']+$/u'],
@@ -836,7 +925,7 @@ class LandingController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return back()
+            return $volver()
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -886,7 +975,7 @@ class LandingController extends Controller
         }
 
         // 6. Respuesta exitosa
-        return back()->with('success', '¡Gracias por contactarnos! Te responderemos pronto.');
+        return $volver()->with('success', '¡Gracias por contactarnos! Te responderemos pronto.');
     }
 
     /**

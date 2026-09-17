@@ -7,9 +7,9 @@
     dirección, el controlador no lo manda y esto no se pinta.
 --}}
 @if($tienda ?? null)
-    <section id="tienda" class="py-16 bg-pg-carbon border-y border-pg-tiza/10">
-        <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid gap-12 items-center {{ $tienda['imagen'] ? 'lg:grid-cols-2' : '' }}">
+    <section id="tienda" class="py-9 lg:py-16 bg-pg-carbon border-y border-pg-tiza/10">
+        <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+            <div class="grid gap-6 lg:gap-12 items-center {{ $tienda['imagen'] ? 'lg:grid-cols-2' : '' }}">
                 @if($tienda['imagen'])
                     <div class="animate-on-scroll overflow-hidden rounded-2xl border border-pg-tiza/10">
                         {{-- Con su proporción, sin recortar: el recuadro fijo a 4:3
@@ -29,7 +29,7 @@
 
                     <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener"
                        data-evento="tienda_suplementos"
-                       class="mt-8 inline-flex items-center gap-3 bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-3 rounded-lg text-base transition-colors font-modern">
+                       class="mt-5 lg:mt-8 inline-flex items-center gap-3 bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-3 rounded-lg text-base transition-colors font-modern">
                         Ver la tienda
                         <i class="fas fa-arrow-up-right-from-square text-sm" aria-hidden="true"></i>
                     </a>

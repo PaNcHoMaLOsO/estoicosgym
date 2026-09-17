@@ -15,12 +15,12 @@
         {{-- El icono al lado del título y sin cuadrado de color detrás: el
              cuadradito con degradado que crece y se gira al pasar por encima es
              el adorno de plantilla, y ocupaba más sitio que lo que hay que leer. --}}
-        <div class="animate-on-scroll py-7 lg:px-8 lg:py-2" style="animation-delay: {{ $index * 0.1 }}s">
+        <div class="animate-on-scroll py-4 lg:px-8 lg:py-2" style="animation-delay: {{ $index * 0.1 }}s">
             <h3 class="flex items-center gap-3 font-display text-xl uppercase text-pg-tiza">
                 <i class="fas fa-{{ $servicio['icono'] }} text-pg-rojo-claro text-base" aria-hidden="true"></i>
                 <span>{{ $servicio['titulo'] }}</span>
             </h3>
-            <p class="text-pg-tiza/60 font-modern text-sm mt-3 leading-relaxed">{{ $servicio['descripcion'] }}</p>
+            <p class="text-pg-tiza/60 font-modern text-sm mt-1.5 lg:mt-3 leading-relaxed">{{ $servicio['descripcion'] }}</p>
         </div>
     @endforeach
 </div>

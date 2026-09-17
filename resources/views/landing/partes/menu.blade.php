@@ -19,12 +19,12 @@
         </div>
     @endif
 
-    <nav class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8" aria-label="Principal">
-        <div class="flex items-center justify-between h-24">
+    <nav class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20" aria-label="Principal">
+        <div class="flex items-center justify-between h-16 lg:h-24">
             <a href="{{ route('landing') }}" class="flex items-center shrink-0" aria-label="{{ $gimnasio['nombre'] }}, ir al inicio">
                 <picture>
                     <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-14 w-auto">
+                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-10 lg:h-14 w-auto">
                 </picture>
             </a>
 

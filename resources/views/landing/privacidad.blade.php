@@ -10,8 +10,8 @@
         'bajada' => 'Versión ' . $legal['version'] . ($legal['fecha'] ? ' · actualizada el ' . $legal['fecha'] : ''),
     ])
 
-    <section class="pb-16 bg-pg-negro">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 font-modern text-pg-tiza/75">
+    <section class="pb-9 lg:pb-16 bg-pg-negro">
+        <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 font-modern text-pg-tiza/75">
             {{-- Lo escribe el gimnasio en Configuración → Política de privacidad. --}}
             <div class="documento en-oscuro">
                 {!! $legal['html'] !!}

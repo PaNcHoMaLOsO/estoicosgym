@@ -1,21 +1,21 @@
 <footer class="bg-pg-carbon border-t border-pg-tiza/5">
-    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div>
+    <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 py-7 lg:py-9">
+        <div class="grid grid-cols-[2fr_3fr] md:grid-cols-3 gap-x-5 gap-y-6 md:gap-10">
+            <div class="col-span-2 md:col-span-1">
                 <picture>
                     <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-20 w-auto" loading="lazy">
+                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-12 lg:h-14 w-auto" loading="lazy">
                 </picture>
-                <p class="text-pg-tiza/55 font-modern text-sm mt-5">
+                <p class="text-pg-tiza/55 font-modern text-sm mt-3 lg:mt-4">
                     {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}
                 </p>
                 @if($gimnasio['direccion'])
                     <p class="text-pg-tiza/55 font-modern text-sm mt-1">{{ $gimnasio['direccion'] }}</p>
                 @endif
                 @if($redes)
-                    <div class="flex gap-3 mt-5">
+                    <div class="flex gap-2 mt-4">
                         @foreach($redes as $red)
-                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-11 h-11 rounded-xl bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-base" aria-hidden="true"></i></a>
+                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-9 h-9 rounded-lg bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-sm" aria-hidden="true"></i></a>
                         @endforeach
                     </div>
                 @endif
@@ -28,8 +28,8 @@
             </div>
 
             <div>
-                <h2 class="font-semibold mb-4 text-pg-tiza">Páginas</h2>
-                <ul class="space-y-2 font-modern text-sm">
+                <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Páginas</h2>
+                <ul class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-1.5 font-modern text-sm">
                     <li><a href="{{ route('landing') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Inicio</a></li>
                     <li><a href="{{ route('landing.gimnasio') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">El gimnasio</a></li>
                     <li><a href="{{ route('landing.planes') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Planes y precios</a></li>
@@ -56,13 +56,29 @@
             </div>
 
             <div>
-                <h2 class="font-semibold mb-4 text-pg-tiza">Horario</h2>
+                <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Horario</h2>
                 @if($horario['configurado'])
-                    <ul class="space-y-1 font-modern text-sm">
-                        @foreach($horario['dias'] as $dia)
-                            <li class="flex justify-between gap-4 {{ $dia['clave'] === $horario['hoy'] ? 'text-pg-tiza' : 'text-pg-tiza/55' }}">
-                                <span>{{ $dia['nombre'] }}</span>
-                                <span class="tabular-nums">{{ $dia['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . '–' . $t[1], $dia['tramos'])) : 'Cerrado' }}</span>
+                    {{-- Los dias seguidos con el mismo horario van en una sola linea:
+                         «Lunes a viernes» en vez de cinco filas iguales. Siete filas
+                         hacian del pie lo mas pesado de la pagina. --}}
+                    <?php
+                        $grupos = [];
+                        foreach ($horario['dias'] as $dia) {
+                            $texto = $dia['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' a ' . $t[1], $dia['tramos'])) : 'Cerrado';
+                            $ultimo = count($grupos) - 1;
+                            if ($ultimo >= 0 && $grupos[$ultimo]['texto'] === $texto) {
+                                $grupos[$ultimo]['hasta'] = $dia['nombre'];
+                                $grupos[$ultimo]['hoy'] = $grupos[$ultimo]['hoy'] || $dia['clave'] === $horario['hoy'];
+                            } else {
+                                $grupos[] = ['desde' => $dia['nombre'], 'hasta' => null, 'texto' => $texto, 'hoy' => $dia['clave'] === $horario['hoy']];
+                            }
+                        }
+                    ?>
+                    <ul class="space-y-1.5 font-modern text-xs sm:text-sm">
+                        @foreach($grupos as $g)
+                            <li class="flex justify-between gap-3 {{ $g['hoy'] ? 'text-pg-tiza' : 'text-pg-tiza/55' }}">
+                                <span>{{ $g['desde'] }}{{ $g['hasta'] ? ' a ' . mb_strtolower($g['hasta']) : '' }}</span>
+                                <span class="tabular-nums">{{ $g['texto'] }}</span>
                             </li>
                         @endforeach
                     </ul>
@@ -72,11 +88,11 @@
             </div>
         </div>
 
-        <div class="border-t border-pg-tiza/5 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p class="text-pg-tiza/40 text-sm font-modern">&copy; {{ date('Y') }} {{ $gimnasio['nombre'] }}. Todos los derechos reservados.</p>
+        <div class="border-t border-pg-tiza/5 mt-5 pt-4 lg:mt-7 lg:pt-5 flex flex-col md:flex-row items-center justify-between gap-3">
+            <p class="text-pg-tiza/40 text-xs font-modern">&copy; {{ date('Y') }} {{ $gimnasio['nombre'] }}. Todos los derechos reservados.</p>
             <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-                <a href="{{ route('landing.terminos') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Términos y condiciones</a>
-                <a href="{{ route('landing.privacidad') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-sm font-modern transition-colors">Privacidad y cookies</a>
+                <a href="{{ route('landing.terminos') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-xs font-modern transition-colors">Términos y condiciones</a>
+                <a href="{{ route('landing.privacidad') }}" class="text-pg-tiza/40 hover:text-pg-tiza text-xs font-modern transition-colors">Privacidad y cookies</a>
             </div>
         </div>
     </div>

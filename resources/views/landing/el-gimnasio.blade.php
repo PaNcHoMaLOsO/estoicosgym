@@ -20,19 +20,27 @@
         // El horario de hoy y el plan mas barato: los planes ya vienen
         // ordenados por precio desde el controlador.
         $hoy = $horario['configurado'] ? collect($horario['dias'])->firstWhere('clave', $horario['hoy']) : null;
-        $masBarato = $planes[0] ?? null;
+        // La mensualidad más barata, no el pase de un día: «planes desde $5.000»
+        // daba a entender que eso es lo que cuesta ser socio. El pase va aparte,
+        // en una línea más pequeña.
+        $masBarato = collect($planes)->firstWhere('es_pase', false);
+        $pase = collect($planes)->firstWhere('es_pase', true);
 
         $datos = array_values(array_filter([
             $hoy ? [
                 'icono' => 'clock',
                 'rotulo' => 'Hoy ' . mb_strtolower($hoy['nombre']),
-                'valor' => $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' – ' . $t[1], $hoy['tramos'])) : 'Cerrado',
+                'valor' => $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' a ' . $t[1], $hoy['tramos'])) : 'Cerrado',
             ] : null,
             $masBarato ? [
                 'icono' => 'ticket',
                 'rotulo' => 'Planes desde',
                 'valor' => '$' . number_format($masBarato['precio'], 0, ',', '.'),
                 'apoyo' => $masBarato['nombre'] . ($masBarato['duracion'] ? ' · ' . $masBarato['duracion'] : ''),
+                // El pase suelto, mencionado en pequeño: no es una mensualidad y
+                // no puede competir con el precio del plan, pero quien viene un
+                // día quiere saber cuánto le cuesta sin tener que preguntar.
+                'extra' => $pase ? $pase['nombre'] . ' $' . number_format($pase['precio'], 0, ',', '.') : null,
                 'href' => route('landing.planes'),
             ] : null,
             $navegacion['convenios'] ? [
@@ -63,17 +71,17 @@
         franja vacia justo donde hay que mostrar el local. Sin fotos cargadas
         cae al degradado de siempre, asi que la pagina nunca queda rota.
     --}}
-    <section class="relative flex min-h-[62vh] items-end overflow-hidden">
+    <section class="relative flex lg:min-h-[70svh] items-end overflow-hidden">
         @if($fotoPortada)
             <div class="absolute inset-0" aria-hidden="true">
                 <img src="{{ $fotoPortada['imagen'] }}" alt="" class="portada-foto h-full w-full object-cover">
-                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/80 to-pg-negro/40"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/25 to-transparent lg:via-pg-negro/80 lg:to-pg-negro/40"></div>
             </div>
         @else
             <div class="absolute inset-0 bg-linear-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>
         @endif
 
-        <div class="relative z-10 w-full max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12 fade-in">
+        <div class="relative z-10 w-full max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 pt-24 lg:pt-32 pb-7 lg:pb-12 entrada">
             <p class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Por dentro</p>
             <h1 class="font-display text-4xl md:text-5xl lg:text-6xl text-pg-tiza mt-3 uppercase leading-[0.95]">El gimnasio</h1>
             <p class="text-pg-tiza/75 mt-5 max-w-2xl font-modern text-base">
@@ -98,19 +106,24 @@
     {{-- Lo que alguien quiere saber antes de venir, de una sola mirada. --}}
     @if($datos)
         <section class="bg-pg-carbon border-y border-pg-tiza/10">
-            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 {{ $columnas }} lg:divide-x divide-pg-tiza/10">
+            <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 grid grid-cols-2 {{ $columnas }} lg:divide-x divide-pg-tiza/10">
                 @foreach($datos as $dato)
                     @php($etiqueta = ($dato['href'] ?? null) ? 'a' : 'div')
                     <{{ $etiqueta }} @if($dato['href'] ?? null) href="{{ $dato['href'] }}" @endif
-                        class="flex items-center gap-4 px-2 lg:px-8 py-7 {{ ($dato['href'] ?? null) ? 'transition-colors hover:bg-pg-negro/40' : '' }}">
+                        class="flex items-start lg:items-center gap-3 lg:gap-4 px-1 lg:px-8 py-4 lg:py-7 {{ ($dato['href'] ?? null) ? 'transition-colors hover:bg-pg-negro/40' : '' }}">
                         {{-- El icono solo, sin el cuadrado de color detrás: igual
                              que en el resto de la web. --}}
                         <i class="fas fa-{{ $dato['icono'] }} text-pg-rojo-claro text-base w-5 shrink-0 text-center" aria-hidden="true"></i>
                         <span class="min-w-0">
-                            <span class="block text-pg-tiza/50 font-modern text-xs uppercase tracking-widest">{{ $dato['rotulo'] }}</span>
-                            <span class="block text-pg-tiza font-modern text-base">{{ $dato['valor'] }}</span>
+                            <span class="block text-pg-tiza/50 font-modern text-[0.65rem] lg:text-xs uppercase tracking-wider lg:tracking-widest">{{ $dato['rotulo'] }}</span>
+                            <span class="block text-pg-tiza font-modern text-sm lg:text-base">{{ $dato['valor'] }}</span>
                             @if($dato['apoyo'] ?? null)
-                                <span class="block text-pg-tiza/45 font-modern text-sm">{{ $dato['apoyo'] }}</span>
+                                <span class="block text-pg-tiza/45 font-modern text-xs lg:text-sm">{{ $dato['apoyo'] }}</span>
+                            @endif
+                            @if($dato['extra'] ?? null)
+                                {{-- Más pequeño y más apagado todavía: es un dato
+                                     secundario que acompaña, no que compite. --}}
+                                <span class="block text-pg-tiza/35 font-modern text-xs mt-0.5">{{ $dato['extra'] }}</span>
                             @endif
                         </span>
                     </{{ $etiqueta }}>
@@ -121,9 +134,9 @@
 
     {{-- ===== LO QUE HAY ADENTRO: sale de Pagina web -> Servicios ===== --}}
     @if(count($servicios))
-        <section id="servicios" class="py-16 bg-pg-negro">
-            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-8 animate-on-scroll">
+        <section id="servicios" class="py-9 lg:py-16 bg-pg-negro">
+            <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+                <div class="text-center mb-5 lg:mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Para entrenar</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">LO QUE ENCUENTRAS</h2>
                 </div>
@@ -134,9 +147,9 @@
 
     {{-- ===== GALERIA: sale de Pagina web -> Fotos ===== --}}
     @if(count($fotos))
-        <section id="fotos" class="py-16 bg-pg-carbon">
-            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-8 animate-on-scroll">
+        <section id="fotos" class="py-9 lg:py-16 bg-pg-carbon">
+            <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+                <div class="text-center mb-5 lg:mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Así se ve</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">EL GIMNASIO EN FOTOS</h2>
                 </div>

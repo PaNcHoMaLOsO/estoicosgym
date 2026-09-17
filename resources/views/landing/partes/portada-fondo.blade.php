@@ -46,8 +46,10 @@
              foto, clara u oscura. VA POR DELANTE DE LAS FOTOS a propósito: las
              capas que se cruzan se pisan entre ellas, y sin esto la foto que
              entraba tapaba el oscurecido y el título se volvía ilegible. --}}
-        <div class="absolute inset-0 z-[3] bg-pg-negro/30"></div>
-        <div class="absolute inset-0 z-[3] bg-linear-to-t from-pg-negro via-pg-negro/75 to-pg-negro/35"></div>
+        <div class="absolute inset-0 z-[3] bg-pg-negro/10 lg:bg-pg-negro/30"></div>
+        {{-- En pantalla ancha el texto ya no va encima de la foto sino a su
+             izquierda, sobre negro: la foto puede ir casi sin oscurecer. --}}
+        <div class="absolute inset-0 z-[3] bg-linear-to-t from-pg-negro via-pg-negro/20 to-transparent lg:via-pg-negro/75 lg:to-pg-negro/35"></div>
     </div>
 
     @if($escenas->count() > 1)

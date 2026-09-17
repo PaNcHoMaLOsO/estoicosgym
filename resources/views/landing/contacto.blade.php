@@ -5,22 +5,25 @@
 
 @section('content')
         <!-- ===== CONTACTO SECTION ===== -->
-        <section id="contacto" class="pt-28 pb-16 bg-pg-negro relative">
-            <div class="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="contacto" class="pt-24 lg:pt-40 pb-10 lg:pb-20 bg-pg-negro relative">
+            {{-- Mas angosto que el resto de la web: son dos columnas cortas, y a todo
+                 el ancho de un monitor quedaban pegadas a los bordes y con un vacio
+                 enorme en medio. --}}
+            <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-12">
                 {{-- El formulario se lleva más ancho que los datos: al medio y medio,
                      la columna de la izquierda quedaba con un vacío enorme debajo. --}}
-                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-12">
+                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 lg:gap-16">
                     <!-- Contact Info -->
                     <div class="animate-on-scroll">
                         <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Contáctanos</span>
-                        <h1 class="font-display text-3xl md:text-4xl mt-4 mb-6 text-pg-tiza">HABLEMOS</h1>
-                        <p class="text-pg-tiza/60 font-modern mb-10">
+                        <h1 class="font-display text-3xl md:text-4xl mt-2 mb-3 lg:mt-4 lg:mb-6 text-pg-tiza">HABLEMOS</h1>
+                        <p class="text-pg-tiza/60 font-modern mb-5 lg:mb-7">
                             ¿Tienes dudas? ¿Quieres conocer nuestras instalaciones? 
                             Contáctanos y te ayudaremos a dar el primer paso.
                         </p>
                         
                         {{-- Salen de Configuración → El gimnasio. Lo vacío no se enseña: mejor nada que un teléfono de ejemplo. --}}
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             @if($gimnasio['direccion'])
                                 <div class="flex items-start">
                                     {{-- El icono suelto, como en el resto de la web: el
@@ -53,7 +56,7 @@
                         </div>
 
                         @if($whatsapp || $web['google_maps'] || $web['resenas'] || $redes)
-                            <div class="mt-10 flex flex-wrap items-center gap-3">
+                            <div class="mt-6 lg:mt-8 flex flex-wrap items-center gap-3">
                                 {{-- El WhatsApp va primero: es por donde escribe casi todo el mundo. --}}
                                 @if($whatsapp)
                                     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
@@ -90,8 +93,8 @@
                          de la web. Los campos sí llevan borde, que eso no es adorno
                          sino la señal de dónde se escribe. --}}
                     <div class="animate-on-scroll lg:border-l lg:border-pg-tiza/10">
-                        <div class="lg:pl-12">
-                            <h3 class="font-display text-xl mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
+                        <div class="lg:pl-16">
+                            <h3 class="font-display text-xl mb-4 lg:mb-6 text-pg-tiza">ENVÍANOS UN MENSAJE</h3>
                             
                             <!-- Alerts -->
                             @if(session('success'))
@@ -118,7 +121,7 @@
                                 </div>
                             @endif
                             
-                            <form action="{{ route('landing.contacto.enviar') }}" method="POST" class="space-y-6">
+                            <form action="{{ route('landing.contacto.enviar') }}" method="POST" class="space-y-4">
                                 @csrf
                                 
                                 <!-- Honeypot (anti-spam) -->
@@ -127,9 +130,9 @@
                                     <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
                                 </div>
                                 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="grid grid-cols-2 gap-3 md:gap-4">
                                     <div>
-                                        <label for="nombre" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Nombre *</label>
+                                        <label for="nombre" class="block text-sm font-medium mb-1.5 text-pg-tiza font-modern">Nombre *</label>
                                         <input 
                                             type="text" 
                                             name="nombre" 
@@ -138,13 +141,13 @@
                                             required
                                             minlength="2"
                                             maxlength="100"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-2.5 text-sm text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="Tu nombre"
                                         >
                                     </div>
                                     
                                     <div>
-                                        <label for="email" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Email *</label>
+                                        <label for="email" class="block text-sm font-medium mb-1.5 text-pg-tiza font-modern">Email *</label>
                                         <input 
                                             type="email" 
                                             name="email" 
@@ -152,51 +155,53 @@
                                             value="{{ old('email') }}"
                                             required
                                             maxlength="255"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-2.5 text-sm text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="tu@email.com"
                                         >
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="grid grid-cols-2 gap-3 md:gap-4">
                                     <div>
-                                        <label for="telefono" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Teléfono</label>
+                                        <label for="telefono" class="block text-sm font-medium mb-1.5 text-pg-tiza font-modern">Teléfono</label>
                                         <input 
                                             type="tel" 
                                             name="telefono" 
                                             id="telefono" 
                                             value="{{ old('telefono') }}"
                                             maxlength="20"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-2.5 text-sm text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                             placeholder="+56 9 1234 5678"
                                         >
                                     </div>
                                     
                                     <div>
-                                        <label for="servicio" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Interés</label>
+                                        <label for="servicio" class="block text-sm font-medium mb-1.5 text-pg-tiza font-modern">Interés</label>
                                         <select 
                                             name="servicio" 
                                             id="servicio"
-                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
+                                            class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-2.5 text-sm text-pg-tiza transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern"
                                         >
                                             <option value="informacion">Información general</option>
                                             <option value="inscripcion">Quiero inscribirme</option>
                                             <option value="convenio">Convenio de empresa</option>
+                                            {{-- Quien llega desde «Arriendo para instituciones» ya lo trae elegido. --}}
+                                            <option value="arriendo" @selected(old('servicio', request('interes')) === 'arriendo')>Arriendo para instituciones</option>
                                             <option value="otro">Otro</option>
                                         </select>
                                     </div>
                                 </div>
                                 
                                 <div>
-                                    <label for="mensaje" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">Mensaje *</label>
+                                    <label for="mensaje" class="block text-sm font-medium mb-1.5 text-pg-tiza font-modern">Mensaje *</label>
                                     <textarea 
                                         name="mensaje" 
                                         id="mensaje" 
-                                        rows="5"
+                                        rows="3"
                                         required
                                         minlength="10"
                                         maxlength="1000"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 resize-none font-modern"
+                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-2.5 text-sm text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 resize-none font-modern"
                                         placeholder="¿En qué podemos ayudarte?"
                                     >{{ old('mensaje') }}</textarea>
                                 </div>
@@ -208,11 +213,6 @@
                                     <i class="fas fa-paper-plane mr-2"></i>
                                     Enviar Mensaje
                                 </button>
-                                
-                                <p class="text-pg-tiza/40 text-sm text-center font-modern">
-                                    <i class="fas fa-lock mr-1"></i>
-                                    Tu información está segura y no será compartida.
-                                </p>
                             </form>
                         </div>
                     </div>
@@ -224,9 +224,9 @@
 
     {{-- ===== PREGUNTAS FRECUENTES: salen de Pagina web -> Preguntas ===== --}}
     @if(count($preguntas))
-        <section id="preguntas" class="py-16 bg-pg-negro">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-8 animate-on-scroll">
+        <section id="preguntas" class="py-9 lg:py-16 bg-pg-negro">
+            <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+                <div class="text-center mb-5 lg:mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Antes de venir</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
                 </div>
@@ -234,7 +234,7 @@
                      la siguiente por una línea. --}}
                 <div class="divide-y divide-pg-tiza/10 border-y border-pg-tiza/10">
                     @foreach($preguntas as $pregunta)
-                        <details class="animate-on-scroll group py-5">
+                        <details class="animate-on-scroll group py-3.5 lg:py-5">
                             <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-modern font-semibold text-pg-tiza">
                                 {{ $pregunta['titulo'] }}
                                 <i class="fas fa-plus text-pg-rojo-claro transition-transform duration-300 group-open:rotate-45" aria-hidden="true"></i>

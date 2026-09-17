@@ -5,13 +5,13 @@
 
 @section('content')
         <!-- ===== CONSULTA MEMBRESÍA SECTION ===== -->
-        <section id="consulta" class="pt-28 pb-16 bg-pg-carbon relative overflow-hidden">
+        <section id="consulta" class="pt-20 lg:pt-28 pb-9 lg:pb-16 bg-pg-carbon relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pg-rojo/30 to-transparent"></div>
             
             <!-- Glow decorativo -->
             
-            <div class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div class="text-center mb-8 animate-on-scroll">
+            <div class="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 relative z-10">
+                <div class="text-center mb-5 lg:mb-8 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
                     <h1 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h1>
                     <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
@@ -67,7 +67,6 @@
                                         maxlength="4"
                                         class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-[0.5em]"
                                     >
-                                    <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">El que registraste en el gimnasio: así nadie más puede ver tu membresía.</p>
                                 </div>
                             </div>
                             
@@ -96,7 +95,6 @@
                                         maxlength="50"
                                         class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center"
                                     >
-                                    <p class="text-pg-tiza/40 text-xs mt-1 font-modern text-center">Para verificar tu identidad</p>
                                 </div>
                             </div>
                             
@@ -109,11 +107,6 @@
                                 Consultar
                             </button>
                         </div>
-                        
-                        <p class="text-pg-tiza/40 text-xs text-center mt-4 font-modern">
-                            <i class="fas fa-shield-alt mr-1"></i>
-                            Consulta protegida • Máximo 3 consultas cada 5 min
-                        </p>
                     </div>
                 </div>
                 
@@ -188,8 +181,7 @@
                     <aside class="animate-on-scroll rounded-2xl border border-pg-tiza/10 bg-pg-negro/50 p-6">
                         <h2 class="font-display text-xl uppercase text-pg-tiza">¿Dudas con tu membresía?</h2>
                         <p class="mt-3 text-pg-tiza/60 font-modern text-sm leading-relaxed">
-                            Si el RUT no aparece o los datos no calzan, escríbenos y lo revisamos en el momento.
-                            También puedes pasar por el mesón.
+                            Escríbenos o pasa por el mesón.
                         </p>
 
                         @if($horario['configurado'])
@@ -199,7 +191,7 @@
                                     <i class="fas fa-clock text-pg-rojo-claro" aria-hidden="true"></i>
                                     <p class="font-modern text-sm text-pg-tiza/80">
                                         Hoy {{ mb_strtolower($hoy['nombre']) }}:
-                                        <span class="text-pg-tiza tabular-nums">{{ $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' – ' . $t[1], $hoy['tramos'])) : 'cerrado' }}</span>
+                                        <span class="text-pg-tiza tabular-nums">{{ $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' a ' . $t[1], $hoy['tramos'])) : 'cerrado' }}</span>
                                     </p>
                                 </div>
                             @endif
@@ -216,6 +208,13 @@
                                class="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-pg-tiza/20 hover:border-pg-rojo/50 text-pg-tiza font-modern text-sm font-semibold transition-colors">
                                 <i class="fas fa-envelope" aria-hidden="true"></i> Contacto
                             </a>
+                            {{-- Las redes, igual que en Contacto: salen de Configuración. --}}
+                            @foreach($redes ?? [] as $red)
+                                <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}"
+                                   class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-pg-tiza/20 hover:border-pg-rojo/50 text-pg-tiza hover:text-pg-rojo-claro transition-colors">
+                                    <i class="{{ $red['icono'] }} text-lg" aria-hidden="true"></i>
+                                </a>
+                            @endforeach
                         </div>
 
                         <p class="mt-6 border-t border-pg-tiza/10 pt-5 font-modern text-sm text-pg-tiza/60">
@@ -355,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             if (!nombre || nombre.length < 2) {
-                mostrarError('Ingresa tu nombre para verificar');
+                mostrarError('Ingresa tu nombre');
                 return;
             }
             payload = { tipo: 'celular', celular: celular, nombre: nombre };
