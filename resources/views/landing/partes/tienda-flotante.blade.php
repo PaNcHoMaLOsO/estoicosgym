@@ -20,8 +20,12 @@
        data-evento="tienda_suplementos"
        aria-label="{{ $tienda['titulo'] }}, tienda de suplementos: se abre en otra pestaña"
        {{-- El aro va como BORDE, no como `ring`: en Tailwind el ring se dibuja
-            con `box-shadow`, que es justo lo que anima el pulso, y se lo comía. --}}
-       class="pulso group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#C142D1] bg-pg-carbon transition-transform hover:scale-105
+            con `box-shadow`, que es justo lo que anima el pulso, y se lo comía.
+
+            Fino y traslúcido: a dos píxeles y morado a tope, el aro gritaba más
+            que el propio logotipo. Quien tiene que llamar la atención es la
+            marca, no la línea de alrededor. --}}
+       class="pulso group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-[#C142D1]/30 bg-pg-carbon transition-colors hover:border-[#C142D1]/60
               sm:h-auto sm:w-auto sm:rounded-2xl sm:px-4 sm:py-3"
        style="--color-pulso: #C142D1">
 
