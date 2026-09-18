@@ -219,7 +219,7 @@
         .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; object-position: 50% 22%; }
 
         /* EN EL TELEFONO LA FOTO ENTRA ENTERA. Las fotos del gimnasio son
-           verticales —1600 x 2000— y la pantalla tambien: van arriba, en un
+           verticales (1600 x 2000) y la pantalla tambien: van arriba, en un
            hueco con su proporcion, 4:5, y el texto debajo, montado sobre el
            fundido. En pantalla ancha la foto sigue de lado a lado, como fondo:
            se probo a ponerla a la derecha y entera, y la portada quedaba medio

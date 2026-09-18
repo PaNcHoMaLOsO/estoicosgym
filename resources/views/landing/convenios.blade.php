@@ -280,7 +280,7 @@
                                 resumen.classList.toggle('text-pg-tiza', partes.length > 0);
                             };
 
-                            // Arrastrar pinta —o borra— todo lo que se cruza, segun lo que
+                            // Arrastrar pinta (o borra) todo lo que se cruza, segun lo que
                             // hizo la primera casilla. Solo con mouse: con el dedo se toca
                             // casilla a casilla, para no pelear con el scroll de la pagina.
                             let pintando = null;
