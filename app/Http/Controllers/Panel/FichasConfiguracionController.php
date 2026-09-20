@@ -114,6 +114,8 @@ class FichasConfiguracionController extends Controller
     /** Un convenio: qué descuenta y a quién alcanza. */
     public function convenio(Convenio $convenio)
     {
+        $convenio->load('precios');
+
         $socios = Cliente::query()
             ->where('id_convenio', $convenio->id)
             ->orderBy('apellido_paterno')
@@ -144,8 +146,39 @@ class FichasConfiguracionController extends Controller
                 // La pagina publica, para el formulario de editar.
                 'mostrar_en_web' => (bool) $convenio->mostrar_en_web,
                 'requisito_web' => $convenio->requisito_web,
+                'canje' => (bool) $convenio->canje,
                 'logo_url' => $convenio->urlDeLogo(),
             ],
+
+            /*
+             * LOS PRECIOS PROPIOS DE ESTE CONVENIO.
+             *
+             * Los clubes deportivos negocian el suyo: uno paga 10.000 la
+             * mensualidad y otro 15.000. Sin esto había que escribir un
+             * descuento a mano en cada inscripción, y un descuento a mano no lo
+             * comprueba nadie. Vacío = paga el precio con convenio del plan.
+             */
+            'planes' => Membresia::where('activo', true)
+                ->with(['precios' => fn ($q) => $q->where('activo', true)])
+                ->orderByRaw('duracion_meses * 30 + duracion_dias')
+                ->get()
+                ->map(function (Membresia $m) use ($convenio) {
+                    $precio = $m->precios->first();
+                    $propio = $convenio->precios->firstWhere('id_membresia', $m->id);
+
+                    return [
+                        'id' => $m->id,
+                        'nombre' => $m->nombre,
+                        'precio' => (int) round($precio?->precio_normal ?? 0),
+                        'precio_convenio' => $precio?->precio_convenio
+                            ? (int) round($precio->precio_convenio)
+                            : null,
+                        'propio' => $propio ? (int) $propio->precio : '',
+                        'condicion' => $propio?->condicion ?? '',
+                    ];
+                })
+                ->values()
+                ->all(),
 
             'cifras' => [
                 'socios' => $socios->count(),

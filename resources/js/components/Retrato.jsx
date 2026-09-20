@@ -13,6 +13,8 @@
  * querer que le retraten.
  */
 
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
 /** Las dos primeras iniciales: nombre y primer apellido. */
 function iniciales(nombre) {
     const partes = String(nombre ?? '')
@@ -62,12 +64,54 @@ const TAMANOS = {
     sm: 'size-8 text-[11px]',
     md: 'size-12 text-sm',
     lg: 'size-20 text-xl',
+    xl: 'size-28 text-2xl',
 };
 
-export default function Retrato({ nombre, foto, tamano = 'md', className = '' }) {
+/**
+ * La foto entera, en grande.
+ *
+ * En el círculo se ve solo el centro de la cara: sirve para reconocer, no para
+ * mirar. Al hacer clic se abre completa, sin recortar, para ver bien a quién
+ * se tiene delante o para comprobar que se subió la foto correcta.
+ */
+function FotoAmpliable({ nombre, foto, clases }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <button
+                    type="button"
+                    title="Ver la foto en grande"
+                    aria-label={`Ver la foto de ${nombre ?? 'socio'} en grande`}
+                    className="shrink-0 cursor-zoom-in rounded-full transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                    <img src={foto} alt="" loading="lazy" className={clases} />
+                </button>
+            </DialogTrigger>
+            <DialogContent className="w-auto p-2 sm:max-w-[min(90vw,48rem)]">
+                <DialogTitle className="px-2 pt-1 pr-10">{nombre}</DialogTitle>
+                <DialogDescription className="sr-only">Foto de la ficha</DialogDescription>
+                <img
+                    src={foto}
+                    alt={`Foto de ${nombre ?? 'socio'}`}
+                    className="mx-auto max-h-[80dvh] w-auto max-w-full rounded-control object-contain"
+                />
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export default function Retrato({ nombre, foto, tamano = 'md', ampliable = false, className = '' }) {
     const medida = TAMANOS[tamano] ?? TAMANOS.md;
 
     if (foto) {
+        // Recortada desde ARRIBA y no desde el centro: en una foto de cuerpo
+        // entero o de medio cuerpo la cara está arriba, y centrada salía el pecho.
+        const clases = `${medida} shrink-0 rounded-full border border-line object-cover object-top ${className}`;
+
+        if (ampliable) {
+            return <FotoAmpliable nombre={nombre} foto={foto} clases={clases} />;
+        }
+
         return (
             <img
                 src={foto}
@@ -75,7 +119,7 @@ export default function Retrato({ nombre, foto, tamano = 'md', className = '' })
                 // lo pinta como texto suelto al lado del nombre ya escrito.
                 alt=""
                 loading="lazy"
-                className={`${medida} shrink-0 rounded-full border border-line object-cover ${className}`}
+                className={clases}
             />
         );
     }

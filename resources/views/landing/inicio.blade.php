@@ -119,5 +119,8 @@
     @endif
 
     @include('landing.partes.tienda')
+    {{-- Los embajadores justo antes del bloque rojo: gente real que entrena
+         aquí es lo último que se ve antes de «¿Listo para empezar?». --}}
+    @include('landing.partes.embajadores')
     @include('landing.partes.llamado')
 @endsection

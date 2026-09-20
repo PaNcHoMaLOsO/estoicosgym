@@ -153,7 +153,7 @@ export default function Enviar({ preseleccionado, plantillas, formToken }) {
                                 </div>
                                 <div>
                                     <dt className="inline">Vence: </dt>
-                                    <dd className="inline text-chalk">{socio.vence ?? '—'}</dd>
+                                    <dd className="inline text-chalk">{socio.vence ?? '-'}</dd>
                                 </div>
                             </dl>
                         </div>

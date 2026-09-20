@@ -16,8 +16,18 @@ class Especialista extends Model
 {
     protected $table = 'especialistas';
 
+    /**
+     * Qué es cada persona, y con eso dónde sale en la web: el especialista en su
+     * página, el embajador en la portada.
+     */
+    public const TIPOS = [
+        'especialista' => 'Especialista',
+        'embajador' => 'Embajador',
+    ];
+
     protected $fillable = [
         'uuid',
+        'tipo',
         'nombre',
         'especialidad',
         'descripcion',

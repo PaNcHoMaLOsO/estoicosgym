@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\PrecioMembresia;
 use App\Rules\RutValido;
 use App\Support\Ajustes;
+use App\Support\PrecioAcordado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -335,23 +336,37 @@ class RegistroClienteService
     /**
      * @param ?Cliente $actual el socio que se esta editando, si es una edicion
      */
+    /**
+     * Un celular chileno (+56 9 y ocho digitos) o uno extranjero con su codigo
+     * de pais. El extranjero no puede empezar por +56: ese seria un chileno mal
+     * escrito y se le avisa en vez de dejarlo pasar.
+     */
+    private const TELEFONO = '/^((\+?56)?\s?9\s?[0-9]{4}\s?[0-9]{4}|\+(?!56)[1-9][0-9\s-]{6,18})$/';
+
     private function reglasCliente(?Cliente $actual = null): array
     {
         return [
             // Al editar, su propio RUT y su propio correo NO cuentan como
             // repetidos: sin esto, guardar una ficha sin tocar esos campos
             // se rechazaria a si misma.
+            //
+            // Un extranjero sin RUT trae su pasaporte: letras y numeros, sin
+            // digito verificador que comprobar. El alta dice cual de los dos es.
             'run_pasaporte' => [
                 'nullable',
                 Rule::unique('clientes', 'run_pasaporte')->ignore($actual?->id),
-                new RutValido(),
+                ...(request()->input('tipo_documento') === 'pasaporte'
+                    ? ['string', 'max:20', 'regex:/^[A-Za-z0-9]+$/']
+                    : [new RutValido()]),
             ],
             'nombres' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El nombre')],
             'apellido_paterno' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El apellido')],
             'apellido_materno' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/'],
-            'celular' => ['required', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
+            'celular' => ['required', 'string', 'regex:' . self::TELEFONO],
+            // El correo NO es obligatorio: hay socios que no tienen o no lo
+            // quieren dar, y el celular ya sirve para ubicarlos.
             'email' => [
-                'required', 'email:rfc', 'max:255',
+                'nullable', 'email:rfc', 'max:255',
                 Rule::unique('clientes', 'email')->ignore($actual?->id),
             ],
             'direccion' => 'nullable|string|max:500',
@@ -361,7 +376,7 @@ class RegistroClienteService
                 'after_or_equal:' . now()->subYears(110)->format('Y-m-d'),
             ],
             'contacto_emergencia' => 'nullable|string|max:100',
-            'telefono_emergencia' => ['nullable', 'string', 'regex:/^(\+?56)?[\s]?9[\s]?[0-9]{4}[\s]?[0-9]{4}$/'],
+            'telefono_emergencia' => ['nullable', 'string', 'regex:' . self::TELEFONO],
             'observaciones' => 'nullable|string|max:500',
         ];
     }
@@ -387,7 +402,9 @@ class RegistroClienteService
             'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
             'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
             'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida.',
-            'celular.regex' => 'Formato de celular inválido. Use: +56 9 1234 5678',
+            'celular.regex' => 'Celular no válido. Uno chileno es +56 9 1234 5678; uno extranjero, con su código de país.',
+            'telefono_emergencia.regex' => 'Teléfono no válido. Uno chileno es +56 9 1234 5678; uno extranjero, con su código de país.',
+            'run_pasaporte.regex' => 'El pasaporte lleva solo letras y números.',
             'email.unique' => 'Este correo ya está registrado en otro cliente.',
         ];
     }
@@ -444,15 +461,19 @@ class RegistroClienteService
             ->firstOrFail();
 
         $precioBase = (int) $precio->precio_normal;
-        $descuentoConvenio = 0;
         $descuentoManual = (int) ($datos['descuento_manual'] ?? 0);
 
-        // Con convenio manda el precio de convenio, y la diferencia con el
-        // normal se registra como descuento para que quede a la vista.
-        if (! empty($datos['id_convenio']) && $precio->precio_convenio) {
-            $precioBase = (int) $precio->precio_convenio;
-            $descuentoConvenio = (int) $precio->precio_normal - (int) $precio->precio_convenio;
-        }
+        /*
+         * Con convenio manda el precio acordado —el propio de ese convenio si
+         * lo tiene, y si no el general del plan—, y la diferencia con el normal
+         * se registra como descuento para que quede a la vista en la ficha.
+         *
+         * El precio lo resuelve PrecioAcordado y NO llega del navegador: lo que
+         * se cobra no puede depender de lo que mande la pantalla.
+         */
+        $conConvenio = PrecioAcordado::para($precio, $datos['id_convenio'] ?? null);
+        $descuentoConvenio = max(0, $precioBase - $conConvenio);
+        $precioBase = $conConvenio;
 
         if ($descuentoManual > $precioBase) {
             // Antes esto volvia como aviso suelto arriba del formulario; ahora
@@ -516,14 +537,13 @@ class RegistroClienteService
             $abonado = 0;
             $estado = self::PAGO_PENDIENTE;
         } else { // mixto
-            if ($abonado < 0 || $abonado > $precioFinal) {
-                throw ValidationException::withMessages([
-                    'monto_abonado' => 'El monto no es válido para pago mixto.',
-                ]);
-            }
-            if ($abonado > 0) {
-                $exigirMetodo();
-            }
+            // EL REPARTO DE VERDAD. La pantalla ofrecia «mixto» pero mandaba un
+            // solo monto y un solo metodo: 20.000 en efectivo y 20.000 con
+            // tarjeta se guardaban como 40.000 en efectivo, y la caja del dia no
+            // cuadraba. Ahora llegan las partes, con el mismo formato que usa el
+            // alta de inscripcion, y cada una se guarda como su propio pago.
+            $partes = $this->partesDelMixto($request, $precioFinal);
+            $abonado = array_sum(array_column($partes, 'monto'));
 
             // Un mixto que cubre el TOTAL queda Pagado, no Parcial. «Mixto»
             // dice que el dinero entro por dos vias, no que falte plata: pagar
@@ -538,6 +558,7 @@ class RegistroClienteService
 
         return [
             'pago' => $datos,
+            'partes' => $partes ?? [],
             'tipo_pago' => $tipo,
             'monto_abonado' => $abonado,
             'estado_pago' => $estado,
@@ -573,8 +594,81 @@ class RegistroClienteService
         ]);
     }
 
+    /**
+     * Las partes de un pago repartido entre varios metodos.
+     *
+     * @return list<array{monto:int,id_metodo_pago:int,nombre:string}>
+     *
+     * @throws ValidationException
+     */
+    private function partesDelMixto(Request $request, int $precioFinal): array
+    {
+        $detalle = json_decode((string) $request->input('detalle_pagos_mixto', '[]'), true);
+
+        if (! is_array($detalle) || count($detalle) < 2) {
+            throw ValidationException::withMessages([
+                'detalle_pagos_mixto' => 'Indica con qué dos medios se reparte el pago.',
+            ]);
+        }
+
+        $metodos = \App\Models\MetodoPago::where('activo', true)->pluck('nombre', 'id');
+        $partes = [];
+
+        foreach ($detalle as $parte) {
+            $monto = (int) round((float) ($parte['monto'] ?? 0));
+            $metodo = (int) ($parte['id_metodo_pago'] ?? 0);
+
+            if ($monto <= 0 || ! $metodos->has($metodo)) {
+                throw ValidationException::withMessages([
+                    'detalle_pagos_mixto' => 'Cada parte del pago necesita un monto mayor que cero y un medio de pago.',
+                ]);
+            }
+
+            $partes[] = ['monto' => $monto, 'id_metodo_pago' => $metodo, 'nombre' => $metodos[$metodo]];
+        }
+
+        $suma = array_sum(array_column($partes, 'monto'));
+
+        if ($suma > $precioFinal) {
+            throw ValidationException::withMessages([
+                'detalle_pagos_mixto' => 'Las partes suman $' . number_format($suma, 0, ',', '.')
+                    . ' y el plan vale $' . number_format($precioFinal, 0, ',', '.') . '.',
+            ]);
+        }
+
+        return $partes;
+    }
+
+    /**
+     * Un pago por cada parte del mixto; uno solo en los demas casos.
+     */
     private function crearPago(Cliente $cliente, Inscripcion $inscripcion, array $datos): Pago
     {
+        if ($datos['tipo_pago'] === 'mixto' && $datos['partes']) {
+            $restante = $datos['precio_final'];
+            $ultimo = null;
+
+            foreach ($datos['partes'] as $parte) {
+                $restante -= $parte['monto'];
+                $ultimo = Pago::create([
+                    'uuid' => Str::uuid(),
+                    'id_inscripcion' => $inscripcion->id,
+                    'id_cliente' => $cliente->id,
+                    'monto_total' => $datos['precio_final'],
+                    'monto_abonado' => $parte['monto'],
+                    'monto_pendiente' => max(0, $restante),
+                    'fecha_pago' => Carbon::parse($datos['pago']['fecha_pago']),
+                    'id_metodo_pago' => $parte['id_metodo_pago'],
+                    'id_estado' => $datos['estado_pago'],
+                    'tipo_pago' => 'mixto',
+                    'referencia_pago' => $datos['referencia_pago'],
+                    'observaciones' => 'Pago mixto - ' . $parte['nombre'],
+                ]);
+            }
+
+            return $ultimo;
+        }
+
         return Pago::create([
             'uuid' => Str::uuid(),
             'id_inscripcion' => $inscripcion->id,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Convenio;
+use App\Models\ConvenioPrecio;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
@@ -94,6 +95,45 @@ class CatalogoController extends Controller
         $this->ponerLogo($convenio, $request);
 
         return back()->with('success', 'Convenio actualizado.');
+    }
+
+    /**
+     * Lo que ESTE convenio paga por cada plan.
+     *
+     * Un precio vacío no es cero: significa «paga el precio con convenio del
+     * plan, como todos». Por eso la fila se borra en vez de guardarse en 0, que
+     * sería regalarle la membresía.
+     */
+    public function preciosDelConvenio(Request $request, Convenio $convenio)
+    {
+        $datos = $request->validate([
+            'precios' => 'array',
+            'precios.*.id_membresia' => 'required|exists:membresias,id',
+            'precios.*.precio' => 'nullable|integer|min:0|max:9999999',
+            'precios.*.condicion' => 'nullable|string|max:120',
+        ], [
+            'precios.*.precio.integer' => 'El precio tiene que ser un número, sin puntos ni pesos.',
+        ]);
+
+        foreach ($datos['precios'] ?? [] as $fila) {
+            $precio = $fila['precio'] ?? null;
+            $condicion = trim((string) ($fila['condicion'] ?? '')) ?: null;
+
+            if ($precio === null || $precio === '') {
+                ConvenioPrecio::where('id_convenio', $convenio->id)
+                    ->where('id_membresia', $fila['id_membresia'])
+                    ->delete();
+
+                continue;
+            }
+
+            ConvenioPrecio::updateOrCreate(
+                ['id_convenio' => $convenio->id, 'id_membresia' => $fila['id_membresia']],
+                ['precio' => (int) $precio, 'condicion' => $condicion],
+            );
+        }
+
+        return back()->with('success', 'Precios del convenio guardados.');
     }
 
     public function guardarMetodoPago(Request $request)
@@ -251,7 +291,7 @@ class CatalogoController extends Controller
     {
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100', Rule::unique('convenios', 'nombre')->ignore($actual?->id)],
-            'tipo' => 'required|in:institucion_educativa,empresa,organizacion,otro',
+            'tipo' => 'required|in:institucion_educativa,empresa,club_deportivo,organizacion,otro',
             'descripcion' => 'nullable|string|max:500',
             'descuento_porcentaje' => 'nullable|numeric|min:0|max:100',
             'descuento_monto' => 'nullable|numeric|min:0|max:99999999',
@@ -262,6 +302,9 @@ class CatalogoController extends Controller
             // ejecutaria al abrir el archivo desde la web.
             'mostrar_en_web' => 'boolean',
             'requisito_web' => 'nullable|string|max:150',
+            // Canje: sus miembros entran sin pagar (el hotel que manda a sus
+            // huéspedes con una tarjeta). Se anotan en Entradas por canje.
+            'canje' => 'boolean',
             'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'quitar_logo' => 'boolean',
             'activo' => 'boolean',
@@ -279,6 +322,10 @@ class CatalogoController extends Controller
         // esconder de la web un convenio que otro marco.
         if (array_key_exists('mostrar_en_web', $datos)) {
             $datos['mostrar_en_web'] = (bool) $datos['mostrar_en_web'];
+        }
+
+        if (array_key_exists('canje', $datos)) {
+            $datos['canje'] = (bool) $datos['canje'];
         }
 
         // El logo NO va con los demas datos: lo pone ponerLogo().

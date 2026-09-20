@@ -28,8 +28,8 @@
         TODA LA SECCIÓN EN BLANCO, no una franja blanca dentro del negro.
 
         El blanco no es decoración: estos logos son de otros y están hechos para
-        fondo claro —el azul del AIEP o el de Virginio Gómez sobre negro no se
-        ven—. Antes cada grupo llevaba su franja blanca y los nombres iban
+        fondo claro (el azul del AIEP o el de Virginio Gómez sobre negro no se
+        ven). Antes cada grupo llevaba su franja blanca y los nombres iban
         debajo, ya sobre negro: el logo y su nombre quedaban en dos mundos
         distintos. Ahora la página entera cambia a blanco aquí y cada institución
         es una sola celda con su logo, su nombre y su requisito.
@@ -88,8 +88,8 @@
     </section>
 
     {{--
-        ARRIENDO PARA INSTITUCIONES. No es un convenio —ahí el alumno se inscribe
-        por su cuenta con descuento—: aquí la universidad o el instituto arrienda
+        ARRIENDO PARA INSTITUCIONES. No es un convenio (ahí el alumno se inscribe
+        por su cuenta con descuento): aquí la universidad o el instituto arrienda
         el gimnasio por horas a la semana para sus clases y talleres, en los
         bloques donde hay menos socios. Va en esta página porque quien la lee es
         el mismo público. Sin precios: se cotiza según las horas y el grupo.
@@ -136,7 +136,7 @@
                         UN CALENDARIO DE LA SEMANA, no botones con letras. «L M X J V S»
                         y dos desplegables no le decían a nadie qué hacer: había que
                         adivinar que eran los días y que las horas valían para todos.
-                        Aquí se ve la semana entera —días arriba, horas al lado— y se
+                        Aquí se ve la semana entera (días arriba, horas al lado) y se
                         pinta encima lo que se necesita, igual que en cualquier agenda.
                         Se puede arrastrar para marcar varias horas de una vez, y debajo
                         se va escribiendo lo marcado, para que no quede duda.

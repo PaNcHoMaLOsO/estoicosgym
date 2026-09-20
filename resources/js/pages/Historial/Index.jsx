@@ -9,7 +9,7 @@ import { ArrowRightIcon, PencilIcon, RepeatIcon } from 'lucide-react';
  */
 function Socio({ nombre, uuid }) {
     if (!nombre) {
-        return <span className="text-fog">—</span>;
+        return <span className="text-fog">-</span>;
     }
 
     if (!uuid) {
@@ -96,7 +96,7 @@ export default function Index({ movimientos }) {
                                 </div>
 
                                 <div className="shrink-0 text-right">
-                                    <p className="apoyo tabular-nums text-fog">{m.cuando ?? '—'}</p>
+                                    <p className="apoyo tabular-nums text-fog">{m.cuando ?? '-'}</p>
                                     {m.usuario ? (
                                         <p className="apoyo text-fog">{m.usuario}</p>
                                     ) : null}

@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { MailIcon, PencilIcon, UserPlusIcon } from 'lucide-react';
 
+import Dialogo from '@/components/Dialogo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
 import { haceCuanto } from '@/lib/tiempo';
 
@@ -91,12 +92,9 @@ function valoresDe(usuario, roles) {
 
 export default function Index({ usuarios, roles }) {
     const [editando, setEditando] = useState(null);
-
-    function mandarEnlace(usuario) {
-        if (window.confirm(`¿Mandarle a ${usuario.email} un enlace para poner su contraseña?`)) {
-            router.post(`/panel/usuarios/${usuario.id}/enlace`, {}, { preserveScroll: true });
-        }
-    }
+    // El aviso gris del navegador no dice de qué sistema viene ni se puede
+    // leer con calma: el correo que se va a mandar tiene que verse entero.
+    const [enlaceA, setEnlaceA] = useState(null);
 
     return (
         <>
@@ -153,7 +151,7 @@ export default function Index({ usuarios, roles }) {
                             {u.activo && !u.soy_yo ? (
                                 <button
                                     type="button"
-                                    onClick={() => mandarEnlace(u)}
+                                    onClick={() => setEnlaceA(u)}
                                     className="inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                                 >
                                     <MailIcon className="size-4" aria-hidden="true" />
@@ -188,6 +186,19 @@ export default function Index({ usuarios, roles }) {
                 campos={camposDe(roles, editando)}
                 valores={valoresDe(editando, roles)}
             />
+            {enlaceA ? (
+                <Dialogo
+                    abierto
+                    alCerrar={() => setEnlaceA(null)}
+                    titulo="Mandarle el enlace para su contraseña"
+                    descripcion={`Le llega a ${enlaceA.email} un enlace para que ponga su propia contraseña. Vence en unas horas; si se le pasa, se le manda otro.`}
+                    accion={`/panel/usuarios/${enlaceA.id}/enlace`}
+                    via="inertia"
+                    metodo="post"
+                    etiquetaConfirmar="Mandar el enlace"
+                />
+            ) : null}
+
         </>
     );
 }

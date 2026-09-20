@@ -4,8 +4,8 @@
 
     HAY DOS CAPAS DE FOTO Y UNA DE VÍDEO. Con una sola capa de foto, pasar de una
     foto a otra era cambiarle la fuente de golpe: se veía el salto y no había
-    transición ninguna —solo la había al pasar de vídeo a foto, que sí son capas
-    distintas—. Con dos capas, la que entra aparece ENCIMA de la que sale, así
+    transición ninguna (solo la había al pasar de vídeo a foto, que sí son capas
+    distintas). Con dos capas, la que entra aparece ENCIMA de la que sale, así
     que en medio no se ve ni un hueco ni un parpadeo negro.
 
     Una capa por escena no sirve: el navegador se descargaría todos los vídeos de
@@ -46,10 +46,10 @@
              foto, clara u oscura. VA POR DELANTE DE LAS FOTOS a propósito: las
              capas que se cruzan se pisan entre ellas, y sin esto la foto que
              entraba tapaba el oscurecido y el título se volvía ilegible. --}}
-        <div class="absolute inset-0 z-[3] bg-pg-negro/10 lg:bg-pg-negro/30"></div>
+        <div class="absolute inset-0 z-[3] bg-pg-negro/30"></div>
         {{-- En pantalla ancha el texto ya no va encima de la foto sino a su
              izquierda, sobre negro: la foto puede ir casi sin oscurecer. --}}
-        <div class="absolute inset-0 z-[3] bg-linear-to-t from-pg-negro via-pg-negro/20 to-transparent lg:via-pg-negro/75 lg:to-pg-negro/35"></div>
+        <div class="absolute inset-0 z-[3] bg-linear-to-t from-pg-negro via-pg-negro/75 to-pg-negro/35"></div>
     </div>
 
     @if($escenas->count() > 1)

@@ -43,8 +43,8 @@
                 pantalla y había que bajar cinco pantallas para compararlos.
                 Así caben todos de un vistazo.
 
-                Desde 1024 px ya van en columnas —antes recién desde 1280, y en
-                un portátil seguían apilados con media pantalla vacía—.
+                Desde 1024 px ya van en columnas (antes recién desde 1280, y en
+                un portátil seguían apilados con media pantalla vacía).
             --}}
             @php
                 // Lo que cuesta el mes suelto: contra eso se mide el ahorro de

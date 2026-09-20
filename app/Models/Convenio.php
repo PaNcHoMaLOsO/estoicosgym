@@ -61,9 +61,12 @@ class Convenio extends Model
         'logo',
         'mostrar_en_web',
         'requisito_web',
+        // Sus miembros entran sin pagar: se anotan en Entradas por canje.
+        'canje',
     ];
 
     protected $casts = [
+        'canje' => 'boolean',
         'descuento_porcentaje' => 'decimal:2',
         'descuento_monto' => 'integer',
         'activo' => 'boolean',
@@ -100,5 +103,11 @@ class Convenio extends Model
     public function estado()
     {
         return $this->belongsTo(Estado::class, 'id_estado', 'codigo');
+    }
+
+    /** Los planes con precio propio de este convenio. */
+    public function precios(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ConvenioPrecio::class, 'id_convenio');
     }
 }

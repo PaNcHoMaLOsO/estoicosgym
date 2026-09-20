@@ -33,6 +33,11 @@ Route::middleware('security.headers')->group(function () {
     Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
     Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
+    /*
+     * Lo que se abre con el QR de la sala: qué entrenar hoy. Sin cuenta y sin
+     * pedir datos; las respuestas van en la dirección.
+     */
+    Route::get('/rutina', [LandingController::class, 'rutina'])->name('landing.rutina');
     Route::get('/privacidad', [LandingController::class, 'privacidad'])->name('landing.privacidad');
     Route::get('/terminos', [LandingController::class, 'terminos'])->name('landing.terminos');
     // Para Google: que hay y donde esta el mapa del sitio.
@@ -348,6 +353,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
     Route::prefix('panel')->name('panel.')->group(function () {
         Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
 
+        // La plata, aparte del resumen: la caja del día y del mes, lo que se
+        // debe y cómo va el gimnasio. Solo para quien ve los informes.
+        Route::get('/caja', \App\Http\Controllers\Panel\CajaController::class)->name('caja');
+
         /*
          * El bloc de notas del meson, en la portada.
          *
@@ -370,6 +379,17 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // volver a apuntarla a mano inventando conceptos y montos.
         Route::patch('/fiados/{fiado}/reabrir', [\App\Http\Controllers\Panel\FiadoController::class, 'reabrir'])->name('fiados.reabrir');
         Route::delete('/fiados/{fiado}', [\App\Http\Controllers\Panel\FiadoController::class, 'destroy'])->name('fiados.destroy');
+
+        /*
+         * Entradas por canje: el huésped del hotel que llega con su tarjeta y
+         * no paga. Se anota quién vino; no toca la caja ni las membresías.
+         */
+        Route::get('/canje', [\App\Http\Controllers\Panel\CanjeController::class, 'index'])->name('canje.index');
+        Route::post('/canje', [\App\Http\Controllers\Panel\CanjeController::class, 'store'])->name('canje.store');
+        Route::delete('/canje/{entrada}', [\App\Http\Controllers\Panel\CanjeController::class, 'anular'])->name('canje.anular');
+        // El buscador del marco: responde desde cualquier pantalla del panel.
+        // Va ANTES de /clientes/{cliente}, o «buscar» entraría como un uuid.
+        Route::get('/clientes/buscar', \App\Http\Controllers\Panel\BuscarSocioController::class)->name('clientes.buscar');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/crear', [\App\Http\Controllers\Panel\ClienteController::class, 'create'])->name('clientes.create');
         Route::post('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'store'])->name('clientes.store');
@@ -455,6 +475,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * nadie mira hasta que cuadran mal las cuentas.
          */
         Route::get('/papelera', [\App\Http\Controllers\Panel\PapeleraController::class, 'index'])->name('papelera.index');
+        // "Bórrenme mis datos" de alguien ya dado de baja: su ficha no se
+        // puede abrir, así que se atiende desde aquí. Los pagos se quedan.
+        Route::post('/papelera/clientes/{id}/borrar-datos', [\App\Http\Controllers\Panel\PapeleraController::class, 'borrarDatos'])->name('papelera.borrar-datos');
+
         Route::patch('/papelera/{tipo}/{id}/restaurar', [\App\Http\Controllers\Panel\PapeleraController::class, 'restaurar'])->name('papelera.restore');
 
         // Informes. El constructor a medida va aparte, mas abajo: arma
@@ -534,6 +558,13 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::put('/membresias/{membresia}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMembresia'])->name('membresias.update');
         Route::post('/convenios', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarConvenio'])->name('convenios.store');
         Route::put('/convenios/{convenio}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarConvenio'])->name('convenios.update');
+        // Lo que ESTE convenio paga por cada plan: el club que negoció su
+        // mensualidad en 15.000 en vez del precio con convenio general.
+        // Mandar un correo de prueba: lo único que dice de verdad si el
+        // correo de salida funciona.
+        Route::post('/configuracion/correo/probar', [\App\Http\Controllers\Panel\AjustesController::class, 'probarCorreo'])->name('configuracion.correo.probar');
+
+        Route::put('/convenios/{convenio}/precios', [\App\Http\Controllers\Panel\CatalogoController::class, 'preciosDelConvenio'])->name('convenios.precios');
         // Los especialistas que aparecen en la web. Se ocultan con catalogos.alternar.
         Route::get('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'index'])->name('especialistas.index');
         Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');

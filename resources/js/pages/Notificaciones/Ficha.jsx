@@ -16,7 +16,7 @@ function Dato({ etiqueta, children }) {
     return (
         <div>
             <dt className="rotulo">{etiqueta}</dt>
-            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">—</span>}</dd>
+            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">-</span>}</dd>
         </div>
     );
 }
@@ -105,7 +105,7 @@ export default function Ficha({ notificacion, socio, logs }) {
                                         <div className="flex items-baseline justify-between gap-2">
                                             <span className="text-chalk">{l.accion}</span>
                                             <span className="apoyo shrink-0 tabular-nums text-fog">
-                                                {l.cuando ?? '—'}
+                                                {l.cuando ?? '-'}
                                             </span>
                                         </div>
                                         {l.detalle ? (

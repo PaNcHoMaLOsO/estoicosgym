@@ -8,7 +8,14 @@
  */
 const ESTADOS = {
     // --- membresia ---
-    100: { texto: 'Al día', tono: 'ok' },
+    /*
+      * «VIGENTE» Y NO «AL DÍA». Este código dice que la membresía CORRE: que
+      * su fecha no ha llegado. «Al día» se lee como «no debe nada», y al lado
+      * de un «Debe $102.054» —que pasa, porque se puede entrenar debiendo—
+      * parecía que el sistema se contradecía. Lo que se debe lo dice la
+      * columna del pago; esta dice hasta cuándo puede entrar.
+      */
+    100: { texto: 'Vigente', tono: 'ok' },
     101: { texto: 'Pausada', tono: 'warn' },
     102: { texto: 'Vencida', tono: 'danger' },
     103: { texto: 'Cancelada', tono: 'neutro' },
@@ -37,7 +44,7 @@ const TONOS = {
     neutro: 'border-line bg-surface-2 text-fog',
 };
 
-export default function Estado({ codigo, vacio = '—' }) {
+export default function Estado({ codigo, vacio = '-' }) {
     if (!codigo) {
         return <span className="apoyo text-fog">{vacio}</span>;
     }

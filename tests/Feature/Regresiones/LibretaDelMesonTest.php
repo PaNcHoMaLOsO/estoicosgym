@@ -204,7 +204,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Barra', 'monto' => 2500]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Bebida', 'monto' => 1500]);
 
-        $cuentas = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+        $cuentas = collect($this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas']);
 
         $this->assertCount(1, $cuentas, 'Las dos líneas del mismo socio son una sola cuenta.');
         $this->assertSame(4000, $cuentas->first()['total']);
@@ -221,7 +221,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
         $this->fiar(['nombre' => 'El hermano de alguien', 'monto' => 2000]);
 
-        $cuentas = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+        $cuentas = collect($this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas']);
 
         $this->assertCount(2, $cuentas);
     }
@@ -302,7 +302,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar();
         Fiado::query()->update(['pagado' => true, 'pagado_en' => now()]);
 
-        $this->assertSame([], $this->como()->get('/panel')->viewData('page')['props']['fiados']);
+        $this->assertSame([], $this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas']);
     }
 
     /**
@@ -391,7 +391,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
      * Si cada una lo hiciera a su manera, la portada podria decir «Juan debe
      * $4.000» y la de fiados repartirlo en dos deudores distintos.
      */
-    public function test_el_resumen_y_la_pantalla_de_fiados_cuentan_lo_mismo(): void
+    public function test_la_caja_y_la_pantalla_de_fiados_cuentan_lo_mismo(): void
     {
         $socio = Cliente::factory()->create(['activo' => true]);
 
@@ -399,12 +399,18 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
         $this->fiar(['nombre' => 'Un visitante', 'monto' => 1000]);
 
-        $enElResumen = collect($this->como()->get('/panel')->viewData('page')['props']['fiados']);
+        // La caja da el total y la pantalla de fiado lo reparte por persona:
+        // las dos tienen que sumar lo mismo y contar las mismas personas.
+        $enLaCaja = $this->como()->get('/panel/caja')->viewData('page')['props']['fiado'];
         $enSuPantalla = collect($this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas']);
 
         $this->assertSame(
-            $enElResumen->pluck('total')->all(),
-            $enSuPantalla->pluck('total')->all()
+            [5000, 2],
+            [$enLaCaja['total'], $enLaCaja['personas']]
+        );
+        $this->assertSame(
+            [$enLaCaja['total'], $enLaCaja['personas']],
+            [(int) $enSuPantalla->sum('total'), $enSuPantalla->count()]
         );
     }
 
@@ -565,37 +571,50 @@ class LibretaDelMesonTest extends CasoConCatalogos
     // ---------- El dinero y quién lo ve ----------
 
     /**
-     * Recepción NO recibe las cifras de caja. No se le tapan en pantalla: no
-     * salen del servidor. Taparlas sería un adorno —el dato estaría en la
-     * página— y esto es el permiso `reportes.ver`.
+     * EL RESUMEN NO LLEVA PLATA, para nadie.
+     *
+     * Es lo primero que abre quien atiende el mesón. La caja del día, lo que se
+     * debe y lo fiado se fueron a Caja: aquí no viajan ni tapados.
      */
-    public function test_recepcion_no_recibe_las_cifras_de_caja(): void
+    public function test_el_resumen_no_lleva_plata(): void
     {
-        $respuesta = $this->actingAs($this->recepcionista())->get('/panel');
+        $this->fiar(['monto' => 2500]);
 
-        $this->assertNull(
-            $respuesta->viewData('page')['props']['caja'],
-            'A recepción le llegó la caja del día en la portada.'
-        );
+        $props = $this->como()->get('/panel')->assertOk()->viewData('page')['props'];
+
+        $this->assertArrayNotHasKey('caja', $props, 'La caja volvió al resumen.');
+        $this->assertArrayNotHasKey('fiados', $props, 'Lo fiado volvió al resumen.');
     }
 
-    public function test_quien_puede_ver_los_informes_si_las_recibe(): void
+    /**
+     * Recepción NO entra a la caja. No es que se le tape la cifra: la página no
+     * se le abre, porque la plata es el permiso `reportes.ver`.
+     */
+    public function test_recepcion_no_entra_a_la_caja(): void
     {
-        $caja = $this->como()->get('/panel')->viewData('page')['props']['caja'];
+        $this->actingAs($this->recepcionista())
+            ->get('/panel/caja')
+            ->assertForbidden();
+    }
+
+    public function test_quien_puede_ver_los_informes_ve_la_caja(): void
+    {
+        $caja = $this->como()->get('/panel/caja')->assertOk()->viewData('page')['props']['caja'];
 
         $this->assertIsArray($caja);
         $this->assertArrayHasKey('hoy', $caja);
+        $this->assertArrayHasKey('mes', $caja);
         $this->assertArrayHasKey('por_cobrar', $caja);
     }
 
     /** Y la cifra de «por cobrar» es de membresías, sin lo fiado del mesón. */
     public function test_lo_fiado_no_entra_en_el_por_cobrar_de_membresias(): void
     {
-        $antes = $this->como()->get('/panel')->viewData('page')['props']['caja']['por_cobrar'];
+        $antes = $this->como()->get('/panel/caja')->viewData('page')['props']['caja']['por_cobrar'];
 
         $this->fiar(['monto' => 9999]);
 
-        $despues = $this->como()->get('/panel')->viewData('page')['props']['caja']['por_cobrar'];
+        $despues = $this->como()->get('/panel/caja')->viewData('page')['props']['caja']['por_cobrar'];
 
         $this->assertSame($antes, $despues);
     }

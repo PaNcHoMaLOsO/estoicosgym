@@ -13,7 +13,7 @@ const numeros = new Intl.NumberFormat('es-CL');
 /** Un valor ya viene formateado del servidor; aqui solo se decide como pintarlo. */
 function Celda({ valor, tipo }) {
     if (valor === null || valor === '') {
-        return <span className="text-fog">—</span>;
+        return <span className="text-fog">-</span>;
     }
 
     if (tipo === 'moneda') {

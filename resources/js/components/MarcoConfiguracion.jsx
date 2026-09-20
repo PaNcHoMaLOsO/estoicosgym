@@ -1,11 +1,32 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { AlertTriangleIcon } from 'lucide-react';
+import {
+    AlertTriangleIcon,
+    Building2Icon,
+    ChevronRightIcon,
+    GlobeIcon,
+    ListChecksIcon,
+    MailIcon,
+    ScaleIcon,
+    ServerCogIcon,
+    WalletIcon,
+} from 'lucide-react';
 import { createContext, useContext } from 'react';
 
 import { SECCIONES_CONFIGURACION, seccionActiva } from '@/lib/configuracion';
 import { puede } from '@/lib/permisos';
 
 const EnMarco = createContext(false);
+
+// El icono de cada grupo: en un menú de veinte enlaces, el dibujo es lo que el ojo
+// encuentra primero; el rótulo en mayúsculas chicas solo no bastaba.
+const ICONOS = {
+    gimnasio: Building2Icon,
+    cobros: WalletIcon,
+    correos: MailIcon,
+    web: GlobeIcon,
+    legal: ScaleIcon,
+    sistema: ServerCogIcon,
+};
 
 /** ¿La pantalla se está viendo dentro de Configuración, con su menú? */
 export function useEnConfiguracion() {
@@ -44,10 +65,12 @@ export default function MarcoConfiguracion({ children }) {
     }
 
     const actual = grupos.flatMap((g) => g.secciones).find((s) => seccionActiva(s, url));
+    const grupoActual = grupos.find((g) => g.secciones.includes(actual));
+    const pendientes = Object.keys(avisos).length;
 
     return (
         <EnMarco.Provider value>
-            <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+            <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-6">
                 <div className="mb-4 lg:hidden">
                     <label htmlFor="seccion-de-configuracion" className="rotulo mb-1 block">
                         Configuración
@@ -76,8 +99,18 @@ export default function MarcoConfiguracion({ children }) {
                     {/* Con sus seis grupos el menú es más alto que la pantalla:
                         se desplaza por su cuenta, o lo de abajo —Usuarios,
                         Papelera— quedaría fuera de alcance en una pantalla corta. */}
-                    <div className="sticky top-6 max-h-[calc(100dvh-3rem)] space-y-5 overflow-y-auto pr-1 pb-4">
-                        <p className="px-2 text-sm font-semibold text-chalk">Configuración</p>
+                    <div className="sticky top-6 max-h-[calc(100dvh-3rem)] space-y-4 overflow-y-auto rounded-panel border border-line bg-surface p-2 pb-3">
+                        <p className="flex items-center justify-between gap-2 px-2 pt-1 text-sm font-semibold text-chalk">
+                            Configuración
+                            {pendientes > 0 ? (
+                                <span
+                                    className="rounded-full bg-warn/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-warn"
+                                    title={pendientes === 1 ? 'Una sección tiene algo pendiente' : `${pendientes} secciones tienen algo pendiente`}
+                                >
+                                    {pendientes}
+                                </span>
+                            ) : null}
+                        </p>
 
                         {grupos.map((g) => (
                             <div key={g.titulo ?? 'inicio'}>
@@ -87,13 +120,13 @@ export default function MarcoConfiguracion({ children }) {
                                     línea, para que un apartado no se confunda con el
                                     título de su grupo. */}
                                 {g.titulo ? (
-                                    <p className="mb-1.5 flex items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.12em] text-chalk uppercase">
-                                        <span className="shrink-0">{g.titulo}</span>
-                                        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+                                    <p className={`mb-1 flex items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.1em] uppercase ${g === grupoActual ? 'text-chalk' : 'text-fog'}`}>
+                                        <IconoDeGrupo icono={g.icono} activo={g === grupoActual} />
+                                        <span className="truncate">{g.titulo}</span>
                                     </p>
                                 ) : null}
 
-                                <div className={g.titulo ? 'ml-2.5 space-y-0.5 border-l border-line pl-2' : 'space-y-0.5'}>
+                                <div className={g.titulo ? 'ml-[0.95rem] space-y-0.5 border-l border-line pl-2' : 'space-y-0.5'}>
                                 {g.secciones.map((s) => {
                                     const activa = seccionActiva(s, url);
                                     const aviso = avisos[s.href];
@@ -110,7 +143,10 @@ export default function MarcoConfiguracion({ children }) {
                                                     : 'text-fog hover:bg-surface-2 hover:text-chalk'
                                             }`}
                                         >
-                                            <span className="truncate">{s.etiqueta}</span>
+                                            <span className="flex min-w-0 items-center gap-2">
+                                                {g.titulo ? null : <ListChecksIcon className="size-4 shrink-0" aria-hidden="true" />}
+                                                <span className="truncate">{s.etiqueta}</span>
+                                            </span>
                                             {aviso ? (
                                                 <AlertTriangleIcon
                                                     className="size-3.5 shrink-0 text-warn"
@@ -126,8 +162,32 @@ export default function MarcoConfiguracion({ children }) {
                     </div>
                 </nav>
 
-                <div className="min-w-0">{children}</div>
+                <div className="min-w-0">
+                    {/* DÓNDE SE ESTÁ, en una línea. Con veinte pantallas parecidas —una
+                        tabla o un formulario cada una— el título solo no decía de qué
+                        parte de la configuración colgaba. En el celular, donde el menú
+                        es un selector cerrado, es lo único que lo dice. */}
+                    {actual && grupoActual?.titulo ? (
+                        <p className="apoyo mb-2 flex flex-wrap items-center gap-1 text-fog">
+                            <Link href="/panel/configuracion" className="transition-colors hover:text-chalk">
+                                Configuración
+                            </Link>
+                            <ChevronRightIcon className="size-3 shrink-0" aria-hidden="true" />
+                            <span>{grupoActual.titulo}</span>
+                            <ChevronRightIcon className="size-3 shrink-0" aria-hidden="true" />
+                            <span className="text-chalk">{actual.etiqueta}</span>
+                        </p>
+                    ) : null}
+
+                    {children}
+                </div>
             </div>
         </EnMarco.Provider>
     );
+}
+
+function IconoDeGrupo({ icono, activo }) {
+    const Icono = ICONOS[icono];
+
+    return Icono ? <Icono className={`size-3.5 shrink-0 ${activo ? 'text-volt' : ''}`} aria-hidden="true" /> : null;
 }

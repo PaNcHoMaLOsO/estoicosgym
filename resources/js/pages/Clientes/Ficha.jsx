@@ -3,10 +3,13 @@ import { useRef, useState } from 'react';
 import {
     AlertTriangleIcon,
     ArrowLeftIcon,
+    BanknoteIcon,
     CameraIcon,
     FileTextIcon,
     PencilIcon,
+    PlayIcon,
     PlusIcon,
+    RefreshCwIcon,
     SendIcon,
     ShieldCheckIcon,
     ShoppingBagIcon,
@@ -16,10 +19,13 @@ import {
 } from 'lucide-react';
 
 import Dialogo from '@/components/Dialogo';
+import CamaraFoto from '@/components/CamaraFoto';
+import ModalDePagina from '@/components/ModalDePagina';
 import Estado from '@/components/Estado';
 import Retrato from '@/components/Retrato';
 import { Reservado } from '@/Privado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { celularLegible } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -32,7 +38,7 @@ function Dato({ etiqueta, children }) {
     return (
         <div>
             <dt className="rotulo">{etiqueta}</dt>
-            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">—</span>}</dd>
+            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">-</span>}</dd>
         </div>
     );
 }
@@ -79,14 +85,11 @@ function FotoDelSocio({ cliente }) {
     const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState(null);
     const [confirmandoQuitar, setConfirmandoQuitar] = useState(false);
+    const [conCamara, setConCamara] = useState(false);
 
-    function elegida(e) {
-        const archivo = e.target.files?.[0];
-
-        if (! archivo) {
-            return;
-        }
-
+    // La foto sacada con la cámara sube igual que la elegida del disco: el
+    // servidor no distingue de dónde salió, y así hay una sola subida.
+    function subir(archivo) {
         setError(null);
         setSubiendo(true);
 
@@ -96,21 +99,30 @@ function FotoDelSocio({ cliente }) {
             {
                 preserveScroll: true,
                 onError: (errores) => setError(errores.foto_perfil ?? 'No se pudo subir la foto.'),
-                onFinish: () => {
-                    setSubiendo(false);
-                    // Se vacía a mano: si no, volver a elegir EL MISMO archivo
-                    // no dispara el evento y parecería que el botón no hace nada.
-                    if (selector.current) {
-                        selector.current.value = '';
-                    }
-                },
+                onFinish: () => setSubiendo(false),
             },
         );
     }
 
+    function elegida(e) {
+        const archivo = e.target.files?.[0];
+
+        if (! archivo) {
+            return;
+        }
+
+        subir(archivo);
+
+        // Se vacía a mano: si no, volver a elegir EL MISMO archivo no dispara
+        // el evento y parecería que el botón no hace nada.
+        if (selector.current) {
+            selector.current.value = '';
+        }
+    }
+
     return (
         <div className="flex shrink-0 flex-col items-center gap-1">
-            <Retrato nombre={cliente.nombre} foto={cliente.foto} tamano="lg" />
+            <Retrato nombre={cliente.nombre} foto={cliente.foto} tamano="xl" ampliable />
 
             <div className="flex flex-col items-center gap-0.5">
                 <input
@@ -125,12 +137,28 @@ function FotoDelSocio({ cliente }) {
                 <button
                     type="button"
                     disabled={subiendo}
-                    onClick={() => selector.current?.click()}
+                    onClick={() => setConCamara(true)}
                     className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk disabled:opacity-50"
                 >
                     <CameraIcon className="size-3.5" aria-hidden="true" />
-                    {subiendo ? 'Subiendo…' : cliente.foto ? 'Cambiar foto' : 'Poner foto'}
+                    {subiendo ? 'Subiendo…' : cliente.foto ? 'Sacar otra foto' : 'Sacar foto'}
                 </button>
+
+                <button
+                    type="button"
+                    disabled={subiendo}
+                    onClick={() => selector.current?.click()}
+                    className="apoyo text-fog transition-colors hover:text-chalk disabled:opacity-50"
+                >
+                    Elegir archivo
+                </button>
+
+                <CamaraFoto
+                    abierta={conCamara}
+                    alCerrar={() => setConCamara(false)}
+                    alSacar={subir}
+                    nombre={cliente.nombre}
+                />
 
                 {cliente.foto ? (
                     <button
@@ -569,8 +597,32 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
     const { auth } = usePage().props;
     // null = ningun dialogo abierto.
     const [confirmando, setConfirmando] = useState(null);
+    /*
+     * RENOVAR, INSCRIBIR Y COBRAR SE HACEN AQUÍ, en una ventana sobre la ficha.
+     * Son lo que se hace con el socio delante; mandarlo a otra pantalla obligaba
+     * a volver a buscarlo al terminar. Siguen siendo enlaces de verdad: con
+     * Ctrl+clic se abre la pantalla entera.
+     */
+    const [enVentana, setEnVentana] = useState(null);
+
+    const abrirEnVentana = (atajo) => (e) => {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
+            return;
+        }
+
+        e.preventDefault();
+        setEnVentana(atajo);
+    };
 
     const vigente = inscripciones.find((i) => i.vigente);
+    // Una pausada no es vigente, pero tampoco se fue: hay que poder
+    // reanudarla desde aquí, con el socio delante, sin ir a buscarla.
+    const pausada = vigente ? null : inscripciones.find((i) => i.id_estado === 101);
+    const puedeGestionar = puede(auth, 'inscripciones.gestionar');
+    // Lo que se cobra es lo que se DEBE, este o no vigente el plan: a quien se
+    // le vencio debiendo plata el boton le abria el cobro en blanco, que es
+    // justo el caso en que mas falta hace.
+    const conSaldo = (vigente?.pendiente > 0 ? vigente : null) ?? inscripciones.find((i) => i.pendiente > 0);
 
     return (
         <>
@@ -603,15 +655,24 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                 ) : null}
                             </h1>
                             <p className="apoyo text-fog">
-                                {cliente.rut ?? 'Sin RUT'} · socio desde {cliente.desde ?? '—'}
+                                {cliente.rut ?? 'Sin RUT'} · socio desde {cliente.desde ?? '-'}
                                 {vigente ? <> · <Vigencia dias={vigente.dias} /></> : null}
+                                {pausada ? (
+                                    <>
+                                        {' · '}
+                                        <span className="font-medium text-warn">
+                                            {pausada.membresia} en pausa
+                                            {pausada.pausada_hasta ? ` hasta el ${pausada.pausada_hasta}` : ''}
+                                        </span>
+                                    </>
+                                ) : null}
                             </p>
                         </div>
                     </div>
 
                     {/* Una ficha borrada no se edita, no se reactiva y no se cobra. */}
                     {cliente.datos_borrados ? null : (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Link
                             href={`/panel/clientes/${cliente.uuid}/editar`}
                             className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
@@ -641,17 +702,71 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                             </button>
                         )}
 
-                        <Link
-                            href={`/panel/pagos/cobrar?inscripcion=${vigente?.uuid ?? ''}`}
-                            className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                        >
-                            <PlusIcon className="size-4" aria-hidden="true" />
-                            Cobrar
-                        </Link>
+                        {/* Con el socio delante se hace TODO desde aqui: renovarle,
+                            inscribirlo o cobrarle. Antes renovar obligaba a saltar a
+                            Inscripciones y buscar su plan, e inscribirlo de nuevo,
+                            a buscar al mismo socio otra vez en otra pantalla. */}
+                        {cliente.activo && pausada && puedeGestionar ? (
+                            <button
+                                type="button"
+                                onClick={() => setConfirmando('reanudar')}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                            >
+                                <PlayIcon className="size-4" aria-hidden="true" />
+                                Reanudar
+                            </button>
+                        ) : null}
+                        {cliente.activo && vigente ? (
+                            <a
+                                href={`/panel/inscripciones/${vigente.uuid}/renovar?volver=${cliente.uuid}`}
+                                onClick={abrirEnVentana({
+                                    href: `/panel/inscripciones/${vigente.uuid}/renovar?volver=${cliente.uuid}`,
+                                    titulo: `Renovar ${vigente.membresia ?? 'la membresía'}`,
+                                })}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                            >
+                                <RefreshCwIcon className="size-4" aria-hidden="true" />
+                                Renovar
+                            </a>
+                        ) : null}
+                        {cliente.activo && ! vigente && ! pausada ? (
+                            <a
+                                href={`/panel/inscripciones/crear?cliente=${cliente.uuid}&volver=${cliente.uuid}`}
+                                onClick={abrirEnVentana({
+                                    href: `/panel/inscripciones/crear?cliente=${cliente.uuid}&volver=${cliente.uuid}`,
+                                    titulo: `Inscribir a ${cliente.nombre}`,
+                                })}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                            >
+                                <PlusIcon className="size-4" aria-hidden="true" />
+                                Inscribir
+                            </a>
+                        ) : null}
+                        {conSaldo ? (
+                            <a
+                                href={`/panel/pagos/cobrar?inscripcion=${conSaldo.uuid}&volver=${cliente.uuid}`}
+                                onClick={abrirEnVentana({
+                                    href: `/panel/pagos/cobrar?inscripcion=${conSaldo.uuid}&volver=${cliente.uuid}`,
+                                    titulo: `Cobrar ${pesos.format(conSaldo.pendiente)} a ${cliente.nombre}`,
+                                })}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                            >
+                                <BanknoteIcon className="size-4" aria-hidden="true" />
+                                Cobrar {pesos.format(conSaldo.pendiente)}
+                            </a>
+                        ) : null}
                     </div>
                     )}
                 </div>
             </header>
+
+            {enVentana ? (
+                <ModalDePagina
+                    href={enVentana.href}
+                    titulo={enVentana.titulo}
+                    alCerrar={() => setEnVentana(null)}
+                />
+            ) : null}
 
             {/* Una ficha sin dueño: se abre desde un pago o una membresía
                 antigua, y tiene que decir por qué no tiene nombre. */}
@@ -730,35 +845,47 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                 </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            {/*
+             * DOS COLUMNAS PAREJAS. La izquierda llevaba seis bloques y la
+             * derecha dos: abajo a la derecha quedaba medio panel vacío. Ahora
+             * la izquierda es quién es y cómo ubicarlo (con la emergencia dentro
+             * del mismo bloque), y la derecha lo que tiene: membresías, pagos y
+             * contrato. Borrar sus datos va al final, a lo ancho y aparte.
+             */}
+            <div className="grid items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3 lg:col-span-1">
                     <Bloque titulo="Contacto">
                         <dl className="space-y-3">
+                            <Dato etiqueta="Celular">{cliente.celular ? celularLegible(cliente.celular) : null}</Dato>
                             <Dato etiqueta="Correo">
                                 {cliente.email ? (
-                                    <a href={`mailto:${cliente.email}`} className="hover:underline">
+                                    <a href={`mailto:${cliente.email}`} className="break-all hover:underline">
                                         {cliente.email}
                                     </a>
                                 ) : null}
                             </Dato>
-                            <Dato etiqueta="Celular">{cliente.celular}</Dato>
                             <Dato etiqueta="Dirección">{cliente.direccion}</Dato>
-                            <Dato etiqueta="Nacimiento">
-                                {cliente.nacimiento
-                                    ? `${cliente.nacimiento}${cliente.edad !== null ? ` · ${cliente.edad} años` : ''}`
-                                    : null}
-                            </Dato>
-                            <Dato etiqueta="Convenio">{cliente.convenio}</Dato>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Dato etiqueta="Nacimiento">
+                                    {cliente.nacimiento
+                                        ? `${cliente.nacimiento}${cliente.edad !== null ? ` · ${cliente.edad} años` : ''}`
+                                        : null}
+                                </Dato>
+                                <Dato etiqueta="Convenio">{cliente.convenio}</Dato>
+                            </div>
                         </dl>
-                    </Bloque>
 
-                    {/* En urgencia se busca este dato con prisa: va en su propio
-                        bloque y no perdido entre los demás. */}
-                    <Bloque titulo="En caso de emergencia">
-                        <dl className="space-y-3">
-                            <Dato etiqueta="Contacto">{cliente.contacto_emergencia}</Dato>
-                            <Dato etiqueta="Teléfono">{cliente.telefono_emergencia}</Dato>
-                        </dl>
+                        {/* En urgencia se busca este dato con prisa: va marcado
+                            y separado, aunque dentro del mismo bloque. */}
+                        <div className="mt-4 border-t border-line pt-3">
+                            <p className="rotulo mb-2 text-danger">En caso de emergencia</p>
+                            <dl className="grid grid-cols-2 gap-3">
+                                <Dato etiqueta="Avisar a">{cliente.contacto_emergencia}</Dato>
+                                <Dato etiqueta="Teléfono">
+                                    {cliente.telefono_emergencia ? celularLegible(cliente.telefono_emergencia) : null}
+                                </Dato>
+                            </dl>
+                        </div>
                     </Bloque>
 
                     {cliente.menor && cliente.apoderado ? (
@@ -780,18 +907,10 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                         </Bloque>
                     ) : null}
 
-                    <ContratoDelSocio cliente={cliente} />
-
                     {cliente.observaciones ? (
                         <Bloque titulo="Observaciones">
                             <p className="text-sm whitespace-pre-line text-fog">{cliente.observaciones}</p>
                         </Bloque>
-                    ) : null}
-
-                    {/* Solo quien puede borrar para siempre: recepción da de baja,
-                        pero esto no se deshace. */}
-                    {! cliente.datos_borrados && puede(auth, 'clientes.eliminar') ? (
-                        <BorrarDatos cliente={cliente} />
                     ) : null}
                 </div>
 
@@ -809,17 +928,17 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                             href={`/panel/inscripciones/${i.uuid}`}
                                             className="hover:underline"
                                         >
-                                            {i.membresia ?? '—'}
+                                            {i.membresia ?? '-'}
                                         </Link>
                                     </Celda>
                                     <Celda>
                                         <Estado codigo={i.id_estado} />
                                     </Celda>
-                                    <Celda className="tabular-nums">{i.inicio ?? '—'}</Celda>
-                                    <Celda className="tabular-nums">{i.vence ?? '—'}</Celda>
+                                    <Celda className="tabular-nums">{i.inicio ?? '-'}</Celda>
+                                    <Celda className="tabular-nums">{i.vence ?? '-'}</Celda>
                                     <Cifra>{pesos.format(i.total)}</Cifra>
                                     <Cifra className={i.pendiente > 0 ? 'font-medium text-warn' : ''}>
-                                        {i.pendiente > 0 ? pesos.format(i.pendiente) : '—'}
+                                        {i.pendiente > 0 ? pesos.format(i.pendiente) : '-'}
                                     </Cifra>
                                 </Fila>
                             ))}
@@ -836,23 +955,50 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                 <Fila key={p.uuid}>
                                     <Celda className="tabular-nums text-chalk">
                                         <Link href={`/panel/pagos/${p.uuid}`} className="hover:underline">
-                                            {p.fecha ?? '—'}
+                                            {p.fecha ?? '-'}
                                         </Link>
                                     </Celda>
-                                    <Celda>{p.metodo ?? '—'}</Celda>
+                                    <Celda>{p.metodo ?? '-'}</Celda>
                                     <Celda>
                                         <Estado codigo={p.id_estado} />
                                     </Celda>
                                     <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
                                     <Cifra className={p.pendiente > 0 ? 'text-warn' : ''}>
-                                        {p.pendiente > 0 ? pesos.format(p.pendiente) : '—'}
+                                        {p.pendiente > 0 ? pesos.format(p.pendiente) : '-'}
                                     </Cifra>
                                 </Fila>
                             ))}
                         </Tabla>
                     </Bloque>
+
+                    <ContratoDelSocio cliente={cliente} />
                 </div>
             </div>
+
+            {/* Solo quien puede borrar para siempre: recepción da de baja,
+                pero esto no se deshace. Al final y a lo ancho: es lo último que
+                se hace con una ficha y no debe estar a mano. */}
+            {! cliente.datos_borrados && puede(auth, 'clientes.eliminar') ? (
+                <div className="mt-3">
+                    <BorrarDatos cliente={cliente} />
+                </div>
+            ) : null}
+
+            {pausada ? (
+                <Dialogo
+                    abierto={confirmando === 'reanudar'}
+                    alCerrar={() => setConfirmando(null)}
+                    titulo="Reanudar la membresía"
+                    descripcion={
+                        pausada.pausada_hasta
+                            ? `${pausada.membresia} de ${cliente.nombre} estaba pausada hasta el ${pausada.pausada_hasta}. Al reanudar se le devuelven los días que le quedaban.`
+                            : `Al reanudar ${pausada.membresia} de ${cliente.nombre} se le devuelven los días que le quedaban.`
+                    }
+                    accion={`/panel/inscripciones/${pausada.uuid}/reanudar`}
+                    etiquetaConfirmar="Reanudar"
+                />
+            ) : null}
+
             <Dialogo
                 abierto={confirmando === 'desactivar'}
                 alCerrar={() => setConfirmando(null)}

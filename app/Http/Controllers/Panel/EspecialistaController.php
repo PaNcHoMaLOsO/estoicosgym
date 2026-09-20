@@ -25,6 +25,7 @@ class EspecialistaController extends Controller
             ->get()
             ->map(fn (Especialista $e) => [
                 'uuid' => $e->uuid,
+                'tipo' => $e->tipo,
                 'nombre' => $e->nombre,
                 'especialidad' => $e->especialidad,
                 'descripcion' => $e->descripcion,
@@ -54,13 +55,15 @@ class EspecialistaController extends Controller
         $especialista->update($this->validar($request));
         $this->ponerFoto($especialista, $request);
 
-        return back()->with('success', 'Especialista actualizado.');
+        return back()->with('success', "«{$especialista->nombre}» actualizado.");
     }
 
     /** @return array<string,mixed> */
     private function validar(Request $request): array
     {
         $datos = $request->validate([
+            // Especialista o embajador: decide dónde sale en la web.
+            'tipo' => 'nullable|in:' . implode(',', array_keys(Especialista::TIPOS)),
             'nombre' => 'required|string|max:100',
             'especialidad' => 'required|string|max:100',
             'descripcion' => 'nullable|string|max:300',
@@ -77,7 +80,7 @@ class EspecialistaController extends Controller
             'foto.max' => 'La foto no puede pesar más de 2 MB.',
         ]);
 
-        return [
+        $fila = [
             'nombre' => trim($datos['nombre']),
             'especialidad' => trim($datos['especialidad']),
             'descripcion' => $datos['descripcion'] ?? null,
@@ -86,6 +89,15 @@ class EspecialistaController extends Controller
             'orden' => (int) ($datos['orden'] ?? 0),
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
+
+        // El tipo SOLO se toca si llega. Al crear, sin él queda especialista
+        // (lo pone la base); al editar, se respeta el que tenía: poniéndolo por
+        // defecto, una edición sin ese campo volvería especialista a un embajador.
+        if (! empty($datos['tipo'])) {
+            $fila['tipo'] = $datos['tipo'];
+        }
+
+        return $fila;
     }
 
     /** «9 1234 5678», «+56 9 1234 5678» o «56912345678» → 56912345678. */

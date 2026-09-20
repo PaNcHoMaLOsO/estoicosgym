@@ -14,44 +14,60 @@ export const SECCIONES_CONFIGURACION = [
         ],
     },
     {
+        // Quién es el gimnasio y cómo trabaja el mesón: lo que se toca al
+        // estrenar el sistema y casi nunca después.
         titulo: 'El gimnasio',
+        icono: 'gimnasio',
         secciones: [
             { href: '/panel/configuracion/gimnasio', etiqueta: 'Datos del gimnasio', permiso: 'configuracion.ver' },
             { href: '/panel/configuracion/horario', etiqueta: 'Horario', permiso: 'configuracion.ver' },
+            { href: '/panel/configuracion/meson', etiqueta: 'Mesón', permiso: 'configuracion.ver' },
         ],
     },
     {
-        titulo: 'Membresías y cobros',
+        // Qué se vende y a qué precio. Es lo que más se vuelve a abrir.
+        titulo: 'Planes y cobros',
+        icono: 'cobros',
         secciones: [
             { href: '/panel/membresias', etiqueta: 'Planes y precios', permiso: 'configuracion.ver' },
             { href: '/panel/convenios', etiqueta: 'Convenios', permiso: 'configuracion.ver' },
             { href: '/panel/metodos-pago', etiqueta: 'Métodos de pago', permiso: 'configuracion.ver' },
             { href: '/panel/motivos-descuento', etiqueta: 'Motivos de descuento', permiso: 'configuracion.ver' },
-            { href: '/panel/configuracion/reglas', etiqueta: 'Reglas', permiso: 'configuracion.ver' },
+            { href: '/panel/configuracion/reglas', etiqueta: 'Reglas de las membresías', permiso: 'configuracion.ver' },
         ],
     },
     {
-        titulo: 'Mesón y correos',
+        /*
+         * Todo el correo junto, en el orden en que se configura: primero desde
+         * qué cuenta se escribe, después qué dice cada mensaje, y al final
+         * cuándo salen solos. Antes «Mesón y correos» mezclaba las notas del
+         * mesón con esto, y «Correos y tareas» sonaba igual que «Correo de
+         * salida» sin serlo.
+         */
+        titulo: 'Correos',
+        icono: 'correos',
         secciones: [
-            { href: '/panel/configuracion/meson', etiqueta: 'Mesón', permiso: 'configuracion.ver' },
-            { href: '/panel/configuracion/tareas', etiqueta: 'Correos y tareas', permiso: 'configuracion.ver' },
-            { href: '/panel/notificaciones/plantillas', etiqueta: 'Plantillas de correo', permiso: 'notificaciones.ver' },
+            { href: '/panel/configuracion/correo', etiqueta: 'Cuenta de correo', permiso: 'configuracion.ver' },
+            { href: '/panel/notificaciones/plantillas', etiqueta: 'Qué dice cada correo', permiso: 'notificaciones.ver' },
+            { href: '/panel/configuracion/tareas', etiqueta: 'Avisos automáticos', permiso: 'configuracion.ver' },
         ],
     },
     {
         titulo: 'Página web',
+        icono: 'web',
         secciones: [
             { href: '/panel/configuracion/portada', etiqueta: 'Portada y aviso', permiso: 'configuracion.ver' },
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
             { href: '/panel/web/pregunta', etiqueta: 'Preguntas frecuentes', permiso: 'configuracion.ver' },
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
-            { href: '/panel/especialistas', etiqueta: 'Especialistas', permiso: 'configuracion.ver' },
+            { href: '/panel/especialistas', etiqueta: 'Especialistas y embajadores', permiso: 'configuracion.ver' },
             { href: '/panel/configuracion/web', etiqueta: 'Google y redes', permiso: 'configuracion.ver' },
         ],
     },
     {
         titulo: 'Contrato y privacidad',
+        icono: 'legal',
         secciones: [
             { href: '/panel/textos-legales/contrato', etiqueta: 'Contrato', permiso: 'configuracion.ver' },
             { href: '/panel/textos-legales/terminos', etiqueta: 'Términos y condiciones', permiso: 'configuracion.ver' },
@@ -60,6 +76,7 @@ export const SECCIONES_CONFIGURACION = [
     },
     {
         titulo: 'Sistema',
+        icono: 'sistema',
         secciones: [
             { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
             { href: '/panel/papelera', etiqueta: 'Papelera', permiso: 'configuracion.ver' },

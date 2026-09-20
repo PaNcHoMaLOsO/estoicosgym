@@ -135,6 +135,10 @@ class PapeleraTest extends CasoConCatalogos
      * NO hay «eliminar del todo». Un socio con inscripciones o un pago de una
      * caja de hace tres años están referenciados por otras filas, y quitarlos
      * deja huecos en sitios que nadie mira hasta que cuadran mal las cuentas.
+     *
+     * «Borrar sus datos» SÍ existe y no es lo mismo: vacía el nombre, el RUT y
+     * el contacto de la persona y deja la fila en su sitio, para que sus pagos
+     * sigan cuadrando a nombre de «Socio Borrado».
      */
     public function test_no_existe_ninguna_ruta_para_borrar_del_todo(): void
     {
@@ -144,6 +148,15 @@ class PapeleraTest extends CasoConCatalogos
             ->values()
             ->all();
 
-        $this->assertSame(['panel.papelera.index', 'panel.papelera.restore'], $rutas);
+        $this->assertSame(
+            ['panel.papelera.index', 'panel.papelera.borrar-datos', 'panel.papelera.restore'],
+            $rutas
+        );
+
+        // Y lo que hay detrás tampoco borra filas: ni un forceDelete.
+        $this->assertStringNotContainsString(
+            'forceDelete',
+            file_get_contents(app_path('Http/Controllers/Panel/PapeleraController.php'))
+        );
     }
 }

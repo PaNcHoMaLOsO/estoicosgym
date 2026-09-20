@@ -52,7 +52,7 @@ class ContenidosWebTest extends CasoConCatalogos
         $this->assertSame(0, ContenidoWeb::where('tipo', 'pregunta')->count());
     }
 
-    public function test_se_crea_una_pregunta_y_sale_en_contacto(): void
+    public function test_se_crea_una_pregunta_pero_no_sale_en_la_web(): void
     {
         $this->admin()->post('/panel/web/pregunta', [
             'titulo' => '¿Abren los domingos?',
@@ -60,7 +60,11 @@ class ContenidosWebTest extends CasoConCatalogos
             'activo' => true,
         ])->assertSessionHasNoErrors();
 
-        $this->get('/contacto')->assertOk()->assertSee('¿Abren los domingos?');
+        // Se guarda, pero la lista de preguntas se quitó de la web pública el
+        // 2026-09-18 por decisión del dueño: ni en Contacto ni en la portada.
+        $this->assertSame(1, ContenidoWeb::where('tipo', 'pregunta')->count());
+        $this->get('/contacto')->assertOk()->assertDontSee('¿Abren los domingos?');
+        $this->get('/')->assertOk()->assertDontSee('¿Abren los domingos?');
     }
 
     /** Una opinión con nombre es un dato personal: sin el permiso de la persona no se publica. */

@@ -61,9 +61,9 @@ export default function Pendientes({ pagos, total, abonado }) {
                                 {p.socio}
                             </Link>
                         </Celda>
-                        <Celda>{p.membresia ?? '—'}</Celda>
-                        <Celda>{p.metodo ?? '—'}</Celda>
-                        <Celda className="tabular-nums">{p.fecha ?? '—'}</Celda>
+                        <Celda>{p.membresia ?? '-'}</Celda>
+                        <Celda>{p.metodo ?? '-'}</Celda>
+                        <Celda className="tabular-nums">{p.fecha ?? '-'}</Celda>
                         <Cifra>{pesos.format(p.total)}</Cifra>
                         <Cifra>{pesos.format(p.abonado)}</Cifra>
                         <Cifra className="font-medium text-warn">{pesos.format(p.pendiente)}</Cifra>

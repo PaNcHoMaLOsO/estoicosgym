@@ -10,10 +10,14 @@ import FormularioCatalogo, {
 import Retrato from '@/components/Retrato';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
-const COLUMNAS = ['Especialista', 'Especialidad', 'Contacto', 'Orden', 'En la web', ''];
+const COLUMNAS = ['Nombre', 'Qué es', 'Especialidad o disciplina', 'Contacto', 'Orden', 'En la web', ''];
+
+// Dónde sale cada uno en la web, para que se lea en la tabla sin abrir la ficha.
+const TIPO = { especialista: 'Especialista', embajador: 'Embajador' };
 
 /**
- * Los especialistas que aparecen en la página pública.
+ * Las personas que aparecen en la página pública: los especialistas, en su
+ * página, y los embajadores, en la portada.
  *
  * Se ocultan, no se borran: igual que los otros catálogos. Quien deja de
  * trabajar con el gimnasio desaparece de la web, y si vuelve está su ficha.
@@ -30,13 +34,13 @@ export default function Especialistas({ especialistas }) {
 
     return (
         <>
-            <Head title="Especialistas" />
+            <Head title="Especialistas y embajadores" />
 
             <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-lg font-semibold text-chalk">Especialistas</h1>
+                    <h1 className="text-lg font-semibold text-chalk">Especialistas y embajadores</h1>
                     <p className="apoyo text-fog">
-                        Los profesionales que aparecen en la web, con su WhatsApp y su Instagram
+                        Los especialistas salen en su página; los embajadores, en la portada
                     </p>
                 </div>
 
@@ -46,26 +50,27 @@ export default function Especialistas({ especialistas }) {
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
-                    Nuevo especialista
+                    Agregar
                 </button>
             </header>
 
             <Tabla
                 columnas={COLUMNAS}
                 vacia={especialistas.length === 0}
-                mensajeVacio="Todavía no hay especialistas. Agrega al personal trainer, al preparador físico o a la nutricionista."
+                mensajeVacio="Todavía no hay nadie. Agrega a un especialista (nutricionista, personal trainer) o a un embajador que represente al gimnasio."
             >
                 {especialistas.map((especialista) => (
                     <Fila key={especialista.uuid}>
                         <Celda className="font-medium text-chalk">
                             <span className="flex items-center gap-2">
-                                <Retrato nombre={especialista.nombre} foto={especialista.foto_url} tamano="sm" />
+                                <Retrato nombre={especialista.nombre} foto={especialista.foto_url} tamano="sm" ampliable />
                                 {especialista.nombre}
                             </span>
                         </Celda>
+                        <Celda>{TIPO[especialista.tipo] ?? 'Especialista'}</Celda>
                         <Celda>{especialista.especialidad}</Celda>
                         <Celda>
-                            {[especialista.whatsapp, especialista.instagram].filter(Boolean).join(' · ') || '—'}
+                            {[especialista.whatsapp, especialista.instagram].filter(Boolean).join(' · ') || '-'}
                         </Celda>
                         <Celda className="tabular-nums">{especialista.orden}</Celda>
                         <Celda>
@@ -98,7 +103,7 @@ export default function Especialistas({ especialistas }) {
             <FormularioCatalogo
                 abierto={editando !== null}
                 alCerrar={() => setEditando(null)}
-                titulo={editando?.uuid ? 'Editar especialista' : 'Nuevo especialista'}
+                titulo={editando?.uuid ? `Editar a ${editando.nombre}` : 'Agregar persona'}
                 descripcion="Solo con su permiso: su foto y su teléfono quedan a la vista de cualquiera."
                 accion={editando?.uuid ? `/panel/especialistas/${editando.uuid}` : '/panel/especialistas'}
                 metodo={editando?.uuid ? 'put' : 'post'}

@@ -350,4 +350,84 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->get('/panel/especialistas')
             ->assertForbidden();
     }
+
+    // ---------- Embajadores ----------
+
+    /**
+     * El embajador sale en la PORTADA, no en la página de especialistas.
+     *
+     * Comparten tabla y pantalla del panel, así que lo que hay que vigilar es
+     * que cada uno salga en su sitio. Y que un embajador no haga aparecer en el
+     * menú la página de especialistas: esa página solo existe si hay alguno.
+     */
+    public function test_el_embajador_sale_en_la_portada_y_no_en_especialistas(): void
+    {
+        $this->admin()->post('/panel/especialistas', [
+            'tipo' => 'embajador',
+            'nombre' => 'Valentina Pérez',
+            'especialidad' => 'Powerlifting',
+            'instagram' => '@vale.lifts',
+            'activo' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('NUESTROS EMBAJADORES')
+            ->assertSee('Valentina Pérez')
+            ->assertSee('Powerlifting')
+            ->assertSee('https://www.instagram.com/vale.lifts/', false)
+            ->assertDontSee('href="' . route('landing.especialistas') . '"', false);
+
+        $this->get('/especialistas')
+            ->assertOk()
+            ->assertDontSee('Valentina Pérez');
+    }
+
+    /** Y el especialista sigue en su página, sin colarse en la portada. */
+    public function test_el_especialista_no_sale_entre_los_embajadores(): void
+    {
+        Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('NUESTROS EMBAJADORES');
+
+        $this->get('/especialistas')
+            ->assertOk()
+            ->assertSee('Diego Soto');
+    }
+
+    /**
+     * Editar sin mandar el tipo no convierte a un embajador en especialista.
+     *
+     * Si el tipo se pusiera por defecto al editar, bastaría un formulario que no
+     * lo mandara para sacar a alguien de la portada sin que nadie lo pidiera.
+     */
+    public function test_editar_sin_el_tipo_respeta_el_que_tenia(): void
+    {
+        $embajador = Especialista::create([
+            'tipo' => 'embajador',
+            'nombre' => 'Valentina Pérez',
+            'especialidad' => 'Powerlifting',
+            'activo' => true,
+        ]);
+
+        $this->admin()->put("/panel/especialistas/{$embajador->uuid}", [
+            'nombre' => 'Valentina Pérez',
+            'especialidad' => 'Powerlifting y crossfit',
+            'activo' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('embajador', $embajador->refresh()->tipo);
+        $this->assertSame('Powerlifting y crossfit', $embajador->especialidad);
+    }
+
+    public function test_un_tipo_que_no_existe_se_rechaza(): void
+    {
+        $this->admin()->post('/panel/especialistas', [
+            'tipo' => 'influencer',
+            'nombre' => 'Valentina Pérez',
+            'especialidad' => 'Powerlifting',
+        ])->assertSessionHasErrors('tipo');
+    }
 }

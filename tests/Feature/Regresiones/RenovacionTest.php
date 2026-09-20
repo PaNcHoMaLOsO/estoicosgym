@@ -302,4 +302,39 @@ class RenovacionTest extends CasoConCatalogos
 
         $this->assertSame(0, Inscripcion::where('id_inscripcion_anterior', $anterior->id)->count());
     }
+
+    /**
+     * QUIEN RENOVÓ NO SALE COMO QUE SE FUE.
+     *
+     * Al renovar, la membresía anterior se cierra como vencida. El resumen
+     * contaba las vencidas por su estado, así que quien renovaba salía en
+     * «se fueron sin renovar»: el número se inflaba justo con los socios que sí
+     * se quedaron.
+     */
+    public function test_quien_renovo_no_sale_como_que_se_fue(): void
+    {
+        $anterior = $this->porVencer();
+
+        $this->renovar($anterior)->assertSessionHasNoErrors();
+
+        $this->assertSame(EstadosCodigo::INSCRIPCION_VENCIDA, (int) $anterior->fresh()->id_estado);
+
+        $props = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props'];
+
+        $this->assertSame(0, $props['cifras']['sin_renovar']);
+        $this->assertSame([], $props['sinRenovar']);
+    }
+
+    /** Y quien se fue de verdad, sí: con su membresía vencida y nada vigente. */
+    public function test_quien_se_fue_sin_renovar_sale_en_el_resumen(): void
+    {
+        $vencida = $this->porVencer(diasQueQuedan: -5);
+        $vencida->update(['id_estado' => EstadosCodigo::INSCRIPCION_VENCIDA]);
+
+        $props = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props'];
+
+        $this->assertSame(1, $props['cifras']['sin_renovar']);
+        $this->assertSame((string) $vencida->uuid, (string) $props['sinRenovar'][0]['uuid']);
+        $this->assertSame(5, $props['sinRenovar'][0]['dias']);
+    }
 }

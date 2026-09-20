@@ -97,8 +97,16 @@ export default function Index({ notificaciones, filtros, resumen }) {
                 <Buscador
                     ruta="/panel/notificaciones"
                     valor={filtros.buscar}
+                    extra={filtros.estado ? { estado: filtros.estado } : undefined}
                     etiqueta="Buscar por correo o asunto"
                 />
+                {/* Las que no salieron son lo único que pide hacer algo: un toque las deja solas. */}
+                <Link
+                    href={filtros.estado ? '/panel/notificaciones' : '/panel/notificaciones?estado=fallidas'}
+                    className={`inline-flex items-center rounded-control border px-3 py-1.5 text-sm transition-colors ${filtros.estado ? 'border-danger/50 bg-danger/5 text-danger' : 'border-line text-fog hover:text-chalk'}`}
+                >
+                    {filtros.estado ? 'Viendo solo las fallidas · ver todas' : 'Ver solo las fallidas'}
+                </Link>
             </div>
 
             <Tabla
@@ -119,7 +127,7 @@ export default function Index({ notificaciones, filtros, resumen }) {
                             <span className="apoyo block text-fog">{n.email}</span>
                         </Celda>
                         <Celda className="max-w-xs truncate">{n.asunto}</Celda>
-                        <Celda>{n.tipo ?? '—'}</Celda>
+                        <Celda>{n.tipo ?? '-'}</Celda>
                         <Celda>{n.envio}</Celda>
                         <Celda>
                             <Estado codigo={n.id_estado} />
@@ -131,8 +139,8 @@ export default function Index({ notificaciones, filtros, resumen }) {
                                 </span>
                             ) : null}
                         </Celda>
-                        <Celda className="tabular-nums">{n.programada ?? '—'}</Celda>
-                        <Celda className="tabular-nums">{n.enviada ?? '—'}</Celda>
+                        <Celda className="tabular-nums">{n.programada ?? '-'}</Celda>
+                        <Celda className="tabular-nums">{n.enviada ?? '-'}</Celda>
                         <Celda className="text-right">
                             {/* Reintentar una que no salio, o parar una que
                                 todavia no ha salido. Sobre una ya enviada no

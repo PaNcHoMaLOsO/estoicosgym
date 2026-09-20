@@ -69,7 +69,7 @@ class EnvioMasivoService
                 'explicacion' => 'Tienen algún pago pendiente o a medias.',
             ],
             'activas' => [
-                'titulo' => 'Al día',
+                'titulo' => 'Con plan vigente',
                 'explicacion' => 'Membresía vigente ahora mismo.',
             ],
             'todos' => [

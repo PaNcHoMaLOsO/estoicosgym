@@ -75,7 +75,7 @@
         @if($fotoPortada)
             <div class="absolute inset-0" aria-hidden="true">
                 <img src="{{ $fotoPortada['imagen'] }}" alt="" class="portada-foto h-full w-full object-cover">
-                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/25 to-transparent lg:via-pg-negro/80 lg:to-pg-negro/40"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/80 to-pg-negro/40"></div>
             </div>
         @else
             <div class="absolute inset-0 bg-linear-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>

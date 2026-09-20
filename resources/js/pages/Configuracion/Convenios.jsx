@@ -71,11 +71,11 @@ export default function Convenios({ convenios }) {
                                 {convenio.nombre}
                             </Link>
                         </Celda>
-                        <Celda>{NOMBRE_TIPO[convenio.tipo] ?? convenio.tipo ?? '—'}</Celda>
+                        <Celda>{NOMBRE_TIPO[convenio.tipo] ?? convenio.tipo ?? '-'}</Celda>
                         <Celda className="tabular-nums">{convenio.descuento}</Celda>
-                        <Celda>{convenio.contacto ?? '—'}</Celda>
+                        <Celda>{convenio.contacto ?? '-'}</Celda>
                         <Cifra>{convenio.clientes}</Cifra>
-                        <Celda>{convenio.mostrar_en_web ? (convenio.logo_url ? 'Sí' : 'Sí, sin logo') : '—'}</Celda>
+                        <Celda>{convenio.mostrar_en_web ? (convenio.logo_url ? 'Sí' : 'Sí, sin logo') : '-'}</Celda>
                         <Celda>
                             <Activo valor={convenio.activo} />
                         </Celda>

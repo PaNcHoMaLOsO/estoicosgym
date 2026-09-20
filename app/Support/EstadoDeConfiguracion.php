@@ -137,7 +137,7 @@ class EstadoDeConfiguracion
             default => ['ok', "{$activos} planes a la venta, todos con precio."],
         };
 
-        return self::punto('planes', 'Cobros', 'Planes y precios', '/panel/membresias', $estado, $detalle);
+        return self::punto('planes', 'Planes y cobros', 'Planes y precios', '/panel/membresias', $estado, $detalle);
     }
 
     private static function metodosDePago(): array
@@ -145,7 +145,7 @@ class EstadoDeConfiguracion
         $activos = MetodoPago::where('activo', true)->count();
 
         return self::punto(
-            'metodos', 'Cobros', 'Métodos de pago', '/panel/metodos-pago',
+            'metodos', 'Planes y cobros', 'Métodos de pago', '/panel/metodos-pago',
             $activos ? 'ok' : 'falta',
             match (true) {
                 $activos === 0 => 'Sin ningún método de pago activo no se puede cobrar.',
@@ -169,14 +169,15 @@ class EstadoDeConfiguracion
             default => ['ok', "{$publicados} convenios en la web, todos con su logo."],
         };
 
-        return self::punto('convenios', 'Cobros', 'Convenios', '/panel/convenios', $estado, $detalle);
+        return self::punto('convenios', 'Planes y cobros', 'Convenios', '/panel/convenios', $estado, $detalle);
     }
 
     private static function correo(): array
     {
         if (! self::correoConfigurado()) {
             return self::punto(
-                'correo', 'Lo automático', 'Correo de salida', '/panel/configuracion/tareas', 'falta',
+                // A la pantalla donde se arregla, no a la de al lado.
+                'correo', 'Correos', 'Cuenta de correo', '/panel/configuracion/correo', 'falta',
                 'El correo del gimnasio no está configurado: no le llega ningún aviso a los socios.'
             );
         }
@@ -186,7 +187,7 @@ class EstadoDeConfiguracion
             ->count();
 
         return self::punto(
-            'correo', 'Lo automático', 'Correo de salida', '/panel/configuracion/tareas',
+            'correo', 'Correos', 'Cuenta de correo', '/panel/configuracion/correo',
             $fallidos ? 'falta' : 'ok',
             match (true) {
                 $fallidos === 1 => 'Un correo no salió esta semana. Si empiezan a fallar todos, lo más probable es que haya cambiado la clave del correo.',
@@ -206,7 +207,7 @@ class EstadoDeConfiguracion
             default => ['falta', 'No corren desde el ' . $ultimo->format('d/m/Y \a \l\a\s H:i') . ': no se marcan los vencimientos ni salen los avisos.'],
         };
 
-        return self::punto('tareas', 'Lo automático', 'Tareas automáticas', '/panel/configuracion/tareas', $estado, $detalle);
+        return self::punto('tareas', 'Correos', 'Avisos automáticos', '/panel/configuracion/tareas', $estado, $detalle);
     }
 
     private static function enInternet(): array

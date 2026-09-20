@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ArrowLeftIcon, PencilIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
-import FormularioCatalogo, { CAMPOS_PLAN } from '@/components/FormularioCatalogo';
+import FormularioCatalogo, { CAMPOS_PLAN, valoresDePlan } from '@/components/FormularioCatalogo';
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -34,7 +34,7 @@ function duracion({ duracion_meses, duracion_dias }) {
         return duracion_dias === 1 ? '1 día' : `${duracion_dias} días`;
     }
 
-    return '—';
+    return '-';
 }
 
 export default function FichaMembresia({ membresia, cifras, precios, inscripciones }) {
@@ -93,7 +93,7 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                 <div className="rounded-panel border border-line bg-surface p-3">
                     <p className="rotulo">Precio con convenio</p>
                     <p className="mt-0.5 text-lg font-semibold tabular-nums text-chalk">
-                        {membresia.precio_convenio > 0 ? pesos.format(membresia.precio_convenio) : '—'}
+                        {membresia.precio_convenio > 0 ? pesos.format(membresia.precio_convenio) : '-'}
                     </p>
                 </div>
             </div>
@@ -122,7 +122,7 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                                                 <span className="text-chalk">{pesos.format(p.despues)}</span>
                                             </span>
                                             <span className="apoyo shrink-0 tabular-nums text-fog">
-                                                {p.cuando ?? '—'}
+                                                {p.cuando ?? '-'}
                                             </span>
                                         </div>
                                         {p.razon ? <p className="apoyo text-fog">{p.razon}</p> : null}
@@ -157,9 +157,9 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                                     <Celda>
                                         <Estado codigo={i.id_estado} />
                                     </Celda>
-                                    <Celda className="tabular-nums">{i.vence ?? '—'}</Celda>
+                                    <Celda className="tabular-nums">{i.vence ?? '-'}</Celda>
                                     <Cifra className={i.pendiente > 0 ? 'font-medium text-warn' : ''}>
-                                        {i.pendiente > 0 ? pesos.format(i.pendiente) : '—'}
+                                        {i.pendiente > 0 ? pesos.format(i.pendiente) : '-'}
                                     </Cifra>
                                 </Fila>
                             ))}

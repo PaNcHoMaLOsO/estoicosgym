@@ -8,6 +8,7 @@ use App\Models\HistorialCambio;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Models\Pago;
+use App\Support\PrecioAcordado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -386,14 +387,16 @@ class RegistroInscripcionService
         return $precio;
     }
 
-    /** Descuento del convenio más el que se escriba a mano. */
+    /**
+     * Descuento del convenio más el que se escriba a mano.
+     *
+     * El precio con convenio sale de PrecioAcordado: primero el que ese
+     * convenio negoció para este plan —el club que paga 15.000 la mensualidad—
+     * y si no tiene, el «con convenio» general del plan.
+     */
     private function descuentoTotal($precio, array $datos, int $base, int $manual): int
     {
-        $porConvenio = 0;
-
-        if (! empty($datos['id_convenio']) && $precio->precio_convenio) {
-            $porConvenio = max(0, $base - (int) round($precio->precio_convenio));
-        }
+        $porConvenio = max(0, $base - PrecioAcordado::para($precio, $datos['id_convenio'] ?? null));
 
         return min($base, $porConvenio + $manual);
     }

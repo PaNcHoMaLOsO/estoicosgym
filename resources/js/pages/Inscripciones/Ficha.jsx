@@ -15,6 +15,7 @@ import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import { Campo, Seleccion, Texto } from '@/components/Campo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { celularLegible, whatsapp } from '@/lib/contacto';
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -35,7 +36,7 @@ function Dato({ etiqueta, children }) {
     return (
         <div>
             <dt className="rotulo">{etiqueta}</dt>
-            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">—</span>}</dd>
+            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">-</span>}</dd>
         </div>
     );
 }
@@ -249,55 +250,71 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                 </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            {/*
+             * DOS COLUMNAS PAREJAS. La izquierda apilaba cuatro bloques cortos
+             * (membresía, pausas, contacto, observaciones) y la derecha dos: abajo
+             * a la derecha quedaba un hueco. Ahora las fechas y las pausas van en
+             * un solo bloque, el socio en otro, y las observaciones a la derecha.
+             */}
+            <div className="grid items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Membresía">
-                        <dl className="space-y-3">
+                        <dl className="grid grid-cols-2 gap-3">
                             <Dato etiqueta="Inicio">{inscripcion.inicio}</Dato>
                             <Dato etiqueta="Vence">{inscripcion.vence}</Dato>
                             <Dato etiqueta="Convenio">{inscripcion.convenio}</Dato>
+                            <Dato etiqueta="Pausas">
+                                {pausa.permitidas === 0
+                                    ? 'No admite'
+                                    : `${pausa.usadas} de ${pausa.permitidas} usadas`}
+                            </Dato>
                             {inscripcion.descuento > 0 ? (
-                                <Dato etiqueta="Descuento">
-                                    {pesos.format(inscripcion.descuento)}
-                                    {inscripcion.motivo_descuento ? ` · ${inscripcion.motivo_descuento}` : ''}
-                                </Dato>
+                                <div className="col-span-2">
+                                    <Dato etiqueta="Descuento">
+                                        {pesos.format(inscripcion.descuento)}
+                                        {inscripcion.motivo_descuento ? ` · ${inscripcion.motivo_descuento}` : ''}
+                                    </Dato>
+                                </div>
                             ) : null}
                         </dl>
-                    </Bloque>
 
-                    <Bloque titulo="Pausas">
+                        {/* La pausa en curso sí se destaca: cambia qué se puede
+                            hacer con la membresía. */}
                         {pausa.pausada ? (
-                            <div className="rounded-panel border border-warn/40 bg-warn/5 p-3 text-sm text-warn">
+                            <div className="mt-3 rounded-control border border-warn/40 bg-warn/5 p-3 text-sm text-warn">
                                 <p className="font-medium">Pausada desde el {pausa.desde}</p>
                                 {pausa.hasta ? <p className="apoyo">Se reanuda el {pausa.hasta}</p> : null}
                                 {pausa.razon ? <p className="apoyo mt-1">{pausa.razon}</p> : null}
                             </div>
-                        ) : (
-                            <p className="text-sm text-fog">No está pausada.</p>
-                        )}
-
-                        <p className="apoyo mt-3 text-fog">
-                            {pausa.permitidas === 0
-                                ? 'Este plan no admite pausas.'
-                                : `Usadas ${pausa.usadas} de ${pausa.permitidas} · quedan ${pausa.disponibles}`}
-                        </p>
+                        ) : null}
                     </Bloque>
 
                     {socio ? (
-                        <Bloque titulo="Contacto del socio">
+                        <Bloque titulo="Socio">
                             <dl className="space-y-3">
-                                <Dato etiqueta="RUT">{socio.rut}</Dato>
-                                <Dato etiqueta="Correo">{socio.email}</Dato>
-                                <Dato etiqueta="Celular">{socio.celular}</Dato>
+                                <Dato etiqueta="Nombre">
+                                    <Link href={`/panel/clientes/${socio.uuid}`} className="hover:underline">
+                                        {socio.nombre}
+                                    </Link>
+                                </Dato>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Dato etiqueta="RUT">{socio.rut}</Dato>
+                                    <Dato etiqueta="Celular">
+                                        {socio.celular ? (
+                                            <a href={whatsapp(socio.celular)} target="_blank" rel="noopener" className="hover:underline">
+                                                {celularLegible(socio.celular)}
+                                            </a>
+                                        ) : null}
+                                    </Dato>
+                                </div>
+                                <Dato etiqueta="Correo">
+                                    {socio.email ? (
+                                        <a href={`mailto:${socio.email}`} className="break-all hover:underline">
+                                            {socio.email}
+                                        </a>
+                                    ) : null}
+                                </Dato>
                             </dl>
-                        </Bloque>
-                    ) : null}
-
-                    {inscripcion.observaciones ? (
-                        <Bloque titulo="Observaciones">
-                            <p className="text-sm whitespace-pre-line text-fog">
-                                {inscripcion.observaciones}
-                            </p>
                         </Bloque>
                     ) : null}
                 </div>
@@ -313,10 +330,10 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                 <Fila key={p.uuid}>
                                     <Celda className="tabular-nums text-chalk">
                                         <a href={`/panel/pagos/${p.uuid}`} className="hover:underline">
-                                            {p.fecha ?? '—'}
+                                            {p.fecha ?? '-'}
                                         </a>
                                     </Celda>
-                                    <Celda>{p.metodo ?? '—'}</Celda>
+                                    <Celda>{p.metodo ?? '-'}</Celda>
                                     <Celda>{p.tipo}</Celda>
                                     <Celda>
                                         <Estado codigo={p.id_estado} />
@@ -329,8 +346,8 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
 
                     <Bloque titulo="Qué le ha pasado">
                         {movimientos.length === 0 ? (
-                            <p className="apoyo py-4 text-center text-fog">
-                                Sin movimientos registrados.
+                            <p className="apoyo text-fog">
+                                Sin pausas, cambios ni traspasos.
                             </p>
                         ) : (
                             <ol className="space-y-2">
@@ -346,7 +363,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                             ) : null}
                                         </div>
                                         <div className="shrink-0 text-right">
-                                            <p className="apoyo tabular-nums text-fog">{m.cuando ?? '—'}</p>
+                                            <p className="apoyo tabular-nums text-fog">{m.cuando ?? '-'}</p>
                                             {m.quien ? <p className="apoyo text-fog">{m.quien}</p> : null}
                                         </div>
                                     </li>
@@ -354,6 +371,14 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                             </ol>
                         )}
                     </Bloque>
+
+                    {inscripcion.observaciones ? (
+                        <Bloque titulo="Observaciones">
+                            <p className="text-sm whitespace-pre-line text-fog">
+                                {inscripcion.observaciones}
+                            </p>
+                        </Bloque>
+                    ) : null}
                 </div>
             </div>
 

@@ -9,6 +9,7 @@ use App\Models\Especialista;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Support\Ajustes;
+use App\Support\RutinaSugerida;
 use App\Support\WebPublica;
 use App\Services\CorreoService;
 use Illuminate\Http\Request;
@@ -61,6 +62,7 @@ class LandingController extends Controller
         'landing.membresia' => 'Mi membresía',
         'landing.privacidad' => 'Privacidad',
         'landing.terminos' => 'Términos y condiciones',
+        'landing.rutina' => 'Qué entrenar hoy',
     ];
 
     /**
@@ -92,6 +94,9 @@ class LandingController extends Controller
             'logosConvenios' => collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all(),
             'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
             'testimonios' => $this->contenidos('testimonio')->all(),
+            // Solo en la portada: es el único sitio donde salen, y así no se
+            // hace una consulta más en cada página.
+            'embajadores' => $this->embajadoresEnLaWeb($comun['gimnasio']['nombre']),
             'json_ld' => $comun['web']['json_ld'],
         ], $comun);
     }
@@ -160,23 +165,13 @@ class LandingController extends Controller
     public function paginaContacto()
     {
         $comun = $this->comun();
-        $preguntas = $this->contenidos('pregunta')->all();
 
+        // Sin preguntas frecuentes: la lista de acordeones se quito de la pagina
+        // (2026-09-17), y la ficha FAQPage se fue con ella, porque Google no
+        // acepta preguntas que no estan a la vista.
         return $this->pagina('landing.contacto', 'landing.contacto', 'Contacto y horario',
-            "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar, el horario y las preguntas frecuentes. Escríbenos.",
-            [
-                'preguntas' => $preguntas,
-                // Las preguntas en el formato que Google puede mostrar en sus resultados.
-                'json_ld' => $preguntas ? [
-                    '@context' => 'https://schema.org',
-                    '@type' => 'FAQPage',
-                    'mainEntity' => array_map(fn (array $p) => [
-                        '@type' => 'Question',
-                        'name' => $p['titulo'],
-                        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $p['texto']],
-                    ], $preguntas),
-                ] : null,
-            ], $comun);
+            "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar y el horario. Escríbenos.",
+            [], $comun);
     }
 
     public function miMembresia()
@@ -197,6 +192,33 @@ class LandingController extends Controller
      * Los términos y condiciones. Los escribe el gimnasio en Configuración, y
      * son los mismos que acepta cada socio al firmar su contrato.
      */
+    /**
+     * La rutina de la sala: lo que se abre al leer el QR.
+     *
+     * NO PIDE NI GUARDA NADA de quien la mira: ni nombre, ni RUT, ni cuánto
+     * levantó. Las tres respuestas viajan en la dirección y el día en que va lo
+     * recuerda su propio teléfono. Es un cartel de la sala, no una ficha.
+     */
+    public function rutina(Request $request)
+    {
+        $objetivo = (string) $request->query('objetivo', '');
+        $nivel = (string) $request->query('nivel', '');
+        $dias = (int) $request->query('dias', 0);
+        $respondido = RutinaSugerida::respondido($objetivo, $nivel, $dias);
+
+        return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',
+            'Rutinas del gimnasio para empezar, bajar de peso o ganar fuerza, con las máquinas que hay en la sala.',
+            [
+                'objetivos' => \App\Models\Rutina::OBJETIVOS,
+                'niveles' => \App\Models\Rutina::NIVELES,
+                'diasPosibles' => RutinaSugerida::diasPosibles(),
+                'elegido' => ['objetivo' => $objetivo, 'nivel' => $nivel, 'dias' => $dias],
+                'rutina' => $respondido ? RutinaSugerida::buscar($objetivo, $nivel, $dias) : null,
+                'respondido' => $respondido,
+            ],
+            $this->comun());
+    }
+
     public function terminos()
     {
         return $this->pagina('landing.terminos', 'landing.terminos', 'Términos y condiciones',
@@ -764,7 +786,10 @@ class LandingController extends Controller
      */
     private function especialistasEnLaWeb(string $gimnasio): array
     {
+        // Solo los especialistas: los embajadores comparten tabla pero salen en
+        // la portada, no en esta página.
         return Especialista::where('activo', true)
+            ->where('tipo', 'especialista')
             ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
@@ -775,6 +800,34 @@ class LandingController extends Controller
                 'foto' => $e->urlDeFoto(),
                 'whatsapp' => $e->enlaceWhatsapp($gimnasio),
                 'instagram' => $e->enlaceInstagram(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Los embajadores, para la portada.
+     *
+     * Son socios que representan al gimnasio: se enseñan con su foto, su
+     * disciplina y su Instagram, que es donde se les sigue. Sin ninguno cargado
+     * la sección no sale.
+     *
+     * @return list<array<string,?string>>
+     */
+    private function embajadoresEnLaWeb(string $gimnasio): array
+    {
+        return Especialista::where('activo', true)
+            ->where('tipo', 'embajador')
+            ->orderBy('orden')
+            ->orderBy('nombre')
+            ->get()
+            ->map(fn (Especialista $e) => [
+                'nombre' => $e->nombre,
+                'disciplina' => $e->especialidad,
+                'descripcion' => $e->descripcion,
+                'foto' => $e->urlDeFoto(),
+                'instagram' => $e->enlaceInstagram(),
+                'usuario' => $e->instagram,
+                'whatsapp' => $e->enlaceWhatsapp($gimnasio),
             ])
             ->all();
     }

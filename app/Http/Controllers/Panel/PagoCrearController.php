@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Http\Controllers\Traits\VuelveAlSocio;
 use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Services\RegistroPagoService;
@@ -25,6 +26,7 @@ use Inertia\Inertia;
 class PagoCrearController extends Controller
 {
     use ValidatesFormToken;
+    use VuelveAlSocio;
 
     /** Cuántos socios se devuelven por búsqueda. */
     private const RESULTADOS = 15;
@@ -41,6 +43,9 @@ class PagoCrearController extends Controller
              * se escribe.
              */
             'preseleccionada' => $this->preseleccionada($request->query('inscripcion')),
+            // Se cobra desde la ficha del socio, en una ventana: al guardar se
+            // vuelve a esa ficha y no a la pantalla del pago.
+            'volverA' => (string) $request->query('volver', ''),
             'metodosPago' => MetodoPago::where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'requiere_comprobante']),
@@ -113,7 +118,7 @@ class PagoCrearController extends Controller
 
         // Lo que quedó pendiente sale del pago ya escrito, no de lo que se leyó
         // al validar: si entremedio entró otro cobro, el saldo es otro.
-        return redirect()->route('panel.pagos.show', $pago->uuid)->with(
+        return redirect()->to($this->volverA($request, 'panel.pagos.show', $pago->uuid))->with(
             'success',
             (int) $pago->monto_pendiente <= 0
                 ? "Pago registrado. La membresía de {$nombre} queda al día."

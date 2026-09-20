@@ -99,8 +99,8 @@ export default function PorVencer({ dias, inscripciones, sinContacto }) {
                                 <span className="text-warn">Sin contacto</span>
                             )}
                         </Celda>
-                        <Celda>{i.membresia ?? '—'}</Celda>
-                        <Celda className="tabular-nums">{i.vence ?? '—'}</Celda>
+                        <Celda>{i.membresia ?? '-'}</Celda>
+                        <Celda className="tabular-nums">{i.vence ?? '-'}</Celda>
                         <Celda>
                             <Faltan dias={i.dias} />
                         </Celda>

@@ -63,7 +63,7 @@ class ConfiguracionController extends Controller
                 // por los dos: se resuelve aqui para que la fila no decida.
                 'descuento' => $c->descuento_porcentaje > 0
                     ? rtrim(rtrim(number_format((float) $c->descuento_porcentaje, 1, ',', '.'), '0'), ',') . ' %'
-                    : ($c->descuento_monto > 0 ? '$' . number_format((float) $c->descuento_monto, 0, ',', '.') : '—'),
+                    : ($c->descuento_monto > 0 ? '$' . number_format((float) $c->descuento_monto, 0, ',', '.') : '-'),
                 'contacto' => $c->contacto_nombre,
                 'clientes' => $c->clientes_count,
                 'activo' => (bool) $c->activo,
@@ -77,6 +77,7 @@ class ConfiguracionController extends Controller
                 // La pagina publica, para el formulario de editar.
                 'mostrar_en_web' => (bool) $c->mostrar_en_web,
                 'requisito_web' => $c->requisito_web,
+                'canje' => (bool) $c->canje,
                 'logo_url' => $c->urlDeLogo(),
             ]);
 
@@ -129,6 +130,6 @@ class ConfiguracionController extends Controller
             return $membresia->duracion_dias === 1 ? '1 día' : "{$membresia->duracion_dias} días";
         }
 
-        return '—';
+        return '-';
     }
 }

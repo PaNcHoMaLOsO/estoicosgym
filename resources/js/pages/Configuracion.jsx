@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { AlertTriangleIcon, CheckIcon, CopyIcon } from 'lucide-react';
 
@@ -56,16 +56,22 @@ export default function Configuracion({ grupo, extra }) {
                 <EstadoDeTareas tareas={extra.tareas} correoConfigurado={extra.correoConfigurado} />
             ) : null}
 
+            {grupo.clave === 'correo' && extra?.correo ? <CorreoDeSalida correo={extra.correo} /> : null}
+
             {grupo.clave === 'web' && extra ? (
                 <VistaEnGoogle vista={extra.vistaGoogle} descripcion={data['web.descripcion']} />
             ) : null}
 
             <div className="space-y-4">
                 {bloques.map((bloque, i) => (
-                    <section key={bloque.seccion ?? i} className="rounded-panel border border-line bg-surface p-4">
-                        {bloque.seccion ? <h2 className="rotulo mb-3">{bloque.seccion}</h2> : null}
+                    <section key={bloque.seccion ?? i} className="overflow-hidden rounded-panel border border-line bg-surface">
+                        {/* La misma cabecera que las tarjetas de «Lo que falta»: todas las
+                            pantallas de Configuración se leen igual. Y las filas, separadas
+                            por una línea: con solo aire entre ellas, en un tema de quince
+                            ajustes no se sabía qué ayuda era de qué casilla. */}
+                        {bloque.seccion ? <h2 className="rotulo border-b border-line px-4 py-2">{bloque.seccion}</h2> : null}
 
-                        <div className="space-y-3">
+                        <div className="divide-y divide-line [&>*]:px-4 [&>*]:py-3">
                             {bloque.ajustes.map((ajuste) => (
                                 <Ajuste
                                     key={ajuste.clave}
@@ -140,7 +146,10 @@ function useAvisoAlSalir(activo) {
 /** Un ajuste: su etiqueta, su campo y por qué existe. */
 function Ajuste({ ajuste, valor, error, alCambiar }) {
     const texto = String(valor ?? '');
-    const cambiado = texto !== String(ajuste.defecto ?? '');
+    const sinGuardar = texto !== String(ajuste.valor ?? '');
+    // En los secretos el valor siempre llega vacío, así que compararlo con su
+    // defecto diría «sin cambios» aunque haya una contraseña guardada.
+    const cambiado = ajuste.tipo !== 'secreto' && texto !== String(ajuste.defecto ?? '');
     const borde = error ? 'border-danger' : 'border-line focus:border-line-strong';
 
     const comun = {
@@ -155,13 +164,70 @@ function Ajuste({ ajuste, valor, error, alCambiar }) {
 
     return (
         <div className="grid gap-1 sm:grid-cols-[14rem_1fr] sm:items-start sm:gap-4">
-            <label htmlFor={ajuste.clave} className="pt-1.5 text-sm text-chalk">
+            <label htmlFor={ajuste.clave} className="flex items-center gap-1.5 pt-1.5 text-sm text-chalk">
                 {ajuste.etiqueta}
+                {/* Un punto en lo que se cambió y todavía no se guarda. */}
+                {sinGuardar ? <span className="size-1.5 shrink-0 rounded-full bg-warn" title="Cambiado, sin guardar" /> : null}
             </label>
 
             <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                    {ajuste.tipo === 'area' ? (
+                    {ajuste.tipo === 'secreto' ? (
+                        /*
+                         * LA CONTRASEÑA NO SE PINTA, NI SIQUIERA EN PUNTOS.
+                         *
+                         * El servidor no la manda: el campo llega vacío y al
+                         * lado se dice si hay una guardada. Dejarlo en blanco
+                         * conserva la que está; para quitarla hay que escribir
+                         * BORRAR, que no se teclea sin querer.
+                         */
+                        <input
+                            {...comun}
+                            type="password"
+                            autoComplete="new-password"
+                            maxLength={ajuste.largo ?? 255}
+                            placeholder={ajuste.guardado ? 'Hay una guardada: escribe una nueva para cambiarla' : 'Sin contraseña'}
+                            className={`w-full min-w-0 rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:outline-none ${borde}`}
+                        />
+                    ) : ajuste.tipo === 'si_no' ? (
+                        /* Un interruptor y no una casilla: lo que se enciende y
+                           se apaga de golpe —los correos automáticos— tiene que
+                           verse encendido o apagado desde lejos. */
+                        <button
+                            type="button"
+                            role="switch"
+                            id={ajuste.clave}
+                            aria-checked={String(valor) === '1'}
+                            aria-describedby={`${ajuste.clave}-ayuda`}
+                            onClick={() => alCambiar(String(valor) === '1' ? '0' : '1')}
+                            className="inline-flex items-center gap-2 text-sm text-chalk"
+                        >
+                            <span
+                                className={`relative inline-block h-5 w-9 rounded-full transition-colors ${
+                                    String(valor) === '1' ? 'bg-volt' : 'bg-surface-2 ring-1 ring-line-strong'
+                                }`}
+                                aria-hidden="true"
+                            >
+                                <span
+                                    className={`absolute top-0.5 size-4 rounded-full bg-chalk transition-all ${
+                                        String(valor) === '1' ? 'left-[18px]' : 'left-0.5'
+                                    }`}
+                                />
+                            </span>
+                            {String(valor) === '1' ? 'Encendidos' : 'Apagados'}
+                        </button>
+                    ) : ajuste.tipo === 'opciones' ? (
+                        <select
+                            {...comun}
+                            className={`min-w-0 rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:outline-none ${borde}`}
+                        >
+                            {Object.entries(ajuste.opciones ?? {}).map(([valorOpcion, etiqueta]) => (
+                                <option key={valorOpcion} value={valorOpcion}>
+                                    {etiqueta}
+                                </option>
+                            ))}
+                        </select>
+                    ) : ajuste.tipo === 'area' ? (
                         <textarea
                             {...comun}
                             rows={3}
@@ -185,6 +251,12 @@ function Ajuste({ ajuste, valor, error, alCambiar }) {
                     )}
 
                     {ajuste.unidad ? <span className="apoyo shrink-0 text-fog">{ajuste.unidad}</span> : null}
+
+                    {ajuste.tipo === 'secreto' ? (
+                        <span className={`apoyo shrink-0 ${ajuste.guardado ? 'text-ok' : 'text-warn'}`}>
+                            {ajuste.guardado ? 'guardada' : 'sin guardar'}
+                        </span>
+                    ) : null}
 
                     {/* Decir cuál era el valor de fábrica ahorra tener que
                         buscarlo en otra parte para volver atrás. */}
@@ -303,10 +375,105 @@ function EstadoDeTareas({ tareas, correoConfigurado }) {
             )}
 
             <Estado bien={correoConfigurado}>
-                {correoConfigurado
-                    ? 'El correo de salida está configurado.'
-                    : 'El correo de salida no está configurado: los avisos no le llegan a nadie. Lo configura quien instaló el sistema.'}
+                <span>
+                    {correoConfigurado
+                        ? 'El correo de salida está configurado.'
+                        : 'El correo de salida no está configurado: los avisos no le llegan a nadie.'}{' '}
+                    {/* La cuenta se cambia en su propia pantalla: aquí solo se
+                        dice si hay una, y desde dónde llegar a ella. */}
+                    <Link href="/panel/configuracion/correo" className="underline underline-offset-4 hover:text-chalk">
+                        Ver o cambiar la cuenta de correo
+                    </Link>
+                </span>
             </Estado>
+        </section>
+    );
+}
+
+/**
+ * Cómo está el correo de salida, y la prueba que lo confirma.
+ *
+ * «Configurado» solo dice que hay usuario y clave escritos. Que la clave valga,
+ * que el servidor acepte y que el mensaje llegue recién se sabe mandando uno:
+ * por eso el botón de prueba está aquí y no en un manual.
+ *
+ * LAS CLAVES NO SE VEN NI SE ESCRIBEN AQUÍ. Viven en el archivo de
+ * configuración del equipo; esta pantalla la abre cualquiera con permiso de
+ * configuración, y una clave de aplicación a la vista es una cuenta regalada.
+ */
+function CorreoDeSalida({ correo }) {
+    const { data, setData, post, processing, errors } = useForm({ para: '' });
+
+    const VIAS = {
+        smtp: 'el servidor de correo del gimnasio',
+        resend: 'la API de Resend',
+    };
+
+    return (
+        <section className="mb-4 space-y-3 rounded-panel border border-line bg-surface p-4">
+            <h2 className="rotulo">Correo de salida</h2>
+
+            <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[14rem_1fr]">
+                <dt className="text-fog">Sale por</dt>
+                <dd className="text-chalk">
+                    {VIAS[correo.via] ?? correo.via}
+                    <span className="apoyo block text-fog">{correo.via_descripcion}</span>
+                </dd>
+
+                <dt className="text-fog">Si falla, reintenta por</dt>
+                <dd className="text-chalk">
+                    {correo.respaldo ? (VIAS[correo.respaldo] ?? correo.respaldo) : 'nada: se da por perdido'}
+                </dd>
+
+                <dt className="text-fog">Escribe desde</dt>
+                <dd className="text-chalk">
+                    {correo.remitente || 'sin dirección'}
+                    {correo.nombre_remitente ? <span className="apoyo block text-fog">como «{correo.nombre_remitente}»</span> : null}
+                </dd>
+            </dl>
+
+            {/* Elegir una vía sin credenciales dejaría al gimnasio sin avisos:
+                se avisa antes, no cuando un socio no reciba su recordatorio. */}
+            {correo.listas && ! correo.listas.resend ? (
+                <p className="apoyo text-fog">
+                    La API de Resend no tiene clave cargada en este equipo, así que no se puede usar todavía.
+                    La clave se saca en resend.com y la pone quien instaló el sistema, en el archivo de
+                    configuración: por seguridad no se escribe desde aquí.
+                </p>
+            ) : null}
+
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    post('/panel/configuracion/correo/probar', { preserveScroll: true, onSuccess: () => setData('para', '') });
+                }}
+                className="flex flex-wrap items-start gap-2 border-t border-line pt-3"
+            >
+                <div className="min-w-0 flex-1">
+                    <label htmlFor="correo-prueba" className="apoyo block text-fog">
+                        Mandar un correo de prueba a
+                    </label>
+                    <input
+                        id="correo-prueba"
+                        type="email"
+                        value={data.para}
+                        onChange={(e) => setData('para', e.target.value)}
+                        placeholder="tu-correo@gmail.com"
+                        className={`w-full rounded-control border bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:outline-none ${
+                            errors.para ? 'border-danger' : 'border-line focus:border-line-strong'
+                        }`}
+                    />
+                    {errors.para ? <p className="apoyo mt-1 text-danger">{errors.para}</p> : null}
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={processing || ! data.para}
+                    className="mt-[1.15rem] shrink-0 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2 disabled:opacity-50"
+                >
+                    {processing ? 'Mandando…' : 'Mandar prueba'}
+                </button>
+            </form>
         </section>
     );
 }

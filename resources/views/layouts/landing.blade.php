@@ -269,9 +269,9 @@
         /* La sombra de siempre va DENTRO de la animacion: `box-shadow` es una
            sola propiedad, y animarla a secas dejaba los botones planos. */
         @keyframes pulso {
-            0% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 0 var(--color-pulso, #25D366); }
-            70% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 16px transparent; }
-            100% { box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 0 transparent; }
+            0% { box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 0 0 var(--color-pulso, #25D366); }
+            70% { box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 0 10px transparent; }
+            100% { box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 0 0 transparent; }
         }
 
         /* ===== Entradas, scroll y paso entre paginas ===== */

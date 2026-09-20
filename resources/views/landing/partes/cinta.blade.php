@@ -1,7 +1,7 @@
 {{--
     Cinta de logos en movimiento. La lista se repite para llenar el ancho y
     se duplica para que la vuelta no se note. Se detiene al pasar el mouse y
-    se queda quieta —en grilla— si el equipo pide reducir el movimiento.
+    se queda quieta (en grilla) si el equipo pide reducir el movimiento.
 
     Con menos de tres logos no se mueve: el mismo logo pasando una y otra vez
     se ve como un error, no como una cinta.

@@ -82,6 +82,9 @@ export const CAMPOS_PLAN = [
 export const TIPOS_CONVENIO = [
     { valor: 'empresa', etiqueta: 'Empresa' },
     { valor: 'institucion_educativa', etiqueta: 'Institución educativa' },
+    // Los clubes —fútbol, básquetbol— pagan distinto a una empresa y se
+    // buscan aparte: mezclados con «organización» no se encontraban.
+    { valor: 'club_deportivo', etiqueta: 'Club deportivo' },
     { valor: 'organizacion', etiqueta: 'Organización' },
     { valor: 'otro', etiqueta: 'Otro' },
 ];
@@ -113,6 +116,13 @@ export const CAMPOS_CONVENIO = [
     { nombre: 'contacto_nombre', etiqueta: 'Persona de contacto' },
     { nombre: 'contacto_telefono', etiqueta: 'Teléfono' },
     { nombre: 'contacto_email', etiqueta: 'Correo', tipo: 'email' },
+    {
+        nombre: 'canje',
+        etiqueta: 'Canje',
+        tipo: 'si-no',
+        textoCasilla: 'Entran sin pagar (por ejemplo, huéspedes de un hotel con tarjeta)',
+        ayuda: 'Sus entradas se anotan en Mesón → Canje, con nombre y n.º de tarjeta.',
+    },
     {
         nombre: 'mostrar_en_web',
         etiqueta: 'Página web',
@@ -170,6 +180,7 @@ export function valoresDeConvenio(convenio) {
         contacto_telefono: convenio?.contacto_telefono ?? '',
         contacto_email: convenio?.contacto_email ?? '',
         // La pagina publica. El logo solo viaja si se elige uno nuevo.
+        canje: Boolean(convenio?.canje),
         mostrar_en_web: Boolean(convenio?.mostrar_en_web),
         requisito_web: convenio?.requisito_web ?? '',
         logo: null,
@@ -179,13 +190,23 @@ export function valoresDeConvenio(convenio) {
     };
 }
 
+/**
+ * Qué es cada persona, y con eso dónde sale en la web: el especialista en su
+ * página y el embajador en la portada.
+ */
+export const TIPOS_PERSONA = [
+    { valor: 'especialista', etiqueta: 'Especialista (sale en su página)' },
+    { valor: 'embajador', etiqueta: 'Embajador (sale en la portada)' },
+];
+
 export const CAMPOS_ESPECIALISTA = [
+    { nombre: 'tipo', etiqueta: 'Qué es', tipo: 'opciones', opciones: TIPOS_PERSONA, requerido: true },
     { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Camila Rojas' },
     {
         nombre: 'especialidad',
-        etiqueta: 'Especialidad',
+        etiqueta: 'Especialidad o disciplina',
         requerido: true,
-        ejemplo: 'Personal trainer, preparador físico, nutricionista…',
+        ejemplo: 'Nutricionista, personal trainer… o powerlifting, crossfit…',
     },
     {
         nombre: 'descripcion',
@@ -216,6 +237,7 @@ export const CAMPOS_ESPECIALISTA = [
 /** Lo que hay que mandar para guardar un especialista. */
 export function valoresDeEspecialista(especialista) {
     return {
+        tipo: especialista?.tipo ?? 'especialista',
         nombre: especialista?.nombre ?? '',
         especialidad: especialista?.especialidad ?? '',
         descripcion: especialista?.descripcion ?? '',
@@ -297,6 +319,9 @@ function CampoImagen({ campo, data, setData }) {
     );
 }
 
+/** Los campos que caben en media fila cuando la ventana va en dos columnas. */
+const CORTOS = ['number', 'date', 'time', 'opciones', 'email', 'tel', 'password'];
+
 export default function FormularioCatalogo({
     abierto,
     alCerrar,
@@ -346,18 +371,24 @@ export default function FormularioCatalogo({
         (metodo === 'put' ? put : post)(accion, opciones);
     }
 
+    const ancha = campos.length > 6;
+
     return (
         <Dialog open={abierto} onOpenChange={(v) => (! v && ! processing ? alCerrar() : null)}>
-            <DialogContent className="sm:max-w-md">
+            {/* CON MUCHOS CAMPOS, MÁS ANCHA Y EN DOS COLUMNAS. El convenio tiene trece
+                campos: en una ventana angosta eran una tira larguísima con «Guardar»
+                al final del scroll. Lo corto (números, fechas, listas) va de a dos;
+                lo que necesita ancho (nombres, textos, imágenes) ocupa la fila. */}
+            <DialogContent className={ancha ? 'sm:max-w-2xl' : 'sm:max-w-md'}>
                 <DialogHeader>
                     <DialogTitle>{titulo}</DialogTitle>
                     {descripcion ? <DialogDescription>{descripcion}</DialogDescription> : null}
                 </DialogHeader>
 
-                <form onSubmit={enviar} className="space-y-3">
+                <form onSubmit={enviar} className={ancha ? 'grid gap-x-4 gap-y-3 sm:grid-cols-2' : 'space-y-3'}>
                     {campos.map((campo) => (
+                        <div key={campo.nombre} className={ancha && ! CORTOS.includes(campo.tipo) ? 'sm:col-span-2' : ''}>
                         <Campo
-                            key={campo.nombre}
                             etiqueta={campo.etiqueta}
                             nombre={campo.nombre}
                             error={errors[campo.nombre]}
@@ -412,9 +443,11 @@ export default function FormularioCatalogo({
                                 />
                             )}
                         </Campo>
+                        </div>
                     ))}
 
-                    <div className="flex items-center justify-end gap-3 pt-1">
+                    {/* Pegados abajo: en una ventana que se desplaza, «Guardar» no se pierde. */}
+                    <div className="sticky -bottom-4 -mx-4 -mb-4 flex items-center justify-end gap-3 border-t border-line bg-raise px-4 py-3 sm:col-span-2">
                         <button
                             type="button"
                             onClick={alCerrar}

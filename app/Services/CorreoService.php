@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Services\Correo\Transporte;
 use App\Services\Correo\TransporteResend;
 use App\Services\Correo\TransporteSmtp;
+use App\Support\Ajustes;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
@@ -94,16 +95,77 @@ class CorreoService
         return $this->crear($nombre ?? $this->nombrePrincipal())->descripcion();
     }
 
+    /**
+     * Por dónde sale el correo.
+     *
+     * MANDA LO QUE DIGA CONFIGURACIÓN, y si nadie lo eligió, el archivo del
+     * equipo. Elegirlo desde el panel es lo que permite cambiar de vía cuando
+     * Gmail corta los 500 del día, sin tocar archivos ni reiniciar nada.
+     *
+     * Las CLAVES no se eligen aquí: siguen en el archivo del equipo. Por eso
+     * una vía sin credenciales no se usa aunque esté elegida; si no, el panel
+     * podría dejar al gimnasio sin avisos con un clic.
+     */
     public function nombrePrincipal(): string
     {
+        $elegido = $this->elegidoEnConfiguracion('correo.transporte');
+
+        if ($elegido !== '' && $this->tieneCredenciales($elegido)) {
+            return $elegido;
+        }
+
         return (string) config('correo.transporte', 'smtp');
     }
 
     public function nombreRespaldo(): ?string
     {
+        $elegido = $this->elegidoEnConfiguracion('correo.respaldo');
+
+        if ($elegido !== '') {
+            return $this->tieneCredenciales($elegido) ? $elegido : null;
+        }
+
         $nombre = config('correo.respaldo');
 
         return $nombre ? (string) $nombre : null;
+    }
+
+    /**
+     * Lo elegido en Configuración, o vacío si no se puede preguntar.
+     *
+     * El ajuste vive en la base de datos, y esto corre también donde no la hay
+     * —una orden de consola suelta, una prueba—. Si no se puede leer, manda el
+     * archivo del equipo: quedarse sin mandar correos porque no se pudo
+     * consultar una preferencia sería el peor de los dos males.
+     */
+    private function elegidoEnConfiguracion(string $clave): string
+    {
+        return trim($this->deConfiguracion($clave));
+    }
+
+    /** ¿Esa vía tiene con qué conectarse? No dice si la clave sirve. */
+    public function tieneCredenciales(string $nombre): bool
+    {
+        $hay = fn (string $clave, $delArchivo) => trim((string) $this->deConfiguracion($clave)) !== ''
+            || trim((string) $delArchivo) !== '';
+
+        return match ($nombre) {
+            'resend' => $hay('correo.resend_clave', config('correo.resend.key')),
+            'smtp' => $hay('correo.smtp_host', config('mail.mailers.smtp.host'))
+                && $hay('correo.smtp_usuario', config('mail.mailers.smtp.username'))
+                && $hay('correo.smtp_clave', config('mail.mailers.smtp.password')),
+            default => false,
+        };
+    }
+
+    /** Un ajuste del panel, o vacío si aquí no se puede preguntar. */
+    private function deConfiguracion(string $clave): string
+    {
+        try {
+            return (string) Ajustes::obtener($clave);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /**
@@ -158,22 +220,32 @@ class CorreoService
 
     private function crear(string $nombre): Transporte
     {
+        /*
+         * LO QUE DIGA EL PANEL MANDA, y el archivo del equipo queda de
+         * respaldo. Cambiar la cuenta de correo —o renovar la contraseña de
+         * aplicación de Gmail, que caduca— tiene que poder hacerlo quien lleva
+         * el gimnasio, sin entrar al servidor.
+         */
+        $delPanel = fn (string $clave, $siNo) => trim((string) $this->deConfiguracion($clave)) !== ''
+            ? $this->deConfiguracion($clave)
+            : $siNo;
+
         $timeout = (int) config('correo.timeout', 15);
-        $remitente = (string) config('mail.from.address');
-        $nombreRemitente = (string) config('mail.from.name');
+        $remitente = (string) $delPanel('correo.remitente', config('mail.from.address'));
+        $nombreRemitente = (string) $delPanel('correo.nombre_remitente', config('mail.from.name'));
 
         return match ($nombre) {
             'smtp' => new TransporteSmtp(
-                host: (string) config('mail.mailers.smtp.host'),
-                puerto: (int) config('mail.mailers.smtp.port'),
-                usuario: (string) config('mail.mailers.smtp.username'),
-                clave: (string) config('mail.mailers.smtp.password'),
+                host: (string) $delPanel('correo.smtp_host', config('mail.mailers.smtp.host')),
+                puerto: (int) $delPanel('correo.smtp_puerto', config('mail.mailers.smtp.port')),
+                usuario: (string) $delPanel('correo.smtp_usuario', config('mail.mailers.smtp.username')),
+                clave: (string) $delPanel('correo.smtp_clave', config('mail.mailers.smtp.password')),
                 remitente: $remitente,
                 nombreRemitente: $nombreRemitente,
                 timeout: $timeout,
             ),
             'resend' => new TransporteResend(
-                clave: (string) config('correo.resend.key'),
+                clave: (string) $delPanel('correo.resend_clave', config('correo.resend.key')),
                 remitente: $remitente,
                 nombreRemitente: $nombreRemitente,
                 timeout: $timeout,

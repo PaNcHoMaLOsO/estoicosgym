@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\MetodoPago;
+use App\Support\IngresosPorMetodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -85,37 +86,9 @@ class ReporteController extends Controller
             'pagos' => (int) ($totalPorMes[$mes]->cantidad ?? 0),
         ]);
 
-        /*
-         * Un pago MIXTO se reparte entre sus dos métodos. Antes iba entero al
-         * primero: 20.000 en efectivo y 10.000 por transferencia se leían como
-         * 30.000 en efectivo, y la caja no cuadraba con el banco.
-         */
-        $mixto = 'pagos.id_metodo_pago2 IS NOT NULL AND pagos.monto_metodo1 IS NOT NULL';
-
-        $primero = Pago::ingresos()
-            ->whereYear('fecha_pago', $anio)
-            ->selectRaw("pagos.id_metodo_pago as metodo, SUM(CASE WHEN {$mixto} THEN pagos.monto_metodo1 ELSE pagos.monto_abonado END) as total, COUNT(*) as cantidad")
-            ->groupBy('pagos.id_metodo_pago')
-            ->get();
-
-        $segundo = Pago::ingresos()
-            ->whereYear('fecha_pago', $anio)
-            ->whereRaw($mixto)
-            ->selectRaw('pagos.id_metodo_pago2 as metodo, SUM(pagos.monto_abonado - pagos.monto_metodo1) as total, COUNT(*) as cantidad')
-            ->groupBy('pagos.id_metodo_pago2')
-            ->get();
-
-        $nombres = MetodoPago::query()->withoutGlobalScopes()->pluck('nombre', 'id');
-
-        $porMetodo = $primero->concat($segundo)
-            ->groupBy('metodo')
-            ->map(fn ($filas, $metodo) => (object) [
-                'nombre' => $nombres[$metodo] ?? 'Sin método',
-                'total' => (int) $filas->sum('total'),
-                'cantidad' => (int) $filas->sum('cantidad'),
-            ])
-            ->sortByDesc('total')
-            ->values();
+        // El reparto de los pagos mixtos entre sus dos medios vive en
+        // App\Support\IngresosPorMetodo: lo mismo pregunta la Caja por el mes.
+        $porMetodo = IngresosPorMetodo::en(fn ($q) => $q->whereYear('fecha_pago', $anio));
 
         $porMembresia = Pago::ingresos()
             ->selectRaw('membresias.nombre, SUM(pagos.monto_abonado) as total, COUNT(*) as cantidad')
@@ -131,7 +104,7 @@ class ReporteController extends Controller
             'anios' => $this->aniosConMovimiento(),
             'meses' => $meses,
             'total' => (int) $meses->sum('total'),
-            'porMetodo' => $this->comoLista($porMetodo),
+            'porMetodo' => $porMetodo->all(),
             'porMembresia' => $this->comoLista($porMembresia),
         ]);
     }

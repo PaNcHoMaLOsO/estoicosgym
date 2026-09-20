@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Http\Controllers\Traits\VuelveAlSocio;
 use App\Models\Convenio;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
@@ -27,6 +28,7 @@ use Inertia\Inertia;
 class InscripcionRenovarController extends Controller
 {
     use ValidatesFormToken;
+    use VuelveAlSocio;
 
     /**
      * Con demasiado por delante no hay nada que renovar.
@@ -40,7 +42,7 @@ class InscripcionRenovarController extends Controller
         return Ajustes::numero('reglas.dias_para_renovar');
     }
 
-    public function create(Inscripcion $inscripcion)
+    public function create(Request $request, Inscripcion $inscripcion)
     {
         $inscripcion->load(['cliente', 'membresia', 'convenio']);
 
@@ -53,6 +55,9 @@ class InscripcionRenovarController extends Controller
         $socio = $inscripcion->cliente;
 
         return Inertia::render('Inscripciones/Renovar', [
+            // Se renueva desde la ficha del socio, en una ventana: al guardar
+            // se vuelve a esa ficha.
+            'volverA' => (string) $request->query('volver', ''),
             'inscripcion' => [
                 'uuid' => $inscripcion->uuid,
                 'socio' => trim("{$socio->nombres} {$socio->apellido_paterno} {$socio->apellido_materno}"),
@@ -72,7 +77,11 @@ class InscripcionRenovarController extends Controller
                 'empieza_sugerido' => $this->cuandoEmpieza($inscripcion),
             ],
             'membresias' => $this->planesCobrables(),
-            'convenios' => Convenio::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'convenios' => Convenio::where('activo', true)
+                ->orderBy('tipo')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'tipo']),
+            'preciosDeConvenio' => \App\Support\PrecioAcordado::porConvenio(),
             'motivos' => MotivoDescuento::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'metodosPago' => MetodoPago::where('activo', true)
                 ->orderBy('nombre')
@@ -104,7 +113,7 @@ class InscripcionRenovarController extends Controller
             return back()->withInput()->with('error', 'No se pudo renovar. Inténtalo nuevamente.');
         }
 
-        return redirect()->route('panel.inscripciones.show', $nueva->uuid)->with(
+        return redirect()->to($this->volverA($request, 'panel.inscripciones.show', $nueva->uuid))->with(
             'success',
             'Membresía renovada hasta el ' . $nueva->fecha_vencimiento->format('d/m/Y') . '.'
         );
@@ -181,7 +190,8 @@ class InscripcionRenovarController extends Controller
             ->where('fecha_vigencia_desde', '<=', now())
             ->orderByDesc('fecha_vigencia_desde')])
             ->where('activo', true)
-            ->orderBy('nombre')
+            // Del más corto al más largo, como se ofrecen en el mostrador.
+            ->orderByRaw('duracion_meses * 30 + duracion_dias')
             ->get()
             ->map(function (Membresia $m) {
                 $precio = $m->precios->first();

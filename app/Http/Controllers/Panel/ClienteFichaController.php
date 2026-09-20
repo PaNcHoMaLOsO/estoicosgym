@@ -119,6 +119,8 @@ class ClienteFichaController extends Controller
                     'abonado' => $abonado,
                     'pendiente' => max(0, $total - $abonado),
                     'vigente' => (int) $i->id_estado === self::ACTIVA,
+                    // Para decir en la cabecera hasta cuándo está pausada.
+                    'pausada_hasta' => $i->fecha_pausa_fin?->format('d/m/Y'),
                 ];
             }),
 

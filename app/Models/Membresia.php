@@ -86,6 +86,24 @@ class Membresia extends Model
     }
 
     /**
+     * Los planes que son un PASE y no una mensualidad: sin meses y de un día.
+     *
+     * Quien compra un pase está de paso, como el huésped que entra por canje.
+     * Sus pases vencen al día siguiente y, mezclados con las mensualidades,
+     * llenaban «vencidos» y «se fueron sin renovar» de gente que nunca pensó
+     * quedarse. Las listas los muestran aparte con esta misma regla.
+     */
+    public function scopePases($consulta)
+    {
+        return $consulta->where('duracion_meses', 0)->where('duracion_dias', '<=', 1);
+    }
+
+    public function esPase(): bool
+    {
+        return (int) $this->duracion_meses === 0 && (int) $this->duracion_dias <= 1;
+    }
+
+    /**
      * El último día que sirve una membresía de este plan que empieza en $inicio.
      *
      * UNA sola regla para todo lo que crea una membresía —inscribir, renovar,

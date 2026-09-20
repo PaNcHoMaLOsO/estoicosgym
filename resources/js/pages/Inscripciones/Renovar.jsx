@@ -25,10 +25,52 @@ const FORMAS = [
  * mismo o cambia», y para responderla hay que ver el anterior y su precio al
  * lado del nuevo.
  */
-export default function Renovar({ inscripcion, membresias, convenios, motivos, metodosPago, formToken }) {
+/** Cómo se agrupan los convenios en el desplegable, y en qué orden. */
+const GRUPOS_DE_CONVENIO = {
+    institucion_educativa: 'Instituciones educativas',
+    empresa: 'Empresas',
+    club_deportivo: 'Clubes deportivos',
+    organizacion: 'Organizaciones',
+    otro: 'Otros',
+};
+
+/** Las opciones del desplegable de convenios, agrupadas por su tipo. */
+function opcionesDeConvenio(convenios) {
+    return convenios.map((c) => ({
+        valor: String(c.id),
+        etiqueta: c.nombre,
+        grupo: GRUPOS_DE_CONVENIO[c.tipo] ?? 'Otros',
+    }));
+}
+
+/**
+ * El precio que paga ESE convenio por ESE plan.
+ *
+ * Un club deportivo negocia el suyo —10.000, 15.000, 20.000 la mensualidad— y
+ * eso no cabe en el «precio con convenio» del plan, que es uno solo para todos.
+ * Sin trato propio manda ese precio general; sin convenio, el normal. El
+ * servidor aplica la misma regla: aquí solo se enseña.
+ */
+function precioCon(plan, idConvenio, preciosDeConvenio) {
+    if (! plan) {
+        return 0;
+    }
+
+    if (! idConvenio) {
+        return plan.precio;
+    }
+
+    const propio = preciosDeConvenio?.[idConvenio]?.[plan.id];
+
+    return propio ?? (plan.precio_convenio || plan.precio);
+}
+
+export default function Renovar({ inscripcion, membresias, convenios, motivos, metodosPago, formToken, volverA = '', preciosDeConvenio = {} }) {
     const [partes, setPartes] = useState([{ id_metodo_pago: '', monto: '' }]);
 
     const { data, setData, post, processing, errors } = useForm({
+        // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
+        volver: volverA,
         form_submit_token: formToken,
         // Se llega con el mismo plan y el mismo convenio ya puestos: lo normal
         // es renovar igual, y cambiar es la excepcion.
@@ -56,14 +98,12 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
         }
 
         const base = plan.precio;
-        const porConvenio = data.id_convenio && plan.precio_convenio
-            ? Math.max(0, base - plan.precio_convenio)
-            : 0;
+        const porConvenio = Math.max(0, base - precioCon(plan, data.id_convenio, preciosDeConvenio));
         const manual = Number(data.descuento_aplicado) || 0;
         const descuento = Math.min(base, porConvenio + manual);
 
         return { base, porConvenio, manual, descuento, final: Math.max(0, base - descuento) };
-    }, [plan, data.id_convenio, data.descuento_aplicado]);
+    }, [plan, data.id_convenio, data.descuento_aplicado, preciosDeConvenio]);
 
     const total = cuenta?.final ?? 0;
     const sumaPartes = partes.reduce((t, p) => t + (Number(p.monto) || 0), 0);
@@ -124,7 +164,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                     <dl className="apoyo grid grid-cols-2 gap-x-4 gap-y-0.5 text-fog sm:grid-cols-4">
                         <div>
                             <dt className="inline">Plan: </dt>
-                            <dd className="inline text-chalk">{inscripcion.plan ?? '—'}</dd>
+                            <dd className="inline text-chalk">{inscripcion.plan ?? '-'}</dd>
                         </div>
                         <div>
                             <dt className="inline">Pagó: </dt>
@@ -136,7 +176,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                         </div>
                         <div>
                             <dt className="inline">Vence: </dt>
-                            <dd className="inline text-chalk">{inscripcion.vence ?? '—'}</dd>
+                            <dd className="inline text-chalk">{inscripcion.vence ?? '-'}</dd>
                         </div>
                     </dl>
 
@@ -207,7 +247,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                                 nombre="id_convenio"
                                 valor={data.id_convenio}
                                 alCambiar={(v) => setData('id_convenio', v)}
-                                opciones={convenios.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
+                                opciones={opcionesDeConvenio(convenios)}
                                 vacio="Sin convenio"
                             />
                         </Campo>

@@ -1,6 +1,6 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeftIcon, TrashIcon } from 'lucide-react';
+import { ArrowLeftIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
@@ -30,7 +30,47 @@ const FORMAS = [
  * La pantalla vieja era un asistente de tres pasos con la lista COMPLETA de
  * socios dentro y 2.074 lineas de Blade. Aqui el socio se busca.
  */
-export default function Crear({ preseleccionado, membresias, convenios, motivos, metodosPago, formToken }) {
+/** Cómo se agrupan los convenios en el desplegable, y en qué orden. */
+const GRUPOS_DE_CONVENIO = {
+    institucion_educativa: 'Instituciones educativas',
+    empresa: 'Empresas',
+    club_deportivo: 'Clubes deportivos',
+    organizacion: 'Organizaciones',
+    otro: 'Otros',
+};
+
+/** Las opciones del desplegable de convenios, agrupadas por su tipo. */
+function opcionesDeConvenio(convenios) {
+    return convenios.map((c) => ({
+        valor: String(c.id),
+        etiqueta: c.nombre,
+        grupo: GRUPOS_DE_CONVENIO[c.tipo] ?? 'Otros',
+    }));
+}
+
+/**
+ * El precio que paga ESE convenio por ESE plan.
+ *
+ * Un club deportivo negocia el suyo —10.000, 15.000, 20.000 la mensualidad— y
+ * eso no cabe en el «precio con convenio» del plan, que es uno solo para todos.
+ * Sin trato propio manda ese precio general; sin convenio, el normal. El
+ * servidor aplica la misma regla: aquí solo se enseña.
+ */
+function precioCon(plan, idConvenio, preciosDeConvenio) {
+    if (! plan) {
+        return 0;
+    }
+
+    if (! idConvenio) {
+        return plan.precio;
+    }
+
+    const propio = preciosDeConvenio?.[idConvenio]?.[plan.id];
+
+    return propio ?? (plan.precio_convenio || plan.precio);
+}
+
+export default function Crear({ preseleccionado, membresias, convenios, motivos, metodosPago, formToken, volverA = '', preciosDeConvenio = {} }) {
     const [socio, setSocio] = useState(preseleccionado ?? null);
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState(null);
@@ -41,6 +81,8 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
     const [partes, setPartes] = useState([{ id_metodo_pago: '', monto: '' }]);
 
     const { data, setData, post, processing, errors } = useForm({
+        // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
+        volver: volverA,
         form_submit_token: formToken,
         id_cliente: preseleccionado?.id ?? '',
         id_membresia: '',
@@ -107,14 +149,12 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         }
 
         const base = plan.precio;
-        const porConvenio = data.id_convenio && plan.precio_convenio
-            ? Math.max(0, base - plan.precio_convenio)
-            : 0;
+        const porConvenio = Math.max(0, base - precioCon(plan, data.id_convenio, preciosDeConvenio));
         const manual = Number(data.descuento_aplicado) || 0;
         const descuento = Math.min(base, porConvenio + manual);
 
         return { base, porConvenio, manual, descuento, final: Math.max(0, base - descuento) };
-    }, [plan, data.id_convenio, data.descuento_aplicado]);
+    }, [plan, data.id_convenio, data.descuento_aplicado, preciosDeConvenio]);
 
     const total = cuenta?.final ?? 0;
 
@@ -229,9 +269,34 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                 buscando ? (
                                     <p className="apoyo mt-2 text-fog">Buscando…</p>
                                 ) : resultados && resultados.length === 0 ? (
-                                    <p className="apoyo mt-2 text-fog">
-                                        Nadie coincide, o a quien buscas ya tiene una membresía vigente.
-                                    </p>
+                                    /*
+                                     * SI NO ESTÁ, SE LE DA DE ALTA DESDE AQUÍ. Antes esto era un
+                                     * callejón: «nadie coincide», y había que salir a Clientes,
+                                     * crearlo y volver a empezar. El alta de socio ya trae el plan
+                                     * y el pago en la misma pantalla, así que se salta allá con lo
+                                     * que se escribió ya puesto. Va por sessionStorage y no en la
+                                     * dirección: un RUT no tiene por qué quedar en el historial.
+                                     */
+                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line bg-surface-2 px-3 py-2.5">
+                                        <p className="apoyo min-w-0 flex-1 text-fog">
+                                            Nadie coincide, o ya tiene una membresía vigente.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                try {
+                                                    sessionStorage.setItem('alta-desde-busqueda', busqueda.trim());
+                                                } catch {
+                                                    // Sin almacenamiento el alta abre vacía, que es como abría siempre.
+                                                }
+                                                router.visit('/panel/clientes/crear');
+                                            }}
+                                            className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                                        >
+                                            <UserPlusIcon className="size-4" aria-hidden="true" />
+                                            Inscribirlo como socio nuevo
+                                        </button>
+                                    </div>
                                 ) : resultados ? (
                                     <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto rounded-control border border-line">
                                         {resultados.map((c) => (
@@ -321,10 +386,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                         nombre="id_convenio"
                                         valor={data.id_convenio}
                                         alCambiar={(v) => setData('id_convenio', v)}
-                                        opciones={convenios.map((c) => ({
-                                            valor: String(c.id),
-                                            etiqueta: c.nombre,
-                                        }))}
+                                        opciones={opcionesDeConvenio(convenios)}
                                         vacio="Sin convenio"
                                     />
                                 </Campo>

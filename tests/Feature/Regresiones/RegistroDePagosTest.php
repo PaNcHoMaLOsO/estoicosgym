@@ -96,12 +96,16 @@ class RegistroDePagosTest extends CasoConCatalogos
         );
     }
 
-    public function test_un_mixto_sin_dinero_encima_queda_pendiente(): void
+    /**
+     * Un mixto sin dinero no es un mixto: se rechaza. Antes quedaba «pendiente»,
+     * pero para no cobrar nada ya existe «Nada todavía», y aceptar un reparto
+     * vacío era justo lo que dejaba guardar la mitad de un pago sin avisar.
+     */
+    public function test_un_mixto_sin_dinero_encima_se_rechaza(): void
     {
-        $this->assertSame(
-            200,
-            $this->estadoDeUnMixto(precio: 50000, abonado: 0)
-        );
+        $this->expectException(ValidationException::class);
+
+        $this->estadoDeUnMixto(precio: 50000, abonado: 0);
     }
 
     /**
@@ -318,10 +322,17 @@ class RegistroDePagosTest extends CasoConCatalogos
     {
         $servicio = app(\App\Services\RegistroClienteService::class);
 
+        // El mixto llega como sus PARTES, cada una con su medio, no como un
+        // monto suelto: aqui se reparte lo abonado en dos mitades.
+        [$uno, $dos] = MetodoPago::orderBy('id')->take(2)->get()->all();
+        $mitad = intdiv($abonado, 2);
+
         $peticion = \Illuminate\Http\Request::create('/', 'POST', [
             'tipo_pago' => 'mixto',
-            'monto_abonado' => $abonado,
-            'id_metodo_pago' => MetodoPago::first()->id,
+            'detalle_pagos_mixto' => json_encode($abonado > 0 ? [
+                ['id_metodo_pago' => $uno->id, 'monto' => $mitad],
+                ['id_metodo_pago' => $dos->id, 'monto' => $abonado - $mitad],
+            ] : []),
             'fecha_pago' => now()->format('Y-m-d'),
         ]);
 

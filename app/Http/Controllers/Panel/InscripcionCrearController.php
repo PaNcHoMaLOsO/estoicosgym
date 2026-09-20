@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Http\Controllers\Traits\VuelveAlSocio;
 use App\Models\Cliente;
 use App\Models\Convenio;
 use App\Models\Membresia;
@@ -31,10 +32,14 @@ class InscripcionCrearController extends Controller
     private const RESULTADOS = 15;
 
     use ValidatesFormToken;
+    use VuelveAlSocio;
 
     public function create(Request $request)
     {
         return Inertia::render('Inscripciones/Crear', [
+            // Se inscribe desde la ficha del socio, en una ventana: al guardar
+            // se vuelve a esa ficha.
+            'volverA' => (string) $request->query('volver', ''),
             /*
              * NO va la lista de socios.
              *
@@ -46,8 +51,10 @@ class InscripcionCrearController extends Controller
             'preseleccionado' => $this->preseleccionado($request->query('cliente')),
             'membresias' => $this->planesCobrables(),
             'convenios' => Convenio::where('activo', true)
+                ->orderBy('tipo')
                 ->orderBy('nombre')
-                ->get(['id', 'nombre']),
+                ->get(['id', 'nombre', 'tipo']),
+            'preciosDeConvenio' => \App\Support\PrecioAcordado::porConvenio(),
             'motivos' => MotivoDescuento::where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre']),
@@ -118,7 +125,7 @@ class InscripcionCrearController extends Controller
         // cualquiera cuyo nombre no siga la regla. Se habla de la membresia.
         $plan = $resultado['membresia']->nombre;
 
-        return redirect()->route('panel.inscripciones.show', $inscripcion->uuid)->with(
+        return redirect()->to($this->volverA($request, 'panel.inscripciones.show', $inscripcion->uuid))->with(
             'success',
             $resultado['abonos'] === []
                 ? "Membresía {$plan} creada para {$nombre}. El pago queda pendiente de cobro."
@@ -190,7 +197,8 @@ class InscripcionCrearController extends Controller
             ->where('fecha_vigencia_desde', '<=', now())
             ->orderByDesc('fecha_vigencia_desde')])
             ->where('activo', true)
-            ->orderBy('nombre')
+            // Del más corto al más largo, como se ofrecen en el mostrador.
+            ->orderByRaw('duracion_meses * 30 + duracion_dias')
             ->get()
             ->map(function (Membresia $m) {
                 $precio = $m->precios->first();

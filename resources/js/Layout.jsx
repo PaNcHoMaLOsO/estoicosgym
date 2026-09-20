@@ -10,10 +10,12 @@ import {
     MenuIcon,
     MonitorIcon,
     NotebookPenIcon,
+    TicketIcon,
     MoonIcon,
     SettingsIcon,
     SunIcon,
     UsersIcon,
+    WalletIcon,
     XIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -33,6 +35,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { PREFIJOS_CONFIGURACION } from '@/lib/configuracion';
 import { puede } from '@/lib/permisos';
 import { fijarTema, usarPreferenciaDeTema } from '@/lib/tema';
+import BuscadorGlobal from '@/components/BuscadorGlobal';
 import { BotonPrivado, ProveedorPrivado } from '@/Privado';
 
 /**
@@ -45,23 +48,53 @@ import { BotonPrivado, ProveedorPrivado } from '@/Privado';
  */
 const GRUPOS = [
     {
-        titulo: 'Mesón',
+        // Sin rótulo: es la puerta de entrada, no un apartado más. Un título
+        // encima de una sola línea solo gasta espacio.
+        titulo: null,
         secciones: [
             { href: '/panel', etiqueta: 'Resumen', Icono: LayoutDashboardIcon, permiso: 'clientes.ver' },
-            // Arriba del todo: es lo que se abre con el socio delante.
-            { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon, permiso: 'clientes.ver' },
-            { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon, permiso: 'inscripciones.ver' },
-            { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon, permiso: 'pagos.ver' },
-            // Va con el meson y NO con Pagos: lo fiado no es dinero de
-            // membresias y no toca la caja. Ponerlo al lado invitaria a
-            // confundirlos.
-            { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
         ],
     },
     {
-        titulo: 'Seguimiento',
+        // La persona y su plan: lo que se abre con el socio delante.
+        titulo: 'Socios',
         secciones: [
-            { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon, permiso: 'historial.ver' },
+            { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon, permiso: 'clientes.ver' },
+            { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon, permiso: 'inscripciones.ver' },
+            { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon, permiso: 'pagos.ver' },
+        ],
+    },
+    {
+        /*
+         * Lo suelto del día, que no es membresía ni toca la caja: la barra de
+         * proteína que alguien se lleva fiada y el huésped del hotel que entra
+         * con su tarjeta. Aparte de Pagos a propósito: juntarlos invitaría a
+         * confundir esa plata con la de las membresías.
+         */
+        titulo: 'Mostrador',
+        secciones: [
+            { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
+            { href: '/panel/canje', etiqueta: 'Canje', Icono: TicketIcon, permiso: 'clientes.ver' },
+        ],
+    },
+    {
+        // Cómo va el negocio. Recepción no ve ninguna de las dos.
+        titulo: 'Dinero',
+        secciones: [
+            { href: '/panel/caja', etiqueta: 'Caja', Icono: WalletIcon, permiso: 'reportes.ver' },
+            {
+                href: '/panel/reportes',
+                etiqueta: 'Reportes',
+                Icono: ChartNoAxesColumnIcon,
+                permiso: 'reportes.ver',
+            },
+        ],
+    },
+    {
+        // Qué se le mandó a quién y qué tocó cada uno: se mira cuando algo no
+        // cuadra, no todos los días.
+        titulo: 'Avisos',
+        secciones: [
             {
                 href: '/panel/notificaciones',
                 etiqueta: 'Notificaciones',
@@ -71,12 +104,7 @@ const GRUPOS = [
                 // se marca esa, no las dos a la vez.
                 excepto: ['/panel/notificaciones/plantillas'],
             },
-            {
-                href: '/panel/reportes',
-                etiqueta: 'Reportes',
-                Icono: ChartNoAxesColumnIcon,
-                permiso: 'reportes.ver',
-            },
+            { href: '/panel/historial', etiqueta: 'Historial', Icono: HistoryIcon, permiso: 'historial.ver' },
         ],
     },
 ];
@@ -205,8 +233,8 @@ function Arbol({ url, auth, onIr }) {
     return (
         <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-3">
             {grupos.map((grupo) => (
-                <div key={grupo.titulo} className="space-y-0.5">
-                    <p className="rotulo px-3 pb-1">{grupo.titulo}</p>
+                <div key={grupo.titulo ?? grupo.secciones[0].href} className="space-y-0.5">
+                    {grupo.titulo ? <p className="rotulo px-3 pb-1">{grupo.titulo}</p> : null}
                     {grupo.secciones.map((seccion) => (
                         <Enlace key={seccion.href} seccion={seccion} url={url} onIr={onIr} />
                     ))}
@@ -309,10 +337,18 @@ function Aviso({ flash }) {
             : { caja: 'border-info/40 bg-info/5 text-info', glifo: 'i' };
 
     return (
+        /*
+         * FLOTANTE, arriba a la derecha, y no al principio de la pagina. Casi todo
+         * lo que se hace en una lista larga —activar un plan, restaurar algo de la
+         * papelera— conserva el scroll: el aviso salia arriba, fuera de la vista, y
+         * parecia que el boton no habia hecho nada. Lleva fondo macizo debajo del
+         * tinte para que se lea encima de cualquier cosa.
+         */
         <div
             role="status"
-            className={`mb-4 flex items-start justify-between gap-3 rounded-panel border px-3 py-2 text-sm ${tono.caja}`}
+            className="fixed right-3 top-[6.25rem] z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-panel bg-surface shadow-xl sm:w-auto sm:min-w-[18rem] lg:top-4"
         >
+        <div className={`flex items-start justify-between gap-3 rounded-panel border px-3 py-2 text-sm ${tono.caja}`}>
             <span className="flex items-start gap-1.5">
                 {/* Glifo + texto + color, en ese orden: el color solo no basta. */}
                 <span aria-hidden="true" className="font-semibold">
@@ -328,6 +364,7 @@ function Aviso({ flash }) {
             >
                 <XIcon className="size-3.5" aria-hidden="true" />
             </button>
+        </div>
         </div>
     );
 }
@@ -355,6 +392,14 @@ export default function Layout({ children }) {
                             <Marca />
                         </Link>
                     </div>
+
+                    {/* Buscar a un socio desde cualquier pantalla: en el mesón todo
+                        empieza por un nombre, y antes solo se podía desde Resumen. */}
+                    {puede(auth, 'clientes.ver') ? (
+                        <div className="shrink-0 border-b border-line p-2">
+                            <BuscadorGlobal />
+                        </div>
+                    ) : null}
 
                     <Arbol url={url} auth={auth} />
 
@@ -408,6 +453,12 @@ export default function Layout({ children }) {
                         className="max-w-[9rem]"
                     />
                 </header>
+
+                {puede(auth, 'clientes.ver') ? (
+                    <div className="sticky top-12 z-10 border-b border-line bg-surface/95 px-2 py-1.5 backdrop-blur lg:hidden">
+                        <BuscadorGlobal />
+                    </div>
+                ) : null}
 
                 <div className="lg:pl-56">
                     {/* 1600 px: una tabla de nueve columnas no se lee mejor por

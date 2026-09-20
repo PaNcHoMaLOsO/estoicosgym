@@ -56,7 +56,7 @@ class PapeleraController extends Controller
                         ? trim("{$i->cliente->nombres} {$i->cliente->apellido_paterno}")
                         : 'Socio eliminado',
                     'detalle' => trim(($i->membresia?->nombre ?? 'Sin plan')
-                        . ' · vencía ' . ($i->fecha_vencimiento?->format('d/m/Y') ?? '—')),
+                        . ' · vencía ' . ($i->fecha_vencimiento?->format('d/m/Y') ?? '-')),
                 ],
             ],
             'pagos' => [
@@ -69,7 +69,7 @@ class PapeleraController extends Controller
                         ? trim("{$p->cliente->nombres} {$p->cliente->apellido_paterno}")
                         : 'Socio eliminado',
                     'detalle' => '$' . number_format((float) $p->monto_abonado, 0, ',', '.')
-                        . ' · ' . ($p->fecha_pago?->format('d/m/Y') ?? '—'),
+                        . ' · ' . ($p->fecha_pago?->format('d/m/Y') ?? '-'),
                 ],
             ],
             'membresias' => [
@@ -136,6 +136,22 @@ class PapeleraController extends Controller
                     return [
                         'id' => $fila->getKey(),
                         'tipo' => $clave,
+                        /*
+                         * BORRAR SUS DATOS DESDE AQUÍ.
+                         *
+                         * Un socio en la papelera no tiene ficha que abrir: su
+                         * dirección no responde. Sin esto, la única forma de
+                         * atender un «bórrenme mis datos» de alguien ya dado de
+                         * baja era restaurarlo, borrarlo y volver a borrarlo.
+                         *
+                         * Lo que se borra son SUS DATOS —nombre, RUT, contacto,
+                         * foto, correos, contratos—; sus pagos y membresías se
+                         * quedan en las cuentas, sin nombre.
+                         */
+                        'datos_borrables' => $fila instanceof Cliente && ! $fila->datos_borrados_en,
+                        'por_que_no' => $fila instanceof Cliente
+                            ? app(\App\Services\BorradoDeDatosService::class)->porQueNoSePuede($fila)
+                            : null,
                         'que' => $como['que'],
                         'detalle' => $como['detalle'] ?: null,
                         'borrado' => $fila->deleted_at?->format('d/m/Y H:i'),
@@ -179,5 +195,44 @@ class PapeleraController extends Controller
         $como = ($config['describir'])($fila);
 
         return back()->with('success', "«{$como['que']}» vuelve a estar disponible.");
+    }
+
+    /**
+     * Borra los datos personales de un socio que está en la papelera.
+     *
+     * Sus pagos y membresías NO se tocan: siguen en las cuentas a nombre de
+     * «Socio Borrado», porque el gimnasio tiene que poder cuadrar sus ingresos
+     * de años anteriores aunque la persona ya no exista para el sistema.
+     *
+     * Es lo mismo que hace el botón de su ficha, pero aquí llega quien ya fue
+     * dado de baja: su ficha no se puede abrir, y sin esto había que
+     * restaurarlo, borrarle los datos y volver a darlo de baja.
+     */
+    public function borrarDatos(Request $request, string $id, \App\Services\BorradoDeDatosService $borrado)
+    {
+        // Borrar los datos de una persona es cosa de quien puede eliminar
+        // socios, no de cualquiera que entre a la papelera.
+        abort_unless($request->user()?->puede('clientes.eliminar'), 403);
+
+        $request->merge(['confirmacion' => mb_strtoupper(trim((string) $request->input('confirmacion')))]);
+
+        $datos = $request->validate([
+            'motivo' => ['required', \Illuminate\Validation\Rule::in(array_keys(\App\Services\BorradoDeDatosService::MOTIVOS))],
+            'confirmacion' => ['required', 'in:BORRAR'],
+        ], [
+            'motivo.required' => 'Elige por qué se borran.',
+            'confirmacion.required' => 'Escribe BORRAR para confirmar.',
+            'confirmacion.in' => 'Escribe BORRAR para confirmar.',
+        ]);
+
+        $cliente = Cliente::onlyTrashed()->findOrFail($id);
+
+        try {
+            $borrado->borrar($cliente, $request->user()?->id, $datos['motivo']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return back()->with('success', 'Se borraron sus datos personales. Sus membresías y pagos siguen en las cuentas, sin nombre.');
     }
 }

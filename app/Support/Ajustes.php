@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -145,6 +146,142 @@ class Ajustes
             ],
 
             // ---- Lo automático ----
+            /*
+             * EL INTERRUPTOR DE LOS CORREOS AUTOMÁTICOS.
+             *
+             * Apagado, el gimnasio sigue funcionando entero: lo que se corta son
+             * los avisos que el sistema manda SOLO —«tu membresía vence
+             * pronto», «venció»— y los envíos programados. Escribirle a un socio
+             * desde su ficha o mandar un correo a un grupo a mano sigue
+             * andando, porque eso lo decide una persona en ese momento.
+             *
+             * Hace falta un apagado de verdad para estrenar el sistema con datos
+             * reales sin que a nadie le llegue un correo de prueba, y para
+             * cortar en seco si algo sale mal un domingo.
+             */
+            /*
+             * ============ EL CORREO DE SALIDA ============
+             *
+             * La cuenta desde la que escribe el gimnasio, cambiable desde el
+             * panel. Antes vivía solo en un archivo del equipo: cambiar de
+             * correo —o renovar la clave de aplicación de Gmail, que caduca—
+             * obligaba a abrir el servidor, y eso no lo puede hacer quien lleva
+             * el gimnasio.
+             *
+             * LA CLAVE SE GUARDA CIFRADA y NUNCA vuelve al navegador: la
+             * pantalla solo dice si hay una guardada. Dejar el campo vacío
+             * mantiene la que ya estaba; para quitarla del todo se escribe
+             * «BORRAR», que es más difícil de hacer sin querer que un campo que
+             * se vacía al recargar.
+             */
+            'correo.remitente' => [
+                'grupo' => 'correo',
+                'seccion' => 'Desde qué correo se escribe',
+                'etiqueta' => 'Dirección',
+                'ayuda' => 'La que ven los socios en «De:». Con SMTP tiene que ser la misma cuenta que se usa para conectarse, o el servidor rechaza el envío.',
+                'ejemplo' => 'contacto@progym.cl',
+                'tipo' => 'texto',
+                'largo' => 120,
+                'patron' => '/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i',
+                'mensaje' => 'Revisa el correo: le falta la @ o el punto.',
+                // De fábrica, lo que ya está puesto en el equipo: así la
+                // pantalla no arranca vacía haciendo creer que no hay correo.
+                'defecto' => (string) config('mail.from.address', ''),
+            ],
+            'correo.nombre_remitente' => [
+                'grupo' => 'correo',
+                'seccion' => 'Desde qué correo se escribe',
+                'etiqueta' => 'A nombre de',
+                'ayuda' => 'El nombre que aparece antes de la dirección.',
+                'ejemplo' => 'PRO GYM',
+                'tipo' => 'texto',
+                'largo' => 60,
+                'defecto' => (string) config('mail.from.name', ''),
+            ],
+            'correo.transporte' => [
+                'grupo' => 'correo',
+                'seccion' => 'Desde qué correo se escribe',
+                'etiqueta' => 'Por dónde salen',
+                'ayuda' => 'SMTP usa la cuenta de correo del gimnasio (Gmail corta a los 500 diarios). Resend es un servicio aparte y necesita un dominio propio verificado.',
+                'tipo' => 'opciones',
+                'opciones' => [
+                    'smtp' => 'Servidor de correo (SMTP)',
+                    'resend' => 'API de Resend',
+                ],
+                'defecto' => 'smtp',
+            ],
+            'correo.respaldo' => [
+                'grupo' => 'correo',
+                'seccion' => 'Desde qué correo se escribe',
+                'etiqueta' => 'Si falla, reintentar por',
+                'ayuda' => 'Un aviso de vencimiento que no sale es un socio que no renueva. El respaldo solo se usa si el primero falla, nunca si el correo del socio está mal escrito.',
+                'tipo' => 'opciones',
+                'opciones' => [
+                    '' => 'Nada: se da por perdido',
+                    'smtp' => 'Servidor de correo (SMTP)',
+                    'resend' => 'API de Resend',
+                ],
+                'defecto' => '',
+            ],
+
+            'correo.smtp_host' => [
+                'grupo' => 'correo',
+                'seccion' => 'Servidor de correo (SMTP)',
+                'etiqueta' => 'Servidor',
+                'ayuda' => 'Para Gmail: smtp.gmail.com. Para Outlook: smtp.office365.com.',
+                'ejemplo' => 'smtp.gmail.com',
+                'tipo' => 'texto',
+                'largo' => 120,
+                'defecto' => (string) config('mail.mailers.smtp.host', ''),
+            ],
+            'correo.smtp_puerto' => [
+                'grupo' => 'correo',
+                'seccion' => 'Servidor de correo (SMTP)',
+                'etiqueta' => 'Puerto',
+                'ayuda' => '587 con TLS es lo normal. 465 es para SSL.',
+                'tipo' => 'numero',
+                'min' => 1,
+                'max' => 65535,
+                'defecto' => (int) config('mail.mailers.smtp.port', 587),
+            ],
+            'correo.smtp_usuario' => [
+                'grupo' => 'correo',
+                'seccion' => 'Servidor de correo (SMTP)',
+                'etiqueta' => 'Usuario',
+                'ayuda' => 'Casi siempre la dirección de correo completa.',
+                'ejemplo' => 'contacto@progym.cl',
+                'tipo' => 'texto',
+                'largo' => 120,
+                'defecto' => (string) config('mail.mailers.smtp.username', ''),
+            ],
+            'correo.smtp_clave' => [
+                'grupo' => 'correo',
+                'seccion' => 'Servidor de correo (SMTP)',
+                'etiqueta' => 'Contraseña',
+                'ayuda' => 'Con Gmail NO es la contraseña de la cuenta: es una «contraseña de aplicación» de 16 letras, que se saca en la configuración de seguridad de Google con la verificación en dos pasos activada.',
+                'tipo' => 'secreto',
+                'largo' => 255,
+                'defecto' => '',
+            ],
+
+            'correo.resend_clave' => [
+                'grupo' => 'correo',
+                'seccion' => 'API de Resend',
+                'etiqueta' => 'Clave de Resend',
+                'ayuda' => 'Se saca en resend.com/api-keys. El remitente tiene que ser de un dominio verificado ahí: con una dirección @gmail.com, Resend rechaza el envío.',
+                'tipo' => 'secreto',
+                'largo' => 255,
+                'defecto' => '',
+            ],
+
+            'tareas.correos_automaticos' => [
+                'grupo' => 'tareas',
+                'seccion' => 'Correos automáticos',
+                'etiqueta' => 'Mandar correos automáticos',
+                'ayuda' => 'Apagado, el sistema no manda ningún aviso solo. Escribirle a un socio desde su ficha o a un grupo a mano sigue funcionando.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
             'tareas.hora_revision' => [
                 'grupo' => 'tareas',
                 'seccion' => 'A qué hora',
@@ -431,9 +568,13 @@ class Ajustes
                 'titulo' => 'Mesón',
                 'descripcion' => 'Cuándo se marcan las notas y lo fiado que llevan tiempo esperando.',
             ],
+            'correo' => [
+                'titulo' => 'Cuenta de correo',
+                'descripcion' => 'Desde qué cuenta escribe el gimnasio, y por dónde salen los correos. Se cambia aquí, sin tocar el servidor.',
+            ],
             'tareas' => [
-                'titulo' => 'Correos y tareas automáticas',
-                'descripcion' => 'A qué hora corre lo automático y cuántos correos salen de una vez.',
+                'titulo' => 'Avisos automáticos',
+                'descripcion' => 'Qué hace el sistema solo: a qué hora revisa los vencimientos, cuándo manda los avisos y cuántos salen de una vez.',
             ],
             'portada' => [
                 'titulo' => 'Portada y aviso',
@@ -461,7 +602,38 @@ class Ajustes
             return $definicion['defecto'];
         }
 
+        /*
+         * Los secretos se guardan cifrados con la llave de la aplicación: una
+         * contraseña de correo en texto plano en la base es una cuenta
+         * regalada a quien consiga una copia del respaldo.
+         *
+         * Si no se puede descifrar —porque cambió APP_KEY— vale más devolver
+         * vacío que el texto cifrado: con vacío el correo deja de salir y se
+         * ve; con la porquería cifrada, el servidor rechazaría el acceso y
+         * nadie sabría por qué.
+         */
+        if (($definicion['tipo'] ?? null) === 'secreto') {
+            try {
+                return Crypt::decryptString($guardado);
+            } catch (\Throwable) {
+                return $definicion['defecto'];
+            }
+        }
+
         return $definicion['tipo'] === 'numero' ? (int) $guardado : $guardado;
+    }
+
+    /**
+     * Atajo para los de encendido/apagado.
+     *
+     * Solo un «0» apaga. Un ajuste que nunca se guardó vale lo que diga su
+     * valor de fábrica, y para los correos automáticos ese valor es encendido:
+     * un sistema que deja de avisar porque a nadie se le ocurrió encenderlo es
+     * peor que uno que avisa de más.
+     */
+    public static function activo(string $clave): bool
+    {
+        return (string) self::obtener($clave) !== '0';
     }
 
     /** Atajo para los que son números: siempre devuelve un entero usable. */
@@ -486,6 +658,19 @@ class Ajustes
         foreach ($valores as $clave => $valor) {
             if (! isset($conocidos[$clave])) {
                 continue;
+            }
+
+            if (($conocidos[$clave]['tipo'] ?? null) === 'secreto') {
+                $escrito = trim((string) $valor);
+
+                // Vacío = no se tocó: la pantalla nunca recibe la clave
+                // guardada, así que un campo en blanco significa «déjala como
+                // está», no «bórrala». Para quitarla se escribe BORRAR.
+                if ($escrito === '') {
+                    continue;
+                }
+
+                $valor = $escrito === 'BORRAR' ? '' : Crypt::encryptString($escrito);
             }
 
             DB::table('ajustes')->updateOrInsert(

@@ -140,6 +140,20 @@ class Inscripcion extends Model
         return $this->belongsTo(Cliente::class, 'id_cliente');
     }
 
+    /** Solo las mensualidades: sin los pases diarios (ver Membresia::scopePases). */
+    public function scopeSinPases($consulta)
+    {
+        return $consulta->whereHas('membresia', fn ($q) => $q->withTrashed()->where(fn ($q) => $q
+            ->where('duracion_meses', '>', 0)
+            ->orWhere('duracion_dias', '>', 1)));
+    }
+
+    /** Solo los pases diarios. */
+    public function scopeSoloPases($consulta)
+    {
+        return $consulta->whereHas('membresia', fn ($q) => $q->withTrashed()->pases());
+    }
+
     public function membresia()
     {
         return $this->belongsTo(Membresia::class, 'id_membresia');

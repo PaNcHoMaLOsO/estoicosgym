@@ -50,8 +50,8 @@
         <tr><td>RUT o pasaporte</td><td>{{ $rut }}</td></tr>
         <tr><td>En calidad de</td><td>{{ $firmante['tipo'] === 'apoderado' ? 'Apoderado de ' . $socio : 'Socio' }}</td></tr>
         <tr><td>Fecha y hora</td><td>{{ $fecha->format('d/m/Y H:i:s') }} (hora de Chile)</td></tr>
-        <tr><td>Enlace enviado a</td><td>{{ $email ?? '—' }}</td></tr>
-        <tr><td>Conexión</td><td>{{ $ip ?? '—' }}</td></tr>
+        <tr><td>Enlace enviado a</td><td>{{ $email ?? '-' }}</td></tr>
+        <tr><td>Conexión</td><td>{{ $ip ?? '-' }}</td></tr>
     </table>
 
     <img class="cf-trazo" src="{{ $firma }}" alt="Firma de {{ $nombre }}">

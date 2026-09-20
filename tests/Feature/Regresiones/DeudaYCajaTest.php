@@ -50,13 +50,18 @@ class DeudaYCajaTest extends CasoConCatalogos
         return $pago;
     }
 
-    /** Lo que dicen las tres pantallas que muestran «por cobrar». */
+    /**
+     * Lo que dicen las tres pantallas que muestran «por cobrar».
+     *
+     * La primera es la caja: el «por cobrar» salió del resumen junto con el
+     * resto de la plata.
+     */
     private function porCobrarEnPantalla(): array
     {
         $admin = $this->administrador();
 
         return [
-            'resumen' => $this->actingAs($admin)->get('/panel')->viewData('page')['props']['caja']['por_cobrar'],
+            'caja' => $this->actingAs($admin)->get('/panel/caja')->viewData('page')['props']['caja']['por_cobrar'],
             'pagos' => $this->actingAs($admin)->get('/panel/pagos')->viewData('page')['props']['resumen']['por_cobrar'],
             'reportes' => $this->actingAs($admin)->get('/panel/reportes')->viewData('page')['props']['cifras']['por_cobrar'],
         ];
@@ -79,7 +84,7 @@ class DeudaYCajaTest extends CasoConCatalogos
         $this->membresia(50000, estado: 103);     // cancelada: no se sale a cobrar
 
         $this->assertSame(
-            ['resumen' => 40000, 'pagos' => 40000, 'reportes' => 40000],
+            ['caja' => 40000, 'pagos' => 40000, 'reportes' => 40000],
             $this->porCobrarEnPantalla()
         );
     }

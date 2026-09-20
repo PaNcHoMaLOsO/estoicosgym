@@ -200,6 +200,12 @@ class Cliente extends Model
             $celular = substr($celular, 2);
         }
         
+        // Uno extranjero guarda su código de país con el «+» delante: sin él,
+        // 5491123456789 no se lee como teléfono de nadie.
+        if (str_starts_with(trim($value), '+') && strlen($celular) !== 9) {
+            $celular = '+' . $celular;
+        }
+
         // Guardar solo los 9 dígitos
         $this->attributes['celular'] = $celular;
     }

@@ -26,7 +26,7 @@ const FORMAS = [
  * —cuanto se puede abonar, cuanto tienen que sumar los dos metodos— y sin saber
  * de quien hablamos esos campos no significan nada.
  */
-export default function Crear({ preseleccionada, metodosPago, formToken }) {
+export default function Crear({ preseleccionada, metodosPago, formToken, volverA = '' }) {
     // A quién se le cobra. Si se llega desde una ficha, ya viene resuelta.
     const [elegida, setElegida] = useState(preseleccionada ?? null);
     const [busqueda, setBusqueda] = useState('');
@@ -34,6 +34,8 @@ export default function Crear({ preseleccionada, metodosPago, formToken }) {
     const [buscando, setBuscando] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
+        // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
+        volver: volverA,
         form_submit_token: formToken,
         id_inscripcion: preseleccionada?.id ?? '',
         tipo_pago: 'completo',
@@ -148,11 +150,11 @@ export default function Crear({ preseleccionada, metodosPago, formToken }) {
                             <dl className="apoyo mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 text-fog sm:grid-cols-4">
                                 <div>
                                     <dt className="inline">Plan: </dt>
-                                    <dd className="inline text-chalk">{elegida.membresia ?? '—'}</dd>
+                                    <dd className="inline text-chalk">{elegida.membresia ?? '-'}</dd>
                                 </div>
                                 <div>
                                     <dt className="inline">Vence: </dt>
-                                    <dd className="inline text-chalk">{elegida.vence ?? '—'}</dd>
+                                    <dd className="inline text-chalk">{elegida.vence ?? '-'}</dd>
                                 </div>
                                 <div>
                                     <dt className="inline">Pagado: </dt>

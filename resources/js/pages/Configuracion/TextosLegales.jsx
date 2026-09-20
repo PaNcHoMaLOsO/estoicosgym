@@ -107,8 +107,8 @@ export default function TextosLegales({ tipo, tipos, titulo, descripcion, texto,
                 <div className="mb-4 flex items-start gap-2 rounded-panel border border-warn/40 bg-warn/5 px-3 py-2.5 text-sm text-warn">
                     <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                     <span>
-                        Es el texto base que trae el sistema. Léelo y ajústalo a tu gimnasio —idealmente
-                        con un abogado— antes de mandar contratos a firmar. Al guardarlo queda como revisado.
+                        Es el texto base que trae el sistema. Léelo y ajústalo a tu gimnasio, idealmente
+                        con un abogado, antes de mandar contratos a firmar. Al guardarlo queda como revisado.
                     </span>
                 </div>
             ) : null}

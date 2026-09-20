@@ -3,6 +3,7 @@ import { ArrowLeftIcon, BanknoteIcon, PencilIcon, ReceiptTextIcon } from 'lucide
 
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { celularLegible, whatsapp } from '@/lib/contacto';
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -23,7 +24,7 @@ function Dato({ etiqueta, children }) {
     return (
         <div>
             <dt className="rotulo">{etiqueta}</dt>
-            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">—</span>}</dd>
+            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">-</span>}</dd>
         </div>
     );
 }
@@ -114,18 +115,30 @@ export default function Ficha({
                         pago.pendiente > 0 ? 'border-warn/40 bg-warn/5' : 'border-ok/40 bg-ok/5'
                     }`}
                 >
-                    <p className="rotulo">{pago.pendiente > 0 ? 'Quedó debiendo' : 'Sin saldo'}</p>
+                    <p className="rotulo">{pago.pendiente > 0 ? 'Quedó debiendo' : 'Saldo'}</p>
                     <p
                         className={`mt-0.5 text-xl font-semibold tabular-nums ${
                             pago.pendiente > 0 ? 'text-warn' : 'text-ok'
                         }`}
                     >
-                        {pago.pendiente > 0 ? pesos.format(pago.pendiente) : '—'}
+                        {pago.pendiente > 0 ? pesos.format(pago.pendiente) : 'Pagado'}
                     </p>
+                    {/* Un cobro de 5.000 de una membresía de 25.000 que sale
+                        «Pagado» parece un error. No lo es: hubo más cobros. */}
+                    {pago.pendiente <= 0 && otrosPagos.length > 0 ? (
+                        <p className="apoyo mt-0.5 text-fog">entre {otrosPagos.length + 1} cobros</p>
+                    ) : null}
                 </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            {/*
+             * DOS COLUMNAS PAREJAS. La izquierda apilaba cuatro bloques (cómo se
+             * pagó, detalle, socio, observaciones) y la derecha dos: quedaba un
+             * hueco abajo a la derecha. Ahora el pago en sí va a la izquierda en
+             * un solo bloque, y a la derecha a qué membresía corresponde, sus
+             * otros cobros y de quién es.
+             */}
+            <div className="grid items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Cómo se pagó">
                         {metodos.length === 0 ? (
@@ -154,30 +167,13 @@ export default function Ficha({
                                 Este método requiere comprobante y no se registró ninguna referencia.
                             </p>
                         ) : null}
-                    </Bloque>
 
-                    <Bloque titulo="Detalle">
-                        <dl className="space-y-3">
-                            <Dato etiqueta="Referencia">{pago.referencia}</Dato>
+                        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3">
+                            <Dato etiqueta="Comprobante">{pago.referencia}</Dato>
                             <Dato etiqueta="Registrado">{pago.registrado}</Dato>
                             {pago.cuotas > 1 ? <Dato etiqueta="Cuotas">{pago.cuotas}</Dato> : null}
-                            <Dato etiqueta="Periodo cubierto">
-                                {pago.periodo_inicio && pago.periodo_fin
-                                    ? `${pago.periodo_inicio} — ${pago.periodo_fin}`
-                                    : null}
-                            </Dato>
                         </dl>
                     </Bloque>
-
-                    {socio ? (
-                        <Bloque titulo="Socio">
-                            <dl className="space-y-3">
-                                <Dato etiqueta="RUT">{socio.rut}</Dato>
-                                <Dato etiqueta="Correo">{socio.email}</Dato>
-                                <Dato etiqueta="Celular">{socio.celular}</Dato>
-                            </dl>
-                        </Bloque>
-                    ) : null}
 
                     {pago.observaciones ? (
                         <Bloque titulo="Observaciones">
@@ -197,8 +193,13 @@ export default function Ficha({
                                     >
                                         {inscripcion.membresia ?? 'Membresía'}
                                     </Link>
-                                    <p className="apoyo text-fog">
-                                        {inscripcion.inicio} — {inscripcion.vence}
+                                    <p className="apoyo tabular-nums text-fog">
+                                        {inscripcion.inicio} → {inscripcion.vence}
+                                        {pago.periodo_inicio &&
+                                        pago.periodo_fin &&
+                                        (pago.periodo_inicio !== inscripcion.inicio || pago.periodo_fin !== inscripcion.vence)
+                                            ? ` · este pago cubre ${pago.periodo_inicio} → ${pago.periodo_fin}`
+                                            : ''}
                                     </p>
                                 </div>
                                 <Estado codigo={inscripcion.id_estado} />
@@ -207,27 +208,49 @@ export default function Ficha({
                     ) : null}
 
                     <Bloque titulo="Otros cobros de esta membresía">
-                        <Tabla
-                            columnas={['Fecha', 'Método', 'Estado', 'Abonado']}
-                            vacia={otrosPagos.length === 0}
-                            mensajeVacio="Este es el único cobro registrado de esta membresía."
-                        >
-                            {otrosPagos.map((p) => (
-                                <Fila key={p.uuid}>
-                                    <Celda className="tabular-nums text-chalk">
-                                        <Link href={`/panel/pagos/${p.uuid}`} className="hover:underline">
-                                            {p.fecha ?? '—'}
-                                        </Link>
-                                    </Celda>
-                                    <Celda>{p.metodo ?? '—'}</Celda>
-                                    <Celda>
-                                        <Estado codigo={p.id_estado} />
-                                    </Celda>
-                                    <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
-                                </Fila>
-                            ))}
-                        </Tabla>
+                        {otrosPagos.length === 0 ? (
+                            <p className="text-sm text-fog">Este es el único cobro registrado de esta membresía.</p>
+                        ) : (
+                            <Tabla columnas={['Fecha', 'Método', 'Estado', { titulo: 'Abonado', className: 'text-right' }]}>
+                                {otrosPagos.map((p) => (
+                                    <Fila key={p.uuid} href={`/panel/pagos/${p.uuid}`}>
+                                        <Celda className="tabular-nums text-chalk">
+                                            <Link href={`/panel/pagos/${p.uuid}`} className="hover:underline">
+                                                {p.fecha ?? '?'}
+                                            </Link>
+                                        </Celda>
+                                        <Celda>{p.metodo ?? 'Sin medio'}</Celda>
+                                        <Celda>
+                                            <Estado codigo={p.id_estado} />
+                                        </Celda>
+                                        <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
+                                    </Fila>
+                                ))}
+                            </Tabla>
+                        )}
                     </Bloque>
+
+                    {socio ? (
+                        <Bloque titulo="Socio">
+                            <dl className="grid gap-3 sm:grid-cols-3">
+                                <Dato etiqueta="RUT">{socio.rut}</Dato>
+                                <Dato etiqueta="Celular">
+                                    {socio.celular ? (
+                                        <a href={whatsapp(socio.celular)} target="_blank" rel="noopener" className="hover:underline">
+                                            {celularLegible(socio.celular)}
+                                        </a>
+                                    ) : null}
+                                </Dato>
+                                <Dato etiqueta="Correo">
+                                    {socio.email ? (
+                                        <a href={`mailto:${socio.email}`} className="break-all hover:underline">
+                                            {socio.email}
+                                        </a>
+                                    ) : null}
+                                </Dato>
+                            </dl>
+                        </Bloque>
+                    ) : null}
                 </div>
             </div>
         </>

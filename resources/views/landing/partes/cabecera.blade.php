@@ -1,7 +1,7 @@
 {{-- La cabecera de cada pagina: el titulo que se lee primero. --}}
 {{-- Sin la mancha de color borrosa de la esquina: era humo, y es de lo que hace
      que la página se vea hecha con plantilla. --}}
-{{-- `compacta`: para las páginas donde lo que importa viene debajo —los planes—
+{{-- `compacta`: para las páginas donde lo que importa viene debajo (los planes)
      y el título no puede comerse media pantalla del teléfono. --}}
 <section class="pt-20 lg:pt-28 {{ !empty($compacta) ? 'pb-6 lg:pb-8' : 'pb-12' }} bg-pg-negro">
     {{-- Centrado: alineado a la izquierda, en una pantalla ancha dejaba media

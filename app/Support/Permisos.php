@@ -111,6 +111,10 @@ class Permisos
         // cada cuantos dias se avisa de un vencimiento.
         'configuracion' => 'configuracion',
         'resumen' => 'clientes',
+        // La caja —lo que entró, lo que se debe y cómo va el gimnasio— es
+        // plata: la ve quien ve los informes, y recepción no. Por eso salió del
+        // resumen, que es lo primero que abre quien atiende.
+        'caja' => 'reportes',
         // El bloc de notas del meson va con el trabajo de meson: quien
         // atiende apunta lo que hay que hacer hoy.
         'notas' => 'clientes',
@@ -118,6 +122,7 @@ class Permisos
         // con `pagos` a proposito —una bebida de $1.500 no es el dinero de las
         // membresias— ni con `reportes`, que es lo que recepcion no ve.
         'fiados' => 'clientes',
+        'canje' => 'clientes',
         // El contrato firmado por correo es del socio: lo manda y lo mira el mesón.
         'contratos' => 'clientes',
         // Lo que se le hace firmar a todos y se publica en la web lo cambia

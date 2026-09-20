@@ -71,7 +71,7 @@ export default function MotivosDescuento({ motivos }) {
                 {motivos.map((motivo) => (
                     <Fila key={motivo.id}>
                         <Celda className="font-medium text-chalk">{motivo.nombre}</Celda>
-                        <Celda>{motivo.descripcion ?? '—'}</Celda>
+                        <Celda>{motivo.descripcion ?? '-'}</Celda>
                         <Celda>
                             <Activo valor={motivo.activo} />
                         </Celda>

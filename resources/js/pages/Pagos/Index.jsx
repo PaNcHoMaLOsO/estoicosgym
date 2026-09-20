@@ -3,43 +3,68 @@ import { PlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
+import Filtros from '@/components/Filtros';
 import Paginacion from '@/components/Paginacion';
-import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
+import { Cifra as Tarjeta, pesos } from '@/components/Tablero';
+import { Reservado } from '@/Privado';
 
-const COLUMNAS = ['Socio', 'Fecha', 'Método', 'Tipo', 'Estado', 'Total', 'Abonado', 'Pendiente'];
+/*
+ * Cada fila es plata que ENTRÓ: cuándo, de quién, cuánto y por dónde. La
+ * última columna dice cómo quedó la membresía HOY. Antes decía lo que faltaba
+ * el día de ese pago, y un socio que ya había terminado de pagar seguía
+ * saliendo como que debía en sus abonos viejos.
+ */
+const COLUMNAS = [
+    { titulo: 'Fecha', className: 'hidden sm:table-cell' },
+    'Socio',
+    { titulo: 'Pagó', className: 'text-right' },
+    { titulo: 'Medio', className: 'hidden md:table-cell' },
+    { titulo: 'La membresía hoy', className: 'hidden lg:table-cell' },
+];
 
-const pesos = new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-});
+function Membresia({ debe, cobros }) {
+    if (debe === null || debe === undefined) {
+        return <span className="apoyo text-fog">·</span>;
+    }
 
-function Cabecera({ etiqueta, valor, destacada = false }) {
+    if (debe > 0) {
+        return <span className="font-medium tabular-nums text-warn">Debe {pesos.format(debe)}</span>;
+    }
+
+    /*
+     * «Pagada» al lado de un cobro de 5.000 de una membresía de 25.000 parece
+     * un error del sistema. No lo es: hubo más cobros. Decirlo aquí evita la
+     * revisión a mano que ese aparente descuadre obliga a hacer.
+     */
     return (
-        <div
-            className={`rounded-panel border p-3 ${
-                destacada && valor > 0 ? 'border-warn/40 bg-warn/5' : 'border-line bg-surface'
-            }`}
-        >
-            <p className="rotulo">{etiqueta}</p>
-            <p
-                className={`mt-0.5 text-lg font-semibold tabular-nums ${
-                    destacada && valor > 0 ? 'text-warn' : 'text-chalk'
-                }`}
-            >
-                {typeof valor === 'number' && etiqueta !== 'Completados' ? pesos.format(valor) : valor}
-            </p>
-        </div>
+        <span className="text-ok">
+            Pagada
+            {cobros > 1 ? <span className="apoyo block text-fog">entre {cobros} cobros</span> : null}
+        </span>
     );
 }
 
-export default function Index({ pagos, filtros, resumen }) {
+export default function Index({ pagos, filtros, resumen, cantidades }) {
+    const opciones = [
+        { valor: '', etiqueta: 'Todos', cantidad: cantidades.total },
+        { valor: 'hoy', etiqueta: 'Hoy', cantidad: cantidades.hoy },
+        { valor: 'mes', etiqueta: 'Este mes', cantidad: cantidades.mes },
+        { valor: 'abonos', etiqueta: 'Abonos', cantidad: cantidades.abonos, tono: 'warn' },
+        { valor: 'pendientes', etiqueta: 'Sin pagar', cantidad: cantidades.pendientes, tono: 'warn' },
+        // Aparte: la plata de los pases sí está en las cifras de arriba.
+        { valor: 'pases', etiqueta: 'Pases diarios', cantidad: cantidades.pases, aparte: true },
+    ];
+
     return (
         <>
             <Head title="Pagos" />
 
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <h1 className="text-lg font-semibold text-chalk">Pagos</h1>
+                <div>
+                    <h1 className="text-lg font-semibold text-chalk">Pagos</h1>
+                    <p className="apoyo text-fog">Lo que entró, del más reciente al más antiguo</p>
+                </div>
 
                 <Link
                     href="/panel/pagos/cobrar"
@@ -50,16 +75,38 @@ export default function Index({ pagos, filtros, resumen }) {
                 </Link>
             </header>
 
-            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Cabecera etiqueta="Recaudado hoy" valor={resumen.recaudado_hoy} />
-                <Cabecera etiqueta="Recaudado este mes" valor={resumen.recaudado_mes} />
-                {/* La unica cifra accionable de las cuatro. */}
-                <Cabecera etiqueta="Por cobrar" valor={resumen.por_cobrar} destacada />
-                <Cabecera etiqueta="Completados" valor={resumen.completados} />
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                <Tarjeta etiqueta="Entró hoy" valor={<Reservado>{pesos.format(resumen.recaudado_hoy)}</Reservado>} />
+                <Tarjeta etiqueta="Entró este mes" valor={<Reservado>{pesos.format(resumen.recaudado_mes)}</Reservado>} />
+                {/* La única cifra que pide hacer algo. */}
+                <Tarjeta
+                    etiqueta="Por cobrar"
+                    valor={<Reservado>{pesos.format(resumen.por_cobrar)}</Reservado>}
+                    tono="aviso"
+                    siempreTono={resumen.por_cobrar > 0}
+                    pie={
+                        resumen.por_cobrar > 0 ? (
+                            <Link href="/panel/inscripciones?filtro=con_deuda" className="hover:text-chalk hover:underline">
+                                Ver quién debe →
+                            </Link>
+                        ) : undefined
+                    }
+                />
             </div>
 
-            <div className="mb-3 flex flex-wrap gap-2">
-                <Buscador ruta="/panel/pagos" valor={filtros.buscar} etiqueta="Buscar por socio o RUT" />
+            <div className="mb-3 flex flex-col gap-3">
+                <Buscador
+                    ruta="/panel/pagos"
+                    valor={filtros.buscar}
+                    etiqueta="Buscar por socio o RUT"
+                    extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
+                />
+                <Filtros
+                    ruta="/panel/pagos"
+                    actual={filtros.filtro}
+                    opciones={opciones}
+                    extra={filtros.buscar ? { buscar: filtros.buscar } : {}}
+                />
             </div>
 
             <Tabla
@@ -68,27 +115,54 @@ export default function Index({ pagos, filtros, resumen }) {
                 mensajeVacio={
                     filtros.buscar
                         ? `Ningún pago coincide con «${filtros.buscar}».`
-                        : 'Todavía no hay pagos registrados.'
+                        : filtros.filtro
+                          ? 'No hay pagos en este grupo.'
+                          : 'Todavía no hay pagos registrados.'
                 }
             >
                 {pagos.data.map((pago) => (
-                    <Fila key={pago.uuid}>
-                        <Celda className="font-medium text-chalk">
-                            <Link href={`/panel/pagos/${pago.uuid}`} className="hover:underline">
-                                {pago.socio}
-                            </Link>
-                        </Celda>
-                        <Celda className="tabular-nums">{pago.fecha ?? '—'}</Celda>
-                        <Celda>{pago.metodo ?? '—'}</Celda>
-                        <Celda>{pago.tipo}</Celda>
+                    <Fila key={pago.uuid} href={`/panel/pagos/${pago.uuid}`}>
+                        <Celda className="hidden tabular-nums whitespace-nowrap sm:table-cell">{pago.fecha ?? '?'}</Celda>
                         <Celda>
-                            <Estado codigo={pago.id_estado} />
+                            <DosLineas
+                                arriba={
+                                    <Link href={`/panel/pagos/${pago.uuid}`} className="font-medium text-chalk hover:underline">
+                                        {pago.socio}
+                                    </Link>
+                                }
+                                abajo={
+                                    <>
+                                        {/* En celular no hay columna de fecha: va aquí. */}
+                                        <span className="tabular-nums sm:hidden">{pago.fecha} · </span>
+                                        {pago.membresia ?? 'Sin plan'}
+                                    </>
+                                }
+                            />
                         </Celda>
-                        <Cifra>{pesos.format(pago.total)}</Cifra>
-                        <Cifra className="text-chalk">{pesos.format(pago.abonado)}</Cifra>
-                        <Cifra className={pago.pendiente > 0 ? 'font-medium text-warn' : ''}>
-                            {pago.pendiente > 0 ? pesos.format(pago.pendiente) : '—'}
-                        </Cifra>
+                        <Celda className="text-right">
+                            <div className="flex flex-col items-end gap-0.5">
+                                <span className="font-medium tabular-nums text-chalk">
+                                    {pago.abonado > 0 ? pesos.format(pago.abonado) : 'Nada'}
+                                </span>
+                                {/* Solo se dice el precio de la membresía cuando este
+                                    cobro no la cubre entero. Y se dice que es UNA PARTE
+                                    cuando hubo más cobros: «$5.000 de $25.000» a secas se
+                                    lee como que faltan 20.000, aunque ya estén pagados. */}
+                                {pago.abonado < pago.total ? (
+                                    <span className="apoyo tabular-nums text-fog">
+                                        {pago.cobros > 1 ? 'parte de ' : 'de '}
+                                        {pesos.format(pago.total)}
+                                    </span>
+                                ) : null}
+                                <span className="lg:hidden">
+                                    <Estado codigo={pago.id_estado} />
+                                </span>
+                            </div>
+                        </Celda>
+                        <Celda className="hidden md:table-cell">{pago.metodo ?? 'Sin medio'}</Celda>
+                        <Celda className="hidden lg:table-cell">
+                            <Membresia debe={pago.debe_hoy} cobros={pago.cobros} />
+                        </Celda>
                     </Fila>
                 ))}
             </Tabla>

@@ -16,6 +16,7 @@ use App\Services\RegistroClienteService;
 use App\Support\Ajustes;
 use App\Support\TextosLegales;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -48,6 +49,8 @@ class ClienteController extends Controller
          */
         $verBajas = $request->boolean('bajas');
 
+        $filtro = $verBajas ? '' : (string) $request->query('filtro', '');
+
         $clientes = Cliente::query()
             ->where('activo', ! $verBajas)
             // Una ficha con los datos borrados ya no es nadie a quien atender:
@@ -63,9 +66,36 @@ class ClienteController extends Controller
                         ->orWhere('celular', 'like', "%{$busqueda}%");
                 });
             })
-            // Solo la inscripcion mas reciente: es la unica que se pinta en la
-            // fila, y traerlas todas multiplicaba las consultas por socio.
-            ->with(['inscripciones' => fn ($q) => $q->latest('fecha_vencimiento')->with('membresia')->limit(1)])
+            // Sin filtro elegido también se filtra: quien SOLO compró pases
+            // diarios está de paso y va en su propio grupo, no en la lista.
+            // Salvo al BUSCAR: a quien se busca por su nombre hay que encontrarlo.
+            ->when(
+                ! $verBajas && (isset(self::FILTROS[$filtro]) || $busqueda === ''),
+                fn ($q) => $this->filtrar($q, isset(self::FILTROS[$filtro]) ? $filtro : ''),
+            )
+            // La membresía que VALE: la vigente o pausada si hay una, y si no la
+            // última. Con solo «la última», quien renovó por adelantado salía
+            // con la nueva sin empezar y quien tenía una vieja cancelada, con esa.
+            //
+            // Las mensualidades antes que los pases: un socio que además
+            // compró un pase sigue mostrando su plan y no el pase de ayer.
+            ->with(['inscripciones' => fn ($q) => $q
+                ->orderByRaw('id_membresia in (select id from membresias where duracion_meses = 0 and duracion_dias <= 1) asc')
+                ->orderByRaw('id_estado in (100, 101) desc')
+                ->latest('fecha_vencimiento')
+                ->with('membresia')
+                ->limit(1)])
+            ->when(
+                $filtro === 'por_vencer',
+                // Los que vencen antes, primero: es el orden en que se llama.
+                fn ($q) => $q->orderBy(
+                    \App\Models\Inscripcion::select('fecha_vencimiento')
+                        ->whereColumn('inscripciones.id_cliente', 'clientes.id')
+                        ->where('id_estado', 100)
+                        ->orderBy('fecha_vencimiento')
+                        ->limit(1)
+                ),
+            )
             ->orderBy('apellido_paterno')
             ->orderBy('nombres')
             ->paginate(25)
@@ -83,12 +113,20 @@ class ClienteController extends Controller
                     'membresia' => $inscripcion?->membresia?->nombre,
                     'id_estado' => $inscripcion?->id_estado,
                     'vence' => $inscripcion?->fecha_vencimiento?->format('d/m/Y'),
+                    // Un pase no «vence» ni «está vencido»: se usó un día.
+                    'es_pase' => (bool) $inscripcion?->membresia?->esPase(),
+                    'pase_del' => $inscripcion?->fecha_inicio?->format('d/m/Y'),
+                    // Negativo = ya venció. Se calcula aquí para que la fila no
+                    // dependa del reloj del equipo.
+                    'dias' => $inscripcion?->fecha_vencimiento
+                        ? (int) Carbon::today()->diffInDays($inscripcion->fecha_vencimiento, false)
+                        : null,
                 ];
             });
 
         return Inertia::render('Clientes/Index', [
             'clientes' => $clientes,
-            'filtros' => ['buscar' => $busqueda, 'bajas' => $verBajas],
+            'filtros' => ['buscar' => $busqueda, 'bajas' => $verBajas, 'filtro' => $filtro],
             'resumen' => $this->resumen(),
         ]);
     }
@@ -103,9 +141,12 @@ class ClienteController extends Controller
     public function create()
     {
         return Inertia::render('Clientes/Crear', [
+            // Del más corto al más largo, que es como se ofrecen en el
+            // mostrador: el pase suelto, el mes, y de ahí para arriba. Por
+            // nombre salían en orden alfabético, que no significa nada.
             'membresias' => Membresia::where('activo', true)
                 ->with(['precios' => fn ($q) => $q->where('activo', true)])
-                ->orderBy('nombre')
+                ->orderByRaw('duracion_meses * 30 + duracion_dias')
                 ->get()
                 ->map(fn (Membresia $m) => [
                     'id' => $m->id,
@@ -114,7 +155,13 @@ class ClienteController extends Controller
                     'precio' => (int) ($m->precios->first()->precio_normal ?? 0),
                     'precio_convenio' => (int) ($m->precios->first()->precio_convenio ?? 0),
                 ]),
-            'convenios' => Convenio::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
+            'convenios' => Convenio::where('activo', true)
+                ->orderBy('tipo')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'tipo']),
+            // El precio que cada convenio negoció para cada plan: la pantalla
+            // lo necesita para decir el precio mientras se elige.
+            'preciosDeConvenio' => \App\Support\PrecioAcordado::porConvenio(),
             'motivos' => MotivoDescuento::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'metodosPago' => MetodoPago::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             // Mismo token anti-doble-envio que usa el panel Blade.
@@ -163,7 +210,14 @@ class ClienteController extends Controller
             }
         }
 
-        return redirect()->route('panel.clientes.index')
+        // A LA FICHA DEL SOCIO NUEVO, no a la lista. Volver a la lista dejaba
+        // fuera de la vista justo lo que se acababa de hacer —el socio, su plan
+        // y su pago— y para comprobarlo o corregirlo habia que buscarlo otra vez.
+        $destino = $resultado['cliente'] instanceof Cliente
+            ? redirect()->route('panel.clientes.show', $resultado['cliente'])
+            : redirect()->route('panel.clientes.index');
+
+        return $destino
             ->with('success', $mensaje)
             ->with('error', $problema);
     }
@@ -443,17 +497,63 @@ class ClienteController extends Controller
      * Los codigos son los de la tabla estados (100 activa, 101 pausada,
      * 102 vencida); id_estado guarda el CODIGO, no el id de la fila.
      */
+    /** Los filtros de la lista, con lo que cuenta cada uno. */
+    private const FILTROS = [
+        'al_dia' => 'Con plan vigente',
+        'por_vencer' => 'Vencen esta semana',
+        'pausados' => 'Pausados',
+        'vencidos' => 'Vencidos',
+        'sin_plan' => 'Sin plan',
+        'pases' => 'Solo pase diario',
+    ];
+
+    /** Días que cuentan como «vence esta semana». */
+    private const DIAS_POR_VENCER = 7;
+
+    /**
+     * Cada socio cae en UN estado, el de su membresía que vale.
+     *
+     * «Vencido» es quien no tiene ninguna vigente ni pausada. Contar a quien
+     * tuviera alguna vencida metía ahí a todos los que renovaron: renovar deja
+     * la anterior como vencida.
+     */
+    private function filtrar($consulta, string $filtro)
+    {
+        // Solo cuentan las mensualidades: un pase diario vencido no hace a
+        // nadie «vencido», y quien solo compró pases está en su grupo aparte.
+        $mensualidad = fn (array $estados = []) => fn ($q) => $q->sinPases()
+            ->when($estados, fn ($q) => $q->whereIn('id_estado', $estados));
+        $soloPases = fn ($q) => $q->whereHas('inscripciones', fn ($q) => $q->soloPases())
+            ->whereDoesntHave('inscripciones', $mensualidad());
+
+        return match ($filtro) {
+            'al_dia' => $consulta->whereHas('inscripciones', $mensualidad([100])),
+            'por_vencer' => $consulta->whereHas('inscripciones', fn ($q) => $q->sinPases()->where('id_estado', 100)
+                ->whereBetween('fecha_vencimiento', [Carbon::today(), Carbon::today()->addDays(self::DIAS_POR_VENCER)])),
+            'pausados' => $consulta->whereHas('inscripciones', $mensualidad([101]))
+                ->whereDoesntHave('inscripciones', $mensualidad([100])),
+            'vencidos' => $consulta->whereHas('inscripciones', $mensualidad())
+                ->whereDoesntHave('inscripciones', $mensualidad([100, 101])),
+            'sin_plan' => $consulta->whereDoesntHave('inscripciones'),
+            'pases' => $soloPases($consulta),
+            // «Todos» son los socios: todos menos los que solo vinieron por el día.
+            default => $consulta->whereNot(fn ($q) => $soloPases($q)),
+        };
+    }
+
     private function resumen(): array
     {
-        $conEstado = fn (int $codigo) => Cliente::where('activo', true)
-            ->whereHas('inscripciones', fn ($q) => $q->where('id_estado', $codigo))
-            ->count();
+        $activos = fn () => Cliente::where('activo', true)->whereNull('datos_borrados_en');
+        $contar = fn (string $filtro) => $this->filtrar($activos(), $filtro)->count();
 
         return [
-            'total' => Cliente::where('activo', true)->count(),
-            'activos' => $conEstado(100),
-            'pausados' => $conEstado(101),
-            'vencidos' => $conEstado(102),
+            'total' => $contar(''),
+            'activos' => $contar('al_dia'),
+            'por_vencer' => $contar('por_vencer'),
+            'pausados' => $contar('pausados'),
+            'vencidos' => $contar('vencidos'),
+            'sin_plan' => $contar('sin_plan'),
+            'pases' => $contar('pases'),
             // Para poder ofrecer el enlace solo cuando hay alguno.
             'bajas' => Cliente::where('activo', false)->whereNull('datos_borrados_en')->count(),
         ];

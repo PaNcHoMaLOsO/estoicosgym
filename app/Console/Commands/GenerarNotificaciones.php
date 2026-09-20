@@ -172,7 +172,11 @@ class GenerarNotificaciones extends Command
         $contador = 0;
 
         // Buscar inscripciones vencidas (fecha_vencimiento < hoy)
+        // Sin los pases diarios: vencen al día siguiente por diseño, y un
+        // correo de «tu membresía venció» a quien vino a entrenar un día
+        // no tiene sentido.
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
+            ->sinPases()
             ->whereIn('id_estado', [100, 102]) // Activa o Vencida
             ->whereDate('fecha_vencimiento', '<', $hoy)
             ->whereHas('cliente', function($query) {

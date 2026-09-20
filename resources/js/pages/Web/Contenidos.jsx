@@ -109,7 +109,7 @@ const COLUMNAS = {
 
 function recortar(texto, largo = 90) {
     if (! texto) {
-        return '—';
+        return '-';
     }
 
     return texto.length > largo ? `${texto.slice(0, largo)}…` : texto;
@@ -142,8 +142,7 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                     className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                 >
                     <PlusIcon className="size-4" aria-hidden="true" />
-                    Nueva {datos.singular === 'servicio' || datos.singular === 'testimonio' ? '' : ''}
-                    {datos.singular}
+                    {datos.singular === 'servicio' || datos.singular === 'testimonio' ? 'Nuevo' : 'Nueva'} {datos.singular}
                 </button>
             </header>
 
@@ -159,7 +158,7 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                                         className="h-12 w-20 rounded-control border border-line object-cover"
                                     />
                                 ) : (
-                                    '—'
+                                    '-'
                                 )}
                             </Celda>
                         ) : (

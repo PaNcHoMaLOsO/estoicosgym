@@ -4,31 +4,23 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
-use App\Models\Fiado;
 use App\Models\Inscripcion;
+use App\Models\Notificacion;
 use App\Models\Nota;
-use App\Models\Pago;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
- * Pantalla de entrada del panel.
+ * Pantalla de entrada del panel: lo que hay que HACER hoy.
  *
- * EL DINERO SOLO VIAJA A QUIEN PUEDE VERLO. Recepcion no recibe las cifras de
- * caja: no es que se le tapen en pantalla, es que no salen del servidor. Eso es
- * el permiso `reportes.ver`, el mismo que le cierra los informes.
+ * ES PARA QUIEN ATIENDE EL MESÓN. Lleva los atajos a lo que se hace con el
+ * socio delante, las notas del día y las dos listas que piden levantar el
+ * teléfono: a quién le vence esta semana y quién se fue sin renovar.
  *
- * A quien SI puede verlas, la pantalla se las tapa por defecto y las enseña con
- * el ojito de la barra. Eso es otra cosa distinta: en el meson se sienta gente
- * detras de quien atiende, y una cifra de caja la lee cualquiera que pase por
- * ahi. Tapar NO es un permiso —el dato ya esta en la pagina— sino no dejarlo a
- * la vista.
- *
- * Lo demas es lo que se puede HACER hoy: la libreta del meson —las notas y lo
- * fiado—, a quien hay que llamar, quien se fue sin renovar y como va creciendo
- * el gimnasio.
+ * SIN PLATA. La caja del día, lo que se debe, lo fiado y cómo va el gimnasio
+ * están en Caja, que solo abre quien ve los informes. Antes vivían aquí y la
+ * primera pantalla de quien atiende enseñaba las cifras del negocio.
  */
 class ResumenController extends Controller
 {
@@ -36,99 +28,140 @@ class ResumenController extends Controller
     private const PAUSADA = 101;
     private const VENCIDA = 102;
 
-    /** Cuántos meses de historia se pintan en la tendencia. */
-    private const MESES = 6;
+    /** Hasta cuántos días atrás se mira quién se fue sin renovar. */
+    private const DIAS_SIN_RENOVAR = 30;
 
-    public function __invoke(Request $request)
+    /** Cuántos socios se listan en cada lista: lo que cabe sin bajar. */
+    private const EN_LISTA = 8;
+
+    /** Un correo que se intentó y no salió. Código de la categoría `notificacion`. */
+    private const AVISO_FALLIDO = 602;
+
+    /** Hasta cuántos días adelante se mira qué planes están por empezar. */
+    private const DIAS_POR_EMPEZAR = 14;
+
+    public function __invoke()
     {
         $hoy = Carbon::today();
         $enUnaSemana = $hoy->copy()->addDays(7);
 
+        // Todo lo de aquí habla de MENSUALIDADES. Un pase diario vence al día
+        // siguiente: contarlo llenaba «vencen» y «se fueron» de gente de paso.
         $porVencer = Inscripcion::query()
-            ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+            ->sinPases()
             ->where('id_estado', self::ACTIVA)
-            ->whereBetween('fecha_vencimiento', [$hoy, $enUnaSemana])
-            ->orderBy('fecha_vencimiento')
-            ->limit(10)
-            ->get();
+            ->whereBetween('fecha_vencimiento', [$hoy, $enUnaSemana]);
+
+        $sinRenovar = $this->sinRenovar($hoy);
 
         return Inertia::render('Resumen', [
             'cifras' => [
-                'socios' => Cliente::where('activo', true)->count(),
-                'al_dia' => Inscripcion::where('id_estado', self::ACTIVA)->count(),
-                'pausadas' => Inscripcion::where('id_estado', self::PAUSADA)->count(),
-                // Las dos que piden actuar hoy.
-                'vencen_semana' => Inscripcion::where('id_estado', self::ACTIVA)
-                    ->whereBetween('fecha_vencimiento', [$hoy, $enUnaSemana])
+                // Socios son los que tienen o tuvieron una mensualidad, o los
+                // recién dados de alta. Quien solo compró pases no lo es.
+                'socios' => Cliente::where('activo', true)
+                    ->where(fn (Builder $q) => $q
+                        ->whereHas('inscripciones', fn (Builder $q) => $q->sinPases())
+                        ->orWhereDoesntHave('inscripciones'))
                     ->count(),
-                'vencidas' => Inscripcion::where('id_estado', self::VENCIDA)->count(),
+                'al_dia' => Inscripcion::sinPases()->where('id_estado', self::ACTIVA)->count(),
+                'pausadas' => Inscripcion::sinPases()->where('id_estado', self::PAUSADA)->count(),
+                'vencen_semana' => (clone $porVencer)->count(),
+                'sin_renovar' => (clone $sinRenovar)->count(),
+                'dias_sin_renovar' => self::DIAS_SIN_RENOVAR,
             ],
 
-            /*
-             * El dinero SOLO si esta persona puede verlo.
-             *
-             * No se manda y se tapa: no se manda. Recepción no tiene
-             * `reportes.ver` y esta pantalla es lo primero que abre; dejarle la
-             * caja del día aquí le enseñaría por la puerta de atrás justo lo que
-             * el resto del sistema le cierra. El ojito es para OTRA cosa: que no
-             * lo lea quien se sienta detrás de quien sí puede verlo.
-             */
-            'caja' => $request->user()?->puede('reportes.ver')
-                ? $this->caja($hoy)
-                : null,
-
             'notas' => $this->notas(),
-            'fiados' => $this->fiados(),
 
-            'altas' => $this->altasPorMes($hoy),
-            'porPlan' => $this->repartoPorPlan(),
+            /*
+             * LOS AVISOS QUE NO SALIERON. El sistema le escribe al socio cuando
+             * se le acerca el vencimiento; si ese correo falla y nadie se entera,
+             * en el mesón se da por avisado a alguien que no lo fue. Aquí solo se
+             * cuenta: reintentarlos se hace en Notificaciones, y el enlace solo
+             * se le ofrece a quien puede entrar ahí.
+             */
+            'avisosFallidos' => Notificacion::where('id_estado', self::AVISO_FALLIDO)->count(),
 
-            'porVencer' => $porVencer->map(function (Inscripcion $i) use ($hoy) {
-                $cliente = $i->cliente;
+            /*
+             * LOS PLANES QUE EMPIEZAN PRONTO: inscripciones ya hechas cuyo primer
+             * día todavía no llega. Es la persona que aparece el lunes por
+             * primera vez, y conviene saber su nombre antes de que entre.
+             */
+            'porEmpezar' => Inscripcion::query()
+                ->sinPases()
+                ->whereIn('id_estado', [self::ACTIVA, self::PAUSADA])
+                ->whereBetween('fecha_inicio', [$hoy->copy()->addDay(), $hoy->copy()->addDays(self::DIAS_POR_EMPEZAR)])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                ->orderBy('fecha_inicio')
+                ->limit(self::EN_LISTA)
+                ->get()
+                ->map(fn (Inscripcion $i) => [
+                    ...$this->fila($i, (int) $hoy->diffInDays($i->fecha_inicio, false)),
+                    'fecha' => $i->fecha_inicio?->format('d/m/Y'),
+                ])
+                ->all(),
 
-                return [
-                    'uuid' => $i->uuid,
-                    'socio_uuid' => $cliente?->uuid,
-                    'socio' => $cliente
-                        ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
-                        : 'Socio eliminado',
-                    'membresia' => $i->membresia?->nombre,
-                    'vence' => $i->fecha_vencimiento?->format('d/m/Y'),
-                    'dias' => (int) $hoy->diffInDays($i->fecha_vencimiento, false),
-                    // Sin correo ni celular no hay a quien avisar: ese socio hay
-                    // que buscarlo a mano y conviene que se vea desde aqui.
-                    'contacto' => $cliente?->email ?: $cliente?->celular,
-                ];
-            }),
+            'porVencer' => $porVencer
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                ->orderBy('fecha_vencimiento')
+                ->limit(self::EN_LISTA)
+                ->get()
+                ->map(fn (Inscripcion $i) => $this->fila($i, (int) $hoy->diffInDays($i->fecha_vencimiento, false)))
+                ->all(),
+
+            'sinRenovar' => $sinRenovar
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                // El que se fue hace menos, arriba: es al que todavía se le
+                // puede convencer de volver.
+                ->orderByDesc('fecha_vencimiento')
+                ->limit(self::EN_LISTA)
+                ->get()
+                ->map(fn (Inscripcion $i) => $this->fila($i, (int) $i->fecha_vencimiento->copy()->startOfDay()->diffInDays($hoy)))
+                ->all(),
         ]);
     }
 
     /**
-     * Lo que entró y lo que falta por entrar.
+     * Las membresías de socios que se fueron sin renovar, en los últimos días.
      *
-     * Tres cifras y no diez: lo de hoy, lo del mes, y lo que se debe. Es lo que
-     * se mira al abrir; el desglose está en Reportes.
-     *
-     * @return array<string,int>
+     * «SIN RENOVAR» ES QUE EL SOCIO NO TENGA NADA VIGENTE, no que la membresía
+     * esté vencida. Al renovar, la membresía anterior se cierra como vencida:
+     * contando solo el estado, quien renovó salía aquí como que se estaba
+     * yendo, y el número se inflaba justo con los socios que sí se quedaron.
      */
-    private function caja(Carbon $hoy): array
+    private function sinRenovar(Carbon $hoy): Builder
     {
+        return Inscripcion::query()
+            ->sinPases()
+            ->where('id_estado', self::VENCIDA)
+            ->where('fecha_vencimiento', '>=', $hoy->copy()->subDays(self::DIAS_SIN_RENOVAR))
+            // Un pase comprado después no es renovar: sigue sin mensualidad.
+            ->whereDoesntHave('cliente.inscripciones', fn (Builder $q) => $q
+                ->sinPases()
+                ->whereIn('id_estado', [self::ACTIVA, self::PAUSADA]));
+    }
+
+    /**
+     * Una fila de las listas de llamar: quién, qué plan, cuándo y cómo avisarle.
+     *
+     * @return array<string,mixed>
+     */
+    private function fila(Inscripcion $i, int $dias): array
+    {
+        $cliente = $i->cliente;
+
         return [
-            'hoy' => (int) Pago::ingresos()
-                ->whereDate('fecha_pago', $hoy)
-                ->sum('monto_abonado'),
-
-            'mes' => (int) Pago::ingresos()
-                ->whereBetween('fecha_pago', [
-                    $hoy->copy()->startOfMonth(),
-                    $hoy->copy()->endOfMonth(),
-                ])
-                ->sum('monto_abonado'),
-
-            // Lo que los socios deben de sus membresías, contado membresía por
-            // membresía. No incluye lo fiado del mesón, que es otra libreta y
-            // se cuenta aparte.
-            'por_cobrar' => Inscripcion::porCobrar(),
+            'uuid' => $i->uuid,
+            'socio_uuid' => $cliente?->uuid,
+            'socio' => $cliente
+                ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
+                : 'Socio eliminado',
+            'membresia' => $i->membresia?->nombre,
+            'fecha' => $i->fecha_vencimiento?->format('d/m/Y'),
+            'dias' => $dias,
+            // Sin correo ni celular no hay a quién avisar: ese socio hay que
+            // buscarlo a mano y conviene que se vea desde aquí.
+            'celular' => $cliente?->celular,
+            'email' => $cliente?->email,
         ];
     }
 
@@ -155,100 +188,13 @@ class ResumenController extends Controller
                 'autor' => $n->autor?->name,
                 'cuando' => $n->created_at?->format('H:i'),
                 'hecha_por' => $n->quienLaHizo?->name,
-                // Cuantos dias lleva ahi. Las notas NO se borran solas —una
+                // Cuántos días lleva ahí. Las notas NO se borran solas —una
                 // tarea pendiente que desaparece sola es lo peor que puede
                 // pasar—, pero una que lleva una semana sin que nadie la toque
-                // hay que enseñarla distinta para que alguien decida: se hace
-                // o se quita.
+                // se enseña distinta para que alguien decida: se hace o se quita.
                 'dias' => (int) $n->created_at?->startOfDay()->diffInDays(today()),
                 'vieja' => $n->estaVieja(),
             ])
-            ->all();
-    }
-
-    /**
-     * Lo fiado, agrupado POR PERSONA y no línea a línea.
-     *
-     * Lo que se pregunta en el mesón es «¿cuánto debe Juan?», no «¿qué se llevó
-     * el martes?». El detalle va dentro, para cuando alguien discute la cifra.
-     *
-     * @return list<array<string,mixed>>
-     */
-    private function fiados(): array
-    {
-        return Fiado::debiendo()
-            ->with('cliente:id,uuid,nombres,apellido_paterno')
-            ->orderBy('created_at')
-            ->get()
-            ->groupBy(fn (Fiado $f) => $f->claveDeCuenta())
-            ->map(function ($lineas) {
-                $primera = $lineas->first();
-
-                return [
-                    'clave' => $primera->claveDeCuenta(),
-                    'quien' => $primera->aNombreDe(),
-                    'socio_uuid' => $primera->cliente?->uuid,
-                    'id_cliente' => $primera->id_cliente,
-                    'nombre' => $primera->nombre,
-                    'total' => (int) $lineas->sum('monto'),
-                    'desde' => $lineas->min('created_at')?->format('d/m/Y'),
-                    'lineas' => $lineas->map(fn (Fiado $f) => [
-                        'uuid' => $f->uuid,
-                        'concepto' => $f->concepto,
-                        'monto' => $f->monto,
-                        'cuando' => $f->created_at?->format('d/m H:i'),
-                    ])->values()->all(),
-                ];
-            })
-            // El que más debe arriba: es de quien hay que acordarse.
-            ->sortByDesc('total')
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Socios nuevos en cada uno de los últimos meses.
-     *
-     * Se pintan TODOS los meses aunque no haya altas: un hueco en la serie se
-     * lee como «no se midió», y un mes que falta parece un error.
-     */
-    private function altasPorMes(Carbon $hoy): array
-    {
-        /*
-         * Se cuenta mes a mes con un rango de fechas, y NO agrupando por
-         * YEAR(created_at) / MONTH(created_at).
-         *
-         * Esas dos funciones son de MySQL y SQLite no las tiene, asi que la
-         * consulta reventaba con un 500 en cuanto se ejecutaba fuera de
-         * produccion —lo cazaron las pruebas, que corren sobre SQLite—. Con un
-         * whereBetween la consulta vale en los dos motores, y son seis
-         * COUNT diminutos: no compensa complicarlo por eso.
-         */
-        return collect(range(self::MESES - 1, 0))
-            ->map(function (int $atras) use ($hoy) {
-                $mes = $hoy->copy()->subMonths($atras);
-
-                return [
-                    'mes' => $mes->translatedFormat('M'),
-                    'total' => Cliente::whereBetween('created_at', [
-                        $mes->copy()->startOfMonth(),
-                        $mes->copy()->endOfMonth(),
-                    ])->count(),
-                ];
-            })
-            ->all();
-    }
-
-    /** Cuántas membresías al día hay de cada plan. */
-    private function repartoPorPlan(): array
-    {
-        return Inscripcion::query()
-            ->join('membresias', 'inscripciones.id_membresia', '=', 'membresias.id')
-            ->where('inscripciones.id_estado', self::ACTIVA)
-            ->groupBy('membresias.id', 'membresias.nombre')
-            ->orderByDesc(DB::raw('COUNT(*)'))
-            ->get([DB::raw('membresias.nombre as nombre'), DB::raw('COUNT(*) as total')])
-            ->map(fn ($f) => ['nombre' => $f->nombre, 'total' => (int) $f->total])
             ->all();
     }
 }

@@ -221,22 +221,18 @@ class PaginasPublicasTest extends CasoConCatalogos
             ->assertSessionHasErrors('web.whatsapp');
     }
 
-    /** Las preguntas salen en Contacto y en el formato que Google puede mostrar. */
-    public function test_las_preguntas_salen_en_contacto_con_su_ficha(): void
+    /**
+     * Las preguntas frecuentes ya no salen en la web (2026-09-18, decisión del
+     * dueño). Y sin preguntas a la vista tampoco va la ficha FAQPage: Google no
+     * acepta que se le declaren preguntas que el visitante no puede leer.
+     */
+    public function test_las_preguntas_no_salen_en_contacto_ni_su_ficha(): void
     {
         ContenidoWeb::create(['tipo' => 'pregunta', 'titulo' => '¿Necesito llevar candado?', 'texto' => 'Sí, para los casilleros.', 'activo' => true]);
-        ContenidoWeb::create(['tipo' => 'pregunta', 'titulo' => '¿Hay estacionamiento?', 'texto' => 'No.', 'activo' => false]);
 
-        $this->get('/contacto')
-            ->assertOk()
-            ->assertSee('¿Necesito llevar candado?')
-            ->assertDontSee('¿Hay estacionamiento?');
+        $respuesta = $this->get('/contacto')->assertOk()->assertDontSee('¿Necesito llevar candado?');
 
-        $ficha = $this->fichaDe('/contacto');
-
-        $this->assertSame('FAQPage', $ficha['@type']);
-        $this->assertCount(1, $ficha['mainEntity']);
-        $this->assertSame('Sí, para los casilleros.', $ficha['mainEntity'][0]['acceptedAnswer']['text']);
+        $this->assertStringNotContainsString('FAQPage', $respuesta->getContent());
     }
 
     /** Los servicios salen de la base, no escritos en la vista: lo oculto no aparece. */

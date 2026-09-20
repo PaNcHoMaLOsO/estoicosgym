@@ -66,7 +66,22 @@ export function Area({ nombre, error, valor, alCambiar, filas = 3, ...resto }) {
     );
 }
 
+/**
+ * Desplegable. Si las opciones traen `grupo`, se pintan agrupadas.
+ *
+ * Con quince convenios sueltos en orden alfabético hay que leerlos todos para
+ * encontrar el club deportivo; agrupados por tipo se va directo al montón que
+ * corresponde.
+ */
 export function Seleccion({ nombre, error, valor, alCambiar, opciones, vacio = 'Seleccione…' }) {
+    const agrupadas = opciones.some((o) => o.grupo);
+    const grupos = agrupadas
+        ? opciones.reduce((mapa, o) => {
+              (mapa[o.grupo] ??= []).push(o);
+
+              return mapa;
+          }, {})
+        : null;
     return (
         <select
             id={nombre}
@@ -80,11 +95,21 @@ export function Seleccion({ nombre, error, valor, alCambiar, opciones, vacio = '
                 vacia: elegirla dejaria el campo sin valor y no significa nada.
                 Se pide con vacio={null}. */}
             {vacio === null ? null : <option value="">{vacio}</option>}
-            {opciones.map((o) => (
-                <option key={o.valor} value={o.valor}>
-                    {o.etiqueta}
-                </option>
-            ))}
+            {agrupadas
+                ? Object.entries(grupos).map(([grupo, suyas]) => (
+                      <optgroup key={grupo} label={grupo}>
+                          {suyas.map((o) => (
+                              <option key={o.valor} value={o.valor}>
+                                  {o.etiqueta}
+                              </option>
+                          ))}
+                      </optgroup>
+                  ))
+                : opciones.map((o) => (
+                      <option key={o.valor} value={o.valor}>
+                          {o.etiqueta}
+                      </option>
+                  ))}
         </select>
     );
 }

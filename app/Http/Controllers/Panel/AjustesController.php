@@ -44,6 +44,9 @@ class AjustesController extends Controller
             ],
             // Lo que cada tema enseña además de sus campos.
             'extra' => match ($grupo) {
+                'correo' => [
+                    'correo' => $this->estadoDelCorreo(app(\App\Services\CorreoService::class)),
+                ],
                 'tareas' => [
                     'tareas' => Programador::estado(),
                     'correoConfigurado' => EstadoDeConfiguracion::correoConfigurado(),
@@ -79,6 +82,15 @@ class AjustesController extends Controller
                 // Las fechas del aviso: llegan del selector de fecha como AAAA-MM-DD.
                 'fecha' => ['nullable', 'date_format:Y-m-d'],
                 'hora' => ['nullable', 'date_format:H:i'],
+                // Encendido o apagado, nada más: llega como «1» o «0». Va
+                // «nullable» y no «required» porque cada pantalla manda SOLO
+                // sus campos: exigirlo rompía el guardado de todas las demás.
+                'si_no' => ['nullable', 'in:0,1'],
+                // Una de las opciones declaradas y ninguna otra: lo que llega
+                // del navegador no decide por dónde sale el correo.
+                'opciones' => ['nullable', 'string', 'in:' . implode(',', array_keys($definicion['opciones'] ?? []))],
+                // Las claves: vacío significa «deja la que está».
+                'secreto' => ['nullable', 'string', 'max:' . ($definicion['largo'] ?? 255)],
                 'area' => ['nullable', 'string', 'max:' . ($definicion['largo'] ?? 500)],
                 default => ['nullable', 'string', 'max:' . ($definicion['largo'] ?? 255)],
             };
@@ -154,6 +166,63 @@ class AjustesController extends Controller
     }
 
     /**
+     * Cómo está el correo de salida. Sin claves: solo si las hay.
+     *
+     * @return array<string,mixed>
+     */
+    private function estadoDelCorreo(\App\Services\CorreoService $correo): array
+    {
+        $via = $correo->nombrePrincipal();
+        $respaldo = $correo->nombreRespaldo();
+
+        return [
+            'via' => $via,
+            'via_descripcion' => $correo->descripcion($via),
+            'respaldo' => $respaldo,
+            'respaldo_descripcion' => $respaldo ? $correo->descripcion($respaldo) : null,
+            'remitente' => (string) config('mail.from.address'),
+            'nombre_remitente' => (string) config('mail.from.name'),
+            // Qué vías están listas para usarse, para avisar antes de elegir
+            // una que no tiene credenciales y dejar al gimnasio sin avisos.
+            'listas' => [
+                'smtp' => $correo->tieneCredenciales('smtp'),
+                'resend' => $correo->tieneCredenciales('resend'),
+            ],
+        ];
+    }
+
+    /**
+     * Manda un correo de prueba a donde se diga.
+     *
+     * ES LA ÚNICA FORMA DE SABER SI EL CORREO SIRVE. «Configurado» solo dice
+     * que hay usuario y clave escritos; que la clave valga, que el servidor
+     * acepte y que el mensaje llegue recién se sabe mandando uno.
+     */
+    public function probarCorreo(Request $request, \App\Services\CorreoService $correo)
+    {
+        $datos = $request->validate(
+            ['para' => 'required|email:rfc'],
+            ['para.required' => 'Escribe a qué correo mandarlo.', 'para.email' => 'Ese correo no es válido.'],
+        );
+
+        try {
+            $correo->enviar(
+                $datos['para'],
+                'Prueba de correo de ' . (Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM'),
+                '<p>Este es un correo de prueba del panel.</p>'
+                . '<p>Si te llegó, el correo de salida está funcionando: salió por '
+                . e($correo->descripcion()) . '.</p>',
+            );
+        } catch (\Throwable $e) {
+            // El motivo completo, no un «no se pudo»: quien configura el correo
+            // necesita leer qué dijo el servidor para arreglarlo.
+            return back()->with('error', 'No salió: ' . $e->getMessage());
+        }
+
+        return back()->with('success', "Correo de prueba enviado a {$datos['para']}. Si no llega en unos minutos, revisa la carpeta de no deseados.");
+    }
+
+    /**
      * Los ajustes de un tema listos para pintar, con su valor actual.
      *
      * @return list<array<string,mixed>>
@@ -178,7 +247,20 @@ class AjustesController extends Controller
                 'min' => $definicion['min'] ?? null,
                 'max' => $definicion['max'] ?? null,
                 'largo' => $definicion['largo'] ?? null,
-                'valor' => Ajustes::obtener($clave),
+                // Las de elegir entre varias: la pantalla pinta el desplegable.
+                'opciones' => $definicion['opciones'] ?? null,
+                /*
+                 * LA CLAVE NUNCA VUELVE AL NAVEGADOR.
+                 *
+                 * Se manda vacía y aparte se dice SI hay una guardada, para
+                 * poder escribir «Ya hay una contraseña guardada». Mandarla
+                 * para rellenar el campo la dejaría en el HTML de la página,
+                 * a la vista de cualquiera que mire el código fuente.
+                 */
+                'valor' => $definicion['tipo'] === 'secreto' ? '' : Ajustes::obtener($clave),
+                'guardado' => $definicion['tipo'] === 'secreto'
+                    ? trim((string) Ajustes::obtener($clave)) !== ''
+                    : null,
                 // Para poder decir «lo dejaste en 10, por defecto son 3».
                 'defecto' => $definicion['defecto'],
             ];

@@ -4,7 +4,7 @@
 @section('etiqueta', 'Contrato firmado')
 
 @php
-    $fila = fn (string $que, ?string $valor) => ['que' => $que, 'valor' => $valor !== null && $valor !== '' ? $valor : '—'];
+    $fila = fn (string $que, ?string $valor) => ['que' => $que, 'valor' => $valor !== null && $valor !== '' ? $valor : '-'];
     $constancia = [
         $fila('Firmado el', $contrato->firmado_en?->format('d/m/Y \a \l\a\s H:i:s')),
         $fila('Firmó', $contrato->firmante_nombre
@@ -64,7 +64,7 @@
             @endforeach
             <div class="sm:col-span-2">
                 <dt class="text-xs uppercase tracking-wider text-pg-acero">Huella (SHA-256)</dt>
-                <dd class="mt-0.5 break-all font-mono text-xs text-pg-tiza/70">{{ $contrato->huella ?? '—' }}</dd>
+                <dd class="mt-0.5 break-all font-mono text-xs text-pg-tiza/70">{{ $contrato->huella ?? '-' }}</dd>
             </div>
         </dl>
     </section>

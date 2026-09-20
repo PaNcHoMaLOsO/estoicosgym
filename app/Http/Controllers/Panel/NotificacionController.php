@@ -22,12 +22,17 @@ class NotificacionController extends Controller
     public function index(Request $request)
     {
         $busqueda = trim((string) $request->query('buscar', ''));
+        // «Solo las que no salieron»: es a lo que se llega desde el aviso del
+        // Resumen, y lo único de esta pantalla que pide hacer algo.
+        $soloFallidas = $request->query('estado') === 'fallidas';
 
         $notificaciones = Notificacion::query()
             ->with(['cliente', 'tipoNotificacion'])
+            ->when($soloFallidas, fn ($q) => $q->where('id_estado', self::FALLIDA))
+            // Agrupado: sin el paréntesis, el «o el asunto» se saltaba el filtro de fallidas.
             ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->where('email_destino', 'like', "%{$busqueda}%")
-                    ->orWhere('asunto', 'like', "%{$busqueda}%");
+                $q->where(fn ($q) => $q->where('email_destino', 'like', "%{$busqueda}%")
+                    ->orWhere('asunto', 'like', "%{$busqueda}%"));
             })
             ->orderByDesc('created_at')
             ->paginate(25)
@@ -39,7 +44,7 @@ class NotificacionController extends Controller
                     'uuid' => $n->uuid,
                     'socio' => $cliente
                         ? trim("{$cliente->nombres} {$cliente->apellido_paterno}")
-                        : '—',
+                        : '-',
                     'email' => $n->email_destino,
                     'asunto' => $n->asunto,
                     'tipo' => $n->tipoNotificacion?->nombre,
@@ -62,7 +67,7 @@ class NotificacionController extends Controller
 
         return Inertia::render('Notificaciones/Index', [
             'notificaciones' => $notificaciones,
-            'filtros' => ['buscar' => $busqueda],
+            'filtros' => ['buscar' => $busqueda, 'estado' => $soloFallidas ? 'fallidas' : null],
             'resumen' => [
                 'pendientes' => Notificacion::where('id_estado', self::PENDIENTE)->count(),
                 'enviadas' => Notificacion::where('id_estado', self::ENVIADA)->count(),

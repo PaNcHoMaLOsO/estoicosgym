@@ -334,7 +334,7 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                                         )}
                                     </td>
                                     <td className="px-3 py-2 text-fog">{c.concepto}</td>
-                                    <td className="px-3 py-2 tabular-nums text-fog">{c.cuando ?? '—'}</td>
+                                    <td className="px-3 py-2 tabular-nums text-fog">{c.cuando ?? '-'}</td>
                                     <td className="px-3 py-2 text-right tabular-nums text-chalk">
                                         <Reservado ancho="w-14">{pesos.format(c.monto)}</Reservado>
                                     </td>

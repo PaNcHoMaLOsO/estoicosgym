@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\NotificacionService;
+use App\Support\Ajustes;
 use Illuminate\Console\Command;
 
 class EnviarNotificaciones extends Command
@@ -30,6 +31,22 @@ class EnviarNotificaciones extends Command
         $this->info('║       🔔 SISTEMA DE NOTIFICACIONES - ESTOICOS GYM        ║');
         $this->info('╚══════════════════════════════════════════════════════════╝');
         $this->info('');
+
+        /*
+         * EL INTERRUPTOR DE CONFIGURACIÓN MANDA.
+         *
+         * Apagado, esta orden no programa ni envía nada, aunque Windows la
+         * llame a su hora. Es lo que permite estrenar el sistema con socios de
+         * verdad sin que les llegue un correo de prueba, y cortar en seco un
+         * domingo si algo sale mal. Lo que se manda A MANO desde el panel no
+         * pasa por aquí y sigue funcionando.
+         */
+        if (! Ajustes::activo('tareas.correos_automaticos')) {
+            $this->warn('Los correos automáticos están apagados en Configuración, en Avisos automáticos.');
+            $this->line('No se programó ni se envió nada.');
+
+            return self::SUCCESS;
+        }
 
         $todo = $this->option('todo');
         $programar = $this->option('programar') || $todo;

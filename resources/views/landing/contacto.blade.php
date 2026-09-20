@@ -221,31 +221,6 @@
         </section>
 
     @include('landing.partes.horario')
-
-    {{-- ===== PREGUNTAS FRECUENTES: salen de Pagina web -> Preguntas ===== --}}
-    @if(count($preguntas))
-        <section id="preguntas" class="py-9 lg:py-16 bg-pg-negro">
-            <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
-                <div class="text-center mb-5 lg:mb-8 animate-on-scroll">
-                    <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Antes de venir</span>
-                    <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">PREGUNTAS FRECUENTES</h2>
-                </div>
-                {{-- Una lista, no una pila de tarjetas: cada pregunta separada de
-                     la siguiente por una línea. --}}
-                <div class="divide-y divide-pg-tiza/10 border-y border-pg-tiza/10">
-                    @foreach($preguntas as $pregunta)
-                        <details class="animate-on-scroll group py-3.5 lg:py-5">
-                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-modern font-semibold text-pg-tiza">
-                                {{ $pregunta['titulo'] }}
-                                <i class="fas fa-plus text-pg-rojo-claro transition-transform duration-300 group-open:rotate-45" aria-hidden="true"></i>
-                            </summary>
-                            <p class="mt-3 text-pg-tiza/70 font-modern text-sm whitespace-pre-line">{{ $pregunta['texto'] }}</p>
-                        </details>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
 @endsection
 
 @section('scripts')
