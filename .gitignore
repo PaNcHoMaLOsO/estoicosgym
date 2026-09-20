@@ -38,3 +38,7 @@ _ide_helper_models.php
 # Compilado de Vite
 /public/build
 /node_modules
+
+# La aplicación de escritorio trae su propio node_modules y Electron pesa 250 MB.
+/escritorio/node_modules
+/escritorio/dist
