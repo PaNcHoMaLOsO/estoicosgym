@@ -13,7 +13,6 @@ import {
     MailWarningIcon,
 } from 'lucide-react';
 
-import ChatWhatsapp from '@/components/ChatWhatsapp';
 import { ApuntarFiado, Notas } from '@/components/Libreta';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Cifra, Panel, pesos } from '@/components/Tablero';
@@ -259,7 +258,6 @@ export default function Resumen({
     porVencer,
     sinRenovar,
     fiado = { total: 0, personas: 0, cuentas: [] },
-    whatsapp = null,
     porEmpezar = [],
     avisosFallidos = 0,
 }) {
@@ -364,18 +362,6 @@ export default function Resumen({
                     {/* LAS NOTAS, PRIMERO. Es el papel del mesón: lo que hay que
                         acordarse de hacer hoy y lo que dejó dicho el turno anterior. */}
                     <Notas notas={notas} />
-
-                    {/* EL CHAT, AQUÍ MISMO. Escribirle a quien le vence el viernes
-                        se hace desde donde se mira todo el día, no en otra pantalla
-                        a la que hay que acordarse de entrar. */}
-                    {whatsapp ? (
-                        <ChatWhatsapp
-                            conversaciones={whatsapp.conversaciones}
-                            plantillas={whatsapp.plantillas}
-                            esMaqueta={whatsapp.esMaqueta}
-                            compacto
-                        />
-                    ) : null}
 
                     <Fiado fiado={fiado} />
 

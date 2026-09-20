@@ -6,7 +6,6 @@ import {
     CreditCardIcon,
     HistoryIcon,
     LayoutDashboardIcon,
-    MessageCircleIcon,
     LogOutIcon,
     MenuIcon,
     MonitorIcon,
@@ -76,8 +75,6 @@ const GRUPOS = [
         secciones: [
             { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
             { href: '/panel/canje', etiqueta: 'Canje', Icono: TicketIcon, permiso: 'clientes.ver' },
-            // Maqueta mientras se decide por dónde se conecta WhatsApp.
-            { href: '/panel/whatsapp', etiqueta: 'WhatsApp', Icono: MessageCircleIcon, permiso: 'clientes.ver' },
         ],
     },
     {

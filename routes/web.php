@@ -384,10 +384,6 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * Entradas por canje: el huésped del hotel que llega con su tarjeta y
          * no paga. Se anota quién vino; no toca la caja ni las membresías.
          */
-        // El chat con el socio dentro del panel. Por ahora una maqueta: no
-        // manda nada, sirve para decidir por dónde se conecta WhatsApp.
-        Route::get('/whatsapp', \App\Http\Controllers\Panel\WhatsappController::class)->name('whatsapp');
-
         Route::get('/canje', [\App\Http\Controllers\Panel\CanjeController::class, 'index'])->name('canje.index');
         Route::post('/canje', [\App\Http\Controllers\Panel\CanjeController::class, 'store'])->name('canje.store');
         Route::delete('/canje/{entrada}', [\App\Http\Controllers\Panel\CanjeController::class, 'anular'])->name('canje.anular');
