@@ -149,13 +149,13 @@ export default function VentanaWhatsapp() {
               */}
             <div
                 ref={caja}
-                className="relative h-[28rem] border-t border-line bg-surface-2/40"
+                className="relative h-[32rem] border-t border-line bg-surface-2/40"
             >
                 {! abierta ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
                         <MessageCircleIcon className="size-8 text-fog" aria-hidden="true" />
                         <p className="text-sm text-chalk">WhatsApp Web, aquí mismo</p>
-                        <p className="apoyo max-w-xs text-fog">
+                        <p className="apoyo max-w-md text-fog">
                             Se abre en su propia ventana y se coloca justo sobre este recuadro. WhatsApp no permite
                             mostrarse dentro de otra página, así que esta es la forma de tenerlo a la vista sin
                             tocar su seguridad.

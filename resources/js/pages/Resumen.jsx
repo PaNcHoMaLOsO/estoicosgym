@@ -366,10 +366,6 @@ export default function Resumen({
 
                     <Fiado fiado={fiado} />
 
-                    {/* WhatsApp, calzado sobre este recuadro. Va después de las
-                        notas y lo fiado: es para mirar, no para hacer. */}
-                    <VentanaWhatsapp />
-
                     {/* Las tres cifras del gimnasio, al final y en chico: se miran
                         de vez en cuando, no se hace nada con ellas. */}
                     <div className="grid grid-cols-3 gap-2">
@@ -378,6 +374,14 @@ export default function Resumen({
                         <Cifra etiqueta="Pausadas" valor={cifras.pausadas} />
                     </div>
                 </div>
+            </div>
+
+            {/* WHATSAPP, A TODO LO ANCHO. En la columna lateral son 350 píxeles
+                y WhatsApp necesita más del doble para enseñar la lista y la
+                conversación a la vez: quedaba apretado e ilegible. Abajo, porque
+                es para mirar mientras se atiende, no lo primero que se busca. */}
+            <div className="mt-3">
+                <VentanaWhatsapp />
             </div>
 
         </>
