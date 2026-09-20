@@ -1,8 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeftIcon, InfoIcon, MessageCircleIcon, SendIcon } from 'lucide-react';
+import { InfoIcon, MessageCircleIcon, SendIcon } from 'lucide-react';
 
 import Retrato from '@/components/Retrato';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { celularLegible } from '@/lib/contacto';
 
 /**
@@ -85,17 +86,6 @@ export default function ChatWhatsapp({ conversaciones, plantillas, esMaqueta = t
         <>
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
                 <div className="flex min-w-0 items-center gap-2">
-                    {compacto ? (
-                        <button
-                            type="button"
-                            onClick={() => setAbierta(null)}
-                            aria-label="Volver a las conversaciones"
-                            className="rounded-control p-1 text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
-                        >
-                            <ArrowLeftIcon className="size-4" aria-hidden="true" />
-                        </button>
-                    ) : null}
-
                     <div className="min-w-0">
                         <Link
                             href={`/panel/clientes/${conversacion.socio_uuid}`}
@@ -109,17 +99,15 @@ export default function ChatWhatsapp({ conversaciones, plantillas, esMaqueta = t
                     </div>
                 </div>
 
-                {compacto ? null : (
-                    <Link
-                        href={`/panel/clientes/${conversacion.socio_uuid}`}
-                        className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
-                    >
-                        Abrir su ficha
-                    </Link>
-                )}
+                <Link
+                    href={`/panel/clientes/${conversacion.socio_uuid}`}
+                    className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
+                >
+                    Abrir su ficha
+                </Link>
             </header>
 
-            <div className={`flex-1 space-y-2 overflow-y-auto p-3 ${compacto ? 'max-h-64' : ''}`}>
+            <div className="min-h-40 flex-1 space-y-2 overflow-y-auto p-3">
                 {conversacion.mensajes.map((m, i) => (
                     <div key={i} className={`flex ${m.mio ? 'justify-end' : 'justify-start'}`}>
                         <div
@@ -158,7 +146,7 @@ export default function ChatWhatsapp({ conversaciones, plantillas, esMaqueta = t
                 <textarea
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
-                    rows={compacto ? 2 : 2}
+                    rows={2}
                     placeholder="Escribe el mensaje…"
                     className="min-w-0 flex-1 rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
                 />
@@ -169,18 +157,27 @@ export default function ChatWhatsapp({ conversaciones, plantillas, esMaqueta = t
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-control bg-[#25D366] px-3 py-2 text-sm font-medium text-black opacity-50"
                 >
                     <SendIcon className="size-4" aria-hidden="true" />
-                    {compacto ? '' : 'Enviar'}
+                    Enviar
                 </button>
             </form>
         </>
     ) : null;
 
+    /*
+     * EN LA COLUMNA LATERAL NO CABE UN CHAT.
+     *
+     * Con la lista, las burbujas, las plantillas y el cuadro de escribir, el
+     * bloque se comía la columna entera y quedaba todo apretado e ilegible. Lo
+     * que hace falta ahí es solo la pregunta «¿a quién le escribo?»: cuatro
+     * nombres en una línea cada uno. La conversación se abre en una ventana
+     * ancha encima, que es donde sí se puede leer y escribir.
+     */
     if (compacto) {
         return (
-            <section className="flex flex-col overflow-hidden rounded-panel border border-line bg-surface">
-                <div className="flex items-baseline justify-between gap-2 border-b border-line px-3 py-2">
+            <section className="overflow-hidden rounded-panel border border-line bg-surface">
+                <div className="flex items-baseline justify-between gap-2 px-4 pt-3">
                     <h2 className="rotulo">
-                        WhatsApp
+                        A quién escribirle
                         {sinResponder > 0 ? (
                             <span className="ml-2 text-base font-semibold tabular-nums text-warn">{sinResponder}</span>
                         ) : null}
@@ -190,15 +187,45 @@ export default function ChatWhatsapp({ conversaciones, plantillas, esMaqueta = t
                     </Link>
                 </div>
 
-                {aviso}
+                {esMaqueta ? <p className="apoyo px-4 pt-0.5 text-fog">Prueba: todavía no manda mensajes.</p> : null}
 
                 {conversaciones.length === 0 ? (
-                    <p className="apoyo p-3 text-fog">No hay a quién escribirle estos días.</p>
-                ) : conversacion ? (
-                    conversacionAbierta
+                    <p className="apoyo px-4 py-3 text-fog">No hay a quién escribirle estos días.</p>
                 ) : (
-                    lista
+                    <ul className="mt-2 divide-y divide-line border-t border-line">
+                        {conversaciones.slice(0, 4).map((c) => (
+                            <li key={c.id}>
+                                <button
+                                    type="button"
+                                    onClick={() => setAbierta(c.id)}
+                                    className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left transition-colors hover:bg-surface-2"
+                                >
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-sm text-chalk">{c.nombre}</span>
+                                        <span className={`apoyo block truncate ${c.urgente ? 'text-danger' : 'text-warn'}`}>
+                                            {c.motivo}
+                                            {c.sin_responder ? ' · sin responder' : ''}
+                                        </span>
+                                    </span>
+                                    <MessageCircleIcon className="size-4 shrink-0 text-[#25D366]" aria-hidden="true" />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
                 )}
+
+                {/* La conversación, encima y ancha: en 22 cm de columna no se
+                    puede ni leer un mensaje ni escribir otro. */}
+                <Dialog open={conversacion !== null} onOpenChange={(v) => (v ? null : setAbierta(null))}>
+                    <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>{conversacion?.nombre ?? 'Conversación'}</DialogTitle>
+                            <DialogDescription>Mensajes con este socio</DialogDescription>
+                        </DialogHeader>
+
+                        <div className="flex max-h-[80dvh] flex-col">{conversacionAbierta}</div>
+                    </DialogContent>
+                </Dialog>
             </section>
         );
     }
