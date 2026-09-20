@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { ApuntarFiado, Notas } from '@/components/Libreta';
+import VentanaWhatsapp from '@/components/VentanaWhatsapp';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Cifra, Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
@@ -364,6 +365,10 @@ export default function Resumen({
                     <Notas notas={notas} />
 
                     <Fiado fiado={fiado} />
+
+                    {/* WhatsApp, calzado sobre este recuadro. Va después de las
+                        notas y lo fiado: es para mirar, no para hacer. */}
+                    <VentanaWhatsapp />
 
                     {/* Las tres cifras del gimnasio, al final y en chico: se miran
                         de vez en cuando, no se hace nada con ellas. */}
