@@ -123,6 +123,7 @@ class Permisos
         // membresias— ni con `reportes`, que es lo que recepcion no ve.
         'fiados' => 'clientes',
         'canje' => 'clientes',
+        'whatsapp' => 'clientes',
         // El contrato firmado por correo es del socio: lo manda y lo mira el mesón.
         'contratos' => 'clientes',
         // Lo que se le hace firmar a todos y se publica en la web lo cambia

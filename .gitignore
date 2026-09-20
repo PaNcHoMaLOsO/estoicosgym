@@ -38,3 +38,7 @@ _ide_helper_models.php
 # Compilado de Vite
 /public/build
 /node_modules
+
+# La carpeta de la app de escritorio que se descartó: Electron pesa 382 MB y
+# no tiene por qué viajar al repositorio si alguien la vuelve a probar.
+/escritorio/

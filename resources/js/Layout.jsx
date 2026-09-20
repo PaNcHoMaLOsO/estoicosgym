@@ -6,6 +6,7 @@ import {
     CreditCardIcon,
     HistoryIcon,
     LayoutDashboardIcon,
+    MessageCircleIcon,
     LogOutIcon,
     MenuIcon,
     MonitorIcon,
@@ -36,7 +37,6 @@ import { PREFIJOS_CONFIGURACION } from '@/lib/configuracion';
 import { puede } from '@/lib/permisos';
 import { fijarTema, usarPreferenciaDeTema } from '@/lib/tema';
 import BuscadorGlobal from '@/components/BuscadorGlobal';
-import PanelWhatsapp from '@/components/PanelWhatsapp';
 import { BotonPrivado, ProveedorPrivado } from '@/Privado';
 
 /**
@@ -76,6 +76,8 @@ const GRUPOS = [
         secciones: [
             { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
             { href: '/panel/canje', etiqueta: 'Canje', Icono: TicketIcon, permiso: 'clientes.ver' },
+            // Maqueta mientras se decide por dónde se conecta WhatsApp.
+            { href: '/panel/whatsapp', etiqueta: 'WhatsApp', Icono: MessageCircleIcon, permiso: 'clientes.ver' },
         ],
     },
     {
@@ -397,11 +399,8 @@ export default function Layout({ children }) {
                     {/* Buscar a un socio desde cualquier pantalla: en el mesón todo
                         empieza por un nombre, y antes solo se podía desde Resumen. */}
                     {puede(auth, 'clientes.ver') ? (
-                        <div className="shrink-0 space-y-2 border-b border-line p-2">
+                        <div className="shrink-0 border-b border-line p-2">
                             <BuscadorGlobal />
-                            {/* WhatsApp a mano desde cualquier pantalla: se abre
-                                en su propia ventana y se deja al lado del panel. */}
-                            <PanelWhatsapp className="w-full justify-center" />
                         </div>
                     ) : null}
 
