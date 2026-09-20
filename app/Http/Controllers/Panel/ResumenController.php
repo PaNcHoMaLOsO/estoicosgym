@@ -88,6 +88,19 @@ class ResumenController extends Controller
             'fiado' => $this->fiado(),
 
             /*
+             * EL CHAT, EN LA COLUMNA LATERAL. Por ahora una maqueta.
+             *
+             * Es donde se mira todo el día: escribirle a quien le vence el
+             * viernes tiene que estar aquí, no en otra pantalla a la que hay
+             * que acordarse de entrar.
+             */
+            'whatsapp' => [
+                'conversaciones' => \App\Support\ChatDeWhatsapp::conversaciones(),
+                'plantillas' => \App\Support\ChatDeWhatsapp::plantillas(),
+                'esMaqueta' => true,
+            ],
+
+            /*
              * LOS AVISOS QUE NO SALIERON. El sistema le escribe al socio cuando
              * se le acerca el vencimiento; si ese correo falla y nadie se entera,
              * en el mesón se da por avisado a alguien que no lo fue. Aquí solo se
