@@ -306,13 +306,15 @@ export function Fiados({ fiados }) {
  * Se exporta porque lo usan las DOS pantallas —el resumen y la de fiados—, y
  * dos copias del mismo formulario acaban pidiendo cosas distintas.
  */
-export function ApuntarFiado({ alTerminar }) {
+export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState(null);
-    const [socio, setSocio] = useState(null);
+    // Desde la ficha de un socio se llega con él ya puesto: ahí no hay a quién
+    // buscar, es la persona cuya ficha se está mirando.
+    const [socio, setSocio] = useState(socioFijo);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        id_cliente: '',
+        id_cliente: socioFijo?.id ?? '',
         nombre: '',
         concepto: '',
         monto: '',
@@ -354,7 +356,8 @@ export function ApuntarFiado({ alTerminar }) {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
-                setSocio(null);
+                setSocio(socioFijo);
+                setData('id_cliente', socioFijo?.id ?? '');
                 setBusqueda('');
                 alTerminar();
             },

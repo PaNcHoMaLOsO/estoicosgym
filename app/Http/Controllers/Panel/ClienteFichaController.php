@@ -44,6 +44,9 @@ class ClienteFichaController extends Controller
         return Inertia::render('Clientes/Ficha', [
             'cliente' => [
                 'uuid' => $cliente->uuid,
+                // El id, solo para apuntarle algo fiado desde aquí: la libreta
+                // del mesón trabaja con id, no con uuid.
+                'id' => $cliente->id,
                 'nombre' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
                 'rut' => $cliente->run_pasaporte,
                 // Para reconocer a quien esta delante sin preguntarle el RUT.

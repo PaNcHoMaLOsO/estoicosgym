@@ -13,7 +13,7 @@ import {
     MailWarningIcon,
 } from 'lucide-react';
 
-import { Notas } from '@/components/Libreta';
+import { ApuntarFiado, Notas } from '@/components/Libreta';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Cifra, Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
@@ -109,7 +109,10 @@ function Contacto({ celular, email, nombre }) {
             {celular ? (
                 <a
                     href={whatsapp(celular)}
-                    target="_blank"
+                    // A LA MISMA VENTANA de WhatsApp que abre el carril: así el
+                    // chat de este socio aparece en la ventana que ya está al
+                    // lado, en vez de abrir una pestaña nueva por cada persona.
+                    target="progym-whatsapp"
                     rel="noopener"
                     title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
                     aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
@@ -133,11 +136,30 @@ function Contacto({ celular, email, nombre }) {
     );
 }
 
-/** Lo que alguien debe del mesón, con el botón para ir a cobrarlo. */
+/**
+ * Lo que alguien debe del mesón, y el formulario para apuntar otra cosa.
+ *
+ * SE APUNTA AQUÍ MISMO. La barra de proteína se fía en diez segundos, con la
+ * persona todavía delante: mandar a otra pantalla a anotarla —y volver— es más
+ * trabajo que el fiado, y lo que pasa entonces es que no se anota.
+ */
 function Fiado({ fiado }) {
+    const [anotando, setAnotando] = useState(false);
+
+    const apuntar = (
+        <button
+            type="button"
+            onClick={() => setAnotando((a) => ! a)}
+            className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
+        >
+            {anotando ? 'Cerrar' : '+ Anotar'}
+        </button>
+    );
+
     if (fiado.personas === 0) {
         return (
-            <Panel titulo="Fiado del mesón">
+            <Panel titulo="Fiado del mesón" enlace={apuntar}>
+                {anotando ? <ApuntarFiado alTerminar={() => setAnotando(false)} /> : null}
                 <p className="apoyo text-fog">Nadie debe nada. Lo que se anote aparecerá aquí.</p>
             </Panel>
         );
@@ -148,11 +170,15 @@ function Fiado({ fiado }) {
             titulo={<ConCuenta texto="Fiado del mesón" cuenta={fiado.personas} tono="text-warn" />}
             descripcion={<>Deben <Reservado ancho="w-14">{pesos.format(fiado.total)}</Reservado> en total</>}
             enlace={
-                <Link href="/panel/fiados" className="apoyo shrink-0 text-fog transition-colors hover:text-chalk">
-                    Cobrar
-                </Link>
+                <span className="flex shrink-0 items-center gap-3">
+                    {apuntar}
+                    <Link href="/panel/fiados" className="apoyo text-fog transition-colors hover:text-chalk">
+                        Cobrar
+                    </Link>
+                </span>
             }
         >
+            {anotando ? <ApuntarFiado alTerminar={() => setAnotando(false)} /> : null}
             <ul className="space-y-2">
                 {fiado.cuentas.map((c) => (
                     <li key={`${c.socio_uuid ?? c.quien}`} className="flex items-baseline justify-between gap-3">

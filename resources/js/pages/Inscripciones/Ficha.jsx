@@ -301,7 +301,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                     <Dato etiqueta="RUT">{socio.rut}</Dato>
                                     <Dato etiqueta="Celular">
                                         {socio.celular ? (
-                                            <a href={whatsapp(socio.celular)} target="_blank" rel="noopener" className="hover:underline">
+                                            <a href={whatsapp(socio.celular)} target="progym-whatsapp" rel="noopener" className="hover:underline">
                                                 {celularLegible(socio.celular)}
                                             </a>
                                         ) : null}

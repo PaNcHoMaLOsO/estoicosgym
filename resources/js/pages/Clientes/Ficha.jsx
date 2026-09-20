@@ -20,6 +20,7 @@ import {
 
 import Dialogo from '@/components/Dialogo';
 import CamaraFoto from '@/components/CamaraFoto';
+import { ApuntarFiado } from '@/components/Libreta';
 import ModalDePagina from '@/components/ModalDePagina';
 import Estado from '@/components/Estado';
 import Retrato from '@/components/Retrato';
@@ -604,6 +605,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
      * Ctrl+clic se abre la pantalla entera.
      */
     const [enVentana, setEnVentana] = useState(null);
+    const [anotandoFiado, setAnotandoFiado] = useState(false);
 
     const abrirEnVentana = (atajo) => (e) => {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
@@ -812,6 +814,37 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                     >
                         Cobrarlo
                     </Link>
+                </div>
+            ) : null}
+
+            {/* APUNTAR OTRA COSA, sin salir de su ficha: se fía con la persona
+                delante, y un salto a otra pantalla es más trabajo que el fiado. */}
+            {cliente.activo && ! cliente.datos_borrados ? (
+                <div className="mb-4">
+                    {anotandoFiado ? (
+                        <div className="rounded-panel border border-line bg-surface p-4">
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <h2 className="rotulo">Anotar algo fiado</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setAnotandoFiado(false)}
+                                    className="apoyo text-fog transition-colors hover:text-chalk"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                            <ApuntarFiado alTerminar={() => setAnotandoFiado(false)} socio={{ id: cliente.id, nombre: cliente.nombre }} />
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setAnotandoFiado(true)}
+                            className="apoyo inline-flex items-center gap-1.5 text-fog transition-colors hover:text-chalk"
+                        >
+                            <ShoppingBagIcon className="size-3.5" aria-hidden="true" />
+                            Anotar algo fiado
+                        </button>
+                    )}
                 </div>
             ) : null}
 
