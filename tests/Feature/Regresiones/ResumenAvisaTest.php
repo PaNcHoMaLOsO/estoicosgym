@@ -93,4 +93,47 @@ class ResumenAvisaTest extends CasoConCatalogos
         $this->assertSame(3, $porEmpezar[0]['dias']);
         $this->assertSame(today()->addDays(3)->format('d/m/Y'), $porEmpezar[0]['fecha']);
     }
+
+    /**
+     * LO FIADO SE VE EN EL RESUMEN, no solo en su pantalla.
+     *
+     * Es lo que se cobra con la persona delante. Escondido en otra pantalla, la
+     * cuenta de alguien que pasa todos los días se quedaba semanas sin cobrar.
+     */
+    public function test_el_resumen_dice_quien_debe_del_meson(): void
+    {
+        $socio = \App\Models\Cliente::factory()->create(['activo' => true, 'nombres' => 'Rosa', 'apellido_paterno' => 'Pinto']);
+
+        \App\Models\Fiado::create([
+            'id_cliente' => $socio->id,
+            'concepto' => 'Barra de proteína',
+            'monto' => 2500,
+            'id_usuario' => $this->administrador()->id,
+        ]);
+        \App\Models\Fiado::create([
+            'nombre' => 'El de la moto',
+            'concepto' => 'Bebida',
+            'monto' => 1500,
+            'id_usuario' => $this->administrador()->id,
+        ]);
+
+        $fiado = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props']['fiado'];
+
+        $this->assertSame(4000, $fiado['total']);
+        $this->assertSame(2, $fiado['personas']);
+        // Con el uuid del socio para poder abrir su ficha desde ahí.
+        $this->assertContains(
+            (string) $socio->uuid,
+            collect($fiado['cuentas'])->pluck('socio_uuid')->map(fn ($u) => (string) $u)->all()
+        );
+    }
+
+    /** Sin nada fiado, el resumen lo dice en cero y no revienta. */
+    public function test_sin_fiado_el_resumen_sigue_abriendo(): void
+    {
+        $fiado = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props']['fiado'];
+
+        $this->assertSame(['total' => 0, 'personas' => 0], ['total' => $fiado['total'], 'personas' => $fiado['personas']]);
+        $this->assertSame([], $fiado['cuentas']);
+    }
 }

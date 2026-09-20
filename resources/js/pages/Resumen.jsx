@@ -15,7 +15,8 @@ import {
 
 import { Notas } from '@/components/Libreta';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
-import { Cifra, Panel } from '@/components/Tablero';
+import { Cifra, Panel, pesos } from '@/components/Tablero';
+import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 import ModalDePagina from '@/components/ModalDePagina';
 import { Reservado } from '@/Privado';
@@ -42,13 +43,9 @@ const ATAJOS = [
     { href: '/panel/canje', etiqueta: 'Entrada por canje', Icono: TicketIcon, permiso: 'clientes.crear', conCabecera: true },
 ];
 
-/** El enlace de WhatsApp para un celular chileno escrito de cualquier forma. */
-function whatsapp(celular) {
-    const digitos = String(celular).replace(/\D/g, '');
-    const numero = digitos.length === 9 && digitos.startsWith('9') ? `56${digitos}` : digitos;
-
-    return `https://wa.me/${numero}`;
-}
+// El enlace de WhatsApp sale de lib/contacto, el mismo que usan las listas de
+// Clientes: con una copia aquí, un arreglo en una no llegaba a la otra.
+const whatsapp = enlaceWhatsapp;
 
 /** Buscar al socio que se tiene delante: lo primero que se hace al atender. */
 function Buscador() {
@@ -87,12 +84,20 @@ function Buscador() {
     );
 }
 
-/** Cómo avisarle, con un clic: su WhatsApp y su correo. */
-function Contacto({ celular, email }) {
-    if (!celular && !email) {
+/**
+ * Escribirle, en un clic.
+ *
+ * WHATSAPP ES EL BOTÓN, no un icono chico al lado del número. Avisar es lo que
+ * se hace con estas listas —«te vence el viernes», «te echamos de menos»— y
+ * antes había que fijarse en un icono de 14 píxeles para darse cuenta de que se
+ * podía. El correo queda detrás, en pequeño: en el mesón se escribe por
+ * WhatsApp, el correo es para lo formal.
+ */
+function Contacto({ celular, email, nombre }) {
+    if (! celular && ! email) {
         // Sin correo ni celular no hay a quién avisar: hay que buscarlo a mano.
         return (
-            <span className="inline-flex items-center gap-1 text-warn">
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-warn">
                 <PhoneOffIcon className="size-3.5" aria-hidden="true" />
                 Sin contacto
             </span>
@@ -100,16 +105,18 @@ function Contacto({ celular, email }) {
     }
 
     return (
-        <span className="inline-flex items-center gap-3">
+        <span className="inline-flex items-center gap-2">
             {celular ? (
                 <a
                     href={whatsapp(celular)}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex items-center gap-1 text-chalk hover:underline"
+                    title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
+                    aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-control border border-[#25D366]/40 bg-[#25D366]/10 px-2.5 py-1 text-sm font-medium text-[#25D366] transition-colors hover:bg-[#25D366]/20"
                 >
-                    <MessageCircleIcon className="size-3.5 text-[#25D366]" aria-hidden="true" />
-                    {celular}
+                    <MessageCircleIcon className="size-3.5" aria-hidden="true" />
+                    WhatsApp
                 </a>
             ) : null}
             {email ? (
@@ -119,10 +126,58 @@ function Contacto({ celular, email }) {
                     title={email}
                     className="text-fog transition-colors hover:text-chalk"
                 >
-                    <MailIcon className="size-3.5" aria-hidden="true" />
+                    <MailIcon className="size-4" aria-hidden="true" />
                 </a>
             ) : null}
         </span>
+    );
+}
+
+/** Lo que alguien debe del mesón, con el botón para ir a cobrarlo. */
+function Fiado({ fiado }) {
+    if (fiado.personas === 0) {
+        return (
+            <Panel titulo="Fiado del mesón">
+                <p className="apoyo text-fog">Nadie debe nada. Lo que se anote aparecerá aquí.</p>
+            </Panel>
+        );
+    }
+
+    return (
+        <Panel
+            titulo={<ConCuenta texto="Fiado del mesón" cuenta={fiado.personas} tono="text-warn" />}
+            descripcion={<>Deben <Reservado ancho="w-14">{pesos.format(fiado.total)}</Reservado> en total</>}
+            enlace={
+                <Link href="/panel/fiados" className="apoyo shrink-0 text-fog transition-colors hover:text-chalk">
+                    Cobrar
+                </Link>
+            }
+        >
+            <ul className="space-y-2">
+                {fiado.cuentas.map((c) => (
+                    <li key={`${c.socio_uuid ?? c.quien}`} className="flex items-baseline justify-between gap-3">
+                        <div className="min-w-0">
+                            {c.socio_uuid ? (
+                                <Link href={`/panel/clientes/${c.socio_uuid}`} className="truncate text-sm text-chalk hover:underline">
+                                    {c.quien}
+                                </Link>
+                            ) : (
+                                <span className="truncate text-sm text-chalk">{c.quien}</span>
+                            )}
+                            {/* Los días que lleva: una cuenta de tres semanas no
+                                se cobra sola, y conviene que se note. */}
+                            <p className={`apoyo ${c.dias >= 14 ? 'text-warn' : 'text-fog'}`}>
+                                {c.dias === 0 ? 'de hoy' : c.dias === 1 ? 'de ayer' : `hace ${c.dias} días`}
+                                {c.cuantas > 1 ? ` · ${c.cuantas} cosas` : ''}
+                            </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-medium tabular-nums text-chalk">
+                            <Reservado ancho="w-12">{pesos.format(c.total)}</Reservado>
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        </Panel>
     );
 }
 
@@ -153,7 +208,7 @@ function Llamar({ filas, fecha, cuanto, vacia }) {
                     <Celda className="tabular-nums">{f.fecha}</Celda>
                     <Celda>{cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums">{f.dias} d</span>}</Celda>
                     <Celda>
-                        <Contacto celular={f.celular} email={f.email} />
+                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} />
                     </Celda>
                 </Fila>
             ))}
@@ -171,7 +226,15 @@ function ConCuenta({ texto, cuenta, tono }) {
     );
 }
 
-export default function Resumen({ cifras, notas, porVencer, sinRenovar, porEmpezar = [], avisosFallidos = 0 }) {
+export default function Resumen({
+    cifras,
+    notas,
+    porVencer,
+    sinRenovar,
+    fiado = { total: 0, personas: 0, cuentas: [] },
+    porEmpezar = [],
+    avisosFallidos = 0,
+}) {
     const { auth } = usePage().props;
     const atajos = ATAJOS.filter((a) => puede(auth, a.permiso));
     const [enVentana, setEnVentana] = useState(null);
@@ -223,68 +286,69 @@ export default function Resumen({ cifras, notas, porVencer, sinRenovar, porEmpez
                 />
             ) : null}
 
-            {/* CADA COSA SE NOMBRA UNA VEZ. «Vencen esta semana» y «Sin renovar» salían
-                dos veces: como cifra aquí arriba y como título del panel de abajo con
-                la misma gente. Ahora el número va en el título de su panel, y aquí
-                quedan solo las cifras que no tienen lista propia. */}
-            <div className="mb-4 grid gap-3 sm:grid-cols-3">
-                <Cifra etiqueta="Socios activos" valor={<Reservado>{cifras.socios}</Reservado>} />
-                <Cifra etiqueta="Membresías vigentes" valor={<Reservado>{cifras.al_dia}</Reservado>} />
-                <Cifra etiqueta="Pausadas" valor={cifras.pausadas} />
-            </div>
+            {/*
+             * DOS COLUMNAS: a la izquierda lo que hay que HACER, a la derecha
+             * lo que hay que TENER A LA VISTA.
+             *
+             * Todo iba en una sola columna y las notas quedaban enterradas bajo
+             * las listas de llamar: en el mesón se anota en un papel al lado del
+             * teclado justamente porque la pantalla no las tenía. Ahora la
+             * columna de la derecha se queda fija al bajar, y las notas son lo
+             * primero que hay en ella.
+             */}
+            <div className="grid items-start gap-4 xl:grid-cols-[1fr_22rem]">
+                <div className="flex flex-col gap-3">
+                    <Panel
+                        titulo={<ConCuenta texto="Vencen esta semana" cuenta={cifras.vencen_semana} tono="text-warn" />}
+                        descripcion="Escríbeles antes de que se les acabe."
+                        enlace={
+                            // El listado completo es un informe: solo se ofrece a
+                            // quien lo puede abrir. A los demás les daría un error.
+                            puede(auth, 'reportes.ver') ? (
+                                <Link href="/panel/reportes/por-vencer" className="apoyo shrink-0 text-fog transition-colors hover:text-chalk">
+                                    Ver todas
+                                </Link>
+                            ) : null
+                        }
+                    >
+                        <Llamar filas={porVencer} fecha="Vence" cuanto="Faltan" vacia="Ninguna membresía vence esta semana." />
+                    </Panel>
 
-            {/* AVISOS QUE NO SALIERON. Solo aparece cuando hay alguno: en el mesón se
-                da por avisado al socio, y si el correo falló nadie lo sabe. */}
-            {avisosFallidos > 0 ? (
-                <div role="status" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-panel border border-danger/40 bg-danger/5 px-4 py-3">
-                    <MailWarningIcon className="size-4 shrink-0 text-danger" aria-hidden="true" />
-                    <p className="min-w-0 flex-1 text-sm text-chalk">
-                        {avisosFallidos === 1
-                            ? 'Un aviso por correo no salió: ese socio no fue avisado.'
-                            : `${avisosFallidos} avisos por correo no salieron: esos socios no fueron avisados.`}
-                    </p>
-                    {puede(auth, 'notificaciones.ver') ? (
-                        <Link
-                            href="/panel/notificaciones?estado=fallidas"
-                            className="shrink-0 rounded-control border border-danger/50 px-3 py-1.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+                    <Panel
+                        titulo={<ConCuenta texto="Sin renovar" cuenta={cifras.sin_renovar} tono="text-danger" />}
+                        descripcion={`Se fueron en los últimos ${cifras.dias_sin_renovar} días y todavía se les puede convencer.`}
+                    >
+                        <Llamar filas={sinRenovar} fecha="Venció" cuanto="Hace" vacia="Nadie se fue sin renovar en estos días." />
+                    </Panel>
+
+                    {/* Solo cuando hay alguien: un panel vacío aquí sería ruido casi siempre. */}
+                    {porEmpezar.length > 0 ? (
+                        <Panel
+                            titulo={<ConCuenta texto="Empiezan pronto" cuenta={porEmpezar.length} tono="text-chalk" />}
+                            descripcion="Aparecen por primera vez: conviene saber su nombre antes de que entren."
                         >
-                            Ver y reintentar
-                        </Link>
+                            <Llamar filas={porEmpezar} fecha="Empieza" cuanto="En" vacia="" />
+                        </Panel>
                     ) : null}
                 </div>
-            ) : null}
 
-            <div className="mb-4">
-                <Notas notas={notas} />
+                <div className="flex flex-col gap-3 xl:sticky xl:top-4">
+                    {/* LAS NOTAS, PRIMERO. Es el papel del mesón: lo que hay que
+                        acordarse de hacer hoy y lo que dejó dicho el turno anterior. */}
+                    <Notas notas={notas} />
+
+                    <Fiado fiado={fiado} />
+
+                    {/* Las tres cifras del gimnasio, al final y en chico: se miran
+                        de vez en cuando, no se hace nada con ellas. */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <Cifra etiqueta="Socios" valor={<Reservado ancho="w-8">{cifras.socios}</Reservado>} />
+                        <Cifra etiqueta="Vigentes" valor={<Reservado ancho="w-8">{cifras.al_dia}</Reservado>} />
+                        <Cifra etiqueta="Pausadas" valor={cifras.pausadas} />
+                    </div>
+                </div>
             </div>
 
-            <div className="grid gap-3 xl:grid-cols-2">
-                <Panel
-                    titulo={<ConCuenta texto="Vencen esta semana" cuenta={cifras.vencen_semana} tono="text-warn" />}
-                    enlace={
-                        // El listado completo es un informe: solo se ofrece a
-                        // quien lo puede abrir. A los demás les daría un error.
-                        puede(auth, 'reportes.ver') ? (
-                            <Link href="/panel/reportes/por-vencer" className="apoyo shrink-0 text-fog transition-colors hover:text-chalk">
-                                Ver todas
-                            </Link>
-                        ) : null
-                    }
-                >
-                    <Llamar filas={porVencer} fecha="Vence" cuanto="Faltan" vacia="Ninguna membresía vence esta semana." />
-                </Panel>
-
-                <Panel titulo={<ConCuenta texto="Sin renovar" cuenta={cifras.sin_renovar} tono="text-danger" />} descripcion={`En los últimos ${cifras.dias_sin_renovar} días`}>
-                    <Llamar filas={sinRenovar} fecha="Venció" cuanto="Hace" vacia="Nadie se fue sin renovar en estos días." />
-                </Panel>
-
-                {/* Solo cuando hay alguien: un panel vacío aquí sería ruido casi siempre. */}
-                {porEmpezar.length > 0 ? (
-                    <Panel titulo={<ConCuenta texto="Empiezan pronto" cuenta={porEmpezar.length} tono="text-chalk" />}>
-                        <Llamar filas={porEmpezar} fecha="Empieza" cuanto="En" vacia="" />
-                    </Panel>
-                ) : null}
-            </div>
         </>
     );
 }

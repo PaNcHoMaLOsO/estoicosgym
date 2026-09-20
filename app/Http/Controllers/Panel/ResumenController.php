@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Notificacion;
 use App\Models\Nota;
@@ -71,6 +72,20 @@ class ResumenController extends Controller
             ],
 
             'notas' => $this->notas(),
+
+            /*
+             * LO FIADO DEL MESÓN, en el resumen.
+             *
+             * Es lo que se cobra con la persona delante, y hasta ahora había
+             * que acordarse de entrar a otra pantalla: la cuenta de alguien que
+             * pasa todos los días se quedaba sin cobrar semanas. Aquí van las
+             * que más deben y las más viejas; el detalle y el cobro siguen en
+             * Fiado, que es donde se trabaja.
+             *
+             * Las cifras van tapadas como el resto: quien atiende tiene gente
+             * detrás mirando la pantalla.
+             */
+            'fiado' => $this->fiado(),
 
             /*
              * LOS AVISOS QUE NO SALIERON. El sistema le escribe al socio cuando
@@ -162,6 +177,44 @@ class ResumenController extends Controller
             // buscarlo a mano y conviene que se vea desde aquí.
             'celular' => $cliente?->celular,
             'email' => $cliente?->email,
+        ];
+    }
+
+    /**
+     * Quién debe algo del mesón, y cuánto.
+     *
+     * @return array<string,mixed>
+     */
+    private function fiado(): array
+    {
+        $pendientes = Fiado::debiendo()
+            ->with('cliente:id,uuid,nombres,apellido_paterno,celular')
+            ->get();
+
+        $cuentas = $pendientes
+            ->groupBy(fn (Fiado $f) => $f->claveDeCuenta())
+            ->map(function ($lineas) {
+                $primera = $lineas->first();
+                $desde = $lineas->min('created_at');
+
+                return [
+                    'quien' => $primera->aNombreDe(),
+                    'socio_uuid' => $primera->cliente?->uuid,
+                    'celular' => $primera->cliente?->celular,
+                    'total' => (int) $lineas->sum('monto'),
+                    'cuantas' => $lineas->count(),
+                    // Los días que lleva: una cuenta de hace tres semanas no se
+                    // cobra sola, y conviene que se note.
+                    'dias' => (int) $desde?->startOfDay()->diffInDays(today()),
+                ];
+            })
+            ->sortByDesc('dias')
+            ->values();
+
+        return [
+            'total' => (int) $pendientes->sum('monto'),
+            'personas' => $cuentas->count(),
+            'cuentas' => $cuentas->take(self::EN_LISTA)->all(),
         ];
     }
 
