@@ -14,9 +14,10 @@ import {
 } from 'lucide-react';
 
 import { ApuntarFiado, Notas } from '@/components/Libreta';
+import MesonTienda from '@/components/MesonTienda';
 import VentanaWhatsapp from '@/components/VentanaWhatsapp';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
-import { Cifra, Panel, pesos } from '@/components/Tablero';
+import { Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 import ModalDePagina from '@/components/ModalDePagina';
@@ -220,7 +221,17 @@ function Faltan({ dias }) {
 /** Una lista de socios a los que llamar. */
 function Llamar({ filas, fecha, cuanto, vacia }) {
     return (
-        <Tabla columnas={['Socio', 'Plan', fecha, cuanto, 'Contacto']} vacia={filas.length === 0} mensajeVacio={vacia}>
+        <Tabla
+            columnas={[
+                { titulo: 'Socio', className: 'w-full' },
+                { titulo: 'Plan', className: 'whitespace-nowrap' },
+                { titulo: fecha, className: 'whitespace-nowrap' },
+                { titulo: cuanto, className: 'whitespace-nowrap' },
+                { titulo: 'Contacto', className: 'text-right' },
+            ]}
+            vacia={filas.length === 0}
+            mensajeVacio={vacia}
+        >
             {filas.map((f) => (
                 <Fila key={f.uuid}>
                     <Celda className="font-medium text-chalk">
@@ -234,12 +245,22 @@ function Llamar({ filas, fecha, cuanto, vacia }) {
                     <Celda>{f.membresia ?? 'Sin plan'}</Celda>
                     <Celda className="tabular-nums">{f.fecha}</Celda>
                     <Celda>{cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums">{f.dias} d</span>}</Celda>
-                    <Celda>
+                    <Celda className="text-right">
                         <Contacto celular={f.celular} email={f.email} nombre={f.socio} />
                     </Celda>
                 </Fila>
             ))}
         </Tabla>
+    );
+}
+
+/** Un número del gimnasio dentro de la barra de abajo: rótulo arriba, cifra debajo. */
+function Numero({ etiqueta, valor }) {
+    return (
+        <div className="px-3 py-2.5">
+            <p className="rotulo">{etiqueta}</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-chalk">{valor}</p>
+        </div>
     );
 }
 
@@ -295,7 +316,7 @@ export default function Resumen({
                                 e.preventDefault();
                                 setEnVentana(atajo);
                             }}
-                            className="flex items-center gap-2.5 rounded-panel border border-line bg-surface px-4 py-3 text-sm font-medium text-chalk transition-colors hover:border-line-strong"
+                            className="flex items-center justify-center gap-2.5 rounded-panel border border-line bg-surface px-3 py-2.5 text-sm font-medium text-chalk transition-colors hover:border-line-strong hover:bg-surface-2"
                         >
                             <atajo.Icono className="size-4 text-fog" aria-hidden="true" />
                             {atajo.etiqueta}
@@ -366,13 +387,18 @@ export default function Resumen({
 
                     <Fiado fiado={fiado} />
 
-                    {/* Las tres cifras del gimnasio, al final y en chico: se miran
-                        de vez en cuando, no se hace nada con ellas. */}
-                    <div className="grid grid-cols-3 gap-2">
-                        <Cifra etiqueta="Socios" valor={<Reservado ancho="w-8">{cifras.socios}</Reservado>} />
-                        <Cifra etiqueta="Vigentes" valor={<Reservado ancho="w-8">{cifras.al_dia}</Reservado>} />
-                        <Cifra etiqueta="Pausadas" valor={cifras.pausadas} />
+                    {/* CÓMO ESTÁ EL GIMNASIO, en una línea. Antes eran tres cajas
+                        altas, y le daban el tamaño de un panel entero a algo que
+                        solo se mira de reojo: no se hace nada con estos números. */}
+                    <div className="grid grid-cols-3 divide-x divide-line rounded-panel border border-line bg-surface">
+                        <Numero etiqueta="Socios" valor={<Reservado ancho="w-8">{cifras.socios}</Reservado>} />
+                        <Numero etiqueta="Vigentes" valor={<Reservado ancho="w-8">{cifras.al_dia}</Reservado>} />
+                        <Numero etiqueta="Pausadas" valor={cifras.pausadas} />
                     </div>
+
+                    {/* El sitio del mostrador, todavía sin catálogo: al final de
+                        la columna, que es donde cabe sin estorbar a lo de hoy. */}
+                    <MesonTienda />
                 </div>
             </div>
 
