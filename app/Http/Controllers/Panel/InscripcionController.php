@@ -8,6 +8,7 @@ use App\Models\Membresia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Inscripciones del panel nuevo (Inertia + React).
@@ -40,14 +41,10 @@ class InscripcionController extends Controller
             // Lo abonado, sumado en la misma consulta: la columna «Pago» dice
             // cuánto debe cada membresía sin una consulta por fila.
             ->withSum('pagos as abonado', 'monto_abonado')
-            ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->whereHas('cliente', function ($q) use ($busqueda) {
-                    $q->where('nombres', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_paterno', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_materno', 'like', "%{$busqueda}%")
-                        ->orWhere('run_pasaporte', 'like', "%{$busqueda}%");
-                });
-            })
+            ->when($busqueda !== '', fn ($q) => $q->whereHas(
+                'cliente',
+                fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda),
+            ))
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
             ->when(is_numeric($plan), fn ($q) => $q->where('id_membresia', (int) $plan))
             // Sin filtro también se filtra: los pases diarios van en su propio

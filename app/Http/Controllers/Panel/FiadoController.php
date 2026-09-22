@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * La libreta de lo fiado en el mesón.
@@ -350,13 +351,7 @@ class FiadoController extends Controller
             return response()->json(['clientes' => []]);
         }
 
-        $clientes = Cliente::query()
-            ->where(function ($q) use ($texto) {
-                $q->where('nombres', 'like', "%{$texto}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$texto}%")
-                    ->orWhere('apellido_materno', 'like', "%{$texto}%")
-                    ->orWhere('run_pasaporte', 'like', "%{$texto}%");
-            })
+        $clientes = BusquedaDeSocio::aplicar(Cliente::query(), $texto)
             ->orderBy('apellido_paterno')
             ->limit(10)
             ->get(['id', 'nombres', 'apellido_paterno', 'apellido_materno', 'run_pasaporte', 'activo']);

@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Clientes del panel nuevo (Inertia + React).
@@ -56,16 +57,9 @@ class ClienteController extends Controller
             // Una ficha con los datos borrados ya no es nadie a quien atender:
             // sus pagos siguen en los informes, pero aquí no aparece.
             ->whereNull('datos_borrados_en')
-            ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->where(function ($q) use ($busqueda) {
-                    $q->where('nombres', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_paterno', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_materno', 'like', "%{$busqueda}%")
-                        ->orWhere('run_pasaporte', 'like', "%{$busqueda}%")
-                        ->orWhere('email', 'like', "%{$busqueda}%")
-                        ->orWhere('celular', 'like', "%{$busqueda}%");
-                });
-            })
+            // Por nombre, RUT, correo o celular, escrito como sea: la ficha
+            // guarda «21.410.708-2» y en el mesón se teclea «21410708».
+            ->when($busqueda !== '', fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda))
             // Sin filtro elegido también se filtra: quien SOLO compró pases
             // diarios está de paso y va en su propio grupo, no en la lista.
             // Salvo al BUSCAR: a quien se busca por su nombre hay que encontrarlo.

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Cobro de una inscripción desde el panel nuevo.
@@ -69,13 +70,7 @@ class PagoCrearController extends Controller
         }
 
         $encontradas = $this->conSaldo()
-            ->whereHas('cliente', function ($q) use ($texto) {
-                $q->where('nombres', 'like', "%{$texto}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$texto}%")
-                    ->orWhere('apellido_materno', 'like', "%{$texto}%")
-                    ->orWhere('run_pasaporte', 'like', "%{$texto}%")
-                    ->orWhere('email', 'like', "%{$texto}%");
-            })
+            ->whereHas('cliente', fn ($q) => BusquedaDeSocio::aplicar($q, $texto))
             ->orderByDesc('id')
             ->limit(self::RESULTADOS * 3)
             ->get()

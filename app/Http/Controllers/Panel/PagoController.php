@@ -8,6 +8,7 @@ use App\Models\Inscripcion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Pagos del panel nuevo (Inertia + React).
@@ -45,14 +46,10 @@ class PagoController extends Controller
                     // que hubo otro antes. La fila tiene que poder decirlo.
                     ->withCount('pagos'),
             ])
-            ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->whereHas('cliente', function ($q) use ($busqueda) {
-                    $q->where('nombres', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_paterno', 'like', "%{$busqueda}%")
-                        ->orWhere('apellido_materno', 'like', "%{$busqueda}%")
-                        ->orWhere('run_pasaporte', 'like', "%{$busqueda}%");
-                });
-            })
+            ->when($busqueda !== '', fn ($q) => $q->whereHas(
+                'cliente',
+                fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda),
+            ))
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
             // Los pases diarios, en su grupo; al buscar se encuentran igual.
             ->when(

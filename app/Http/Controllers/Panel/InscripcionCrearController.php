@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Alta de inscripción desde el panel nuevo.
@@ -82,14 +83,7 @@ class InscripcionCrearController extends Controller
             return response()->json(['clientes' => []]);
         }
 
-        $clientes = $this->inscribibles()
-            ->where(function ($q) use ($texto) {
-                $q->where('nombres', 'like', "%{$texto}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$texto}%")
-                    ->orWhere('apellido_materno', 'like', "%{$texto}%")
-                    ->orWhere('run_pasaporte', 'like', "%{$texto}%")
-                    ->orWhere('email', 'like', "%{$texto}%");
-            })
+        $clientes = BusquedaDeSocio::aplicar($this->inscribibles(), $texto)
             ->orderBy('apellido_paterno')
             ->limit(self::RESULTADOS)
             ->get()

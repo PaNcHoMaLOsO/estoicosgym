@@ -8,6 +8,7 @@ use App\Models\Notificacion;
 use App\Models\TipoNotificacion;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
+use App\Support\BusquedaDeSocio;
 
 /**
  * Envío de un correo suelto a un socio, elegido a mano desde el panel.
@@ -231,13 +232,9 @@ class EnvioManualService
         return Cliente::query()
             ->whereNotNull('email')
             ->where('email', '!=', '')
-            ->where(function ($q) use ($texto) {
-                $q->where('nombres', 'like', "%{$texto}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$texto}%")
-                    ->orWhere('apellido_materno', 'like', "%{$texto}%")
-                    ->orWhere('run_pasaporte', 'like', "%{$texto}%")
-                    ->orWhere('email', 'like', "%{$texto}%");
-            })
+            // La misma búsqueda que el resto del panel: el RUT se compara sin
+            // puntos ni guion, porque nadie los teclea.
+            ->where(fn ($q) => BusquedaDeSocio::aplicar($q, $texto))
             ->with(['inscripciones' => fn ($q) => $q->latest()->limit(1)->with('membresia')])
             ->orderBy('apellido_paterno')
             ->limit($cuantos)
