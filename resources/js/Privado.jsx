@@ -25,15 +25,30 @@ import { puede } from '@/lib/permisos';
  */
 const Contexto = createContext({ oculto: true, alternar: () => {}, forzado: false });
 
-const CLAVE = 'progym:cifras-ocultas';
+// La llave cambió de nombre a propósito al cambiar la regla: antes se guardaba
+// «no» para ver, y ahora «si» para tapar. Con la llave vieja, un computador que
+// tuviera guardado lo de antes habría seguido tapando sin que nadie entendiera
+// por qué.
+const CLAVE = 'progym:cifras-tapadas';
 
-/** Empieza tapado: si alguien ya sabe que le miran, el descuido no es opción. */
+/**
+ * Empieza DESTAPADO, y se recuerda lo que decida cada computador.
+ *
+ * Empezaba tapado «por si acaso», y el resultado era otro: quien abría el
+ * panel por primera vez —o en otro navegador— veía todas las cifras en
+ * puntitos, sin saber que eso se hace a propósito ni que se quita con el ojo
+ * de la barra. Daba el panel por roto y no lo decía.
+ *
+ * Esconder el dinero de verdad es una decisión, y tiene su sitio: Configuración
+ * → El dinero en pantalla. El ojo de arriba es para el momento —alguien se
+ * acerca al mesón—, y ese momento se tapa en un segundo con la tecla O.
+ */
 function loQueHabia() {
     try {
-        return window.localStorage.getItem(CLAVE) !== 'no';
+        return window.localStorage.getItem(CLAVE) === 'si';
     } catch (e) {
-        // Navegador con el almacenamiento capado: se tapa igual.
-        return true;
+        // Navegador con el almacenamiento capado: se ve, como por defecto.
+        return false;
     }
 }
 
