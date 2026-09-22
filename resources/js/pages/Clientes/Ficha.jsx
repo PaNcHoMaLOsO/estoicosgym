@@ -21,6 +21,7 @@ import {
 import Dialogo from '@/components/Dialogo';
 import CamaraFoto from '@/components/CamaraFoto';
 import { ApuntarFiado } from '@/components/Libreta';
+import ConfirmarDinero from '@/components/ConfirmarDinero';
 import ModalDePagina from '@/components/ModalDePagina';
 import Estado from '@/components/Estado';
 import Retrato from '@/components/Retrato';
@@ -606,6 +607,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
      */
     const [enVentana, setEnVentana] = useState(null);
     const [anotandoFiado, setAnotandoFiado] = useState(false);
+    // Cobrar lo del mesón sin salir de su ficha: con la persona delante, un
+    // salto a otra pantalla es lo que hace que esa cuenta se quede sin cobrar.
+    const [cobrandoFiado, setCobrandoFiado] = useState(false);
 
     const abrirEnVentana = (atajo) => (e) => {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
@@ -808,14 +812,41 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                         </span>
                     </p>
 
-                    <Link
-                        href="/panel/fiados"
-                        className="apoyo shrink-0 rounded-control border border-warn/40 px-2.5 py-1 text-warn transition-colors hover:bg-warn/10"
-                    >
-                        Cobrarlo
-                    </Link>
+                    <span className="flex shrink-0 items-center gap-3">
+                        {/* SE COBRA AQUÍ. Antes esto llevaba a la libreta del
+                            mesón, y había que buscarlo otra vez en una lista
+                            para pulsar el mismo botón. */}
+                        <button
+                            type="button"
+                            onClick={() => setCobrandoFiado(true)}
+                            className="apoyo rounded-control border border-warn/40 px-2.5 py-1 text-warn transition-colors hover:bg-warn/10"
+                        >
+                            Pagó
+                        </button>
+
+                        <Link href="/panel/fiados" className="apoyo text-fog transition-colors hover:text-chalk">
+                            La libreta
+                        </Link>
+                    </span>
                 </div>
             ) : null}
+
+            {/* El aviso dice el nombre y la cantidad, no «¿seguro?»: el error
+                de estos botones es pulsar el de al lado, y a eso un «¿seguro?»
+                también le dice que sí. */}
+            <ConfirmarDinero
+                abierto={cobrandoFiado}
+                alCerrar={() => setCobrandoFiado(false)}
+                titulo="Cobrar lo fiado"
+                quien={cliente.nombre}
+                monto={fiado?.total ?? 0}
+                detalle={fiado?.lineas}
+                consecuencia="Su cuenta del mesón queda saldada. Esto no entra en la caja del gimnasio."
+                etiquetaConfirmar="Pagó"
+                accion="/panel/fiados/saldar"
+                metodo="post"
+                datos={{ id_cliente: cliente.id, nombre: null }}
+            />
 
             {/* APUNTAR OTRA COSA, sin salir de su ficha: se fía con la persona
                 delante, y un salto a otra pantalla es más trabajo que el fiado. */}

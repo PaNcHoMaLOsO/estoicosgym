@@ -618,4 +618,74 @@ class LibretaDelMesonTest extends CasoConCatalogos
 
         $this->assertSame($antes, $despues);
     }
+    // ---------- Lo que más se fía ----------
+
+    /**
+     * LAS COSAS QUE MÁS SE FÍAN, para no teclearlas otra vez.
+     *
+     * En el mesón se venden siempre las mismas cinco cosas. Lo que sale aquí
+     * es lo repetido con el precio de la última vez; lo que se fió una sola
+     * vez no sale, porque una lista de cosas sueltas no es un atajo.
+     */
+    public function test_lo_que_mas_se_fia_sale_con_su_ultimo_precio(): void
+    {
+        $this->fiar(['concepto' => 'Barra de proteína', 'monto' => 2000]);
+        $this->fiar(['concepto' => 'BARRA DE PROTEÍNA', 'monto' => 2000]);
+        // Escrita de otra forma, es la misma cosa: si no, «Bebida» y «bebida»
+        // serían dos atajos distintos y ninguno llegaría a repetirse.
+        $this->fiar(['concepto' => 'barra de proteína', 'monto' => 2500]);
+        $this->fiar(['concepto' => 'Bebida', 'monto' => 1500]);
+        $this->fiar(['concepto' => 'Bebida', 'monto' => 1500]);
+        $this->fiar(['concepto' => 'Muñequeras', 'monto' => 9000]);
+
+        $frecuentes = $this->como()->getJson('/panel/fiados/frecuentes')->json('frecuentes');
+
+        // La barra, primero: tres veces contra dos, y con el precio de la
+        // última vez, no con el viejo.
+        $this->assertSame(['barra de proteína', 'Bebida'], array_column($frecuentes, 'concepto'));
+        $this->assertSame(2500, $frecuentes[0]['monto']);
+
+        // Lo que se fió una sola vez no es un atajo.
+        $this->assertNotContains('Muñequeras', array_column($frecuentes, 'concepto'));
+    }
+
+    /** La pantalla dice lo cobrado HOY, que es lo que se cuadra al cerrar. */
+    public function test_la_pantalla_cuenta_lo_cobrado_hoy(): void
+    {
+        $this->fiar(['nombre' => 'De hoy', 'monto' => 2000]);
+        $this->fiar(['nombre' => 'De antes', 'monto' => 5000]);
+
+        Fiado::where('nombre', 'De hoy')->update(['pagado' => true, 'pagado_en' => now()]);
+        Fiado::where('nombre', 'De antes')->update([
+            'pagado' => true,
+            'pagado_en' => now()->subDays(3),
+            'created_at' => now()->subDays(3),
+        ]);
+
+        $cifras = $this->como()->get('/panel/fiados')->viewData('page')['props']['cifras'];
+
+        $this->assertSame(2000, $cifras['cobrado_hoy']);
+        // Lo de hace tres días sigue contando en el mes, pero no en el día.
+        $this->assertSame(7000, $cifras['cobrado_mes']);
+        $this->assertSame(2000, $cifras['anotado_hoy']);
+    }
+
+    /**
+     * CON QUÉ COBRAR: la cuenta lleva el celular y la foto del socio.
+     *
+     * Sin el celular no se le puede recordar por WhatsApp, y recordárselo por
+     * escrito es lo que evita tener que pedirle plata de frente a alguien que
+     * viene a entrenar.
+     */
+    public function test_la_cuenta_trae_con_que_reconocerlo_y_con_que_escribirle(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true, 'celular' => '912345678']);
+
+        $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'concepto' => 'Bebida', 'monto' => 1500]);
+
+        $cuenta = $this->como()->get('/panel/fiados')->viewData('page')['props']['cuentas'][0];
+
+        $this->assertSame('912345678', $cuenta['celular']);
+        $this->assertArrayHasKey('foto', $cuenta);
+    }
 }

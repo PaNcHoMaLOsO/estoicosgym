@@ -373,6 +373,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          */
         Route::get('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'index'])->name('fiados.index');
         Route::get('/fiados/buscar-socio', [\App\Http\Controllers\Panel\FiadoController::class, 'buscar'])->name('fiados.buscar');
+        // Lo que mas se fia, para dejarlo puesto de un toque en vez de teclear
+        // «barra de proteina» y «2500» veinte veces al mes.
+        Route::get('/fiados/frecuentes', [\App\Http\Controllers\Panel\FiadoController::class, 'frecuentes'])->name('fiados.frecuentes');
         Route::post('/fiados', [\App\Http\Controllers\Panel\FiadoController::class, 'store'])->name('fiados.store');
         Route::post('/fiados/saldar', [\App\Http\Controllers\Panel\FiadoController::class, 'saldar'])->name('fiados.saldar');
         // Deshacer un «Pago» mal dado: sin esto, la deuda desaparece y hay que

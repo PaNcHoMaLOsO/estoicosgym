@@ -1,15 +1,6 @@
-import { Link, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
-import { CheckIcon, PlusIcon, TrashIcon, UndoIcon } from 'lucide-react';
-
-import ConfirmarDinero from '@/components/ConfirmarDinero';
-import { Reservado } from '@/Privado';
-
-const pesos = new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-});
+import { router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { CheckIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 /**
  * El bloc de notas del meson.
@@ -155,160 +146,22 @@ export function Notas({ notas }) {
 }
 
 /**
- * Lo que la gente se lleva del meson y paga despues.
- *
- * Agrupado POR PERSONA, no linea a linea: lo que se pregunta en el meson es
- * «¿cuanto debe Juan?», no «¿que se llevo el martes?». El detalle esta dentro,
- * para cuando alguien discute la cifra.
- *
- * NO es un pago de membresia y no toca la caja: es la libreta del meson.
- */
-export function Fiados({ fiados }) {
-    const [abierta, setAbierta] = useState(null);
-    const [anotando, setAnotando] = useState(false);
-    /*
-     * Cual se esta cobrando.
-     *
-     * «Pago» mueve dinero y NO se dispara de un clic. El error de ese boton es
-     * siempre el mismo —pulsar en la fila de al lado—, y para eso no vale un
-     * «¿seguro?»: quien se equivoco de fila tambien dice que si. Lo que lo
-     * evita es que el aviso diga el nombre y la cantidad.
-     */
-    const [cobrando, setCobrando] = useState(null);
-
-    const total = fiados.reduce((t, f) => t + f.total, 0);
-
-    return (
-        <section className="rounded-panel border border-line bg-surface p-4">
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-                <div>
-                    <h2 className="rotulo">Fiado en el mesón</h2>
-                    <p className="apoyo mt-0.5 text-fog">
-                        Lo que se llevaron y todavía no pagan ·{' '}
-                        {/* Aqui va el vistazo; lo cobrado y el historial estan
-                            en su pantalla, que no se mira todos los dias. */}
-                        <Link
-                            href="/panel/fiados"
-                            className="text-fog underline transition-colors hover:text-chalk"
-                        >
-                            ver todo
-                        </Link>
-                    </p>
-                </div>
-
-                {fiados.length > 0 ? (
-                    <span className="apoyo shrink-0 tabular-nums text-warn">
-                        <Reservado ancho="w-14">{pesos.format(total)}</Reservado>
-                    </span>
-                ) : null}
-            </div>
-
-            {anotando ? (
-                <ApuntarFiado alTerminar={() => setAnotando(false)} />
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => setAnotando(true)}
-                    className="mb-3 inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
-                >
-                    <PlusIcon className="size-4" aria-hidden="true" />
-                    Anotar algo fiado
-                </button>
-            )}
-
-            {fiados.length === 0 ? (
-                <p className="apoyo py-3 text-center text-fog">Nadie debe nada.</p>
-            ) : (
-                <ul className="divide-y divide-line">
-                    {fiados.map((cuenta) => (
-                        <li key={cuenta.clave} className="py-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setAbierta(abierta === cuenta.clave ? null : cuenta.clave)
-                                    }
-                                    className="min-w-0 text-left"
-                                >
-                                    <span className="block truncate text-sm font-medium text-chalk">
-                                        {cuenta.quien}
-                                    </span>
-                                    <span className="apoyo block text-fog">
-                                        {cuenta.lineas.length}{' '}
-                                        {cuenta.lineas.length === 1 ? 'cosa' : 'cosas'} · desde{' '}
-                                        {cuenta.desde}
-                                    </span>
-                                </button>
-
-                                <div className="flex shrink-0 items-center gap-3">
-                                    <span className="font-semibold tabular-nums text-warn">
-                                        <Reservado ancho="w-14">{pesos.format(cuenta.total)}</Reservado>
-                                    </span>
-
-                                    {/* Se salda la cuenta ENTERA: quien paga en
-                                        el meson paga lo que debe, no la bebida
-                                        del martes. */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setCobrando(cuenta)}
-                                        className="apoyo rounded-control border border-line px-2 py-1 text-fog transition-colors hover:text-chalk"
-                                    >
-                                        Pagó
-                                    </button>
-                                </div>
-                            </div>
-
-                            {abierta === cuenta.clave ? (
-                                <ul className="apoyo mt-1.5 space-y-0.5 border-l border-line pl-3 text-fog">
-                                    {cuenta.lineas.map((l) => (
-                                        <li key={l.uuid} className="flex justify-between gap-2">
-                                            <span className="min-w-0 truncate">
-                                                {l.concepto}
-                                                <span className="ml-1 opacity-70">{l.cuando}</span>
-                                            </span>
-                                            <span className="shrink-0 tabular-nums">
-                                                <Reservado ancho="w-12">{pesos.format(l.monto)}</Reservado>
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : null}
-                        </li>
-                    ))}
-                </ul>
-            )}
-
-            {/* El aviso dice el nombre y la cantidad, no «¿seguro?». */}
-            <ConfirmarDinero
-                abierto={cobrando !== null}
-                alCerrar={() => setCobrando(null)}
-                titulo="Cobrar lo fiado"
-                quien={cobrando?.quien ?? ''}
-                monto={cobrando?.total ?? 0}
-                detalle={cobrando?.lineas}
-                consecuencia="Su cuenta queda saldada. Esto no entra en la caja del gimnasio."
-                etiquetaConfirmar="Pagó"
-                accion="/panel/fiados/saldar"
-                metodo="post"
-                datos={{
-                    id_cliente: cobrando?.id_cliente ?? null,
-                    nombre: cobrando?.nombre ?? null,
-                }}
-            />
-
-        </section>
-    );
-}
-
-/**
  * El formulario de apuntar: a quien, que y cuanto.
  *
- * Se exporta porque lo usan las DOS pantallas —el resumen y la de fiados—, y
- * dos copias del mismo formulario acaban pidiendo cosas distintas.
+ * Se exporta porque lo usan TRES pantallas —el resumen, la ficha del socio y
+ * la de fiados—, y tres copias del mismo formulario acaban pidiendo cosas
+ * distintas.
+ *
+ * `alTerminar` es opcional: sin el no sale el boton de cerrar, que es como se
+ * usa en la pantalla de fiados, donde el formulario esta siempre puesto.
  */
 export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState(null);
+    // Lo ultimo apuntado, para decirlo sin cerrar el formulario: en el meson se
+    // fian dos cosas seguidas mas veces que una sola.
+    const [apuntado, setApuntado] = useState(null);
+    const [frecuentes, setFrecuentes] = useState([]);
     // Desde la ficha de un socio se llega con él ya puesto: ahí no hay a quién
     // buscar, es la persona cuya ficha se está mirando.
     const [socio, setSocio] = useState(socioFijo);
@@ -319,6 +172,29 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
         concepto: '',
         monto: '',
     });
+
+    /*
+     * LO QUE MAS SE FIA, para no teclearlo.
+     *
+     * En el meson se venden siempre las mismas cinco cosas, y escribir «barra
+     * de proteina» y «2500» veinte veces al mes es justo lo que hace que un
+     * dia no se apunte. Se piden aqui y no como propiedad de la pantalla
+     * porque el formulario vive en tres sitios distintos: asi los tres lo
+     * tienen sin tocar tres controladores.
+     */
+    useEffect(() => {
+        let vivo = true;
+
+        fetch('/panel/fiados/frecuentes', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then((r) => r.json())
+            .then((j) => vivo && setFrecuentes(j.frecuentes ?? []))
+            // Sin esto no se pierde nada: se teclea, como hasta ahora.
+            .catch(() => {});
+
+        return () => {
+            vivo = false;
+        };
+    }, []);
 
     async function buscar(texto) {
         setBusqueda(texto);
@@ -352,6 +228,9 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
     function enviar(e) {
         e.preventDefault();
 
+        // Se guarda lo que se va a decir ANTES de vaciar el formulario.
+        const apunte = `${data.concepto} · $${Number(data.monto).toLocaleString('es-CL')}`;
+
         post('/panel/fiados', {
             preserveScroll: true,
             onSuccess: () => {
@@ -359,7 +238,7 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
                 setSocio(socioFijo);
                 setData('id_cliente', socioFijo?.id ?? '');
                 setBusqueda('');
-                alTerminar();
+                setApuntado(apunte);
             },
         });
     }
@@ -430,11 +309,37 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
 
             {errors.nombre ? <p className="apoyo text-danger">{errors.nombre}</p> : null}
 
+            {/* UN TOQUE EN VEZ DE DOS CAMPOS. Deja puestos el nombre y el
+                precio de la ultima vez, y se corrigen si hoy cuesta otra cosa. */}
+            {frecuentes.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                    {frecuentes.map((f) => (
+                        <button
+                            key={f.concepto}
+                            type="button"
+                            onClick={() => {
+                                setData('concepto', f.concepto);
+                                setData('monto', String(f.monto));
+                                setApuntado(null);
+                            }}
+                            title={`Se ha fiado ${f.veces} veces`}
+                            className="rounded-pill border border-line bg-surface px-2 py-0.5 text-xs text-fog transition-colors hover:border-line-strong hover:text-chalk"
+                        >
+                            {f.concepto}
+                            <span className="ml-1 tabular-nums text-chalk">${f.monto.toLocaleString('es-CL')}</span>
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+
             <div className="flex gap-2">
                 <input
                     type="text"
                     value={data.concepto}
-                    onChange={(e) => setData('concepto', e.target.value)}
+                    onChange={(e) => {
+                        setData('concepto', e.target.value);
+                        setApuntado(null);
+                    }}
                     maxLength={120}
                     placeholder="¿Qué se llevó?"
                     aria-label="Qué se llevó"
@@ -464,13 +369,25 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
                     Anotar
                 </button>
 
-                <button
-                    type="button"
-                    onClick={alTerminar}
-                    className="apoyo text-fog transition-colors hover:text-chalk"
-                >
-                    Cancelar
-                </button>
+                {/* EL FORMULARIO NO SE CIERRA SOLO al guardar. Quien se lleva
+                    una bebida se lleva tambien la barrita: cerrandose habia que
+                    volver a abrirlo y volver a buscar a la misma persona. */}
+                {apuntado ? (
+                    <span className="apoyo inline-flex min-w-0 items-center gap-1 text-ok">
+                        <CheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                        <span className="truncate">Anotado · {apuntado}</span>
+                    </span>
+                ) : null}
+
+                {alTerminar ? (
+                    <button
+                        type="button"
+                        onClick={alTerminar}
+                        className="apoyo ml-auto text-fog transition-colors hover:text-chalk"
+                    >
+                        Cerrar
+                    </button>
+                ) : null}
             </div>
         </form>
     );

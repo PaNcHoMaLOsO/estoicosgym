@@ -48,6 +48,12 @@ class FiadoController extends Controller
                 'se_debe' => (int) Fiado::debiendo()->sum('monto'),
                 'personas' => Fiado::debiendo()->get()->groupBy(fn (Fiado $f) => $f->claveDeCuenta())->count(),
                 'cobrado_mes' => $cobradoEsteMes,
+                // Lo cobrado HOY: es lo que se cuadra al cerrar el turno, y
+                // hasta ahora había que sumarlo a ojo de la lista de pagados.
+                'cobrado_hoy' => (int) Fiado::where('pagado', true)
+                    ->whereBetween('pagado_en', [$hoy->copy()->startOfDay(), $hoy->copy()->endOfDay()])
+                    ->sum('monto'),
+                'anotado_hoy' => (int) Fiado::whereBetween('created_at', [$hoy->copy()->startOfDay(), $hoy->copy()->endOfDay()])->sum('monto'),
             ],
             // Desde Configuración → Mesón: a partir de cuántos días se insiste.
             // Estaba escrito en la pantalla, y el ajuste no lo leía nadie.
@@ -224,7 +230,7 @@ class FiadoController extends Controller
         return Fiado::debiendo()
             // El autor va cargado: cada linea dice quien la apunto, y pedirlo
             // por fila seria una consulta por cada cosa que alguien se llevo.
-            ->with(['cliente:id,uuid,nombres,apellido_paterno', 'autor:id,name'])
+            ->with(['cliente:id,uuid,nombres,apellido_paterno,celular,foto_perfil', 'autor:id,name'])
             ->orderBy('created_at')
             ->get()
             ->groupBy(fn (Fiado $f) => $f->claveDeCuenta())
@@ -236,6 +242,10 @@ class FiadoController extends Controller
                     'clave' => $primera->claveDeCuenta(),
                     'quien' => $primera->aNombreDe(),
                     'socio_uuid' => $primera->cliente?->uuid,
+                    // La cara, para reconocer a quién hay que cobrarle, y el
+                    // celular, para poder recordárselo sin buscar su ficha.
+                    'foto' => $primera->cliente?->urlDeFoto(),
+                    'celular' => $primera->cliente?->celular,
                     'id_cliente' => $primera->id_cliente,
                     'nombre' => $primera->nombre,
                     'total' => (int) $lineas->sum('monto'),
@@ -283,6 +293,47 @@ class FiadoController extends Controller
                 'apunto' => $f->autor?->name,
             ])
             ->all();
+    }
+
+    /**
+     * Lo que más se fía, con lo que costó la última vez.
+     *
+     * TECLEAR «BARRA DE PROTEÍNA» Y «2500» VEINTE VECES AL MES es la razón por
+     * la que las cosas acaban sin apuntarse. En el mesón se venden siempre las
+     * mismas cinco cosas: aquí salen para dejarlas puestas de un toque.
+     *
+     * El precio es el de la última vez que se apuntó esa misma cosa, no un
+     * catálogo: no hay lista de precios en el sistema, y el último es el que
+     * más se parece al de hoy. Se puede corregir antes de guardar.
+     */
+    public function frecuentes()
+    {
+        // Se mira lo último y no todo el histórico: lo que se vendía hace un
+        // año no es lo que hay hoy en el mostrador.
+        // Por `id` y no por fecha: dos cosas apuntadas en el mismo segundo
+        // empatan en `created_at` —la columna no guarda milésimas— y entonces
+        // «la última vez» dependía del orden en que la base las devolviera.
+        $ultimos = Fiado::query()
+            ->orderByDesc('id')
+            ->limit(300)
+            ->get(['id', 'concepto', 'monto']);
+
+        $frecuentes = $ultimos
+            ->groupBy(fn (Fiado $f) => mb_strtolower(trim($f->concepto)))
+            ->map(fn ($lineas) => [
+                // El nombre tal como se escribió la última vez: así se respeta
+                // la mayúscula y la tilde de quien lo apuntó bien.
+                'concepto' => $lineas->first()->concepto,
+                'monto' => (int) $lineas->first()->monto,
+                'veces' => $lineas->count(),
+            ])
+            ->filter(fn (array $f) => $f['veces'] >= 2)
+            ->sortByDesc('veces')
+            ->take(6)
+            ->values()
+            ->all();
+
+        return response()->json(['frecuentes' => $frecuentes]);
     }
 
     /**
