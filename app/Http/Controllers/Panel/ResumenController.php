@@ -41,6 +41,9 @@ class ResumenController extends Controller
     /** Hasta cuántos días adelante se mira qué planes están por empezar. */
     private const DIAS_POR_EMPEZAR = 14;
 
+    /** Hasta cuántos días adelante se miran los cumpleaños. */
+    private const DIAS_CUMPLEANOS = 7;
+
     public function __invoke()
     {
         $hoy = Carbon::today();
@@ -74,6 +77,15 @@ class ResumenController extends Controller
             'notas' => $this->notas(),
 
             /*
+             * QUIÉN CUMPLE AÑOS. Es lo más barato que puede hacer un gimnasio
+             * por alguien que paga todos los meses: saludarlo cuando entra. El
+             * dato ya se pide al inscribirse y hasta ahora no se usaba para
+             * nada; aquí sale la semana que viene, para que en el mesón se
+             * sepa antes de que la persona cruce la puerta.
+             */
+            'cumpleanos' => $this->cumpleanos($hoy),
+
+            /*
              * LO FIADO DEL MESÓN, en el resumen.
              *
              * Es lo que se cobra con la persona delante, y hasta ahora había
@@ -105,7 +117,7 @@ class ResumenController extends Controller
                 ->sinPases()
                 ->whereIn('id_estado', [self::ACTIVA, self::PAUSADA])
                 ->whereBetween('fecha_inicio', [$hoy->copy()->addDay(), $hoy->copy()->addDays(self::DIAS_POR_EMPEZAR)])
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
                 ->orderBy('fecha_inicio')
                 ->limit(self::EN_LISTA)
                 ->get()
@@ -116,7 +128,7 @@ class ResumenController extends Controller
                 ->all(),
 
             'porVencer' => $porVencer
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
                 ->orderBy('fecha_vencimiento')
                 ->limit(self::EN_LISTA)
                 ->get()
@@ -124,7 +136,7 @@ class ResumenController extends Controller
                 ->all(),
 
             'sinRenovar' => $sinRenovar
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
                 // El que se fue hace menos, arriba: es al que todavía se le
                 // puede convencer de volver.
                 ->orderByDesc('fecha_vencimiento')
@@ -167,6 +179,10 @@ class ResumenController extends Controller
         return [
             'uuid' => $i->uuid,
             'socio_uuid' => $cliente?->uuid,
+            // LA CARA, no solo el nombre. Quien atiende reconoce a la persona
+            // que tiene delante antes de leer cómo se llama, y con dos socios
+            // de apellido parecido es lo único que los distingue de un vistazo.
+            'foto' => $cliente?->urlDeFoto(),
             'socio' => $cliente
                 ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
                 : 'Socio eliminado',
@@ -188,7 +204,7 @@ class ResumenController extends Controller
     private function fiado(): array
     {
         $pendientes = Fiado::debiendo()
-            ->with('cliente:id,uuid,nombres,apellido_paterno,celular')
+            ->with('cliente:id,uuid,nombres,apellido_paterno,celular,foto_perfil')
             ->get();
 
         $cuentas = $pendientes
@@ -200,6 +216,7 @@ class ResumenController extends Controller
                 return [
                     'quien' => $primera->aNombreDe(),
                     'socio_uuid' => $primera->cliente?->uuid,
+                    'foto' => $primera->cliente?->urlDeFoto(),
                     'celular' => $primera->cliente?->celular,
                     'total' => (int) $lineas->sum('monto'),
                     'cuantas' => $lineas->count(),
@@ -216,6 +233,49 @@ class ResumenController extends Controller
             'personas' => $cuentas->count(),
             'cuentas' => $cuentas->take(self::EN_LISTA)->all(),
         ];
+    }
+
+    /**
+     * Los socios que cumplen años de aquí a una semana.
+     *
+     * SE CALCULA EN PHP, A PROPÓSITO. Comparar solo el día y el mes en la base
+     * de datos pide funciones distintas en MySQL y en SQLite —y las pruebas
+     * corren en SQLite—, por un puñado de filas que cabe de sobra en memoria.
+     * Y así el salto de año se resuelve solo: el 2 de enero cae después del 30
+     * de diciembre sin ninguna cuenta rara.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function cumpleanos(Carbon $hoy): array
+    {
+        return Cliente::query()
+            ->where('activo', true)
+            ->whereNotNull('fecha_nacimiento')
+            ->get(['id', 'uuid', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'foto_perfil', 'fecha_nacimiento'])
+            ->map(function (Cliente $c) use ($hoy) {
+                $este = $c->fecha_nacimiento->copy()->year($hoy->year)->startOfDay();
+
+                // Ya pasó este año: el que viene es el del año siguiente.
+                if ($este->lt($hoy)) {
+                    $este->addYear();
+                }
+
+                return [
+                    'uuid' => $c->uuid,
+                    'socio' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
+                    'foto' => $c->urlDeFoto(),
+                    'celular' => $c->celular,
+                    'email' => $c->email,
+                    'fecha' => $este->format('d/m'),
+                    'dias' => (int) $hoy->diffInDays($este, false),
+                    // Los que va a cumplir, que es lo que se dice al saludar.
+                    'edad' => $este->year - $c->fecha_nacimiento->year,
+                ];
+            })
+            ->filter(fn (array $f) => $f['dias'] >= 0 && $f['dias'] <= self::DIAS_CUMPLEANOS)
+            ->sortBy('dias')
+            ->values()
+            ->all();
     }
 
     /**

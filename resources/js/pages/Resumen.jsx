@@ -5,6 +5,7 @@ import {
     CreditCardIcon,
     MailIcon,
     MessageCircleIcon,
+    CakeIcon,
     NotebookPenIcon,
     PhoneOffIcon,
     SearchIcon,
@@ -15,6 +16,7 @@ import {
 
 import { ApuntarFiado, Notas } from '@/components/Libreta';
 import MesonTienda from '@/components/MesonTienda';
+import Retrato from '@/components/Retrato';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
@@ -181,25 +183,78 @@ function Fiado({ fiado }) {
             {anotando ? <ApuntarFiado alTerminar={() => setAnotando(false)} /> : null}
             <ul className="space-y-2">
                 {fiado.cuentas.map((c) => (
-                    <li key={`${c.socio_uuid ?? c.quien}`} className="flex items-baseline justify-between gap-3">
-                        <div className="min-w-0">
-                            {c.socio_uuid ? (
-                                <Link href={`/panel/clientes/${c.socio_uuid}`} className="truncate text-sm text-chalk hover:underline">
-                                    {c.quien}
-                                </Link>
-                            ) : (
-                                <span className="truncate text-sm text-chalk">{c.quien}</span>
-                            )}
-                            {/* Los días que lleva: una cuenta de tres semanas no
-                                se cobra sola, y conviene que se note. */}
-                            <p className={`apoyo ${c.dias >= 14 ? 'text-warn' : 'text-fog'}`}>
-                                {c.dias === 0 ? 'de hoy' : c.dias === 1 ? 'de ayer' : `hace ${c.dias} días`}
-                                {c.cuantas > 1 ? ` · ${c.cuantas} cosas` : ''}
-                            </p>
+                    <li key={`${c.socio_uuid ?? c.quien}`} className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                            <Retrato nombre={c.quien} foto={c.foto} tamano="sm" />
+                            <div className="min-w-0">
+                                {c.socio_uuid ? (
+                                    <Link href={`/panel/clientes/${c.socio_uuid}`} className="truncate text-sm text-chalk hover:underline">
+                                        {c.quien}
+                                    </Link>
+                                ) : (
+                                    <span className="truncate text-sm text-chalk">{c.quien}</span>
+                                )}
+                                {/* Los días que lleva: una cuenta de tres semanas
+                                    no se cobra sola, y conviene que se note. */}
+                                <p className={`apoyo ${c.dias >= 14 ? 'text-warn' : 'text-fog'}`}>
+                                    {c.dias === 0 ? 'de hoy' : c.dias === 1 ? 'de ayer' : `hace ${c.dias} días`}
+                                    {c.cuantas > 1 ? ` · ${c.cuantas} cosas` : ''}
+                                </p>
+                            </div>
                         </div>
                         <span className="shrink-0 text-sm font-medium tabular-nums text-chalk">
                             <Reservado ancho="w-12">{pesos.format(c.total)}</Reservado>
                         </span>
+                    </li>
+                ))}
+            </ul>
+        </Panel>
+    );
+}
+
+/**
+ * Quién cumple años esta semana.
+ *
+ * LO MÁS BARATO QUE PUEDE HACER UN GIMNASIO por alguien que paga todos los
+ * meses es saludarlo al entrar. La fecha se pide al inscribirse y no se usaba
+ * para nada; aquí sale con la cara, para reconocer a la persona antes de que
+ * llegue al mesón. Al de hoy se le puede escribir de una.
+ *
+ * Solo aparece si hay alguien: un panel que casi siempre dice «nadie» acaba
+ * siendo una línea más que saltarse.
+ */
+function Cumpleanos({ gente }) {
+    if (gente.length === 0) {
+        return null;
+    }
+
+    const hoy = gente.filter((g) => g.dias === 0).length;
+
+    return (
+        <Panel
+            titulo={
+                <span className="inline-flex items-center gap-2">
+                    <CakeIcon className="size-3.5 text-fog" aria-hidden="true" />
+                    {hoy > 0 ? 'Cumple hoy' : 'Cumpleaños'}
+                </span>
+            }
+            descripcion={hoy > 0 ? null : 'Esta semana'}
+        >
+            <ul className="space-y-2">
+                {gente.slice(0, 5).map((g) => (
+                    <li key={g.uuid} className="flex items-center justify-between gap-2">
+                        <Link href={`/panel/clientes/${g.uuid}`} className="flex min-w-0 items-center gap-2.5">
+                            <Retrato nombre={g.socio} foto={g.foto} tamano="sm" />
+                            <span className="min-w-0">
+                                <span className="block truncate text-sm text-chalk">{g.socio}</span>
+                                <span className={`apoyo block ${g.dias === 0 ? 'text-volt' : 'text-fog'}`}>
+                                    {g.dias === 0 ? 'hoy' : g.dias === 1 ? 'mañana' : `el ${g.fecha}`} · {g.edad} años
+                                </span>
+                            </span>
+                        </Link>
+                        {/* Solo al de hoy: saludar con tres días de antelación
+                            es raro, y el botón en todos llenaba la columna. */}
+                        {g.dias === 0 ? <Contacto celular={g.celular} email={g.email} nombre={g.socio} /> : null}
                     </li>
                 ))}
             </ul>
@@ -233,12 +288,19 @@ function Llamar({ filas, fecha, cuanto, vacia }) {
             {filas.map((f) => (
                 <Fila key={f.uuid}>
                     <Celda className="font-medium text-chalk">
-                        <Link
-                            href={f.socio_uuid ? `/panel/clientes/${f.socio_uuid}` : `/panel/inscripciones/${f.uuid}`}
-                            className="hover:underline"
-                        >
-                            {f.socio}
-                        </Link>
+                        {/* LA CARA AL LADO DEL NOMBRE. Estas listas se usan para
+                            llamar, pero también para caer en la cuenta de quién
+                            es: «ah, el de la polera roja». Con dos apellidos
+                            parecidos, la foto resuelve lo que el nombre no. */}
+                        <div className="flex items-center gap-2.5">
+                            <Retrato nombre={f.socio} foto={f.foto} tamano="sm" ampliable />
+                            <Link
+                                href={f.socio_uuid ? `/panel/clientes/${f.socio_uuid}` : `/panel/inscripciones/${f.uuid}`}
+                                className="hover:underline"
+                            >
+                                {f.socio}
+                            </Link>
+                        </div>
                     </Celda>
                     <Celda>{f.membresia ?? 'Sin plan'}</Celda>
                     <Celda className="tabular-nums">{f.fecha}</Celda>
@@ -278,6 +340,7 @@ export default function Resumen({
     porVencer,
     sinRenovar,
     fiado = { total: 0, personas: 0, cuentas: [] },
+    cumpleanos = [],
     porEmpezar = [],
     avisosFallidos = 0,
 }) {
@@ -384,6 +447,8 @@ export default function Resumen({
                     <Notas notas={notas} />
 
                     <Fiado fiado={fiado} />
+
+                    <Cumpleanos gente={cumpleanos} />
 
                     {/* CÓMO ESTÁ EL GIMNASIO, en una línea. Antes eran tres cajas
                         altas, y le daban el tamaño de un panel entero a algo que

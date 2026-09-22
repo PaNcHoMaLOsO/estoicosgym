@@ -136,4 +136,64 @@ class ResumenAvisaTest extends CasoConCatalogos
         $this->assertSame(['total' => 0, 'personas' => 0], ['total' => $fiado['total'], 'personas' => $fiado['personas']]);
         $this->assertSame([], $fiado['cuentas']);
     }
+    /**
+     * LOS CUMPLEAÑOS SALEN EN EL RESUMEN, y solo los de la semana.
+     *
+     * La fecha se pide al inscribirse y no se usaba para nada. Aquí se prueba
+     * lo que puede salir mal: que aparezca uno de dentro de dos meses, que se
+     * cuele un socio dado de baja, o que el de hoy no salga como «hoy».
+     */
+    public function test_el_resumen_dice_quien_cumple_anos_esta_semana(): void
+    {
+        $hoy = \Illuminate\Support\Carbon::today();
+
+        $deHoy = \App\Models\Cliente::factory()->create([
+            'activo' => true,
+            'nombres' => 'Rocío',
+            'fecha_nacimiento' => $hoy->copy()->subYears(30),
+        ]);
+        $enTresDias = \App\Models\Cliente::factory()->create([
+            'activo' => true,
+            'fecha_nacimiento' => $hoy->copy()->addDays(3)->subYears(41),
+        ]);
+        \App\Models\Cliente::factory()->create([
+            'activo' => true,
+            'fecha_nacimiento' => $hoy->copy()->addDays(40)->subYears(25),
+        ]);
+        \App\Models\Cliente::factory()->create([
+            'activo' => false,
+            'fecha_nacimiento' => $hoy->copy()->subYears(22),
+        ]);
+
+        $cumples = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props']['cumpleanos'];
+
+        $this->assertSame(
+            [(string) $deHoy->uuid, (string) $enTresDias->uuid],
+            array_map(fn ($c) => (string) $c['uuid'], $cumples),
+        );
+        $this->assertSame(0, $cumples[0]['dias']);
+        $this->assertSame(30, $cumples[0]['edad']);
+        $this->assertSame(3, $cumples[1]['dias']);
+    }
+
+    /**
+     * EL SALTO DE AÑO. Quien nació un 2 de enero cumple dentro de días cuando
+     * estamos a fin de diciembre: comparando fechas a secas quedaría fuera por
+     * un año entero y nunca se le saludaría.
+     */
+    public function test_el_cumpleanos_de_enero_sale_estando_en_diciembre(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::create(2026, 12, 30));
+
+        $socio = \App\Models\Cliente::factory()->create([
+            'activo' => true,
+            'fecha_nacimiento' => '1990-01-02',
+        ]);
+
+        $cumples = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props']['cumpleanos'];
+
+        $this->assertSame([(string) $socio->uuid], array_map(fn ($c) => (string) $c['uuid'], $cumples));
+        $this->assertSame(3, $cumples[0]['dias']);
+        $this->assertSame(37, $cumples[0]['edad']);
+    }
 }
