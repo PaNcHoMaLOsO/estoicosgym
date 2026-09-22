@@ -64,6 +64,29 @@ function Pago({ debe, precio }) {
     );
 }
 
+/**
+ * Los planes, repartidos en dos: lo que se vende por días y las mensualidades.
+ *
+ * Ocho planes seguidos en una lista se leen todos para encontrar uno. Partidos
+ * en «de paso» y «mensualidades» no hay que leerlos: se mira el grupo.
+ */
+function gruposDePlanes(planes) {
+    const corto = planes.filter((p) => p.por_dias);
+    const largo = planes.filter((p) => ! p.por_dias);
+
+    const comoOpcion = (p) => ({
+        valor: String(p.id),
+        etiqueta: p.nombre,
+        cuantas: p.cuantas,
+    });
+
+    return [
+        { titulo: null, opciones: [{ valor: '', etiqueta: 'Todos los planes' }] },
+        ...(largo.length ? [{ titulo: 'Mensualidades', opciones: largo.map(comoOpcion) }] : []),
+        ...(corto.length ? [{ titulo: 'De paso', opciones: corto.map(comoOpcion) }] : []),
+    ];
+}
+
 /** Cómo se puede ordenar la lista. «Reciente» es lo de siempre. */
 const ORDENES = [
     { valor: '', etiqueta: 'Lo más reciente' },
@@ -141,13 +164,7 @@ export default function Index({ inscripciones, filtros, resumen, planes = [] }) 
                             valor={filtros.plan ?? ''}
                             ruta="/panel/inscripciones"
                             extra={conservar}
-                            opciones={[
-                                { valor: '', etiqueta: 'Todos los planes' },
-                                ...planes.map((p) => ({
-                                    valor: String(p.id),
-                                    etiqueta: `${p.nombre} (${p.cuantas})`,
-                                })),
-                            ]}
+                            grupos={gruposDePlanes(planes)}
                         />
 
                         <Selector

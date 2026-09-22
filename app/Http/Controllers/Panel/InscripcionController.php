@@ -121,6 +121,9 @@ class InscripcionController extends Controller
                     'id' => $m->id,
                     'nombre' => $m->nombre,
                     'cuantas' => $m->inscripciones_count,
+                    // Para separar en la pantalla lo que se vende por días
+                    // —pase, semana, quincena— de las mensualidades.
+                    'por_dias' => (int) $m->duracion_meses === 0,
                 ])
                 ->all(),
             'resumen' => [
