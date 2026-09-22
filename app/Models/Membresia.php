@@ -49,6 +49,7 @@ class Membresia extends Model
         'nombre',
         'duracion_meses',
         'duracion_dias',
+        'dias_regalo',
         'max_pausas',
         'descripcion',
         'activo',
@@ -114,15 +115,21 @@ class Membresia extends Model
      *
      * Con días mandan los días: inicio + días − 1, porque el primero cuenta.
      * Con meses: inicio + meses − 1 día.
+     *
+     * Y al final los DÍAS DE REGALO, si el plan trae. Son los que el gimnasio
+     * da de más por pagar todo junto —al anual se le daban unos días y se
+     * escribían a mano en la planilla—: van aparte de la duración para que
+     * «cuánto dura» y «cuánto regalamos» sigan siendo dos preguntas con dos
+     * respuestas.
      */
     public function vencimientoDesde(CarbonInterface $inicio): CarbonInterface
     {
         $dia = $inicio->copy()->startOfDay();
 
-        if ((int) $this->duracion_dias > 0) {
-            return $dia->addDays((int) $this->duracion_dias)->subDay();
-        }
+        $fin = (int) $this->duracion_dias > 0
+            ? $dia->addDays((int) $this->duracion_dias)->subDay()
+            : $dia->addMonths(max(1, (int) $this->duracion_meses))->subDay();
 
-        return $dia->addMonths(max(1, (int) $this->duracion_meses))->subDay();
+        return $fin->addDays(max(0, (int) $this->dias_regalo));
     }
 }

@@ -41,6 +41,7 @@ class ConfiguracionController extends Controller
                 // lee bien en la tabla pero no se puede meter en el formulario.
                 'duracion_meses' => (int) $m->duracion_meses,
                 'duracion_dias' => (int) $m->duracion_dias,
+                'dias_regalo' => (int) $m->dias_regalo,
                 'precio_convenio' => $m->precios->first()?->precio_convenio !== null
                     ? (int) $m->precios->first()->precio_convenio
                     : null,
@@ -120,16 +121,22 @@ class ConfiguracionController extends Controller
     /** «Anual», «3 meses», «1 día»: lo que se lee, no dos columnas de numeros. */
     private function duracion(Membresia $membresia): string
     {
-        if ($membresia->duracion_meses > 0) {
-            return $membresia->duracion_meses === 12
+        $texto = match (true) {
+            $membresia->duracion_meses > 0 => $membresia->duracion_meses === 12
                 ? 'Anual'
-                : ($membresia->duracion_meses === 1 ? '1 mes' : "{$membresia->duracion_meses} meses");
+                : ($membresia->duracion_meses === 1 ? '1 mes' : "{$membresia->duracion_meses} meses"),
+            $membresia->duracion_dias > 0 => $membresia->duracion_dias === 1
+                ? '1 día'
+                : "{$membresia->duracion_dias} días",
+            default => '-',
+        };
+
+        // Los días de regalo se dicen aparte: es lo que el gimnasio da de más,
+        // no lo que el plan dura.
+        if ((int) $membresia->dias_regalo > 0) {
+            $texto .= " + {$membresia->dias_regalo} de regalo";
         }
 
-        if ($membresia->duracion_dias > 0) {
-            return $membresia->duracion_dias === 1 ? '1 día' : "{$membresia->duracion_dias} días";
-        }
-
-        return '-';
+        return $texto;
     }
 }

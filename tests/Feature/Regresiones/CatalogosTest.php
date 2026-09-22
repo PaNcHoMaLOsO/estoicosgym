@@ -308,4 +308,67 @@ class CatalogosTest extends CasoConCatalogos
             (int) $inscripcion->id_precio_acordado
         );
     }
+    // ---------- Días de regalo ----------
+
+    /**
+     * LOS DÍAS QUE EL GIMNASIO DA DE MÁS.
+     *
+     * Al anual se le regalaban unos días por pagar todo junto, y eso se
+     * arreglaba escribiendo el vencimiento a mano: no quedaba dicho en ninguna
+     * parte, así que dependía de quién atendiera. Ahora es del plan, y se suma
+     * solo en cada venta.
+     */
+    public function test_los_dias_de_regalo_se_suman_al_vencimiento(): void
+    {
+        $plan = \App\Models\Membresia::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'nombre' => 'Anual con regalo',
+            'duracion_meses' => 12,
+            'duracion_dias' => 0,
+            'dias_regalo' => 5,
+            'max_pausas' => 1,
+            'activo' => true,
+        ]);
+
+        $inicio = \Illuminate\Support\Carbon::create(2026, 1, 1);
+
+        // Un año —hasta el 31 de diciembre, que es el último día que sirve— y
+        // encima los cinco de regalo.
+        $this->assertSame('2027-01-05', $plan->vencimientoDesde($inicio)->format('Y-m-d'));
+    }
+
+    /** Sin regalo, el vencimiento es el de siempre. */
+    public function test_sin_dias_de_regalo_nada_cambia(): void
+    {
+        $plan = \App\Models\Membresia::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'nombre' => 'Mensual de 31',
+            'duracion_meses' => 1,
+            'duracion_dias' => 31,
+            'max_pausas' => 1,
+            'activo' => true,
+        ]);
+
+        // 31 días contando el primero: del 22 de septiembre al 22 de octubre.
+        $this->assertSame(
+            '2026-10-22',
+            $plan->vencimientoDesde(\Illuminate\Support\Carbon::create(2026, 9, 22))->format('Y-m-d')
+        );
+        $this->assertSame(0, (int) $plan->dias_regalo);
+    }
+
+    /** No son la duración: sesenta días de regalo ya serían otro plan. */
+    public function test_el_regalo_tiene_tope(): void
+    {
+        $respuesta = $this->actingAs($this->administrador())->post('/panel/membresias', [
+            'nombre' => 'Plan generoso',
+            'duracion_meses' => 1,
+            'duracion_dias' => 0,
+            'dias_regalo' => 200,
+            'max_pausas' => 1,
+            'precio' => 40000,
+        ]);
+
+        $respuesta->assertSessionHasErrors('dias_regalo');
+    }
 }

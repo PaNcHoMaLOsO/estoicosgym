@@ -45,6 +45,7 @@ class CatalogoController extends Controller
                 'descripcion' => $datos['descripcion'] ?? null,
                 'duracion_meses' => $datos['duracion_meses'],
                 'duracion_dias' => $datos['duracion_dias'],
+                'dias_regalo' => $datos['dias_regalo'],
                 'max_pausas' => $datos['max_pausas'],
                 'activo' => $datos['activo'],
             ]);
@@ -69,6 +70,7 @@ class CatalogoController extends Controller
                 'descripcion' => $datos['descripcion'] ?? null,
                 'duracion_meses' => $datos['duracion_meses'],
                 'duracion_dias' => $datos['duracion_dias'],
+                'dias_regalo' => $datos['dias_regalo'],
                 'max_pausas' => $datos['max_pausas'],
                 'activo' => $datos['activo'],
             ]);
@@ -256,6 +258,8 @@ class CatalogoController extends Controller
             'descripcion' => 'nullable|string|max:500',
             'duracion_meses' => 'required|integer|min:0|max:120',
             'duracion_dias' => 'required|integer|min:0|max:3650',
+            // Días de más, no la duración: 60 ya sería otro plan.
+            'dias_regalo' => 'nullable|integer|min:0|max:60',
             'max_pausas' => 'required|integer|min:0|max:12',
             'precio' => 'required|numeric|min:0|max:99999999',
             'precio_convenio' => 'nullable|numeric|min:0|max:99999999',
@@ -280,6 +284,7 @@ class CatalogoController extends Controller
             ]);
         }
 
+        $datos['dias_regalo'] = (int) ($datos['dias_regalo'] ?? 0);
         $datos['activo'] = (bool) ($datos['activo'] ?? true);
         $datos['precio_convenio'] = $datos['precio_convenio'] ?? null;
 

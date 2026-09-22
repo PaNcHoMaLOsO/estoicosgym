@@ -45,6 +45,7 @@ class FichasConfiguracionController extends Controller
                 'nombre' => $membresia->nombre,
                 'descripcion' => $membresia->descripcion,
                 'duracion_dias' => (int) $membresia->duracion_dias,
+                'dias_regalo' => (int) $membresia->dias_regalo,
                 'duracion_meses' => (int) $membresia->duracion_meses,
                 'max_pausas' => (int) $membresia->max_pausas,
                 'activo' => (bool) $membresia->activo,

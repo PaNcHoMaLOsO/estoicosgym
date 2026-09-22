@@ -23,18 +23,17 @@ function Bloque({ titulo, children }) {
 }
 
 /** «Anual», «3 meses», «1 día»: lo que se lee, no dos números sueltos. */
-function duracion({ duracion_meses, duracion_dias }) {
+function duracion({ duracion_meses, duracion_dias, dias_regalo = 0 }) {
+    let texto = '-';
+
     if (duracion_meses > 0) {
-        if (duracion_meses === 12) return 'Anual';
-
-        return duracion_meses === 1 ? '1 mes' : `${duracion_meses} meses`;
+        texto = duracion_meses === 12 ? 'Anual' : duracion_meses === 1 ? '1 mes' : `${duracion_meses} meses`;
+    } else if (duracion_dias > 0) {
+        texto = duracion_dias === 1 ? '1 día' : `${duracion_dias} días`;
     }
 
-    if (duracion_dias > 0) {
-        return duracion_dias === 1 ? '1 día' : `${duracion_dias} días`;
-    }
-
-    return '-';
+    // Los días de regalo, aparte: es lo que se da de más, no lo que dura.
+    return dias_regalo > 0 ? `${texto} + ${dias_regalo} de regalo` : texto;
 }
 
 export default function FichaMembresia({ membresia, cifras, precios, inscripciones }) {

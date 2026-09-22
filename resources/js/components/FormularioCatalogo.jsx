@@ -52,6 +52,13 @@ export const CAMPOS_PLAN = [
     },
     { nombre: 'duracion_dias', etiqueta: 'Dura (días)', tipo: 'number', min: 0, requerido: true },
     {
+        nombre: 'dias_regalo',
+        etiqueta: 'Días de regalo',
+        tipo: 'number',
+        min: 0,
+        ayuda: 'Los que se suman al vencimiento por pagar todo junto. El anual con 5 dura un año y cinco días. Cero si no se regala nada.',
+    },
+    {
         nombre: 'max_pausas',
         etiqueta: 'Pausas permitidas',
         tipo: 'number',
@@ -158,6 +165,7 @@ export function valoresDePlan(plan) {
         descripcion: plan?.descripcion ?? '',
         duracion_meses: plan?.duracion_meses ?? 1,
         duracion_dias: plan?.duracion_dias ?? 0,
+        dias_regalo: plan?.dias_regalo ?? 0,
         max_pausas: plan?.max_pausas ?? 1,
         precio: plan?.precio ?? '',
         // El precio de convenio puede no existir, y 0 no es lo mismo que «no
