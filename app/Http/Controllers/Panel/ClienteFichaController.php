@@ -167,7 +167,7 @@ class ClienteFichaController extends Controller
              */
             // Escondido desde Configuración → El dinero en pantalla: el
             // aviso de lo que debe no se manda siquiera.
-            'fiado' => Ajustes::activo('privacidad.ocultar_deudas') ? null : $this->loQueDebeDelMeson($cliente),
+            'fiado' => Ajustes::activo('privacidad.ocultar_fiado') ? null : $this->loQueDebeDelMeson($cliente),
         ]);
     }
 

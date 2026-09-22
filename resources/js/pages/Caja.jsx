@@ -67,10 +67,12 @@ function Deuda({ etiqueta, dato, explicacion, href }) {
 }
 
 export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, altas, porPlan }) {
-    // Quién debe, escondido desde Configuración: esta pantalla lo enseña en
-    // tres sitios distintos, y con el ajuste puesto no se pinta ninguno.
+    // Quién debe, escondido desde Configuración. Son dos ajustes distintos:
+    // lo fiado del mesón por un lado y lo que deben de su membresía por otro,
+    // que es justo la diferencia entre las dos cifras de arriba.
     const { privado } = usePage().props;
-    const sinDeudas = Boolean(privado?.sin_deudas);
+    const sinFiado = Boolean(privado?.sin_fiado);
+    const sinPendientes = Boolean(privado?.sin_pendientes);
     // Tapado también dentro de los gráficos: destapar el ojito destapa todo.
     const plata = (valor) => <Reservado ancho="w-14">{pesos.format(valor)}</Reservado>;
 
@@ -100,7 +102,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                         />
                     }
                 />
-                {sinDeudas ? null : (
+                {sinPendientes ? null : (
                 <Cifra
                     etiqueta="Por cobrar"
                     valor={<Reservado ancho="w-20">{pesos.format(caja.por_cobrar)}</Reservado>}
@@ -109,7 +111,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                     siempreTono
                 />
                 )}
-                {sinDeudas ? null : (
+                {sinFiado ? null : (
                 <Cifra
                     etiqueta="Fiado en el mesón"
                     valor={<Reservado ancho="w-20">{pesos.format(fiado.total)}</Reservado>}
@@ -151,7 +153,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                     <Columnas datos={porMes} etiqueta="Ingresos" formato={plata} />
                 </Panel>
 
-                {sinDeudas ? null : (
+                {sinPendientes ? null : (
                 <Panel titulo="Quién debe" descripcion="Lo mismo que «por cobrar», partido según a quién hay que cobrarle.">
                     <ul>
                         <Deuda
@@ -189,7 +191,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                 <Link href="/panel/reportes" className="transition-colors hover:text-chalk">
                     Informes con el detalle
                 </Link>
-                {sinDeudas ? null : (
+                {sinFiado ? null : (
                     <Link href="/panel/fiados" className="transition-colors hover:text-chalk">
                         Lo fiado, persona por persona
                     </Link>

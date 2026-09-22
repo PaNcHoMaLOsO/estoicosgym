@@ -36,8 +36,10 @@ class DineroEnPantallaTest extends CasoConCatalogos
         $respuesta->assertOk();
 
         $privado = $respuesta->viewData('page')['props']['privado'];
-        $this->assertFalse($privado['sin_dinero']);
-        $this->assertFalse($privado['sin_deudas']);
+        $this->assertSame(
+            ['sin_montos' => false, 'sin_caja' => false, 'sin_fiado' => false, 'sin_pendientes' => false],
+            $privado,
+        );
     }
 
     /**
@@ -45,9 +47,9 @@ class DineroEnPantallaTest extends CasoConCatalogos
      * abierta con todos los números en puntitos sería enseñar una pantalla
      * vacía y hacerle perder el tiempo a quien la abra.
      */
-    public function test_con_el_dinero_escondido_la_caja_no_se_abre(): void
+    public function test_con_la_caja_escondida_no_se_abre(): void
     {
-        $this->esconder(['privacidad.ocultar_dinero' => '1']);
+        $this->esconder(['privacidad.ocultar_caja' => '1']);
 
         $this->actingAs($this->administrador())
             ->get('/panel/caja')
@@ -61,7 +63,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
     /** Y el panel lo dice, para que no parezca que el sistema se rompió. */
     public function test_al_devolver_al_resumen_se_explica_por_que(): void
     {
-        $this->esconder(['privacidad.ocultar_dinero' => '1']);
+        $this->esconder(['privacidad.ocultar_caja' => '1']);
 
         $this->actingAs($this->administrador())
             ->get('/panel/caja')
@@ -71,7 +73,10 @@ class DineroEnPantallaTest extends CasoConCatalogos
     /** El resto del panel sigue abriéndose: no es un permiso, es lo que se ve. */
     public function test_lo_demas_del_panel_sigue_funcionando(): void
     {
-        $this->esconder(['privacidad.ocultar_dinero' => '1']);
+        $this->esconder([
+            'privacidad.ocultar_montos' => '1',
+            'privacidad.ocultar_caja' => '1',
+        ]);
 
         $this->actingAs($this->administrador())->get('/panel')->assertOk();
         $this->actingAs($this->administrador())->get('/panel/pagos')->assertOk();
@@ -82,12 +87,14 @@ class DineroEnPantallaTest extends CasoConCatalogos
     /** Las pantallas saben que hay que tapar: viaja en las props compartidas. */
     public function test_el_aviso_de_tapar_llega_a_todas_las_pantallas(): void
     {
-        $this->esconder(['privacidad.ocultar_dinero' => '1']);
+        $this->esconder(['privacidad.ocultar_montos' => '1']);
 
         $privado = $this->actingAs($this->administrador())->get('/panel/clientes')
             ->viewData('page')['props']['privado'];
 
-        $this->assertTrue($privado['sin_dinero']);
+        $this->assertTrue($privado['sin_montos']);
+        // Tapar los importes no cierra la caja: son dos interruptores.
+        $this->assertFalse($privado['sin_caja']);
     }
 
     // ---------- Quién debe ----------
@@ -107,7 +114,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
             'id_usuario' => $this->administrador()->id,
         ]);
 
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_fiado' => '1']);
 
         $props = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props'];
 
@@ -126,7 +133,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
             'id_usuario' => $this->administrador()->id,
         ]);
 
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_fiado' => '1']);
 
         $props = $this->actingAs($this->administrador())
             ->get("/panel/clientes/{$socio->uuid}")
@@ -144,7 +151,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
     {
         $socio = Cliente::factory()->create(['activo' => true, 'nombres' => 'Rosalinda']);
 
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_pendientes' => '1']);
 
         $encontrado = $this->actingAs($this->administrador())
             ->getJson('/panel/clientes/buscar?q=Rosalinda')
@@ -156,7 +163,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
     /** El informe de pendientes es una lista de deudores: tampoco se abre. */
     public function test_el_informe_de_pendientes_no_se_abre(): void
     {
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_pendientes' => '1']);
 
         $this->actingAs($this->administrador())
             ->get('/panel/reportes/pendientes')
@@ -169,16 +176,45 @@ class DineroEnPantallaTest extends CasoConCatalogos
      */
     public function test_la_pantalla_de_fiado_sigue_abriendose(): void
     {
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_fiado' => '1']);
 
         $this->actingAs($this->administrador())->get('/panel/fiados')->assertOk();
     }
 
-    /** Esconder las deudas no esconde la caja: son dos interruptores. */
-    public function test_los_dos_interruptores_son_independientes(): void
+    /**
+     * LOS CUATRO SON INDEPENDIENTES. Se puede no querer ver la caja y seguir
+     * queriendo saber a quién cobrarle, o al revés: por eso son cuatro y no un
+     * interruptor que obligue a tragarse las cuatro cosas por querer una.
+     */
+    public function test_cada_interruptor_va_por_su_cuenta(): void
     {
-        $this->esconder(['privacidad.ocultar_deudas' => '1']);
+        $this->esconder(['privacidad.ocultar_fiado' => '1']);
 
+        // Lo fiado escondido no cierra la caja ni tapa los importes.
         $this->actingAs($this->administrador())->get('/panel/caja')->assertOk();
+        $this->actingAs($this->administrador())->get('/panel/reportes/pendientes')->assertOk();
+
+        $privado = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props']['privado'];
+        $this->assertFalse($privado['sin_montos']);
+    }
+
+    /** Y al revés: cerrar la caja no esconde a quien debe del mesón. */
+    public function test_cerrar_la_caja_no_esconde_lo_fiado(): void
+    {
+        $socio = Cliente::factory()->create(['activo' => true]);
+
+        Fiado::create([
+            'id_cliente' => $socio->id,
+            'concepto' => 'Bebida',
+            'monto' => 1500,
+            'id_usuario' => $this->administrador()->id,
+        ]);
+
+        $this->esconder(['privacidad.ocultar_caja' => '1']);
+
+        $props = $this->actingAs($this->administrador())->get('/panel')->viewData('page')['props'];
+
+        $this->assertNotNull($props['fiado']);
+        $this->assertSame(1500, $props['fiado']['total']);
     }
 }

@@ -24,12 +24,18 @@ use Symfony\Component\HttpFoundation\Response;
 class EscondeElDinero
 {
     /**
-     * @param string $que 'dinero' para las cifras del negocio, 'deudas' para
-     *                    las listas de quién debe.
+     * Qué ajuste apaga cada pantalla.
+     *
+     * @var array<string,string>
      */
-    public function handle(Request $request, Closure $next, string $que = 'dinero'): Response
+    private const AJUSTES = [
+        'caja' => 'privacidad.ocultar_caja',
+        'pendientes' => 'privacidad.ocultar_pendientes',
+    ];
+
+    public function handle(Request $request, Closure $next, string $que = 'caja'): Response
     {
-        $ajuste = $que === 'deudas' ? 'privacidad.ocultar_deudas' : 'privacidad.ocultar_dinero';
+        $ajuste = self::AJUSTES[$que] ?? self::AJUSTES['caja'];
 
         if (! Ajustes::activo($ajuste)) {
             return $next($request);
@@ -39,9 +45,9 @@ class EscondeElDinero
         // sin explicar por qué parece que el sistema se rompió.
         return redirect('/panel')->with(
             'info',
-            $que === 'deudas'
-                ? 'Las listas de quién debe están escondidas. Se vuelven a ver en Configuración → El dinero en pantalla.'
-                : 'Las cifras de dinero están escondidas. Se vuelven a ver en Configuración → El dinero en pantalla.'
+            $que === 'pendientes'
+                ? 'Lo que deben de sus membresías está escondido. Se vuelve a ver en Configuración → El dinero en pantalla.'
+                : 'Las cifras de caja están escondidas. Se vuelven a ver en Configuración → El dinero en pantalla.'
         );
     }
 }

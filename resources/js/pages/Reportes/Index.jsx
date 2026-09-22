@@ -25,9 +25,9 @@ const INFORMES = [
         titulo: 'Ingresos',
         pregunta: 'Cuánto entró, por mes, método y plan.',
         Icono: BanknoteIcon,
-        // No se ofrece cuando el dinero está escondido: la tarjeta llevaría a
+        // No se ofrece cuando se pidió cerrar la caja: la tarjeta llevaría a
         // una pantalla que devuelve al resumen.
-        dinero: true,
+        caja: true,
     },
     {
         href: '/panel/reportes/por-vencer',
@@ -40,7 +40,7 @@ const INFORMES = [
         titulo: 'Por cobrar',
         pregunta: 'Quién debe y cuánto.',
         Icono: WalletIcon,
-        deudas: true,
+        pendientes: true,
     },
     {
         href: '/panel/reportes/membresias',
@@ -77,10 +77,11 @@ function Cifra({ etiqueta, valor, destacada = false }) {
 
 export default function Index({ cifras }) {
     const { privado } = usePage().props;
-    const sinDinero = Boolean(privado?.sin_dinero);
-    const sinDeudas = Boolean(privado?.sin_deudas);
+    const sinCaja = Boolean(privado?.sin_caja);
+    const sinMontos = Boolean(privado?.sin_montos);
+    const sinPendientes = Boolean(privado?.sin_pendientes);
 
-    const informes = INFORMES.filter((i) => ! (i.dinero && sinDinero) && ! (i.deudas && sinDeudas));
+    const informes = INFORMES.filter((i) => ! (i.caja && sinCaja) && ! (i.pendientes && sinPendientes));
 
     return (
         <>
@@ -94,10 +95,12 @@ export default function Index({ cifras }) {
             <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Cifra etiqueta="Socios activos" valor={cifras.socios} />
                 <Cifra etiqueta="Membresías al día" valor={cifras.activas} />
-                {sinDinero ? null : (
+                {/* Estas dos no pasan por <Reservado>: se quitan enteras, que
+                    es lo que pide una portada de informes. */}
+                {sinMontos || sinCaja ? null : (
                     <Cifra etiqueta="Ingresos del mes" valor={pesos.format(cifras.ingresos_mes)} />
                 )}
-                {sinDinero || sinDeudas ? null : (
+                {sinMontos || sinPendientes ? null : (
                     <Cifra etiqueta="Por cobrar" valor={pesos.format(cifras.por_cobrar)} destacada />
                 )}
             </div>

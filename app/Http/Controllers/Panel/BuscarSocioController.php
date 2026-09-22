@@ -95,7 +95,7 @@ class BuscarSocioController extends Controller
                     // En cero cuando se pidió esconder quién debe: el
                     // buscador sale en todas las pantallas, y es el sitio por
                     // donde una cifra escondida se asomaría igual.
-                    'debe' => Ajustes::activo('privacidad.ocultar_deudas') ? 0 : $debe,
+                    'debe' => Ajustes::activo('privacidad.ocultar_pendientes') ? 0 : $debe,
                 ];
             });
 

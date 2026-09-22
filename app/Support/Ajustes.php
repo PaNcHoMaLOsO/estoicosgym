@@ -162,18 +162,43 @@ class Ajustes
              * inscribir y la de anotar un fiado el precio sigue a la vista: sin
              * él no se puede atender, y esconderlo no dejaría un panel discreto
              * sino uno roto.
+             *
+             * SON CUATRO Y NO UNO. Esconder los importes y esconder quién debe
+             * son decisiones distintas —se puede no querer ver la caja y sí
+             * saber a quién cobrarle—, y dentro de cada una hay pantallas que
+             * se tapan y pantallas que se cierran. Un interruptor único
+             * obligaba a tragarse las cuatro cosas por querer una.
              */
-            'privacidad.ocultar_dinero' => [
+            'privacidad.ocultar_montos' => [
                 'grupo' => 'privacidad',
-                'etiqueta' => 'Esconder las cifras de dinero',
-                'ayuda' => 'Los totales de caja, lo recaudado y los saldos salen tapados (••••) en todo el panel, y el ojo de la barra de arriba deja de destaparlos. Caja y el informe de ingresos dejan de abrirse. Cobrar, inscribir y anotar siguen enseñando el precio: sin eso no se puede atender.',
+                'seccion' => 'Las cifras',
+                'etiqueta' => 'Tapar los importes',
+                'ayuda' => 'Los totales, lo recaudado y los saldos salen tapados (••••) en todo el panel, y el ojo de la barra de arriba deja de destaparlos. Cobrar, inscribir y anotar siguen enseñando el precio: sin eso no se puede atender.',
                 'tipo' => 'si_no',
                 'defecto' => '0',
             ],
-            'privacidad.ocultar_deudas' => [
+            'privacidad.ocultar_caja' => [
                 'grupo' => 'privacidad',
-                'etiqueta' => 'Esconder quién debe',
-                'ayuda' => 'Quita del panel los avisos y las listas de quién debe: lo fiado del mesón en el resumen, el aviso de la ficha del socio, lo que marca el buscador y el informe de pendientes. La pantalla de Fiado sigue abierta, porque es donde se cobra: sin ella la deuda no tendría forma de saldarse.',
+                'seccion' => 'Las cifras',
+                'etiqueta' => 'Cerrar Caja y el informe de ingresos',
+                'ayuda' => 'Esas dos pantallas no son otra cosa que cifras del negocio: tapadas quedarían en blanco, así que dejan de abrirse y Caja sale del menú. Quien entre volverá al resumen con el aviso de dónde se enciende otra vez.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
+
+            'privacidad.ocultar_fiado' => [
+                'grupo' => 'privacidad',
+                'seccion' => 'Quién debe',
+                'etiqueta' => 'Esconder lo fiado del mesón',
+                'ayuda' => 'Quita el panel de lo fiado del resumen, el aviso de la ficha del socio y su cifra en Caja. La pantalla de Fiado sigue abierta, porque es donde se cobra: sin ella la deuda no tendría forma de saldarse.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
+            'privacidad.ocultar_pendientes' => [
+                'grupo' => 'privacidad',
+                'seccion' => 'Quién debe',
+                'etiqueta' => 'Esconder lo que deben de sus membresías',
+                'ayuda' => 'Quita «por cobrar» y «quién debe» de Caja, lo que el buscador marca en rojo al lado de cada socio, y cierra el informe de pendientes.',
                 'tipo' => 'si_no',
                 'defecto' => '0',
             ],
@@ -603,7 +628,7 @@ class Ajustes
             ],
             'privacidad' => [
                 'titulo' => 'El dinero en pantalla',
-                'descripcion' => 'Si las cifras del negocio y las deudas se ven en el panel. No cambia quién puede entrar a cada sitio: eso son los permisos de cada usuario.',
+                'descripcion' => 'Qué se enseña y qué no: los importes por un lado, las deudas por otro. No cambia quién puede entrar a cada sitio —eso son los permisos de cada usuario—, solo lo que hay a la vista.',
             ],
             'correo' => [
                 'titulo' => 'Cuenta de correo',

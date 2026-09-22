@@ -101,7 +101,7 @@ class ResumenController extends Controller
             // Null cuando se pidió esconder quién debe: ni se manda. Un
             // panel que dijera «nadie debe nada» sin ser verdad seria peor que
             // no tenerlo.
-            'fiado' => Ajustes::activo('privacidad.ocultar_deudas') ? null : $this->fiado(),
+            'fiado' => Ajustes::activo('privacidad.ocultar_fiado') ? null : $this->fiado(),
 
             /*
              * LOS AVISOS QUE NO SALIERON. El sistema le escribe al socio cuando

@@ -355,7 +355,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
 
         // La plata, aparte del resumen: la caja del día y del mes, lo que se
         // debe y cómo va el gimnasio. Solo para quien ve los informes.
-        Route::get('/caja', \App\Http\Controllers\Panel\CajaController::class)->name('caja')->middleware('sin-dinero:dinero');
+        Route::get('/caja', \App\Http\Controllers\Panel\CajaController::class)->name('caja')->middleware('sin-dinero:caja');
 
         /*
          * El bloc de notas del meson, en la portada.
@@ -487,10 +487,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Informes. El constructor a medida va aparte, mas abajo: arma
         // consultas a medida y no se parece a estas cuatro pantallas.
         Route::get('/reportes', [\App\Http\Controllers\Panel\ReporteController::class, 'index'])->name('reportes.index');
-        Route::get('/reportes/ingresos', [\App\Http\Controllers\Panel\ReporteController::class, 'ingresos'])->name('reportes.ingresos')->middleware('sin-dinero:dinero');
+        Route::get('/reportes/ingresos', [\App\Http\Controllers\Panel\ReporteController::class, 'ingresos'])->name('reportes.ingresos')->middleware('sin-dinero:caja');
         Route::get('/reportes/membresias', [\App\Http\Controllers\Panel\ReporteController::class, 'membresias'])->name('reportes.membresias');
         Route::get('/reportes/por-vencer', [\App\Http\Controllers\Panel\ReporteController::class, 'porVencer'])->name('reportes.por-vencer');
-        Route::get('/reportes/pendientes', [\App\Http\Controllers\Panel\ReporteController::class, 'pendientes'])->name('reportes.pendientes')->middleware('sin-dinero:deudas');
+        Route::get('/reportes/pendientes', [\App\Http\Controllers\Panel\ReporteController::class, 'pendientes'])->name('reportes.pendientes')->middleware('sin-dinero:pendientes');
 
         /*
          * Constructor de informes a medida.

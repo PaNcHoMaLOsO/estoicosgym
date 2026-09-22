@@ -75,8 +75,10 @@ class HandleInertiaRequests extends Middleware
              * página.
              */
             'privado' => fn () => [
-                'sin_dinero' => Ajustes::activo('privacidad.ocultar_dinero'),
-                'sin_deudas' => Ajustes::activo('privacidad.ocultar_deudas'),
+                'sin_montos' => Ajustes::activo('privacidad.ocultar_montos'),
+                'sin_caja' => Ajustes::activo('privacidad.ocultar_caja'),
+                'sin_fiado' => Ajustes::activo('privacidad.ocultar_fiado'),
+                'sin_pendientes' => Ajustes::activo('privacidad.ocultar_pendientes'),
             ],
 
             // El menú de Configuración marca las secciones con algo pendiente.
