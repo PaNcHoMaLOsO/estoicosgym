@@ -1,7 +1,9 @@
+import { Link, usePage } from '@inertiajs/react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, LockIcon } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { puede } from '@/lib/permisos';
 
 /**
  * Tapar las cifras cuando hay gente mirando la pantalla.
@@ -133,11 +135,41 @@ export function Reservado({ children, ancho = 'w-16' }) {
 /** El interruptor, en la barra de arriba. */
 export function BotonPrivado({ className = '' }) {
     const { oculto, alternar, forzado } = usarPrivado();
+    // Arriba del todo: los hooks no pueden quedar dentro de un `if`, y abajo
+    // hay una salida temprana.
+    const { auth } = usePage().props;
 
-    // Sin nada que alternar no hay botón: dejarlo puesto sin efecto es peor
-    // que no tenerlo, porque quien lo pulse creerá que el panel no responde.
+    /*
+     * ESCONDIDO DESDE CONFIGURACIÓN: un candado en el sitio del ojo.
+     *
+     * Antes aquí no salía nada, y eso dejaba el panel entero en puntitos sin
+     * decir por qué ni por dónde se vuelve atrás: parecía roto. El candado lo
+     * explica, y a quien puede entrar a Configuración lo lleva al interruptor.
+     */
     if (forzado) {
-        return null;
+        const icono = <LockIcon className={`size-4 ${className}`} aria-hidden="true" />;
+
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {puede(auth, 'configuracion.ver') ? (
+                        <Link
+                            href="/panel/configuracion/privacidad"
+                            aria-label="Las cifras están escondidas desde Configuración"
+                            className="rounded-control p-1.5 text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
+                        >
+                            {icono}
+                        </Link>
+                    ) : (
+                        <span className="rounded-control p-1.5 text-fog">{icono}</span>
+                    )}
+                </TooltipTrigger>
+
+                <TooltipContent side="bottom">
+                    Las cifras están escondidas desde Configuración → El dinero en pantalla
+                </TooltipContent>
+            </Tooltip>
+        );
     }
 
     const Icono = oculto ? EyeOffIcon : EyeIcon;
