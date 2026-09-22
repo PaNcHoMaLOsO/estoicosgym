@@ -69,12 +69,39 @@ class ImportarPlanillas extends Command
         'trimestre' => 'Trimestral',
         'trimestr' => 'Trimestral',
         'trimistral' => 'Trimestral',
-        'bimestral' => 'Trimestral',
+        'tres meses' => 'Trimestral',
+        '3 meses' => 'Trimestral',
+        // «Bimestral» y «2 meses» son lo mismo, y el gimnasio los cobró a
+        // $50.000: por eso Dos meses es un plan y no un trimestral barato.
+        'bimestral' => 'Dos meses',
+        '2 meses' => 'Dos meses',
+        '2meses' => 'Dos meses',
+        'dos meses' => 'Dos meses',
+        // Medio mes, escrito de las cinco maneras en que aparece.
+        '1/2 mes' => 'Quincena',
+        '!/2 mes' => 'Quincena',
+        '15 dias' => 'Quincena',
+        '15dias' => 'Quincena',
+        'quincena' => 'Quincena',
+        'semanal' => 'Semana',
+        'semana' => 'Semana',
         'mensual' => 'Mensual',
         'mensal' => 'Mensual',
+        // Tecleados de corrido en la planilla: «mesnsual», «menasual».
+        'mesnsual' => 'Mensual',
+        'menasual' => 'Mensual',
+        '1 mes' => 'Mensual',
+        '1mes' => 'Mensual',
         'mens' => 'Mensual',
+        // La tarifa de adulto mayor es una mensualidad más barata, no otra
+        // duración: el plan es mensual y el precio lo pone su convenio.
+        'adulto mayor' => 'Mensual',
         'diario' => 'Pase Diario',
         'pase' => 'Pase Diario',
+        // «Convenio» a secas, sin decir cuánto dura, es la mensualidad con
+        // precio de convenio: así se cobró siempre.
+        'convenio' => 'Mensual',
+        'conv' => 'Mensual',
     ];
 
     /** @var array<string,int> */
@@ -280,7 +307,14 @@ class ImportarPlanillas extends Command
         $resto = 11 - ($suma % 11);
         $esperado = $resto === 11 ? '0' : ($resto === 10 ? 'K' : (string) $resto);
 
-        return $dv === $esperado ? $cuerpo.'-'.$dv : '';
+        if ($dv !== $esperado) {
+            return '';
+        }
+
+        // Con puntos, que es como los escribe el resto del sistema: guardado a
+        // secas, el mismo socio entraba dos veces —una por cada forma— en
+        // cuanto se corría `clientes:normalizar`.
+        return number_format((int) $cuerpo, 0, '', '.').'-'.$dv;
     }
 
     /**
@@ -382,6 +416,7 @@ class ImportarPlanillas extends Command
             'cmpc' => 'CMPC',
             'afusam' => 'AFUSAM',
             'promasa' => 'Promasa',
+            'adulto mayor' => 'Adulto mayor',
             'estudiante' => 'Estudiantes',
             'alumno' => 'Estudiantes',
             'liceo' => 'Estudiantes',
@@ -422,6 +457,9 @@ class ImportarPlanillas extends Command
             'Anual' => $inicio->copy()->addYear(),
             'Semestral' => $inicio->copy()->addMonths(6),
             'Trimestral' => $inicio->copy()->addMonths(3),
+            'Dos meses' => $inicio->copy()->addMonths(2),
+            'Quincena' => $inicio->copy()->addDays(15),
+            'Semana' => $inicio->copy()->addDays(7),
             'Pase Diario' => $inicio->copy()->addDay(),
             default => $inicio->copy()->addMonth(),
         };
@@ -507,9 +545,18 @@ class ImportarPlanillas extends Command
     {
         [$nombres, $paterno, $materno] = $this->partirNombre($persona['nombre']);
 
+        // SE BUSCA SIN PUNTOS NI GUION: en la base hay RUT escritos de las dos
+        // formas, y comparando el texto tal cual el mismo socio se duplicaba.
         $existente = $persona['rut']
-            ? Cliente::where('run_pasaporte', $persona['rut'])->first()
-            : Cliente::where('nombres', $nombres)->where('apellido_paterno', $paterno)->first();
+            ? Cliente::whereRaw("REPLACE(REPLACE(run_pasaporte, '.', ''), '-', '') = ?", [
+                str_replace(['.', '-'], '', $persona['rut']),
+            ])->first()
+            // Sin RUT solo queda el nombre, y en minúsculas: la ficha lo
+            // guarda capitalizado a su manera y comparar tal cual fallaba.
+            : Cliente::whereRaw('LOWER(nombres) = ? AND LOWER(apellido_paterno) = ?', [
+                mb_strtolower($nombres),
+                mb_strtolower($paterno),
+            ])->first();
 
         /*
          * DADO DE BAJA EL QUE NO RENUEVA HACE UN AÑO. Son cuatro años de

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
@@ -50,12 +50,16 @@ function Membresia({ debe, cobros }) {
 }
 
 export default function Index({ pagos, filtros, resumen, cantidades }) {
+    const { privado } = usePage().props;
+    const sinDeudas = Boolean(privado?.sin_pendientes);
+
     const opciones = [
         { valor: '', etiqueta: 'Todos', cantidad: cantidades.total },
         { valor: 'hoy', etiqueta: 'Hoy', cantidad: cantidades.hoy },
         { valor: 'mes', etiqueta: 'Este mes', cantidad: cantidades.mes },
         { valor: 'abonos', etiqueta: 'Abonos', cantidad: cantidades.abonos, tono: 'warn' },
-        { valor: 'pendientes', etiqueta: 'Sin pagar', cantidad: cantidades.pendientes, tono: 'warn' },
+        // «Sin pagar» es la lista de los que deben, con otro nombre.
+        ...(sinDeudas ? [] : [{ valor: 'pendientes', etiqueta: 'Sin pagar', cantidad: cantidades.pendientes, tono: 'warn' }]),
         // Aparte: la plata de los pases sí está en las cifras de arriba.
         { valor: 'pases', etiqueta: 'Pases diarios', cantidad: cantidades.pases, aparte: true },
     ];
@@ -79,10 +83,12 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                 </Link>
             </header>
 
-            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <div className={`mb-4 grid gap-3 ${sinDeudas ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                 <Tarjeta etiqueta="Entró hoy" valor={<Reservado>{pesos.format(resumen.recaudado_hoy)}</Reservado>} />
                 <Tarjeta etiqueta="Entró este mes" valor={<Reservado>{pesos.format(resumen.recaudado_mes)}</Reservado>} />
-                {/* La única cifra que pide hacer algo. */}
+                {/* La única cifra que pide hacer algo, y la primera que se va
+                    cuando se pidió esconder quién debe. */}
+                {sinDeudas ? null : (
                 <Tarjeta
                     etiqueta="Por cobrar"
                     valor={<Reservado>{pesos.format(resumen.por_cobrar)}</Reservado>}
@@ -96,6 +102,7 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                         ) : undefined
                     }
                 />
+                )}
             </div>
 
             <div className="mb-3 flex flex-col gap-3">
@@ -169,7 +176,7 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                         </Celda>
                         <Celda className="hidden md:table-cell">{pago.metodo ?? 'Sin medio'}</Celda>
                         <Celda className="hidden lg:table-cell">
-                            <Membresia debe={pago.debe_hoy} cobros={pago.cobros} />
+                            {sinDeudas ? null : <Membresia debe={pago.debe_hoy} cobros={pago.cobros} />}
                         </Celda>
                     </Fila>
                 ))}

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     ArrowLeftIcon,
@@ -64,6 +64,9 @@ function Vigencia({ dias }) {
 }
 
 export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, movimientos }) {
+    // Lo que debe, escondido desde Configuracion → El dinero en pantalla.
+    const sinDeudas = Boolean(usePage().props.privado?.sin_pendientes);
+
     // Cual esta abierto: null, 'pausar', 'reanudar' o 'traspasar'.
     const [dialogo, setDialogo] = useState(null);
     const [dias, setDias] = useState('30');
@@ -223,27 +226,38 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             </header>
 
             {/* Lo primero: cuánto se debe. Es lo que se mira con el socio
-                delante, antes que cualquier otro dato de la ficha. */}
+                delante, antes que cualquier otro dato de la ficha.
+
+                Con las deudas escondidas se queda el precio y se va el «falta
+                por pagar»: el bloque sigue sirviendo, pero no dice si debe. */}
             <div className="mb-4 rounded-panel border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                     <div>
                         <p className="rotulo">
-                            {pago.pendiente > 0 ? 'Falta por pagar' : 'Membresía pagada'}
+                            {sinDeudas
+                                ? 'Precio de la membresía'
+                                : pago.pendiente > 0
+                                  ? 'Falta por pagar'
+                                  : 'Membresía pagada'}
                         </p>
                         <p
                             className={`mt-0.5 text-2xl font-semibold tabular-nums ${
-                                pago.pendiente > 0 ? 'text-warn' : 'text-ok'
+                                ! sinDeudas && pago.pendiente > 0 ? 'text-warn' : sinDeudas ? 'text-chalk' : 'text-ok'
                             }`}
                         >
                             <Reservado ancho="w-24">
-                                {pago.pendiente > 0 ? pesos.format(pago.pendiente) : pesos.format(pago.total)}
+                                {! sinDeudas && pago.pendiente > 0
+                                    ? pesos.format(pago.pendiente)
+                                    : pesos.format(pago.total)}
                             </Reservado>
                         </p>
                     </div>
-                    <p className="apoyo text-fog">
-                        <Reservado ancho="w-16">{pesos.format(pago.abonado)}</Reservado> de{' '}
-                        <Reservado ancho="w-16">{pesos.format(pago.total)}</Reservado> · {pago.porcentaje}%
-                    </p>
+                    {sinDeudas ? null : (
+                        <p className="apoyo text-fog">
+                            <Reservado ancho="w-16">{pesos.format(pago.abonado)}</Reservado> de{' '}
+                            <Reservado ancho="w-16">{pesos.format(pago.total)}</Reservado> · {pago.porcentaje}%
+                        </p>
+                    )}
                 </div>
 
                 <div className="mt-3 h-1.5 overflow-hidden rounded-pill bg-surface-2">

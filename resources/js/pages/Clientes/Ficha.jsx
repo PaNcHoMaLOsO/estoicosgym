@@ -607,6 +607,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
      */
     const [enVentana, setEnVentana] = useState(null);
     const [anotandoFiado, setAnotandoFiado] = useState(false);
+    // Lo que debe de su membresía, escondido desde Configuración: aquí sale en
+    // la cifra de arriba, en el botón de cobrar y en las dos tablas.
+    const sinDeudas = Boolean(usePage().props.privado?.sin_pendientes);
     // Cobrar lo del mesón sin salir de su ficha: con la persona delante, un
     // salto a otra pantalla es lo que hace que esa cuenta se quede sin cobrar.
     const [cobrandoFiado, setCobrandoFiado] = useState(false);
@@ -758,7 +761,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                 className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
                             >
                                 <BanknoteIcon className="size-4" aria-hidden="true" />
-                                Cobrar {pesos.format(conSaldo.pendiente)}
+                                {/* Sin la cifra cuando está escondida: el botón
+                                    se queda, porque cobrar hay que poder. */}
+                                Cobrar{sinDeudas ? '' : ` ${pesos.format(conSaldo.pendiente)}`}
                             </a>
                         ) : null}
                     </div>
@@ -893,6 +898,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                     </p>
                 </div>
                 {/* La deuda es lo único accionable de las tres. */}
+                {sinDeudas ? null : (
                 <div
                     className={`rounded-panel border p-3 ${
                         resumen.debe > 0 ? 'border-warn/40 bg-warn/5' : 'border-line bg-surface'
@@ -907,6 +913,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                         <Reservado ancho="w-20">{pesos.format(resumen.debe)}</Reservado>
                     </p>
                 </div>
+                )}
             </div>
 
             {/*
@@ -981,7 +988,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                 <div className="space-y-3 lg:col-span-2">
                     <Bloque titulo="Membresías">
                         <Tabla
-                            columnas={['Plan', 'Estado', 'Inicio', 'Vence', 'Total', 'Debe']}
+                            columnas={sinDeudas
+                                ? ['Plan', 'Estado', 'Inicio', 'Vence', 'Total']
+                                : ['Plan', 'Estado', 'Inicio', 'Vence', 'Total', 'Debe']}
                             vacia={inscripciones.length === 0}
                             mensajeVacio="Este socio todavía no tiene ninguna membresía."
                         >
@@ -1003,13 +1012,15 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                     <Cifra>
                                         <Reservado ancho="w-16">{pesos.format(i.total)}</Reservado>
                                     </Cifra>
-                                    <Cifra className={i.pendiente > 0 ? 'font-medium text-warn' : ''}>
-                                        {i.pendiente > 0 ? (
-                                            <Reservado ancho="w-16">{pesos.format(i.pendiente)}</Reservado>
-                                        ) : (
-                                            '-'
-                                        )}
-                                    </Cifra>
+                                    {sinDeudas ? null : (
+                                        <Cifra className={i.pendiente > 0 ? 'font-medium text-warn' : ''}>
+                                            {i.pendiente > 0 ? (
+                                                <Reservado ancho="w-16">{pesos.format(i.pendiente)}</Reservado>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </Cifra>
+                                    )}
                                 </Fila>
                             ))}
                         </Tabla>
@@ -1017,7 +1028,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
 
                     <Bloque titulo="Últimos pagos">
                         <Tabla
-                            columnas={['Fecha', 'Método', 'Estado', 'Abonado', 'Pendiente']}
+                            columnas={sinDeudas
+                                ? ['Fecha', 'Método', 'Estado', 'Abonado']
+                                : ['Fecha', 'Método', 'Estado', 'Abonado', 'Pendiente']}
                             vacia={pagos.length === 0}
                             mensajeVacio="Todavía no ha pagado nada."
                         >
@@ -1035,13 +1048,15 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                     <Cifra className="text-chalk">
                                         <Reservado ancho="w-16">{pesos.format(p.abonado)}</Reservado>
                                     </Cifra>
-                                    <Cifra className={p.pendiente > 0 ? 'text-warn' : ''}>
-                                        {p.pendiente > 0 ? (
-                                            <Reservado ancho="w-16">{pesos.format(p.pendiente)}</Reservado>
-                                        ) : (
-                                            '-'
-                                        )}
-                                    </Cifra>
+                                    {sinDeudas ? null : (
+                                        <Cifra className={p.pendiente > 0 ? 'text-warn' : ''}>
+                                            {p.pendiente > 0 ? (
+                                                <Reservado ancho="w-16">{pesos.format(p.pendiente)}</Reservado>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </Cifra>
+                                    )}
                                 </Fila>
                             ))}
                         </Tabla>

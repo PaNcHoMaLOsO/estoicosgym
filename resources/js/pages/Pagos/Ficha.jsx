@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeftIcon, BanknoteIcon, PencilIcon, ReceiptTextIcon } from 'lucide-react';
 
 import Estado from '@/components/Estado';
@@ -38,6 +38,9 @@ export default function Ficha({
     inscripcion,
     otrosPagos,
 }) {
+    // Lo que quedó debiendo, escondido desde Configuración.
+    const sinDeudas = Boolean(usePage().props.privado?.sin_pendientes);
+
     return (
         <>
             <Head title={`Pago ${pago.fecha ?? ''}`} />
@@ -98,7 +101,7 @@ export default function Ficha({
 
             {/* El monto primero: la ficha se abre casi siempre para responder
                 «¿esto se pagó, y cuánto?». */}
-            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <div className={`mb-4 grid gap-3 ${sinDeudas ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                 <div className="rounded-panel border border-line bg-surface p-3">
                     <p className="rotulo">Se cobró</p>
                     <p className="mt-0.5 text-xl font-semibold tabular-nums text-chalk">
@@ -111,6 +114,9 @@ export default function Ficha({
                         <Reservado ancho="w-24">{pesos.format(pago.total)}</Reservado>
                     </p>
                 </div>
+                {/* Lo que quedó debiendo: fuera cuando se pidió esconder
+                    quién debe. Lo cobrado y el precio se quedan. */}
+                {sinDeudas ? null : (
                 <div
                     className={`rounded-panel border p-3 ${
                         pago.pendiente > 0 ? 'border-warn/40 bg-warn/5' : 'border-ok/40 bg-ok/5'
@@ -134,6 +140,7 @@ export default function Ficha({
                         <p className="apoyo mt-0.5 text-fog">entre {otrosPagos.length + 1} cobros</p>
                     ) : null}
                 </div>
+                )}
             </div>
 
             {/*

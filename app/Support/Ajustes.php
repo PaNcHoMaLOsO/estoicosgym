@@ -198,7 +198,7 @@ class Ajustes
                 'grupo' => 'privacidad',
                 'seccion' => 'Quién debe',
                 'etiqueta' => 'Esconder lo que deben de sus membresías',
-                'ayuda' => 'Quita «por cobrar» y «quién debe» de Caja, lo que el buscador marca en rojo al lado de cada socio, y cierra el informe de pendientes.',
+                'ayuda' => 'Quita de todo el panel lo que dice si alguien debe: la columna de pago y el filtro «con deuda» de las listas, la cifra «Debe» y las columnas de pendiente en las fichas, «por cobrar» en Caja y en Pagos, lo que el buscador marca en rojo, y cierra el informe de pendientes. Cobrar sigue pudiéndose, pero el botón no dice cuánto.',
                 'tipo' => 'si_no',
                 'defecto' => '0',
             ],

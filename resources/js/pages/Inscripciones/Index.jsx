@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
@@ -13,14 +13,18 @@ import { pesos } from '@/components/Tablero';
 /*
  * Una fila, una membresía: de quién es, qué plan, cuándo corre, en qué está y
  * si está pagada. Ocho columnas sueltas pasaron a cinco que se leen de una vez.
+ *
+ * La del pago se va entera cuando se pidió esconder quién debe: tapar la cifra
+ * no serviría de nada, porque lo que delata es la palabra «Debe».
  */
 const COLUMNAS = [
     'Socio',
     { titulo: 'Plan', className: 'hidden sm:table-cell' },
     { titulo: 'Periodo', className: 'hidden lg:table-cell' },
     'Estado',
-    { titulo: 'Pago', className: 'text-right' },
 ];
+
+const COLUMNA_PAGO = { titulo: 'Pago', className: 'text-right' };
 
 /** Pagada, o lo que falta: la pregunta que se hace al mirar una membresía. */
 function Pago({ debe, precio }) {
@@ -60,11 +64,15 @@ function Pago({ debe, precio }) {
 }
 
 export default function Index({ inscripciones, filtros, resumen }) {
+    const { privado } = usePage().props;
+    const sinDeudas = Boolean(privado?.sin_pendientes);
+
     const opciones = [
         { valor: '', etiqueta: 'Todas', cantidad: resumen.total },
         { valor: 'al_dia', etiqueta: 'Vigentes', cantidad: resumen.activas },
         { valor: 'por_vencer', etiqueta: 'Vencen esta semana', cantidad: resumen.por_vencer, tono: 'warn' },
-        { valor: 'con_deuda', etiqueta: 'Con deuda', cantidad: resumen.con_deuda, tono: 'warn' },
+        // El filtro de «con deuda» es una lista de deudores con otro nombre.
+        ...(sinDeudas ? [] : [{ valor: 'con_deuda', etiqueta: 'Con deuda', cantidad: resumen.con_deuda, tono: 'warn' }]),
         { valor: 'vencidas', etiqueta: 'Vencidas', cantidad: resumen.vencidas, tono: 'danger' },
         { valor: 'pausadas', etiqueta: 'Pausadas', cantidad: resumen.pausadas },
         { valor: 'pases', etiqueta: 'Pases diarios', cantidad: resumen.pases, aparte: true },
@@ -105,7 +113,7 @@ export default function Index({ inscripciones, filtros, resumen }) {
             </div>
 
             <Tabla
-                columnas={COLUMNAS}
+                columnas={sinDeudas ? COLUMNAS : [...COLUMNAS, COLUMNA_PAGO]}
                 vacia={inscripciones.data.length === 0}
                 mensajeVacio={
                     filtros.buscar
