@@ -15,7 +15,6 @@ import {
 
 import { ApuntarFiado, Notas } from '@/components/Libreta';
 import MesonTienda from '@/components/MesonTienda';
-import VentanaWhatsapp from '@/components/VentanaWhatsapp';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
@@ -111,9 +110,8 @@ function Contacto({ celular, email, nombre }) {
             {celular ? (
                 <a
                     href={whatsapp(celular)}
-                    // A LA MISMA VENTANA de WhatsApp que abre el carril: así el
-                    // chat de este socio aparece en la ventana que ya está al
-                    // lado, en vez de abrir una pestaña nueva por cada persona.
+                    // SIEMPRE A LA MISMA VENTANA: sin el nombre, escribirle a
+                    // cinco socios dejaba cinco pestañas de WhatsApp abiertas.
                     target="progym-whatsapp"
                     rel="noopener"
                     title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
@@ -400,14 +398,6 @@ export default function Resumen({
                         la columna, que es donde cabe sin estorbar a lo de hoy. */}
                     <MesonTienda />
                 </div>
-            </div>
-
-            {/* WHATSAPP, A TODO LO ANCHO. En la columna lateral son 350 píxeles
-                y WhatsApp necesita más del doble para enseñar la lista y la
-                conversación a la vez: quedaba apretado e ilegible. Abajo, porque
-                es para mirar mientras se atiende, no lo primero que se busca. */}
-            <div className="mt-3">
-                <VentanaWhatsapp />
             </div>
 
         </>

@@ -32,7 +32,7 @@ function Contacto({ celular, email }) {
             {celular ? (
                 <a
                     href={whatsapp(celular)}
-                    // La misma ventana de WhatsApp que abre el carril.
+                    // Siempre la misma ventana, para no dejar una pestaña por socio.
                     target="progym-whatsapp"
                     rel="noopener"
                     title="Escribir por WhatsApp"
