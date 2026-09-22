@@ -115,6 +115,10 @@ class InscripcionController extends Controller
              */
             'planes' => Membresia::query()
                 ->withCount('inscripciones')
+                // Un plan archivado sigue saliendo si tiene membresías —hay que
+                // poder buscarlas—, pero uno archivado y sin ninguna no le
+                // sirve a nadie en un filtro.
+                ->where(fn ($q) => $q->where('activo', true)->orHas('inscripciones'))
                 ->orderByRaw('duracion_meses * 30 + duracion_dias')
                 ->get()
                 ->map(fn (Membresia $m) => [
@@ -124,6 +128,7 @@ class InscripcionController extends Controller
                     // Para separar en la pantalla lo que se vende por días
                     // —pase, semana, quincena— de las mensualidades.
                     'por_dias' => (int) $m->duracion_meses === 0,
+                    'activo' => (bool) $m->activo,
                 ])
                 ->all(),
             'resumen' => [

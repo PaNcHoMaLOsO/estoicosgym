@@ -71,8 +71,13 @@ function Pago({ debe, precio }) {
  * en «de paso» y «mensualidades» no hay que leerlos: se mira el grupo.
  */
 function gruposDePlanes(planes) {
-    const corto = planes.filter((p) => p.por_dias);
-    const largo = planes.filter((p) => ! p.por_dias);
+    const seVende = planes.filter((p) => p.activo !== false);
+    const corto = seVende.filter((p) => p.por_dias);
+    const largo = seVende.filter((p) => ! p.por_dias);
+    // Los archivados siguen aquí porque sus membresías existen y hay que poder
+    // buscarlas; abajo y con su nombre, para que nadie los confunda con la
+    // lista de precios de hoy.
+    const archivados = planes.filter((p) => p.activo === false);
 
     const comoOpcion = (p) => ({
         valor: String(p.id),
@@ -84,6 +89,7 @@ function gruposDePlanes(planes) {
         { titulo: null, opciones: [{ valor: '', etiqueta: 'Todos los planes' }] },
         ...(largo.length ? [{ titulo: 'Mensualidades', opciones: largo.map(comoOpcion) }] : []),
         ...(corto.length ? [{ titulo: 'De paso', opciones: corto.map(comoOpcion) }] : []),
+        ...(archivados.length ? [{ titulo: 'Ya no se venden', opciones: archivados.map(comoOpcion) }] : []),
     ];
 }
 
