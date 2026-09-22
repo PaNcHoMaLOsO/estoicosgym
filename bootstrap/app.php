@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
             'verify.session' => \App\Http\Middleware\VerifyActiveSession::class,
             'puede' => \App\Http\Middleware\VerificaPermiso::class,
+            // Las pantallas que no son mas que dinero, cuando el dueno pidio
+            // no tenerlo delante. Se enciende y se apaga en Configuracion.
+            'sin-dinero' => \App\Http\Middleware\EscondeElDinero::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

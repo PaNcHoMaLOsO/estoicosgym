@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BanknoteIcon,
     CalendarClockIcon,
@@ -25,6 +25,9 @@ const INFORMES = [
         titulo: 'Ingresos',
         pregunta: 'Cuánto entró, por mes, método y plan.',
         Icono: BanknoteIcon,
+        // No se ofrece cuando el dinero está escondido: la tarjeta llevaría a
+        // una pantalla que devuelve al resumen.
+        dinero: true,
     },
     {
         href: '/panel/reportes/por-vencer',
@@ -37,6 +40,7 @@ const INFORMES = [
         titulo: 'Por cobrar',
         pregunta: 'Quién debe y cuánto.',
         Icono: WalletIcon,
+        deudas: true,
     },
     {
         href: '/panel/reportes/membresias',
@@ -72,6 +76,12 @@ function Cifra({ etiqueta, valor, destacada = false }) {
 }
 
 export default function Index({ cifras }) {
+    const { privado } = usePage().props;
+    const sinDinero = Boolean(privado?.sin_dinero);
+    const sinDeudas = Boolean(privado?.sin_deudas);
+
+    const informes = INFORMES.filter((i) => ! (i.dinero && sinDinero) && ! (i.deudas && sinDeudas));
+
     return (
         <>
             <Head title="Reportes" />
@@ -84,12 +94,16 @@ export default function Index({ cifras }) {
             <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Cifra etiqueta="Socios activos" valor={cifras.socios} />
                 <Cifra etiqueta="Membresías al día" valor={cifras.activas} />
-                <Cifra etiqueta="Ingresos del mes" valor={pesos.format(cifras.ingresos_mes)} />
-                <Cifra etiqueta="Por cobrar" valor={pesos.format(cifras.por_cobrar)} destacada />
+                {sinDinero ? null : (
+                    <Cifra etiqueta="Ingresos del mes" valor={pesos.format(cifras.ingresos_mes)} />
+                )}
+                {sinDinero || sinDeudas ? null : (
+                    <Cifra etiqueta="Por cobrar" valor={pesos.format(cifras.por_cobrar)} destacada />
+                )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-                {INFORMES.map(({ href, titulo, pregunta, Icono }) => {
+                {informes.map(({ href, titulo, pregunta, Icono }) => {
                     return (
                         <Link
                             key={href}

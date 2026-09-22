@@ -81,7 +81,10 @@ const GRUPOS = [
         // Cómo va el negocio. Recepción no ve ninguna de las dos.
         titulo: 'Dinero',
         secciones: [
-            { href: '/panel/caja', etiqueta: 'Caja', Icono: WalletIcon, permiso: 'reportes.ver' },
+            // `dinero`: desaparece cuando se pidio esconder las cifras. La
+            // pantalla entera son numeros del negocio; tapados, seria una
+            // pantalla de puntitos.
+            { href: '/panel/caja', etiqueta: 'Caja', Icono: WalletIcon, permiso: 'reportes.ver', dinero: true },
             {
                 href: '/panel/reportes',
                 etiqueta: 'Reportes',
@@ -218,8 +221,9 @@ function Enlace({ seccion, url, onIr }) {
  * cajon de movil: si fueran dos copias, la seccion que se anadiera manana
  * aparecería en una y no en la otra.
  */
-function Arbol({ url, auth, onIr }) {
-    const visibles = (secciones) => secciones.filter((s) => !s.permiso || puede(auth, s.permiso));
+function Arbol({ url, auth, onIr, sinDinero = false }) {
+    const visibles = (secciones) =>
+        secciones.filter((s) => (! s.permiso || puede(auth, s.permiso)) && ! (s.dinero && sinDinero));
 
     // Un grupo entero puede quedarse sin secciones —recepcion no ve nada de
     // Configuracion—, y en ese caso tampoco se pinta su rotulo: un titulo
@@ -381,7 +385,9 @@ export default function Layout({ children }) {
 
     return (
         <TooltipProvider>
-            <ProveedorPrivado>
+            {/* `forzado`: cuando el dueno pidio no ver dinero, las cifras se
+                quedan tapadas y el ojo de la barra desaparece. */}
+            <ProveedorPrivado forzado={Boolean(props.privado?.sin_dinero)}>
             <div className="min-h-dvh bg-page">
                 {/* CARRIL FIJO en escritorio. Carril y no barra horizontal:
                     son once secciones y creceran; ademas deja a las tablas el
@@ -401,7 +407,7 @@ export default function Layout({ children }) {
                         </div>
                     ) : null}
 
-                    <Arbol url={url} auth={auth} />
+                    <Arbol url={url} auth={auth} sinDinero={Boolean(props.privado?.sin_dinero)} />
 
                     {/* El ojito, al lado del usuario: se busca abajo a la
                         izquierda, donde estan las cosas de «yo», no arriba
@@ -432,7 +438,7 @@ export default function Layout({ children }) {
                                 </SheetTitle>
                             </SheetHeader>
 
-                            <Arbol url={url} auth={auth} onIr={cerrarCajon} />
+                            <Arbol url={url} auth={auth} sinDinero={Boolean(props.privado?.sin_dinero)} onIr={cerrarCajon} />
 
                             <div className="shrink-0 border-t border-line p-2">
                                 <MenuDeUsuario correo={auth?.user?.email} className="w-full" />

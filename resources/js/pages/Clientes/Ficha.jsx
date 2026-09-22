@@ -889,7 +889,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                 <div className="rounded-panel border border-line bg-surface p-3">
                     <p className="rotulo">Ha pagado</p>
                     <p className="mt-0.5 text-lg font-semibold tabular-nums text-chalk">
-                        {pesos.format(resumen.pagado)}
+                        <Reservado ancho="w-20">{pesos.format(resumen.pagado)}</Reservado>
                     </p>
                 </div>
                 {/* La deuda es lo único accionable de las tres. */}
@@ -904,7 +904,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                             resumen.debe > 0 ? 'text-warn' : 'text-chalk'
                         }`}
                     >
-                        {pesos.format(resumen.debe)}
+                        <Reservado ancho="w-20">{pesos.format(resumen.debe)}</Reservado>
                     </p>
                 </div>
             </div>
@@ -1000,9 +1000,15 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                     </Celda>
                                     <Celda className="tabular-nums">{i.inicio ?? '-'}</Celda>
                                     <Celda className="tabular-nums">{i.vence ?? '-'}</Celda>
-                                    <Cifra>{pesos.format(i.total)}</Cifra>
+                                    <Cifra>
+                                        <Reservado ancho="w-16">{pesos.format(i.total)}</Reservado>
+                                    </Cifra>
                                     <Cifra className={i.pendiente > 0 ? 'font-medium text-warn' : ''}>
-                                        {i.pendiente > 0 ? pesos.format(i.pendiente) : '-'}
+                                        {i.pendiente > 0 ? (
+                                            <Reservado ancho="w-16">{pesos.format(i.pendiente)}</Reservado>
+                                        ) : (
+                                            '-'
+                                        )}
                                     </Cifra>
                                 </Fila>
                             ))}
@@ -1026,9 +1032,15 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                                     <Celda>
                                         <Estado codigo={p.id_estado} />
                                     </Celda>
-                                    <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
+                                    <Cifra className="text-chalk">
+                                        <Reservado ancho="w-16">{pesos.format(p.abonado)}</Reservado>
+                                    </Cifra>
                                     <Cifra className={p.pendiente > 0 ? 'text-warn' : ''}>
-                                        {p.pendiente > 0 ? pesos.format(p.pendiente) : '-'}
+                                        {p.pendiente > 0 ? (
+                                            <Reservado ancho="w-16">{pesos.format(p.pendiente)}</Reservado>
+                                        ) : (
+                                            '-'
+                                        )}
                                     </Cifra>
                                 </Fila>
                             ))}

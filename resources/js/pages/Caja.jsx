@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
 import Barras from '@/components/Barras';
@@ -67,6 +67,10 @@ function Deuda({ etiqueta, dato, explicacion, href }) {
 }
 
 export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, altas, porPlan }) {
+    // Quién debe, escondido desde Configuración: esta pantalla lo enseña en
+    // tres sitios distintos, y con el ajuste puesto no se pinta ninguno.
+    const { privado } = usePage().props;
+    const sinDeudas = Boolean(privado?.sin_deudas);
     // Tapado también dentro de los gráficos: destapar el ojito destapa todo.
     const plata = (valor) => <Reservado ancho="w-14">{pesos.format(valor)}</Reservado>;
 
@@ -96,6 +100,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                         />
                     }
                 />
+                {sinDeudas ? null : (
                 <Cifra
                     etiqueta="Por cobrar"
                     valor={<Reservado ancho="w-20">{pesos.format(caja.por_cobrar)}</Reservado>}
@@ -103,6 +108,8 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                     tono={caja.por_cobrar > 0 ? 'aviso' : 'normal'}
                     siempreTono
                 />
+                )}
+                {sinDeudas ? null : (
                 <Cifra
                     etiqueta="Fiado en el mesón"
                     valor={<Reservado ancho="w-20">{pesos.format(fiado.total)}</Reservado>}
@@ -114,6 +121,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                     tono={fiado.total > 0 ? 'aviso' : 'normal'}
                     siempreTono={fiado.total > 0}
                 />
+                )}
             </div>
 
             <div className="mb-4 grid gap-3 lg:grid-cols-2">
@@ -143,6 +151,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                     <Columnas datos={porMes} etiqueta="Ingresos" formato={plata} />
                 </Panel>
 
+                {sinDeudas ? null : (
                 <Panel titulo="Quién debe" descripcion="Lo mismo que «por cobrar», partido según a quién hay que cobrarle.">
                     <ul>
                         <Deuda
@@ -159,6 +168,7 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                         />
                     </ul>
                 </Panel>
+                )}
             </div>
 
             <div className="mb-4 grid gap-3 lg:grid-cols-2">
@@ -179,9 +189,11 @@ export default function Caja({ caja, deuda, fiado, porDia, porMes, porMetodo, al
                 <Link href="/panel/reportes" className="transition-colors hover:text-chalk">
                     Informes con el detalle
                 </Link>
-                <Link href="/panel/fiados" className="transition-colors hover:text-chalk">
-                    Lo fiado, persona por persona
-                </Link>
+                {sinDeudas ? null : (
+                    <Link href="/panel/fiados" className="transition-colors hover:text-chalk">
+                        Lo fiado, persona por persona
+                    </Link>
+                )}
                 <Link href="/panel/pagos?filtro=mes" className="transition-colors hover:text-chalk">
                     Los cobros de este mes, uno por uno
                 </Link>

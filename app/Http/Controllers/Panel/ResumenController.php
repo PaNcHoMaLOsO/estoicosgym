@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Support\Ajustes;
 use App\Models\Cliente;
 use App\Models\Fiado;
 use App\Models\Inscripcion;
@@ -97,7 +98,10 @@ class ResumenController extends Controller
              * Las cifras van tapadas como el resto: quien atiende tiene gente
              * detrás mirando la pantalla.
              */
-            'fiado' => $this->fiado(),
+            // Null cuando se pidió esconder quién debe: ni se manda. Un
+            // panel que dijera «nadie debe nada» sin ser verdad seria peor que
+            // no tenerlo.
+            'fiado' => Ajustes::activo('privacidad.ocultar_deudas') ? null : $this->fiado(),
 
             /*
              * LOS AVISOS QUE NO SALIERON. El sistema le escribe al socio cuando

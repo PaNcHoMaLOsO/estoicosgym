@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Support\Ajustes;
 use App\Models\Cliente;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,7 +92,10 @@ class BuscarSocioController extends Controller
                     'dias' => $vigente?->fecha_vencimiento
                         ? (int) now()->startOfDay()->diffInDays($vigente->fecha_vencimiento, false)
                         : null,
-                    'debe' => $debe,
+                    // En cero cuando se pidió esconder quién debe: el
+                    // buscador sale en todas las pantallas, y es el sitio por
+                    // donde una cifra escondida se asomaría igual.
+                    'debe' => Ajustes::activo('privacidad.ocultar_deudas') ? 0 : $debe,
                 ];
             });
 

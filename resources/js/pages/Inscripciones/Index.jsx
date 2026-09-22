@@ -3,6 +3,7 @@ import { PlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
+import { Reservado } from '@/Privado';
 import Filtros from '@/components/Filtros';
 import Paginacion from '@/components/Paginacion';
 import Plazo from '@/components/Plazo';
@@ -31,8 +32,16 @@ function Pago({ debe, precio }) {
         return (
             <DosLineas
                 className="items-end"
-                arriba={<span className="font-medium tabular-nums text-warn">Debe {pesos.format(debe)}</span>}
-                abajo={<span className="tabular-nums">de {pesos.format(precio)}</span>}
+                arriba={
+                    <span className="font-medium tabular-nums text-warn">
+                        Debe <Reservado ancho="w-16">{pesos.format(debe)}</Reservado>
+                    </span>
+                }
+                abajo={
+                    <span className="tabular-nums">
+                        de <Reservado ancho="w-14">{pesos.format(precio)}</Reservado>
+                    </span>
+                }
             />
         );
     }
@@ -41,7 +50,11 @@ function Pago({ debe, precio }) {
         <DosLineas
             className="items-end"
             arriba={<span className="text-ok">Pagada</span>}
-            abajo={<span className="tabular-nums">{pesos.format(precio)}</span>}
+            abajo={
+                <span className="tabular-nums">
+                    <Reservado ancho="w-14">{pesos.format(precio)}</Reservado>
+                </span>
+            }
         />
     );
 }

@@ -29,7 +29,11 @@ function Membresia({ debe, cobros }) {
     }
 
     if (debe > 0) {
-        return <span className="font-medium tabular-nums text-warn">Debe {pesos.format(debe)}</span>;
+        return (
+            <span className="font-medium tabular-nums text-warn">
+                Debe <Reservado ancho="w-16">{pesos.format(debe)}</Reservado>
+            </span>
+        );
     }
 
     /*
@@ -142,7 +146,11 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                         <Celda className="text-right">
                             <div className="flex flex-col items-end gap-0.5">
                                 <span className="font-medium tabular-nums text-chalk">
-                                    {pago.abonado > 0 ? pesos.format(pago.abonado) : 'Nada'}
+                                    {pago.abonado > 0 ? (
+                                        <Reservado ancho="w-16">{pesos.format(pago.abonado)}</Reservado>
+                                    ) : (
+                                        'Nada'
+                                    )}
                                 </span>
                                 {/* Solo se dice el precio de la membresía cuando este
                                     cobro no la cubre entero. Y se dice que es UNA PARTE
@@ -151,7 +159,7 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                                 {pago.abonado < pago.total ? (
                                     <span className="apoyo tabular-nums text-fog">
                                         {pago.cobros > 1 ? 'parte de ' : 'de '}
-                                        {pesos.format(pago.total)}
+                                        <Reservado ancho="w-14">{pesos.format(pago.total)}</Reservado>
                                     </span>
                                 ) : null}
                                 <span className="lg:hidden">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Ajustes;
 use App\Support\EstadoDeConfiguracion;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -62,6 +63,20 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
+            ],
+
+            /*
+             * SI EL DINERO SE ENSEÑA O NO. Va compartido porque lo mira medio
+             * panel —el menú, las cifras tapadas, los avisos de quién debe— y
+             * pasarlo pantalla por pantalla obligaría a acordarse en cada
+             * controlador nuevo; el que se olvidara enseñaría las cifras.
+             *
+             * Los ajustes viven en caché, así que esto no es una consulta por
+             * página.
+             */
+            'privado' => fn () => [
+                'sin_dinero' => Ajustes::activo('privacidad.ocultar_dinero'),
+                'sin_deudas' => Ajustes::activo('privacidad.ocultar_deudas'),
             ],
 
             // El menú de Configuración marca las secciones con algo pendiente.

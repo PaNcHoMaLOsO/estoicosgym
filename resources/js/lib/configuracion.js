@@ -78,6 +78,10 @@ export const SECCIONES_CONFIGURACION = [
         titulo: 'Sistema',
         icono: 'sistema',
         secciones: [
+            // Si las cifras del negocio se ven o no. Aqui y no en «El
+            // gimnasio»: no es como trabaja el gimnasio, es que decide este
+            // panel enseñar.
+            { href: '/panel/configuracion/privacidad', etiqueta: 'El dinero en pantalla', permiso: 'configuracion.ver' },
             { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
             { href: '/panel/papelera', etiqueta: 'Papelera', permiso: 'configuracion.ver' },
         ],

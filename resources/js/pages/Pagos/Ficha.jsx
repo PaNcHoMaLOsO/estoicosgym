@@ -3,6 +3,7 @@ import { ArrowLeftIcon, BanknoteIcon, PencilIcon, ReceiptTextIcon } from 'lucide
 
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import { Reservado } from '@/Privado';
 import { celularLegible, whatsapp } from '@/lib/contacto';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -101,13 +102,13 @@ export default function Ficha({
                 <div className="rounded-panel border border-line bg-surface p-3">
                     <p className="rotulo">Se cobró</p>
                     <p className="mt-0.5 text-xl font-semibold tabular-nums text-chalk">
-                        {pesos.format(pago.abonado)}
+                        <Reservado ancho="w-24">{pesos.format(pago.abonado)}</Reservado>
                     </p>
                 </div>
                 <div className="rounded-panel border border-line bg-surface p-3">
                     <p className="rotulo">Precio de la membresía</p>
                     <p className="mt-0.5 text-xl font-semibold tabular-nums text-fog">
-                        {pesos.format(pago.total)}
+                        <Reservado ancho="w-24">{pesos.format(pago.total)}</Reservado>
                     </p>
                 </div>
                 <div
@@ -121,7 +122,11 @@ export default function Ficha({
                             pago.pendiente > 0 ? 'text-warn' : 'text-ok'
                         }`}
                     >
-                        {pago.pendiente > 0 ? pesos.format(pago.pendiente) : 'Pagado'}
+                        {pago.pendiente > 0 ? (
+                            <Reservado ancho="w-24">{pesos.format(pago.pendiente)}</Reservado>
+                        ) : (
+                            'Pagado'
+                        )}
                     </p>
                     {/* Un cobro de 5.000 de una membresía de 25.000 que sale
                         «Pagado» parece un error. No lo es: hubo más cobros. */}
@@ -152,7 +157,7 @@ export default function Ficha({
                                     >
                                         <span className="text-chalk">{m.nombre}</span>
                                         <span className="tabular-nums text-fog">
-                                            {pesos.format(m.monto)}
+                                            <Reservado ancho="w-16">{pesos.format(m.monto)}</Reservado>
                                         </span>
                                     </li>
                                 ))}
@@ -223,7 +228,9 @@ export default function Ficha({
                                         <Celda>
                                             <Estado codigo={p.id_estado} />
                                         </Celda>
-                                        <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
+                                        <Cifra className="text-chalk">
+                                            <Reservado ancho="w-16">{pesos.format(p.abonado)}</Reservado>
+                                        </Cifra>
                                     </Fila>
                                 ))}
                             </Tabla>

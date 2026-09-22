@@ -339,7 +339,8 @@ export default function Resumen({
     notas,
     porVencer,
     sinRenovar,
-    fiado = { total: 0, personas: 0, cuentas: [] },
+    // Null cuando se pidio esconder quien debe: entonces el panel no se pinta.
+    fiado = null,
     cumpleanos = [],
     porEmpezar = [],
     avisosFallidos = 0,
@@ -446,7 +447,7 @@ export default function Resumen({
                         acordarse de hacer hoy y lo que dejó dicho el turno anterior. */}
                     <Notas notas={notas} />
 
-                    <Fiado fiado={fiado} />
+                    {fiado ? <Fiado fiado={fiado} /> : null}
 
                     <Cumpleanos gente={cumpleanos} />
 

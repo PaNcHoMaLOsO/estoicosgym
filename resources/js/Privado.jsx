@@ -14,8 +14,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *
  * Por eso se guarda POR DISPOSITIVO y no por usuario: el mismo administrador
  * quiere las cifras tapadas en el computador del mesón y a la vista en el suyo.
+ *
+ * APARTE DE ESTO está la decisión de fondo: en Configuración → El dinero en
+ * pantalla se puede pedir que las cifras NO se vean, y entonces esto deja de
+ * ser un interruptor. Es lo que quiere el dueño que prefiere no tener el
+ * dinero delante mientras atiende; el ojo desaparece, porque un botón que
+ * destapa lo que se pidió esconder no esconde nada.
  */
-const Contexto = createContext({ oculto: true, alternar: () => {} });
+const Contexto = createContext({ oculto: true, alternar: () => {}, forzado: false });
 
 const CLAVE = 'progym:cifras-ocultas';
 
@@ -29,7 +35,7 @@ function loQueHabia() {
     }
 }
 
-export function ProveedorPrivado({ children }) {
+export function ProveedorPrivado({ children, forzado = false }) {
     const [oculto, setOculto] = useState(loQueHabia);
 
     const alternar = useCallback(() => {
@@ -58,7 +64,7 @@ export function ProveedorPrivado({ children }) {
      */
     useEffect(() => {
         function alPulsar(e) {
-            if (e.key !== 'o' && e.key !== 'O') {
+            if (forzado || (e.key !== 'o' && e.key !== 'O')) {
                 return;
             }
 
@@ -85,9 +91,15 @@ export function ProveedorPrivado({ children }) {
         window.addEventListener('keydown', alPulsar);
 
         return () => window.removeEventListener('keydown', alPulsar);
-    }, [alternar]);
+    }, [alternar, forzado]);
 
-    return <Contexto.Provider value={{ oculto, alternar }}>{children}</Contexto.Provider>;
+    // Forzado manda: lo que se pidió esconder se queda escondido, aunque en
+    // este computador alguien hubiera dejado el ojo abierto ayer.
+    return (
+        <Contexto.Provider value={{ oculto: forzado || oculto, alternar, forzado }}>
+            {children}
+        </Contexto.Provider>
+    );
 }
 
 export function usarPrivado() {
@@ -101,7 +113,7 @@ export function usarPrivado() {
  * y entre «$9.000» y «$900.000» eso ya dice bastante.
  */
 export function Reservado({ children, ancho = 'w-16' }) {
-    const { oculto } = usarPrivado();
+    const { oculto, forzado } = usarPrivado();
 
     if (! oculto) {
         return children;
@@ -111,7 +123,7 @@ export function Reservado({ children, ancho = 'w-16' }) {
         <span
             className={`inline-block ${ancho} select-none text-center align-middle text-fog`}
             aria-label="Cifra oculta"
-            title="Oculto. Pulsa la tecla O para verlo."
+            title={forzado ? 'Escondido desde Configuración' : 'Oculto. Pulsa la tecla O para verlo.'}
         >
             ••••
         </span>
@@ -120,7 +132,13 @@ export function Reservado({ children, ancho = 'w-16' }) {
 
 /** El interruptor, en la barra de arriba. */
 export function BotonPrivado({ className = '' }) {
-    const { oculto, alternar } = usarPrivado();
+    const { oculto, alternar, forzado } = usarPrivado();
+
+    // Sin nada que alternar no hay botón: dejarlo puesto sin efecto es peor
+    // que no tenerlo, porque quien lo pulse creerá que el panel no responde.
+    if (forzado) {
+        return null;
+    }
 
     const Icono = oculto ? EyeOffIcon : EyeIcon;
 

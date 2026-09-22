@@ -145,6 +145,39 @@ class Ajustes
                 'unidad' => 'días',
             ],
 
+            /*
+             * ============ EL DINERO EN PANTALLA ============
+             *
+             * QUÉ SE VE, NO QUIÉN PUEDE. Los permisos deciden a qué datos llega
+             * cada usuario —recepción no recibe los ingresos y punto—; esto es
+             * otra cosa: el dueño puede no querer las cifras del negocio en
+             * pantalla, en ningún computador, mientras atiende o mientras hay
+             * gente al otro lado del mesón.
+             *
+             * Va aparte del ojo de la barra de arriba, que tapa y destapa por
+             * computador y para un rato. Esto es la decisión de fondo, vale
+             * para todo el panel y se queda hasta que se cambie aquí.
+             *
+             * NO SE TOCA LO QUE HAY QUE COBRAR. En la pantalla de cobrar, la de
+             * inscribir y la de anotar un fiado el precio sigue a la vista: sin
+             * él no se puede atender, y esconderlo no dejaría un panel discreto
+             * sino uno roto.
+             */
+            'privacidad.ocultar_dinero' => [
+                'grupo' => 'privacidad',
+                'etiqueta' => 'Esconder las cifras de dinero',
+                'ayuda' => 'Los totales de caja, lo recaudado y los saldos salen tapados (••••) en todo el panel, y el ojo de la barra de arriba deja de destaparlos. Caja y el informe de ingresos dejan de abrirse. Cobrar, inscribir y anotar siguen enseñando el precio: sin eso no se puede atender.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
+            'privacidad.ocultar_deudas' => [
+                'grupo' => 'privacidad',
+                'etiqueta' => 'Esconder quién debe',
+                'ayuda' => 'Quita del panel los avisos y las listas de quién debe: lo fiado del mesón en el resumen, el aviso de la ficha del socio, lo que marca el buscador y el informe de pendientes. La pantalla de Fiado sigue abierta, porque es donde se cobra: sin ella la deuda no tendría forma de saldarse.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
+
             // ---- Lo automático ----
             /*
              * EL INTERRUPTOR DE LOS CORREOS AUTOMÁTICOS.
@@ -567,6 +600,10 @@ class Ajustes
             'meson' => [
                 'titulo' => 'Mesón',
                 'descripcion' => 'Cuándo se marcan las notas y lo fiado que llevan tiempo esperando.',
+            ],
+            'privacidad' => [
+                'titulo' => 'El dinero en pantalla',
+                'descripcion' => 'Si las cifras del negocio y las deudas se ven en el panel. No cambia quién puede entrar a cada sitio: eso son los permisos de cada usuario.',
             ],
             'correo' => [
                 'titulo' => 'Cuenta de correo',

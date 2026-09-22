@@ -10,6 +10,7 @@ use App\Models\Pago;
 use App\Models\User;
 use App\Services\BorradoDeDatosService;
 use App\Services\ContratoDigitalService;
+use App\Support\Ajustes;
 use App\Support\TextosLegales;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -164,7 +165,9 @@ class ClienteFichaController extends Controller
              * delante: si viene a pagar su mensualidad y ademas debe tres
              * bebidas, hay que saberlo en ese momento y no dos semanas despues.
              */
-            'fiado' => $this->loQueDebeDelMeson($cliente),
+            // Escondido desde Configuración → El dinero en pantalla: el
+            // aviso de lo que debe no se manda siquiera.
+            'fiado' => Ajustes::activo('privacidad.ocultar_deudas') ? null : $this->loQueDebeDelMeson($cliente),
         ]);
     }
 

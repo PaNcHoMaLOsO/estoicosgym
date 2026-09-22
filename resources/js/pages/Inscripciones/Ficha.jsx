@@ -11,6 +11,7 @@ import {
     TrashIcon,
 } from 'lucide-react';
 
+import { Reservado } from '@/Privado';
 import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import { Campo, Seleccion, Texto } from '@/components/Campo';
@@ -234,11 +235,14 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                 pago.pendiente > 0 ? 'text-warn' : 'text-ok'
                             }`}
                         >
-                            {pago.pendiente > 0 ? pesos.format(pago.pendiente) : pesos.format(pago.total)}
+                            <Reservado ancho="w-24">
+                                {pago.pendiente > 0 ? pesos.format(pago.pendiente) : pesos.format(pago.total)}
+                            </Reservado>
                         </p>
                     </div>
                     <p className="apoyo text-fog">
-                        {pesos.format(pago.abonado)} de {pesos.format(pago.total)} · {pago.porcentaje}%
+                        <Reservado ancho="w-16">{pesos.format(pago.abonado)}</Reservado> de{' '}
+                        <Reservado ancho="w-16">{pesos.format(pago.total)}</Reservado> · {pago.porcentaje}%
                     </p>
                 </div>
 
@@ -338,7 +342,9 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                     <Celda>
                                         <Estado codigo={p.id_estado} />
                                     </Celda>
-                                    <Cifra className="text-chalk">{pesos.format(p.abonado)}</Cifra>
+                                    <Cifra className="text-chalk">
+                                        <Reservado ancho="w-16">{pesos.format(p.abonado)}</Reservado>
+                                    </Cifra>
                                 </Fila>
                             ))}
                         </Tabla>
