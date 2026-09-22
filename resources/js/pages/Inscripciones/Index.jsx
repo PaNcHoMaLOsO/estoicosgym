@@ -5,6 +5,7 @@ import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
 import { Reservado } from '@/Privado';
 import Filtros from '@/components/Filtros';
+import Selector from '@/components/Selector';
 import Paginacion from '@/components/Paginacion';
 import Plazo from '@/components/Plazo';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
@@ -63,9 +64,27 @@ function Pago({ debe, precio }) {
     );
 }
 
-export default function Index({ inscripciones, filtros, resumen }) {
+/** Cómo se puede ordenar la lista. «Reciente» es lo de siempre. */
+const ORDENES = [
+    { valor: '', etiqueta: 'Lo más reciente' },
+    { valor: 'monto_desc', etiqueta: 'Monto: de mayor a menor' },
+    { valor: 'monto_asc', etiqueta: 'Monto: de menor a mayor' },
+    { valor: 'vence', etiqueta: 'Lo que vence antes' },
+    { valor: 'antiguas', etiqueta: 'Lo más antiguo' },
+];
+
+export default function Index({ inscripciones, filtros, resumen, planes = [] }) {
     const { privado } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
+
+    // Lo que no se pierde al tocar otro filtro: elegir «Anual» no puede
+    // deshacer la búsqueda ni el orden que ya estaban puestos.
+    const conservar = {
+        ...(filtros.buscar ? { buscar: filtros.buscar } : {}),
+        ...(filtros.filtro ? { filtro: filtros.filtro } : {}),
+        ...(filtros.plan ? { plan: filtros.plan } : {}),
+        ...(filtros.orden ? { orden: filtros.orden } : {}),
+    };
 
     const opciones = [
         { valor: '', etiqueta: 'Todas', cantidad: resumen.total },
@@ -102,14 +121,45 @@ export default function Index({ inscripciones, filtros, resumen }) {
                     ruta="/panel/inscripciones"
                     valor={filtros.buscar}
                     etiqueta="Buscar por socio o RUT"
-                    extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
+                    // Buscar no puede tirar abajo el plan ni el orden elegidos.
+                    extra={conservar}
                 />
-                <Filtros
-                    ruta="/panel/inscripciones"
-                    actual={filtros.filtro}
-                    opciones={opciones}
-                    extra={filtros.buscar ? { buscar: filtros.buscar } : {}}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Filtros
+                        ruta="/panel/inscripciones"
+                        actual={filtros.filtro}
+                        opciones={opciones}
+                        extra={conservar}
+                    />
+
+                    {/* Por plan y por monto: las dos preguntas que no son un
+                        estado de la membresía y no caben como más pastillas. */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Selector
+                            etiqueta="Plan"
+                            nombre="plan"
+                            valor={filtros.plan ?? ''}
+                            ruta="/panel/inscripciones"
+                            extra={conservar}
+                            opciones={[
+                                { valor: '', etiqueta: 'Todos los planes' },
+                                ...planes.map((p) => ({
+                                    valor: String(p.id),
+                                    etiqueta: `${p.nombre} (${p.cuantas})`,
+                                })),
+                            ]}
+                        />
+
+                        <Selector
+                            etiqueta="Ordenar"
+                            nombre="orden"
+                            valor={filtros.orden ?? ''}
+                            ruta="/panel/inscripciones"
+                            extra={conservar}
+                            opciones={ORDENES}
+                        />
+                    </div>
+                </div>
             </div>
 
             <Tabla

@@ -4,6 +4,7 @@ import { PlusIcon } from 'lucide-react';
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
 import Filtros from '@/components/Filtros';
+import Selector from '@/components/Selector';
 import Paginacion from '@/components/Paginacion';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
 import { Cifra as Tarjeta, pesos } from '@/components/Tablero';
@@ -49,9 +50,24 @@ function Membresia({ debe, cobros }) {
     );
 }
 
+/** Cómo se puede ordenar la lista. «Reciente» es lo de siempre. */
+const ORDENES = [
+    { valor: '', etiqueta: 'Lo más reciente' },
+    { valor: 'monto_desc', etiqueta: 'Monto: de mayor a menor' },
+    { valor: 'monto_asc', etiqueta: 'Monto: de menor a mayor' },
+    { valor: 'antiguos', etiqueta: 'Lo más antiguo' },
+];
+
 export default function Index({ pagos, filtros, resumen, cantidades }) {
     const { privado } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
+
+    // Lo que no se pierde al tocar otro filtro.
+    const conservar = {
+        ...(filtros.buscar ? { buscar: filtros.buscar } : {}),
+        ...(filtros.filtro ? { filtro: filtros.filtro } : {}),
+        ...(filtros.orden ? { orden: filtros.orden } : {}),
+    };
 
     const opciones = [
         { valor: '', etiqueta: 'Todos', cantidad: cantidades.total },
@@ -110,14 +126,22 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                     ruta="/panel/pagos"
                     valor={filtros.buscar}
                     etiqueta="Buscar por socio o RUT"
-                    extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
+                    extra={conservar}
                 />
-                <Filtros
-                    ruta="/panel/pagos"
-                    actual={filtros.filtro}
-                    opciones={opciones}
-                    extra={filtros.buscar ? { buscar: filtros.buscar } : {}}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Filtros ruta="/panel/pagos" actual={filtros.filtro} opciones={opciones} extra={conservar} />
+
+                    {/* «¿Cuál fue el cobro más grande del mes?» no se responde
+                        bajando una lista de trescientas filas. */}
+                    <Selector
+                        etiqueta="Ordenar"
+                        nombre="orden"
+                        valor={filtros.orden ?? ''}
+                        ruta="/panel/pagos"
+                        extra={conservar}
+                        opciones={ORDENES}
+                    />
+                </div>
             </div>
 
             <Tabla

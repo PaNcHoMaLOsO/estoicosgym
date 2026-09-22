@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inscripcion;
+use App\Models\Membresia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -28,6 +29,11 @@ class InscripcionController extends Controller
         $estado = $request->query('estado');
 
         $filtro = (string) $request->query('filtro', '');
+        // Por qué plan, y en qué orden. Los grupos de arriba responden «¿en qué
+        // estado está?»; esto responde «¿cuál plan?» y «¿cuánto?», que son
+        // otras dos preguntas y no caben como más pastillas en la misma fila.
+        $plan = $request->query('plan');
+        $orden = (string) $request->query('orden', '');
 
         $inscripciones = Inscripcion::query()
             ->with(['cliente', 'membresia'])
@@ -43,18 +49,25 @@ class InscripcionController extends Controller
                 });
             })
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
+            ->when(is_numeric($plan), fn ($q) => $q->where('id_membresia', (int) $plan))
             // Sin filtro también se filtra: los pases diarios van en su propio
             // grupo. Salvo al buscar, que a quien se busca hay que encontrarlo.
             ->when(
                 isset(self::FILTROS[$filtro]) || $busqueda === '',
                 fn ($q) => $this->filtrar($q, isset(self::FILTROS[$filtro]) ? $filtro : ''),
             )
-            // Las que vencen pronto, en el orden en que hay que llamar.
-            ->when(
-                $filtro === 'por_vencer',
-                fn ($q) => $q->orderBy('fecha_vencimiento'),
-                fn ($q) => $q->orderByDesc('fecha_vencimiento'),
-            )
+            // El orden que se pidió; y si no se pidió ninguno, el de siempre:
+            // lo más reciente arriba, salvo en «vencen esta semana», donde lo
+            // que importa es a quién hay que llamar primero.
+            ->when(true, fn ($q) => match ($orden) {
+                'monto_desc' => $q->orderByDesc('precio_final'),
+                'monto_asc' => $q->orderBy('precio_final'),
+                'vence' => $q->orderBy('fecha_vencimiento'),
+                'antiguas' => $q->orderBy('fecha_inicio'),
+                default => $filtro === 'por_vencer'
+                    ? $q->orderBy('fecha_vencimiento')
+                    : $q->orderByDesc('fecha_vencimiento'),
+            })
             ->paginate(25)
             ->withQueryString()
             ->through(function (Inscripcion $inscripcion) {
@@ -87,7 +100,29 @@ class InscripcionController extends Controller
 
         return Inertia::render('Inscripciones/Index', [
             'inscripciones' => $inscripciones,
-            'filtros' => ['buscar' => $busqueda, 'estado' => $estado, 'filtro' => $filtro],
+            'filtros' => [
+                'buscar' => $busqueda,
+                'estado' => $estado,
+                'filtro' => $filtro,
+                'plan' => $plan,
+                'orden' => $orden,
+            ],
+            /*
+             * LOS PLANES, ORDENADOS POR LO QUE DURAN y no por su id: en el
+             * desplegable se lee «Semana, Quincena, Mensual, Dos meses…», que
+             * es como los nombra quien atiende, con la cuenta de cuántas
+             * membresías hay de cada uno.
+             */
+            'planes' => Membresia::query()
+                ->withCount('inscripciones')
+                ->orderByRaw('duracion_meses * 30 + duracion_dias')
+                ->get()
+                ->map(fn (Membresia $m) => [
+                    'id' => $m->id,
+                    'nombre' => $m->nombre,
+                    'cuantas' => $m->inscripciones_count,
+                ])
+                ->all(),
             'resumen' => [
                 'total' => $this->filtrar(Inscripcion::query(), '')->count(),
                 'activas' => $this->filtrar(Inscripcion::query(), 'al_dia')->count(),

@@ -24,6 +24,7 @@ class PagoController extends Controller
         $estado = $request->query('estado');
 
         $filtro = (string) $request->query('filtro', '');
+        $orden = (string) $request->query('orden', '');
         $hoy = Carbon::today();
         // El segundo medio de un pago mixto no tiene relación en el modelo: se
         // busca aquí por su id, una sola vez para toda la página.
@@ -58,7 +59,14 @@ class PagoController extends Controller
                 isset(self::FILTROS[$filtro]) || $busqueda === '',
                 fn ($q) => $this->filtrar($q, isset(self::FILTROS[$filtro]) ? $filtro : ''),
             )
-            ->orderByDesc('fecha_pago')
+            // Lo último cobrado arriba, salvo que se pida por monto: «¿cuál
+            // fue el cobro más grande del mes?» no se responde bajando la lista.
+            ->when(true, fn ($q) => match ($orden) {
+                'monto_desc' => $q->orderByDesc('monto_abonado'),
+                'monto_asc' => $q->orderBy('monto_abonado'),
+                'antiguos' => $q->orderBy('fecha_pago'),
+                default => $q->orderByDesc('fecha_pago'),
+            })
             ->orderByDesc('id')
             ->paginate(25)
             ->withQueryString()
@@ -96,7 +104,7 @@ class PagoController extends Controller
 
         return Inertia::render('Pagos/Index', [
             'pagos' => $pagos,
-            'filtros' => ['buscar' => $busqueda, 'estado' => $estado, 'filtro' => $filtro],
+            'filtros' => ['buscar' => $busqueda, 'estado' => $estado, 'filtro' => $filtro, 'orden' => $orden],
             'cantidades' => [
                 'total' => $this->filtrar(Pago::query(), '')->count(),
                 'hoy' => $this->filtrar(Pago::query(), 'hoy')->count(),

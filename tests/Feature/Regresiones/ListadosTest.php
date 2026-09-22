@@ -248,4 +248,104 @@ class ListadosTest extends CasoConCatalogos
         $this->assertSame([2, 2], collect($filas)->pluck('cobros')->all());
         $this->assertSame([0, 0], collect($filas)->pluck('debe_hoy')->all());
     }
+    // ---------- Ordenar y filtrar por plan ----------
+
+    /**
+     * DE MAYOR A MENOR, Y AL REVÉS.
+     *
+     * Con mil setecientas membresías, «¿cuál es la más cara de este mes?» no se
+     * responde bajando la lista. Lo que se prueba es que el orden lo haga la
+     * base —no el navegador con la página que le tocó—, porque si no, ordenar
+     * solo acomodaría las veinticinco filas que se están viendo.
+     */
+    public function test_las_inscripciones_se_ordenan_por_monto(): void
+    {
+        $barata = $this->membresia($this->socio(), 100, 10, 25000);
+        $cara = $this->membresia($this->socio(), 100, 20, 250000);
+        $media = $this->membresia($this->socio(), 100, 30, 100000);
+
+        $mayor = $this->enOrden('/panel/inscripciones?orden=monto_desc');
+        $this->assertSame(
+            [(string) $cara->uuid, (string) $media->uuid, (string) $barata->uuid],
+            $mayor,
+        );
+
+        $this->assertSame(array_reverse($mayor), $this->enOrden('/panel/inscripciones?orden=monto_asc'));
+    }
+
+    /** El plan elegido deja fuera a los demás. */
+    public function test_se_puede_ver_un_solo_plan(): void
+    {
+        $mensual = $this->membresia($this->socio(), 100, 10);
+
+        $anual = Inscripcion::factory()->create([
+            'id_cliente' => $this->socio()->id,
+            'id_membresia' => 1,
+            'id_estado' => 100,
+            'precio_base' => 250000,
+            'precio_final' => 250000,
+            'fecha_inicio' => today(),
+            'fecha_vencimiento' => today()->addYear(),
+        ]);
+
+        $this->assertSame([(string) $anual->uuid], $this->enOrden('/panel/inscripciones?plan=1'));
+        $this->assertSame([(string) $mensual->uuid], $this->enOrden('/panel/inscripciones?plan=4'));
+
+        // Y los planes viajan a la pantalla para poder elegirlos.
+        $planes = $this->actingAs($this->administrador())->get('/panel/inscripciones')
+            ->viewData('page')['props']['planes'];
+        $this->assertContains('Mensual', array_column($planes, 'nombre'));
+    }
+
+    /** Ordenar no puede deshacer el filtro que ya estaba puesto. */
+    public function test_el_orden_respeta_el_filtro(): void
+    {
+        $vigente = $this->membresia($this->socio(), 100, 10, 250000);
+        $this->membresia($this->socio(), 102, -10, 400000);
+
+        $this->assertSame(
+            [(string) $vigente->uuid],
+            $this->enOrden('/panel/inscripciones?filtro=al_dia&orden=monto_desc'),
+        );
+    }
+
+    /** Los pagos también: el cobro más grande, arriba. */
+    public function test_los_pagos_se_ordenan_por_monto(): void
+    {
+        $socio = $this->socio();
+        $inscripcion = $this->membresia($socio, 100, 10, 250000);
+
+        $chico = Pago::factory()->create([
+            'id_cliente' => $socio->id,
+            'id_inscripcion' => $inscripcion->id,
+            'monto_total' => 250000,
+            'monto_abonado' => 10000,
+            'fecha_pago' => today()->subDays(2),
+            'id_metodo_pago' => MetodoPago::value('id'),
+            'id_estado' => 202,
+        ]);
+        $grande = Pago::factory()->create([
+            'id_cliente' => $socio->id,
+            'id_inscripcion' => $inscripcion->id,
+            'monto_total' => 250000,
+            'monto_abonado' => 240000,
+            'fecha_pago' => today()->subDays(5),
+            'id_metodo_pago' => MetodoPago::value('id'),
+            'id_estado' => 201,
+        ]);
+
+        $porMonto = collect(
+            $this->actingAs($this->administrador())->get('/panel/pagos?orden=monto_desc')
+                ->viewData('page')['props']['pagos']['data']
+        )->pluck('uuid')->map(fn ($u) => (string) $u)->all();
+
+        $this->assertSame([(string) $grande->uuid, (string) $chico->uuid], $porMonto);
+    }
+
+    /** Los uuid de una lista, EN EL ORDEN EN QUE VIENEN. */
+    private function enOrden(string $url): array
+    {
+        return collect($this->actingAs($this->administrador())->get($url)->viewData('page')['props']['inscripciones']['data'])
+            ->pluck('uuid')->map(fn ($u) => (string) $u)->all();
+    }
 }
