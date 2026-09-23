@@ -1,8 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertTriangleIcon, ArrowLeftIcon, EyeIcon } from 'lucide-react';
+import { ArrowLeftIcon, EyeIcon } from 'lucide-react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
+import Nota from '@/components/Nota';
 import { useEnConfiguracion } from '@/components/MarcoConfiguracion';
 
 /**
@@ -42,12 +43,11 @@ export default function Plantillas({ plantillas, variables }) {
             {/* Las rotas, arriba y contadas: son las que estan mandando correos
                 con las llaves puestas ahora mismo. */}
             {rotas.length > 0 ? (
-                <p className="mb-4 flex items-start gap-2 rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                    <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <Nota tono="peligro" className="mb-4">
                     {rotas.length === 1
                         ? `«${rotas[0].nombre}» usa una variable que no existe: sale con las llaves puestas en el correo del socio.`
                         : `${rotas.length} plantillas usan variables que no existen: salen con las llaves puestas en el correo del socio.`}
-                </p>
+                </Nota>
             ) : null}
 
             <div className="grid gap-3 lg:grid-cols-2">
@@ -331,9 +331,7 @@ function Editor({ plantilla, variables, alCerrar }) {
                 {vista ? (
                     <div className="mt-4">
                         {vista.error ? (
-                            <p className="rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                                {vista.error}
-                            </p>
+                            <Nota tono="peligro">{vista.error}</Nota>
                         ) : (
                             <div className="overflow-hidden rounded-panel border border-line">
                                 <div className="border-b border-line bg-surface-2 px-3 py-2 text-sm">

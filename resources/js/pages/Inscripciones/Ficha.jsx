@@ -16,6 +16,7 @@ import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import { Campo, Seleccion, Texto } from '@/components/Campo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
+import Nota from '@/components/Nota';
 import { celularLegible, whatsapp } from '@/lib/contacto';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -299,11 +300,10 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                         {/* La pausa en curso sí se destaca: cambia qué se puede
                             hacer con la membresía. */}
                         {pausa.pausada ? (
-                            <div className="mt-3 rounded-control border border-warn/40 bg-warn/5 p-3 text-sm text-warn">
-                                <p className="font-medium">Pausada desde el {pausa.desde}</p>
-                                {pausa.hasta ? <p className="apoyo">Se reanuda el {pausa.hasta}</p> : null}
-                                {pausa.razon ? <p className="apoyo mt-1">{pausa.razon}</p> : null}
-                            </div>
+                            <Nota titulo={`Pausada desde el ${pausa.desde}`} className="mt-3">
+                                {pausa.hasta ? <p>Se reanuda el {pausa.hasta}</p> : null}
+                                {pausa.razon ? <p className="mt-1">{pausa.razon}</p> : null}
+                            </Nota>
                         ) : null}
                     </Bloque>
 

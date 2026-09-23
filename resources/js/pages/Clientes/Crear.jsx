@@ -4,6 +4,7 @@ import { ArrowLeftIcon, CameraIcon, ImageIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 import CamaraFoto from '@/components/CamaraFoto';
+import Nota from '@/components/Nota';
 import Retrato from '@/components/Retrato';
 
 /**
@@ -652,11 +653,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                             {/* EL AVISO VA AQUÍ, pegado al campo y mientras se
                                 escribe: a los tres campos siguientes ya es tarde. */}
                             {repetido ? (
-                                <div className="mt-1 rounded-control border border-warn/40 bg-warn/5 px-3 py-2">
-                                    <p className="text-sm text-warn">
-                                        {repetido.nombre} ya está registrado con ese RUT.
-                                    </p>
-                                    <p className="apoyo text-fog">
+                                <Nota titulo={`${repetido.nombre} ya está registrado con ese RUT`} className="mt-1" compacta>
+                                    <p>
                                         {repetido.plan
                                             ? `${repetido.plan}, vence el ${repetido.vence}.`
                                             : 'Sin plan vigente.'}{' '}
@@ -668,7 +666,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     >
                                         Abrir su ficha y renovarle ahí
                                     </Link>
-                                </div>
+                                </Nota>
                             ) : esRut && data.run_pasaporte.trim().length >= 9 && ! rutValido(data.run_pasaporte) ? (
                                 <p className="apoyo mt-1 text-warn">
                                     Ese RUT no calza con su dígito verificador. Revísalo en el carnet.

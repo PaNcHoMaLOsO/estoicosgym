@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import Nota from '@/components/Nota';
 import { ArrowLeftIcon, BookmarkIcon, DownloadIcon, XIcon } from 'lucide-react';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -449,9 +450,7 @@ export default function Constructor({ catalogo, limites, tope, guardados = [] })
 
                 <section className="min-w-0">
                     {fallo ? (
-                        <p className="rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                            {fallo}
-                        </p>
+                        <Nota tono="peligro">{fallo}</Nota>
                     ) : !informe ? (
                         <div className="rounded-panel border border-dashed border-line px-4 py-10 text-center">
                             <p className="text-sm text-fog">

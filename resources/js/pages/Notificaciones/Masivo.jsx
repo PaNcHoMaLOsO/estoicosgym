@@ -1,7 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { AlertTriangleIcon, ArrowLeftIcon, SendIcon, UsersIcon } from 'lucide-react';
+import { ArrowLeftIcon, SendIcon, UsersIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
 /**
@@ -200,12 +201,11 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                         la misma peticion y, pasado ese numero, el servidor corta
                         antes de terminar. */}
                     {sePasa ? (
-                        <p className="flex items-start gap-2 rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                        <Nota tono="peligro">
                             Son {cuantos} y de una vez caben {tope}. Acota el grupo por plan,
                             escoge uno más pequeño, o prográmalo para otro día: así los manda
                             el sistema por la mañana y el tope no aplica.
-                        </p>
+                        </Nota>
                     ) : null}
                 </Grupo>
 

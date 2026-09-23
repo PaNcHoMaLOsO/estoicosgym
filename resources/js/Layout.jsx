@@ -18,6 +18,10 @@ import {
     UsersIcon,
     WalletIcon,
     XIcon,
+    XCircleIcon,
+    AlertTriangleIcon,
+    CheckCircle2Icon,
+    InfoIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -312,67 +316,88 @@ function MenuDeUsuario({ correo, alineacion = 'start', lado = 'top', className =
  */
 function Aviso({ flash }) {
     const [visible, setVisible] = useState(true);
+    const [enPausa, setEnPausa] = useState(false);
 
     const exito = flash?.success;
     const error = flash?.error;
     const aviso = flash?.warning;
     const dato = flash?.info;
 
+    // Lo bueno se va solo a los 5 s; un error o un aviso se quedan hasta que
+    // se cierran, porque hay que leerlos. Con el mouse encima no corre el reloj.
+    const seVaSolo = Boolean(exito || dato) && ! error && ! aviso;
+
     useEffect(() => {
         setVisible(true);
+        setEnPausa(false);
+    }, [exito, error, aviso, dato]);
 
-        if (!exito && !dato) {
+    useEffect(() => {
+        if (! seVaSolo || ! visible || enPausa) {
             return undefined;
         }
 
-        const temporizador = setTimeout(() => setVisible(false), 4000);
+        const temporizador = setTimeout(() => setVisible(false), 5000);
 
         return () => clearTimeout(temporizador);
-    }, [exito, error, aviso, dato]);
+    }, [seVaSolo, visible, enPausa, exito, dato]);
 
     const mensaje = error ?? aviso ?? exito ?? dato;
 
-    if (!visible || !mensaje) {
+    if (! visible || ! mensaje) {
         return null;
     }
 
     const tono = error
-        ? { caja: 'border-danger/40 bg-danger/5 text-danger', glifo: '✕' }
+        ? { raya: 'bg-danger', icono: 'text-danger', Icono: XCircleIcon, titulo: 'No se pudo' }
         : aviso
-          ? { caja: 'border-warn/40 bg-warn/5 text-warn', glifo: '!' }
+          ? { raya: 'bg-warn', icono: 'text-warn', Icono: AlertTriangleIcon, titulo: 'Ojo' }
           : exito
-            ? { caja: 'border-ok/40 bg-ok/5 text-ok', glifo: '✓' }
-            : { caja: 'border-info/40 bg-info/5 text-info', glifo: 'i' };
+            ? { raya: 'bg-ok', icono: 'text-ok', Icono: CheckCircle2Icon, titulo: 'Listo' }
+            : { raya: 'bg-info', icono: 'text-info', Icono: InfoIcon, titulo: null };
 
     return (
         /*
-         * FLOTANTE, arriba a la derecha, y no al principio de la pagina. Casi todo
-         * lo que se hace en una lista larga —activar un plan, restaurar algo de la
-         * papelera— conserva el scroll: el aviso salia arriba, fuera de la vista, y
-         * parecia que el boton no habia hecho nada. Lleva fondo macizo debajo del
-         * tinte para que se lea encima de cualquier cosa.
+         * FLOTANTE, arriba a la derecha, y no al principio de la pagina: casi todo
+         * lo que se hace en una lista larga conserva el scroll, y el aviso salia
+         * fuera de la vista. Fondo macizo, raya de color a la izquierda, icono y
+         * el texto en el color normal: el color solo dice el tipo, y lo que se
+         * lee es el mensaje.
          */
         <div
-            role="status"
-            className="fixed right-3 top-[6.25rem] z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-panel bg-surface shadow-xl sm:w-auto sm:min-w-[18rem] lg:top-4"
+            role={error ? 'alert' : 'status'}
+            onMouseEnter={() => setEnPausa(true)}
+            onMouseLeave={() => setEnPausa(false)}
+            className="aviso-flotante fixed right-3 top-[6.25rem] z-50 w-[calc(100%-1.5rem)] max-w-sm overflow-hidden rounded-panel border border-line bg-raise shadow-overlay sm:w-auto sm:min-w-[19rem] lg:top-4"
         >
-        <div className={`flex items-start justify-between gap-3 rounded-panel border px-3 py-2 text-sm ${tono.caja}`}>
-            <span className="flex items-start gap-1.5">
-                {/* Glifo + texto + color, en ese orden: el color solo no basta. */}
-                <span aria-hidden="true" className="font-semibold">
-                    {tono.glifo}
-                </span>
-                {mensaje}
-            </span>
-            <button
-                type="button"
-                onClick={() => setVisible(false)}
-                aria-label="Cerrar el aviso"
-                className="-m-1 shrink-0 rounded-control p-1 opacity-70 transition-opacity hover:opacity-100"
-            >
-                <XIcon className="size-3.5" aria-hidden="true" />
-            </button>
-        </div>
+            <div className="flex items-start gap-3 py-3 pl-3.5 pr-2.5">
+                <span className={`absolute inset-y-0 left-0 w-[3px] ${tono.raya}`} aria-hidden="true" />
+                <tono.Icono className={`mt-0.5 size-5 shrink-0 ${tono.icono}`} aria-hidden="true" />
+
+                <div className="min-w-0 flex-1 text-sm text-chalk">
+                    {tono.titulo ? <p className="font-medium leading-5">{tono.titulo}</p> : null}
+                    <p className={tono.titulo ? 'apoyo mt-0.5 text-fog' : 'leading-5'}>{mensaje}</p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setVisible(false)}
+                    aria-label="Cerrar el aviso"
+                    className="-m-1 shrink-0 rounded-control p-1 text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
+                >
+                    <XIcon className="size-4" aria-hidden="true" />
+                </button>
+            </div>
+
+            {/* La barrita que se consume dice cuanto le queda al aviso; con el mouse
+                encima se detiene, igual que el reloj. */}
+            {seVaSolo ? (
+                <span
+                    aria-hidden="true"
+                    className={`aviso-cuenta block h-0.5 ${tono.raya} opacity-40`}
+                    style={{ animationPlayState: enPausa ? 'paused' : 'running' }}
+                />
+            ) : null}
         </div>
     );
 }

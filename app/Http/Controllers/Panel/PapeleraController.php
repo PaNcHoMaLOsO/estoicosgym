@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Convenio;
+use App\Models\CotizacionTaller;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\MotivoDescuento;
 use App\Models\Pago;
+use App\Models\Taller;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,7 +19,7 @@ use Inertia\Inertia;
 /**
  * Lo que se borró y todavía se puede recuperar.
  *
- * UNA SOLA PANTALLA para los siete tipos, y no siete papeleras separadas: quien
+ * UNA SOLA PANTALLA para todos los tipos, y no una papelera por cosa: quien
  * la abre no viene a mirar «la papelera de convenios», viene a buscar algo que
  * borró hace un rato y muchas veces ni se acuerda de qué era exactamente.
  *
@@ -88,6 +90,31 @@ class PapeleraController extends Controller
                 'describir' => fn (Convenio $c) => [
                     'que' => $c->nombre,
                     'detalle' => $c->descripcion,
+                ],
+            ],
+            // Los talleres y sus cotizaciones. Una cotización tirada por
+            // error es un papel que ya se mandó al colegio: tiene que poder
+            // volver, igual que un pago anulado sin querer.
+            'cotizaciones' => [
+                'titulo' => 'Cotizaciones de taller',
+                'modelo' => CotizacionTaller::class,
+                'ruta' => '/panel/talleres',
+                'con' => ['taller.institucion'],
+                'describir' => fn (CotizacionTaller $c) => [
+                    'que' => 'Cotización N° '.$c->numero,
+                    'detalle' => trim(($c->taller?->institucion?->nombre ?? 'Sin institución')
+                        .' · $'.number_format($c->total, 0, ',', '.')),
+                ],
+            ],
+            'talleres' => [
+                'titulo' => 'Talleres y arriendos',
+                'modelo' => Taller::class,
+                'ruta' => '/panel/talleres',
+                'con' => ['institucion'],
+                'describir' => fn (Taller $t) => [
+                    'que' => $t->nombre,
+                    'detalle' => trim(($t->institucion?->nombre ?? 'Sin institución')
+                        .' · $'.number_format($t->precio_hora, 0, ',', '.').' la hora'),
                 ],
             ],
             'metodos-pago' => [

@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { AlertTriangleIcon, ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
 const COLUMNAS = ['Socio', 'Contacto', 'Membresía', 'Vence', 'Faltan'];
@@ -68,12 +69,11 @@ export default function PorVencer({ dias, inscripciones, sinContacto }) {
             {/* Sin correo ni celular no hay a quien avisar: esos socios hay que
                 buscarlos a mano y por eso se cuentan aparte. */}
             {sinContacto > 0 ? (
-                <p className="mb-3 flex items-start gap-2 rounded-panel border border-warn/40 bg-warn/5 px-3 py-2 text-sm text-warn">
-                    <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <Nota className="mb-3">
                     {sinContacto === 1
                         ? 'Un socio de esta lista no tiene correo ni celular: habrá que avisarle en persona.'
                         : `${sinContacto} socios de esta lista no tienen correo ni celular: habrá que avisarles en persona.`}
-                </p>
+                </Nota>
             ) : null}
 
             <Tabla

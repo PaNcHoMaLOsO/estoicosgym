@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangleIcon, ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import Estado from '@/components/Estado';
 
 function Bloque({ titulo, children }) {
@@ -57,16 +58,12 @@ export default function Ficha({ notificacion, socio, logs }) {
             {/* Lo primero si falló: por qué. Es la razón por la que se abre
                 esta pantalla nueve de cada diez veces. */}
             {fallida && notificacion.error ? (
-                <div className="mb-4 flex items-start gap-2 rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                    <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                    <div>
-                        <p className="font-medium">No se pudo enviar</p>
-                        <p className="apoyo">{notificacion.error}</p>
-                        <p className="apoyo mt-1">
-                            Intentos: {notificacion.intentos} de {notificacion.max_intentos}
-                        </p>
-                    </div>
-                </div>
+                <Nota tono="peligro" titulo="No se pudo enviar" className="mb-4">
+                    <p>{notificacion.error}</p>
+                    <p className="mt-1">
+                        Intentos: {notificacion.intentos} de {notificacion.max_intentos}
+                    </p>
+                </Nota>
             ) : null}
 
             <div className="grid gap-3 lg:grid-cols-3">

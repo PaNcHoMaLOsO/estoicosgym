@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import Nota from '@/components/Nota';
 import { AlertTriangleIcon, ExternalLinkIcon, EyeIcon } from 'lucide-react';
 
 /**
@@ -104,13 +105,10 @@ export default function TextosLegales({ tipo, tipos, titulo, descripcion, texto,
             </nav>
 
             {texto.base ? (
-                <div className="mb-4 flex items-start gap-2 rounded-panel border border-warn/40 bg-warn/5 px-3 py-2.5 text-sm text-warn">
-                    <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                    <span>
-                        Es el texto base que trae el sistema. Léelo y ajústalo a tu gimnasio, idealmente
-                        con un abogado, antes de mandar contratos a firmar. Al guardarlo queda como revisado.
-                    </span>
-                </div>
+                <Nota titulo="Es el texto base que trae el sistema" className="mb-4">
+                    Léelo y ajústalo a tu gimnasio, idealmente con un abogado, antes de mandar
+                    contratos a firmar. Al guardarlo queda como revisado.
+                </Nota>
             ) : null}
 
             <p className="apoyo mb-3 text-fog">
@@ -224,9 +222,7 @@ export default function TextosLegales({ tipo, tipos, titulo, descripcion, texto,
                     </h2>
 
                     {vista.error ? (
-                        <p className="rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                            {vista.error}
-                        </p>
+                        <Nota tono="peligro">{vista.error}</Nota>
                     ) : (
                         <>
                             {vista.desconocidas?.length ? (

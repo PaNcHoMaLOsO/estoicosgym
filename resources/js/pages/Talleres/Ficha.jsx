@@ -129,6 +129,22 @@ function Horario({ taller }) {
                 </p>
             </div>
 
+            {/* Cerrarlo no es borrarlo: el colegio que dejó de venir se
+                apaga y sus cobros siguen en las cuentas. Se apaga aquí porque
+                es donde está lo demás del taller. */}
+            <label className="flex items-center gap-2 border-t border-line pt-3 text-sm text-chalk">
+                <input
+                    type="checkbox"
+                    checked={data.activo}
+                    onChange={(e) => setData('activo', e.target.checked)}
+                    className="size-4 accent-[var(--color-volt)]"
+                />
+                Sigue abierto
+                <span className="apoyo text-fog">
+                    {data.activo ? 'se le siguen anotando horas' : 'cerrado: queda solo para consultar'}
+                </span>
+            </label>
+
             <button
                 type="submit"
                 disabled={processing}
@@ -373,16 +389,34 @@ function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
                             </span>
                         </Celda>
                         <Celda className="text-right">
-                            <a
-                                href={`/panel/talleres/cotizaciones/${c.uuid}/imprimir`}
-                                target="_blank"
-                                rel="noopener"
-                                aria-label={`Imprimir la cotización N° ${c.numero}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex rounded-control p-1 text-fog transition-colors hover:text-chalk"
-                            >
-                                <PrinterIcon className="size-3.5" aria-hidden="true" />
-                            </a>
+                            <span className="inline-flex items-center gap-1">
+                                <a
+                                    href={`/panel/talleres/cotizaciones/${c.uuid}/imprimir`}
+                                    target="_blank"
+                                    rel="noopener"
+                                    aria-label={`Imprimir la cotización N° ${c.numero}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex rounded-control p-1 text-fog transition-colors hover:text-chalk"
+                                >
+                                    <PrinterIcon className="size-3.5" aria-hidden="true" />
+                                </a>
+                                {/* A la papelera desde la lista: para tirar un
+                                    borrador no hace falta entrar en él. */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+
+                                        if (window.confirm(`¿Mandar la cotización N° ${c.numero} a la papelera?`)) {
+                                            router.delete(`/panel/talleres/cotizaciones/${c.uuid}`, { preserveScroll: true });
+                                        }
+                                    }}
+                                    aria-label={`Eliminar la cotización N° ${c.numero}`}
+                                    className="rounded-control p-1 text-fog transition-colors hover:text-danger"
+                                >
+                                    <TrashIcon className="size-3.5" aria-hidden="true" />
+                                </button>
+                            </span>
                         </Celda>
                     </Fila>
                 ))}
@@ -588,7 +622,23 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                             {c.pagado_en ? (
                                                 <span className="apoyo tabular-nums text-ok">{c.pagado_en}</span>
                                             ) : (
-                                                <span className="apoyo text-warn">Sin pagar</span>
+                                                /* Un clic para anotar que la pagaron: es lo
+                                                   único que se hace con un cobro viejo, y
+                                                   antes había que abrir su formulario. */
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.patch(
+                                                            `/panel/talleres/cobros/${c.uuid}`,
+                                                            { pagado_en: new Date().toISOString().slice(0, 10) },
+                                                            { preserveScroll: true },
+                                                        )
+                                                    }
+                                                    className="apoyo inline-flex items-center gap-1 text-warn transition-colors hover:text-ok"
+                                                >
+                                                    <CheckIcon className="size-3.5" aria-hidden="true" />
+                                                    Marcar pagada
+                                                </button>
                                             )}
                                         </Celda>
                                     </Fila>
@@ -641,6 +691,18 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                             </button>
                         )}
                     </Panel>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (window.confirm(`¿Mandar «${taller.nombre}» a la papelera? Sus cobros se van con él.`)) {
+                                router.delete(`/panel/talleres/${uuid}`);
+                            }
+                        }}
+                        className="apoyo text-fog transition-colors hover:text-danger"
+                    >
+                        Eliminar este taller
+                    </button>
 
                     {taller.institucion ? (
                         <Panel

@@ -1,6 +1,7 @@
 import { CameraIcon, RefreshCwIcon, VideoOffIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import Nota from '@/components/Nota';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /**
@@ -148,10 +149,7 @@ export default function CamaraFoto({ abierta, alCerrar, alSacar, nombre }) {
                 </DialogHeader>
 
                 {error ? (
-                    <div className="flex items-start gap-2 rounded-control border border-warn/40 bg-warn/5 px-3 py-2.5 text-sm text-warn">
-                        <VideoOffIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                        {error}
-                    </div>
+                    <Nota Icono={VideoOffIcon}>{error}</Nota>
                 ) : (
                     <div className="overflow-hidden rounded-panel border border-line bg-black">
                         {/* `muted` y `playsInline` no son adorno: sin ellos el

@@ -188,6 +188,60 @@ class CotizacionesDeTallerTest extends CasoConCatalogos
     }
 
     /**
+     * TIRAR UNA COTIZACIÓN LA MANDA A LA PAPELERA, no al vacío.
+     *
+     * Es un papel que puede estar mandado al colegio: si se tira por error hay
+     * que poder traerla de vuelta, como un pago anulado sin querer.
+     */
+    public function test_una_cotizacion_tirada_se_recupera_de_la_papelera(): void
+    {
+        $taller = $this->taller();
+
+        $this->actingAs($this->administrador())
+            ->post("/panel/talleres/{$taller->uuid}/cotizaciones", ['periodo' => '2026-07']);
+
+        $cotizacion = CotizacionTaller::firstOrFail();
+
+        $this->actingAs($this->administrador())
+            ->delete("/panel/talleres/cotizaciones/{$cotizacion->uuid}")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, CotizacionTaller::count());
+
+        // Y aparece listada en la papelera, no desaparecida.
+        $this->actingAs($this->administrador())->get('/panel/papelera')
+            ->assertOk()
+            ->assertInertia(fn ($pagina) => $pagina->where(
+                'grupos.0.filas.0.que',
+                'Cotización N° '.$cotizacion->numero
+            ));
+
+        $this->actingAs($this->administrador())
+            ->patch("/panel/papelera/cotizaciones/{$cotizacion->id}/restaurar")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, CotizacionTaller::count());
+    }
+
+    /** Y el taller entero también: sus cobros son plata facturada. */
+    public function test_un_taller_borrado_va_a_la_papelera(): void
+    {
+        $taller = $this->taller();
+
+        $this->actingAs($this->administrador())
+            ->delete("/panel/talleres/{$taller->uuid}")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, Taller::count());
+
+        $this->actingAs($this->administrador())
+            ->patch("/panel/papelera/talleres/{$taller->id}/restaurar")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Taller::count());
+    }
+
+    /**
      * RECEPCIÓN COTIZA, y es a propósito: es quien atiende cuando el colegio
      * llama preguntando cuánto sale el mes. Cotizar no cobra nada; cerrar el
      * mes, que sí es emitir un cobro, le sigue estando vedado.

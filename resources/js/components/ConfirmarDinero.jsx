@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { BanknoteIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -58,14 +59,26 @@ export default function ConfirmarDinero({
     return (
         <Dialog open={abierto} onOpenChange={(v) => (! v && ! enviando ? alCerrar() : null)}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{titulo}</DialogTitle>
-                    {consecuencia ? <DialogDescription>{consecuencia}</DialogDescription> : null}
+                <DialogHeader className="flex-row items-start gap-3">
+                    {/* El icono en su circulo dice de que va antes de leer: rojo es
+                        borrar o quitar, azul es una accion normal. */}
+                    <span
+                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full ${
+                            peligrosa ? 'bg-danger/10 text-danger' : 'bg-info/10 text-info'
+                        }`}
+                        aria-hidden="true"
+                    >
+                        {peligrosa ? <Trash2Icon className="size-4" /> : <BanknoteIcon className="size-4" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <DialogTitle>{titulo}</DialogTitle>
+                        {consecuencia ? <DialogDescription className="mt-1">{consecuencia}</DialogDescription> : null}
+                    </div>
                 </DialogHeader>
 
                 {/* EL NOMBRE Y LA CANTIDAD, grandes. Es lo unico que hace que
                     alguien note que se equivoco de fila. */}
-                <div className="rounded-panel border border-line bg-surface-2 p-3">
+                <div className={`rounded-panel border p-3 ${peligrosa ? 'border-danger/30 bg-danger/5' : 'border-line bg-surface-2'}`}>
                     <p className="text-sm font-medium text-chalk">{quien}</p>
                     <p className="mt-0.5 text-2xl font-semibold tabular-nums text-chalk">
                         {pesos.format(monto)}

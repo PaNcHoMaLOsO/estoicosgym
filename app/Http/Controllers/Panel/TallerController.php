@@ -231,6 +231,23 @@ class TallerController extends Controller
         return back()->with('success', 'Datos de la institución guardados.');
     }
 
+    /**
+     * A la papelera, no al vacío.
+     *
+     * UN TALLER ARRASTRA SUS COBROS: lo que se le facturó al colegio el año
+     * pasado tiene que seguir en las cuentas. Por eso se borra en blando y se
+     * recupera desde /panel/papelera; si solo dejó de venir, lo que
+     * corresponde es cerrarlo —el interruptor de su ficha—, no borrarlo.
+     */
+    public function eliminar(Taller $taller)
+    {
+        $taller->delete();
+
+        return redirect()
+            ->route('panel.talleres.index')
+            ->with('success', "«{$taller->nombre}» se fue a la papelera. Desde ahí se recupera.");
+    }
+
     // -------------------------------------------------------- las horas
 
     /** Anota una clase suelta. */

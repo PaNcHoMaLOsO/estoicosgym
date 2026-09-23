@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { ArrowLeftIcon, TrashIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -342,9 +343,9 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                         </Campo>
 
                         {data.tipo_pago === 'pendiente' ? (
-                            <p className="apoyo rounded-control border border-warn/40 bg-warn/5 px-3 py-2 text-warn">
+                            <Nota compacta>
                                 Renueva debiendo {pesos.format(total)}. Aparecerá en Pagos como pendiente de cobro.
-                            </p>
+                            </Nota>
                         ) : null}
 
                         {data.tipo_pago === 'completo' || data.tipo_pago === 'abono' ? (

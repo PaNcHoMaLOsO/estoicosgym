@@ -1,5 +1,8 @@
 import { router } from '@inertiajs/react';
+import { CircleHelpIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
+
+import Nota from '@/components/Nota';
 
 import {
     Dialog,
@@ -42,6 +45,8 @@ export default function Dialogo({
      */
     via = 'json',
     metodo = 'patch',
+    // Con via 'local' no se llama al servidor: confirmar ejecuta esto y ya.
+    alConfirmar,
     children,
 }) {
     const [enviando, setEnviando] = useState(false);
@@ -60,6 +65,12 @@ export default function Dialogo({
     }
 
     async function confirmar() {
+        if (via === 'local') {
+            alConfirmar?.();
+
+            return;
+        }
+
         if (via === 'inertia') {
             confirmarPorInertia();
 
@@ -109,21 +120,26 @@ export default function Dialogo({
     return (
         <Dialog open={abierto} onOpenChange={(v) => (! v && ! enviando ? alCerrar() : null)}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{titulo}</DialogTitle>
-                    {descripcion ? <DialogDescription>{descripcion}</DialogDescription> : null}
+                <DialogHeader className="flex-row items-start gap-3">
+                    {/* El icono en su circulo dice de que va antes de leer: rojo es
+                        borrar o quitar, azul es una accion normal. */}
+                    <span
+                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full ${
+                            peligrosa ? 'bg-danger/10 text-danger' : 'bg-info/10 text-info'
+                        }`}
+                        aria-hidden="true"
+                    >
+                        {peligrosa ? <Trash2Icon className="size-4" /> : <CircleHelpIcon className="size-4" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <DialogTitle>{titulo}</DialogTitle>
+                        {descripcion ? <DialogDescription className="mt-1">{descripcion}</DialogDescription> : null}
+                    </div>
                 </DialogHeader>
 
                 {children ? <div className="space-y-3">{children}</div> : null}
 
-                {error ? (
-                    <p
-                        role="alert"
-                        className="rounded-control border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger"
-                    >
-                        {error}
-                    </p>
-                ) : null}
+                {error ? <Nota tono="peligro" compacta>{error}</Nota> : null}
 
                 <DialogFooter>
                     <button

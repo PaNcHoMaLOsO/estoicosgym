@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangleIcon, CheckIcon, CopyIcon } from 'lucide-react';
 
+import Dialogo from '@/components/Dialogo';
 import { haceCuanto } from '@/lib/tiempo';
 
 /**
@@ -23,7 +24,7 @@ export default function Configuracion({ grupo, extra }) {
     // la página recibe los valores nuevos y el aviso se apaga solo.
     const sinGuardar = grupo.ajustes.some((a) => String(data[a.clave] ?? '') !== String(a.valor ?? ''));
 
-    useAvisoAlSalir(sinGuardar && !processing);
+    const salida = useAvisoAlSalir(sinGuardar && !processing);
 
     function guardar(e) {
         e.preventDefault();
@@ -86,6 +87,17 @@ export default function Configuracion({ grupo, extra }) {
                 ))}
             </div>
 
+            <Dialogo
+                abierto={salida.pendiente !== null}
+                alCerrar={salida.quedarse}
+                titulo="Hay cambios sin guardar"
+                descripcion="Si sales ahora, lo que cambiaste en esta sección se pierde."
+                etiquetaConfirmar="Salir sin guardar"
+                peligrosa
+                via="local"
+                alConfirmar={salida.salir}
+            />
+
             {/* Pegada abajo: en un tema largo, como Google y redes, el botón
                 no se pierde al bajar. */}
             <div className="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface/95 px-4 py-3 backdrop-blur">
@@ -114,26 +126,30 @@ export default function Configuracion({ grupo, extra }) {
  * cerrar la pestaña. Guardar no pregunta: es un PUT, no es irse.
  */
 function useAvisoAlSalir(activo) {
+    // La navegacion que se detuvo para preguntar; se retoma si se confirma.
+    const [pendiente, setPendiente] = useState(null);
+    const confirmada = useRef(false);
+
     useEffect(() => {
         if (!activo) {
             return undefined;
         }
 
         const quitar = router.on('before', (evento) => {
-            if (String(evento.detail.visit.method).toLowerCase() !== 'get') {
+            const visita = evento.detail.visit;
+
+            if (String(visita.method).toLowerCase() !== 'get' || confirmada.current) {
                 return;
             }
 
-            if (!window.confirm('Hay cambios sin guardar. ¿Salir igual y perderlos?')) {
-                evento.preventDefault();
-            }
+            evento.preventDefault();
+            setPendiente(visita.url.href ?? String(visita.url));
         });
 
+        // Cerrar la pestaña sí usa el cuadro del navegador: ahí no hay otro.
         const alCerrar = (e) => {
             e.preventDefault();
-            e.returnValue = '';
         };
-
         window.addEventListener('beforeunload', alCerrar);
 
         return () => {
@@ -141,6 +157,17 @@ function useAvisoAlSalir(activo) {
             window.removeEventListener('beforeunload', alCerrar);
         };
     }, [activo]);
+
+    return {
+        pendiente,
+        quedarse: () => setPendiente(null),
+        salir: () => {
+            confirmada.current = true;
+            const destino = pendiente;
+            setPendiente(null);
+            router.visit(destino);
+        },
+    };
 }
 
 /** Un ajuste: su etiqueta, su campo y por qué existe. */

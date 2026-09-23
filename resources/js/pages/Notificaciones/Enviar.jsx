@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { ArrowLeftIcon, MailIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
 /**
@@ -260,9 +261,7 @@ export default function Enviar({ preseleccionado, plantillas, formToken }) {
                                 </button>
 
                                 {vista?.error ? (
-                                    <p className="rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                                        {vista.error}
-                                    </p>
+                                    <Nota tono="peligro">{vista.error}</Nota>
                                 ) : vista ? (
                                     <div className="overflow-hidden rounded-panel border border-line">
                                         <div className="border-b border-line bg-surface-2 px-3 py-2 text-sm">
@@ -303,9 +302,7 @@ export default function Enviar({ preseleccionado, plantillas, formToken }) {
                         ) : null}
 
                         {errors.envio ? (
-                            <p className="rounded-panel border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-                                {errors.envio}
-                            </p>
+                            <Nota tono="peligro">{errors.envio}</Nota>
                         ) : null}
 
                         <div className="flex items-center gap-3">

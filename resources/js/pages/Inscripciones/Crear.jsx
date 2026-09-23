@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
 
+import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
 const hoy = new Date().toISOString().slice(0, 10);
@@ -480,10 +481,10 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                 </Campo>
 
                                 {data.tipo_pago === 'pendiente' ? (
-                                    <p className="apoyo rounded-control border border-warn/40 bg-warn/5 px-3 py-2 text-warn">
+                                    <Nota compacta>
                                         Queda inscrito debiendo {pesos.format(total)}. Aparecerá en Pagos como
                                         pendiente de cobro.
-                                    </p>
+                                    </Nota>
                                 ) : null}
 
                                 {data.tipo_pago === 'completo' || data.tipo_pago === 'abono' ? (
