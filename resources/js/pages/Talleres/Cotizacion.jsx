@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { ArrowLeftIcon, CalendarPlusIcon, PlusIcon, PrinterIcon, TrashIcon } from 'lucide-react';
 
 import { Celda, Fila, Tabla } from '@/components/Tabla';
@@ -44,6 +45,9 @@ function fechaLegible(fecha) {
 }
 
 export default function Cotizacion({ cotizacion, taller, estados }) {
+    // El detalle de las horas son dos hojas más: hay veces —el colegio ya
+    // conoce el horario— en que sobra y basta la hoja de siempre.
+    const [conDetalle, setConDetalle] = useState(true);
     const { data, setData, patch, processing, errors } = useForm({
         numero: cotizacion.numero,
         fecha: cotizacion.fecha,
@@ -348,7 +352,7 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
                             hay en pantalla: por eso se abre aparte y después de
                             guardar. */}
                         <a
-                            href={`/panel/talleres/cotizaciones/${cotizacion.uuid}/imprimir`}
+                            href={`/panel/talleres/cotizaciones/${cotizacion.uuid}/imprimir${conDetalle ? '' : '?detalle=no'}`}
                             target="_blank"
                             rel="noopener"
                             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-control border border-line px-3 py-2 text-sm text-chalk transition-colors hover:border-line-strong"
@@ -356,6 +360,16 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
                             <PrinterIcon className="size-4" aria-hidden="true" />
                             Imprimir o guardar como PDF
                         </a>
+
+                        <label className="apoyo mt-2 flex items-center gap-2 text-fog">
+                            <input
+                                type="checkbox"
+                                checked={conDetalle}
+                                onChange={(e) => setConDetalle(e.target.checked)}
+                                className="size-3.5 accent-[var(--color-volt)]"
+                            />
+                            Con el detalle de las horas
+                        </label>
                     </Panel>
 
                     <Panel titulo="En qué va">

@@ -3,24 +3,26 @@
 {{--
     La cotización de un taller, en papel.
 
-    IGUAL QUE EL WORD QUE SE MANDABA ANTES, porque el colegio lleva años
-    recibiendo esa hoja y reconoce sus casillas: quién cotiza, a quién, el
-    número de la serie, la descripción y el total. Lo que cambia es que la
-    cuenta ya no se hace a mano.
+    ES EL MISMO DOCUMENTO DE SIEMPRE, a propósito: el membrete arriba, la banda
+    negra con «COTIZACIÓN», los datos del gimnasio a la izquierda y el número y
+    las fechas a la derecha, la banda de «DATOS DEL CLIENTE» y la tabla de
+    DESCRIPCIÓN · UNIDADES/mes · VALOR(hora) · TOTAL. El colegio lleva años
+    recibiendo esta hoja y la reconoce; cambiarle la cara no aportaba nada.
+    Lo que cambia es que la cuenta ya no se hace a mano.
 
     Sale del navegador —«Imprimir o guardar como PDF»— y no de un generador de
     PDF: es una hoja con seis datos, y una librería más habría que mantenerla.
 
     ABAJO VA EL DETALLE DE LAS HORAS, que el Word no llevaba y hacía falta: es
-    lo que responde «¿por qué este mes son 18 y no 20?» sin tener que abrir el
-    calendario.
+    lo que responde «¿por qué este mes son 18 y no 20?» sin abrir el calendario,
+    y enseña tachadas las clases suspendidas.
 --}}
 
 @section('titulo', 'Cotización N° ' . $cotizacion->numero)
 @section('etiqueta', 'Cotización')
 
 @php
-    $pesos = fn ($monto) => '$ ' . number_format((int) $monto, 0, ',', '.');
+    $pesos = fn ($monto) => '$' . number_format((int) $monto, 0, ',', '.');
     $horas = fn ($cantidad) => rtrim(rtrim(number_format((float) $cantidad, 2, ',', '.'), '0'), ',');
     $incluidas = $cotizacion->lineasIncluidas();
     $quitadas = $cotizacion->lineasQuitadas();
@@ -41,76 +43,93 @@
     <article class="rounded-2xl bg-white px-5 py-8 text-neutral-900 shadow-2xl sm:px-10 print:rounded-none print:px-0 print:py-0 print:shadow-none">
         <div class="ct">
 <style>
-.ct{font-family:Arial,Helvetica,sans-serif;color:#16161a;font-size:13px;line-height:1.5}
-.ct h1{font-size:22px;font-weight:700;letter-spacing:.08em;text-align:center;margin:0 0 18px}
-.ct-cajas{display:flex;gap:14px;margin-bottom:14px}
-.ct-caja{flex:1;border:1px solid #16161a;padding:9px 11px}
-.ct-caja p{margin:0 0 3px}
-.ct-rotulo{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6a6a72;margin:0 0 6px!important}
-.ct-cliente{border:1px solid #16161a;padding:9px 11px;margin-bottom:16px}
+.ct{font-family:Calibri,Carlito,'Segoe UI',Arial,sans-serif;color:#000;font-size:14px;line-height:1.45}
+.ct-membrete{display:block;width:100%;max-width:640px;margin:0 auto 34px}
+.ct-banda{background:#000;color:#fff;font-weight:700;font-size:15px;text-align:center;padding:5px 8px;letter-spacing:.01em;margin:0 0 12px}
+.ct-datos{display:flex;gap:24px;margin-bottom:14px}
+.ct-datos>div{flex:1}
+.ct-datos p{margin:0 0 7px}
+.ct b{font-weight:700}
+.ct-correo{color:#c00000}
+.ct-doc td{padding:0 0 7px;vertical-align:top}
+.ct-doc td:first-child{padding-right:14px;white-space:nowrap}
 .ct-cliente p{margin:0 0 3px}
-.ct table{width:100%;border-collapse:collapse;margin-bottom:14px}
-.ct th,.ct td{border:1px solid #16161a;padding:6px 8px;text-align:left;vertical-align:top}
-.ct th{font-size:11px;letter-spacing:.04em;text-transform:uppercase;background:#f1f1f3}
-.ct .num{text-align:right;white-space:nowrap}
-.ct-totales{width:auto;min-width:250px;margin-left:auto}
-.ct-totales td{border:none;padding:3px 0}
-.ct-totales tr.total td{border-top:1.5px solid #16161a;font-weight:700;font-size:15px;padding-top:6px}
-.ct-anexo{margin-top:26px;break-inside:avoid}
-.ct-anexo h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6a6a72;margin:0 0 7px}
-.ct-anexo table{font-size:12px}
-.ct-anexo td{padding:4px 8px}
-.ct-fuera td{color:#6a6a72;text-decoration:line-through}
-.ct-nota{margin-top:18px;font-size:12px;white-space:pre-line}
-.ct-pie{margin-top:26px;font-size:11px;color:#6a6a72;text-align:center}
-@page{size:A4;margin:16mm 15mm}
+.ct-items{width:100%;border-collapse:collapse;margin:26px 0 8px;font-size:13.5px}
+.ct-items th,.ct-items td{border:1px solid #000;padding:4px 7px;text-align:left}
+.ct-items th{font-weight:700}
+.ct-items .num{text-align:left;white-space:nowrap}
+.ct-items .ancho{width:52%}
+.ct-pie{font-size:12.5px;color:#404040;margin:0}
+.ct-anexo{margin-top:30px;break-inside:avoid}
+.ct-anexo table{width:100%;border-collapse:collapse;font-size:13px}
+.ct-anexo th,.ct-anexo td{border:1px solid #000;padding:3px 7px;text-align:left}
+.ct-anexo th{font-weight:700}
+.ct-anexo .num{text-align:right;white-space:nowrap}
+.ct-fuera td{color:#707070;text-decoration:line-through}
+.ct-nota{margin:14px 0 0;font-size:13.5px;white-space:pre-line}
+@page{size:A4;margin:14mm 16mm}
 </style>
-            <h1>COTIZACIÓN</h1>
+            {{-- El membrete del Word: la misma foto con el logo encima. --}}
+            <img src="{{ asset('images/progym-membrete.jpg') }}" alt="{{ $emisor['nombre'] }}" class="ct-membrete">
 
-            <div class="ct-cajas">
-                <div class="ct-caja">
-                    <p class="ct-rotulo">Quien cotiza</p>
-                    <p><strong>{{ $emisor['nombre'] }}</strong></p>
-                    @if ($emisor['rut'])<p>RUT: {{ $emisor['rut'] }}</p>@endif
-                    @if ($emisor['direccion'])<p>{{ $emisor['direccion'] }}</p>@endif
-                    @if ($emisor['telefono'])<p>Teléfono: {{ $emisor['telefono'] }}</p>@endif
-                    @if ($emisor['email'])<p>{{ $emisor['email'] }}</p>@endif
+            <p class="ct-banda">COTIZACIÓN</p>
+
+            <div class="ct-datos">
+                <div>
+                    <p><b>Nombre:</b> {{ $emisor['nombre'] }}</p>
+                    @if ($emisor['direccion'])<p><b>Dirección:</b> {{ $emisor['direccion'] }}</p>@endif
+                    @if ($emisor['rut'])<p><b>Rut:</b> {{ $emisor['rut'] }}</p>@endif
+                    @if ($emisor['telefono'])<p><b>Teléfono:</b> {{ $emisor['telefono'] }}</p>@endif
+                    @if ($emisor['email'])<p><b>Correo:</b> <span class="ct-correo">{{ $emisor['email'] }}</span></p>@endif
                 </div>
 
-                <div class="ct-caja">
-                    <p class="ct-rotulo">Documento</p>
-                    <p><strong>N° {{ $cotizacion->numero }}</strong></p>
-                    <p>Fecha: {{ $cotizacion->fecha->format('d-m-Y') }}</p>
-                    <p>Válido hasta: {{ $cotizacion->valido_hasta->format('d-m-Y') }}</p>
-                    @if ($cotizacion->periodo)
-                        <p class="capitalize">
-                            Mes cotizado:
-                            {{ \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $cotizacion->periodo . '-01')->translatedFormat('F \d\e Y') }}
-                        </p>
-                    @endif
+                <div>
+                    <table class="ct-doc">
+                        <tr>
+                            <td>NÚMERO:</td>
+                            <td>{{ $cotizacion->numero }}</td>
+                        </tr>
+                        <tr>
+                            <td>FECHA:</td>
+                            <td>{{ $cotizacion->fecha->format('d-m-Y') }}</td>
+                        </tr>
+                        <tr>
+                            <td>VÁLIDO HASTA:</td>
+                            <td>{{ $cotizacion->valido_hasta->format('d-m-Y') }}</td>
+                        </tr>
+                        @if ($cotizacion->periodo)
+                            <tr>
+                                <td>MES:</td>
+                                <td class="capitalize">
+                                    {{ \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $cotizacion->periodo . '-01')->translatedFormat('F \d\e Y') }}
+                                </td>
+                            </tr>
+                        @endif
+                    </table>
                 </div>
             </div>
+
+            <p class="ct-banda">DATOS DEL CLIENTE</p>
 
             <div class="ct-cliente">
-                <p class="ct-rotulo">Datos del cliente</p>
-                <p><strong>{{ $institucion?->nombre ?? 'Sin institución' }}</strong></p>
-                @if ($institucion?->rut)<p>RUT: {{ $institucion->rut }}</p>@endif
-                @if ($institucion?->giro)<p>Giro: {{ $institucion->giro }}</p>@endif
+                <p><b>Nombre:</b> {{ $institucion?->nombre ?? 'Sin institución' }}</p>
                 @if ($institucion?->direccion)
-                    <p>{{ $institucion->direccion }}{{ $institucion->comuna ? ', ' . $institucion->comuna : '' }}</p>
+                    <p><b>Dirección:</b> {{ $institucion->direccion }}{{ $institucion->comuna ? ';' . $institucion->comuna : '' }}</p>
                 @endif
+                @if ($institucion?->rut)<p><b>Rut:</b> {{ $institucion->rut }}</p>@endif
+                @if ($institucion?->giro)<p><b>Giro:</b> {{ $institucion->giro }}</p>@endif
                 @if ($institucion?->contacto_email)
-                    <p>Contacto: {{ $institucion->contacto_nombre ? $institucion->contacto_nombre . ' · ' : '' }}{{ $institucion->contacto_email }}</p>
+                    <p><b>E-mail cto:</b> <span class="ct-correo">{{ $institucion->contacto_email }}</span></p>
                 @endif
             </div>
 
-            <table>
+            <table class="ct-items">
                 <thead>
                     <tr>
-                        <th>Descripción</th>
-                        <th class="num">Horas del mes</th>
-                        <th class="num">Valor hora (IVA incl.)</th>
-                        <th class="num">Total</th>
+                        <th class="ancho">DESCRIPCIÓN</th>
+                        <th class="num">UNIDADES/mes</th>
+                        <th class="num">VALOR(hora)</th>
+                        <th class="num">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -123,37 +142,24 @@
                 </tbody>
             </table>
 
-            {{-- El neto y el IVA salen del total y no al revés: lo acordado es
-                 «la hora sale treinta mil», y así el papel cuadra al peso con
-                 la factura que se emitirá después. --}}
-            <table class="ct-totales">
-                <tr>
-                    <td>Neto</td>
-                    <td class="num">{{ $pesos($cotizacion->neto) }}</td>
-                </tr>
-                <tr>
-                    <td>IVA 19%</td>
-                    <td class="num">{{ $pesos($cotizacion->iva) }}</td>
-                </tr>
-                <tr class="total">
-                    <td>Total</td>
-                    <td class="num">{{ $pesos($cotizacion->total) }}</td>
-                </tr>
-            </table>
+            {{-- El precio se acuerda con IVA dentro —«la hora sale treinta
+                 mil»—, así que se dice en el papel y no se desglosa: el neto y
+                 el IVA hacen falta al facturar, y para eso están en el panel. --}}
+            <p class="ct-pie">Valores con IVA incluido.</p>
 
             @if ($cotizacion->notas)
                 <p class="ct-nota">{{ $cotizacion->notas }}</p>
             @endif
 
-            @if (count($incluidas) > 0)
+            @if ($conDetalle && count($incluidas) > 0)
                 <div class="ct-anexo">
-                    <h2>Detalle de las horas</h2>
+                    <p class="ct-banda">DETALLE DE LAS HORAS</p>
                     <table>
                         <thead>
                             <tr>
-                                <th>Día</th>
-                                <th>Horario</th>
-                                <th class="num">Horas</th>
+                                <th>DÍA</th>
+                                <th>HORARIO</th>
+                                <th class="num">HORAS</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -188,17 +194,13 @@
                             @endforeach
 
                             <tr>
-                                <td colspan="2"><strong>Total de horas</strong></td>
-                                <td class="num"><strong>{{ $horas($cotizacion->horas) }}</strong></td>
+                                <td colspan="2"><b>TOTAL DE HORAS</b></td>
+                                <td class="num"><b>{{ $horas($cotizacion->horas) }}</b></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             @endif
-
-            <p class="ct-pie">
-                Las horas efectivamente realizadas se confirman al cierre del mes y son las que se facturan.
-            </p>
         </div>
     </article>
 @endsection

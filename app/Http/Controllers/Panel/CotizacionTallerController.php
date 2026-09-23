@@ -183,7 +183,7 @@ class CotizacionTallerController extends Controller
      * con seis datos, y «Guardar como PDF» del navegador la deja igual que el
      * Word que se mandaba antes sin meter una librería más que mantener.
      */
-    public function imprimir(CotizacionTaller $cotizacion)
+    public function imprimir(Request $request, CotizacionTaller $cotizacion)
     {
         $cotizacion->load('taller.institucion');
 
@@ -192,6 +192,9 @@ class CotizacionTallerController extends Controller
             'taller' => $cotizacion->taller,
             'institucion' => $cotizacion->taller->institucion,
             'emisor' => $this->emisor(),
+            // El detalle de las horas se puede dejar fuera: son dos hojas más
+            // y hay veces —el colegio ya sabe el horario— en que sobra.
+            'conDetalle' => $request->query('detalle') !== 'no',
         ]);
     }
 
