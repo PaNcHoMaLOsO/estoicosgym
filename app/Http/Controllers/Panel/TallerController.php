@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\CobroTaller;
+use App\Models\CotizacionTaller;
 use App\Models\HoraTaller;
 use App\Models\Institucion;
 use App\Models\Taller;
@@ -90,7 +91,7 @@ class TallerController extends Controller
                 'horario' => $taller->horario ?? [],
                 'activo' => $taller->activo,
                 'institucion' => $taller->institucion?->only([
-                    'nombre', 'rut', 'giro', 'direccion', 'comuna',
+                    'uuid', 'nombre', 'rut', 'giro', 'direccion', 'comuna',
                     'contacto_nombre', 'contacto_email', 'contacto_telefono',
                 ]),
             ],
@@ -113,6 +114,26 @@ class TallerController extends Controller
                 ...CobroTaller::desglosar($total),
             ],
             'cobro' => $cobro ? $this->comoSeLee($cobro) : null,
+            // Las cotizaciones del taller: el papel que se le manda al colegio
+            // antes del mes. Van aquí porque es donde se piensa en el mes.
+            'cotizaciones' => $taller->cotizaciones()
+                ->orderByDesc('fecha')
+                ->orderByDesc('numero')
+                ->limit(12)
+                ->get()
+                ->map(fn (CotizacionTaller $c) => [
+                    'uuid' => $c->uuid,
+                    'numero' => $c->numero,
+                    'mes' => $c->periodo
+                        ? Carbon::createFromFormat('Y-m-d', $c->periodo.'-01')->translatedFormat('F \d\e Y')
+                        : null,
+                    'fecha' => $c->fecha->format('d/m/Y'),
+                    'horas' => $c->horas,
+                    'total' => $c->total,
+                    'estado' => CotizacionTaller::ESTADOS[$c->estado] ?? $c->estado,
+                    'vencida' => $c->estaVencida() && $c->estado !== 'aceptada',
+                ])
+                ->all(),
             'historial' => $taller->cobros()
                 ->orderByDesc('periodo')
                 ->limit(24)
@@ -183,6 +204,31 @@ class TallerController extends Controller
         ]);
 
         return back()->with('success', 'Taller actualizado.');
+    }
+
+    /**
+     * Los datos con los que se le factura y se le cotiza a la institución.
+     *
+     * Hacen falta en el papel —giro, dirección, a quién escribirle— y no los
+     * pide el alta: cuando se crea el taller lo que importa es empezar a
+     * contar horas, no rellenar una ficha.
+     */
+    public function actualizarInstitucion(Request $request, Institucion $institucion)
+    {
+        $datos = $request->validate([
+            'nombre' => 'required|string|max:160',
+            'rut' => 'nullable|string|max:20',
+            'giro' => 'nullable|string|max:120',
+            'direccion' => 'nullable|string|max:180',
+            'comuna' => 'nullable|string|max:80',
+            'contacto_nombre' => 'nullable|string|max:120',
+            'contacto_email' => 'nullable|email|max:120',
+            'contacto_telefono' => 'nullable|string|max:30',
+        ]);
+
+        $institucion->update($datos);
+
+        return back()->with('success', 'Datos de la institución guardados.');
     }
 
     // -------------------------------------------------------- las horas

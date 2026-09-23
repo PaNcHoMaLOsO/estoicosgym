@@ -7,7 +7,9 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     CopyIcon,
+    FileTextIcon,
     LockIcon,
+    PrinterIcon,
     PlusIcon,
     TrashIcon,
 } from 'lucide-react';
@@ -252,7 +254,144 @@ function DatosDelCobro({ cobro }) {
     );
 }
 
-export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, cuenta, cobro, historial }) {
+/**
+ * Los datos con los que se le cotiza y se le factura a la institución.
+ *
+ * NO LOS PIDE EL ALTA A PROPÓSITO: cuando se crea el taller lo que importa es
+ * empezar a contar horas, no rellenar una ficha. Pero el papel que se le manda
+ * al colegio lleva giro, dirección y a quién escribirle, así que se corrigen
+ * aquí, que es donde se miran.
+ */
+function DatosDeLaInstitucion({ institucion }) {
+    const { data, setData, patch, processing } = useForm({
+        nombre: institucion.nombre ?? '',
+        rut: institucion.rut ?? '',
+        giro: institucion.giro ?? '',
+        direccion: institucion.direccion ?? '',
+        comuna: institucion.comuna ?? '',
+        contacto_nombre: institucion.contacto_nombre ?? '',
+        contacto_email: institucion.contacto_email ?? '',
+        contacto_telefono: institucion.contacto_telefono ?? '',
+    });
+
+    const campo =
+        'w-full rounded-control border border-line bg-surface-2 px-2 py-1 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none';
+
+    const campos = [
+        ['nombre', 'Nombre'],
+        ['rut', 'RUT'],
+        ['giro', 'Giro'],
+        ['direccion', 'Dirección'],
+        ['comuna', 'Comuna y región'],
+        ['contacto_nombre', 'Contacto'],
+        ['contacto_email', 'Correo del contacto'],
+    ];
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                patch(`/panel/talleres/instituciones/${institucion.uuid}`, { preserveScroll: true });
+            }}
+            className="space-y-2"
+        >
+            {campos.map(([clave, etiqueta]) => (
+                <label key={clave} className="block">
+                    <span className="rotulo">{etiqueta}</span>
+                    <input
+                        type="text"
+                        value={data[clave]}
+                        onChange={(e) => setData(clave, e.target.value)}
+                        className={`${campo} mt-0.5`}
+                    />
+                </label>
+            ))}
+
+            <button
+                type="submit"
+                disabled={processing}
+                className="apoyo rounded-control border border-line px-2.5 py-1 text-fog transition-colors hover:text-chalk disabled:opacity-50"
+            >
+                Guardar
+            </button>
+        </form>
+    );
+}
+
+/**
+ * Las cotizaciones del taller.
+ *
+ * ES EL PAPEL CON EL QUE EMPIEZA EL MES: el colegio pregunta cuánto sale abril
+ * y hay que mandarle las horas y el total. Se hacía copiando el Word del mes
+ * anterior y cambiándole a mano el número, las fechas y la cifra. Desde aquí se
+ * cotiza el mes que se está mirando, con las clases del horario ya puestas.
+ */
+function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
+    return (
+        <Panel
+            titulo="Cotizaciones"
+            descripcion="Lo que se le manda al colegio antes del mes. Se corrige cuando se suspende una semana."
+            enlace={
+                <button
+                    type="button"
+                    onClick={() => router.post(`/panel/talleres/${uuid}/cotizaciones`, { periodo })}
+                    className="apoyo inline-flex shrink-0 items-center gap-1 text-fog transition-colors hover:text-chalk"
+                >
+                    <FileTextIcon className="size-3.5" aria-hidden="true" />
+                    Cotizar {mesLegible}
+                </button>
+            }
+        >
+            <Tabla
+                columnas={[
+                    { titulo: 'N°', className: 'whitespace-nowrap' },
+                    { titulo: 'Mes', className: 'w-full' },
+                    { titulo: 'Horas', className: 'text-right' },
+                    { titulo: 'Total', className: 'text-right' },
+                    'Estado',
+                    { titulo: '', className: 'text-right' },
+                ]}
+                vacia={cotizaciones.length === 0}
+                mensajeVacio="Ninguna cotización todavía. «Cotizar» trae las clases del horario y hace la cuenta."
+            >
+                {cotizaciones.map((c) => (
+                    <Fila key={c.uuid} href={`/panel/talleres/cotizaciones/${c.uuid}`}>
+                        <Celda className="whitespace-nowrap tabular-nums text-chalk">{c.numero}</Celda>
+                        <Celda>
+                            <Link href={`/panel/talleres/cotizaciones/${c.uuid}`} className="capitalize text-chalk hover:underline">
+                                {c.mes ?? 'Sin mes'}
+                            </Link>
+                            <span className="apoyo block text-fog">escrita el {c.fecha}</span>
+                        </Celda>
+                        <Celda className="text-right tabular-nums text-chalk">{c.horas}</Celda>
+                        <Celda className="text-right tabular-nums text-chalk">
+                            <Reservado ancho="w-20">{pesos.format(c.total)}</Reservado>
+                        </Celda>
+                        <Celda>
+                            <span className={`apoyo ${c.vencida ? 'text-warn' : 'text-fog'}`}>
+                                {c.vencida ? 'Vencida' : c.estado}
+                            </span>
+                        </Celda>
+                        <Celda className="text-right">
+                            <a
+                                href={`/panel/talleres/cotizaciones/${c.uuid}/imprimir`}
+                                target="_blank"
+                                rel="noopener"
+                                aria-label={`Imprimir la cotización N° ${c.numero}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex rounded-control p-1 text-fog transition-colors hover:text-chalk"
+                            >
+                                <PrinterIcon className="size-3.5" aria-hidden="true" />
+                            </a>
+                        </Celda>
+                    </Fila>
+                ))}
+            </Tabla>
+        </Panel>
+    );
+}
+
+export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, cuenta, cobro, historial, cotizaciones }) {
     const uuid = window.location.pathname.split('/').pop().split('?')[0];
     const [anotando, setAnotando] = useState(false);
 
@@ -419,6 +558,8 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                         </Tabla>
                     </Panel>
 
+                    <Cotizaciones uuid={uuid} periodo={periodo} mesLegible={mesLegible} cotizaciones={cotizaciones} />
+
                     <Panel titulo="El horario" descripcion="De aquí salen propuestas las clases de cada mes. Cambiarlo no toca lo ya anotado.">
                         <Horario taller={{ ...taller, uuidRuta: uuid }} />
                     </Panel>
@@ -502,43 +643,11 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                     </Panel>
 
                     {taller.institucion ? (
-                        <Panel titulo="A quién se le factura">
-                            <dl className="space-y-2 text-sm">
-                                <div>
-                                    <dt className="rotulo">Nombre</dt>
-                                    <dd className="text-chalk">{taller.institucion.nombre}</dd>
-                                </div>
-                                {taller.institucion.rut ? (
-                                    <div>
-                                        <dt className="rotulo">RUT</dt>
-                                        <dd className="tabular-nums text-chalk">{taller.institucion.rut}</dd>
-                                    </div>
-                                ) : null}
-                                {taller.institucion.giro ? (
-                                    <div>
-                                        <dt className="rotulo">Giro</dt>
-                                        <dd className="text-chalk">{taller.institucion.giro}</dd>
-                                    </div>
-                                ) : null}
-                                {taller.institucion.direccion ? (
-                                    <div>
-                                        <dt className="rotulo">Dirección</dt>
-                                        <dd className="text-chalk">
-                                            {taller.institucion.direccion}
-                                            {taller.institucion.comuna ? `, ${taller.institucion.comuna}` : ''}
-                                        </dd>
-                                    </div>
-                                ) : null}
-                                {taller.institucion.contacto_email ? (
-                                    <div>
-                                        <dt className="rotulo">Contacto</dt>
-                                        <dd className="text-chalk">
-                                            {taller.institucion.contacto_nombre}
-                                            <span className="apoyo block text-fog">{taller.institucion.contacto_email}</span>
-                                        </dd>
-                                    </div>
-                                ) : null}
-                            </dl>
+                        <Panel
+                            titulo="A quién se le factura"
+                            descripcion="Lo que sale en la cotización y en la factura."
+                        >
+                            <DatosDeLaInstitucion institucion={taller.institucion} />
                         </Panel>
                     ) : null}
                 </div>

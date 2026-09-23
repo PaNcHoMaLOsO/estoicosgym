@@ -62,6 +62,11 @@ class Taller extends Model
         return $this->hasMany(CobroTaller::class, 'id_taller');
     }
 
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(CotizacionTaller::class, 'id_taller');
+    }
+
     /**
      * Las clases que TOCARÍAN en un mes, según el horario semanal.
      *
@@ -93,7 +98,9 @@ class Taller extends Model
 
                 $clases[] = [
                     'fecha' => $dia->toDateString(),
-                    'horas' => round(Carbon::parse($desde)->floatDiffInHours(Carbon::parse($hasta)), 2),
+                    // `diffInHours` ya devuelve decimales en Carbon 3, y el 'float' de
+                    // `floatDiffInHours` quedó marcado como a retirar.
+                    'horas' => round(Carbon::parse($desde)->diffInHours(Carbon::parse($hasta)), 2),
                     'detalle' => "{$desde} a {$hasta}",
                 ];
             }

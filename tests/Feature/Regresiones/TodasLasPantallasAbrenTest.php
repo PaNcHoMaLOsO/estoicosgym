@@ -109,6 +109,19 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'precio_hora' => 30000,
         ]);
 
+        // Y una cotización suya: el papel que se le manda al colegio.
+        $cotizacion = new \App\Models\CotizacionTaller([
+            'id_taller' => $taller->id,
+            'numero' => 1,
+            'periodo' => '2026-07',
+            'fecha' => now(),
+            'valido_hasta' => now()->addMonth(),
+            'descripcion' => 'Uso instalaciones deportivas para clase grupal',
+            'precio_hora' => 30000,
+        ]);
+        $cotizacion->rehacerLaCuenta([['fecha' => '2026-07-03', 'detalle' => '15:00 a 16:00', 'horas' => 1, 'incluida' => true]]);
+        $cotizacion->save();
+
         // Algo en la papelera, para que esa pantalla tenga filas.
         $borrable = Cliente::factory()->create(['activo' => true]);
         $borrable->delete();
@@ -130,6 +143,7 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'texto' => 'terminos',
             'contrato' => $contrato->uuid,
             'taller' => $taller->uuid,
+            'cotizacion' => $cotizacion->uuid,
         ];
     }
 

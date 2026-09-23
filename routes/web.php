@@ -397,6 +397,20 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/talleres/{taller}/cerrar', [\App\Http\Controllers\Panel\TallerController::class, 'cerrar'])->name('talleres.cerrar');
         Route::patch('/talleres/cobros/{cobro}', [\App\Http\Controllers\Panel\TallerController::class, 'actualizarCobro'])->name('talleres.cobros.update');
         Route::delete('/talleres/cobros/{cobro}', [\App\Http\Controllers\Panel\TallerController::class, 'reabrir'])->name('talleres.cobros.destroy');
+        // Los datos con los que se factura y se cotiza: giro, dirección y a
+        // quién escribirle. Se corrigen aquí porque es donde se ven.
+        Route::patch('/talleres/instituciones/{institucion}', [\App\Http\Controllers\Panel\TallerController::class, 'actualizarInstitucion'])->name('talleres.instituciones.update');
+        /*
+         * Las cotizaciones: el papel que se le manda al colegio ANTES del mes,
+         * con las horas que tocan y el total. Se corrigen cuando se suspende
+         * una semana y se imprimen o se guardan como PDF para mandarlas.
+         */
+        Route::post('/talleres/{taller}/cotizaciones', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'crear'])->name('talleres.cotizaciones.store');
+        Route::get('/talleres/cotizaciones/{cotizacion}', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'show'])->name('talleres.cotizaciones.show');
+        Route::get('/talleres/cotizaciones/{cotizacion}/imprimir', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'imprimir'])->name('talleres.cotizaciones.imprimir');
+        Route::patch('/talleres/cotizaciones/{cotizacion}', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'actualizar'])->name('talleres.cotizaciones.update');
+        Route::post('/talleres/cotizaciones/{cotizacion}/refrescar', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'refrescar'])->name('talleres.cotizaciones.refrescar');
+        Route::delete('/talleres/cotizaciones/{cotizacion}', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'eliminar'])->name('talleres.cotizaciones.destroy');
 
         /*
          * Entradas por canje: el huésped del hotel que llega con su tarjeta y

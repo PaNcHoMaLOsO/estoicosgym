@@ -26,6 +26,8 @@ class Permisos
         'preview', 'plantillas', 'editar', 'traspaso.show',
         // Ver e imprimir el contrato de un socio: solo se mira.
         'contrato.ver',
+        // Leer una cotizacion de taller y sacarla en papel: no la cambia.
+        'cotizaciones.show', 'cotizaciones.imprimir',
     ];
 
     /** Dar de alta. */
@@ -35,6 +37,9 @@ class Permisos
         // clases y sabe cuál se suspendió. Si tuviera que contárselo a alguien
         // para que las escribiera, ese es el paso donde se pierden.
         'horas.store', 'horas.mes',
+        // Cotizar un mes de taller: es preparar un papel para mandarlo, no
+        // cobrarlo. Lo que se cobra se cierra aparte, al final del mes.
+        'cotizaciones.store',
     ];
 
     /** Modificar lo que ya existe, incluido activar y desactivar. */
@@ -59,6 +64,9 @@ class Permisos
         // no es apuntar horas, es emitir un cobro.
         'cerrar',
         'cobros.update',
+        // Corregir una cotizacion y traerle las clases del horario, y los
+        // datos de facturacion de la institucion.
+        'cotizaciones.update', 'cotizaciones.refrescar', 'instituciones.update',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
@@ -67,6 +75,8 @@ class Permisos
         // Quitar una clase ya anotada y reabrir un mes cerrado: las dos mueven
         // lo que se va a facturar.
         'horas.destroy', 'cobros.destroy',
+        // Y tirar una cotizacion que no se mando.
+        'cotizaciones.destroy',
         // Los datos personales de un socio (Ley 21.719): tampoco se deshace.
         'borrar-datos',
     ];

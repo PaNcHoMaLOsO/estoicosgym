@@ -67,12 +67,42 @@ class Ajustes
                 'largo' => 80,
                 'defecto' => 'PRO GYM',
             ],
+            // Con lo que se factura y se cotiza. No es lo mismo que el
+            // nombre: el socio conoce «PRO GYM» y el colegio recibe un papel a
+            // nombre de la sociedad, con su RUT.
+            'gimnasio.razon_social' => [
+                'grupo' => 'gimnasio',
+                'etiqueta' => 'Razón social',
+                'ayuda' => 'El nombre con el que se factura. Sale en las cotizaciones de talleres y arriendos.',
+                'ejemplo' => 'Progym SpA',
+                'tipo' => 'texto',
+                'largo' => 120,
+                'defecto' => '',
+            ],
+            'gimnasio.rut' => [
+                'grupo' => 'gimnasio',
+                'etiqueta' => 'RUT de la empresa',
+                'ayuda' => 'El de la sociedad, no el tuyo. Sale en las cotizaciones.',
+                'ejemplo' => '77.490.649-5',
+                'tipo' => 'texto',
+                'largo' => 20,
+                'defecto' => '',
+            ],
             'gimnasio.direccion' => [
                 'grupo' => 'gimnasio',
                 'etiqueta' => 'Dirección',
                 'ayuda' => 'Calle y número, como en Google Maps. Sale en los correos, en la web y en la ficha de Google.',
                 'ejemplo' => 'Colón 123',
                 'tipo' => 'texto',
+                'defecto' => '',
+            ],
+            'gimnasio.comuna' => [
+                'grupo' => 'gimnasio',
+                'etiqueta' => 'Comuna y región',
+                'ayuda' => 'Va debajo de la dirección en las cotizaciones.',
+                'ejemplo' => 'Los Ángeles, Biobío',
+                'tipo' => 'texto',
+                'largo' => 80,
                 'defecto' => '',
             ],
             'gimnasio.telefono' => [
