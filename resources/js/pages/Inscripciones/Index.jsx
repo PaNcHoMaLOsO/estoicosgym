@@ -213,11 +213,23 @@ export default function Index({ inscripciones, filtros, resumen, planes = [] }) 
                                         {/* En celular no hay columna de plan: va aquí. */}
                                         <span className="sm:hidden">{inscripcion.membresia ?? 'Sin plan'} · </span>
                                         {inscripcion.rut ?? 'Sin RUT'}
+                                        {/* En celular no hay columna de plan, así
+                                            que el convenio se dice aquí. */}
+                                        {inscripcion.convenio ? (
+                                            <span className="sm:hidden"> · {inscripcion.convenio}</span>
+                                        ) : null}
                                     </span>
                                 }
                             />
                         </Celda>
-                        <Celda className="hidden text-chalk sm:table-cell">{inscripcion.membresia ?? 'Sin plan'}</Celda>
+                        <Celda className="hidden sm:table-cell">
+                            {/* El convenio debajo del plan: es de donde sale el
+                                precio de esa venta, así que van juntos. */}
+                            <DosLineas
+                                arriba={<span className="text-chalk">{inscripcion.membresia ?? 'Sin plan'}</span>}
+                                abajo={inscripcion.convenio}
+                            />
+                        </Celda>
                         <Celda className="hidden tabular-nums whitespace-nowrap lg:table-cell">
                             {inscripcion.inicio ?? '?'} <span aria-hidden="true">→</span>
                             <span className="sr-only">hasta</span> {inscripcion.vence ?? '?'}

@@ -37,7 +37,10 @@ class InscripcionController extends Controller
         $orden = (string) $request->query('orden', '');
 
         $inscripciones = Inscripcion::query()
-            ->with(['cliente', 'membresia'])
+            // El convenio VA EN LA MEMBRESÍA y no solo en el socio: es el que
+            // se le aplicó a esa venta, y el socio puede haber cambiado de
+            // convenio después —de estudiante a nada, al titularse—.
+            ->with(['cliente', 'membresia', 'convenio:id,nombre'])
             // Lo abonado, sumado en la misma consulta: la columna «Pago» dice
             // cuánto debe cada membresía sin una consulta por fila.
             ->withSum('pagos as abonado', 'monto_abonado')
@@ -77,6 +80,7 @@ class InscripcionController extends Controller
                         : 'Socio eliminado',
                     'rut' => $cliente?->run_pasaporte,
                     'membresia' => $inscripcion->membresia?->nombre,
+                    'convenio' => $inscripcion->convenio?->nombre,
                     'id_estado' => $inscripcion->id_estado,
                     'inicio' => $inscripcion->fecha_inicio?->format('d/m/Y'),
                     'vence' => $inscripcion->fecha_vencimiento?->format('d/m/Y'),

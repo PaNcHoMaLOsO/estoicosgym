@@ -348,4 +348,70 @@ class ListadosTest extends CasoConCatalogos
         return collect($this->actingAs($this->administrador())->get($url)->viewData('page')['props']['inscripciones']['data'])
             ->pluck('uuid')->map(fn ($u) => (string) $u)->all();
     }
+    // ---------- El convenio en las listas ----------
+
+    /**
+     * EL CONVENIO EXPLICA EL PRECIO.
+     *
+     * «¿Por qué este paga $25.000 y no $40.000?» se pregunta en el mesón todo
+     * el día, y sin verlo en la lista hay que abrir la ficha del socio para
+     * responderlo. Va en las dos listas porque son dos cosas distintas: el
+     * socio tiene el suyo hoy, y cada membresía guarda con cuál se vendió —el
+     * estudiante que se titula deja de tener convenio, y su membresía vieja
+     * sigue habiéndose vendido con él—.
+     */
+    public function test_la_lista_de_socios_dice_su_convenio(): void
+    {
+        $convenio = \App\Models\Convenio::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'nombre' => 'Santo Tomás',
+            'tipo' => 'institucion_educativa',
+            'id_estado' => 300,
+            'activo' => true,
+        ]);
+
+        $socio = Cliente::factory()->create(['activo' => true, 'id_convenio' => $convenio->id]);
+        $this->membresia($socio, 100, 20);
+
+        $fila = collect(
+            $this->actingAs($this->administrador())->get('/panel/clientes')->viewData('page')['props']['clientes']['data']
+        )->firstWhere('uuid', (string) $socio->uuid);
+
+        $this->assertSame('Santo Tomás', $fila['convenio']);
+    }
+
+    /** Y la de membresías, con cuál se vendió cada una. */
+    public function test_la_lista_de_membresias_dice_con_que_convenio_se_vendio(): void
+    {
+        $convenio = \App\Models\Convenio::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'nombre' => 'Carabineros',
+            'tipo' => 'organizacion',
+            'id_estado' => 300,
+            'activo' => true,
+        ]);
+
+        $socio = $this->socio();
+        $inscripcion = $this->membresia($socio, 100, 15);
+        $inscripcion->update(['id_convenio' => $convenio->id]);
+
+        $fila = collect(
+            $this->actingAs($this->administrador())->get('/panel/inscripciones')->viewData('page')['props']['inscripciones']['data']
+        )->firstWhere('uuid', (string) $inscripcion->uuid);
+
+        $this->assertSame('Carabineros', $fila['convenio']);
+    }
+
+    /** Quien no tiene convenio no trae nada: en la lista no ocupa sitio. */
+    public function test_sin_convenio_la_fila_no_inventa_nada(): void
+    {
+        $socio = $this->socio();
+        $this->membresia($socio, 100, 20);
+
+        $fila = collect(
+            $this->actingAs($this->administrador())->get('/panel/clientes')->viewData('page')['props']['clientes']['data']
+        )->firstWhere('uuid', (string) $socio->uuid);
+
+        $this->assertNull($fila['convenio']);
+    }
 }

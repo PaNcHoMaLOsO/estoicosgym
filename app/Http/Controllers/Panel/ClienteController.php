@@ -79,6 +79,9 @@ class ClienteController extends Controller
                 ->latest('fecha_vencimiento')
                 ->with('membresia')
                 ->limit(1)])
+            // El convenio del socio: es lo que explica por qué paga $25.000 y
+            // no $40.000, y sin verlo hay que abrir su ficha para saberlo.
+            ->with('convenio:id,nombre')
             ->when(
                 $filtro === 'por_vencer',
                 // Los que vencen antes, primero: es el orden en que se llama.
@@ -105,6 +108,7 @@ class ClienteController extends Controller
                     'email' => $cliente->email,
                     'celular' => $cliente->celular,
                     'membresia' => $inscripcion?->membresia?->nombre,
+                    'convenio' => $cliente->convenio?->nombre,
                     'id_estado' => $inscripcion?->id_estado,
                     'vence' => $inscripcion?->fecha_vencimiento?->format('d/m/Y'),
                     // Un pase no «vence» ni «está vencido»: se usó un día.

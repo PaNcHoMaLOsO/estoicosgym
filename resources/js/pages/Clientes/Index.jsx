@@ -22,6 +22,25 @@ const COLUMNAS = [
     'Estado',
 ];
 
+/**
+ * El convenio del socio, en pequeño bajo su RUT.
+ *
+ * ES LO QUE EXPLICA EL PRECIO. Sin verlo aquí, «¿por qué este paga $25.000?»
+ * obliga a abrir su ficha, y en el mesón eso se pregunta todo el día. Quien no
+ * tiene ninguno no ocupa sitio: no se pinta nada.
+ */
+function Convenio({ nombre }) {
+    if (! nombre) {
+        return null;
+    }
+
+    return (
+        <span className="ml-1.5 inline-flex max-w-40 items-center gap-1 rounded-pill border border-line bg-surface-2 px-1.5 py-px align-middle text-[0.7rem] text-fog">
+            <span className="truncate">{nombre}</span>
+        </span>
+    );
+}
+
 function Contacto({ celular, email }) {
     if (!celular && !email) {
         return <span className="apoyo text-fog">Sin contacto</span>;
@@ -148,7 +167,14 @@ export default function Index({ clientes, filtros, resumen }) {
                                             {cliente.nombre}
                                         </Link>
                                     }
-                                    abajo={<span className="tabular-nums">{cliente.run_pasaporte ?? 'Sin RUT'}</span>}
+                                    abajo={
+                                        <span>
+                                            <span className="tabular-nums">
+                                                {cliente.run_pasaporte ?? 'Sin RUT'}
+                                            </span>
+                                            <Convenio nombre={cliente.convenio} />
+                                        </span>
+                                    }
                                 />
                             </div>
                         </Celda>
