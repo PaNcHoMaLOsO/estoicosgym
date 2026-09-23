@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BanknoteIcon,
+    TrendingUpIcon,
     CalendarClockIcon,
     ScrollTextIcon,
     SlidersHorizontalIcon,
@@ -41,6 +42,12 @@ const INFORMES = [
         pregunta: 'Quién debe y cuánto.',
         Icono: WalletIcon,
         pendientes: true,
+    },
+    {
+        href: '/panel/reportes/negocio',
+        titulo: 'Cómo va el negocio',
+        pregunta: 'Si entra más gente de la que se va, y si el que entra vuelve.',
+        Icono: TrendingUpIcon,
     },
     {
         href: '/panel/reportes/membresias',

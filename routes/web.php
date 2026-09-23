@@ -489,6 +489,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/reportes', [\App\Http\Controllers\Panel\ReporteController::class, 'index'])->name('reportes.index');
         Route::get('/reportes/ingresos', [\App\Http\Controllers\Panel\ReporteController::class, 'ingresos'])->name('reportes.ingresos')->middleware('sin-dinero:caja');
         Route::get('/reportes/membresias', [\App\Http\Controllers\Panel\ReporteController::class, 'membresias'])->name('reportes.membresias');
+        // Como evoluciona el negocio: altas, renovaciones, bajas y si el que
+        // entra se queda. Es el unico informe que mira el tiempo y no el hoy.
+        Route::get('/reportes/negocio', [\App\Http\Controllers\Panel\ReporteController::class, 'negocio'])->name('reportes.negocio');
         Route::get('/reportes/por-vencer', [\App\Http\Controllers\Panel\ReporteController::class, 'porVencer'])->name('reportes.por-vencer');
         Route::get('/reportes/pendientes', [\App\Http\Controllers\Panel\ReporteController::class, 'pendientes'])->name('reportes.pendientes')->middleware('sin-dinero:pendientes');
 

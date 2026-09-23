@@ -11,6 +11,7 @@ use App\Support\IngresosPorMetodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
+use App\Support\EvolucionDelNegocio;
 
 /**
  * Informes del panel nuevo (Inertia + React).
@@ -47,6 +48,32 @@ class ReporteController extends Controller
                     ->sum('monto_abonado'),
                 'por_cobrar' => Inscripcion::porCobrar(),
             ],
+        ]);
+    }
+
+    /**
+     * Cómo evoluciona el negocio: si entra más gente de la que se va.
+     *
+     * LOS DEMÁS INFORMES SON FOTOS —lo de este mes, lo vigente hoy— y ninguno
+     * contesta lo único que decide si el gimnasio crece: cuánta gente nueva
+     * entra, cuánta renueva, cuánta deja de venir y si el que entra se queda.
+     * Un gimnasio que pierde diez socios al mes y gana ocho se ve idéntico a
+     * uno que crece si solo se miran fotos.
+     */
+    public function negocio(Request $request)
+    {
+        $meses = min(48, max(6, (int) $request->query('meses', 24)));
+        $evolucion = new EvolucionDelNegocio($meses);
+
+        return Inertia::render('Reportes/Negocio', [
+            'meses' => $meses,
+            'porMes' => $evolucion->porMes(),
+            'retencion' => $evolucion->retencion(),
+            'porConvenio' => $evolucion->porConvenio(),
+            'diasDeGracia' => EvolucionDelNegocio::DIAS_DE_GRACIA,
+            // De dónde salen los datos: con la mitad viniendo de las planillas
+            // viejas, la retención que se ve es la de ellas.
+            'importadas' => $evolucion->importadas(),
         ]);
     }
 
