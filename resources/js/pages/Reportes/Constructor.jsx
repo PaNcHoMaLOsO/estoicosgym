@@ -1,6 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { ArrowLeftIcon, DownloadIcon } from 'lucide-react';
+import { ArrowLeftIcon, BookmarkIcon, DownloadIcon, XIcon } from 'lucide-react';
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -42,7 +42,7 @@ function Celda({ valor, tipo }) {
  * se pinta debajo sin recargar: cambiar una columna y volver a mirar es lo que
  * mas se hace aqui, y recargar la pagina entera perderia lo ya armado.
  */
-export default function Constructor({ catalogo, limites, tope }) {
+export default function Constructor({ catalogo, limites, tope, guardados = [] }) {
     const claves = Object.keys(catalogo);
 
     const [modulo, setModulo] = useState(claves[0]);
@@ -55,6 +55,11 @@ export default function Constructor({ catalogo, limites, tope }) {
     const [informe, setInforme] = useState(null);
     const [cargando, setCargando] = useState(false);
     const [fallo, setFallo] = useState(null);
+
+    // Guardar la receta: armar un informe cuesta veinte clics y el mismo se
+    // pide todos los meses.
+    const [nombre, setNombre] = useState('');
+    const [guardando, setGuardando] = useState(false);
 
     const columnas = catalogo[modulo].columnas;
 
@@ -84,6 +89,57 @@ export default function Constructor({ catalogo, limites, tope }) {
 
     function ponerFiltro(clave, valor) {
         setFiltros({ ...filtros, [clave]: valor });
+    }
+
+    /** Lo que se guarda: lo elegido, no las filas. */
+    function receta() {
+        return { columnas: elegidas, filtros, orden, direccion, limite };
+    }
+
+    function guardar() {
+        if (nombre.trim() === '') {
+            return;
+        }
+
+        setGuardando(true);
+
+        router.post(
+            '/panel/reportes/constructor/guardados',
+            { nombre: nombre.trim(), modulo, configuracion: receta() },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setNombre(''),
+                onFinish: () => setGuardando(false),
+            },
+        );
+    }
+
+    /**
+     * Abrir uno guardado: deja la pantalla como estaba y pide la tabla sola.
+     *
+     * Sin lo último habría que acordarse de pulsar «Ver» después de elegirlo, y
+     * la pantalla se quedaría con la tabla del informe anterior debajo del
+     * nombre del nuevo, que es la peor forma de equivocarse.
+     */
+    function abrir(informeGuardado) {
+        const receta = informeGuardado.configuracion ?? {};
+
+        setModulo(informeGuardado.modulo);
+        setElegidas(receta.columnas ?? []);
+        setFiltros(receta.filtros ?? {});
+        setOrden(receta.orden ?? null);
+        setDireccion(receta.direccion ?? 'desc');
+        setLimite(receta.limite ?? 100);
+        setInforme(null);
+        setFallo(null);
+    }
+
+    function olvidar(informeGuardado) {
+        router.delete(`/panel/reportes/constructor/guardados/${informeGuardado.uuid}`, {
+            preserveScroll: true,
+            preserveState: true,
+        });
     }
 
     const consulta = useMemo(() => {
@@ -182,6 +238,77 @@ export default function Constructor({ catalogo, limites, tope }) {
                                     {catalogo[clave].titulo}
                                 </button>
                             ))}
+                        </div>
+                    </section>
+
+                    {/*
+                      * MIS INFORMES, arriba del todo.
+                      *
+                      * Es lo primero que se busca al entrar: el que ya está
+                      * armado. Abajo, después de las columnas y los filtros,
+                      * habría que pasar por delante de todo lo que se quiere
+                      * evitar para encontrarlo.
+                      */}
+                    <section className="rounded-panel border border-line bg-surface p-3">
+                        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fog">
+                            Mis informes
+                        </h2>
+
+                        {guardados.length === 0 ? (
+                            <p className="apoyo text-fog">
+                                Arma uno abajo y guárdalo con un nombre: no hay que volver a montarlo el mes
+                                que viene.
+                            </p>
+                        ) : (
+                            <ul className="mb-2 space-y-0.5">
+                                {guardados.map((g) => (
+                                    <li key={g.uuid} className="group flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => abrir(g)}
+                                            className="min-w-0 flex-1 truncate rounded-control px-1.5 py-1 text-left text-sm text-chalk transition-colors hover:bg-surface-2"
+                                        >
+                                            {g.nombre}
+                                            <span className="apoyo block text-fog">
+                                                {catalogo[g.modulo]?.titulo ?? g.modulo}
+                                            </span>
+                                        </button>
+
+                                        {/* Quitar solo al pasar por encima: es lo
+                                            único de aquí que no se deshace. */}
+                                        <button
+                                            type="button"
+                                            onClick={() => olvidar(g)}
+                                            aria-label={`Quitar ${g.nombre}`}
+                                            className="rounded-control p-1 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
+                                        >
+                                            <XIcon className="size-3.5" aria-hidden="true" />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        <div className="mt-2 flex gap-1.5 border-t border-line pt-2">
+                            <input
+                                type="text"
+                                value={nombre}
+                                onChange={(e) => setNombre(e.target.value)}
+                                onKeyDown={(e) => (e.key === 'Enter' ? guardar() : null)}
+                                maxLength={80}
+                                placeholder="Guardar esto como…"
+                                aria-label="Nombre del informe"
+                                className="min-w-0 flex-1 rounded-control border border-line bg-surface-2 px-2 py-1 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={guardar}
+                                disabled={guardando || nombre.trim() === ''}
+                                aria-label="Guardar el informe"
+                                className="shrink-0 rounded-control border border-line px-2 text-fog transition-colors hover:text-chalk disabled:opacity-40"
+                            >
+                                <BookmarkIcon className="size-4" aria-hidden="true" />
+                            </button>
                         </div>
                     </section>
 

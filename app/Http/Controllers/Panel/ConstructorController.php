@@ -7,6 +7,7 @@ use App\Services\ConstructorInformes;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\InformeGuardado;
 
 /**
  * Constructor de informes del panel nuevo.
@@ -21,13 +22,77 @@ class ConstructorController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
         return Inertia::render('Reportes/Constructor', [
             'catalogo' => $this->informes->catalogoParaPantalla(),
             'limites' => ConstructorInformes::LIMITES,
             'tope' => ConstructorInformes::TOPE,
+            'guardados' => $this->guardadosDe($request),
         ]);
+    }
+
+    /**
+     * Guarda la receta del informe que se acaba de armar.
+     *
+     * LA RECETA, NO EL RESULTADO: columnas, filtros y orden. Al abrirlo se
+     * vuelve a consultar, así que trae los datos de hoy. Guardar las filas
+     * sería una foto que envejece sola.
+     *
+     * Con el mismo nombre se pisa el anterior en vez de crear otro: «Socios de
+     * Santo Tomás» dos veces en la lista, con distinto contenido, no se
+     * distinguen.
+     */
+    public function guardar(Request $request)
+    {
+        $datos = $request->validate([
+            'nombre' => 'required|string|max:80',
+            'modulo' => 'required|string|max:40',
+            'configuracion' => 'required|array',
+        ], [
+            'nombre.required' => 'Ponle un nombre para poder encontrarlo después.',
+        ]);
+
+        abort_unless($this->informes->existe($datos['modulo']), 404);
+
+        InformeGuardado::updateOrCreate(
+            ['id_usuario' => $request->user()->id, 'nombre' => trim($datos['nombre'])],
+            ['modulo' => $datos['modulo'], 'configuracion' => $datos['configuracion']]
+        );
+
+        return back()->with('success', "Informe «{$datos['nombre']}» guardado.");
+    }
+
+    /** Quita uno de la lista. Solo los propios: la de cada uno es suya. */
+    public function olvidar(Request $request, InformeGuardado $informe)
+    {
+        abort_unless($informe->id_usuario === $request->user()->id, 403);
+
+        $informe->delete();
+
+        return back()->with('success', 'Informe quitado de tu lista.');
+    }
+
+    /**
+     * Los informes guardados de quien mira.
+     *
+     * Cada uno ve los suyos: la lista de informes de alguien es su forma de
+     * trabajar, y mezclarlas convertiría el menú en un cajón común.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function guardadosDe(Request $request): array
+    {
+        return InformeGuardado::where('id_usuario', $request->user()->id)
+            ->orderBy('nombre')
+            ->get()
+            ->map(fn (InformeGuardado $i) => [
+                'uuid' => $i->uuid,
+                'nombre' => $i->nombre,
+                'modulo' => $i->modulo,
+                'configuracion' => $i->configuracion,
+            ])
+            ->all();
     }
 
     /**

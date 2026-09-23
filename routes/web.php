@@ -505,6 +505,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/reportes/constructor', [\App\Http\Controllers\Panel\ConstructorController::class, 'index'])->name('reportes.constructor');
         Route::get('/reportes/constructor/{modulo}/ver', [\App\Http\Controllers\Panel\ConstructorController::class, 'generar'])->name('reportes.constructor.ver');
         Route::get('/reportes/constructor/{modulo}/csv', [\App\Http\Controllers\Panel\ConstructorController::class, 'exportar'])->name('reportes.constructor.csv');
+        // La receta de un informe, para no volver a armarlo cada mes. Se
+        // guarda lo elegido, no las filas: al abrirlo trae los datos de hoy.
+        Route::post('/reportes/constructor/guardados', [\App\Http\Controllers\Panel\ConstructorController::class, 'guardar'])->name('reportes.constructor.guardar');
+        Route::delete('/reportes/constructor/guardados/{informe}', [\App\Http\Controllers\Panel\ConstructorController::class, 'olvidar'])->name('reportes.constructor.olvidar');
         Route::get('/notificaciones', [\App\Http\Controllers\Panel\NotificacionController::class, 'index'])->name('notificaciones.index');
         // El envio va ANTES de la ficha: si fuera despues, /notificaciones/enviar
         // entraria por {notificacion} y buscaria una con uuid «enviar».

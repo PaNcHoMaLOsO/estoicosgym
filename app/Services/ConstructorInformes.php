@@ -76,7 +76,10 @@ class ConstructorInformes
             'clientes' => [
                 'titulo' => 'Socios',
                 'modelo' => Cliente::class,
-                'relaciones' => ['convenio'],
+                // `inscripciones.membresia` para poder decir cuál fue su
+                // último plan y cuándo le vence, que es lo primero que se
+                // pregunta de un socio en una lista.
+                'relaciones' => ['convenio', 'inscripciones.membresia'],
                 'columnas' => [
                     'run_pasaporte' => ['titulo' => 'RUT', 'tipo' => 'texto'],
                     'nombres' => ['titulo' => 'Nombres', 'tipo' => 'texto'],
@@ -91,6 +94,25 @@ class ConstructorInformes
                     'es_menor_edad' => ['titulo' => 'Menor de edad', 'tipo' => 'booleano'],
                     'activo' => ['titulo' => 'Activo', 'tipo' => 'booleano'],
                     'created_at' => ['titulo' => 'Se registró', 'tipo' => 'fecha'],
+                    // Su última membresía: es lo primero que se pregunta de un
+                    // socio en una lista —«¿sigue viniendo?»— y obligaba a
+                    // sacar otro informe y cruzarlo a mano.
+                    'ultimo_plan' => [
+                        'titulo' => 'Último plan',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Cliente $c) => $c->inscripciones
+                            ->sortByDesc('fecha_vencimiento')
+                            ->first()?->membresia?->nombre,
+                    ],
+                    'ultimo_vence' => [
+                        'titulo' => 'Vence',
+                        'tipo' => 'fecha',
+                        // Sin formatear: de eso se encarga el formateador, que
+                        // es el que sabe cómo se escriben las fechas aquí.
+                        'derivada' => fn (Cliente $c) => $c->inscripciones
+                            ->sortByDesc('fecha_vencimiento')
+                            ->first()?->fecha_vencimiento,
+                    ],
                     'convenio' => [
                         'titulo' => 'Convenio',
                         'tipo' => 'texto',
@@ -102,7 +124,7 @@ class ConstructorInformes
             'inscripciones' => [
                 'titulo' => 'Membresías vendidas',
                 'modelo' => Inscripcion::class,
-                'relaciones' => ['cliente', 'membresia'],
+                'relaciones' => ['cliente', 'membresia', 'convenio', 'pagos'],
                 'columnas' => [
                     'socio' => [
                         'titulo' => 'Socio',
@@ -111,10 +133,28 @@ class ConstructorInformes
                             ? trim("{$i->cliente->nombres} {$i->cliente->apellido_paterno} {$i->cliente->apellido_materno}")
                             : null,
                     ],
+                    // El RUT y el celular del socio, aquí mismo: un listado de
+                    // membresías sin con qué ubicar a la gente solo sirve para
+                    // mirarlo, y estas listas se hacen para llamar.
+                    'rut' => [
+                        'titulo' => 'RUT',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Inscripcion $i) => $i->cliente?->run_pasaporte,
+                    ],
+                    'celular' => [
+                        'titulo' => 'Celular',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Inscripcion $i) => $i->cliente?->celular,
+                    ],
                     'plan' => [
                         'titulo' => 'Plan',
                         'tipo' => 'texto',
                         'derivada' => fn (Inscripcion $i) => $i->membresia?->nombre,
+                    ],
+                    'convenio' => [
+                        'titulo' => 'Convenio',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Inscripcion $i) => $i->convenio?->nombre,
                     ],
                     'fecha_inicio' => ['titulo' => 'Empieza', 'tipo' => 'fecha'],
                     'fecha_vencimiento' => ['titulo' => 'Vence', 'tipo' => 'fecha'],
@@ -128,6 +168,32 @@ class ConstructorInformes
                         // memoria que 106 es «Traspasada».
                         'opciones' => self::ESTADOS_INSCRIPCION,
                     ],
+                    // Lo pagado y lo que falta, que es la pregunta que se le
+                    // hace a una membresía además de cuándo vence.
+                    'abonado' => [
+                        'titulo' => 'Abonado',
+                        'tipo' => 'moneda',
+                        'derivada' => fn (Inscripcion $i) => (int) $i->pagos->sum('monto_abonado'),
+                    ],
+                    'debe' => [
+                        'titulo' => 'Debe',
+                        'tipo' => 'moneda',
+                        'necesita' => ['precio_final'],
+                        'derivada' => fn (Inscripcion $i) => max(
+                            0,
+                            (int) $i->precio_final - (int) $i->pagos->sum('monto_abonado')
+                        ),
+                    ],
+                    'dias' => [
+                        'titulo' => 'Días que quedan',
+                        'tipo' => 'numero',
+                        'necesita' => ['fecha_vencimiento'],
+                        // Negativo = ya venció. Se calcula aquí y no en el
+                        // navegador para que no dependa del reloj del equipo.
+                        'derivada' => fn (Inscripcion $i) => $i->fecha_vencimiento
+                            ? (int) \Illuminate\Support\Carbon::today()->diffInDays($i->fecha_vencimiento, false)
+                            : null,
+                    ],
                     'pausada' => ['titulo' => 'Pausada', 'tipo' => 'booleano'],
                     'created_at' => ['titulo' => 'Se creó', 'tipo' => 'fecha'],
                 ],
@@ -136,7 +202,7 @@ class ConstructorInformes
             'pagos' => [
                 'titulo' => 'Pagos',
                 'modelo' => Pago::class,
-                'relaciones' => ['cliente', 'metodoPago'],
+                'relaciones' => ['cliente', 'metodoPago', 'inscripcion.membresia'],
                 'columnas' => [
                     'socio' => [
                         'titulo' => 'Socio',
@@ -144,6 +210,18 @@ class ConstructorInformes
                         'derivada' => fn (Pago $p) => $p->cliente
                             ? trim("{$p->cliente->nombres} {$p->cliente->apellido_paterno}")
                             : null,
+                    ],
+                    'rut' => [
+                        'titulo' => 'RUT',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Pago $p) => $p->cliente?->run_pasaporte,
+                    ],
+                    // De qué plan era el cobro: sin esto, «cuánto entró por los
+                    // anuales» había que armarlo cruzando dos informes a mano.
+                    'plan' => [
+                        'titulo' => 'Plan',
+                        'tipo' => 'texto',
+                        'derivada' => fn (Pago $p) => $p->inscripcion?->membresia?->nombre,
                     ],
                     'fecha_pago' => ['titulo' => 'Fecha', 'tipo' => 'fecha'],
                     'monto_abonado' => ['titulo' => 'Abonado', 'tipo' => 'moneda'],
@@ -363,11 +441,29 @@ class ConstructorInformes
         foreach ($columnas as $columna) {
             if (! isset($config['columnas'][$columna]['derivada'])) {
                 $seleccion[] = $tabla . '.' . $columna;
+
+                continue;
+            }
+
+            /*
+             * LO QUE LA COLUMNA CALCULADA NECESITA.
+             *
+             * «Debe» se saca del precio menos lo abonado, y el precio es una
+             * columna de la tabla. Si no se pide —porque quien arma el informe
+             * eligió «Debe» pero no «Precio cobrado»— llega vacía y la resta da
+             * cero: la tabla diría que no debe nada.
+             */
+            foreach ($config['columnas'][$columna]['necesita'] ?? [] as $suya) {
+                $seleccion[] = $tabla . '.' . $suya;
             }
         }
 
         foreach ($relaciones as $relacion) {
-            $r = $modelo->{$relacion}();
+            // Solo el primer tramo: «inscripcion.membresia» cuelga de la
+            // inscripción, y lo que esta tabla necesita es la clave con la que
+            // llega hasta ella. Llamar al método con el nombre entero reventaría.
+            $primera = explode('.', $relacion)[0];
+            $r = $modelo->{$primera}();
 
             if ($r instanceof BelongsTo) {
                 $seleccion[] = $tabla . '.' . $r->getForeignKeyName();
