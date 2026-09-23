@@ -127,7 +127,11 @@ class ImportarPlanillas extends Command
 
         $this->planes = Membresia::pluck('id', 'nombre')->all();
         $this->convenios = Convenio::pluck('id', 'nombre')->all();
-        $this->metodoPago = (int) (MetodoPago::where('nombre', 'like', '%fectivo%')->value('id') ?? MetodoPago::value('id'));
+        // «Sin registrar» y NO «Efectivo»: la planilla nunca dijo cómo pagó
+        // cada socio, y darlo por efectivo hacía que el informe de ingresos
+        // por medio de pago dijera una cifra falsa con toda seguridad.
+        $this->metodoPago = (int) (MetodoPago::withoutGlobalScopes()->where('nombre', 'Sin registrar')->value('id')
+            ?? MetodoPago::value('id'));
 
         $gente = $this->agrupar($filas);
         $this->info(count($gente).' personas distintas.');

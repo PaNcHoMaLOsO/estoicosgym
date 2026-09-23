@@ -136,4 +136,32 @@ class CajaTest extends CasoConCatalogos
         $this->assertFalse($porDia->firstWhere('mes', '10')['futuro']);
         $this->assertTrue($porDia->firstWhere('mes', '11')['futuro']);
     }
+    /**
+     * LO IMPORTADO NO SE CUENTA COMO EFECTIVO.
+     *
+     * Las planillas viejas no decían cómo pagó cada socio, y al traerlas hubo
+     * que ponerles un medio: quedaron 1.770 pagos diciendo «efectivo» por
+     * $73.953.000. Eso hacía que el informe de ingresos por medio de pago
+     * afirmara una cifra falsa con toda seguridad, y una cifra falsa es peor
+     * que una que falta: nadie la revisa porque parece completa.
+     *
+     * El medio «Sin registrar» existe y está apagado —no se ofrece al cobrar,
+     * porque de hoy en adelante sí se sabe— pero sigue nombrándose en los
+     * informes.
+     */
+    public function test_el_medio_sin_registrar_existe_apagado_y_se_nombra_en_los_informes(): void
+    {
+        $sinRegistrar = MetodoPago::withoutGlobalScopes()->where('nombre', 'Sin registrar')->firstOrFail();
+
+        $this->assertFalse((bool) $sinRegistrar->activo);
+
+        $this->cobrar($this->membresia(30000), 30000, today()->toDateString(), [
+            'id_metodo_pago' => $sinRegistrar->id,
+        ]);
+
+        $porMedio = \App\Support\IngresosPorMetodo::en(fn ($q) => $q->whereDate('pagos.fecha_pago', today()));
+
+        $this->assertSame('Sin registrar', $porMedio->first()['nombre']);
+        $this->assertSame(30000, $porMedio->first()['total']);
+    }
 }

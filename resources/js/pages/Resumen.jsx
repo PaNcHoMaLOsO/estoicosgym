@@ -17,7 +17,6 @@ import {
 import { ApuntarFiado, Notas } from '@/components/Libreta';
 import MesonTienda from '@/components/MesonTienda';
 import Retrato from '@/components/Retrato';
-import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
@@ -96,13 +95,47 @@ function Buscador() {
  * podía. El correo queda detrás, en pequeño: en el mesón se escribe por
  * WhatsApp, el correo es para lo formal.
  */
-function Contacto({ celular, email, nombre }) {
+function Contacto({ celular, email, nombre, compacto = false }) {
     if (! celular && ! email) {
         // Sin correo ni celular no hay a quién avisar: hay que buscarlo a mano.
         return (
-            <span className="inline-flex items-center gap-1 whitespace-nowrap text-warn">
+            <span
+                className="inline-flex items-center gap-1 whitespace-nowrap text-warn"
+                title={compacto ? 'Sin correo ni celular: hay que avisarle en persona' : undefined}
+            >
                 <PhoneOffIcon className="size-3.5" aria-hidden="true" />
-                Sin contacto
+                {compacto ? <span className="sr-only">Sin contacto</span> : 'Sin contacto'}
+            </span>
+        );
+    }
+
+    // En las listas del resumen el WhatsApp es solo el icono: con «WhatsApp»
+    // escrito ocho veces seguidas, la palabra deja de decir nada.
+    if (compacto) {
+        return (
+            <span className="inline-flex shrink-0 items-center gap-1">
+                {celular ? (
+                    <a
+                        href={whatsapp(celular)}
+                        target="progym-whatsapp"
+                        rel="noopener"
+                        title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
+                        aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
+                        className="inline-flex size-7 items-center justify-center rounded-control text-[#25D366] transition-colors hover:bg-[#25D366]/15"
+                    >
+                        <MessageCircleIcon className="size-4" aria-hidden="true" />
+                    </a>
+                ) : null}
+                {email ? (
+                    <a
+                        href={`mailto:${email}`}
+                        aria-label={`Escribir a ${email}`}
+                        title={email}
+                        className="inline-flex size-7 items-center justify-center rounded-control text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
+                    >
+                        <MailIcon className="size-4" aria-hidden="true" />
+                    </a>
+                ) : null}
             </span>
         );
     }
@@ -271,46 +304,53 @@ function Faltan({ dias }) {
     return <span className={`font-medium ${dias <= 3 ? 'text-danger' : 'text-warn'}`}>{dias} d</span>;
 }
 
-/** Una lista de socios a los que llamar. */
-function Llamar({ filas, fecha, cuanto, vacia }) {
+/** Alto de cada lista: unas cinco personas; el resto se ve bajando dentro de la lista. */
+const ALTO_LISTA = 'max-h-[13.5rem]';
+
+/**
+ * Una lista de socios a los que llamar: UNA LÍNEA POR PERSONA.
+ *
+ * Era una tabla de cinco columnas con una fila alta por socio: tres listas así
+ * ocupaban tres pantallas, y un resumen que hay que recorrer no resume nada.
+ * Aquí cada persona es una línea (cara, nombre, cuándo, cómo escribirle); la
+ * lista mide lo de cinco personas y el resto se ve bajando DENTRO de ella, sin
+ * que la página crezca. El plan y la fecha exacta van
+ * en letra chica bajo el nombre: se leen si hacen falta y no ocupan columna.
+ */
+function Llamar({ filas, cuanto, vacia }) {
+    if (filas.length === 0) {
+        return <p className="apoyo py-2 text-fog">{vacia}</p>;
+    }
+
     return (
-        <Tabla
-            columnas={[
-                { titulo: 'Socio', className: 'w-full' },
-                { titulo: 'Plan', className: 'whitespace-nowrap' },
-                { titulo: fecha, className: 'whitespace-nowrap' },
-                { titulo: cuanto, className: 'whitespace-nowrap' },
-                { titulo: 'Contacto', className: 'text-right' },
-            ]}
-            vacia={filas.length === 0}
-            mensajeVacio={vacia}
-        >
-            {filas.map((f) => (
-                <Fila key={f.uuid}>
-                    <Celda className="font-medium text-chalk">
-                        {/* LA CARA AL LADO DEL NOMBRE. Estas listas se usan para
-                            llamar, pero también para caer en la cuenta de quién
-                            es: «ah, el de la polera roja». Con dos apellidos
-                            parecidos, la foto resuelve lo que el nombre no. */}
-                        <div className="flex items-center gap-2.5">
-                            <Retrato nombre={f.socio} foto={f.foto} tamano="sm" ampliable />
+        <>
+            <ul className={`-mx-1 divide-y divide-line overflow-y-auto overscroll-contain pr-1 ${ALTO_LISTA}`}>
+                {filas.map((f) => (
+                    <li key={f.uuid} className="flex items-center gap-2.5 px-1 py-1.5">
+                        <Retrato nombre={f.socio} foto={f.foto} tamano="sm" ampliable />
+
+                        <div className="min-w-0 flex-1 leading-tight">
                             <Link
                                 href={f.socio_uuid ? `/panel/clientes/${f.socio_uuid}` : `/panel/inscripciones/${f.uuid}`}
-                                className="hover:underline"
+                                className="block truncate text-sm font-medium text-chalk hover:underline"
                             >
                                 {f.socio}
                             </Link>
+                            <p className="apoyo truncate text-fog">
+                                {f.membresia ?? 'Sin plan'} · {f.fecha}
+                            </p>
                         </div>
-                    </Celda>
-                    <Celda>{f.membresia ?? 'Sin plan'}</Celda>
-                    <Celda className="tabular-nums">{f.fecha}</Celda>
-                    <Celda>{cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums">{f.dias} d</span>}</Celda>
-                    <Celda className="text-right">
-                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} />
-                    </Celda>
-                </Fila>
-            ))}
-        </Tabla>
+
+                        <span className="shrink-0 text-sm">
+                            {cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums text-fog">{cuanto === 'Hace' ? 'hace ' : 'en '}{f.dias} d</span>}
+                        </span>
+
+                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} compacto />
+                    </li>
+                ))}
+            </ul>
+
+        </>
     );
 }
 
@@ -406,11 +446,13 @@ export default function Resumen({
              * columna de la derecha se queda fija al bajar, y las notas son lo
              * primero que hay en ella.
              */}
-            <div className="grid items-start gap-4 xl:grid-cols-[1fr_22rem]">
-                <div className="flex flex-col gap-3">
+            {/* TODO A LA VISTA. Las tres listas van lado a lado en cuanto hay
+                ancho, con cinco personas cada una: el resumen cabe en una
+                pantalla y lo demás se despliega desde cada lista. */}
+            <div className="grid items-start gap-4 lg:grid-cols-[1fr_19rem] xl:grid-cols-[1fr_21rem]">
+                <div className="grid gap-3 2xl:grid-cols-2">
                     <Panel
                         titulo={<ConCuenta texto="Vencen esta semana" cuenta={cifras.vencen_semana} tono="text-warn" />}
-                        descripcion="Escríbeles antes de que se les acabe."
                         enlace={
                             // El listado completo es un informe: solo se ofrece a
                             // quien lo puede abrir. A los demás les daría un error.
@@ -421,28 +463,26 @@ export default function Resumen({
                             ) : null
                         }
                     >
-                        <Llamar filas={porVencer} fecha="Vence" cuanto="Faltan" vacia="Ninguna membresía vence esta semana." />
+                        <Llamar filas={porVencer} cuanto="Faltan" vacia="Ninguna membresía vence esta semana." />
                     </Panel>
 
                     <Panel
                         titulo={<ConCuenta texto="Sin renovar" cuenta={cifras.sin_renovar} tono="text-danger" />}
-                        descripcion={`Se fueron en los últimos ${cifras.dias_sin_renovar} días y todavía se les puede convencer.`}
                     >
-                        <Llamar filas={sinRenovar} fecha="Venció" cuanto="Hace" vacia="Nadie se fue sin renovar en estos días." />
+                        <Llamar filas={sinRenovar} cuanto="Hace" vacia="Nadie se fue sin renovar en estos días." />
                     </Panel>
 
                     {/* Solo cuando hay alguien: un panel vacío aquí sería ruido casi siempre. */}
                     {porEmpezar.length > 0 ? (
                         <Panel
                             titulo={<ConCuenta texto="Empiezan pronto" cuenta={porEmpezar.length} tono="text-chalk" />}
-                            descripcion="Aparecen por primera vez: conviene saber su nombre antes de que entren."
                         >
-                            <Llamar filas={porEmpezar} fecha="Empieza" cuanto="En" vacia="" />
+                            <Llamar filas={porEmpezar} cuanto="En" vacia="" />
                         </Panel>
                     ) : null}
                 </div>
 
-                <div className="flex flex-col gap-3 xl:sticky xl:top-4">
+                <div className="flex flex-col gap-3 lg:sticky lg:top-4">
                     {/* LAS NOTAS, PRIMERO. Es el papel del mesón: lo que hay que
                         acordarse de hacer hoy y lo que dejó dicho el turno anterior. */}
                     <Notas notas={notas} />
