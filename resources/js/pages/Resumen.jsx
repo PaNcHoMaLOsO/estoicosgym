@@ -21,6 +21,7 @@ import { Panel, pesos } from '@/components/Tablero';
 import { celularLegible, whatsapp as enlaceWhatsapp } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 import ModalDePagina from '@/components/ModalDePagina';
+import Convenio from '@/components/Convenio';
 import { Reservado } from '@/Privado';
 
 /**
@@ -304,8 +305,9 @@ function Faltan({ dias }) {
     return <span className={`font-medium ${dias <= 3 ? 'text-danger' : 'text-warn'}`}>{dias} d</span>;
 }
 
-/** Alto de cada lista: unas cinco personas; el resto se ve bajando dentro de la lista. */
-const ALTO_LISTA = 'max-h-[13.5rem]';
+/** Cada persona ocupa una línea de alto fijo, y la lista mide cinco justas: ninguna se corta por la mitad. */
+const ALTO_FILA = 'h-[3.25rem]';
+const ALTO_LISTA = 'max-h-[16.25rem]';
 
 /**
  * Una lista de socios a los que llamar: UNA LÍNEA POR PERSONA.
@@ -324,9 +326,9 @@ function Llamar({ filas, cuanto, vacia }) {
 
     return (
         <>
-            <ul className={`-mx-1 divide-y divide-line overflow-y-auto overscroll-contain pr-1 ${ALTO_LISTA}`}>
+            <ul className={`lista-fina -mx-1 divide-y divide-line overflow-y-auto overscroll-contain pr-1 ${ALTO_LISTA}`}>
                 {filas.map((f) => (
-                    <li key={f.uuid} className="flex items-center gap-2.5 px-1 py-1.5">
+                    <li key={f.uuid} className={`flex items-center gap-2.5 px-1 ${ALTO_FILA}`}>
                         <Retrato nombre={f.socio} foto={f.foto} tamano="sm" ampliable />
 
                         <div className="min-w-0 flex-1 leading-tight">
@@ -336,8 +338,9 @@ function Llamar({ filas, cuanto, vacia }) {
                             >
                                 {f.socio}
                             </Link>
-                            <p className="apoyo truncate text-fog">
-                                {f.membresia ?? 'Sin plan'} · {f.fecha}
+                            <p className="apoyo flex items-center gap-1.5 truncate text-fog">
+                                <span className="truncate">{f.membresia ?? 'Sin plan'} · {f.fecha}</span>
+                                <Convenio nombre={f.convenio} className="shrink-0" />
                             </p>
                         </div>
 

@@ -8,6 +8,7 @@ import Paginacion from '@/components/Paginacion';
 import Plazo from '@/components/Plazo';
 import Retrato from '@/components/Retrato';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
+import Convenio from '@/components/Convenio';
 import { celularLegible, whatsapp } from '@/lib/contacto';
 
 /*
@@ -21,25 +22,6 @@ const COLUMNAS = [
     { titulo: 'Plan', className: 'hidden sm:table-cell' },
     'Estado',
 ];
-
-/**
- * El convenio del socio, en pequeño bajo su RUT.
- *
- * ES LO QUE EXPLICA EL PRECIO. Sin verlo aquí, «¿por qué este paga $25.000?»
- * obliga a abrir su ficha, y en el mesón eso se pregunta todo el día. Quien no
- * tiene ninguno no ocupa sitio: no se pinta nada.
- */
-function Convenio({ nombre }) {
-    if (! nombre) {
-        return null;
-    }
-
-    return (
-        <span className="ml-1.5 inline-flex max-w-40 items-center gap-1 rounded-pill border border-line bg-surface-2 px-1.5 py-px align-middle text-[0.7rem] text-fog">
-            <span className="truncate">{nombre}</span>
-        </span>
-    );
-}
 
 function Contacto({ celular, email }) {
     if (!celular && !email) {
@@ -172,7 +154,8 @@ export default function Index({ clientes, filtros, resumen }) {
                                             <span className="tabular-nums">
                                                 {cliente.run_pasaporte ?? 'Sin RUT'}
                                             </span>
-                                            <Convenio nombre={cliente.convenio} />
+                                            {/* En celular no hay columna de plan: el convenio va aquí. */}
+                                            <Convenio nombre={cliente.convenio} className="ml-1.5 sm:hidden" />
                                         </span>
                                     }
                                 />
@@ -184,7 +167,12 @@ export default function Index({ clientes, filtros, resumen }) {
                         <Celda className="hidden sm:table-cell">
                             {cliente.membresia ? (
                                 <DosLineas
-                                    arriba={<span className="text-chalk">{cliente.membresia}</span>}
+                                    arriba={
+                                        <span className="text-chalk">
+                                            {cliente.membresia}
+                                            <Convenio nombre={cliente.convenio} className="ml-1.5" />
+                                        </span>
+                                    }
                                     abajo={cliente.vence && !cliente.es_pase ? <span className="tabular-nums">vence el {cliente.vence}</span> : null}
                                 />
                             ) : (

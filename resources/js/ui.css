@@ -218,3 +218,23 @@
         animation-duration: 1ms !important;
     }
 }
+
+/* Barra de desplazamiento fina para las listas que se recorren por dentro:
+   la del sistema, gris y ancha, pesaba más que la propia lista. */
+.lista-fina {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+}
+
+.lista-fina::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lista-fina::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: var(--color-line-strong);
+}
+
+.lista-fina::-webkit-scrollbar-track {
+    background: transparent;
+}

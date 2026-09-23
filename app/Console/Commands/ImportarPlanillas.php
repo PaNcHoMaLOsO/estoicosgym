@@ -45,7 +45,8 @@ class ImportarPlanillas extends Command
     protected $signature = 'datos:importar-planillas
         {archivo=storage/app/private/importacion/planillas.csv : El CSV que sale de las planillas}
         {--confirmar : Guardar de verdad; sin esto solo cuenta lo que haría}
-        {--activos-desde=12 : Meses hacia atrás: a quien no renueva desde entonces se le da de baja}';
+        {--con-pagos : Traer también los montos de la planilla como pagos}
+                            {--activos-desde=12 : Meses hacia atrás: a quien no renueva desde entonces se le da de baja}';
 
     protected $description = 'Carga los socios y sus membresías desde las planillas del gimnasio';
 
@@ -667,7 +668,20 @@ class ImportarPlanillas extends Command
         // Lo que dice la planilla; y si no dijo nada, el precio de lista de
         // ese plan, que es lo más cerca de la verdad que se puede estar.
         $lista = $this->precioDeLista($idPlan);
-        $precio = $venta['pagado'] > 0 ? $venta['pagado'] : $lista['precio'];
+
+        /*
+         * SIN PRECIO, salvo que se pida.
+         *
+         * La planilla trae el monto, pero NO con qué se pagó, y una membresía
+         * con precio y sin pago sale debiendo su precio entero: mil setecientos
+         * morosos falsos. Lo que la planilla dice de verdad y sirve es quién,
+         * qué plan y entre qué fechas; la plata de esos años se deja fuera.
+         * Con --con-pagos se traen los montos igual, que es como se recupera
+         * lo que hubiera quitado `datos:quitar-pagos-importados`.
+         */
+        $precio = $this->option('con-pagos')
+            ? ($venta['pagado'] > 0 ? $venta['pagado'] : $lista['precio'])
+            : 0;
         $vigente = $venta['fin']->gte(Carbon::today());
 
         $inscripcion = Inscripcion::create([
@@ -695,7 +709,7 @@ class ImportarPlanillas extends Command
          * son. El medio de pago no se sabe y no se inventa: se deja el de
          * siempre y queda dicho en la observación de dónde salió.
          */
-        if ($precio > 0) {
+        if ($precio > 0 && $this->option('con-pagos')) {
             Pago::create([
                 'uuid' => (string) Str::uuid(),
                 'id_inscripcion' => $inscripcion->id,

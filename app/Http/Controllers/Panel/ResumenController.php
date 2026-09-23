@@ -121,7 +121,7 @@ class ResumenController extends Controller
                 ->sinPases()
                 ->whereIn('id_estado', [self::ACTIVA, self::PAUSADA])
                 ->whereBetween('fecha_inicio', [$hoy->copy()->addDay(), $hoy->copy()->addDays(self::DIAS_POR_EMPEZAR)])
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre', 'convenio:id,nombre'])
                 ->orderBy('fecha_inicio')
                 ->limit(self::EN_LISTA)
                 ->get()
@@ -132,7 +132,7 @@ class ResumenController extends Controller
                 ->all(),
 
             'porVencer' => $porVencer
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre', 'convenio:id,nombre'])
                 ->orderBy('fecha_vencimiento')
                 ->limit(self::EN_LISTA)
                 ->get()
@@ -140,7 +140,7 @@ class ResumenController extends Controller
                 ->all(),
 
             'sinRenovar' => $sinRenovar
-                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre'])
+                ->with(['cliente:id,uuid,nombres,apellido_paterno,apellido_materno,email,celular,foto_perfil', 'membresia:id,nombre', 'convenio:id,nombre'])
                 // El que se fue hace menos, arriba: es al que todavía se le
                 // puede convencer de volver.
                 ->orderByDesc('fecha_vencimiento')
@@ -191,6 +191,9 @@ class ResumenController extends Controller
                 ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
                 : 'Socio eliminado',
             'membresia' => $i->membresia?->nombre,
+            // El convenio se ve en la lista: a quien entró por la universidad se le
+            // habla de su credencial, no del precio normal.
+            'convenio' => $i->convenio?->nombre,
             'fecha' => $i->fecha_vencimiento?->format('d/m/Y'),
             'dias' => $dias,
             // Sin correo ni celular no hay a quién avisar: ese socio hay que

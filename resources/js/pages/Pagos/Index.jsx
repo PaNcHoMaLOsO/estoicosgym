@@ -8,6 +8,7 @@ import Selector from '@/components/Selector';
 import Paginacion from '@/components/Paginacion';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
 import { Cifra as Tarjeta, pesos } from '@/components/Tablero';
+import Convenio from '@/components/Convenio';
 import { Reservado } from '@/Privado';
 
 /*
@@ -170,6 +171,7 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                                         {/* En celular no hay columna de fecha: va aquí. */}
                                         <span className="tabular-nums sm:hidden">{pago.fecha} · </span>
                                         {pago.membresia ?? 'Sin plan'}
+                                        <Convenio nombre={pago.convenio} className="ml-1.5" />
                                     </>
                                 }
                             />

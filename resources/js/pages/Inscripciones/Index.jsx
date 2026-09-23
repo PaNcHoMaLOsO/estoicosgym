@@ -9,6 +9,7 @@ import Selector from '@/components/Selector';
 import Paginacion from '@/components/Paginacion';
 import Plazo from '@/components/Plazo';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
+import Convenio from '@/components/Convenio';
 import { pesos } from '@/components/Tablero';
 
 /*
@@ -213,22 +214,19 @@ export default function Index({ inscripciones, filtros, resumen, planes = [] }) 
                                         {/* En celular no hay columna de plan: va aquí. */}
                                         <span className="sm:hidden">{inscripcion.membresia ?? 'Sin plan'} · </span>
                                         {inscripcion.rut ?? 'Sin RUT'}
-                                        {/* En celular no hay columna de plan, así
-                                            que el convenio se dice aquí. */}
-                                        {inscripcion.convenio ? (
-                                            <span className="sm:hidden"> · {inscripcion.convenio}</span>
-                                        ) : null}
+                                        {/* En celular no hay columna de plan: el convenio va aquí. */}
+                                        <Convenio nombre={inscripcion.convenio} className="ml-1.5 sm:hidden" />
                                     </span>
                                 }
                             />
                         </Celda>
                         <Celda className="hidden sm:table-cell">
-                            {/* El convenio debajo del plan: es de donde sale el
+                            {/* El convenio junto al plan: es de donde sale el
                                 precio de esa venta, así que van juntos. */}
-                            <DosLineas
-                                arriba={<span className="text-chalk">{inscripcion.membresia ?? 'Sin plan'}</span>}
-                                abajo={inscripcion.convenio}
-                            />
+                            <span className="text-chalk">
+                                {inscripcion.membresia ?? 'Sin plan'}
+                                <Convenio nombre={inscripcion.convenio} className="ml-1.5" />
+                            </span>
                         </Celda>
                         <Celda className="hidden tabular-nums whitespace-nowrap lg:table-cell">
                             {inscripcion.inicio ?? '?'} <span aria-hidden="true">→</span>

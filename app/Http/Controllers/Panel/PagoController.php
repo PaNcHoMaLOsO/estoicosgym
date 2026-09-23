@@ -39,7 +39,7 @@ class PagoController extends Controller
                 // quedó pagada o cuánto falta HOY, no lo que faltaba el día
                 // de ese pago.
                 'inscripcion' => fn ($q) => $q->withTrashed()
-                    ->with('membresia')
+                    ->with(['membresia', 'convenio:id,nombre'])
                     ->withSum('pagos as abonado', 'monto_abonado')
                     // Cuántas veces se cobró esta membresía: un cobro de 5.000
                     // «de 25.000» con la membresía pagada no es un error, es
@@ -90,6 +90,7 @@ class PagoController extends Controller
                     'abonado' => (int) $pago->monto_abonado,
                     'pendiente' => (int) $pago->monto_pendiente,
                     'membresia' => $inscripcion?->membresia?->nombre,
+                    'convenio' => $inscripcion?->convenio?->nombre,
                     // Lo que la membresía debe HOY. null = la membresía ya no
                     // se cobra (cancelada) o no existe.
                     'debe_hoy' => $inscripcion && in_array((int) $inscripcion->id_estado, Inscripcion::ESTADOS_CON_DEUDA, true)
