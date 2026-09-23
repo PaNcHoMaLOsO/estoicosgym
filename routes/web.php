@@ -384,6 +384,21 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::delete('/fiados/{fiado}', [\App\Http\Controllers\Panel\FiadoController::class, 'destroy'])->name('fiados.destroy');
 
         /*
+         * Talleres y arriendos: la sala que se le presta a un colegio y se le
+         * factura por hora a fin de mes. No son socios ni mensualidades.
+         */
+        Route::get('/talleres', [\App\Http\Controllers\Panel\TallerController::class, 'index'])->name('talleres.index');
+        Route::post('/talleres', [\App\Http\Controllers\Panel\TallerController::class, 'guardar'])->name('talleres.store');
+        Route::get('/talleres/{taller}', [\App\Http\Controllers\Panel\TallerController::class, 'show'])->name('talleres.show');
+        Route::patch('/talleres/{taller}', [\App\Http\Controllers\Panel\TallerController::class, 'actualizar'])->name('talleres.update');
+        Route::post('/talleres/{taller}/horas', [\App\Http\Controllers\Panel\TallerController::class, 'anotarHora'])->name('talleres.horas.store');
+        Route::post('/talleres/{taller}/horas/del-mes', [\App\Http\Controllers\Panel\TallerController::class, 'anotarMes'])->name('talleres.horas.mes');
+        Route::delete('/talleres/horas/{hora}', [\App\Http\Controllers\Panel\TallerController::class, 'borrarHora'])->name('talleres.horas.destroy');
+        Route::post('/talleres/{taller}/cerrar', [\App\Http\Controllers\Panel\TallerController::class, 'cerrar'])->name('talleres.cerrar');
+        Route::patch('/talleres/cobros/{cobro}', [\App\Http\Controllers\Panel\TallerController::class, 'actualizarCobro'])->name('talleres.cobros.update');
+        Route::delete('/talleres/cobros/{cobro}', [\App\Http\Controllers\Panel\TallerController::class, 'reabrir'])->name('talleres.cobros.destroy');
+
+        /*
          * Entradas por canje: el huésped del hotel que llega con su tarjeta y
          * no paga. Se anota quién vino; no toca la caja ni las membresías.
          */

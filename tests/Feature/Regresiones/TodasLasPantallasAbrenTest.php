@@ -101,6 +101,14 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'huella' => hash('sha256', '<p>Contrato</p>'),
         ]);
 
+        // Un taller con su institución: la sala que se le presta a un colegio.
+        $institucion = \App\Models\Institucion::create(['nombre' => 'Colegio de prueba']);
+        $taller = \App\Models\Taller::create([
+            'id_institucion' => $institucion->id,
+            'nombre' => 'Clases grupales',
+            'precio_hora' => 30000,
+        ]);
+
         // Algo en la papelera, para que esa pantalla tenga filas.
         $borrable = Cliente::factory()->create(['activo' => true]);
         $borrable->delete();
@@ -121,6 +129,7 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             // Un texto legal: cualquiera de los tres.
             'texto' => 'terminos',
             'contrato' => $contrato->uuid,
+            'taller' => $taller->uuid,
         ];
     }
 

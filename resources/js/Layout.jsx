@@ -10,6 +10,7 @@ import {
     MenuIcon,
     MonitorIcon,
     NotebookPenIcon,
+    SchoolIcon,
     TicketIcon,
     MoonIcon,
     SettingsIcon,
@@ -75,6 +76,9 @@ const GRUPOS = [
         secciones: [
             { href: '/panel/fiados', etiqueta: 'Fiado', Icono: NotebookPenIcon, permiso: 'clientes.ver' },
             { href: '/panel/canje', etiqueta: 'Canje', Icono: TicketIcon, permiso: 'clientes.ver' },
+            // La sala que se le presta a un colegio y se le factura por hora:
+            // no son socios ni mensualidades, pero es lo mismo de anotar.
+            { href: '/panel/talleres', etiqueta: 'Talleres', Icono: SchoolIcon, permiso: 'pagos.ver' },
         ],
     },
     {

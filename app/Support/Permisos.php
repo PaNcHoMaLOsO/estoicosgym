@@ -29,7 +29,13 @@ class Permisos
     ];
 
     /** Dar de alta. */
-    private const CREAR = ['create', 'store', 'crear', 'create-simple'];
+    private const CREAR = [
+        'create', 'store', 'crear', 'create-simple',
+        // Anotar las clases de un taller: quien está en el mesón ve pasar las
+        // clases y sabe cuál se suspendió. Si tuviera que contárselo a alguien
+        // para que las escribiera, ese es el paso donde se pierden.
+        'horas.store', 'horas.mes',
+    ];
 
     /** Modificar lo que ya existe, incluido activar y desactivar. */
     private const EDITAR = [
@@ -49,11 +55,18 @@ class Permisos
         // se firmó. Es trabajo de mesón, como anotar la firma en papel.
         'contrato.enviar',
         'anular',
+        // Cerrar el mes de un taller y anotarle el folio de la factura: eso ya
+        // no es apuntar horas, es emitir un cobro.
+        'cerrar',
+        'cobros.update',
     ];
 
     /** Borrar. Se separa del resto a proposito: no se deshace. */
     private const ELIMINAR = [
         'destroy', 'force-delete',
+        // Quitar una clase ya anotada y reabrir un mes cerrado: las dos mueven
+        // lo que se va a facturar.
+        'horas.destroy', 'cobros.destroy',
         // Los datos personales de un socio (Ley 21.719): tampoco se deshace.
         'borrar-datos',
     ];
@@ -123,6 +136,10 @@ class Permisos
         // membresias— ni con `reportes`, que es lo que recepcion no ve.
         'fiados' => 'clientes',
         'canje' => 'clientes',
+        // Los talleres y el arriendo de la sala: es plata del negocio, con
+        // factura de por medio. Va con `pagos` —quien cobra, anota y cierra el
+        // mes— y no con `reportes`, que es solo mirar.
+        'talleres' => 'pagos',
         // El contrato firmado por correo es del socio: lo manda y lo mira el mesón.
         'contratos' => 'clientes',
         // Lo que se le hace firmar a todos y se publica en la web lo cambia
