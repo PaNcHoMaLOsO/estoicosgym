@@ -50,8 +50,16 @@ class ContenidoWebController extends Controller
 
     public function store(Request $request, string $tipo)
     {
-        $contenido = ContenidoWeb::create($this->validar($request, $tipo, true) + ['tipo' => $tipo]);
+        // EL ORDEN SE PONE SOLO: lo nuevo va al final, que es donde uno espera
+        // que caiga. Pedir el número a mano dejaba huecos y repetidos —dos
+        // fotos con el 12 y ninguna con el 11—, y entonces el orden de la web
+        // lo decidía el desempate y no quien lo escribió.
+        $contenido = ContenidoWeb::create($this->validar($request, $tipo, true) + [
+            'tipo' => $tipo,
+            'orden' => (int) ContenidoWeb::where('tipo', $tipo)->max('orden') + 1,
+        ]);
         $this->ponerImagen($contenido, $request);
+        $this->renumerar($tipo);
 
         return back()->with('success', $contenido->activo
             ? 'Guardado. Ya aparece en la web.'
@@ -66,6 +74,78 @@ class ContenidoWebController extends Controller
         return back()->with('success', 'Cambios guardados.');
     }
 
+    /**
+     * Lo borra del todo, con su archivo.
+     *
+     * OCULTAR NO BASTA: una foto que ya no se quiere seguiría ocupando sitio en
+     * la lista y en el disco. Y el archivo se va con ella, o el servidor se
+     * llena de fotos que no mira nadie.
+     */
+    public function eliminar(ContenidoWeb $contenido)
+    {
+        if ($contenido->imagen) {
+            Storage::disk('public')->delete($contenido->imagen);
+        }
+
+        $contenido->delete();
+        // Sin esto quedaría un hueco en la cuenta: 1, 2, 4, 5…
+        $this->renumerar($contenido->tipo);
+
+        return back()->with('success', 'Eliminado. Ya no está en la web.');
+    }
+
+    /**
+     * Sube o baja un puesto.
+     *
+     * ES LA ÚNICA MANERA DE ORDENAR QUE NO OBLIGA A PENSAR EN NÚMEROS: «esta
+     * foto va antes que esa» se dice con una flecha. Se renumera primero para
+     * que no haya dos con el mismo puesto, que es como estaba la galería.
+     */
+    public function mover(Request $request, ContenidoWeb $contenido)
+    {
+        $this->renumerar($contenido->tipo);
+        $contenido->refresh();
+
+        $arriba = $request->input('hacia') !== 'abajo';
+
+        $vecino = ContenidoWeb::where('tipo', $contenido->tipo)
+            ->when(
+                $arriba,
+                fn ($q) => $q->where('orden', '<', $contenido->orden)->orderByDesc('orden'),
+                fn ($q) => $q->where('orden', '>', $contenido->orden)->orderBy('orden')
+            )
+            ->first();
+
+        if (! $vecino) {
+            return back();
+        }
+
+        $puesto = $contenido->orden;
+        $contenido->update(['orden' => $vecino->orden]);
+        $vecino->update(['orden' => $puesto]);
+
+        return back();
+    }
+
+    /**
+     * Deja los puestos en 1, 2, 3… sin huecos ni repetidos.
+     *
+     * Se llama después de crear, de borrar y antes de mover: así el número que
+     * se ve en la lista es el puesto de verdad y no una etiqueta suelta.
+     */
+    private function renumerar(string $tipo): void
+    {
+        ContenidoWeb::where('tipo', $tipo)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->each(function (ContenidoWeb $contenido, int $i) {
+                if ($contenido->orden !== $i + 1) {
+                    $contenido->update(['orden' => $i + 1]);
+                }
+            });
+    }
+
     /** @return array<string,mixed> */
     private function validar(Request $request, string $tipo, bool $creando): array
     {
@@ -75,7 +155,6 @@ class ContenidoWebController extends Controller
         $reglas = [
             'titulo' => ['required', 'string', "max:{$largoTitulo}"],
             'texto' => [$tipo === 'foto' ? 'nullable' : 'required', 'string', "max:{$largoTexto}"],
-            'orden' => 'nullable|integer|min:0|max:999',
             'activo' => 'boolean',
         ];
 
@@ -119,7 +198,6 @@ class ContenidoWebController extends Controller
             'texto' => isset($datos['texto']) ? trim($datos['texto']) : null,
             'icono' => $datos['icono'] ?? null,
             'con_permiso' => $tipo === 'testimonio',
-            'orden' => (int) ($datos['orden'] ?? 0),
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
     }

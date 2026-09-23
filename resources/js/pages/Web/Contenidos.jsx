@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { PencilIcon, PlusIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
@@ -14,13 +14,9 @@ import { Celda, Fila, Tabla } from '@/components/Tabla';
  * Se ocultan, no se borran, igual que los catálogos.
  */
 function camposDe(tipo, iconos) {
-    const orden = {
-        nombre: 'orden',
-        etiqueta: 'Orden',
-        tipo: 'number',
-        min: 0,
-        ayuda: 'Los de número más bajo salen primero.',
-    };
+    // El orden NO se pregunta: lo nuevo va al final y se sube o se baja con
+    // las flechas de la lista. Escribir el número a mano dejaba huecos y
+    // repetidos, y entonces el orden de la web no era el que se quiso.
     const activo = { nombre: 'activo', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Se muestra en la web' };
 
     switch (tipo) {
@@ -41,7 +37,6 @@ function camposDe(tipo, iconos) {
                     opciones: iconos,
                     requerido: true,
                 },
-                orden,
                 activo,
             ];
         case 'foto':
@@ -60,14 +55,12 @@ function camposDe(tipo, iconos) {
                     ejemplo: 'Sala de musculación con las máquinas nuevas',
                     ayuda: 'Lo lee Google y quien no puede ver la imagen.',
                 },
-                orden,
                 activo,
             ];
         case 'pregunta':
             return [
                 { nombre: 'titulo', etiqueta: 'Pregunta', requerido: true, ejemplo: '¿Necesito llevar candado?' },
                 { nombre: 'texto', etiqueta: 'Respuesta', tipo: 'area', requerido: true },
-                orden,
                 activo,
             ];
         default:
@@ -81,7 +74,6 @@ function camposDe(tipo, iconos) {
                     textoCasilla: 'La persona me autorizó a publicar su opinión con su nombre',
                     requerido: true,
                 },
-                orden,
                 activo,
             ];
     }
@@ -95,7 +87,6 @@ function valoresDe(tipo, fila) {
         imagen: null,
         imagen_url: fila?.imagen_url ?? null,
         con_permiso: Boolean(fila?.con_permiso),
-        orden: fila?.orden ?? 0,
         activo: fila?.uuid ? Boolean(fila.activo) : true,
     };
 }
@@ -122,8 +113,22 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
     const campos = useMemo(() => camposDe(tipo, iconos), [tipo, iconos]);
     const nombreIcono = useMemo(() => Object.fromEntries(iconos.map((i) => [i.valor, i.etiqueta])), [iconos]);
 
+    /** Sube o baja un puesto: ordenar sin pensar en números. */
+    function mover(fila, hacia) {
+        router.post(`/panel/web/contenido/${fila.uuid}/mover`, { hacia }, { preserveScroll: true });
+    }
+
     function alternar(fila) {
         router.patch(`/panel/catalogos/contenidos/${fila.uuid}/alternar`, {}, { preserveScroll: true });
+    }
+
+    /** Borrar no se deshace, así que se pregunta antes. */
+    function eliminar(fila) {
+        const que = fila.titulo || `esta ${datos.singular}`;
+
+        if (window.confirm(`¿Eliminar ${que}? No se puede deshacer.`)) {
+            router.delete(`/panel/web/contenido/${fila.uuid}`, { preserveScroll: true });
+        }
     }
 
     return (
@@ -147,7 +152,7 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
             </header>
 
             <Tabla columnas={COLUMNAS[tipo]} vacia={filas.length === 0} mensajeVacio="Todavía no hay nada aquí.">
-                {filas.map((fila) => (
+                {filas.map((fila, indice) => (
                     <Fila key={fila.uuid}>
                         {tipo === 'foto' ? (
                             <Celda>
@@ -169,7 +174,31 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
 
                         {tipo === 'servicio' ? <Celda>{nombreIcono[fila.icono] ?? fila.icono}</Celda> : null}
 
-                        <Celda className="tabular-nums">{fila.orden}</Celda>
+                        <Celda className="whitespace-nowrap">
+                            {/* El puesto con sus flechas: el número se lleva
+                                solo y aquí solo se dice qué va antes. */}
+                            <span className="inline-flex items-center gap-1">
+                                <span className="w-5 tabular-nums text-fog">{indice + 1}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => mover(fila, 'arriba')}
+                                    disabled={indice === 0}
+                                    aria-label="Subir un puesto"
+                                    className="rounded-control p-0.5 text-fog transition-colors hover:text-chalk disabled:opacity-25"
+                                >
+                                    <ChevronUpIcon className="size-4" aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => mover(fila, 'abajo')}
+                                    disabled={indice === filas.length - 1}
+                                    aria-label="Bajar un puesto"
+                                    className="rounded-control p-0.5 text-fog transition-colors hover:text-chalk disabled:opacity-25"
+                                >
+                                    <ChevronDownIcon className="size-4" aria-hidden="true" />
+                                </button>
+                            </span>
+                        </Celda>
                         <Celda>
                             <Activo valor={fila.activo} />
                         </Celda>
@@ -189,6 +218,17 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                                     className="apoyo text-fog transition-colors hover:text-chalk"
                                 >
                                     {fila.activo ? 'Ocultar' : 'Mostrar'}
+                                </button>
+                                {/* Borrar del todo: ocultar solo lo saca de la
+                                    web, y una lista que nunca se limpia acaba
+                                    siendo imposible de ordenar. */}
+                                <button
+                                    type="button"
+                                    onClick={() => eliminar(fila)}
+                                    aria-label={`Eliminar ${fila.titulo}`}
+                                    className="text-fog transition-colors hover:text-danger"
+                                >
+                                    <TrashIcon className="size-4" aria-hidden="true" />
                                 </button>
                             </div>
                         </Celda>

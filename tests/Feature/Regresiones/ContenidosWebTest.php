@@ -139,6 +139,72 @@ class ContenidosWebTest extends CasoConCatalogos
         Storage::disk('public')->assertExists('web/sala.jpg');
     }
 
+    /**
+     * BORRAR ES BORRAR: se va la fila y se va el archivo.
+     *
+     * Ocultar deja la foto en la lista y en el disco, y una galería que solo
+     * crece acaba siendo imposible de ordenar: al final había doce fotos y
+     * ninguna manera de sacar la que no se quería.
+     */
+    public function test_eliminar_una_foto_se_lleva_su_archivo(): void
+    {
+        Storage::disk('public')->put('web/sala.jpg', 'foto');
+        $foto = ContenidoWeb::create(['tipo' => 'foto', 'titulo' => 'Sala', 'imagen' => 'web/sala.jpg', 'activo' => true]);
+
+        $this->admin()->delete("/panel/web/contenido/{$foto->uuid}")->assertSessionHasNoErrors();
+
+        $this->assertSame(0, ContenidoWeb::where('tipo', 'foto')->count());
+        Storage::disk('public')->assertMissing('web/sala.jpg');
+    }
+
+    /**
+     * EL ORDEN SE LLEVA SOLO: lo nuevo va al final, sin preguntar el número.
+     *
+     * Pedirlo a mano dejó la galería con dos fotos en el puesto 12 y ninguna
+     * en el 11, y entonces quién sale antes lo decide el desempate y no quien
+     * lo escribió.
+     */
+    public function test_lo_nuevo_se_pone_al_final_solo(): void
+    {
+        foreach (['¿Abren los domingos?', '¿Hay estacionamiento?', '¿Tienen casilleros?'] as $pregunta) {
+            $this->admin()->post('/panel/web/pregunta', ['titulo' => $pregunta, 'texto' => 'Sí.'])
+                ->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame([1, 2, 3], ContenidoWeb::where('tipo', 'pregunta')->orderBy('orden')->pluck('orden')->all());
+    }
+
+    /** Y se ordena con flechas: «esta va antes que esa», sin pensar en números. */
+    public function test_subir_una_fila_la_cambia_de_puesto(): void
+    {
+        $primera = ContenidoWeb::create(['tipo' => 'pregunta', 'titulo' => 'Primera', 'texto' => 'a', 'orden' => 1, 'activo' => true]);
+        $segunda = ContenidoWeb::create(['tipo' => 'pregunta', 'titulo' => 'Segunda', 'texto' => 'b', 'orden' => 2, 'activo' => true]);
+
+        $this->admin()->post("/panel/web/contenido/{$segunda->uuid}/mover", ['hacia' => 'arriba'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, $segunda->refresh()->orden);
+        $this->assertSame(2, $primera->refresh()->orden);
+
+        // La primera de la lista ya no sube más: no hay a dónde.
+        $this->admin()->post("/panel/web/contenido/{$segunda->uuid}/mover", ['hacia' => 'arriba']);
+        $this->assertSame(1, $segunda->refresh()->orden);
+    }
+
+    /** Al borrar una del medio, las de abajo corren: no queda el hueco. */
+    public function test_borrar_una_no_deja_hueco_en_el_orden(): void
+    {
+        foreach ([1, 2, 3] as $puesto) {
+            ContenidoWeb::create(['tipo' => 'pregunta', 'titulo' => "Pregunta {$puesto}", 'texto' => 'a', 'orden' => $puesto, 'activo' => true]);
+        }
+
+        $delMedio = ContenidoWeb::where('titulo', 'Pregunta 2')->firstOrFail();
+
+        $this->admin()->delete("/panel/web/contenido/{$delMedio->uuid}")->assertSessionHasNoErrors();
+
+        $this->assertSame([1, 2], ContenidoWeb::where('tipo', 'pregunta')->orderBy('orden')->pluck('orden')->all());
+    }
+
     /** Ocultar va por el mismo interruptor que los catálogos, y lo oculto no sale. */
     public function test_ocultar_un_contenido_lo_saca_de_la_web(): void
     {

@@ -612,6 +612,11 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'show'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.show');
         Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.store');
         Route::put('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'update'])->name('web.update');
+        // Borrar del todo, con su archivo: ocultar deja la foto ahí, y una
+        // galería que solo crece termina siendo imposible de ordenar.
+        Route::delete('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'eliminar'])->name('web.destroy');
+        // Subir y bajar un puesto: ordenar sin tener que pensar en números.
+        Route::post('/web/contenido/{contenido}/mover', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'mover'])->name('web.mover');
         Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
         Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');
