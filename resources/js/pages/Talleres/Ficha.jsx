@@ -69,7 +69,17 @@ function Horario({ taller }) {
             }}
             className="space-y-3"
         >
-            <div className="grid gap-2 sm:grid-cols-[1fr_10rem]">
+            <div className="grid gap-2 sm:grid-cols-2">
+                <label className="block">
+                    <span className="rotulo">Nombre</span>
+                    <input
+                        type="text"
+                        value={data.nombre}
+                        onChange={(e) => setData('nombre', e.target.value)}
+                        placeholder="Clases grupales del colegio"
+                        className={`${campo} mt-1 w-full`}
+                    />
+                </label>
                 <label className="block">
                     <span className="rotulo">Cómo va en la factura</span>
                     <input
@@ -80,7 +90,7 @@ function Horario({ taller }) {
                         className={`${campo} mt-1 w-full`}
                     />
                 </label>
-                <label className="block">
+                <label className="block sm:max-w-40">
                     <span className="rotulo">La hora (con IVA)</span>
                     <input
                         type="number"
@@ -594,7 +604,10 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
 
                     <Cotizaciones uuid={uuid} periodo={periodo} mesLegible={mesLegible} cotizaciones={cotizaciones} />
 
-                    <Panel titulo="El horario" descripcion="De aquí salen propuestas las clases de cada mes. Cambiarlo no toca lo ya anotado.">
+                    <Panel
+                        titulo="El taller y su horario"
+                        descripcion="Del horario salen propuestas las clases de cada mes. Cambiarlo no toca lo ya anotado."
+                    >
                         <Horario taller={{ ...taller, uuidRuta: uuid }} />
                     </Panel>
 

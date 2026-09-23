@@ -1,6 +1,6 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Cifra, pesos } from '@/components/Tablero';
@@ -223,6 +223,7 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                     { titulo: 'Horas del mes', className: 'text-right' },
                     { titulo: 'Se factura', className: 'text-right' },
                     'Estado',
+                    { titulo: '', className: 'text-right' },
                 ]}
                 vacia={talleres.length === 0}
                 mensajeVacio="Todavía no hay ningún taller ni arriendo. Créalo con el botón de arriba."
@@ -246,10 +247,38 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                             {! t.activo ? (
                                 <span className="apoyo text-fog">Cerrado</span>
                             ) : t.cerrado ? (
-                                <span className="apoyo text-ok">Mes cerrado</span>
+                                <span className="apoyo whitespace-nowrap text-ok">Mes cerrado</span>
                             ) : (
                                 <span className="apoyo text-fog">Abierto</span>
                             )}
+                        </Celda>
+                        {/* Abrir y tirar desde la lista: entrar en la ficha
+                            para darse cuenta de que ahí estaba el botón es un
+                            paso que nadie adivina. */}
+                        <Celda className="text-right">
+                            <span className="inline-flex items-center gap-1">
+                                <Link
+                                    href={`/panel/talleres/${t.uuid}?periodo=${periodo}`}
+                                    aria-label={`Abrir ${t.nombre}`}
+                                    className="inline-flex rounded-control p-1 text-fog transition-colors hover:text-chalk"
+                                >
+                                    <PencilIcon className="size-3.5" aria-hidden="true" />
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+
+                                        if (window.confirm(`¿Mandar «${t.nombre}» a la papelera? Sus horas y cobros se van con él y se recuperan desde ahí.`)) {
+                                            router.delete(`/panel/talleres/${t.uuid}`, { preserveScroll: true });
+                                        }
+                                    }}
+                                    aria-label={`Eliminar ${t.nombre}`}
+                                    className="rounded-control p-1 text-fog transition-colors hover:text-danger"
+                                >
+                                    <TrashIcon className="size-3.5" aria-hidden="true" />
+                                </button>
+                            </span>
                         </Celda>
                     </Fila>
                 ))}
