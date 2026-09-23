@@ -218,20 +218,18 @@
            recorte centrado de `object-cover` cortaba a la persona por la cabeza. */
         .portada-foto { animation: acercar 24s ease-in-out infinite alternate; transform-origin: center; object-position: 50% 22%; }
 
-        /* EN EL TELEFONO LA FOTO ENTRA ENTERA. Las fotos del gimnasio son
-           verticales (1600 x 2000) y la pantalla tambien: van arriba, en un
-           hueco con su proporcion, 4:5, y el texto debajo, montado sobre el
-           fundido. En pantalla ancha la foto sigue de lado a lado, como fondo:
-           se probo a ponerla a la derecha y entera, y la portada quedaba medio
-           vacia. */
+        /* EN EL TELEFONO LA FOTO ENTRA CASI ENTERA. Las fotos de portada son
+           apaisadas (16:9): van arriba, en un hueco de 16:10 que apenas les quita
+           un borde, y el texto debajo, montado sobre el fundido. Antes el hueco
+           era vertical (4:5) y a una foto apaisada le cortaba los dos lados. */
         @media (max-width: 1023px) {
             .portada-foto, .portada-capa.portada-foto {
                 position: absolute; inset: auto; top: 4rem; left: 0; width: 100%; height: auto;
-                aspect-ratio: 4 / 5; max-height: 70svh; object-position: 50% 30%;
-                -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-                mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+                aspect-ratio: 16 / 10; max-height: 60svh; object-position: 50% 45%;
+                -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+                mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
             }
-            section:has(.portada-foto) > .entrada { padding-top: calc(min(125vw, 70svh) - 4rem); }
+            section:has(.portada-foto) > .entrada { padding-top: calc(min(62.5vw, 60svh) - 3.5rem); }
         }
         .entrada { text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55); }
         .entrada a { text-shadow: none; }

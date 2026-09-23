@@ -65,21 +65,13 @@
     @endphp
 
     {{--
-        La portada, con la primera foto del gimnasio.
-
-        Antes era el titulo sobre negro: en una pantalla ancha se veia una
-        franja vacia justo donde hay que mostrar el local. Sin fotos cargadas
-        cae al degradado de siempre, asi que la pagina nunca queda rota.
+        La portada, con el mismo fondo que gira en el inicio: fotos apaisadas y
+        vídeos, pasando solos. Antes era una sola foto fija, y la primera de la
+        galería es vertical: en pantalla ancha salía ampliada al doble y
+        borrosa. Sin fotos cargadas cae al degradado de siempre.
     --}}
     <section class="relative flex lg:min-h-[70svh] items-end overflow-hidden">
-        @if($fotoPortada)
-            <div class="absolute inset-0" aria-hidden="true">
-                <img src="{{ $fotoPortada['imagen'] }}" alt="" class="portada-foto h-full w-full object-cover">
-                <div class="absolute inset-0 bg-linear-to-t from-pg-negro via-pg-negro/80 to-pg-negro/40"></div>
-            </div>
-        @else
-            <div class="absolute inset-0 bg-linear-to-br from-pg-negro via-pg-carbon to-pg-grafito" aria-hidden="true"></div>
-        @endif
+        @include('landing.partes.portada-fondo')
 
         <div class="relative z-10 w-full max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 pt-24 lg:pt-32 pb-7 lg:pb-12 entrada">
             <p class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Por dentro</p>

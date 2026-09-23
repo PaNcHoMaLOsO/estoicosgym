@@ -111,6 +111,8 @@ class LandingController extends Controller
             [
                 'servicios' => $this->contenidos('servicio')->all(),
                 'fotos' => $this->contenidos('foto')->all(),
+                // La misma portada que gira en el inicio: fotos apaisadas y vídeos.
+                'fondoPortada' => $this->fondoDePortada(),
             ], $comun);
     }
 
@@ -374,7 +376,22 @@ class LandingController extends Controller
      */
     private function fondoDePortada(): array
     {
-        $fotos = $this->contenidos('foto')->pluck('imagen')->filter()->values()->all();
+        /*
+         * SOLO LAS FOTOS APAISADAS. La portada es ancha y baja; una foto vertical
+         * (la mayoría de las del gimnasio: 1600 x 2000) tiene que agrandarse más
+         * del doble para taparla, y en la rotación se veía una franja borrosa y
+         * enorme entre fotos que sí calzaban. Las verticales siguen en la galería
+         * de «El gimnasio», que las muestra enteras. Si no hay ninguna apaisada,
+         * van todas: mejor una portada que una portada vacía.
+         */
+        $todas = $this->contenidos('foto')->pluck('imagen')->filter()->values();
+        $apaisadas = $todas->filter(function (string $src) {
+            $ruta = storage_path('app/public/web/' . basename(parse_url($src, PHP_URL_PATH) ?? ''));
+            $medidas = is_file($ruta) ? @getimagesize($ruta) : false;
+
+            return $medidas && $medidas[0] >= $medidas[1];
+        })->values();
+        $fotos = ($apaisadas->isNotEmpty() ? $apaisadas : $todas)->all();
 
         $videos = collect(glob(storage_path('app/public/web/portada*.mp4')) ?: [])
             ->map(fn (string $ruta) => asset('storage/web/' . basename($ruta)))
