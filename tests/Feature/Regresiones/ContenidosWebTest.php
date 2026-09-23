@@ -205,6 +205,37 @@ class ContenidosWebTest extends CasoConCatalogos
         $this->assertSame([1, 2], ContenidoWeb::where('tipo', 'pregunta')->orderBy('orden')->pluck('orden')->all());
     }
 
+    /**
+     * LA GALERÍA SE ORDENA SOLA: las panorámicas primero.
+     *
+     * Son las que enseñan la sala entera, y es por donde empieza a mirar quien
+     * entra a la web. Ordenar diez fotos a flechazos no lo hace nadie, así que
+     * sin esto la galería queda en el orden en que se subieron, que no es
+     * ninguno.
+     */
+    public function test_la_galeria_se_ordena_sola_con_las_panoramicas_primero(): void
+    {
+        $this->admin()->post('/panel/web/foto', [
+            'titulo' => 'Vertical',
+            'imagen' => UploadedFile::fake()->image('alta.jpg', 600, 900),
+        ]);
+        $this->admin()->post('/panel/web/foto', [
+            'titulo' => 'Otra vertical',
+            'imagen' => UploadedFile::fake()->image('alta2.jpg', 600, 900),
+        ]);
+        $this->admin()->post('/panel/web/foto', [
+            'titulo' => 'Panorámica',
+            'imagen' => UploadedFile::fake()->image('ancha.jpg', 1600, 900),
+        ]);
+
+        $this->admin()->post('/panel/web/foto/ordenar')->assertSessionHasNoErrors();
+
+        $puestos = ContenidoWeb::where('tipo', 'foto')->orderBy('orden')->pluck('titulo', 'orden')->all();
+
+        $this->assertSame('Panorámica', $puestos[1]);
+        $this->assertSame([1, 2, 3], array_keys($puestos));
+    }
+
     /** Ocultar va por el mismo interruptor que los catálogos, y lo oculto no sale. */
     public function test_ocultar_un_contenido_lo_saca_de_la_web(): void
     {

@@ -128,6 +128,133 @@ class ContenidoWebController extends Controller
     }
 
     /**
+     * Ordena la galería sola.
+     *
+     * ORDENAR DIEZ FOTOS A FLECHAZOS ES UN TRABAJO QUE NADIE HACE: se suben
+     * cuando se sacan y quedan en el orden en que se subieron, que no es
+     * ninguno. Dos reglas, que son las que usaría cualquiera a ojo:
+     *
+     *  · Las panorámicas primero. Son las que enseñan la sala entera, y la
+     *    galería de la web empieza por ahí: quien entra quiere ver el local,
+     *    no un primer plano de una mancuerna.
+     *  · Después, sin dos parecidas seguidas. Se compara el color medio de
+     *    cada foto —las del salón rojo se parecen entre ellas, las de la sala
+     *    azul entre ellas— y se va eligiendo cada vez la que más se diferencia
+     *    de la anterior. Tres rojas seguidas parecen la misma foto repetida.
+     *
+     * NO SUSTITUYE A LAS FLECHAS: deja un orden razonable de una vez, y quien
+     * quiera una foto concreta arriba la sube a mano y ahí se queda.
+     */
+    public function ordenar(string $tipo)
+    {
+        // Solo las fotos: en un servicio o una pregunta el orden lo decide lo
+        // que dice, no cómo se ve.
+        abort_unless($tipo === 'foto', 404);
+
+        $fotos = ContenidoWeb::where('tipo', 'foto')
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ContenidoWeb $foto) => ['foto' => $foto] + $this->comoSeVe($foto));
+
+        // Apaisada: más ancha que alta con holgura. Las de teléfono, que son
+        // verticales, no entran aquí.
+        $panoramicas = $fotos->filter(fn (array $f) => $f['proporcion'] >= 1.25)->values()->all();
+        $pendientes = $fotos->filter(fn (array $f) => $f['proporcion'] < 1.25)->values()->all();
+
+        $orden = $panoramicas;
+
+        if ($orden === [] && $pendientes !== []) {
+            $orden[] = array_shift($pendientes);
+        }
+
+        while ($pendientes !== []) {
+            $anterior = end($orden);
+            $lejana = 0;
+
+            foreach ($pendientes as $i => $candidata) {
+                if ($this->distancia($anterior['color'], $candidata['color'])
+                    > $this->distancia($anterior['color'], $pendientes[$lejana]['color'])) {
+                    $lejana = $i;
+                }
+            }
+
+            $orden[] = $pendientes[$lejana];
+            unset($pendientes[$lejana]);
+            $pendientes = array_values($pendientes);
+        }
+
+        foreach ($orden as $i => $puesto) {
+            $puesto['foto']->update(['orden' => $i + 1]);
+        }
+
+        return back()->with('success', count($orden) === 0
+            ? 'No hay fotos que ordenar.'
+            : 'Ordenadas: las panorámicas primero y sin dos parecidas seguidas. Con las flechas las mueves a tu gusto.');
+    }
+
+    /**
+     * Cómo se ve una foto: su proporción y su color medio.
+     *
+     * El color se saca de una copia de 8×8 píxeles —no hace falta más para
+     * saber si una foto es roja o azul— y así ordenar cuarenta fotos no se
+     * convierte en cuarenta imágenes enteras cargadas en memoria.
+     *
+     * @return array{proporcion:float, color:array{0:int,1:int,2:int}}
+     */
+    private function comoSeVe(ContenidoWeb $foto): array
+    {
+        $gris = ['proporcion' => 1.0, 'color' => [128, 128, 128]];
+        $ruta = $foto->imagen ? Storage::disk('public')->path($foto->imagen) : null;
+
+        if (! $ruta || ! is_file($ruta) || ! function_exists('imagecreatefromstring')) {
+            return $gris;
+        }
+
+        $medidas = @getimagesize($ruta);
+        $imagen = @imagecreatefromstring((string) file_get_contents($ruta));
+
+        if (! $medidas || ! $imagen) {
+            return $gris;
+        }
+
+        $chica = imagescale($imagen, 8, 8);
+        $suma = [0, 0, 0];
+
+        for ($x = 0; $x < 8; $x++) {
+            for ($y = 0; $y < 8; $y++) {
+                $punto = imagecolorsforindex($chica, imagecolorat($chica, $x, $y));
+                $suma[0] += $punto['red'];
+                $suma[1] += $punto['green'];
+                $suma[2] += $punto['blue'];
+            }
+        }
+
+        imagedestroy($chica);
+        imagedestroy($imagen);
+
+        return [
+            'proporcion' => $medidas[1] > 0 ? $medidas[0] / $medidas[1] : 1.0,
+            'color' => [(int) ($suma[0] / 64), (int) ($suma[1] / 64), (int) ($suma[2] / 64)],
+        ];
+    }
+
+    /**
+     * Cuánto se diferencian dos colores.
+     *
+     * @param  array{0:int,1:int,2:int}  $uno
+     * @param  array{0:int,1:int,2:int}  $otro
+     */
+    private function distancia(array $uno, array $otro): float
+    {
+        return sqrt(
+            ($uno[0] - $otro[0]) ** 2
+            + ($uno[1] - $otro[1]) ** 2
+            + ($uno[2] - $otro[2]) ** 2
+        );
+    }
+
+    /**
      * Deja los puestos en 1, 2, 3… sin huecos ni repetidos.
      *
      * Se llama después de crear, de borrar y antes de mover: así el número que

@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon, WandSparklesIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
@@ -113,6 +113,17 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
     const campos = useMemo(() => camposDe(tipo, iconos), [tipo, iconos]);
     const nombreIcono = useMemo(() => Object.fromEntries(iconos.map((i) => [i.valor, i.etiqueta])), [iconos]);
 
+    /** Un orden razonable de una vez, sin ir foto por foto. */
+    function ordenarSolas() {
+        const aviso =
+            'Se ordenan solas: las panorámicas primero y sin dos parecidas seguidas.\n\n'
+            + 'Se pierde el orden que hayas puesto a mano. ¿Seguir?';
+
+        if (window.confirm(aviso)) {
+            router.post(`/panel/web/${tipo}/ordenar`, {}, { preserveScroll: true });
+        }
+    }
+
     /** Sube o baja un puesto: ordenar sin pensar en números. */
     function mover(fila, hacia) {
         router.post(`/panel/web/contenido/${fila.uuid}/mover`, { hacia }, { preserveScroll: true });
@@ -140,6 +151,20 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                     <h1 className="text-lg font-semibold text-chalk">{datos.titulo}</h1>
                     <p className="apoyo text-fog">{datos.descripcion}</p>
                 </div>
+
+                {/* Ordenar diez fotos a flechazos es un trabajo que nadie
+                    hace: esto deja un orden razonable de una vez y las flechas
+                    siguen ahí para la que se quiera arriba. */}
+                {tipo === 'foto' && filas.length > 2 ? (
+                    <button
+                        type="button"
+                        onClick={ordenarSolas}
+                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:border-line-strong"
+                    >
+                        <WandSparklesIcon className="size-4" aria-hidden="true" />
+                        Ordenarlas solas
+                    </button>
+                ) : null}
 
                 <button
                     type="button"

@@ -619,6 +619,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::delete('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'eliminar'])->name('web.destroy');
         // Subir y bajar un puesto: ordenar sin tener que pensar en números.
         Route::post('/web/contenido/{contenido}/mover', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'mover'])->name('web.mover');
+        // Ordenar la galería sola: las panorámicas primero y sin dos fotos
+        // parecidas seguidas. A flechazos nadie ordena diez fotos.
+        Route::post('/web/{tipo}/ordenar', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'ordenar'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.ordenar');
         Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
         Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');
