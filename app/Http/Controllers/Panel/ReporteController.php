@@ -7,6 +7,9 @@ use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\MetodoPago;
+use App\Models\CobroTaller;
+use App\Models\Fiado;
+use App\Support\IngresosDelNegocio;
 use App\Support\IngresosPorMetodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -107,11 +110,52 @@ class ReporteController extends Controller
 
         // Los doce meses SIEMPRE, aunque no haya movimiento: un hueco en la
         // serie se lee como «no se cobró», y un mes que falta parece un error.
-        $meses = collect(range(1, 12))->map(fn (int $mes) => [
-            'mes' => Carbon::create($anio, $mes, 1)->translatedFormat('M'),
-            'total' => (int) ($totalPorMes[$mes]->total ?? 0),
-            'pagos' => (int) ($totalPorMes[$mes]->cantidad ?? 0),
-        ]);
+        //
+        // Y CADA MES PARTIDO en membresías, talleres y mesón, con su total: la
+        // misma cuenta que la Caja, de App\Support\IngresosDelNegocio. El
+        // total del año contaba solo las membresías.
+        $meses = collect(range(1, 12))->map(function (int $mes) use ($anio, $totalPorMes) {
+            $inicio = Carbon::create($anio, $mes, 1);
+            $partes = IngresosDelNegocio::entre($inicio, $inicio->copy()->endOfMonth());
+
+            return [
+                'mes' => $inicio->translatedFormat('M'),
+                'mes_largo' => $inicio->translatedFormat('F'),
+                'total' => $partes['total'],
+                'partes' => $partes,
+                'pagos' => (int) ($totalPorMes[$mes]->cantidad ?? 0),
+            ];
+        });
+
+        // Los talleres, por a quién se le cobró; el mesón, por qué se vendió.
+        $desde = Carbon::create($anio, 1, 1)->startOfDay();
+        $hasta = Carbon::create($anio, 12, 31)->endOfDay();
+
+        $porInstitucion = CobroTaller::with('taller.institucion')
+            ->whereNotNull('pagado_en')
+            ->whereBetween('pagado_en', [$desde->toDateString(), $hasta->toDateString()])
+            ->get()
+            ->groupBy(fn (CobroTaller $c) => $c->taller?->institucion?->nombre ?? 'Sin institución')
+            ->map(fn ($cobros, $nombre) => [
+                'nombre' => $nombre,
+                'total' => (int) $cobros->sum('total'),
+                'cantidad' => $cobros->count(),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
+        $porConcepto = Fiado::where('pagado', true)
+            ->whereBetween('pagado_en', [$desde, $hasta])
+            ->get(['concepto', 'monto'])
+            ->groupBy(fn (Fiado $f) => mb_strtolower(trim((string) $f->concepto)) ?: 'sin detalle')
+            ->map(fn ($lineas) => [
+                'nombre' => ucfirst((string) $lineas->first()->concepto ?: 'Sin detalle'),
+                'total' => (int) $lineas->sum('monto'),
+                'cantidad' => $lineas->count(),
+            ])
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
 
         // El reparto de los pagos mixtos entre sus dos medios vive en
         // App\Support\IngresosPorMetodo: lo mismo pregunta la Caja por el mes.
@@ -131,6 +175,12 @@ class ReporteController extends Controller
             'anios' => $this->aniosConMovimiento(),
             'meses' => $meses,
             'total' => (int) $meses->sum('total'),
+            'fuentes' => IngresosDelNegocio::FUENTES,
+            'totalesPorFuente' => collect(array_keys(IngresosDelNegocio::FUENTES))
+                ->mapWithKeys(fn (string $f) => [$f => (int) $meses->sum(fn ($m) => $m['partes'][$f])])
+                ->all(),
+            'porInstitucion' => $porInstitucion->all(),
+            'porConcepto' => $porConcepto->all(),
             'porMetodo' => $porMetodo->all(),
             'porMembresia' => $this->comoLista($porMembresia),
         ]);

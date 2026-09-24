@@ -64,8 +64,8 @@ class CajaTest extends CasoConCatalogos
 
         $caja = $this->caja()['caja'];
 
-        $this->assertSame(100000, $caja['mes']);
-        $this->assertSame(50000, $caja['mes_pasado'], 'Se coló lo cobrado después del día 10 del mes pasado.');
+        $this->assertSame(100000, $caja['mes']['total']);
+        $this->assertSame(50000, $caja['mes_pasado']['total'], 'Se coló lo cobrado después del día 10 del mes pasado.');
         $this->assertSame(10, $caja['dia_del_mes']);
     }
 
@@ -79,7 +79,7 @@ class CajaTest extends CasoConCatalogos
 
         $caja = $this->caja()['caja'];
 
-        $this->assertSame([30000, 20000], [$caja['hoy'], $caja['ayer']]);
+        $this->assertSame([30000, 20000], [$caja['hoy']['total'], $caja['ayer']['total']]);
     }
 
     /** La deuda, partida entre quien sigue viniendo y quien ya se fue. */
@@ -163,5 +163,73 @@ class CajaTest extends CasoConCatalogos
 
         $this->assertSame('Sin registrar', $porMedio->first()['nombre']);
         $this->assertSame(30000, $porMedio->first()['total']);
+    }
+    /**
+     * LA CAJA CUENTA LAS TRES FUENTES, por separado y juntas.
+     *
+     * Antes solo sumaba las membresías: lo que pagó el colegio por el arriendo
+     * y lo cobrado del fiado del mesón no salía en ninguna cifra, y «entró
+     * este mes» decía menos de lo que entró. Lo que sigue debiéndose —el fiado
+     * sin cobrar, la factura sin pagar— no es un ingreso y no cuenta.
+     */
+    public function test_la_caja_suma_membresias_talleres_y_meson(): void
+    {
+        $this->travelTo(Carbon::parse('2026-09-10 12:00', 'America/Santiago'));
+
+        $this->cobrar($this->membresia(40000), 40000, '2026-09-05');
+
+        $institucion = \App\Models\Institucion::create(['nombre' => 'Colegio']);
+        $taller = \App\Models\Taller::create(['id_institucion' => $institucion->id, 'nombre' => 'Clases', 'precio_hora' => 30000]);
+        $taller->cobros()->create(['periodo' => '2026-08', 'horas' => 20, 'precio_hora' => 30000, 'total' => 600000, 'neto' => 504202, 'iva' => 95798, 'pagado_en' => '2026-09-08']);
+        // Facturada y sin pagar: se debe, no entró.
+        $taller->cobros()->create(['periodo' => '2026-07', 'horas' => 10, 'precio_hora' => 30000, 'total' => 300000, 'neto' => 252101, 'iva' => 47899]);
+
+        $socio = Cliente::factory()->create();
+        $quien = $this->administrador()->id;
+        \App\Models\Fiado::create(['id_cliente' => $socio->id, 'concepto' => 'Barrita', 'monto' => 2000, 'pagado' => true, 'pagado_en' => now(), 'id_usuario' => $quien]);
+        \App\Models\Fiado::create(['id_cliente' => $socio->id, 'concepto' => 'Agua', 'monto' => 1000, 'pagado' => false, 'id_usuario' => $quien]);
+
+        $props = $this->caja();
+        $mes = $props['caja']['mes'];
+
+        $this->assertSame(
+            ['membresias' => 40000, 'talleres' => 600000, 'meson' => 2000, 'total' => 642000],
+            $mes
+        );
+        $this->assertSame(2000, $props['caja']['hoy']['meson']);
+        $this->assertSame(300000, $props['talleres']['por_cobrar']);
+
+        // El gráfico mes a mes trae las mismas partes.
+        $this->assertSame(642000, end($props['porMes'])['total']);
+    }
+    /**
+     * EL INFORME DEL AÑO CUENTA LO MISMO QUE LA CAJA, partido igual, y cada
+     * parte con su detalle: el colegio que pagó, el producto del mesón.
+     */
+    public function test_el_informe_de_ingresos_parte_el_anio_por_fuente(): void
+    {
+        $this->travelTo(Carbon::parse('2026-09-10 12:00', 'America/Santiago'));
+
+        $this->cobrar($this->membresia(40000), 40000, '2026-03-05');
+
+        $institucion = \App\Models\Institucion::create(['nombre' => 'Colegio Hispano Americano']);
+        $taller = \App\Models\Taller::create(['id_institucion' => $institucion->id, 'nombre' => 'Clases', 'precio_hora' => 30000]);
+        $taller->cobros()->create(['periodo' => '2026-07', 'horas' => 20, 'precio_hora' => 30000, 'total' => 600000, 'neto' => 504202, 'iva' => 95798, 'pagado_en' => '2026-08-02']);
+
+        \App\Models\Fiado::create([
+            'id_cliente' => Cliente::factory()->create()->id, 'concepto' => 'Barrita', 'monto' => 2000,
+            'pagado' => true, 'pagado_en' => now(), 'id_usuario' => $this->administrador()->id,
+        ]);
+
+        $props = $this->actingAs($this->administrador())
+            ->get('/panel/reportes/ingresos?anio=2026')
+            ->assertOk()
+            ->viewData('page')['props'];
+
+        $this->assertSame(642000, $props['total']);
+        $this->assertSame(['membresias' => 40000, 'talleres' => 600000, 'meson' => 2000], $props['totalesPorFuente']);
+        $this->assertSame(600000, $props['meses'][7]['partes']['talleres']);
+        $this->assertSame('Colegio Hispano Americano', $props['porInstitucion'][0]['nombre']);
+        $this->assertSame('Barrita', $props['porConcepto'][0]['nombre']);
     }
 }

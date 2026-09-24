@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\CobroTaller;
 use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Pago;
+use App\Support\IngresosDelNegocio;
 use App\Support\IngresosPorMetodo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +45,12 @@ class CajaController extends Controller
         $mes = [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()];
 
         return Inertia::render('Caja', [
+            /*
+             * CADA CIFRA VIENE PARTIDA en membresías, talleres y mesón, y con
+             * su total. Antes solo contaba las membresías: lo del colegio y lo
+             * cobrado del fiado no salía en ninguna parte, y «entró este mes»
+             * decía menos de lo que entró.
+             */
             'caja' => [
                 'hoy' => $this->entre($hoy, $hoy),
                 'ayer' => $this->entre($hoy->copy()->subDay(), $hoy->copy()->subDay()),
@@ -73,20 +81,32 @@ class CajaController extends Controller
                     ->count(),
             ],
 
+            // Lo facturado a colegios y empresas que todavía no pagan. Es
+            // plata que ya salió en una factura y que nadie estaba mirando.
+            'talleres' => [
+                'por_cobrar' => (int) CobroTaller::whereNull('pagado_en')->sum('total'),
+                'facturas' => CobroTaller::whereNull('pagado_en')->count(),
+            ],
+
+            'fuentes' => IngresosDelNegocio::FUENTES,
             'porDia' => $this->porDiaDelMes($hoy),
             'porMes' => $this->porMes($hoy),
+            // Solo las membresías: los talleres se pagan por transferencia a
+            // la cuenta del gimnasio y el fiado no anota con qué se cobró.
             'porMetodo' => IngresosPorMetodo::en(fn ($q) => $q->whereBetween('fecha_pago', $mes))->all(),
             'altas' => $this->altasPorMes($hoy),
             'porPlan' => $this->repartoPorPlan(),
         ]);
     }
 
-    /** Lo que entró entre dos días, ambos incluidos. */
-    private function entre(Carbon $desde, Carbon $hasta): int
+    /**
+     * Lo que entró entre dos días, ambos incluidos: por fuente y en total.
+     *
+     * @return array{membresias:int, talleres:int, meson:int, total:int}
+     */
+    private function entre(Carbon $desde, Carbon $hasta): array
     {
-        return (int) Pago::ingresos()
-            ->whereBetween('fecha_pago', [$desde->copy()->startOfDay(), $hasta->copy()->endOfDay()])
-            ->sum('monto_abonado');
+        return IngresosDelNegocio::entre($desde, $hasta);
     }
 
     /**
@@ -96,7 +116,7 @@ class CajaController extends Controller
      * día del mes en vez de saltar al 2 de marzo y comparar contra un periodo
      * de treinta y un días.
      */
-    private function mesPasadoALaFecha(Carbon $hoy): int
+    private function mesPasadoALaFecha(Carbon $hoy): array
     {
         $mismoDia = $hoy->copy()->subMonthNoOverflow();
 
@@ -112,22 +132,14 @@ class CajaController extends Controller
      */
     private function porDiaDelMes(Carbon $hoy): array
     {
-        $porFecha = Pago::ingresos()
-            ->selectRaw('fecha_pago, SUM(monto_abonado) as total')
-            ->whereBetween('fecha_pago', [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()])
-            ->groupBy('fecha_pago')
-            ->pluck('total', 'fecha_pago');
-
-        return collect(range(1, $hoy->daysInMonth))
-            ->map(function (int $dia) use ($hoy, $porFecha) {
-                $fecha = $hoy->copy()->startOfMonth()->addDays($dia - 1);
-
-                return [
-                    'mes' => (string) $dia,
-                    'total' => (int) ($porFecha[$fecha->format('Y-m-d')] ?? $porFecha[$fecha->format('Y-m-d 00:00:00')] ?? 0),
-                    'futuro' => $fecha->gt($hoy),
-                ];
-            })
+        return collect(IngresosDelNegocio::porDia($hoy))
+            ->map(fn (array $partes, string $fecha) => [
+                'mes' => (string) Carbon::parse($fecha)->day,
+                'total' => $partes['total'],
+                'partes' => $partes,
+                'futuro' => Carbon::parse($fecha)->gt($hoy),
+            ])
+            ->values()
             ->all();
     }
 
@@ -138,9 +150,13 @@ class CajaController extends Controller
             ->map(function (int $atras) use ($hoy) {
                 $mes = $hoy->copy()->subMonthsNoOverflow($atras);
 
+                $partes = $this->entre($mes->copy()->startOfMonth(), $mes->copy()->endOfMonth());
+
                 return [
                     'mes' => $mes->translatedFormat('M'),
-                    'total' => $this->entre($mes->copy()->startOfMonth(), $mes->copy()->endOfMonth()),
+                    'mes_largo' => $mes->translatedFormat('F Y'),
+                    'total' => $partes['total'],
+                    'partes' => $partes,
                 ];
             })
             ->all();
