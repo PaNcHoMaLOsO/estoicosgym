@@ -122,4 +122,45 @@ class CorreoDeSalidaTest extends CasoConCatalogos
             ->post('/panel/configuracion/correo/probar', ['para' => 'no-es-un-correo'])
             ->assertSessionHasErrors('para');
     }
+    /**
+     * LA LLAVE DE GMAIL SE PUEDE PEGAR COMO LA ENSEÑA GOOGLE.
+     *
+     * Google la muestra en cuatro bloques —«abcd efgh ijkl mnop»— y así es
+     * como se copia. Con los espacios la conexión falla sin explicar nada, y
+     * quien la pegó bien cree que la llave no sirve.
+     */
+    public function test_la_llave_de_gmail_se_guarda_sin_los_espacios(): void
+    {
+        $this->guardar(['correo.smtp_clave' => 'abcd efgh ijkl mnop'])->assertSessionHasNoErrors();
+
+        $this->assertSame('abcdefghijklmnop', Ajustes::obtener('correo.smtp_clave'));
+    }
+
+    /**
+     * LAS RESPUESTAS LLEGAN AL CORREO DE CONTACTO, aunque se mande desde otro.
+     *
+     * El ajuste lo prometía y ningún correo lo llevaba: se mandaba desde la
+     * cuenta de Estoicos y lo que contestaban los socios de PRO GYM caía allí,
+     * donde nadie lo miraba.
+     */
+    public function test_las_respuestas_van_al_correo_de_contacto(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'api.resend.com/*' => \Illuminate\Support\Facades\Http::response(['id' => 'abc'], 200),
+        ]);
+
+        Ajustes::guardar([
+            'gimnasio.email' => 'progymlosangeles@gmail.com',
+            'correo.remitente' => 'avisos@progym.cl',
+            'correo.resend_clave' => 're_prueba',
+            'correo.transporte' => 'resend',
+        ]);
+
+        app(CorreoService::class)->enviar('socio@correo.cl', 'Hola', '<p>Hola</p>');
+
+        \Illuminate\Support\Facades\Http::assertSent(
+            fn ($peticion) => $peticion['reply_to'] === 'progymlosangeles@gmail.com'
+                && str_contains($peticion['from'], 'avisos@progym.cl')
+        );
+    }
 }

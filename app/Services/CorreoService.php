@@ -234,6 +234,17 @@ class CorreoService
         $remitente = (string) $delPanel('correo.remitente', config('mail.from.address'));
         $nombreRemitente = (string) $delPanel('correo.nombre_remitente', config('mail.from.name'));
 
+        /*
+         * LAS RESPUESTAS VAN AL CORREO DE CONTACTO DEL GIMNASIO.
+         *
+         * El ajuste lo prometía —«a dónde responde el socio si contesta un
+         * aviso»— pero ningún correo lo llevaba: el socio pulsaba «Responder»
+         * y la respuesta caía en la cuenta que envía, que puede ser otra. Se
+         * vio así: se mandaba desde la cuenta de Estoicos y las respuestas de
+         * los socios de PRO GYM iban a parar allí, donde nadie las miraba.
+         */
+        $responderA = trim($this->deConfiguracion('gimnasio.email')) ?: null;
+
         return match ($nombre) {
             'smtp' => new TransporteSmtp(
                 host: (string) $delPanel('correo.smtp_host', config('mail.mailers.smtp.host')),
@@ -243,12 +254,14 @@ class CorreoService
                 remitente: $remitente,
                 nombreRemitente: $nombreRemitente,
                 timeout: $timeout,
+                responderA: $responderA,
             ),
             'resend' => new TransporteResend(
                 clave: (string) $delPanel('correo.resend_clave', config('correo.resend.key')),
                 remitente: $remitente,
                 nombreRemitente: $nombreRemitente,
                 timeout: $timeout,
+                responderA: $responderA,
             ),
             default => throw new InvalidArgumentException(
                 "Transporte de correo desconocido: «{$nombre}». Usa 'smtp' o 'resend' en MAIL_TRANSPORTE."

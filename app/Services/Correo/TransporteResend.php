@@ -32,6 +32,7 @@ class TransporteResend implements Transporte
         private readonly string $remitente,
         private readonly string $nombreRemitente,
         private readonly int $timeout = 15,
+        private readonly ?string $responderA = null,
     ) {}
 
     public function enviar(string $para, string $asunto, string $html, ?string $nombreDestino = null): string
@@ -46,13 +47,16 @@ class TransporteResend implements Transporte
                 // Un fallo de red se reintenta solo; un rechazo del servidor no,
                 // porque volver a mandarlo daria el mismo rechazo.
                 ->retry(2, 300, throw: false)
-                ->post(self::URL, [
+                ->post(self::URL, array_filter([
                     'from' => $this->remitenteConNombre(),
                     'to' => [$para],
                     'subject' => $asunto,
                     'html' => $html,
                     'text' => trim(strip_tags($html)),
-                ]);
+                    'reply_to' => $this->responderA && strcasecmp($this->responderA, $this->remitente) !== 0
+                        ? $this->responderA
+                        : null,
+                ]));
         } catch (Throwable $e) {
             throw new RuntimeException('Error al enviar correo por Resend: ' . $e->getMessage(), previous: $e);
         }

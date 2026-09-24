@@ -28,6 +28,9 @@ class TransporteSmtp implements Transporte
         private readonly string $remitente,
         private readonly string $nombreRemitente,
         private readonly int $timeout = 15,
+        // A dónde llega la respuesta si el socio pulsa «Responder». Puede no
+        // ser la cuenta que envía: se manda desde una y se atiende en otra.
+        private readonly ?string $responderA = null,
     ) {}
 
     public function enviar(string $para, string $asunto, string $html, ?string $nombreDestino = null): string
@@ -122,6 +125,11 @@ class TransporteSmtp implements Transporte
         $mail->SMTPKeepAlive = true;
 
         $mail->setFrom($this->remitente, $this->nombreRemitente);
+
+        if ($this->responderA && strcasecmp($this->responderA, $this->remitente) !== 0) {
+            $mail->addReplyTo($this->responderA, $this->nombreRemitente);
+        }
+
         $mail->isHTML(true);
 
         return $this->mail = $mail;

@@ -783,6 +783,15 @@ class Ajustes
                     continue;
                 }
 
+                // Gmail enseña la contraseña de aplicación en cuatro bloques
+                // —«abcd efgh ijkl mnop»— y así es como se copia. Con los
+                // espacios la conexión falla sin decir por qué, y quien la
+                // pegó bien cree que la llave no sirve. Ninguna clave de estas
+                // lleva espacios de verdad, así que se quitan al guardar.
+                if ($clave === 'correo.smtp_clave') {
+                    $escrito = preg_replace('/\s+/', '', $escrito);
+                }
+
                 $valor = $escrito === 'BORRAR' ? '' : Crypt::encryptString($escrito);
             }
 
