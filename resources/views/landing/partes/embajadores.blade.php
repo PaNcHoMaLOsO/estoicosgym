@@ -21,7 +21,7 @@
             <div class="mb-7 lg:mb-12 flex flex-wrap items-end justify-between gap-4 animate-on-scroll">
                 <div>
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Entrenan con nosotros</span>
-                    <h2 class="font-display text-4xl md:text-6xl mt-2 uppercase leading-none text-pg-tiza">Nuestros embajadores</h2>
+                    <h2 class="font-display text-4xl md:text-6xl mt-2 uppercase leading-none text-pg-tiza">NUESTROS EMBAJADORES</h2>
                 </div>
                 <p class="font-display text-lg tracking-wider text-pg-tiza/40">{{ str_pad(count($embajadores), 2, '0', STR_PAD_LEFT) }} atletas</p>
             </div>
