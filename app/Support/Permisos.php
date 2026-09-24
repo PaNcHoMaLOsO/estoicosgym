@@ -118,6 +118,7 @@ class Permisos
         // Los especialistas de la web: un catalogo mas, lo toca quien
         // configura, no el meson.
         'especialistas' => 'configuracion',
+        'embajadores' => 'configuracion',
         // La pagina web: lo que ven los clientes lo cambia quien configura.
         'web' => 'configuracion',
         // Las cuentas del panel: quien entra y con que rol. Modulo PROPIO y no

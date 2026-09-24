@@ -610,6 +610,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::put('/convenios/{convenio}/precios', [\App\Http\Controllers\Panel\CatalogoController::class, 'preciosDelConvenio'])->name('convenios.precios');
         // Los especialistas que aparecen en la web. Se ocultan con catalogos.alternar.
         Route::get('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'index'])->name('especialistas.index');
+        // Los embajadores, aparte: comparten tabla con los especialistas pero no
+        // pantalla. Guardar va por las mismas rutas, con su tipo.
+        Route::get('/embajadores', [\App\Http\Controllers\Panel\EspecialistaController::class, 'embajadores'])->name('embajadores.index');
         Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
         Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
         // La pagina web: servicios, fotos, preguntas y testimonios. Se ocultan con catalogos.alternar.

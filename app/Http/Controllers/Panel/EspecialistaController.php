@@ -18,9 +18,29 @@ use Inertia\Inertia;
  */
 class EspecialistaController extends Controller
 {
+    /**
+     * Los especialistas, SOLOS.
+     *
+     * Iban en la misma lista que los embajadores y al dueño no le acomodaba:
+     * son cosas distintas —uno es un profesional al que se le escribe, el otro
+     * un socio que representa al gimnasio—, salen en sitios distintos de la
+     * web y se llenan con datos distintos. Comparten tabla, no pantalla.
+     */
     public function index()
     {
-        $especialistas = Especialista::orderBy('orden')
+        return $this->lista('especialista');
+    }
+
+    /** Los embajadores, en su propia pantalla. */
+    public function embajadores()
+    {
+        return $this->lista('embajador');
+    }
+
+    private function lista(string $tipo)
+    {
+        $especialistas = Especialista::where('tipo', $tipo)
+            ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
             ->map(fn (Especialista $e) => [
@@ -37,7 +57,10 @@ class EspecialistaController extends Controller
                 'activo' => (bool) $e->activo,
             ]);
 
-        return Inertia::render('Configuracion/Especialistas', ['especialistas' => $especialistas]);
+        return Inertia::render('Configuracion/Especialistas', [
+            'especialistas' => $especialistas,
+            'tipo' => $tipo,
+        ]);
     }
 
     public function store(Request $request)

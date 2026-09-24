@@ -430,4 +430,23 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             'especialidad' => 'Powerlifting',
         ])->assertSessionHasErrors('tipo');
     }
+    /**
+     * CADA UNO EN SU PANTALLA. Iban en la misma lista y al dueño no le
+     * acomodaba: el especialista es un profesional al que se le escribe y el
+     * embajador un socio que representa al gimnasio.
+     */
+    public function test_especialistas_y_embajadores_van_en_pantallas_separadas(): void
+    {
+        \App\Models\Especialista::create(['tipo' => 'especialista', 'nombre' => 'La nutricionista', 'especialidad' => 'Nutrición', 'activo' => true]);
+        \App\Models\Especialista::create(['tipo' => 'embajador', 'nombre' => 'El powerlifter', 'especialidad' => 'Powerlifting', 'activo' => true]);
+
+        $especialistas = $this->actingAs($this->administrador())->get('/panel/especialistas')
+            ->assertOk()->viewData('page')['props'];
+        $embajadores = $this->actingAs($this->administrador())->get('/panel/embajadores')
+            ->assertOk()->viewData('page')['props'];
+
+        $this->assertSame(['La nutricionista'], collect($especialistas['especialistas'])->pluck('nombre')->all());
+        $this->assertSame(['El powerlifter'], collect($embajadores['especialistas'])->pluck('nombre')->all());
+        $this->assertSame('embajador', $embajadores['tipo']);
+    }
 }

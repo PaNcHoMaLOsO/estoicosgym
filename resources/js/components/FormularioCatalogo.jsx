@@ -218,14 +218,43 @@ export const TIPOS_PERSONA = [
     { valor: 'embajador', etiqueta: 'Embajador (sale en la portada)' },
 ];
 
+/**
+ * Los campos de una persona, según lo que es.
+ *
+ * Un embajador no lleva descripción ni WhatsApp: en la web sale su foto, su
+ * nombre, su disciplina y su Instagram, y pedir lo demás era llenar campos
+ * que no se ven en ninguna parte.
+ */
+export function camposDePersona(tipo) {
+    if (tipo === 'embajador') {
+        return [
+            { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Diego Riquelme' },
+            { nombre: 'especialidad', etiqueta: 'Disciplina', requerido: true, ejemplo: 'Powerlifting, CrossFit, culturismo…' },
+            {
+                nombre: 'foto',
+                etiqueta: 'Foto',
+                tipo: 'imagen',
+                actual: 'foto_url',
+                quitar: 'quitar_foto',
+                ayuda: 'Mejor vertical, de cuerpo entero o de medio cuerpo: sale en un panel alto. JPG, PNG o WEBP, hasta 2 MB.',
+            },
+            { nombre: 'instagram', etiqueta: 'Instagram', ejemplo: '@usuario o el enlace del perfil' },
+            { nombre: 'orden', etiqueta: 'Orden', tipo: 'number', min: 0, ayuda: 'Los de número más bajo salen primero.' },
+            { nombre: 'activo', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Se muestra en la portada' },
+        ];
+    }
+
+    return CAMPOS_ESPECIALISTA.filter((c) => c.nombre !== 'tipo');
+}
+
 export const CAMPOS_ESPECIALISTA = [
     { nombre: 'tipo', etiqueta: 'Qué es', tipo: 'opciones', opciones: TIPOS_PERSONA, requerido: true },
     { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Camila Rojas' },
     {
         nombre: 'especialidad',
-        etiqueta: 'Especialidad o disciplina',
+        etiqueta: 'Especialidad',
         requerido: true,
-        ejemplo: 'Nutricionista, personal trainer… o powerlifting, crossfit…',
+        ejemplo: 'Nutricionista, personal trainer, kinesióloga…',
     },
     {
         nombre: 'descripcion',
@@ -239,7 +268,7 @@ export const CAMPOS_ESPECIALISTA = [
         tipo: 'imagen',
         actual: 'foto_url',
         quitar: 'quitar_foto',
-        ayuda: 'JPG, PNG o WEBP, hasta 2 MB. Mejor cuadrada y con la cara centrada.',
+        ayuda: 'Mejor vertical y con la cara arriba: sale en un panel alto. JPG, PNG o WEBP, hasta 2 MB.',
     },
     { nombre: 'whatsapp', etiqueta: 'WhatsApp', ejemplo: '9 1234 5678', ayuda: 'Sale como botón «WhatsApp» con un saludo ya escrito.' },
     { nombre: 'instagram', etiqueta: 'Instagram', ejemplo: '@usuario o el enlace del perfil' },
@@ -254,9 +283,9 @@ export const CAMPOS_ESPECIALISTA = [
 ];
 
 /** Lo que hay que mandar para guardar un especialista. */
-export function valoresDeEspecialista(especialista) {
+export function valoresDeEspecialista(especialista, tipo = 'especialista') {
     return {
-        tipo: especialista?.tipo ?? 'especialista',
+        tipo: especialista?.tipo ?? tipo,
         nombre: especialista?.nombre ?? '',
         especialidad: especialista?.especialidad ?? '',
         descripcion: especialista?.descripcion ?? '',
