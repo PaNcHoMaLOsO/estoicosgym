@@ -37,6 +37,10 @@ class ConfiguracionController extends Controller
                 'precio' => (int) ($m->precios->first()->precio_normal ?? 0),
                 'inscripciones' => $m->inscripciones_count,
                 'activo' => (bool) $m->activo,
+                // Hace falta aquí también: editando desde la lista, sin este
+                // dato el formulario lo daría por encendido y volvería a
+                // publicar un precio que se había sacado de la web.
+                'en_la_web' => (bool) $m->en_la_web,
                 // Los dos numeros por separado ademas del texto: «3 meses» se
                 // lee bien en la tabla pero no se puede meter en el formulario.
                 'duracion_meses' => (int) $m->duracion_meses,

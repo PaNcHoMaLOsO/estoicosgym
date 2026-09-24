@@ -53,10 +53,12 @@ class Membresia extends Model
         'max_pausas',
         'descripcion',
         'activo',
+        'en_la_web',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
+        'en_la_web' => 'boolean',
         'max_pausas' => 'integer',
     ];
 

@@ -49,6 +49,7 @@ class FichasConfiguracionController extends Controller
                 'duracion_meses' => (int) $membresia->duracion_meses,
                 'max_pausas' => (int) $membresia->max_pausas,
                 'activo' => (bool) $membresia->activo,
+                'en_la_web' => (bool) $membresia->en_la_web,
                 'precio' => (int) ($precioVigente->precio_normal ?? 0),
                 // null y no 0: «sin precio de convenio» y «gratis con
                 // convenio» no son lo mismo, y el formulario de editar

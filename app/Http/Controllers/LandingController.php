@@ -588,7 +588,10 @@ class LandingController extends Controller
             ->orderByDesc('total')
             ->value('id_membresia');
 
+        // Solo lo que se anuncia: hay planes que se venden en el mesón a un
+        // precio arreglado con cada persona, y en la web serían una promesa.
         return Membresia::where('activo', true)
+            ->where('en_la_web', true)
             ->with(['precios' => fn ($q) => $q->where('activo', true)
                 ->where('fecha_vigencia_desde', '<=', now())
                 ->orderByDesc('fecha_vigencia_desde')])

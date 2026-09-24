@@ -269,4 +269,24 @@ class PaginasPublicasTest extends CasoConCatalogos
             // Las copias que llenan la vuelta no se leen dos veces con un lector de pantalla.
             ->assertSee('data-repetido aria-hidden="true"', false);
     }
+    /**
+     * UN PRECIO ARREGLADO CON CADA UNO NO SE ANUNCIA, pero se sigue vendiendo.
+     *
+     * La Semana y la Quincena se cobran a lo que se acuerda en el mesón: en la
+     * web, «Semana a $15.000» pasaba a ser una promesa para cualquiera. Y
+     * apagarlos no servía, porque un plan apagado ya no se puede vender.
+     */
+    public function test_un_plan_fuera_de_la_web_se_sigue_vendiendo(): void
+    {
+        $plan = \App\Models\Membresia::where('duracion_meses', 0)->firstOrFail();
+        $plan->update(['en_la_web' => false]);
+
+        $this->get('/planes')->assertOk()->assertDontSee($plan->nombre.' a $', false);
+
+        $cobrables = $this->actingAs($this->administrador())
+            ->get('/panel/inscripciones/crear')
+            ->viewData('page')['props']['membresias'];
+
+        $this->assertContains($plan->id, collect($cobrables)->pluck('id')->all());
+    }
 }

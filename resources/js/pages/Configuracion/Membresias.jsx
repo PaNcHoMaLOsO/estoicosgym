@@ -71,6 +71,11 @@ export default function Membresias({ membresias }) {
                             >
                                 {membresia.nombre}
                             </Link>
+                            {/* Se vende en el mesón pero no se anuncia: dicho aquí,
+                                nadie lo busca en la web creyendo que se perdió. */}
+                            {membresia.en_la_web === false ? (
+                                <span className="apoyo ml-2 font-normal text-fog">· no sale en la web</span>
+                            ) : null}
                             {membresia.descripcion ? (
                                 <span className="apoyo block text-fog">{membresia.descripcion}</span>
                             ) : null}

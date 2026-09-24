@@ -84,6 +84,16 @@ export const CAMPOS_PLAN = [
         ayuda: 'Opcional. Lo que paga quien viene por un convenio. Tiene que ser menor que el normal.',
     },
     { nombre: 'activo', etiqueta: 'Disponibilidad', tipo: 'si-no', textoCasilla: 'Se puede vender' },
+    /* Aparte de venderse: la Semana o la Quincena se venden en el mesón a un
+       precio que se arregla con cada uno, y puesto en la web ese precio pasa
+       a ser el de todos. */
+    {
+        nombre: 'en_la_web',
+        etiqueta: 'Página web',
+        tipo: 'si-no',
+        textoCasilla: 'Sale en la página de planes',
+        ayuda: 'Apágalo en los precios que se arreglan con cada persona: se siguen vendiendo en el mesón, pero no se anuncian.',
+    },
 ];
 
 export const TIPOS_CONVENIO = [
@@ -172,6 +182,7 @@ export function valoresDePlan(plan) {
         // tiene»: uno significa gratis con convenio y el otro, sin convenio.
         precio_convenio: plan?.precio_convenio ?? '',
         activo: plan?.uuid ? Boolean(plan.activo) : true,
+        en_la_web: plan?.uuid ? Boolean(plan.en_la_web ?? true) : true,
     };
 }
 

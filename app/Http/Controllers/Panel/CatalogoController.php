@@ -48,6 +48,7 @@ class CatalogoController extends Controller
                 'dias_regalo' => $datos['dias_regalo'],
                 'max_pausas' => $datos['max_pausas'],
                 'activo' => $datos['activo'],
+                'en_la_web' => $datos['en_la_web'],
             ]);
 
             $this->ponerPrecio($membresia, $datos);
@@ -73,6 +74,7 @@ class CatalogoController extends Controller
                 'dias_regalo' => $datos['dias_regalo'],
                 'max_pausas' => $datos['max_pausas'],
                 'activo' => $datos['activo'],
+                'en_la_web' => $datos['en_la_web'],
             ]);
 
             $this->ponerPrecio($membresia, $datos);
@@ -264,6 +266,7 @@ class CatalogoController extends Controller
             'precio' => 'required|numeric|min:0|max:99999999',
             'precio_convenio' => 'nullable|numeric|min:0|max:99999999',
             'activo' => 'boolean',
+            'en_la_web' => 'boolean',
         ], [
             'nombre.unique' => 'Ya hay un plan con ese nombre.',
             'precio.required' => 'Indica cuánto cuesta. Un plan sin precio no se puede vender.',
@@ -286,6 +289,7 @@ class CatalogoController extends Controller
 
         $datos['dias_regalo'] = (int) ($datos['dias_regalo'] ?? 0);
         $datos['activo'] = (bool) ($datos['activo'] ?? true);
+        $datos['en_la_web'] = (bool) ($datos['en_la_web'] ?? true);
         $datos['precio_convenio'] = $datos['precio_convenio'] ?? null;
 
         return $datos;
