@@ -248,6 +248,14 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                     Es menor de edad: se avisará también al apoderado.
                                 </p>
                             ) : null}
+
+                            {/* Se dice para que no sorprenda: venderle el plan lo
+                                vuelve a dar de alta, sin pasar por su ficha. */}
+                            {socio.de_baja ? (
+                                <p className="apoyo mt-2 text-fog">
+                                    Estaba dado de baja: al guardar la membresía queda activo otra vez.
+                                </p>
+                            ) : null}
                         </div>
                     ) : (
                         <Campo
@@ -311,6 +319,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                                     <span className="apoyo block text-fog">
                                                         {c.rut ?? 'sin RUT'}
                                                         {c.email ? ` · ${c.email}` : ''}
+                                                        {c.de_baja ? ' · de baja' : ''}
                                                     </span>
                                                 </button>
                                             </li>

@@ -161,6 +161,13 @@ class RegistroInscripcionService
         $inscripcion = DB::transaction(function () use ($resultado) {
             $inscripcion = Inscripcion::create($resultado['inscripcion']);
 
+            // Quien vuelve y paga está activo otra vez: lo reactiva la venta,
+            // no un paso aparte que se olvida.
+            $socio = $resultado['cliente'] ?? null;
+            if ($socio instanceof Cliente && ! $socio->activo) {
+                $socio->update(['activo' => true]);
+            }
+
             foreach ($this->filasDePago($inscripcion, $resultado) as $fila) {
                 Pago::create($fila);
             }
@@ -416,9 +423,18 @@ class RegistroInscripcionService
             throw ValidationException::withMessages(['id_cliente' => 'Ese socio no existe.']);
         }
 
-        if (! $cliente->activo) {
+        /*
+         * UNO DE BAJA SÍ SE PUEDE INSCRIBIR: venderle un plan lo reactiva.
+         *
+         * Antes había que ir a su ficha, reactivarlo, volver y recién ahí
+         * inscribirlo. En el mesón, con la persona esperando, lo más rápido era
+         * crearlo de nuevo, y así nacían los duplicados. Casi todos los socios
+         * que vinieron de las planillas están de baja: es el caso de todos los
+         * días. Lo que sigue sin poder volver es quien pidió borrar sus datos.
+         */
+        if ($cliente->datos_borrados_en) {
             throw ValidationException::withMessages([
-                'id_cliente' => 'Ese socio está desactivado. Reactívalo antes de inscribirlo.',
+                'id_cliente' => 'A ese socio se le borraron los datos personales: no se puede volver a inscribir.',
             ]);
         }
 

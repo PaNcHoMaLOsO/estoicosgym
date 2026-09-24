@@ -424,6 +424,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // El buscador del marco: responde desde cualquier pantalla del panel.
         // Va ANTES de /clientes/{cliente}, o «buscar» entraría como un uuid.
         Route::get('/clientes/buscar', \App\Http\Controllers\Panel\BuscarSocioController::class)->name('clientes.buscar');
+        // ¿Ya está registrado? Lo pregunta el alta mientras se escribe. Va antes
+        // de /clientes/{cliente} por lo mismo que «buscar».
+        Route::get('/clientes/verificar', [\App\Http\Controllers\Panel\ClienteController::class, 'verificar'])->name('clientes.verificar');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/crear', [\App\Http\Controllers\Panel\ClienteController::class, 'create'])->name('clientes.create');
         Route::post('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'store'])->name('clientes.store');

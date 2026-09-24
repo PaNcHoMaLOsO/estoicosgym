@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, CameraIcon, ChevronDownIcon, ImageIcon } from 'lucide-react';
 
@@ -377,6 +377,78 @@ function Casilla({ marcada, alCambiar, etiqueta, ayuda }) {
  * quiere la ficha lo elige arriba de esa isla (el mismo `flujo_cliente` que
  * entiende el servidor: completo / con_membresia / solo_cliente).
  */
+/**
+ * Qué se puede hacer con alguien que YA está registrado.
+ *
+ * ES LO QUE AHORRA EL DUPLICADO Y EL TIEMPO A LA VEZ: al que vuelve después de
+ * un año no se le vuelve a escribir todo, se le vende el plan desde aquí. Uno
+ * de baja se reactiva solo al venderle; el de la papelera se restaura antes.
+ */
+function AccionDelRegistrado({ socio, principal = false }) {
+    const boton = principal
+        ? 'inline-flex items-center rounded-control bg-volt px-2.5 py-1 text-xs font-medium text-on-volt hover:opacity-90'
+        : 'apoyo text-chalk underline underline-offset-4';
+
+    if (socio.estado === 'datos_borrados') {
+        return <span className="apoyo text-fog">Se le borraron los datos</span>;
+    }
+
+    if (socio.estado === 'papelera') {
+        return (
+            <button
+                type="button"
+                className={boton}
+                onClick={() =>
+                    router.patch(`/panel/papelera/clientes/${socio.id}/restaurar`, {}, {
+                        onSuccess: () => router.visit(`/panel/clientes/${socio.uuid}`),
+                    })
+                }
+            >
+                Restaurar su ficha
+            </button>
+        );
+    }
+
+    if (socio.estado === 'vigente') {
+        return (
+            <Link href={`/panel/clientes/${socio.uuid}`} className={boton}>
+                Abrir su ficha
+            </Link>
+        );
+    }
+
+    return (
+        <Link href={`/panel/inscripciones/crear?cliente=${socio.uuid}`} className={boton}>
+            Venderle un plan
+        </Link>
+    );
+}
+
+const ESTADO_REGISTRADO = {
+    vigente: (s) => `Tiene ${s.plan}, vence el ${s.vence}.`,
+    sin_plan: () => 'Está activo pero sin plan vigente.',
+    baja: () => 'Está dado de baja. Al venderle un plan se reactiva solo.',
+    papelera: () => 'Está en la papelera: se restaura con su historial.',
+    datos_borrados: () => 'Se le borraron los datos personales: ese RUT no se puede volver a usar.',
+};
+
+/** El aviso de RUT repetido, pegado al campo y mientras se escribe. */
+function YaRegistrado({ socio }) {
+    return (
+        <Nota titulo={`${socio.nombre} ya está registrado con ese RUT`} className="mt-1" compacta>
+            <p>{(ESTADO_REGISTRADO[socio.estado] ?? ESTADO_REGISTRADO.sin_plan)(socio)}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+                <AccionDelRegistrado socio={socio} principal />
+                {socio.estado !== 'vigente' && socio.estado !== 'papelera' && socio.estado !== 'datos_borrados' ? (
+                    <Link href={`/panel/clientes/${socio.uuid}`} className="apoyo text-fog underline underline-offset-4 hover:text-chalk">
+                        Ver su ficha
+                    </Link>
+                ) : null}
+            </div>
+        </Nota>
+    );
+}
+
 export default function Crear({ membresias, convenios, motivos, metodosPago, formToken, preciosDeConvenio = {} }) {
     /*
      * EL PRECIO QUE PAGA ESTE CONVENIO por este plan.
@@ -456,6 +528,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
     const [masDelPlan, setMasDelPlan] = useState(false);
     // El socio que YA existe con ese RUT, si lo hay.
     const [repetido, setRepetido] = useState(null);
+    // Los que se le parecen sin RUT: mismo celular o mismo nombre.
+    const [parecidos, setParecidos] = useState([]);
 
     /*
      * MENOR DE EDAD NO SE PREGUNTA: se sabe por la fecha de nacimiento.
@@ -525,10 +599,16 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
      * servidor rechaza el RUT repetido de todos modos.
      */
     useEffect(() => {
-        const rut = data.run_pasaporte.trim();
+        const rut = data.tipo_documento === 'rut' && rutValido(data.run_pasaporte.trim()) ? data.run_pasaporte.trim() : '';
+        const celular = soloPrefijo(data.celular) ? '' : data.celular;
+        const nombres = data.nombres.trim();
+        const apellido = data.apellido_paterno.trim();
 
-        if (data.tipo_documento !== 'rut' || ! rutValido(rut)) {
+        // Sin nada con qué comparar no se pregunta: ni RUT completo, ni
+        // celular, ni nombre con apellido.
+        if (! rut && ! celular && ! (nombres && apellido)) {
             setRepetido(null);
+            setParecidos([]);
 
             return undefined;
         }
@@ -536,25 +616,27 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
         const cancelar = new AbortController();
         const espera = setTimeout(async () => {
             try {
-                const r = await fetch(`/panel/clientes/buscar?q=${encodeURIComponent(rut)}`, {
+                const consulta = new URLSearchParams({ rut, celular, nombres, apellido });
+                const r = await fetch(`/panel/clientes/verificar?${consulta}`, {
                     headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin',
                     signal: cancelar.signal,
                 });
-                const { socios = [] } = await r.json();
-                const limpio = (t) => String(t ?? '').replace(/[^0-9kK]/g, '').toUpperCase();
+                const { por_rut = null, parecidos: otros = [] } = await r.json();
 
-                setRepetido(socios.find((s) => limpio(s.rut) === limpio(rut)) ?? null);
+                setRepetido(por_rut);
+                setParecidos(otros);
             } catch {
-                // Sin conexión o respuesta rara: se sigue sin el aviso.
+                // Sin conexión o respuesta rara: se sigue sin el aviso. El
+                // servidor rechaza el RUT repetido de todos modos.
             }
-        }, 400);
+        }, 450);
 
         return () => {
             clearTimeout(espera);
             cancelar.abort();
         };
-    }, [data.run_pasaporte, data.tipo_documento]);
+    }, [data.run_pasaporte, data.tipo_documento, data.celular, data.nombres, data.apellido_paterno]);
 
     // Un error en algo escondido no puede quedar escondido: se abre su parte.
     useEffect(() => {
@@ -671,20 +753,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                             {/* EL AVISO VA AQUÍ, pegado al campo y mientras se
                                 escribe: a los tres campos siguientes ya es tarde. */}
                             {repetido ? (
-                                <Nota titulo={`${repetido.nombre} ya está registrado con ese RUT`} className="mt-1" compacta>
-                                    <p>
-                                        {repetido.plan
-                                            ? `${repetido.plan}, vence el ${repetido.vence}.`
-                                            : 'Sin plan vigente.'}{' '}
-                                        {repetido.debe > 0 ? `Debe ${pesos.format(repetido.debe)}.` : ''}
-                                    </p>
-                                    <Link
-                                        href={`/panel/clientes/${repetido.uuid}`}
-                                        className="apoyo mt-1 inline-block text-chalk underline underline-offset-4"
-                                    >
-                                        Abrir su ficha y renovarle ahí
-                                    </Link>
-                                </Nota>
+                                <YaRegistrado socio={repetido} />
                             ) : esRut && data.run_pasaporte.trim().length >= 9 && ! rutValido(data.run_pasaporte) ? (
                                 <p className="apoyo mt-1 text-warn">
                                     Ese RUT no calza con su dígito verificador. Revísalo en el carnet.
@@ -715,6 +784,29 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                         >
                             <Texto {...texto('celular', { tipo: 'tel', inputMode: 'tel' })} />
                         </Campo>
+
+                        {/* Sin RUT que lo diga seguro, solo se sospecha: mismo
+                            celular o mismo nombre. Se avisa y no se bloquea, que
+                            dos hermanos pueden compartir teléfono. */}
+                        {! repetido && parecidos.length > 0 ? (
+                            <Nota titulo="¿Es alguna de estas personas?" compacta>
+                                <ul className="space-y-1">
+                                    {parecidos.map((p) => (
+                                        <li key={p.uuid} className="flex flex-wrap items-center justify-between gap-2">
+                                            <span>
+                                                <span className="text-chalk">{p.nombre}</span>
+                                                <span className="apoyo text-fog">
+                                                    {' · '}
+                                                    {p.porque}
+                                                    {p.rut ? ` · ${p.rut}` : ''}
+                                                </span>
+                                            </span>
+                                            <AccionDelRegistrado socio={p} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Nota>
+                        ) : null}
 
                         <Campo etiqueta="Correo" nombre="email" error={errors.email} ayuda="Opcional">
                             <Texto {...texto('email', { tipo: 'email' })} />

@@ -175,9 +175,28 @@ class AltaDeInscripcionTest extends CasoConCatalogos
         $this->assertSame(1, Inscripcion::where('id_cliente', $socio->id)->count());
     }
 
-    public function test_no_se_inscribe_a_un_socio_desactivado(): void
+    /**
+     * AL QUE VUELVE SE LE VENDE EL PLAN Y QUEDA ACTIVO, sin pasar por su ficha.
+     *
+     * Antes se rechazaba: había que reactivarlo primero. Con la persona
+     * esperando en el mesón, lo más rápido era crearlo de nuevo, y así nacían
+     * los duplicados. Casi todos los que vinieron de las planillas están de baja.
+     */
+    public function test_inscribir_a_uno_de_baja_lo_reactiva(): void
     {
         $socio = $this->socio(['activo' => false]);
+
+        $respuesta = $this->inscribir($this->formulario($socio));
+
+        $respuesta->assertSessionHasNoErrors();
+        $this->assertSame(1, Inscripcion::where('id_cliente', $socio->id)->count());
+        $this->assertTrue((bool) $socio->fresh()->activo);
+    }
+
+    /** Lo que sigue sin poder volver es quien pidió borrar sus datos. */
+    public function test_no_se_inscribe_a_quien_se_le_borraron_los_datos(): void
+    {
+        $socio = $this->socio(['activo' => false, 'datos_borrados_en' => now()]);
 
         $respuesta = $this->inscribir($this->formulario($socio));
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Support\SocioRepetido;
 use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
@@ -375,6 +376,36 @@ class ClienteController extends Controller
             'success',
             "{$cliente->nombres} {$cliente->apellido_paterno} queda desactivado. Su ficha y su historial siguen ahí."
         );
+    }
+
+    /**
+     * ¿Ya está registrado? Lo pregunta el alta MIENTRAS se escribe.
+     *
+     * Por RUT es seguro —mismo RUT, misma persona— y se busca también en la
+     * papelera y entre los de baja, que es donde se escondía el duplicado. Por
+     * celular o por nombre solo se sospecha: se enseña y se decide en el mesón.
+     */
+    public function verificar(Request $request)
+    {
+        $porRut = SocioRepetido::porRut($request->query('rut'));
+
+        $parecidos = SocioRepetido::parecidos(
+            $request->query('celular'),
+            $request->query('nombres'),
+            $request->query('apellido'),
+            $porRut?->id,
+        )->map(function (Cliente $c) use ($request) {
+            $numero = substr(preg_replace('/\D/', '', (string) $request->query('celular')), -8);
+            $mismoCelular = strlen($numero) === 8
+                && str_ends_with(preg_replace('/\D/', '', (string) $c->celular), $numero);
+
+            return SocioRepetido::comoSeLee($c, $mismoCelular ? 'mismo celular' : 'mismo nombre');
+        })->values();
+
+        return response()->json([
+            'por_rut' => $porRut ? SocioRepetido::comoSeLee($porRut) : null,
+            'parecidos' => $parecidos,
+        ]);
     }
 
     /**

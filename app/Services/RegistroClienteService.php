@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\SocioRepetido;
 use App\Models\Cliente;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
@@ -69,6 +70,7 @@ class RegistroClienteService
     {
         $flujo = $request->input('flujo_cliente', 'completo');
 
+        $this->dejarElRutEnSuForma($request);
         $cliente = $request->validate($this->reglasCliente(), $this->mensajesCliente());
 
         /*
@@ -149,6 +151,7 @@ class RegistroClienteService
      */
     public function validarEdicion(Request $request, Cliente $cliente): array
     {
+        $this->dejarElRutEnSuForma($request);
         $datos = $request->validate(
             $this->reglasCliente($cliente),
             $this->mensajesCliente()
@@ -354,7 +357,18 @@ class RegistroClienteService
             // digito verificador que comprobar. El alta dice cual de los dos es.
             'run_pasaporte' => [
                 'nullable',
-                Rule::unique('clientes', 'run_pasaporte')->ignore($actual?->id),
+                /*
+                 * REPETIDO SE MIRA SIN PUNTOS NI GUION, Y TAMBIÉN EN LA
+                 * PAPELERA. La regla de siempre comparaba el texto tal cual y
+                 * contra los socios vivos: «21410708-2» pasaba al lado de
+                 * «21.410.708-2», y el de la papelera chocaba con un mensaje
+                 * que no decía de quién era ni qué hacer.
+                 */
+                function ($attribute, $value, $fail) use ($actual) {
+                    if ($otro = SocioRepetido::porRut($value, $actual?->id)) {
+                        $fail(SocioRepetido::mensaje($otro));
+                    }
+                },
                 ...(request()->input('tipo_documento') === 'pasaporte'
                     ? ['string', 'max:20', 'regex:/^[A-Za-z0-9]+$/']
                     : [new RutValido()]),
@@ -379,6 +393,20 @@ class RegistroClienteService
             'telefono_emergencia' => ['nullable', 'string', 'regex:' . self::TELEFONO],
             'observaciones' => 'nullable|string|max:500',
         ];
+    }
+
+    /**
+     * «21410708-2» → «21.410.708-2». Así se guarda siempre igual, y la
+     * búsqueda y la regla de repetidos comparan lo mismo. El pasaporte se deja
+     * como viene.
+     */
+    private function dejarElRutEnSuForma(Request $request): void
+    {
+        if ($request->input('tipo_documento', 'rut') === 'pasaporte' || blank($request->input('run_pasaporte'))) {
+            return;
+        }
+
+        $request->merge(['run_pasaporte' => SocioRepetido::rut($request->input('run_pasaporte'))]);
     }
 
     /** Letras y espacios, y sin espacios dobles: «Juan  Pérez» es un desliz. */

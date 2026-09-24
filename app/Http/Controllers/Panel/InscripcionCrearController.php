@@ -145,11 +145,15 @@ class InscripcionCrearController extends Controller
         return $cliente ? $this->resumir($cliente) : null;
     }
 
-    /** Socios activos que hoy no tienen una membresía vigente ni pausada. */
+    /**
+     * Socios que hoy no tienen una membresía vigente ni pausada, ACTIVOS O DE
+     * BAJA: venderle un plan a uno de baja lo reactiva. Dejándolos fuera, el
+     * socio que volvía no aparecía al buscarlo y se le creaba otra ficha.
+     */
     private function inscribibles()
     {
         return Cliente::query()
-            ->where('activo', true)
+            ->whereNull('datos_borrados_en')
             ->whereDoesntHave('inscripciones', fn ($q) => $q->whereIn('id_estado', [
                 EstadosCodigo::INSCRIPCION_ACTIVA,
                 EstadosCodigo::INSCRIPCION_PAUSADA,
@@ -167,6 +171,8 @@ class InscripcionCrearController extends Controller
             'email' => $cliente->email,
             'celular' => $cliente->celular,
             'menor' => (bool) $cliente->es_menor_edad,
+            // Para decirlo al elegirlo: «de baja, se reactiva al venderle».
+            'de_baja' => ! $cliente->activo,
         ];
     }
 

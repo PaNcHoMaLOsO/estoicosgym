@@ -23,6 +23,8 @@ class Permisos
         'info-cambio-plan', 'buscar-clientes-traspaso', 'buscar-cliente',
         'buscar-cliente-individual', 'contar-destinatarios', 'obtener-destinatarios',
         'buscar',
+        // Preguntar si alguien ya está registrado: solo se mira.
+        'verificar',
         'preview', 'plantillas', 'editar', 'traspaso.show',
         // Ver e imprimir el contrato de un socio: solo se mira.
         'contrato.ver',
