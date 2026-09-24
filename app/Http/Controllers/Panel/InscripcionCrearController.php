@@ -140,6 +140,12 @@ class InscripcionCrearController extends Controller
             return null;
         }
 
+        // Solo si tiene forma de identificador: en PostgreSQL, comparar una
+        // columna uuid con cualquier otro texto revienta en vez de no encontrar.
+        if (! \Illuminate\Support\Str::isUuid($uuid)) {
+            return null;
+        }
+
         $cliente = $this->inscribibles()->where('uuid', $uuid)->first();
 
         return $cliente ? $this->resumir($cliente) : null;

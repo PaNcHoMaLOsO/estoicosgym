@@ -135,6 +135,12 @@ class PagoCrearController extends Controller
             return null;
         }
 
+        // Solo si tiene forma de identificador: en PostgreSQL, comparar una
+        // columna uuid con cualquier otro texto revienta en vez de no encontrar.
+        if (! \Illuminate\Support\Str::isUuid((string) $uuid)) {
+            return null;
+        }
+
         $inscripcion = $this->conSaldo()->where('uuid', $uuid)->first();
 
         return $inscripcion ? $this->resumir($inscripcion) : null;

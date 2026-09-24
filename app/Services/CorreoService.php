@@ -162,7 +162,17 @@ class CorreoService
      */
     private function elegidoEnConfiguracion(string $clave): string
     {
-        return trim($this->deConfiguracion($clave));
+        /*
+         * LO QUE ALGUIEN ELIGIÓ, no el valor por defecto del ajuste. Leyendo
+         * con Ajustes::obtener(), el «smtp» de fábrica contaba como elegido y
+         * el transporte del archivo del equipo no se usaba nunca, aunque nadie
+         * hubiera tocado la pantalla.
+         */
+        try {
+            return trim((string) \Illuminate\Support\Facades\DB::table('ajustes')->where('clave', $clave)->value('valor'));
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /** ¿Esa vía tiene con qué conectarse? No dice si la clave sirve. */

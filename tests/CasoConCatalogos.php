@@ -27,6 +27,29 @@ abstract class CasoConCatalogos extends TestCase
     {
         parent::setUp();
 
+        /*
+         * EN POSTGRESQL LA NUMERACIÓN NO VUELVE ATRÁS con la transacción de
+         * cada prueba: el primer plan de la segunda prueba sería el 6, no el 1,
+         * y el catálogo y las pruebas que dicen «el plan 4 es el mensual»
+         * dejarían de calzar. Se reinicia antes de sembrar, que es lo que en
+         * MySQL y SQLite pasa solo.
+         */
+        //
+        // Al siguiente del mayor que haya, no a 1: hay tablas que las propias
+        // migraciones dejan con filas —las plantillas de correo, los textos de
+        // la web— y empezar en 1 chocaría con ellas.
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+            $tablas = \Illuminate\Support\Facades\DB::select(
+                "SELECT table_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name = 'id' AND column_default LIKE 'nextval%'"
+            );
+
+            foreach ($tablas as $t) {
+                \Illuminate\Support\Facades\DB::select(
+                    "SELECT setval(pg_get_serial_sequence('\"{$t->table_name}\"', 'id'), COALESCE((SELECT MAX(id) FROM \"{$t->table_name}\"), 0) + 1, false)"
+                );
+            }
+        }
+
         $this->seed([
             RolesSeeder::class,
             EstadoSeeder::class,

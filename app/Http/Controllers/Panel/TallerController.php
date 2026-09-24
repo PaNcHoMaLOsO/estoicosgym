@@ -148,7 +148,9 @@ class TallerController extends Controller
     public function guardar(Request $request)
     {
         $datos = $request->validate([
-            'institucion_uuid' => 'nullable|string|exists:instituciones,uuid',
+            // «uuid» antes que «exists»: en PostgreSQL buscar un texto cualquiera
+            // en una columna uuid revienta en vez de decir que no existe.
+            'institucion_uuid' => 'nullable|uuid|exists:instituciones,uuid',
             'institucion_nombre' => 'required_without:institucion_uuid|nullable|string|max:160',
             'institucion_rut' => 'nullable|string|max:20',
             'nombre' => 'required|string|max:160',

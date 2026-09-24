@@ -138,7 +138,12 @@ class EmpezarDeCeroTest extends CasoConCatalogos
         $this->assertTrue($archivos->contains(fn (string $a) => str_ends_with($a, 'fotos/camila.jpg')), 'No quedó la foto.');
 
         $contenido = Storage::disk('local')->get($sql);
-        $this->assertStringContainsString('INSERT INTO `clientes`', $contenido);
+        // Con las comillas de la base que hay: invertidas en MySQL, dobles en
+        // PostgreSQL. Con las de la otra, el respaldo no se podría importar.
+        $this->assertStringContainsString(
+            \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' ? 'INSERT INTO "clientes"' : 'INSERT INTO `clientes`',
+            $contenido
+        );
 
         // Se importa y vuelve todo. La base de las pruebas no entiende el
         // SET FOREIGN_KEY_CHECKS de MySQL: se quita solo para probar.

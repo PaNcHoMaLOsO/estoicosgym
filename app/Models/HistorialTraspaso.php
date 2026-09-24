@@ -72,7 +72,15 @@ class HistorialTraspaso extends Model
      */
     public function resolveRouteBinding($value, $field = null)
     {
-        return $this->where('uuid', $value)->orWhere('id', $value)->firstOrFail();
+        // Por uuid o por número, según lo que llegue: en PostgreSQL comparar
+        // una columna uuid con un número —o un número con un texto— revienta.
+        if (\Illuminate\Support\Str::isUuid((string) $value)) {
+            return $this->where('uuid', $value)->firstOrFail();
+        }
+
+        abort_unless(ctype_digit((string) $value), 404);
+
+        return $this->where('id', (int) $value)->firstOrFail();
     }
 
     // ============================================

@@ -30,7 +30,9 @@ trait VuelveAlSocio
     {
         $uuid = (string) $request->input('volver', '');
 
-        if ($uuid !== '' && Cliente::where('uuid', $uuid)->exists()) {
+        // Solo si tiene forma de identificador: en PostgreSQL, comparar una
+        // columna uuid con cualquier otro texto revienta en vez de no encontrar.
+        if (\Illuminate\Support\Str::isUuid($uuid) && Cliente::where('uuid', $uuid)->exists()) {
             return route('panel.clientes.show', $uuid);
         }
 

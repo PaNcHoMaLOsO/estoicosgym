@@ -149,6 +149,12 @@ class NotificacionEnviarController extends Controller
             return null;
         }
 
+        // Solo si tiene forma de identificador: en PostgreSQL, comparar una
+        // columna uuid con cualquier otro texto revienta en vez de no encontrar.
+        if (! \Illuminate\Support\Str::isUuid((string) $uuid)) {
+            return null;
+        }
+
         $cliente = Cliente::where('uuid', $uuid)->first();
 
         // Sin correo no se puede: mejor abrir vacio y que se busque a otro,
