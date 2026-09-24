@@ -26,7 +26,7 @@
                 <p class="font-display text-lg tracking-wider text-pg-tiza/40">{{ str_pad(count($embajadores), 2, '0', STR_PAD_LEFT) }} atletas</p>
             </div>
 
-            <div class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4 lg:gap-4">
+            <div class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 md:grid-cols-4 lg:gap-4">
                 @foreach($embajadores as $i => $e)
                     <figure class="animate-on-scroll group relative aspect-[3/4] w-[72%] shrink-0 snap-start overflow-hidden bg-pg-carbon sm:w-auto" style="animation-delay: {{ ($i % 4) * 0.08 }}s">
                         @if($e['foto'])
