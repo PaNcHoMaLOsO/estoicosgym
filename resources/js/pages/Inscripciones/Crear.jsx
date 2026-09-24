@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeftIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
+import { ArrowLeftIcon, UserPlusIcon } from 'lucide-react';
 
+import Cobro, { Botones, detalleDePartes, metodoPorDefecto, partesIniciales } from '@/components/Cobro';
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
@@ -13,12 +14,6 @@ const pesos = new Intl.NumberFormat('es-CL', {
     maximumFractionDigits: 0,
 });
 
-const FORMAS = [
-    { valor: 'completo', etiqueta: 'Paga el plan completo' },
-    { valor: 'abono', etiqueta: 'Abona una parte' },
-    { valor: 'mixto', etiqueta: 'Reparte entre varios métodos' },
-    { valor: 'pendiente', etiqueta: 'No paga ahora' },
-];
 
 /**
  * Alta de inscripcion.
@@ -79,7 +74,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
 
     // Las partes del pago mixto viven aparte del formulario: son una lista que
     // crece y el backend las espera como un solo campo JSON.
-    const [partes, setPartes] = useState([{ id_metodo_pago: '', monto: '' }]);
+    const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
 
     const { data, setData, post, processing, errors } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
@@ -94,7 +89,8 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         observaciones: '',
         tipo_pago: 'completo',
         monto_abonado: '',
-        id_metodo_pago: '',
+        // Marcado en efectivo: es lo que más se usa en el mesón.
+        id_metodo_pago: metodoPorDefecto(metodosPago),
         detalle_pagos_mixto: '',
         fecha_pago: hoy,
     });
@@ -159,7 +155,6 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
 
     const total = cuenta?.final ?? 0;
 
-    const sumaPartes = partes.reduce((t, p) => t + (Number(p.monto) || 0), 0);
 
     function elegirSocio(cliente) {
         setSocio(cliente);
@@ -173,9 +168,6 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         setData('id_cliente', '');
     }
 
-    function cambiarParte(indice, campo, valor) {
-        setPartes(partes.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p)));
-    }
 
     function enviar(e) {
         e.preventDefault();
@@ -184,13 +176,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         // se manda tambien: queda escrito en las observaciones del pago, y si
         // manana se renombra el metodo, el recibo viejo sigue diciendo con que
         // se pago de verdad.
-        const detalle = partes
-            .filter((p) => p.id_metodo_pago && Number(p.monto) > 0)
-            .map((p) => ({
-                id_metodo_pago: Number(p.id_metodo_pago),
-                monto: Number(p.monto),
-                metodo_nombre: metodosPago.find((m) => String(m.id) === String(p.id_metodo_pago))?.nombre,
-            }));
+        const detalle = detalleDePartes(partes, metodosPago);
 
         post('/panel/inscripciones', {
             preserveScroll: true,
@@ -198,12 +184,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         });
     }
 
-    const opcionesPlan = membresias.map((m) => ({
-        valor: String(m.id),
-        etiqueta: `${m.nombre} · ${m.duracion} · ${pesos.format(m.precio)}`,
-    }));
 
-    const opcionesMetodo = metodosPago.map((m) => ({ valor: String(m.id), etiqueta: m.nombre }));
 
     return (
         <>
@@ -347,12 +328,18 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                         : undefined
                                 }
                             >
-                                <Seleccion
-                                    nombre="id_membresia"
+                                {/* Un toque y no tres: son cuatro o cinco planes, y en un
+                                    desplegable el precio queda escondido hasta abrirlo. */}
+                                <Botones
+                                    nombre="Plan"
                                     valor={data.id_membresia}
-                                    alCambiar={(v) => setData('id_membresia', v)}
-                                    opciones={opcionesPlan}
-                                    vacio="Elige un plan…"
+                                    alElegir={(v) => setData('id_membresia', String(v))}
+                                    columnas="grid-cols-2 sm:grid-cols-3"
+                                    opciones={membresias.map((m) => ({
+                                        valor: String(m.id),
+                                        etiqueta: m.nombre,
+                                        pie: `${m.duracion} · ${pesos.format(m.precio)}`,
+                                    }))}
                                 />
                             </Campo>
 
@@ -479,133 +466,24 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
 
                         {plan ? (
                             <Grupo titulo="¿Cómo paga?">
-                                <Campo etiqueta="Forma de pago" nombre="tipo_pago" error={errors.tipo_pago} requerido>
-                                    <Seleccion
-                                        nombre="tipo_pago"
-                                        valor={data.tipo_pago}
-                                        alCambiar={(v) => setData('tipo_pago', v)}
-                                        opciones={FORMAS}
-                                        vacio={null}
-                                    />
-                                </Campo>
+                                <Cobro
+                                    total={total}
+                                    forma={data.tipo_pago}
+                                    alCambiarForma={(v) => setData('tipo_pago', v)}
+                                    monto={data.monto_abonado}
+                                    alCambiarMonto={(v) => setData('monto_abonado', v)}
+                                    metodo={data.id_metodo_pago}
+                                    alCambiarMetodo={(v) => setData('id_metodo_pago', v)}
+                                    metodosPago={metodosPago}
+                                    partes={partes}
+                                    setPartes={setPartes}
+                                    errores={errors}
+                                />
 
                                 {data.tipo_pago === 'pendiente' ? (
                                     <Nota compacta>
-                                        Queda inscrito debiendo {pesos.format(total)}. Aparecerá en Pagos como
-                                        pendiente de cobro.
+                                        Queda inscrito debiendo {pesos.format(total)}. Aparecerá en Pagos como pendiente de cobro.
                                     </Nota>
-                                ) : null}
-
-                                {data.tipo_pago === 'completo' || data.tipo_pago === 'abono' ? (
-                                    <>
-                                        <Campo
-                                            etiqueta="Monto"
-                                            nombre="monto_abonado"
-                                            error={errors.monto_abonado}
-                                            requerido
-                                            ayuda={
-                                                data.tipo_pago === 'abono'
-                                                    ? `Menos de ${pesos.format(total)}. El resto queda por cobrar.`
-                                                    : `El total es ${pesos.format(total)}.`
-                                            }
-                                        >
-                                            <Texto
-                                                nombre="monto_abonado"
-                                                tipo="number"
-                                                min="1"
-                                                valor={data.monto_abonado}
-                                                alCambiar={(v) => setData('monto_abonado', v)}
-                                                placeholder={String(total)}
-                                            />
-                                        </Campo>
-
-                                        <Campo
-                                            etiqueta="Método"
-                                            nombre="id_metodo_pago"
-                                            error={errors.id_metodo_pago}
-                                            requerido
-                                        >
-                                            <Seleccion
-                                                nombre="id_metodo_pago"
-                                                valor={data.id_metodo_pago}
-                                                alCambiar={(v) => setData('id_metodo_pago', v)}
-                                                opciones={opcionesMetodo}
-                                            />
-                                        </Campo>
-                                    </>
-                                ) : null}
-
-                                {data.tipo_pago === 'mixto' ? (
-                                    <Campo
-                                        etiqueta="Reparto"
-                                        nombre="detalle_pagos_mixto"
-                                        error={errors.detalle_pagos_mixto}
-                                        requerido
-                                        ayuda="Una línea por método. Pueden sumar menos que el total: lo que falte queda por cobrar."
-                                    >
-                                        <div className="space-y-2">
-                                            {partes.map((parte, i) => (
-                                                <div key={i} className="flex gap-2">
-                                                    <select
-                                                        value={parte.id_metodo_pago}
-                                                        onChange={(e) =>
-                                                            cambiarParte(i, 'id_metodo_pago', e.target.value)
-                                                        }
-                                                        className="min-w-0 flex-1 rounded-control border border-line bg-surface px-2 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
-                                                    >
-                                                        <option value="">Método…</option>
-                                                        {metodosPago.map((m) => (
-                                                            <option key={m.id} value={m.id}>
-                                                                {m.nombre}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={parte.monto}
-                                                        onChange={(e) => cambiarParte(i, 'monto', e.target.value)}
-                                                        placeholder="Monto"
-                                                        className="w-32 rounded-control border border-line bg-surface px-2 py-1.5 text-sm tabular-nums text-chalk focus:border-line-strong focus:outline-none"
-                                                    />
-
-                                                    {/* Con una sola parte no hay nada que quitar. */}
-                                                    {partes.length > 1 ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setPartes(partes.filter((_, j) => j !== i))
-                                                            }
-                                                            aria-label={`Quitar la parte ${i + 1}`}
-                                                            className="shrink-0 rounded-control border border-line px-2 text-fog transition-colors hover:text-danger"
-                                                        >
-                                                            <TrashIcon className="size-4" aria-hidden="true" />
-                                                        </button>
-                                                    ) : null}
-                                                </div>
-                                            ))}
-
-                                            <div className="flex items-center justify-between gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setPartes([...partes, { id_metodo_pago: '', monto: '' }])
-                                                    }
-                                                    className="apoyo text-fog transition-colors hover:text-chalk"
-                                                >
-                                                    Agregar otro método
-                                                </button>
-
-                                                <p className="apoyo tabular-nums text-fog">
-                                                    Suma {pesos.format(sumaPartes)} de {pesos.format(total)}
-                                                    {sumaPartes > total ? (
-                                                        <span className="ml-1 text-danger">· se pasa</span>
-                                                    ) : null}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Campo>
                                 ) : null}
 
                                 {data.tipo_pago !== 'pendiente' ? (

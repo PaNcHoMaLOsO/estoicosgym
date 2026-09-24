@@ -292,12 +292,12 @@ class RenovacionTest extends CasoConCatalogos
         $this->assertEquals(100000, $nueva->precio_final);
     }
 
-    /** No se puede cobrar de más al renovar, igual que en el alta. */
+    /** No se puede cobrar de más al renovar: un abono mayor que el precio se rechaza. */
     public function test_no_se_cobra_mas_que_el_precio_del_plan(): void
     {
         $anterior = $this->porVencer();
 
-        $this->renovar($anterior, ['monto_abonado' => 90000])
+        $this->renovar($anterior, ['tipo_pago' => 'abono', 'monto_abonado' => 90000])
             ->assertSessionHasErrors('monto_abonado');
 
         $this->assertSame(0, Inscripcion::where('id_inscripcion_anterior', $anterior->id)->count());

@@ -287,16 +287,36 @@ class AltaDeInscripcionTest extends CasoConCatalogos
         $this->assertSame(0, Inscripcion::where('id_cliente', $socio->id)->count());
     }
 
-    /** No se puede cobrar más de lo que vale. */
-    public function test_no_se_cobra_mas_que_el_precio_final(): void
+    /**
+     * «TODO» ES EL TOTAL, NO LO QUE SE ESCRIBA.
+     *
+     * Antes se leía el monto del campo: de más se rechazaba, pero de menos
+     * quedaba un pago llamado «completo» con saldo pendiente, que los informes
+     * leían como pagado y «por cobrar» como deuda a la vez.
+     */
+    public function test_pagar_todo_cobra_el_total_exacto(): void
+    {
+        foreach ([60000, 10000, null] as $escrito) {
+            $socio = $this->socio();
+
+            $this->inscribir($this->formulario($socio, ['monto_abonado' => $escrito]))
+                ->assertSessionHasNoErrors();
+
+            $pago = Pago::where('id_cliente', $socio->id)->firstOrFail();
+
+            $this->assertEquals(40000, $pago->monto_abonado);
+            $this->assertEquals(0, $pago->monto_pendiente);
+            $this->assertSame(self::ESTADO_PAGO_PAGADO, (int) $pago->id_estado);
+        }
+    }
+
+    /** Un abono sí se lee del campo, y no puede pasar del precio. */
+    public function test_un_abono_no_pasa_del_precio(): void
     {
         $socio = $this->socio();
 
-        $respuesta = $this->inscribir($this->formulario($socio, [
-            'monto_abonado' => 60000,
-        ]));
-
-        $respuesta->assertSessionHasErrors('monto_abonado');
+        $this->inscribir($this->formulario($socio, ['tipo_pago' => 'abono', 'monto_abonado' => 60000]))
+            ->assertSessionHasErrors('monto_abonado');
     }
 
     /** Un reparto entre dos métodos son dos filas, una por método. */

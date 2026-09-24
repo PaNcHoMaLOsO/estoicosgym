@@ -293,7 +293,17 @@ class RegistroInscripcionService
             return $this->abonosMixtos($request, $final);
         }
 
-        $monto = (int) round((float) $request->input('monto_abonado', 0));
+        /*
+         * «PAGA EL PLAN COMPLETO» ES EL TOTAL, NO LO QUE SE ESCRIBA.
+         *
+         * Se leía del campo monto: si alguien escribía menos —o el precio
+         * cambiaba por un convenio después de escribirlo—, quedaba un pago
+         * llamado «completo» con saldo pendiente, que los informes leían como
+         * pagado y «por cobrar» como deuda a la vez.
+         */
+        $monto = $forma === 'completo'
+            ? $final
+            : (int) round((float) $request->input('monto_abonado', 0));
 
         if ($monto > $final) {
             throw ValidationException::withMessages([
@@ -470,6 +480,10 @@ class RegistroInscripcionService
 
         if ($forma === 'mixto') {
             $reglas['detalle_pagos_mixto'] = 'required|string';
+            $reglas['fecha_pago'] = 'required|date';
+        } elseif ($forma === 'completo') {
+            // «Todo» no pregunta cuánto: es el total, y lo pone abonos().
+            $reglas['id_metodo_pago'] = 'required|exists:metodos_pago,id';
             $reglas['fecha_pago'] = 'required|date';
         } elseif ($forma !== 'pendiente') {
             $reglas['monto_abonado'] = 'required|numeric|min:1';
