@@ -48,11 +48,12 @@ class BuscarSocioController extends Controller
                     $sinFormato = preg_replace('/[^0-9kK]/', '', $palabra);
 
                     $q->where(function ($q) use ($palabra, $sinFormato) {
-                        $q->where('nombres', 'like', "%{$palabra}%")
-                            ->orWhere('apellido_paterno', 'like', "%{$palabra}%")
-                            ->orWhere('apellido_materno', 'like', "%{$palabra}%")
-                            ->orWhere('run_pasaporte', 'like', "%{$palabra}%")
-                            ->orWhere('celular', 'like', "%{$palabra}%");
+                        // Sin mirar mayúsculas ni tildes, también en PostgreSQL.
+                        $q->whereParecido('nombres', "%{$palabra}%")
+                            ->orWhereParecido('apellido_paterno', "%{$palabra}%")
+                            ->orWhereParecido('apellido_materno', "%{$palabra}%")
+                            ->orWhereParecido('run_pasaporte', "%{$palabra}%")
+                            ->orWhereParecido('celular', "%{$palabra}%");
 
                         if ($sinFormato !== '') {
                             $q->orWhereRaw(

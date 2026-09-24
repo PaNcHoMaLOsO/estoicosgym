@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Buscar sin mirar mayúsculas ni tildes también en PostgreSQL, que es
+        // lo que usa el servidor: ver App\Support\Parecido.
+        \App\Support\Parecido::registrar();
     }
 }

@@ -90,9 +90,10 @@ class SocioRepetido
                 }
 
                 if ($porNombre) {
+                    // Sin mirar mayúsculas ni tildes: «hernandez» es Hernández.
                     $q->orWhere(fn ($q) => $q
-                        ->whereRaw('LOWER(nombres) LIKE ?', ["{$primerNombre}%"])
-                        ->whereRaw('LOWER(apellido_paterno) = ?', [$apellido]));
+                        ->whereParecido('nombres', "{$primerNombre}%")
+                        ->whereParecido('apellido_paterno', $apellido));
                 }
             })
             ->when($ignorar, fn ($q) => $q->where('id', '!=', $ignorar))

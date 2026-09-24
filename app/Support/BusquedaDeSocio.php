@@ -70,11 +70,14 @@ class BusquedaDeSocio
                 $numeros = preg_replace('/\D/', '', $palabra);
 
                 $q->orWhere(function (Builder $q) use ($palabra, $numeros) {
-                    $q->where('nombres', 'like', "%{$palabra}%")
-                        ->orWhere('apellido_paterno', 'like', "%{$palabra}%")
-                        ->orWhere('apellido_materno', 'like', "%{$palabra}%")
-                        ->orWhere('run_pasaporte', 'like', "%{$palabra}%")
-                        ->orWhere('email', 'like', "%{$palabra}%");
+                    // «Parecido» y no «like»: en PostgreSQL LIKE distingue
+                    // mayúsculas y tildes, y «hernandez» no encontraba a
+                    // «Hernández». Ver App\Support\Parecido.
+                    $q->whereParecido('nombres', "%{$palabra}%")
+                        ->orWhereParecido('apellido_paterno', "%{$palabra}%")
+                        ->orWhereParecido('apellido_materno', "%{$palabra}%")
+                        ->orWhereParecido('run_pasaporte', "%{$palabra}%")
+                        ->orWhereParecido('email', "%{$palabra}%");
 
                     // El celular, igual que el RUT: guardado con espacios o con
                     // +56, y tecleado a secas.

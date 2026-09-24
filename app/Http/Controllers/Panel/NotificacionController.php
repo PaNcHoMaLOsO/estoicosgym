@@ -31,8 +31,8 @@ class NotificacionController extends Controller
             ->when($soloFallidas, fn ($q) => $q->where('id_estado', self::FALLIDA))
             // Agrupado: sin el paréntesis, el «o el asunto» se saltaba el filtro de fallidas.
             ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->where(fn ($q) => $q->where('email_destino', 'like', "%{$busqueda}%")
-                    ->orWhere('asunto', 'like', "%{$busqueda}%"));
+                $q->where(fn ($q) => $q->whereParecido('email_destino', "%{$busqueda}%")
+                    ->orWhereParecido('asunto', "%{$busqueda}%"));
             })
             ->orderByDesc('created_at')
             ->paginate(25)

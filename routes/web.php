@@ -73,6 +73,15 @@ Route::middleware('guest')->group(function () {
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+
+        // EL CORREO SIN MIRAR MAYÚSCULAS. En MySQL daba igual; en PostgreSQL
+        // —el del servidor— «Admin@progym.cl» no es «admin@progym.cl» y la
+        // cuenta no entraba. Se busca la cuenta sin mayúsculas y se intenta
+        // con el correo tal como está guardado.
+        $guardado = \App\Models\User::whereRaw('LOWER(email) = ?', [mb_strtolower($credentials['email'])])->value('email');
+        if ($guardado) {
+            $credentials['email'] = $guardado;
+        }
         
         // Solo cuentas activas: una desactivada en Configuración → Usuarios no
         // entra, aunque la contraseña sea la correcta.
@@ -231,7 +240,8 @@ Route::middleware('guest')->group(function () {
         // a cualquiera —sin sesion— que direcciones estan registradas.
         $neutro = 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
 
-        $user = \App\Models\User::where('email', request('email'))->first();
+        // Sin mirar mayúsculas: en PostgreSQL el correo se compara tal cual.
+        $user = \App\Models\User::whereRaw('LOWER(email) = ?', [mb_strtolower((string) request('email'))])->first();
 
         if ($user) {
             // Token nuevo, guardado hasheado y que caduca a la hora: el mismo
@@ -319,7 +329,8 @@ Route::middleware('guest')->group(function () {
         }
         
         // Actualizar contraseña
-        $user = \App\Models\User::where('email', request('email'))->first();
+        // Sin mirar mayúsculas: en PostgreSQL el correo se compara tal cual.
+        $user = \App\Models\User::whereRaw('LOWER(email) = ?', [mb_strtolower((string) request('email'))])->first();
         if (!$user) {
             return back()->withErrors(['email' => 'No encontramos un usuario con ese correo.']);
         }

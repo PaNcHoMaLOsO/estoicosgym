@@ -101,7 +101,9 @@ class EmpezarDeCero extends Command
 
         $this->info('Listo: el sistema quedó sin socios ni movimientos. La configuración sigue igual.');
         $this->line('Respaldo de lo borrado: ' . Storage::disk('local')->path($carpeta));
-        $this->line('Para devolverlo, se importa datos.sql en phpMyAdmin.');
+        $this->line(DB::getDriverName() === 'pgsql'
+            ? 'Para devolverlo: psql -f datos.sql sobre la misma base.'
+            : 'Para devolverlo, se importa datos.sql en phpMyAdmin.');
 
         return self::SUCCESS;
     }
@@ -114,9 +116,18 @@ class EmpezarDeCero extends Command
     {
         $pdo = DB::getPdo();
 
+        /*
+         * EN EL IDIOMA DE LA BASE QUE HAY. Estaba escrito para MySQL —comillas
+         * invertidas, SET FOREIGN_KEY_CHECKS— y en PostgreSQL, el del servidor,
+         * el respaldo no se podía volver a importar: justo cuando hace falta.
+         */
+        $postgres = DB::getDriverName() === 'pgsql';
+        $nombre = fn (string $n) => $postgres ? '"' . $n . '"' : '`' . $n . '`';
+
         $sql = '-- Respaldo antes de datos:empezar-de-cero, ' . now()->toDateTimeString() . "\n"
-            . "-- Para devolverlo: importar este archivo en phpMyAdmin.\n\n"
-            . "SET FOREIGN_KEY_CHECKS=0;\n";
+            . ($postgres
+                ? "-- Para devolverlo: psql -f datos.sql\n\nSET session_replication_role = replica;\n"
+                : "-- Para devolverlo: importar este archivo en phpMyAdmin.\n\nSET FOREIGN_KEY_CHECKS=0;\n");
 
         foreach (array_reverse(self::TABLAS) as $tabla) {
             $sql .= "\n-- {$tabla}\n";
@@ -125,26 +136,26 @@ class EmpezarDeCero extends Command
 
             foreach (DB::table($tabla)->cursor() as $fila) {
                 $fila = (array) $fila;
-                $columnas ??= '(`' . implode('`, `', array_keys($fila)) . '`)';
+                $columnas ??= '(' . implode(', ', array_map($nombre, array_keys($fila))) . ')';
 
                 $lote[] = '(' . implode(', ', array_map(fn ($valor) => match (true) {
                     $valor === null => 'NULL',
-                    is_bool($valor) => $valor ? '1' : '0',
+                    is_bool($valor) => $postgres ? ($valor ? 'true' : 'false') : ($valor ? '1' : '0'),
                     is_int($valor), is_float($valor) => (string) $valor,
                     default => $pdo->quote((string) $valor),
                 }, $fila)) . ')';
 
                 if (count($lote) === 100) {
-                    $sql .= "INSERT INTO `{$tabla}` {$columnas} VALUES\n" . implode(",\n", $lote) . ";\n";
+                    $sql .= 'INSERT INTO ' . $nombre($tabla) . " {$columnas} VALUES\n" . implode(",\n", $lote) . ";\n";
                     $lote = [];
                 }
             }
 
             if ($lote !== []) {
-                $sql .= "INSERT INTO `{$tabla}` {$columnas} VALUES\n" . implode(",\n", $lote) . ";\n";
+                $sql .= 'INSERT INTO ' . $nombre($tabla) . " {$columnas} VALUES\n" . implode(",\n", $lote) . ";\n";
             }
         }
 
-        return $sql . "\nSET FOREIGN_KEY_CHECKS=1;\n";
+        return $sql . ($postgres ? "\nSET session_replication_role = DEFAULT;\n" : "\nSET FOREIGN_KEY_CHECKS=1;\n");
     }
 }

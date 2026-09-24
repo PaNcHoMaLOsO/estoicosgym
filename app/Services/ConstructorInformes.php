@@ -523,7 +523,7 @@ class ConstructorInformes
             }
 
             match ($columna['tipo']) {
-                'texto' => $consulta->where($campo, 'like', '%' . $valor . '%'),
+                'texto' => $consulta->whereParecido($campo, '%' . $valor . '%'),
                 'numero', 'moneda' => $consulta->where($campo, $valor),
                 'estado', 'opciones' => $consulta->where($campo, $valor),
                 'booleano' => $consulta->where($campo, in_array($valor, ['1', 1, true, 'true'], true)),

@@ -38,10 +38,10 @@ return new class extends Migration
             $id = DB::table('metodos_pago')->insertGetId([
                 'nombre' => 'Sin registrar',
                 'descripcion' => 'Pagos traídos de las planillas antiguas: no quedó anotado si fueron en efectivo o por transferencia.',
-                'requiere_comprobante' => 0,
+                'requiere_comprobante' => false,
                 // Apagado: no se ofrece al cobrar. De hoy en adelante el medio
                 // se elige de verdad.
-                'activo' => 0,
+                'activo' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -46,6 +46,20 @@ return Application::configure(basePath: dirname(__DIR__))
          * en una ventana. Igual que al salir: se va de verdad a la pantalla de
          * entrar.
          */
+        /*
+         * UN IDENTIFICADOR MAL ESCRITO ES «NO EXISTE», NO UN ERROR.
+         *
+         * En PostgreSQL las columnas uuid son de ese tipo de verdad, y buscar
+         * «/panel/clientes/abc» revienta con «invalid input syntax for type
+         * uuid» en vez de decir que no existe: un 500 por un enlace roto. En
+         * MySQL era texto y simplemente no encontraba nada.
+         */
+        $exceptions->map(\Illuminate\Database\QueryException::class, function (\Illuminate\Database\QueryException $e) {
+            return $e->getCode() === '22P02'
+                ? new \Symfony\Component\HttpKernel\Exception\NotFoundHttpException('No existe.', $e)
+                : $e;
+        });
+
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
             if ($request->header('X-Inertia')) {
                 return \Inertia\Inertia::location(route('login'));
