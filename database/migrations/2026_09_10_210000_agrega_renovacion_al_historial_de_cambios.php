@@ -56,6 +56,18 @@ return new class extends Migration
     /** @param list<string> $valores */
     private function admitir(array $valores): void
     {
+        // En PostgreSQL un enum es un texto con una restricción CHECK, y
+        // ->change() arma una sentencia que PostgreSQL no acepta. Se cambia
+        // la restricción a mano: la vieja fuera, la nueva con la lista ancha.
+        if (DB::getDriverName() === 'pgsql') {
+            $lista = implode(', ', array_map(fn (string $v) => "'" . $v . "'", $valores));
+
+            DB::statement('ALTER TABLE historial_cambios DROP CONSTRAINT IF EXISTS historial_cambios_tipo_cambio_check');
+            DB::statement("ALTER TABLE historial_cambios ADD CONSTRAINT historial_cambios_tipo_cambio_check CHECK (tipo_cambio IN ({$lista}))");
+
+            return;
+        }
+
         Schema::table('historial_cambios', function (Blueprint $tabla) use ($valores) {
             $tabla->enum('tipo_cambio', $valores)->change();
         });

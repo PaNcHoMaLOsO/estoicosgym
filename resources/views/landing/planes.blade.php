@@ -104,10 +104,6 @@
                             @endif
                         </div>
 
-                        @if($plan['descripcion'])
-                            <p class="hidden lg:block mt-4 text-pg-tiza/60 font-modern text-sm leading-relaxed">{{ $plan['descripcion'] }}</p>
-                        @endif
-
                         <div class="col-start-2 lg:mt-auto lg:pt-6">
                             <a href="{{ route('landing.contacto') }}" data-evento="elegir_plan" data-plan="{{ $plan['nombre'] }}" class="ml-auto block w-28 lg:w-full text-center whitespace-nowrap px-4 py-2 lg:py-3 rounded-lg font-semibold transition-colors font-modern text-sm {{ $plan['destacado'] ? 'bg-pg-rojo hover:bg-pg-rojo-oscuro text-white' : 'border border-pg-tiza/20 text-pg-tiza hover:border-pg-rojo hover:text-pg-rojo-claro' }}">
                                 Lo quiero
