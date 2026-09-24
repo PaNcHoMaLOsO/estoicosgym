@@ -37,5 +37,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        /*
+         * LA SESIÓN QUE CADUCA CON EL PANEL ABIERTO.
+         *
+         * Quien deja el panel abierto y vuelve al rato hace clic en algo, el
+         * servidor ve que ya no hay sesión y lo manda a entrar. Pero esa
+         * pantalla no es del panel, y el panel la pintaba ENCIMA de sí mismo,
+         * en una ventana. Igual que al salir: se va de verdad a la pantalla de
+         * entrar.
+         */
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->header('X-Inertia')) {
+                return \Inertia\Inertia::location(route('login'));
+            }
+
+            return null;
+        });
     })->create();

@@ -144,4 +144,53 @@ class RecuperarClaveTest extends CasoConCatalogos
         // puede armar el enlace con lo que hay ahi.
         $this->assertStringStartsWith('$2y$', $guardado, 'El token se guardó en claro.');
     }
+    /**
+     * DESDE EL TÚNEL NO SE VE EL ENLACE, NUNCA.
+     *
+     * En modo desarrollo el enlace para cambiar la clave salía en pantalla a
+     * cualquiera que escribiera el correo de un usuario. Con la web abierta a
+     * internet por un túnel, eso era entregar la cuenta del administrador.
+     * Ahora solo sale si el correo falló y quien lo pide está en este equipo.
+     */
+    public function test_desde_fuera_de_este_equipo_el_enlace_no_sale_en_pantalla(): void
+    {
+        $this->app['env'] = 'local';
+        $usuario = $this->usuario();
+
+        // El correo no sale —sin clave de prueba—, que es justo cuando antes
+        // se mostraba el enlace. Y se pide desde la dirección del túnel.
+        config(['mail.mailers.smtp.password' => '', 'correo.transporte' => 'smtp']);
+
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->post('http://algo-random.trycloudflare.com/forgot-password', ['email' => $usuario->email])
+            ->assertRedirect();
+
+        $this->assertStringNotContainsString('[dev]', (string) session('status'));
+        $this->assertStringNotContainsString('reset-password', (string) session('status'));
+    }
+
+    /**
+     * SALIR NO PINTA LA PANTALLA DE ENTRAR DENTRO DEL PANEL.
+     *
+     * El botón «Salir» pide la salida por dentro del panel, y con un redirect
+     * a secas el panel recibía la página de entrar y la mostraba encima de sí
+     * mismo, en una ventana. Ahora el navegador se va de verdad.
+     */
+    public function test_salir_desde_el_panel_es_una_visita_completa(): void
+    {
+        $this->actingAs($this->usuario())
+            ->post('/logout', [], ['X-Inertia' => 'true'])
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', '/login');
+
+        $this->assertGuest();
+    }
+
+    /** Y lo mismo si la sesión caducó con el panel abierto. */
+    public function test_una_sesion_caducada_manda_a_entrar_sin_ventana(): void
+    {
+        $this->get('/panel', ['X-Inertia' => 'true'])
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', route('login'));
+    }
 }

@@ -243,16 +243,29 @@ Route::middleware('guest')->group(function () {
             // del admin reseteaba su clave SIN entrar a su buzon: toma de cuenta
             // completa. Si el correo no esta configurado el envio falla y queda
             // en el log, pero el token JAMAS vuelve al navegador.
+            $salio = true;
+
             try {
                 \App\Support\EnlaceDeClave::mandar($user, $enlace);
             } catch (\Throwable $e) {
+                $salio = false;
                 \Illuminate\Support\Facades\Log::error('No se pudo enviar el correo de recuperación: ' . $e->getMessage());
             }
 
-            // Solo en desarrollo, y siguiendo el mismo criterio que el dev_code
-            // del 2FA: en local el enlace se muestra para poder probar sin correo
-            // configurado. En produccion esta rama no existe.
-            if (app()->environment('local', 'development')) {
+            /*
+             * EL ENLACE EN PANTALLA, SOLO SI NO HAY OTRA FORMA Y SOLO AQUÍ.
+             *
+             * En desarrollo se mostraba SIEMPRE, y este equipo corre en modo
+             * desarrollo. Con la web abierta a internet por un túnel, cualquiera
+             * que escribiera el correo del administrador recibía en pantalla el
+             * enlace para cambiarle la clave: la cuenta entera, sin tocar su
+             * buzón. Ahora sale solo si el correo NO se pudo mandar y quien lo
+             * pide está sentado en este computador —la dirección es localhost,
+             * no la del túnel—.
+             */
+            $enEsteEquipo = in_array(request()->getHost(), ['localhost', '127.0.0.1', '::1'], true);
+
+            if (! $salio && $enEsteEquipo && app()->environment('local', 'development')) {
                 return back()->with('status', $neutro . ' [dev] ' . $enlace);
             }
         }
@@ -325,6 +338,20 @@ Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
+
+    /*
+     * DESDE EL PANEL, UNA VISITA COMPLETA y no una respuesta del panel.
+     *
+     * El botón «Salir» pide la salida por dentro del panel (Inertia), y la
+     * pantalla de entrar NO es del panel: es una página normal. Con un
+     * redirect a secas, el panel recibía esa página y la mostraba ENCIMA de
+     * sí mismo, en una ventana, con el menú todavía detrás. Así el navegador
+     * se va de verdad a la pantalla de entrar.
+     */
+    if (request()->header('X-Inertia')) {
+        return \Inertia\Inertia::location('/login');
+    }
+
     return redirect('/login');
 })->middleware('auth')->name('logout');
 
