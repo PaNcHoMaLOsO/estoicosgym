@@ -250,4 +250,42 @@ class ContenidosWebTest extends CasoConCatalogos
         $this->flushSession();
         $this->get('/contacto')->assertOk()->assertDontSee('¿Abren los domingos?');
     }
+    /**
+     * LA FOTO VERTICAL DEL CELULAR TAMBIÉN SE ACHICA, y queda en WebP.
+     *
+     * Se achicaba solo a lo ancho: una de 1152 × 2048 pasaba entera y pesaba
+     * 400 KB. La galería completa eran más de 3 MB.
+     */
+    public function test_una_foto_vertical_se_achica_por_el_lado_largo_y_en_webp(): void
+    {
+        $this->admin()->post('/panel/web/foto', [
+            'titulo' => 'Sala de máquinas',
+            'imagen' => UploadedFile::fake()->image('vertical.jpg', 1152, 2048),
+        ])->assertSessionHasNoErrors();
+
+        $foto = ContenidoWeb::where('tipo', 'foto')->firstOrFail();
+        [$ancho, $alto, $tipo] = getimagesize(Storage::disk('public')->path($foto->imagen));
+
+        $this->assertSame(1600, $alto);
+        $this->assertSame(900, $ancho);
+        $this->assertSame(IMAGETYPE_WEBP, $tipo);
+    }
+
+    /** Y el comando aligera las que ya estaban, sin borrar la original si no se pide. */
+    public function test_aligerar_las_fotos_viejas_conserva_la_original(): void
+    {
+        $vieja = UploadedFile::fake()->image('vieja.jpg', 1152, 2048);
+        Storage::disk('public')->putFileAs('web', $vieja, 'vieja.jpg');
+        $foto = ContenidoWeb::create(['tipo' => 'foto', 'titulo' => 'Sala', 'imagen' => 'web/vieja.jpg', 'activo' => true]);
+
+        $this->artisan('web:aligerar-fotos --confirmar')->assertSuccessful();
+
+        $foto->refresh();
+
+        $this->assertStringEndsWith('.webp', $foto->imagen);
+        Storage::disk('public')->assertExists($foto->imagen);
+        // La original se queda: viaja en git, y borrarla dejaría al servidor
+        // sin foto antes de que alcance a correr esto.
+        Storage::disk('public')->assertExists('web/vieja.jpg');
+    }
 }

@@ -344,8 +344,8 @@ class LandingController extends Controller
             return null;
         }
 
-        $foto = collect(glob(storage_path('app/public/web/tienda.*')) ?: [])->first();
-        $icono = collect(glob(storage_path('app/public/web/tienda-icono.*')) ?: [])->first();
+        $foto = $this->laMasLiviana('tienda');
+        $icono = $this->laMasLiviana('tienda-icono');
 
         return [
             'url' => $url,
@@ -355,10 +355,23 @@ class LandingController extends Controller
             // La marca sola —la columna y el laurel— y el logotipo entero. El
             // botón flotante usa el logotipo donde cabe, y la marca en el móvil.
             'icono' => $icono ? asset('storage/web/' . basename($icono)) : null,
-            'logo' => ($l = collect(glob(storage_path('app/public/web/tienda-logo.*')) ?: [])->first())
+            'logo' => ($l = $this->laMasLiviana('tienda-logo'))
                 ? asset('storage/web/' . basename($l))
                 : null,
         ];
+    }
+
+    /**
+     * La foto con ese nombre, prefiriendo la versión WebP si la hay.
+     *
+     * `web:aligerar-fotos` deja la liviana al lado de la original, y por orden
+     * alfabético el .jpg salía primero: la web seguía mandando la pesada.
+     */
+    private function laMasLiviana(string $nombre): ?string
+    {
+        return collect(glob(storage_path("app/public/web/{$nombre}.*")) ?: [])
+            ->sortBy(fn (string $ruta) => str_ends_with(strtolower($ruta), '.webp') ? 0 : 1)
+            ->first();
     }
 
     /**

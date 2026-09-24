@@ -23,8 +23,8 @@
         <div class="flex items-center justify-between h-16 lg:h-24">
             <a href="{{ route('landing') }}" class="flex items-center shrink-0" aria-label="{{ $gimnasio['nombre'] }}, ir al inicio">
                 <picture>
-                    <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-10 lg:h-14 w-auto">
+                    <source srcset="{{ asset('images/progym-logo-320.webp') }}" type="image/webp">
+                    <img src="{{ asset('images/progym-logo-320.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-10 lg:h-14 w-auto">
                 </picture>
             </a>
 

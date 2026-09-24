@@ -28,8 +28,8 @@
     <header class="border-b border-pg-tiza/10 print:hidden">
         <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4">
             <picture>
-                <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['gimnasio'] }}" width="1096" height="495" class="h-10 w-auto">
+                <source srcset="{{ asset('images/progym-logo-320.webp') }}" type="image/webp">
+                <img src="{{ asset('images/progym-logo-320.png') }}" alt="{{ $gimnasio['gimnasio'] }}" width="1096" height="495" class="h-10 w-auto">
             </picture>
             <span class="text-right text-[11px] uppercase tracking-[0.25em] text-pg-acero">@yield('etiqueta')</span>
         </div>

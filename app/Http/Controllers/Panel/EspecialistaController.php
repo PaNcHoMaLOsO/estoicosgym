@@ -264,7 +264,7 @@ class EspecialistaController extends Controller
         $anterior = $especialista->foto;
 
         if ($request->hasFile('foto')) {
-            $especialista->update(['foto' => $request->file('foto')->store('especialistas', 'public')]);
+            $especialista->update(['foto' => self::guardarLiviana($request->file('foto'), 'especialistas', 1200)]);
         } elseif ($request->boolean('quitar_foto')) {
             $especialista->update(['foto' => null]);
         } else {
@@ -274,6 +274,24 @@ class EspecialistaController extends Controller
         if ($anterior && $anterior !== $especialista->foto) {
             Storage::disk('public')->delete($anterior);
         }
+    }
+
+    /**
+     * La foto, liviana: en la web sale en un panel, no a pantalla completa.
+     * Si GD no la sabe leer, va tal cual.
+     */
+    private static function guardarLiviana(\Illuminate\Http\UploadedFile $archivo, string $carpeta, int $maximo): string
+    {
+        $liviana = \App\Support\FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), $maximo, 80, $archivo->getRealPath());
+
+        if (! $liviana) {
+            return $archivo->store($carpeta, 'public');
+        }
+
+        $ruta = $carpeta . '/' . \Illuminate\Support\Str::random(40) . '.' . $liviana['extension'];
+        Storage::disk('public')->put($ruta, $liviana['bytes']);
+
+        return $ruta;
     }
 
     /** 56912345678 → «9 1234 5678». */

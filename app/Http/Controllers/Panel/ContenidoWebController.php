@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContenidoWeb;
+use App\Support\FotoLiviana;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -358,47 +359,16 @@ class ContenidoWebController extends Controller
      */
     private function guardarFoto(UploadedFile $archivo): string
     {
-        $imagen = function_exists('imagecreatefromstring')
-            ? @imagecreatefromstring((string) file_get_contents($archivo->getRealPath()))
-            : false;
+        // Derecha, por el lado más largo a 1.600 y en WebP: ver
+        // App\Support\FotoLiviana. Si GD no la sabe leer, va tal cual.
+        $liviana = FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), 1600, 80, $archivo->getRealPath());
 
-        if (! $imagen) {
+        if (! $liviana) {
             return $archivo->store('web', 'public');
         }
 
-        if (function_exists('exif_read_data')) {
-            $exif = @exif_read_data($archivo->getRealPath());
-            $giro = match ((int) ($exif['Orientation'] ?? 1)) {
-                3 => 180,
-                6 => -90,
-                8 => 90,
-                default => 0,
-            };
-
-            if ($giro !== 0) {
-                $imagen = imagerotate($imagen, $giro, 0);
-            }
-        }
-
-        $ancho = imagesx($imagen);
-        $alto = imagesy($imagen);
-        $maximo = 1600;
-
-        if ($ancho > $maximo) {
-            $nuevoAlto = (int) round($alto * $maximo / $ancho);
-            $chica = imagecreatetruecolor($maximo, $nuevoAlto);
-            imagecopyresampled($chica, $imagen, 0, 0, 0, 0, $maximo, $nuevoAlto, $ancho, $alto);
-            imagedestroy($imagen);
-            $imagen = $chica;
-        }
-
-        ob_start();
-        imagejpeg($imagen, null, 82);
-        $bytes = (string) ob_get_clean();
-        imagedestroy($imagen);
-
-        $ruta = 'web/' . Str::random(32) . '.jpg';
-        Storage::disk('public')->put($ruta, $bytes);
+        $ruta = 'web/' . Str::random(32) . '.' . $liviana['extension'];
+        Storage::disk('public')->put($ruta, $liviana['bytes']);
 
         return $ruta;
     }

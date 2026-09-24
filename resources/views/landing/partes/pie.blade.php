@@ -3,8 +3,8 @@
         <div class="grid grid-cols-[2fr_3fr] md:grid-cols-3 gap-x-5 gap-y-6 md:gap-10">
             <div class="col-span-2 md:col-span-1">
                 <picture>
-                    <source srcset="{{ asset('images/progym-logo.webp') }}" type="image/webp">
-                    <img src="{{ asset('images/progym-logo.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-12 lg:h-14 w-auto" loading="lazy">
+                    <source srcset="{{ asset('images/progym-logo-320.webp') }}" type="image/webp">
+                    <img src="{{ asset('images/progym-logo-320.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-12 lg:h-14 w-auto" loading="lazy">
                 </picture>
                 <p class="text-pg-tiza/55 font-modern text-sm mt-3 lg:mt-4">
                     {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}

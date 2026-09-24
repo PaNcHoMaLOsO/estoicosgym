@@ -257,6 +257,25 @@ class RegistroClienteService
      * se da de baja, porque esa baja se deshace desde la papelera y el socio
      * volveria sin cara.
      */
+    /**
+     * La cara del socio, liviana: en el panel sale en un círculo o ampliada a
+     * media pantalla, y una foto de celular entera eran 3 MB por socio. Si GD
+     * no la sabe leer, va tal cual.
+     */
+    private function guardarFoto(UploadedFile $archivo): string
+    {
+        $liviana = \App\Support\FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), 800, 80, $archivo->getRealPath());
+
+        if (! $liviana) {
+            return $archivo->store('clientes', 'public');
+        }
+
+        $ruta = 'clientes/' . \Illuminate\Support\Str::random(40) . '.' . $liviana['extension'];
+        Storage::disk('public')->put($ruta, $liviana['bytes']);
+
+        return $ruta;
+    }
+
     public function cambiarFoto(Cliente $cliente, ?UploadedFile $nueva, bool $quitar = false): Cliente
     {
         $anterior = $cliente->foto_perfil;
@@ -264,7 +283,7 @@ class RegistroClienteService
         if ($quitar) {
             $cliente->update(['foto_perfil' => null]);
         } elseif ($nueva) {
-            $cliente->update(['foto_perfil' => $nueva->store('clientes', 'public')]);
+            $cliente->update(['foto_perfil' => $this->guardarFoto($nueva)]);
         } else {
             return $cliente;
         }
@@ -298,7 +317,7 @@ class RegistroClienteService
                 'apoderado_telefono' => $datos['apoderado']['apoderado_telefono'] ?? null,
                 'apoderado_parentesco' => $datos['apoderado']['apoderado_parentesco'] ?? null,
                 'apoderado_observaciones' => $datos['apoderado']['apoderado_observaciones'] ?? null,
-                'foto_perfil' => $foto?->store('clientes', 'public'),
+                'foto_perfil' => $foto ? $this->guardarFoto($foto) : null,
                 'activo' => true,
                 ...($datos['contrato'] ?? []),
             ]);
