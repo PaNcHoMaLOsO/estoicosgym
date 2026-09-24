@@ -341,7 +341,7 @@ class RegistroClienteService
      * de pais. El extranjero no puede empezar por +56: ese seria un chileno mal
      * escrito y se le avisa en vez de dejarlo pasar.
      */
-    private const TELEFONO = '/^((\+?56)?\s?9\s?[0-9]{4}\s?[0-9]{4}|\+(?!56)[1-9][0-9\s-]{6,18})$/';
+    public const TELEFONO = '/^((\+?56)?\s?9\s?[0-9]{4}\s?[0-9]{4}|\+(?!56)[1-9][0-9\s-]{6,18})$/';
 
     private function reglasCliente(?Cliente $actual = null): array
     {

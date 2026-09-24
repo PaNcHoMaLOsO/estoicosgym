@@ -446,6 +446,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Borrar sus datos personales (Ley 21.719): sus pagos se quedan en las cuentas, sin nombre.
         Route::post('/clientes/{cliente}/borrar-datos', [\App\Http\Controllers\Panel\ClienteController::class, 'borrarDatos'])->name('clientes.borrar-datos');
         Route::patch('/clientes/{cliente}/desactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'desactivar'])->name('clientes.deactivate');
+        // Solo el celular: se anota desde las listas del Resumen, con el socio en el telefono.
+        Route::patch('/clientes/{cliente}/celular', [\App\Http\Controllers\Panel\ClienteController::class, 'celular'])->name('clientes.celular');
         Route::patch('/clientes/{cliente}/reactivar', [\App\Http\Controllers\Panel\ClienteController::class, 'reactivar'])->name('clientes.reactivate');
         // A la papelera, no al vacio: se recupera desde /panel/papelera.
         Route::delete('/clientes/{cliente}', [\App\Http\Controllers\Panel\ClienteController::class, 'eliminar'])->name('clientes.destroy');

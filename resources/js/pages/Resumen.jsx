@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ClipboardPlusIcon,
     CreditCardIcon,
@@ -96,9 +96,120 @@ function Buscador() {
  * podía. El correo queda detrás, en pequeño: en el mesón se escribe por
  * WhatsApp, el correo es para lo formal.
  */
-function Contacto({ celular, email, nombre, compacto = false }) {
+/**
+ * Escribirle a alguien que NO tiene celular anotado.
+ *
+ * Antes salía «sin contacto» y ahí moría: para anotarle el número había que
+ * abrir la ficha, editar, guardar y volver. Ahora el WhatsApp sale igual, en
+ * gris, y al tocarlo pide el número ahí mismo: se guarda en la ficha y se
+ * abre la conversación de una vez.
+ */
+function AnotarCelular({ uuid, nombre }) {
+    const [abierto, setAbierto] = useState(false);
+    const [numero, setNumero] = useState('+56 9 ');
+    const [error, setError] = useState(null);
+    const [guardando, setGuardando] = useState(false);
+    const [listo, setListo] = useState(null);
+    const caja = useRef(null);
+
+    useEffect(() => {
+        if (abierto) {
+            caja.current?.focus();
+        }
+    }, [abierto]);
+
+    if (listo) {
+        return <Contacto celular={listo} nombre={nombre} compacto />;
+    }
+
+    const guardar = async (e) => {
+        e.preventDefault();
+        setGuardando(true);
+        setError(null);
+
+        try {
+            const r = await fetch(`/panel/clientes/${uuid}/celular`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                },
+                body: JSON.stringify({ celular: numero }),
+            });
+            const cuerpo = await r.json().catch(() => ({}));
+
+            if (! r.ok) {
+                setError(cuerpo.errors?.celular?.[0] ?? cuerpo.message ?? 'No se pudo guardar.');
+                setGuardando(false);
+
+                return;
+            }
+
+            setListo(cuerpo.celular);
+            setAbierto(false);
+            window.open(enlaceWhatsapp(cuerpo.celular), 'progym-whatsapp', 'noopener');
+        } catch {
+            setError('No se pudo contactar con el servidor.');
+            setGuardando(false);
+        }
+    };
+
+    return (
+        <span className="relative inline-flex shrink-0">
+            <button
+                type="button"
+                onClick={() => setAbierto((v) => ! v)}
+                title="Sin celular anotado: tócalo para anotárselo y escribirle"
+                aria-label={`Anotar el celular de ${nombre} y escribirle por WhatsApp`}
+                aria-expanded={abierto}
+                className="inline-flex size-7 items-center justify-center rounded-control text-fog transition-colors hover:bg-surface-2 hover:text-[#25D366]"
+            >
+                <MessageCircleIcon className="size-4" aria-hidden="true" />
+            </button>
+
+            {abierto ? (
+                <form
+                    onSubmit={guardar}
+                    className="absolute right-0 top-full z-20 mt-1 w-64 rounded-panel border border-line bg-raise p-2.5 shadow-overlay"
+                >
+                    <label className="apoyo mb-1 block text-fog" htmlFor={`celular-${uuid}`}>
+                        Celular de {nombre.split(' ')[0]}
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            ref={caja}
+                            id={`celular-${uuid}`}
+                            type="tel"
+                            inputMode="tel"
+                            value={numero}
+                            onChange={(e) => setNumero(e.target.value)}
+                            onKeyDown={(e) => (e.key === 'Escape' ? setAbierto(false) : null)}
+                            className="min-w-0 flex-1 rounded-control border border-line bg-surface-2 px-2 py-1.5 text-sm text-chalk focus:border-volt focus:outline-none"
+                        />
+                        <button
+                            type="submit"
+                            disabled={guardando}
+                            className="shrink-0 rounded-control bg-[#25D366] px-2.5 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                        >
+                            {guardando ? '…' : 'Escribir'}
+                        </button>
+                    </div>
+                    {error ? <p className="apoyo mt-1 text-danger">{error}</p> : <p className="apoyo mt-1 text-fog">Queda guardado en su ficha.</p>}
+                </form>
+            ) : null}
+        </span>
+    );
+}
+
+function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
     if (! celular && ! email) {
-        // Sin correo ni celular no hay a quién avisar: hay que buscarlo a mano.
+        // Sin celular anotado: desde el Resumen se le anota ahí mismo.
+        if (compacto && uuid) {
+            return <AnotarCelular uuid={uuid} nombre={nombre ?? 'este socio'} />;
+        }
+
         return (
             <span
                 className="inline-flex items-center gap-1 whitespace-nowrap text-warn"
@@ -106,37 +217,6 @@ function Contacto({ celular, email, nombre, compacto = false }) {
             >
                 <PhoneOffIcon className="size-3.5" aria-hidden="true" />
                 {compacto ? <span className="sr-only">Sin contacto</span> : 'Sin contacto'}
-            </span>
-        );
-    }
-
-    // En las listas del resumen el WhatsApp es solo el icono: con «WhatsApp»
-    // escrito ocho veces seguidas, la palabra deja de decir nada.
-    if (compacto) {
-        return (
-            <span className="inline-flex shrink-0 items-center gap-1">
-                {celular ? (
-                    <a
-                        href={whatsapp(celular)}
-                        target="progym-whatsapp"
-                        rel="noopener"
-                        title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
-                        aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
-                        className="inline-flex size-7 items-center justify-center rounded-control text-[#25D366] transition-colors hover:bg-[#25D366]/15"
-                    >
-                        <MessageCircleIcon className="size-4" aria-hidden="true" />
-                    </a>
-                ) : null}
-                {email ? (
-                    <a
-                        href={`mailto:${email}`}
-                        aria-label={`Escribir a ${email}`}
-                        title={email}
-                        className="inline-flex size-7 items-center justify-center rounded-control text-fog transition-colors hover:bg-surface-2 hover:text-chalk"
-                    >
-                        <MailIcon className="size-4" aria-hidden="true" />
-                    </a>
-                ) : null}
             </span>
         );
     }
@@ -348,7 +428,7 @@ function Llamar({ filas, cuanto, vacia }) {
                             {cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums text-fog">{cuanto === 'Hace' ? 'hace ' : 'en '}{f.dias} d</span>}
                         </span>
 
-                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} compacto />
+                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} uuid={f.socio_uuid} compacto />
                     </li>
                 ))}
             </ul>
@@ -388,7 +468,7 @@ export default function Resumen({
     porEmpezar = [],
     avisosFallidos = 0,
 }) {
-    const { auth } = usePage().props;
+    const { auth, privado } = usePage().props;
     const atajos = ATAJOS.filter((a) => puede(auth, a.permiso));
     const [enVentana, setEnVentana] = useState(null);
 
@@ -398,7 +478,24 @@ export default function Resumen({
 
             <header className="mb-4">
                 <h1 className="text-lg font-semibold text-chalk">Resumen</h1>
-                <p className="apoyo text-fog">Qué hay que atender hoy</p>
+                <p className="apoyo text-fog">
+                    Qué hay que atender hoy
+                    {/* Sin decirlo, «Camila R.» parece un dato a medias o un
+                        error de carga; dicho, se entiende que es a propósito y
+                        por dónde se vuelve atrás. */}
+                    {privado?.sin_nombres ? (
+                        <>
+                            {' · '}
+                            {puede(auth, 'configuracion.ver') ? (
+                                <Link href="/panel/configuracion/privacidad" className="underline underline-offset-2 hover:text-chalk">
+                                    nombres abreviados
+                                </Link>
+                            ) : (
+                                'nombres abreviados'
+                            )}
+                        </>
+                    ) : null}
+                </p>
             </header>
 
             <div className="mb-4">

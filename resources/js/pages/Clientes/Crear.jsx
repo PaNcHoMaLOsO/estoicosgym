@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeftIcon, CameraIcon, ImageIcon } from 'lucide-react';
+import { ArrowLeftIcon, CameraIcon, ChevronDownIcon, ImageIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 import CamaraFoto from '@/components/CamaraFoto';
@@ -307,25 +307,43 @@ function Isla({ titulo, accion, children, className = '' }) {
 }
 
 /** Un interruptor para mostrar lo que no hace falta llenar siempre. */
-function Interruptor({ encendido, alCambiar, children }) {
+/**
+ * Lo opcional, plegado: una fila que dice qué hay dentro y se abre al tocarla.
+ *
+ * Antes era un interruptor, y un interruptor dice «encendido o apagado», no
+ * «hay más aquí». Con la flecha y la lista de lo que esconde, se entiende que
+ * es un apartado que se despliega, y al abrirlo lo de dentro va agrupado con
+ * sus propios títulos para que no sea una tira de doce casillas.
+ */
+function Desplegable({ abierto, alCambiar, titulo, detalle }) {
     return (
         <button
             type="button"
-            role="switch"
-            aria-checked={encendido}
-            onClick={() => alCambiar(!encendido)}
-            className="inline-flex items-center gap-2 text-sm text-fog transition-colors hover:text-chalk"
+            aria-expanded={abierto}
+            onClick={() => alCambiar(!abierto)}
+            className={`flex w-full items-center justify-between gap-3 rounded-control border px-3 py-2 text-left transition-colors sm:col-span-2 ${
+                abierto ? 'border-line bg-surface-2' : 'border-dashed border-line-strong hover:bg-surface-2'
+            }`}
         >
-            <span
-                className={`relative inline-block h-5 w-9 rounded-full transition-colors ${encendido ? 'bg-volt' : 'bg-surface-2 ring-1 ring-line-strong'}`}
-                aria-hidden="true"
-            >
-                <span
-                    className={`absolute top-0.5 size-4 rounded-full bg-chalk transition-all ${encendido ? 'left-[18px]' : 'left-0.5'}`}
-                />
+            <span className="min-w-0">
+                <span className="block text-sm font-medium text-chalk">{titulo}</span>
+                <span className="apoyo block truncate text-fog">{detalle}</span>
             </span>
-            {children}
+            <ChevronDownIcon
+                className={`size-4 shrink-0 text-fog transition-transform ${abierto ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+            />
         </button>
+    );
+}
+
+/** El título de un grupo de campos dentro de un apartado desplegado. */
+function Subtitulo({ children }) {
+    return (
+        <p className="rotulo flex items-center gap-2 pt-1 sm:col-span-2">
+            <span className="shrink-0">{children}</span>
+            <span className="h-px flex-1 bg-line" aria-hidden="true" />
+        </p>
     );
 }
 
@@ -702,14 +720,17 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                             <Texto {...texto('email', { tipo: 'email' })} />
                         </Campo>
 
-                        <div className="border-t border-line pt-3 sm:col-span-2">
-                            <Interruptor encendido={fichaCompleta} alCambiar={setFichaCompleta}>
-                                Completar la ficha (emergencia, contrato, foto…)
-                            </Interruptor>
-                        </div>
+                        <Desplegable
+                            abierto={fichaCompleta}
+                            alCambiar={setFichaCompleta}
+                            titulo={fichaCompleta ? 'Ficha completa' : 'Completar la ficha'}
+                            detalle="Nacimiento, dirección, emergencia, foto, contrato y permisos. Todo opcional."
+                        />
 
                         {fichaCompleta ? (
                             <>
+                                <Subtitulo>Datos personales</Subtitulo>
+
                                 <Campo etiqueta="Fecha de nacimiento" nombre="fecha_nacimiento" error={errors.fecha_nacimiento}>
                                     <Texto {...texto('fecha_nacimiento', { tipo: 'date' })} />
                                 </Campo>
@@ -718,7 +739,15 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     <Texto {...texto('direccion')} />
                                 </Campo>
 
-                                <Campo etiqueta="En emergencia avisar a" nombre="contacto_emergencia" error={errors.contacto_emergencia}>
+                                <div className="sm:col-span-2">
+                                    <Campo etiqueta="Observaciones" nombre="observaciones" error={errors.observaciones}>
+                                        <Area {...texto('observaciones')} filas={2} />
+                                    </Campo>
+                                </div>
+
+                                <Subtitulo>En caso de emergencia</Subtitulo>
+
+                                <Campo etiqueta="Avisar a" nombre="contacto_emergencia" error={errors.contacto_emergencia}>
                                     <Texto {...texto('contacto_emergencia', { placeholder: 'Nombre' })} />
                                 </Campo>
 
@@ -726,14 +755,10 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     <Texto {...texto('telefono_emergencia', { tipo: 'tel', inputMode: 'tel' })} />
                                 </Campo>
 
-                                <div className="sm:col-span-2">
-                                    <Campo etiqueta="Observaciones" nombre="observaciones" error={errors.observaciones}>
-                                        <Area {...texto('observaciones')} filas={2} />
-                                    </Campo>
-                                </div>
+                                <Subtitulo>Foto</Subtitulo>
 
                                 <div className="sm:col-span-2">
-                                    <Campo etiqueta="Foto" nombre="foto_perfil" error={errors.foto_perfil}>
+                                    <Campo etiqueta="" nombre="foto_perfil" error={errors.foto_perfil}>
                                         <CampoFoto
                                             archivo={data.foto_perfil}
                                             nombre={`${data.nombres} ${data.apellido_paterno}`}
@@ -751,6 +776,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                   * casilla significaba «no firmó». Ahora se elige qué
                                   * pasó con el contrato y aparece solo lo que haga falta.
                                   */}
+                                <Subtitulo>Contrato y permisos</Subtitulo>
+
                                 <div className="sm:col-span-2">
                                     <Campo etiqueta="Contrato" nombre="contrato_firmado_en" error={errors.contrato_firmado_en}>
                                         <Botones
@@ -1037,19 +1064,28 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     </div>
                                 ) : null}
 
-                                <div className="border-t border-line pt-3 sm:col-span-2">
-                                    <Interruptor encendido={masDelPlan} alCambiar={setMasDelPlan}>
-                                        Descuento, fecha del pago y comprobante
-                                    </Interruptor>
-                                </div>
+                                <Desplegable
+                                    abierto={masDelPlan}
+                                    alCambiar={setMasDelPlan}
+                                    titulo={masDelPlan ? 'Más del plan y del pago' : 'Descuento, fecha del pago o comprobante'}
+                                    detalle="Solo si hace falta: casi siempre se guarda tal cual."
+                                />
 
                                 {masDelPlan ? (
                                     <>
+                                        <Subtitulo>Descuento</Subtitulo>
+
                                         <Campo
                                             etiqueta="Descuento"
                                             nombre="descuento_manual"
                                             error={errors.descuento_manual}
-                                            ayuda={precioBase > 0 ? `Precio del plan: ${pesos.format(precioBase)}` : undefined}
+                                            ayuda={
+                                                precioBase > 0
+                                                    ? Number(data.descuento_manual) > 0
+                                                        ? `De ${pesos.format(precioBase)} queda en ${pesos.format(precioFinal)}`
+                                                        : `El plan vale ${pesos.format(precioBase)}`
+                                                    : undefined
+                                            }
                                         >
                                             <Texto {...texto('descuento_manual', { tipo: 'number', min: '0', inputMode: 'numeric' })} />
                                         </Campo>
@@ -1063,6 +1099,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
 
                                         {conPago ? (
                                             <>
+                                                <Subtitulo>Del pago</Subtitulo>
+
                                                 <Campo etiqueta="Fecha del pago" nombre="fecha_pago" error={errors.fecha_pago} requerido>
                                                     <Texto {...texto('fecha_pago', { tipo: 'date', max: hoy })} />
                                                 </Campo>
@@ -1077,6 +1115,8 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                                 </Campo>
                                             </>
                                         ) : null}
+
+                                        <Subtitulo>Nota</Subtitulo>
 
                                         <div className="sm:col-span-2">
                                             <Campo

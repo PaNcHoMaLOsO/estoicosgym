@@ -377,6 +377,26 @@ class ClienteController extends Controller
         );
     }
 
+    /**
+     * Anotar el celular de un socio que no lo tenía, sin abrir su ficha.
+     *
+     * Desde las listas del Resumen: a quien sale «sin contacto» se le pide el
+     * número ahí mismo, se guarda y se le escribe. Responde JSON porque quien
+     * lo llama quiere abrir WhatsApp acto seguido, no recargar la pantalla.
+     */
+    public function celular(Request $request, Cliente $cliente)
+    {
+        $datos = $request->validate([
+            'celular' => ['required', 'string', 'regex:' . RegistroClienteService::TELEFONO],
+        ], [
+            'celular.regex' => 'Celular no válido. Uno chileno es +56 9 1234 5678.',
+        ]);
+
+        $cliente->update(['celular' => trim($datos['celular'])]);
+
+        return response()->json(['celular' => $cliente->celular]);
+    }
+
     public function reactivar(Cliente $cliente)
     {
         if ($cliente->datos_borrados_en) {
