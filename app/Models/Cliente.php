@@ -307,6 +307,24 @@ class Cliente extends Model
             && !empty($this->apoderado_parentesco);
     }
 
+    /**
+     * Como se le nombra cuando la pantalla la ve más gente: «Camila R.».
+     *
+     * NO ES ANONIMIZAR: quien atiende sabe perfectamente de quién habla —y en
+     * el resumen tiene la foto al lado—. Lo que se evita es que el nombre
+     * completo de un socio se lea desde el otro lado del mesón, en una lista
+     * que además dice que debe plata o que se le vence la membresía.
+     */
+    public function nombreCorto(): string
+    {
+        $nombre = trim((string) $this->nombres);
+        $primero = $nombre === '' ? '' : explode(' ', $nombre)[0];
+        $apellido = trim((string) $this->apellido_paterno);
+        $inicial = $apellido === '' ? '' : mb_strtoupper(mb_substr($apellido, 0, 1)).'.';
+
+        return trim($primero.' '.$inicial) ?: 'Socio';
+    }
+
     public function getNombreCompletoAttribute()
     {
         $nombre = $this->nombres . ' ' . $this->apellido_paterno;

@@ -233,6 +233,27 @@ class Ajustes
                 'defecto' => '0',
             ],
 
+            /*
+              * LOS NOMBRES DEL RESUMEN.
+              *
+              * El resumen es la pantalla que está puesta todo el día en el
+              * mesón, y sus listas son de personas: a quién se le vence la
+              * membresía, quién debe una barrita, quién cumple años. Quien
+              * espera su turno al otro lado del mostrador las lee enteras.
+              *
+              * Abreviado, quien atiende sigue sabiendo de quién habla —y la
+              * foto está al lado— pero desde dos metros ya no se lee el nombre
+              * completo de nadie. El nombre entero sigue en su ficha, a un clic.
+              */
+            'privacidad.ocultar_nombres' => [
+                'grupo' => 'privacidad',
+                'seccion' => 'Los nombres',
+                'etiqueta' => 'Abreviar los nombres en el resumen',
+                'ayuda' => 'En las listas del resumen los socios salen como «Camila R.» en vez de con su nombre completo. Es la pantalla que se ve desde el otro lado del mesón. En su ficha y en las demás pantallas el nombre sigue entero.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
+
             // ---- Lo automático ----
             /*
              * EL INTERRUPTOR DE LOS CORREOS AUTOMÁTICOS.
@@ -657,8 +678,8 @@ class Ajustes
                 'descripcion' => 'Cuándo se marcan las notas y lo fiado que llevan tiempo esperando.',
             ],
             'privacidad' => [
-                'titulo' => 'El dinero en pantalla',
-                'descripcion' => 'Qué se enseña y qué no: los importes por un lado, las deudas por otro. No cambia quién puede entrar a cada sitio —eso son los permisos de cada usuario—, solo lo que hay a la vista.',
+                'titulo' => 'Lo que se ve en pantalla',
+                'descripcion' => 'Qué se enseña y qué no: los importes por un lado, las deudas por otro y los nombres de los socios por otro. No cambia quién puede entrar a cada sitio —eso son los permisos de cada usuario—, solo lo que hay a la vista.',
             ],
             'correo' => [
                 'titulo' => 'Cuenta de correo',

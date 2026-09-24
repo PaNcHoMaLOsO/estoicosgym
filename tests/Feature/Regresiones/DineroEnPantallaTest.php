@@ -37,7 +37,7 @@ class DineroEnPantallaTest extends CasoConCatalogos
 
         $privado = $respuesta->viewData('page')['props']['privado'];
         $this->assertSame(
-            ['sin_montos' => false, 'sin_caja' => false, 'sin_fiado' => false, 'sin_pendientes' => false],
+            ['sin_montos' => false, 'sin_caja' => false, 'sin_fiado' => false, 'sin_pendientes' => false, 'sin_nombres' => false],
             $privado,
         );
     }
@@ -216,5 +216,52 @@ class DineroEnPantallaTest extends CasoConCatalogos
 
         $this->assertNotNull($props['fiado']);
         $this->assertSame(1500, $props['fiado']['total']);
+    }
+    /**
+     * LOS NOMBRES DEL RESUMEN, ABREVIADOS.
+     *
+     * El resumen está puesto todo el día en el mesón y sus listas son de
+     * personas: a quién se le vence, quién debe, quién cumple años. Quien
+     * espera su turno al otro lado del mostrador las lee enteras, y no tiene
+     * por qué enterarse de que a Camila Rodríguez se le acaba la mensualidad.
+     *
+     * Se abrevia EN EL SERVIDOR: el nombre completo no llega siquiera a la
+     * página, así que no se lee ni mirando el código de la pantalla.
+     */
+    public function test_los_nombres_del_resumen_se_abrevian(): void
+    {
+        $socio = \App\Models\Cliente::factory()->create([
+            'activo' => true,
+            'nombres' => 'Camila Andrea',
+            'apellido_paterno' => 'Rodríguez',
+            'apellido_materno' => 'Pérez',
+        ]);
+
+        \App\Models\Inscripcion::factory()->create([
+            'id_cliente' => $socio->id,
+            'id_membresia' => 4,
+            'id_estado' => 100,
+            'fecha_inicio' => now()->subDays(25),
+            'fecha_vencimiento' => now()->addDays(3),
+        ]);
+
+        // Con el ajuste apagado sale entero, que es lo de siempre.
+        $entero = $this->actingAs($this->administrador())->get('/panel');
+        $entero->assertOk();
+
+        $this->assertSame(
+            'Camila Andrea Rodríguez Pérez',
+            $entero->viewData('page')['props']['porVencer'][0]['socio']
+        );
+
+        \App\Support\Ajustes::guardar(['privacidad.ocultar_nombres' => '1']);
+
+        $abreviado = $this->actingAs($this->administrador())->get('/panel');
+        $abreviado->assertOk();
+
+        $props = $abreviado->viewData('page')['props'];
+
+        $this->assertSame('Camila R.', $props['porVencer'][0]['socio']);
+        $this->assertTrue($props['privado']['sin_nombres']);
     }
 }

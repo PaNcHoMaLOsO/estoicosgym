@@ -187,9 +187,7 @@ class ResumenController extends Controller
             // que tiene delante antes de leer cómo se llama, y con dos socios
             // de apellido parecido es lo único que los distingue de un vistazo.
             'foto' => $cliente?->urlDeFoto(),
-            'socio' => $cliente
-                ? trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}")
-                : 'Socio eliminado',
+            'socio' => $cliente ? $this->comoSeLlama($cliente) : 'Socio eliminado',
             'membresia' => $i->membresia?->nombre,
             // El convenio se ve en la lista: a quien entró por la universidad se le
             // habla de su credencial, no del precio normal.
@@ -201,6 +199,25 @@ class ResumenController extends Controller
             'celular' => $cliente?->celular,
             'email' => $cliente?->email,
         ];
+    }
+
+    /**
+     * Cómo se nombra a un socio en esta pantalla.
+     *
+     * EL RESUMEN ESTÁ PUESTO TODO EL DÍA EN EL MESÓN y sus listas son de
+     * personas: a quién se le vence, quién debe una barrita, quién cumple años.
+     * Quien espera su turno al otro lado del mostrador las lee enteras, y no
+     * tiene por qué saber que a Camila Rodríguez se le acaba la mensualidad.
+     *
+     * Abreviado —«Camila R.»— quien atiende sigue sabiendo de quién habla, y
+     * además tiene la foto al lado. El nombre completo está en su ficha, a un
+     * clic. Se decide en Configuración → Lo que se ve en pantalla.
+     */
+    private function comoSeLlama(Cliente $cliente): string
+    {
+        return Ajustes::activo('privacidad.ocultar_nombres')
+            ? $cliente->nombreCorto()
+            : trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}");
     }
 
     /**
@@ -221,7 +238,9 @@ class ResumenController extends Controller
                 $desde = $lineas->min('created_at');
 
                 return [
-                    'quien' => $primera->aNombreDe(),
+                    'quien' => $primera->cliente
+                        ? $this->comoSeLlama($primera->cliente)
+                        : $primera->aNombreDe(),
                     'socio_uuid' => $primera->cliente?->uuid,
                     'foto' => $primera->cliente?->urlDeFoto(),
                     'celular' => $primera->cliente?->celular,
@@ -269,7 +288,7 @@ class ResumenController extends Controller
 
                 return [
                     'uuid' => $c->uuid,
-                    'socio' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
+                    'socio' => $this->comoSeLlama($c),
                     'foto' => $c->urlDeFoto(),
                     'celular' => $c->celular,
                     'email' => $c->email,

@@ -79,6 +79,7 @@ class HandleInertiaRequests extends Middleware
                 'sin_caja' => Ajustes::activo('privacidad.ocultar_caja'),
                 'sin_fiado' => Ajustes::activo('privacidad.ocultar_fiado'),
                 'sin_pendientes' => Ajustes::activo('privacidad.ocultar_pendientes'),
+                'sin_nombres' => Ajustes::activo('privacidad.ocultar_nombres'),
             ],
 
             // El menú de Configuración marca las secciones con algo pendiente.
