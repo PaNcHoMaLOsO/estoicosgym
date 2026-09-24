@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { PencilIcon, PlusIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioCatalogo, { camposDePersona, valoresDeEspecialista } from '@/components/FormularioCatalogo';
@@ -41,6 +41,18 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
     // null = cerrado; una fila = editando esa; {} = creando.
     const [editando, setEditando] = useState(null);
 
+    /** Sube o baja un puesto: ordenar sin pensar en números. */
+    function mover(especialista, hacia) {
+        router.post(`/panel/especialistas/${especialista.uuid}/mover`, { hacia }, { preserveScroll: true });
+    }
+
+    /** Borrar no se deshace, así que se pregunta antes. */
+    function eliminar(especialista) {
+        if (window.confirm(`¿Eliminar a ${especialista.nombre}? Se borra también su foto y no se puede deshacer.`)) {
+            router.delete(`/panel/especialistas/${especialista.uuid}`, { preserveScroll: true });
+        }
+    }
+
     function alternar(especialista) {
         router.patch(`/panel/catalogos/especialistas/${especialista.uuid}/alternar`, {}, {
             preserveScroll: true,
@@ -72,7 +84,7 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                 vacia={especialistas.length === 0}
                 mensajeVacio={textos.vacio}
             >
-                {especialistas.map((especialista) => (
+                {especialistas.map((especialista, indice) => (
                     <Fila key={especialista.uuid}>
                         <Celda className="font-medium text-chalk">
                             <span className="flex items-center gap-2">
@@ -87,7 +99,30 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                                 : [especialista.whatsapp, especialista.instagram]
                             ).filter(Boolean).join(' · ') || '-'}
                         </Celda>
-                        <Celda className="tabular-nums">{especialista.orden}</Celda>
+                        <Celda className="whitespace-nowrap">
+                            {/* El puesto se lleva solo: aquí solo se dice quién va antes. */}
+                            <span className="inline-flex items-center gap-1">
+                                <span className="w-5 tabular-nums text-fog">{indice + 1}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => mover(especialista, 'arriba')}
+                                    disabled={indice === 0}
+                                    aria-label="Subir un puesto"
+                                    className="rounded-control p-0.5 text-fog transition-colors hover:text-chalk disabled:opacity-25"
+                                >
+                                    <ChevronUpIcon className="size-4" aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => mover(especialista, 'abajo')}
+                                    disabled={indice === especialistas.length - 1}
+                                    aria-label="Bajar un puesto"
+                                    className="rounded-control p-0.5 text-fog transition-colors hover:text-chalk disabled:opacity-25"
+                                >
+                                    <ChevronDownIcon className="size-4" aria-hidden="true" />
+                                </button>
+                            </span>
+                        </Celda>
                         <Celda>
                             <Activo valor={especialista.activo} />
                         </Celda>
@@ -108,6 +143,15 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                                     className="apoyo text-fog transition-colors hover:text-chalk"
                                 >
                                     {especialista.activo ? 'Ocultar' : 'Mostrar'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => eliminar(especialista)}
+                                    aria-label={`Eliminar a ${especialista.nombre}`}
+                                    className="text-fog transition-colors hover:text-danger"
+                                >
+                                    <TrashIcon className="size-4" aria-hidden="true" />
                                 </button>
                             </div>
                         </Celda>

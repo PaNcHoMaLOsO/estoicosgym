@@ -239,7 +239,6 @@ export function camposDePersona(tipo) {
                 ayuda: 'Mejor vertical, de cuerpo entero o de medio cuerpo: sale en un panel alto. JPG, PNG o WEBP, hasta 2 MB.',
             },
             { nombre: 'instagram', etiqueta: 'Instagram', ejemplo: '@usuario o el enlace del perfil' },
-            { nombre: 'orden', etiqueta: 'Orden', tipo: 'number', min: 0, ayuda: 'Los de número más bajo salen primero.' },
             { nombre: 'activo', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Se muestra en la portada' },
         ];
     }
@@ -272,13 +271,7 @@ export const CAMPOS_ESPECIALISTA = [
     },
     { nombre: 'whatsapp', etiqueta: 'WhatsApp', ejemplo: '9 1234 5678', ayuda: 'Sale como botón «WhatsApp» con un saludo ya escrito.' },
     { nombre: 'instagram', etiqueta: 'Instagram', ejemplo: '@usuario o el enlace del perfil' },
-    {
-        nombre: 'orden',
-        etiqueta: 'Orden',
-        tipo: 'number',
-        min: 0,
-        ayuda: 'Los de número más bajo salen primero.',
-    },
+    // Sin «orden»: lo nuevo va al final solo y se mueve con las flechas.
     { nombre: 'activo', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Se muestra en la web' },
 ];
 
@@ -294,7 +287,6 @@ export function valoresDeEspecialista(especialista, tipo = 'especialista') {
         foto_url: especialista?.foto_url ?? null,
         whatsapp: especialista?.whatsapp ?? '',
         instagram: especialista?.instagram ?? '',
-        orden: especialista?.orden ?? 0,
         activo: especialista?.uuid ? Boolean(especialista.activo) : true,
     };
 }

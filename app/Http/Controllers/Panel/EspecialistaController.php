@@ -65,8 +65,17 @@ class EspecialistaController extends Controller
 
     public function store(Request $request)
     {
-        $especialista = Especialista::create($this->validar($request));
+        $fila = $this->validar($request);
+        $tipo = $fila['tipo'] ?? 'especialista';
+
+        // EL ORDEN SE PONE SOLO: lo nuevo va al final DE SU LISTA. Escrito a
+        // mano, los números se repetían y saltaban —embajadores 1, 2, 4, 6 y
+        // especialistas 3, 5, 7—, porque se contaba entre las dos listas.
+        $especialista = Especialista::create($fila + [
+            'orden' => (int) Especialista::where('tipo', $tipo)->max('orden') + 1,
+        ]);
         $this->ponerFoto($especialista, $request);
+        $this->renumerar($especialista->tipo);
 
         return back()->with('success', $especialista->activo
             ? "«{$especialista->nombre}» ya aparece en la web."
@@ -81,6 +90,76 @@ class EspecialistaController extends Controller
         return back()->with('success', "«{$especialista->nombre}» actualizado.");
     }
 
+    /**
+     * Lo borra del todo, con su foto.
+     *
+     * OCULTAR NO BASTABA: quien dejó de trabajar con el gimnasio —o un ejemplo
+     * cargado para probar— seguía en la lista para siempre. Borrar se lleva
+     * también la foto, que es la cara de una persona y no tiene por qué
+     * quedarse en el servidor cuando ya no sale en ninguna parte.
+     */
+    public function eliminar(Especialista $especialista)
+    {
+        if ($especialista->foto) {
+            Storage::disk('public')->delete($especialista->foto);
+        }
+
+        $especialista->delete();
+        // Sin esto quedaría un hueco en la cuenta: 1, 2, 4…
+        $this->renumerar($especialista->tipo);
+
+        return back()->with('success', "«{$especialista->nombre}» eliminado.");
+    }
+
+    /**
+     * Sube o baja un puesto dentro de su lista.
+     *
+     * Ordenar con flechas y no con números: «este va antes que ese». Se
+     * renumera antes para que no haya dos en el mismo puesto.
+     */
+    public function mover(Request $request, Especialista $especialista)
+    {
+        $this->renumerar($especialista->tipo);
+        $especialista->refresh();
+
+        $arriba = $request->input('hacia') !== 'abajo';
+
+        $vecino = Especialista::where('tipo', $especialista->tipo)
+            ->when(
+                $arriba,
+                fn ($q) => $q->where('orden', '<', $especialista->orden)->orderByDesc('orden'),
+                fn ($q) => $q->where('orden', '>', $especialista->orden)->orderBy('orden')
+            )
+            ->first();
+
+        if ($vecino) {
+            $puesto = $especialista->orden;
+            $especialista->update(['orden' => $vecino->orden]);
+            $vecino->update(['orden' => $puesto]);
+        }
+
+        return back();
+    }
+
+    /**
+     * Deja los puestos de UNA lista en 1, 2, 3… sin huecos ni repetidos.
+     *
+     * Por tipo: los especialistas y los embajadores comparten tabla pero no
+     * lista, y numerarlos juntos es justo lo que dejaba saltos en las dos.
+     */
+    private function renumerar(string $tipo): void
+    {
+        Especialista::where('tipo', $tipo)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->each(function (Especialista $especialista, int $i) {
+                if ((int) $especialista->orden !== $i + 1) {
+                    $especialista->update(['orden' => $i + 1]);
+                }
+            });
+    }
+
     /** @return array<string,mixed> */
     private function validar(Request $request): array
     {
@@ -92,7 +171,6 @@ class EspecialistaController extends Controller
             'descripcion' => 'nullable|string|max:300',
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
-            'orden' => 'nullable|integer|min:0|max:999',
             'activo' => 'boolean',
             // Sin SVG: puede llevar código, y se ejecutaría al abrirlo desde la web.
             'foto' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
@@ -109,7 +187,6 @@ class EspecialistaController extends Controller
             'descripcion' => $datos['descripcion'] ?? null,
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
-            'orden' => (int) ($datos['orden'] ?? 0),
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
 

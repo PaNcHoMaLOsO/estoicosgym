@@ -615,6 +615,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::get('/embajadores', [\App\Http\Controllers\Panel\EspecialistaController::class, 'embajadores'])->name('embajadores.index');
         Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
         Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
+        // Subir y bajar un puesto dentro de su lista, sin escribir números.
+        Route::post('/especialistas/{especialista}/mover', [\App\Http\Controllers\Panel\EspecialistaController::class, 'mover'])->name('especialistas.mover');
+        // Borrar del todo, con su foto: ocultar dejaba a la persona en la lista para siempre.
+        Route::delete('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'eliminar'])->name('especialistas.destroy');
         // La pagina web: servicios, fotos, preguntas y testimonios. Se ocultan con catalogos.alternar.
         Route::get('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'show'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.show');
         Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', ['servicio', 'foto', 'pregunta', 'testimonio'])->name('web.store');

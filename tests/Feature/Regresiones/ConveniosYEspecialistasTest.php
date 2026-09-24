@@ -449,4 +449,45 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->assertSame(['El powerlifter'], collect($embajadores['especialistas'])->pluck('nombre')->all());
         $this->assertSame('embajador', $embajadores['tipo']);
     }
+    /**
+     * EL ORDEN SE LLEVA SOLO Y CADA LISTA POR SU LADO.
+     *
+     * Escrito a mano y contado entre las dos listas, quedaban embajadores 1, 2,
+     * 4, 6 y especialistas 3, 5, 7.
+     */
+    public function test_cada_lista_se_numera_sola_y_por_separado(): void
+    {
+        foreach (['Ana' => 'especialista', 'Beto' => 'embajador', 'Carla' => 'especialista', 'Dani' => 'embajador'] as $nombre => $tipo) {
+            $this->actingAs($this->administrador())->post('/panel/especialistas', [
+                'tipo' => $tipo, 'nombre' => $nombre, 'especialidad' => 'Algo', 'activo' => true,
+            ])->assertSessionHasNoErrors();
+        }
+
+        $puestos = fn (string $tipo) => \App\Models\Especialista::where('tipo', $tipo)->orderBy('orden')->pluck('orden', 'nombre')->all();
+
+        $this->assertSame(['Ana' => 1, 'Carla' => 2], $puestos('especialista'));
+        $this->assertSame(['Beto' => 1, 'Dani' => 2], $puestos('embajador'));
+
+        // Con flechas, sin números.
+        $carla = \App\Models\Especialista::where('nombre', 'Carla')->firstOrFail();
+        $this->actingAs($this->administrador())->post("/panel/especialistas/{$carla->uuid}/mover", ['hacia' => 'arriba']);
+        $this->assertSame(['Carla' => 1, 'Ana' => 2], $puestos('especialista'));
+        // Mover en una lista no toca la otra.
+        $this->assertSame(['Beto' => 1, 'Dani' => 2], $puestos('embajador'));
+    }
+
+    /** Eliminar se lleva la persona y su foto, y no deja hueco en la cuenta. */
+    public function test_eliminar_a_una_persona_se_lleva_su_foto(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        \Illuminate\Support\Facades\Storage::disk('public')->put('especialistas/cara.jpg', 'foto');
+
+        $primera = \App\Models\Especialista::create(['tipo' => 'embajador', 'nombre' => 'Uno', 'especialidad' => 'x', 'orden' => 1, 'foto' => 'especialistas/cara.jpg', 'activo' => true]);
+        \App\Models\Especialista::create(['tipo' => 'embajador', 'nombre' => 'Dos', 'especialidad' => 'x', 'orden' => 2, 'activo' => true]);
+
+        $this->actingAs($this->administrador())->delete("/panel/especialistas/{$primera->uuid}")->assertSessionHasNoErrors();
+
+        $this->assertSame(['Dos' => 1], \App\Models\Especialista::pluck('orden', 'nombre')->all());
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('especialistas/cara.jpg');
+    }
 }
