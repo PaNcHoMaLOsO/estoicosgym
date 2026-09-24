@@ -97,26 +97,7 @@
     @endif
 
     {{-- ===== TESTIMONIOS: reales y con permiso ===== --}}
-    @if(count($testimonios))
-        <section class="py-9 lg:py-16 bg-pg-carbon">
-            <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
-                <div class="text-center mb-6 lg:mb-10 animate-on-scroll">
-                    <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Nuestros socios</span>
-                    <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">LO QUE DICEN</h2>
-                </div>
-                {{-- Separados por una línea, no metidos cada uno en su recuadro. --}}
-                <div class="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-y-0 lg:divide-x divide-pg-tiza/10">
-                    @foreach($testimonios as $i => $t)
-                        <figure class="animate-on-scroll py-5 lg:py-7 lg:px-8" style="animation-delay: {{ $i * 0.1 }}s">
-                            <i class="fas fa-quote-left text-pg-rojo/60 text-2xl" aria-hidden="true"></i>
-                            <blockquote class="mt-4 text-pg-tiza/85 font-modern leading-relaxed">{{ $t['texto'] }}</blockquote>
-                            <figcaption class="mt-3 lg:mt-6 font-semibold text-pg-tiza font-modern">{{ $t['titulo'] }}</figcaption>
-                        </figure>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
+    @include('landing.partes.testimonios')
 
     @include('landing.partes.tienda')
     {{-- Los embajadores justo antes del bloque rojo: gente real que entrena
