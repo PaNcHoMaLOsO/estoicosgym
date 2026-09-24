@@ -1,2 +1,13 @@
+# Lo que se sube desde el panel NO va al repositorio, salvo lo que ya es
+# público en la página web: las fotos de la galería y la portada, la tienda y
+# los logos de los convenios. Así quien descarga el proyecto ve la web igual.
+#
+# Todo lo demás se queda fuera a propósito. Las fotos de los socios son datos
+# personales, y este repositorio es público: una foto subida aquí no se borra
+# nunca del todo, queda en el historial.
 *
 !.gitignore
+!web/
+!web/**
+!convenios/
+!convenios/**
