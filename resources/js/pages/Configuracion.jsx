@@ -463,9 +463,8 @@ function CorreoDeSalida({ correo }) {
                 se avisa antes, no cuando un socio no reciba su recordatorio. */}
             {correo.listas && ! correo.listas.resend ? (
                 <p className="apoyo text-fog">
-                    La API de Resend no tiene clave cargada en este equipo, así que no se puede usar todavía.
-                    La clave se saca en resend.com y la pone quien instaló el sistema, en el archivo de
-                    configuración: por seguridad no se escribe desde aquí.
+                    La API de Resend no tiene clave cargada, así que no se puede usar todavía. La clave se saca en
+                    resend.com y se pega más abajo, en «API de Resend».
                 </p>
             ) : null}
 

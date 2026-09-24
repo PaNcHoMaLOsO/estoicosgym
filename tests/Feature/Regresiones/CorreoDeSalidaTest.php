@@ -163,4 +163,37 @@ class CorreoDeSalidaTest extends CasoConCatalogos
                 && str_contains($peticion['from'], 'avisos@progym.cl')
         );
     }
+    /**
+     * LA PANTALLA DICE DESDE DÓNDE SALE DE VERDAD.
+     *
+     * Enseñaba la cuenta del archivo del equipo aunque en el panel se hubiera
+     * puesto otra: después de cambiarla, el resumen seguía diciendo la vieja y
+     * parecía que no se había guardado.
+     */
+    public function test_el_resumen_ensena_la_cuenta_del_panel(): void
+    {
+        config(['mail.from.address' => 'vieja@gmail.com']);
+
+        $this->guardar(['correo.remitente' => 'nueva@gmail.com'])->assertSessionHasNoErrors();
+
+        $correo = $this->actingAs($this->administrador())
+            ->get('/panel/configuracion/correo')
+            ->viewData('page')['props']['extra']['correo'];
+
+        $this->assertSame('nueva@gmail.com', $correo['remitente']);
+    }
+
+    /** Un respaldo por la misma vía no es respaldo: daría el mismo error. */
+    public function test_el_respaldo_por_la_misma_via_no_cuenta(): void
+    {
+        $this->guardar([
+            'correo.transporte' => 'smtp',
+            'correo.respaldo' => 'smtp',
+            'correo.smtp_host' => 'smtp.gmail.com',
+            'correo.smtp_usuario' => 'nueva@gmail.com',
+            'correo.smtp_clave' => 'abcdefghijklmnop',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertNull(app(CorreoService::class)->nombreRespaldo());
+    }
 }

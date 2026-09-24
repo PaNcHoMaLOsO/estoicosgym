@@ -180,8 +180,11 @@ class AjustesController extends Controller
             'via_descripcion' => $correo->descripcion($via),
             'respaldo' => $respaldo,
             'respaldo_descripcion' => $respaldo ? $correo->descripcion($respaldo) : null,
-            'remitente' => (string) config('mail.from.address'),
-            'nombre_remitente' => (string) config('mail.from.name'),
+            // El que se usa de verdad. Decía el del archivo del equipo, así
+            // que después de cambiar la cuenta en esta misma pantalla seguía
+            // enseñando la vieja y parecía que no se había guardado.
+            'remitente' => $correo->remitente()['direccion'],
+            'nombre_remitente' => $correo->remitente()['nombre'],
             // Qué vías están listas para usarse, para avisar antes de elegir
             // una que no tiene credenciales y dejar al gimnasio sin avisos.
             'listas' => [

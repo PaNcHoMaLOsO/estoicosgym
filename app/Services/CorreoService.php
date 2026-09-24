@@ -122,12 +122,34 @@ class CorreoService
         $elegido = $this->elegidoEnConfiguracion('correo.respaldo');
 
         if ($elegido !== '') {
-            return $this->tieneCredenciales($elegido) ? $elegido : null;
+            $nombre = $this->tieneCredenciales($elegido) ? $elegido : null;
+        } else {
+            $nombre = config('correo.respaldo') ? (string) config('correo.respaldo') : null;
         }
 
-        $nombre = config('correo.respaldo');
+        // EL RESPALDO POR LA MISMA VÍA NO ES RESPALDO. Si Gmail rechaza la
+        // clave, volver a mandarlo por Gmail da el mismo rechazo: solo
+        // duplicaba la espera y hacía creer que había plan B.
+        return $nombre === $this->nombrePrincipal() ? null : $nombre;
+    }
 
-        return $nombre ? (string) $nombre : null;
+    /**
+     * Desde qué dirección sale el correo DE VERDAD: la del panel si hay una, y
+     * si no la del archivo del equipo. La pantalla tiene que decir esto, no lo
+     * que dice el archivo, o enseña una cuenta que ya no se usa.
+     *
+     * @return array{direccion:string, nombre:string}
+     */
+    public function remitente(): array
+    {
+        $delPanel = fn (string $clave, $siNo) => trim($this->deConfiguracion($clave)) !== ''
+            ? trim($this->deConfiguracion($clave))
+            : (string) $siNo;
+
+        return [
+            'direccion' => $delPanel('correo.remitente', config('mail.from.address')),
+            'nombre' => $delPanel('correo.nombre_remitente', config('mail.from.name')),
+        ];
     }
 
     /**
