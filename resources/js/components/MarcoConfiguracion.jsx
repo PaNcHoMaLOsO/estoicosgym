@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangleIcon,
     Building2Icon,
+    ChevronDownIcon,
     ChevronRightIcon,
     GlobeIcon,
     ListChecksIcon,
@@ -10,7 +11,7 @@ import {
     ServerCogIcon,
     WalletIcon,
 } from 'lucide-react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 import { SECCIONES_CONFIGURACION, seccionActiva } from '@/lib/configuracion';
 import { puede } from '@/lib/permisos';
@@ -69,8 +70,34 @@ export default function MarcoConfiguracion({ children }) {
     const pendientes = Object.keys(avisos).length;
 
     return (
+        <Marco
+            grupos={grupos}
+            actual={actual}
+            grupoActual={grupoActual}
+            pendientes={pendientes}
+            avisos={avisos}
+            url={url}
+        >
+            {children}
+        </Marco>
+    );
+}
+
+/**
+ * EL MENÚ, CON AIRE. Eran seis grupos abiertos a la vez —veinticinco enlaces—
+ * metidos en una caja con su propia barra de desplazamiento: todo apretado y
+ * lo de abajo fuera de la vista. Ahora se abre solo el grupo en que se está;
+ * los demás muestran su título y cuántos avisos tienen, y se abren con un
+ * clic. Así cabe entero sin desplazarse y con espacio entre líneas.
+ */
+function Marco({ grupos, actual, grupoActual, pendientes, avisos, url, children }) {
+    // Los que se abrieron a mano, además del grupo en que se está.
+    const [abiertos, setAbiertos] = useState({});
+    const estaAbierto = (g) => ! g.titulo || g === grupoActual || abiertos[g.titulo];
+
+    return (
         <EnMarco.Provider value>
-            <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-6">
+            <div className="lg:grid lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-10">
                 <div className="mb-4 lg:hidden">
                     <label htmlFor="seccion-de-configuracion" className="rotulo mb-1 block">
                         Configuración
@@ -96,15 +123,12 @@ export default function MarcoConfiguracion({ children }) {
                 </div>
 
                 <nav aria-label="Secciones de la configuración" className="hidden lg:block">
-                    {/* Con sus seis grupos el menú es más alto que la pantalla:
-                        se desplaza por su cuenta, o lo de abajo —Usuarios,
-                        Papelera— quedaría fuera de alcance en una pantalla corta. */}
-                    <div className="sticky top-6 max-h-[calc(100dvh-3rem)] space-y-4 overflow-y-auto rounded-panel border border-line bg-surface p-2 pb-3">
-                        <p className="flex items-center justify-between gap-2 px-2 pt-1 text-sm font-semibold text-chalk">
+                    <div className="sticky top-6 max-h-[calc(100dvh-3rem)] space-y-1 overflow-y-auto pb-4">
+                        <p className="mb-3 flex items-center justify-between gap-2 px-3 text-base font-semibold text-chalk">
                             Configuración
                             {pendientes > 0 ? (
                                 <span
-                                    className="rounded-full bg-warn/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-warn"
+                                    className="rounded-full bg-warn/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-warn"
                                     title={pendientes === 1 ? 'Una sección tiene algo pendiente' : `${pendientes} secciones tienen algo pendiente`}
                                 >
                                     {pendientes}
@@ -112,53 +136,69 @@ export default function MarcoConfiguracion({ children }) {
                             ) : null}
                         </p>
 
-                        {grupos.map((g) => (
-                            <div key={g.titulo ?? 'inicio'}>
-                                {/* El título del grupo NO es un enlace y tiene que
-                                    notarse: claro, en negrita y con su raya hasta el
-                                    borde. Lo que cuelga de él va sangrado bajo una
-                                    línea, para que un apartado no se confunda con el
-                                    título de su grupo. */}
-                                {g.titulo ? (
-                                    <p className={`mb-1 flex items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.1em] uppercase ${g === grupoActual ? 'text-chalk' : 'text-fog'}`}>
-                                        <IconoDeGrupo icono={g.icono} activo={g === grupoActual} />
-                                        <span className="truncate">{g.titulo}</span>
-                                    </p>
-                                ) : null}
+                        {grupos.map((g) => {
+                            const abierto = estaAbierto(g);
+                            const avisosDelGrupo = g.secciones.filter((s) => avisos[s.href]).length;
 
-                                <div className={g.titulo ? 'ml-[0.95rem] space-y-0.5 border-l border-line pl-2' : 'space-y-0.5'}>
-                                {g.secciones.map((s) => {
-                                    const activa = seccionActiva(s, url);
-                                    const aviso = avisos[s.href];
-
-                                    return (
-                                        <Link
-                                            key={s.href}
-                                            href={s.href}
-                                            aria-current={activa ? 'page' : undefined}
-                                            title={aviso ?? undefined}
-                                            className={`relative flex items-center justify-between gap-2 rounded-control py-1.5 pr-2 pl-3 text-sm transition-colors ${
-                                                activa
-                                                    ? 'bg-surface-2 font-medium text-chalk before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-volt'
-                                                    : 'text-fog hover:bg-surface-2 hover:text-chalk'
+                            return (
+                                <div key={g.titulo ?? 'inicio'} className={g.titulo ? 'pt-1' : 'pb-2'}>
+                                    {g.titulo ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setAbiertos((a) => ({ ...a, [g.titulo]: ! abierto }))}
+                                            aria-expanded={abierto}
+                                            disabled={g === grupoActual}
+                                            className={`flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-left text-sm font-medium transition-colors ${
+                                                g === grupoActual ? 'text-chalk' : 'text-fog hover:bg-surface-2 hover:text-chalk'
                                             }`}
                                         >
-                                            <span className="flex min-w-0 items-center gap-2">
-                                                {g.titulo ? null : <ListChecksIcon className="size-4 shrink-0" aria-hidden="true" />}
-                                                <span className="truncate">{s.etiqueta}</span>
-                                            </span>
-                                            {aviso ? (
-                                                <AlertTriangleIcon
-                                                    className="size-3.5 shrink-0 text-warn"
-                                                    aria-label="Tiene algo pendiente"
-                                                />
+                                            <IconoDeGrupo icono={g.icono} activo={g === grupoActual} />
+                                            <span className="min-w-0 flex-1 truncate">{g.titulo}</span>
+                                            {! abierto && avisosDelGrupo > 0 ? (
+                                                <AlertTriangleIcon className="size-3.5 shrink-0 text-warn" aria-label="Tiene algo pendiente" />
                                             ) : null}
-                                        </Link>
-                                    );
-                                })}
+                                            {g === grupoActual ? null : (
+                                                <ChevronDownIcon
+                                                    className={`size-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`}
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+                                        </button>
+                                    ) : null}
+
+                                    {abierto ? (
+                                        <div className={g.titulo ? 'mt-0.5 mb-2 ml-[1.35rem] space-y-0.5 border-l border-line pl-3' : 'space-y-0.5'}>
+                                            {g.secciones.map((s) => {
+                                                const activa = seccionActiva(s, url);
+                                                const aviso = avisos[s.href];
+
+                                                return (
+                                                    <Link
+                                                        key={s.href}
+                                                        href={s.href}
+                                                        aria-current={activa ? 'page' : undefined}
+                                                        title={aviso ?? undefined}
+                                                        className={`relative flex items-center justify-between gap-2 rounded-control px-3 py-2 text-sm transition-colors ${
+                                                            activa
+                                                                ? 'bg-surface-2 font-medium text-chalk before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-volt'
+                                                                : 'text-fog hover:bg-surface-2 hover:text-chalk'
+                                                        }`}
+                                                    >
+                                                        <span className="flex min-w-0 items-center gap-2.5">
+                                                            {g.titulo ? null : <ListChecksIcon className="size-4 shrink-0" aria-hidden="true" />}
+                                                            <span className="truncate">{s.etiqueta}</span>
+                                                        </span>
+                                                        {aviso ? (
+                                                            <AlertTriangleIcon className="size-3.5 shrink-0 text-warn" aria-label="Tiene algo pendiente" />
+                                                        ) : null}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : null}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </nav>
 
@@ -168,7 +208,7 @@ export default function MarcoConfiguracion({ children }) {
                         parte de la configuración colgaba. En el celular, donde el menú
                         es un selector cerrado, es lo único que lo dice. */}
                     {actual && grupoActual?.titulo ? (
-                        <p className="apoyo mb-2 flex flex-wrap items-center gap-1 text-fog">
+                        <p className="apoyo mb-3 flex flex-wrap items-center gap-1 text-fog">
                             <Link href="/panel/configuracion" className="transition-colors hover:text-chalk">
                                 Configuración
                             </Link>

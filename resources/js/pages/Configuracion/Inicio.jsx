@@ -45,9 +45,9 @@ export default function Inicio({ puntos }) {
         <>
             <Head title="Configuración" />
 
-            <header className="mb-4">
-                <h1 className="text-lg font-semibold text-chalk">Lo que falta</h1>
-                <p className="apoyo text-fog">
+            <header className="mb-6">
+                <h1 className="text-xl font-semibold text-chalk">Lo que falta</h1>
+                <p className="mt-1 text-sm text-fog">
                     {faltan === 0
                         ? 'Nada impide trabajar.'
                         : faltan === 1
@@ -60,24 +60,24 @@ export default function Inicio({ puntos }) {
             </header>
 
             {/* CÓMO VA, de un vistazo: cuánto está listo y cuánto queda, antes de la lista. */}
-            <section className="mb-4 max-w-3xl rounded-panel border border-line bg-surface p-4">
+            <section className="mb-6 rounded-panel border border-line bg-surface px-6 py-5">
                 <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
                     <p className="text-sm text-chalk">
-                        <span className="text-2xl font-semibold tabular-nums">{avance}%</span>
+                        <span className="text-3xl font-semibold tabular-nums">{avance}%</span>
                         <span className="ml-2 text-fog">configurado</span>
                     </p>
-                    <p className="apoyo flex flex-wrap gap-x-4 gap-y-1 text-fog">
+                    <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-fog">
                         <span className={faltan > 0 ? 'text-warn' : ''}>{faltan} por arreglar</span>
                         <span className={mejoras > 0 ? 'text-info' : ''}>{mejoras} {mejoras === 1 ? 'idea' : 'ideas'}</span>
                         <span className="text-ok">{listos} listos</span>
                     </p>
                 </div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100} aria-label="Configuración completada">
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100} aria-label="Configuración completada">
                     <div className="h-full rounded-full bg-ok transition-[width] duration-500" style={{ width: `${avance}%` }} />
                 </div>
             </section>
 
-            <div className="max-w-3xl space-y-4">
+            <div className="grid items-start gap-5 xl:grid-cols-2">
                 {grupos.map((grupo) => {
                     const pendientes = grupo.puntos.filter((p) => p.estado !== 'ok');
                     const hechos = grupo.puntos.filter((p) => p.estado === 'ok');
@@ -86,7 +86,7 @@ export default function Inicio({ puntos }) {
 
                     return (
                     <section key={grupo.titulo} className="overflow-hidden rounded-panel border border-line bg-surface">
-                        <h2 className="flex items-center justify-between gap-3 border-b border-line px-4 py-2">
+                        <h2 className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
                             <span className="rotulo">{grupo.titulo}</span>
                             {pendientes.length === 0 ? (
                                 <span className="apoyo inline-flex items-center gap-1 text-ok">
@@ -105,7 +105,7 @@ export default function Inicio({ puntos }) {
                                     <li key={punto.clave}>
                                         <Link
                                             href={punto.href}
-                                            className={`group flex items-start gap-3 border-l-2 px-4 py-3 transition-colors hover:bg-surface-2 ${
+                                            className={`group flex items-start gap-3.5 border-l-2 px-5 py-4 transition-colors hover:bg-surface-2 ${
                                                 punto.estado === 'falta' ? 'border-l-warn' : punto.estado === 'mejora' ? 'border-l-info' : 'border-l-transparent'
                                             }`}
                                         >
@@ -117,7 +117,7 @@ export default function Inicio({ puntos }) {
                                                 >
                                                     {punto.titulo}
                                                 </span>
-                                                <span className="apoyo block text-fog">{punto.detalle}</span>
+                                                <span className="mt-0.5 block text-[13px] leading-relaxed text-fog">{punto.detalle}</span>
                                             </span>
 
                                             <ChevronRightIcon
@@ -135,7 +135,7 @@ export default function Inicio({ puntos }) {
                                 type="button"
                                 onClick={() => setAbiertos((a) => ({ ...a, [grupo.titulo]: !abierto }))}
                                 aria-expanded={abierto}
-                                className={`apoyo flex w-full items-center justify-between gap-2 px-4 py-2 text-fog transition-colors hover:bg-surface-2 hover:text-chalk ${visibles.length > 0 ? 'border-t border-line' : ''}`}
+                                className={`apoyo flex w-full items-center justify-between gap-2 px-5 py-2.5 text-fog transition-colors hover:bg-surface-2 hover:text-chalk ${visibles.length > 0 ? 'border-t border-line' : ''}`}
                             >
                                 {abierto ? 'Ocultar lo que ya está listo' : `${hechos.length} ${hechos.length === 1 ? 'cosa ya está lista' : 'cosas ya están listas'}`}
                                 <ChevronDownIcon className={`size-4 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
