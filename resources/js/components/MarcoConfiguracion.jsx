@@ -83,17 +83,38 @@ export default function MarcoConfiguracion({ children }) {
     );
 }
 
+/** Lo que se abrió o cerró a mano, guardado en este navegador. */
+function leerPlegados() {
+    try {
+        return JSON.parse(window.localStorage.getItem('configuracion.menu') ?? '{}') ?? {};
+    } catch {
+        return {};
+    }
+}
+
 /**
  * EL MENÚ, CON AIRE. Eran seis grupos abiertos a la vez —veinticinco enlaces—
  * metidos en una caja con su propia barra de desplazamiento: todo apretado y
- * lo de abajo fuera de la vista. Ahora se abre solo el grupo en que se está;
- * los demás muestran su título y cuántos avisos tienen, y se abren con un
- * clic. Así cabe entero sin desplazarse y con espacio entre líneas.
+ * lo de abajo fuera de la vista.
+ *
+ * CADA GRUPO SE ABRE Y SE CIERRA CON UN CLIC, también el que se está viendo.
+ * Sin tocar nada, se ve abierto solo el grupo en que se está; lo que se abre o
+ * se cierra a mano se recuerda al cambiar de pantalla y al volver otro día.
  */
 function Marco({ grupos, actual, grupoActual, pendientes, avisos, url, children }) {
-    // Los que se abrieron a mano, además del grupo en que se está.
-    const [abiertos, setAbiertos] = useState({});
-    const estaAbierto = (g) => ! g.titulo || g === grupoActual || abiertos[g.titulo];
+    const [plegados, setPlegados] = useState(leerPlegados);
+    const estaAbierto = (g) => ! g.titulo || (plegados[g.titulo] ?? g === grupoActual);
+
+    function alternar(g) {
+        const nuevo = { ...plegados, [g.titulo]: ! estaAbierto(g) };
+        setPlegados(nuevo);
+
+        try {
+            window.localStorage.setItem('configuracion.menu', JSON.stringify(nuevo));
+        } catch {
+            // Sin almacenamiento, se recuerda solo mientras no se recargue.
+        }
+    }
 
     return (
         <EnMarco.Provider value>
@@ -145,11 +166,10 @@ function Marco({ grupos, actual, grupoActual, pendientes, avisos, url, children 
                                     {g.titulo ? (
                                         <button
                                             type="button"
-                                            onClick={() => setAbiertos((a) => ({ ...a, [g.titulo]: ! abierto }))}
+                                            onClick={() => alternar(g)}
                                             aria-expanded={abierto}
-                                            disabled={g === grupoActual}
                                             className={`flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-left text-sm font-medium transition-colors ${
-                                                g === grupoActual ? 'text-chalk' : 'text-fog hover:bg-surface-2 hover:text-chalk'
+                                                g === grupoActual ? 'text-chalk hover:bg-surface-2' : 'text-fog hover:bg-surface-2 hover:text-chalk'
                                             }`}
                                         >
                                             <IconoDeGrupo icono={g.icono} activo={g === grupoActual} />
@@ -157,12 +177,10 @@ function Marco({ grupos, actual, grupoActual, pendientes, avisos, url, children 
                                             {! abierto && avisosDelGrupo > 0 ? (
                                                 <AlertTriangleIcon className="size-3.5 shrink-0 text-warn" aria-label="Tiene algo pendiente" />
                                             ) : null}
-                                            {g === grupoActual ? null : (
-                                                <ChevronDownIcon
-                                                    className={`size-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`}
-                                                    aria-hidden="true"
-                                                />
-                                            )}
+                                            <ChevronDownIcon
+                                                className={`size-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            />
                                         </button>
                                     ) : null}
 
