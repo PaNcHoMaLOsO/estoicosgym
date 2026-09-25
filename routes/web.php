@@ -31,6 +31,7 @@ Route::middleware('security.headers')->group(function () {
     Route::get('/planes', [LandingController::class, 'planes'])->name('landing.planes');
     Route::get('/convenios', [LandingController::class, 'convenios'])->name('landing.convenios');
     Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
+    Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->name('landing.especialista');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
     Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
     /*

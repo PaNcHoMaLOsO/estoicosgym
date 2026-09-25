@@ -179,6 +179,11 @@ borra. `php artisan permisos:revisar` falla si alguna ruta quedó sin clasificar
 - Especialistas, embajadores y testimonios se cargan en Configuración → Página
   web. `web:ejemplos` pone unos de muestra y `--quitar` los saca: un testimonio
   inventado publicado es publicidad engañosa.
+- **Cada especialista tiene su perfil** (`/especialistas/su-nombre`, la dirección
+  sale sola del nombre): la foto grande, cómo atiende, los temas en que se enfoca,
+  su presentación y los botones para escribirle. En la lista va solo la foto, la
+  especialidad y el nombre: con la presentación encima, la foto quedaba tapada.
+  Los perfiles salen en el `sitemap.xml`.
 - **Las fotos** se guardan livianas (`App\Support\FotoLiviana`): WebP, achicadas
   por el lado más largo. La galería se puede ordenar sola —las panorámicas
   primero y sin dos parecidas seguidas— o con flechas.

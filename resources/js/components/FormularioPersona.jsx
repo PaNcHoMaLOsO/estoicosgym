@@ -2,6 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
+import { Botones } from '@/components/Cobro';
 import { valoresDeEspecialista } from '@/components/FormularioCatalogo';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import achicarFoto from '@/lib/achicarFoto';
@@ -29,7 +30,70 @@ const SUGERENCIAS = {
     embajador: ['Powerlifting', 'CrossFit', 'Culturismo', 'Halterofilia', 'Calistenia', 'Fitness', 'Atletismo'],
 };
 
-const LARGO_DESCRIPCION = 300;
+const LARGO_DESCRIPCION = 1200;
+
+const MODALIDADES = [
+    { valor: 'presencial', etiqueta: 'Presencial' },
+    { valor: 'online', etiqueta: 'Online' },
+    { valor: 'ambas', etiqueta: 'Las dos' },
+];
+
+const TEXTO_MODALIDAD = { presencial: 'Presencial', online: 'Online', ambas: 'Presencial y online' };
+
+/**
+ * Los temas como etiquetas: se escribe uno y Enter (o coma). Una lista es más
+ * fácil de leer en el perfil que una frase larga con todo junto.
+ */
+function Temas({ valor, alCambiar, error }) {
+    const [texto, setTexto] = useState('');
+
+    function agregar() {
+        const nuevo = texto.trim().replace(/,$/, '').trim();
+
+        if (nuevo && valor.length < 8 && ! valor.some((t) => t.toLowerCase() === nuevo.toLowerCase())) {
+            alCambiar([...valor, nuevo.charAt(0).toUpperCase() + nuevo.slice(1)]);
+        }
+
+        setTexto('');
+    }
+
+    return (
+        <div className={`flex flex-wrap items-center gap-1.5 rounded-control border bg-surface px-2 py-1.5 ${error ? 'border-danger' : 'border-line focus-within:border-line-strong'}`}>
+            {valor.map((tema) => (
+                <span key={tema} className="inline-flex items-center gap-1 rounded-control bg-surface-2 py-0.5 pl-2 pr-1 text-sm text-chalk">
+                    {tema}
+                    <button
+                        type="button"
+                        onClick={() => alCambiar(valor.filter((t) => t !== tema))}
+                        aria-label={`Quitar ${tema}`}
+                        className="rounded px-1 text-fog hover:text-danger"
+                    >
+                        ×
+                    </button>
+                </span>
+            ))}
+            {valor.length < 8 ? (
+                <input
+                    id="temas"
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            agregar();
+                        } else if (e.key === 'Backspace' && texto === '' && valor.length) {
+                            alCambiar(valor.slice(0, -1));
+                        }
+                    }}
+                    onBlur={agregar}
+                    maxLength={40}
+                    placeholder={valor.length ? '' : 'Nutrición deportiva, lesiones… (Enter para agregar)'}
+                    className="min-w-32 flex-1 bg-transparent py-0.5 text-sm text-chalk placeholder:text-fog focus:outline-none"
+                />
+            ) : null}
+        </div>
+    );
+}
 
 /** «+56 9 1234 5678», «912345678» o «9 1234 5678» → «9 1234 5678». */
 export function formatearCelular(valor) {
@@ -154,7 +218,6 @@ function Inicial({ nombre, embajador }) {
 /** El panel de un especialista, copiado de landing/especialistas.blade.php. */
 function PanelEspecialista({ data, foto, celular, ancho }) {
     const nombre = data.nombre.trim();
-    const usuario = limpiarInstagram(data.instagram);
 
     return (
         <article
@@ -167,35 +230,26 @@ function PanelEspecialista({ data, foto, celular, ancho }) {
                 <Inicial nombre={nombre} />
             )}
 
-            <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/80 to-transparent" aria-hidden="true" />
+            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/70 to-transparent" aria-hidden="true" />
 
             <div className={`relative ${celular ? 'p-5' : 'p-7'}`}>
                 <span className="block h-0.5 w-8 bg-[#dd2a32]" aria-hidden="true" />
-                <p className={`mt-4 ${POPPINS} text-xs uppercase tracking-[0.2em] ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
+                <p className={`mt-4 line-clamp-2 ${POPPINS} text-xs uppercase tracking-[0.2em] ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
                     {data.especialidad.trim() || 'Especialidad'}
                 </p>
                 <p className={`mt-1 ${OSWALD} ${celular ? 'text-3xl' : 'text-4xl'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
                     {nombre || 'Nombre'}
                 </p>
+                {data.modalidad ? <p className={`mt-2 ${POPPINS} text-xs text-[#f2f2f4]/60`}>{TEXTO_MODALIDAD[data.modalidad]}</p> : null}
 
-                {data.descripcion.trim() ? (
-                    <p className={`mt-3 ${POPPINS} text-sm leading-relaxed text-[#f2f2f4]/70`}>{data.descripcion}</p>
-                ) : null}
-
-                {data.whatsapp || usuario ? (
-                    <div className={`mt-5 flex flex-wrap gap-x-5 gap-y-2 ${POPPINS} text-sm`}>
-                        {data.whatsapp ? (
-                            <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">
-                                <IconoWhatsapp /> Escribirle
-                            </span>
-                        ) : null}
-                        {usuario ? (
-                            <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">
-                                <IconoInstagram /> Instagram
-                            </span>
-                        ) : null}
-                    </div>
-                ) : null}
+                <div className={`mt-5 flex items-center justify-between gap-4 ${POPPINS} text-sm`}>
+                    <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">Ver perfil →</span>
+                    {data.whatsapp ? (
+                        <span className="flex size-10 items-center justify-center rounded-full border border-[#f2f2f4]/25 text-lg text-[#f2f2f4]">
+                            <IconoWhatsapp />
+                        </span>
+                    ) : null}
+                </div>
             </div>
         </article>
     );
@@ -474,20 +528,37 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                         </Campo>
 
                         {! esEmbajador ? (
-                            <Campo etiqueta="Descripción" nombre="descripcion" error={errors.descripcion}>
-                                <Area
-                                    nombre="descripcion"
-                                    valor={data.descripcion}
-                                    alCambiar={(v) => setData('descripcion', v)}
-                                    error={errors.descripcion}
-                                    filas={3}
-                                    maxLength={LARGO_DESCRIPCION}
-                                    placeholder="En qué te puede ayudar, en una o dos líneas."
-                                />
-                                <span className="apoyo -mt-0.5 self-end tabular-nums text-fog">
-                                    {data.descripcion.length}/{LARGO_DESCRIPCION}
-                                </span>
-                            </Campo>
+                            <>
+                                <Campo etiqueta="Atiende" nombre="modalidad" error={errors.modalidad}>
+                                    <Botones
+                                        opciones={MODALIDADES}
+                                        valor={data.modalidad}
+                                        alElegir={(v) => setData('modalidad', data.modalidad === v ? '' : v)}
+                                        nombre="Atiende"
+                                        columnas="grid-cols-3"
+                                        compacto
+                                    />
+                                </Campo>
+
+                                <Campo etiqueta="En qué ayuda" nombre="temas" error={errors.temas ?? errors['temas.0']}>
+                                    <Temas valor={data.temas ?? []} alCambiar={(v) => setData('temas', v)} error={errors.temas} />
+                                </Campo>
+
+                                <Campo etiqueta="Presentación" nombre="descripcion" error={errors.descripcion} ayuda="Sale en su perfil, no encima de la foto.">
+                                    <Area
+                                        nombre="descripcion"
+                                        valor={data.descripcion}
+                                        alCambiar={(v) => setData('descripcion', v)}
+                                        error={errors.descripcion}
+                                        filas={5}
+                                        maxLength={LARGO_DESCRIPCION}
+                                        placeholder="Quién es, su experiencia y cómo trabaja. Una línea en blanco separa párrafos."
+                                    />
+                                    <span className="apoyo -mt-0.5 self-end tabular-nums text-fog">
+                                        {data.descripcion.length}/{LARGO_DESCRIPCION}
+                                    </span>
+                                </Campo>
+                            </>
                         ) : null}
 
                         <div className={esEmbajador ? '' : 'grid gap-3 sm:grid-cols-2'}>
@@ -554,6 +625,12 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                 e.target.value = '';
                             }}
                         />
+
+                        {persona?.perfil_url ? (
+                            <a href={persona.perfil_url} target="_blank" rel="noopener" className="apoyo mt-2 block text-center text-fog underline-offset-2 hover:text-chalk hover:underline">
+                                Abrir su perfil en la web ↗
+                            </a>
+                        ) : null}
 
                         <div className="apoyo mt-2 flex justify-between gap-2 text-fog">
                             <button type="button" onClick={() => elegir.current?.click()} className="hover:text-chalk">

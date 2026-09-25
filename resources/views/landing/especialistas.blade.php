@@ -44,33 +44,33 @@
                                 </span>
                             @endif
 
-                            <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-pg-negro via-pg-negro/80 to-transparent" aria-hidden="true"></div>
+                            <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-pg-negro via-pg-negro/70 to-transparent" aria-hidden="true"></div>
 
+                            {{-- LO JUSTO PARA ELEGIR. La presentación iba aquí y con más de
+                                 dos líneas tapaba la foto; ahora va en su perfil, al que lleva
+                                 todo el panel. El WhatsApp queda a mano, para quien ya sabe. --}}
                             <div class="relative p-5 lg:p-7">
                                 <span class="block h-0.5 w-8 bg-pg-rojo transition-all duration-500 group-hover:w-16" aria-hidden="true"></span>
-                                <p class="mt-4 font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro">{{ $e['especialidad'] }}</p>
-                                <h2 class="mt-1 font-display text-3xl lg:text-4xl uppercase leading-none text-pg-tiza">{{ $e['nombre'] }}</h2>
-
-                                @if($e['descripcion'])
-                                    <p class="mt-3 font-modern text-sm leading-relaxed text-pg-tiza/70">{{ $e['descripcion'] }}</p>
+                                <p class="mt-4 line-clamp-2 font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro">{{ $e['especialidad'] }}</p>
+                                <h2 class="mt-1 font-display text-3xl lg:text-4xl uppercase leading-none text-pg-tiza">
+                                    <a href="{{ $e['perfil'] }}" class="after:absolute after:inset-0">{{ $e['nombre'] }}</a>
+                                </h2>
+                                @if($e['modalidad'])
+                                    <p class="mt-2 font-modern text-xs text-pg-tiza/60">{{ $e['modalidad'] }}</p>
                                 @endif
 
-                                @if($e['whatsapp'] || $e['instagram'])
-                                    <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 font-modern text-sm">
-                                        @if($e['whatsapp'])
-                                            <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
-                                               class="inline-flex items-center gap-2 border-b border-pg-tiza/30 pb-1 text-pg-tiza transition-colors hover:border-[#25D366] hover:text-[#25D366]">
-                                                <i class="fab fa-whatsapp" aria-hidden="true"></i> Escribirle
-                                            </a>
-                                        @endif
-                                        @if($e['instagram'])
-                                            <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
-                                               class="inline-flex items-center gap-2 border-b border-pg-tiza/30 pb-1 text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
-                                                <i class="fab fa-instagram" aria-hidden="true"></i> Instagram
-                                            </a>
-                                        @endif
-                                    </div>
-                                @endif
+                                <div class="mt-5 flex items-center justify-between gap-4 font-modern text-sm">
+                                    <span class="inline-flex items-center gap-2 border-b border-pg-tiza/30 pb-1 text-pg-tiza transition-colors group-hover:border-pg-rojo group-hover:text-pg-rojo-claro">
+                                        Ver perfil <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                                    </span>
+                                    @if($e['whatsapp'])
+                                        <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
+                                           aria-label="Escribirle a {{ $e['nombre'] }} por WhatsApp"
+                                           class="relative z-10 flex size-10 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-[#25D366] hover:bg-[#25D366]">
+                                            <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i>
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </article>
                     @endforeach

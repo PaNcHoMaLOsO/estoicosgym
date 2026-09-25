@@ -216,6 +216,8 @@ export function valoresDeEspecialista(especialista, tipo = 'especialista') {
         nombre: especialista?.nombre ?? '',
         especialidad: especialista?.especialidad ?? '',
         descripcion: especialista?.descripcion ?? '',
+        temas: especialista?.temas ?? [],
+        modalidad: especialista?.modalidad ?? '',
         foto: null,
         quitar_foto: false,
         foto_url: especialista?.foto_url ?? null,

@@ -269,6 +269,11 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertSee('Diego Soto')
             ->assertSee('Personal trainer')
             ->assertSee('https://wa.me/56912345678?text=' . $saludo, false)
+            ->assertSee(route('landing.especialista', 'diego-soto'), false);
+
+        // El Instagram va en su perfil.
+        $this->get('/especialistas/diego-soto')
+            ->assertOk()
             ->assertSee('https://www.instagram.com/diego.fit/', false);
 
         $this->get('/')
@@ -489,5 +494,72 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $this->assertSame(['Dos' => 1], \App\Models\Especialista::pluck('orden', 'nombre')->all());
         \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('especialistas/cara.jpg');
+    }
+
+    // ---------- El perfil de cada especialista ----------
+
+    /**
+     * La presentación iba encima de la foto y la tapaba: ahora va en su
+     * perfil, y en la lista queda lo justo para elegir.
+     */
+    public function test_la_presentacion_va_en_su_perfil_y_no_en_la_lista(): void
+    {
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Camila Rojas',
+            'especialidad' => 'Nutricionista',
+            'descripcion' => "Nutricionista deportiva con diez años de experiencia.\n\nTrabajo con deportistas.",
+            'temas' => ['nutrición deportiva', 'Nutrición deportiva', ' ', 'Composición corporal'],
+            'modalidad' => 'ambas',
+            'activo' => true,
+        ])->assertSessionHasNoErrors();
+
+        $camila = Especialista::firstWhere('nombre', 'Camila Rojas');
+        $this->assertSame('camila-rojas', $camila->slug);
+        $this->assertSame(['Nutrición deportiva', 'Composición corporal'], $camila->temas);
+
+        $this->get('/especialistas')
+            ->assertOk()
+            ->assertSee('Camila Rojas')
+            ->assertSee('Presencial y online')
+            ->assertDontSee('diez años de experiencia');
+
+        $this->get('/especialistas/camila-rojas')
+            ->assertOk()
+            ->assertSee('diez años de experiencia')
+            ->assertSee('Trabajo con deportistas.')
+            ->assertSee('Composición corporal')
+            ->assertSee('Presencial y online');
+    }
+
+    public function test_el_perfil_de_un_oculto_o_de_un_embajador_no_existe(): void
+    {
+        Especialista::create(['nombre' => 'Oculto Uno', 'especialidad' => 'Kine', 'activo' => false]);
+        Especialista::create(['nombre' => 'Diego Atleta', 'especialidad' => 'CrossFit', 'tipo' => 'embajador', 'activo' => true]);
+
+        $this->get('/especialistas/oculto-uno')->assertNotFound();
+        $this->get('/especialistas/diego-atleta')->assertNotFound();
+        $this->get('/especialistas/no-existe')->assertNotFound();
+    }
+
+    public function test_dos_con_el_mismo_nombre_tienen_direcciones_distintas(): void
+    {
+        $uno = Especialista::create(['nombre' => 'José Pérez', 'especialidad' => 'Kine', 'activo' => true]);
+        $dos = Especialista::create(['nombre' => 'Jose Perez', 'especialidad' => 'Nutri', 'activo' => true]);
+
+        $this->assertSame('jose-perez', $uno->slug);
+        $this->assertSame('jose-perez-2', $dos->slug);
+
+        // Corregir el nombre cambia la dirección; guardar otra cosa, no.
+        $uno->update(['especialidad' => 'Kinesiólogo']);
+        $this->assertSame('jose-perez', $uno->fresh()->slug);
+        $uno->update(['nombre' => 'José Pérez Soto']);
+        $this->assertSame('jose-perez-soto', $uno->fresh()->slug);
+    }
+
+    public function test_el_perfil_sale_en_el_mapa_del_sitio(): void
+    {
+        Especialista::create(['nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'activo' => true]);
+
+        $this->get('/sitemap.xml')->assertOk()->assertSee(route('landing.especialista', 'camila-rojas'), false);
     }
 }

@@ -164,6 +164,44 @@ class LandingController extends Controller
             [], $comun);
     }
 
+    /**
+     * El perfil de un especialista: su foto grande, su presentación, en qué
+     * se enfoca, cómo atiende y cómo escribirle.
+     *
+     * En la lista iba todo encima de la foto y la tapaba; allá queda lo justo
+     * para elegir, y aquí lo necesario para decidirse a escribirle.
+     */
+    public function especialista(string $slug)
+    {
+        $comun = $this->comun();
+        $especialista = collect($comun['especialistas'])->firstWhere('slug', $slug);
+
+        abort_if(! $especialista, 404);
+
+        $otros = collect($comun['especialistas'])->where('slug', '!=', $slug)->take(3)->values()->all();
+        $nombreGimnasio = $comun['gimnasio']['nombre'];
+
+        return $this->pagina('landing.especialista', 'landing.especialista',
+            "{$especialista['nombre']}, {$especialista['especialidad']}",
+            $especialista['descripcion']
+                ? Str::limit(preg_replace('/\s+/', ' ', $especialista['descripcion']), 155)
+                : "{$especialista['nombre']}, {$especialista['especialidad']} en {$nombreGimnasio}. Escríbele directo.",
+            [
+                'especialista' => $especialista,
+                'otros' => $otros,
+                'migas' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => $nombreGimnasio, 'item' => route('landing')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Especialistas', 'item' => route('landing.especialistas')],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $especialista['nombre'], 'item' => route('landing.especialista', $slug)],
+                    ],
+                ],
+            ],
+            $comun, ['slug' => $slug]);
+    }
+
     public function paginaContacto()
     {
         $comun = $this->comun();
@@ -276,7 +314,7 @@ class LandingController extends Controller
      * @param array<string,mixed> $datos
      * @param array<string,mixed> $comun
      */
-    private function pagina(string $vista, string $ruta, ?string $titulo, ?string $descripcion, array $datos, array $comun)
+    private function pagina(string $vista, string $ruta, ?string $titulo, ?string $descripcion, array $datos, array $comun, array $parametros = [])
     {
         $web = $comun['web'];
 
@@ -288,9 +326,10 @@ class LandingController extends Controller
             $web['descripcion'] = $descripcion;
         }
 
-        $web['canonical'] = route($ruta);
+        $web['canonical'] = route($ruta, $parametros);
         $web['json_ld'] = $datos['json_ld'] ?? null;
-        unset($datos['json_ld']);
+        $migas = $datos['migas'] ?? null;
+        unset($datos['json_ld'], $datos['migas']);
 
         // Las migas: Google las muestra en vez de la dirección —«PRO GYM ›
         // Planes y precios»— y dicen de qué parte del sitio es cada página.
@@ -301,7 +340,7 @@ class LandingController extends Controller
                 ['@type' => 'ListItem', 'position' => 1, 'name' => $comun['gimnasio']['nombre'], 'item' => route('landing')],
                 ['@type' => 'ListItem', 'position' => 2, 'name' => self::MIGAS[$ruta], 'item' => route($ruta)],
             ],
-        ] : null;
+        ] : $migas;
 
         return view($vista, ['web' => $web] + $datos + $comun);
     }
@@ -828,11 +867,16 @@ class LandingController extends Controller
             ->get()
             ->map(fn (Especialista $e) => [
                 'nombre' => $e->nombre,
+                'slug' => $e->slug,
+                'perfil' => $e->slug ? route('landing.especialista', $e->slug) : null,
                 'especialidad' => $e->especialidad,
                 'descripcion' => $e->descripcion,
+                'temas' => $e->temas ?? [],
+                'modalidad' => Especialista::MODALIDADES[$e->modalidad] ?? null,
                 'foto' => $e->urlDeFoto(),
                 'whatsapp' => $e->enlaceWhatsapp($gimnasio),
                 'instagram' => $e->enlaceInstagram(),
+                'usuario' => $e->instagram,
             ])
             ->all();
     }
@@ -909,6 +953,13 @@ class LandingController extends Controller
             $xml .= '  <url><loc>' . e(route($ruta)) . '</loc><lastmod>' . $fecha . '</lastmod>'
                 . '<changefreq>weekly</changefreq><priority>' . $prioridad . '</priority></url>' . "\n";
         }
+
+        // El perfil de cada especialista, con la fecha de su último cambio.
+        Especialista::where('activo', true)->where('tipo', 'especialista')->whereNotNull('slug')->get()
+            ->each(function (Especialista $e) use (&$xml) {
+                $xml .= '  <url><loc>' . e(route('landing.especialista', $e->slug)) . '</loc><lastmod>' . $e->updated_at->toDateString() . '</lastmod>'
+                    . '<changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
+            });
 
         $xml .= '</urlset>' . "\n";
 

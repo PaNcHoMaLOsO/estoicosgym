@@ -29,8 +29,11 @@ class Especialista extends Model
         'uuid',
         'tipo',
         'nombre',
+        'slug',
         'especialidad',
         'descripcion',
+        'temas',
+        'modalidad',
         'foto',
         'whatsapp',
         'instagram',
@@ -41,6 +44,14 @@ class Especialista extends Model
     protected $casts = [
         'activo' => 'boolean',
         'orden' => 'integer',
+        'temas' => 'array',
+    ];
+
+    /** Cómo atiende. Sin elegir, el perfil no dice nada. */
+    public const MODALIDADES = [
+        'presencial' => 'Presencial',
+        'online' => 'Online',
+        'ambas' => 'Presencial y online',
     ];
 
     protected static function booted(): void
@@ -50,11 +61,32 @@ class Especialista extends Model
                 $especialista->uuid = (string) Str::uuid();
             }
         });
+
+        // La dirección de su perfil sale del nombre. Se rehace si se corrige
+        // el nombre: una dirección con el nombre mal escrito no sirve a nadie.
+        static::saving(function (Especialista $especialista) {
+            if (! $especialista->slug || $especialista->isDirty('nombre')) {
+                $especialista->slug = $especialista->slugLibre();
+            }
+        });
     }
 
     public function getRouteKeyName()
     {
         return 'uuid';
+    }
+
+    /** «Camila Rojas» → «camila-rojas»; si ya existe, «camila-rojas-2». */
+    private function slugLibre(): string
+    {
+        $base = Str::slug($this->nombre) ?: 'especialista';
+        $slug = $base;
+
+        for ($n = 2; static::where('slug', $slug)->when($this->exists, fn ($q) => $q->whereKeyNot($this->getKey()))->exists(); $n++) {
+            $slug = "{$base}-{$n}";
+        }
+
+        return $slug;
     }
 
     public function urlDeFoto(): ?string

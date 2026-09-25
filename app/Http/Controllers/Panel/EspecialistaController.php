@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Especialista;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -49,6 +50,10 @@ class EspecialistaController extends Controller
                 'nombre' => $e->nombre,
                 'especialidad' => $e->especialidad,
                 'descripcion' => $e->descripcion,
+                'temas' => $e->temas ?? [],
+                'modalidad' => $e->modalidad ?? '',
+                // Para abrir su perfil desde el formulario.
+                'perfil_url' => $e->tipo === 'especialista' && $e->slug ? route('landing.especialista', $e->slug) : null,
                 'foto_url' => $e->urlDeFoto(),
                 // Se enseñan como se escriben, no como se guardan.
                 'whatsapp' => $e->whatsapp ? $this->comoSeLee($e->whatsapp) : '',
@@ -168,7 +173,11 @@ class EspecialistaController extends Controller
             'tipo' => 'nullable|in:' . implode(',', array_keys(Especialista::TIPOS)),
             'nombre' => 'required|string|max:100',
             'especialidad' => 'required|string|max:100',
-            'descripcion' => 'nullable|string|max:300',
+            // En su perfil: una presentación, no una línea.
+            'descripcion' => 'nullable|string|max:1200',
+            'temas' => 'nullable|array|max:8',
+            'temas.*' => 'nullable|string|max:40',
+            'modalidad' => 'nullable|in:' . implode(',', array_keys(Especialista::MODALIDADES)),
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
             'activo' => 'boolean',
@@ -184,7 +193,15 @@ class EspecialistaController extends Controller
         $fila = [
             'nombre' => trim($datos['nombre']),
             'especialidad' => trim($datos['especialidad']),
-            'descripcion' => $datos['descripcion'] ?? null,
+            'descripcion' => filled($datos['descripcion'] ?? null) ? trim($datos['descripcion']) : null,
+            // Sin repetidos ni vacíos, con la primera en mayúscula.
+            'temas' => collect($datos['temas'] ?? [])
+                ->map(fn ($t) => Str::ucfirst(trim((string) $t)))
+                ->filter()
+                ->unique(fn ($t) => mb_strtolower($t))
+                ->values()
+                ->all() ?: null,
+            'modalidad' => ($datos['modalidad'] ?? null) ?: null,
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
             'activo' => (bool) ($datos['activo'] ?? true),
