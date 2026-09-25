@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
-import FormularioCatalogo, { camposDePersona, valoresDeEspecialista } from '@/components/FormularioCatalogo';
+import FormularioPersona from '@/components/FormularioPersona';
 import Retrato from '@/components/Retrato';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
@@ -159,15 +159,12 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                 ))}
             </Tabla>
 
-            <FormularioCatalogo
+            <FormularioPersona
                 abierto={editando !== null}
                 alCerrar={() => setEditando(null)}
-                titulo={editando?.uuid ? `Editar a ${editando.nombre}` : textos.nuevo}
-                descripcion="Solo con su permiso: su foto y su teléfono quedan a la vista de cualquiera."
-                accion={editando?.uuid ? `/panel/especialistas/${editando.uuid}` : '/panel/especialistas'}
-                metodo={editando?.uuid ? 'put' : 'post'}
-                campos={camposDePersona(tipo)}
-                valores={valoresDeEspecialista(editando, tipo)}
+                tipo={tipo}
+                persona={editando?.uuid ? editando : null}
+                existentes={[...new Set(especialistas.map((e) => e.especialidad).filter(Boolean))]}
             />
         </>
     );
