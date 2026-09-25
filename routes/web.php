@@ -388,7 +388,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
      * Vive bajo /panel y reemplazo por completo al panel viejo de Blade
      * (/admin), que se cerro y cuyo codigo ya se borro.
      */
-    Route::prefix('panel')->name('panel.')->group(function () {
+    // La revisión del día —vencidas, pagos, bajas— la corre el primero que
+    // abre el panel cada día: ver App\Http\Middleware\RevisaElDia.
+    Route::prefix('panel')->name('panel.')->middleware(\App\Http\Middleware\RevisaElDia::class)->group(function () {
         Route::get('/', \App\Http\Controllers\Panel\ResumenController::class)->name('resumen');
 
         // La plata, aparte del resumen: la caja del día y del mes, lo que se

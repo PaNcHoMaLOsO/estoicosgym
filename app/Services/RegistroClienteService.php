@@ -400,7 +400,18 @@ class RegistroClienteService
             // quieren dar, y el celular ya sirve para ubicarlos.
             'email' => [
                 'nullable', 'email:rfc', 'max:255',
-                Rule::unique('clientes', 'email')->ignore($actual?->id),
+                // Sin mirar mayúsculas: en PostgreSQL «Juan@Gmail.com» y
+                // «juan@gmail.com» contaban como correos distintos.
+                function ($attribute, $value, $fail) use ($actual) {
+                    $existe = Cliente::withTrashed()
+                        ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim((string) $value))])
+                        ->when($actual, fn ($q) => $q->where('id', '!=', $actual->id))
+                        ->exists();
+
+                    if ($existe) {
+                        $fail('Este correo ya está registrado en otro cliente.');
+                    }
+                },
             ],
             'direccion' => 'nullable|string|max:500',
             'fecha_nacimiento' => [
@@ -421,6 +432,14 @@ class RegistroClienteService
      */
     private function dejarElRutEnSuForma(Request $request): void
     {
+        // El correo, en minúsculas y sin espacios: así se guarda siempre igual
+        // y el aviso de repetido compara lo mismo.
+        foreach (['email', 'apoderado_email'] as $campo) {
+            if (filled($request->input($campo))) {
+                $request->merge([$campo => mb_strtolower(trim((string) $request->input($campo)))]);
+            }
+        }
+
         if ($request->input('tipo_documento', 'rut') === 'pasaporte' || blank($request->input('run_pasaporte'))) {
             return;
         }

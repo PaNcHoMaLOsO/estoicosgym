@@ -8,7 +8,9 @@ presentó el prototipo.
 **No describen el sistema de hoy.** Desde entonces cambiaron, entre otras cosas:
 
 - Se montó un panel nuevo en Inertia + React bajo `/panel`, con la paleta del
-  logotipo; el de Blade sigue vivo en `/admin`.
+  logotipo, y el de Blade (`/admin`) se cerró.
+- La base pasó de MySQL a PostgreSQL (septiembre de 2026), que es lo que usa el
+  servidor.
 - Los permisos por rol pasaron de ser una columna decorativa a aplicarse de
   verdad en las 129 rutas del panel.
 - Se corrigieron fallos que estos documentos daban por buenos: el abono que
@@ -17,7 +19,13 @@ presentó el prototipo.
   y los informes que ocultaban la mitad del dinero cobrado.
 - El envío de correo admite dos vías (SMTP y Resend) con una de respaldo.
 
-Para el estado actual, el README de la raíz.
+Para el estado actual: el [README](../../README.md) de la raíz y
+[docs/](../README.md).
+
+Aquí también quedaron, en septiembre de 2026, los documentos que estaban sueltos
+en la raíz y en `docs/`: los de notificaciones, correo, colores de los correos,
+la guía de código y las presentaciones de requerimientos. Describen el sistema
+de antes.
 
 ## Qué hay aquí
 

@@ -109,4 +109,17 @@ class SocioRepetidoTest extends CasoConCatalogos
 
         $this->assertNull(SocioRepetido::porRut('214107082', $socio->id));
     }
+    /**
+     * EL CORREO SE COMPARA SIN MAYÚSCULAS. En PostgreSQL «Juan@Gmail.com» y
+     * «juan@gmail.com» contaban como distintos y pasaban como dos socios.
+     */
+    public function test_el_correo_repetido_con_mayusculas_no_pasa(): void
+    {
+        Cliente::factory()->create(['email' => 'juan@gmail.com']);
+
+        $this->alta(['run_pasaporte' => '', 'email' => 'Juan@Gmail.com '])->assertSessionHasErrors('email');
+        $this->alta(['run_pasaporte' => '', 'email' => 'Otro.Socio@Gmail.com'])->assertSessionHasNoErrors();
+
+        $this->assertTrue(Cliente::where('email', 'otro.socio@gmail.com')->exists());
+    }
 }

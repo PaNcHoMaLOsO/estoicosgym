@@ -1,160 +1,121 @@
 # PRO GYM — Sistema de gestión
 
-Gestión de socios, membresías y pagos para el gimnasio.
-**Laravel 12 · PHP 8.2 · MySQL · Inertia + React 19 · Tailwind 4**
+El sistema del gimnasio PRO GYM (Los Ángeles, Biobío): socios, membresías,
+cobros, el fiado del mesón, los talleres que se le arriendan a colegios, la caja
+y la página web pública.
+
+**Laravel 12 · PHP 8.4 · PostgreSQL 16 · Inertia + React 19 · Tailwind 4**
 
 ---
 
-## Un solo panel
+## Qué hace
 
-Todo el trabajo del gimnasio se hace en **`/panel`** (Inertia + React): alta de
-socios, inscribir, cobrar, corregir o anular un pago, renovar, pausar, reanudar,
-traspasar, cambiar de plan, dar de baja, papelera, informes con constructor a
-medida, configuración de planes y precios, y los correos —uno a un socio, un
-aviso a un grupo, y el texto de las plantillas—.
-
-El panel antiguo (`/admin`, Blade + AdminLTE) se cerró y su código se borró.
-Solo queda `Admin\InscripcionController` con las seis acciones de membresía que
-el panel llama tal cual: pausar, reanudar, cambiar de plan, traspasar y las dos
-consultas de esos diálogos.
-
-La lógica de negocio vive en servicios (`app/Services/`) y no en los
-controladores. `RegistroClienteService` da de alta socios,
-`RegistroInscripcionService` inscribe y renueva, `RegistroPagoService` cobra,
-`EnvioManualService` y `EnvioMasivoService` mandan los correos, y
-`ConstructorInformes` arma los informes a medida.
-
----
-
-## Levantarlo
-
-Hace falta PHP 8.2+, Composer, MySQL 8 (o MariaDB 10.4) y Node 18+.
-
-```bash
-composer install
-npm install
-cp .env.example .env
-php artisan key:generate
-```
-
-Crea la base y ponla en el `.env` (`DB_DATABASE`), luego:
-
-```bash
-php artisan migrate --seed
-npm run build
-php artisan serve
-```
-
-Con XAMPP en Windows, MySQL se arranca así:
-
-```bash
-/c/xampp/mysql/bin/mysqld.exe --defaults-file=/c/xampp/mysql/bin/my.ini --standalone
-```
-
-### Datos de prueba
-
-`DatabaseSeeder` solo crea los catálogos (roles, estados, planes, precios,
-formas de pago). Para poblar con socios:
-
-```bash
-php artisan db:seed --class=DatosMasivosSeeder
-```
-
-Genera 100 socios con su inscripción y su pago, **coherentes entre sí**: el
-estado se deduce de los montos y las fechas, los precios salen de
-`precios_membresias` y ningún pago queda fechado en el futuro.
-
-> `composer limpiar-y-cargar` hace `migrate:fresh` y **borra toda la base**.
-
----
-
-## Entrar
-
-En `http://localhost:8000/panel`:
-
-| Rol | Correo | Contraseña |
+| Parte | Dónde | Qué resuelve |
 |---|---|---|
-| Administrador | `admin@progym.cl` | `password` |
-| Recepcionista | `recepcion@progym.cl` | `password` |
+| **Resumen** | `/panel` | Lo que hay que atender hoy: a quién se le vence, quién no renovó, quién debe fiado, cumpleaños, notas del mesón |
+| **Socios** | `/panel/clientes` | Alta rápida, ficha del socio, contrato para firmar por correo, foto. Avisa si la persona ya está registrada mientras se escribe el RUT |
+| **Membresías** | `/panel/inscripciones` | Inscribir, renovar, pausar, cambiar de plan, traspasar. A un socio de baja se le vende un plan y se reactiva solo |
+| **Cobros** | `/panel/pagos` | Todo, una parte o repartido entre varios medios. «Todo» cobra el total exacto |
+| **Fiado** | `/panel/fiados` | La libreta del mesón: lo que se lleva y se paga después |
+| **Talleres** | `/panel/talleres` | La sala arrendada a colegios: horario, horas del mes, cotizaciones imprimibles y cobro mensual con IVA |
+| **Caja** | `/panel/caja` | Lo que entró, separado en membresías, talleres y mesón, y junto. Lo que se debe |
+| **Informes** | `/panel/reportes` | Ingresos del año, membresías, pendientes, cómo va el negocio, y un constructor de informes a medida |
+| **Configuración** | `/panel/configuracion` | Planes y precios, convenios, correo, página web, privacidad en pantalla, usuarios, papelera |
+| **Web pública** | `/` | Inicio, El gimnasio, Planes, Convenios, Especialistas, Contacto y «consulta tu membresía» |
 
-Salen de `DatabaseSeeder`. **Cámbialas antes de poner esto en producción**:
-
-```bash
-php artisan tinker
-```
-
-```php
-$u = App\Models\User::where('email', 'admin@progym.cl')->first();
-$u->password = Hash::make('la-nueva');
-$u->save();
-```
-
-**Los permisos por rol se aplican de verdad.** Recepción hace el trabajo de
-mesón —altas, inscripciones, cobros, pausar, renovar, traspasar— y no entra a la
-configuración del gimnasio ni a los informes de ingresos, ni borra nada. El
-reparto se define en `RolesSeeder` y lo aplica `App\Support\Permisos`, que deduce
-el permiso del nombre de la ruta.
-
-```bash
-php artisan permisos:revisar          # qué permiso exige cada ruta
-php artisan permisos:revisar --rol=2  # a qué NO llega recepción
-```
-
-Falla si alguna ruta del panel quedó sin clasificar: un permiso olvidado no da
-error, simplemente deja pasar.
+Cómo funciona cada parte por dentro está en [docs/MODULOS.md](docs/MODULOS.md).
 
 ---
 
-## Correo
+## Levantarlo en este equipo
 
-Todo el sistema envía por `App\Services\CorreoService`, que admite dos vías
-—SMTP con PHPMailer, o la API de Resend— y una de respaldo por si la principal
-falla. Se configura en `config/correo.php` y en el `.env`.
+Resumen corto; el paso a paso, en [docs/INSTALACION.md](docs/INSTALACION.md).
+
+1. **Docker Desktop abierto.** PostgreSQL corre en el contenedor `estoicosgym-pg`.
+2. **El servidor, con PHP 8.4** (el `php` de XAMPP no trae PostgreSQL):
 
 ```bash
-php artisan correo:verificar          # comprueba la configuración SIN enviar nada
-php artisan correo:verificar resend   # solo una vía
+C:/php84/php.exe artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Con Gmail hace falta la verificación en 2 pasos y una **contraseña de
-aplicación** de 16 caracteres, pegada sin los espacios con que Google la muestra.
-Resend solo envía desde un dominio verificado en su panel.
+3. Abrir <http://127.0.0.1:8000/panel>.
 
-No se envía a los dominios reservados (`example.com`, `.test`, `.invalid`): la
-base de pruebas está llena de correos así y mandarles algo solo acumula rebotes
-desde la cuenta real del gimnasio.
+Si se cambió algo del panel (React), se recompila con `npm run build`.
+
+---
+
+## Subirlo al servidor
+
+El servidor usa PostgreSQL. Después de `git pull`:
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan web:aligerar-fotos --confirmar
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+
+Y **el programador**, cada minuto (cron):
+
+```
+* * * * * cd /ruta/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Sin el cron no salen los avisos por correo. La revisión diaria —marcar las
+membresías vencidas y dar de baja a quien quedó sin plan— corre igual: la hace
+el primero que abre el panel cada día.
+
+Todo lo del servidor, en [docs/INSTALACION.md](docs/INSTALACION.md#el-servidor).
 
 ---
 
 ## Comandos propios
 
 ```bash
-php artisan inscripciones:actualizar-estados --dry-run  # marca vencidas y cierra pausas
-php artisan notificaciones:generar                      # arma los avisos automáticos
-php artisan notificaciones:enviar                       # los manda
-php artisan correo:verificar
-php artisan permisos:revisar
+# La revisión del día (normalmente sola: ver docs/MODULOS.md)
+php artisan inscripciones:actualizar-estados --dry-run   # marca vencidas y cierra pausas
+php artisan pagos:sincronizar-estados                    # recuadra saldos
+php artisan clientes:desactivar-vencidos                 # baja a quien quedó sin plan
+
+# Correo
+php artisan notificaciones:generar                       # arma los avisos automáticos
+php artisan notificaciones:enviar                        # los manda
+php artisan correo:verificar                             # revisa la configuración sin enviar
+
+# Datos
+php artisan datos:importar-planillas                     # carga socios desde las planillas (CSV)
+php artisan datos:quitar-pagos-importados                # la plata de las planillas fuera
+php artisan datos:empezar-de-cero                        # borra socios de prueba, con respaldo
+php artisan clientes:normalizar                          # RUT y teléfonos al formato chileno
+
+# Web
+php artisan web:aligerar-fotos --confirmar               # fotos ya subidas → WebP livianas
+php artisan web:ejemplos [--quitar]                      # especialistas y testimonios de muestra
+
+# Revisión
+php artisan permisos:revisar [--rol=2]                   # qué permiso exige cada ruta
 ```
+
+Los comandos que borran o cambian datos solo cuentan lo que harían si no se les
+pasa `--confirmar`.
 
 ---
 
 ## Pruebas
 
 ```bash
-php artisan test
+C:/php84/php.exe artisan test
 ```
 
-Corren sobre SQLite en memoria, sin tocar tu base. Las de `tests/Feature/Regresiones/`
-cubren fallos que ocurrieron de verdad y están escritas para fallar si alguien
-los reintroduce: el pago duplicado por doble clic, el abono que reventaba, el
-segundo factor que se saltaba solo, el enlace de recuperación que no caducaba,
-la renovación que nunca llegó a guardarse, «no paga ahora» que dejaba
-inscripciones sin ningún pago detrás, y el reenvío de un correo que disparaba
-todos los demás de la cola.
+Corren sobre SQLite en memoria, sin tocar la base. Para correrlas contra
+PostgreSQL, que es lo que usa el servidor, ver
+[docs/INSTALACION.md](docs/INSTALACION.md#pruebas-contra-postgresql). Hoy pasan
+las **679 en los dos**.
 
-`TodasLasPantallasAbrenTest` recorre TODAS las rutas GET del panel con datos
-detrás. Es la más tonta y la que más veces ha servido: una pantalla que revienta
-al abrirse no la detecta ninguna prueba de negocio.
+Las de `tests/Feature/Regresiones/` cubren fallos que ocurrieron de verdad y
+están escritas para fallar si alguien los reintroduce. `TodasLasPantallasAbrenTest`
+recorre todas las pantallas del panel con datos detrás.
 
 ---
 
@@ -163,17 +124,23 @@ al abrirse no la detecta ninguna prueba de negocio.
 ```
 app/
   Http/Controllers/Panel/    el panel (Inertia)
-  Http/Controllers/Admin/    lo que queda del panel antiguo: InscripcionController
-  Services/                  logica de negocio
-  Support/Permisos.php       qué permiso exige cada ruta
+  Http/Middleware/           permisos, privacidad del dinero, revisión del día
+  Services/                  la lógica de negocio: altas, inscripciones, cobros, correo
+  Support/                   piezas chicas compartidas: ajustes, búsqueda, ingresos, fotos
+  Console/Commands/          los comandos de arriba
 resources/
-  js/                        el panel: paginas, componentes y tokens de diseno
-  views/landing/             la web publica
-  views/emails/              plantillas de correo
+  js/pages/                  las pantallas del panel (React)
+  js/components/             piezas reusables: cobro, tablas, tablero
+  views/landing/             la web pública (Blade)
+  views/talleres/            la cotización para imprimir
+database/migrations/         el esquema; cada migración explica por qué existe
+tests/Feature/Regresiones/   una prueba por cada fallo que ya pasó
+docs/                        instalación, cómo funciona cada parte y lo pendiente
 ```
 
-Los colores salen del logotipo y viven en `resources/css/tokens.css`. Se editan
-a mano: el generador que los producía es del otro proyecto y aquí no existe.
+Lo pendiente y lo que se podría integrar está en [docs/MEJORAS.md](docs/MEJORAS.md).
+Los documentos de antes —del panel viejo, de 2025— quedaron en
+[docs/historico/](docs/historico/) y ya no describen el sistema.
 
 ---
 

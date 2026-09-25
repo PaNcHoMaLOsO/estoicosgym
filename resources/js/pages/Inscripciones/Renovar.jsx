@@ -107,6 +107,9 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
     // Cuanto sube o baja respecto de lo que pagó la vez pasada. Es la pregunta
     // que hace el socio en el mesón, y responderla de memoria se equivoca.
     const diferencia = cuenta ? cuenta.final - inscripcion.precio_anterior : 0;
+    // Las membresías traídas de las planillas quedaron en $0: no se sabe cuánto
+    // pagaron. Comparar contra ese cero diría «paga $40.000 más», y es falso.
+    const sinPrecioAnterior = ! inscripcion.precio_anterior;
 
 
     function enviar(e) {
@@ -150,7 +153,9 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                         </div>
                         <div>
                             <dt className="inline">Pagó: </dt>
-                            <dd className="inline text-chalk">{pesos.format(inscripcion.precio_anterior)}</dd>
+                            <dd className="inline text-chalk">
+                                {sinPrecioAnterior ? 'sin dato' : pesos.format(inscripcion.precio_anterior)}
+                            </dd>
                         </div>
                         <div>
                             <dt className="inline">Convenio: </dt>
@@ -305,7 +310,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                         </dl>
 
                         {/* «¿Me sube?» es lo primero que preguntan. */}
-                        {diferencia !== 0 ? (
+                        {sinPrecioAnterior ? null : diferencia !== 0 ? (
                             <p className="apoyo mt-1.5 text-fog">
                                 {diferencia > 0
                                     ? `Paga ${pesos.format(diferencia)} más que la vez pasada.`
