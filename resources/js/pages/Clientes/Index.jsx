@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { MailIcon, MessageCircleIcon, UserPlusIcon } from 'lucide-react';
+import { CopyIcon, MailIcon, MessageCircleIcon, UserPlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
 import Estado from '@/components/Estado';
@@ -56,7 +56,7 @@ function Contacto({ celular, email }) {
     );
 }
 
-export default function Index({ clientes, filtros, resumen }) {
+export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
     const opciones = [
         { valor: '', etiqueta: 'Todos', cantidad: resumen.total },
         { valor: 'al_dia', etiqueta: 'Con plan vigente', cantidad: resumen.activos },
@@ -80,13 +80,24 @@ export default function Index({ clientes, filtros, resumen }) {
                     <p className="apoyo text-fog">Haz clic en un socio para abrir su ficha</p>
                 </div>
 
-                <Link
-                    href="/panel/clientes/crear"
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <UserPlusIcon className="size-4" aria-hidden="true" />
-                    Nuevo socio
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                    {duplicados > 0 ? (
+                        <Link
+                            href="/panel/clientes/duplicados"
+                            className="inline-flex items-center gap-1.5 rounded-control border border-warn/40 px-3 py-1.5 text-sm text-warn transition-colors hover:bg-warn/10"
+                        >
+                            <CopyIcon className="size-4" aria-hidden="true" />
+                            {duplicados === 1 ? '1 posible duplicado' : `${duplicados} posibles duplicados`}
+                        </Link>
+                    ) : null}
+                    <Link
+                        href="/panel/clientes/crear"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <UserPlusIcon className="size-4" aria-hidden="true" />
+                        Nuevo socio
+                    </Link>
+                </div>
             </header>
 
             <div className="mb-3 flex flex-col gap-3">

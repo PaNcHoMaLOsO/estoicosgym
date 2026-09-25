@@ -595,7 +595,7 @@ function BorrarDatos({ cliente }) {
     );
 }
 
-export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado }) {
+export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, posiblesDuplicados = [] }) {
     const { auth } = usePage().props;
     // null = ningun dialogo abierto.
     const [confirmando, setConfirmando] = useState(null);
@@ -770,6 +770,32 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                     )}
                 </div>
             </header>
+
+            {/* PUEDE ESTAR DOS VECES. Las planillas traían fichas sin RUT, y la
+                misma persona quedó con una ficha sin RUT y otra con él. Se avisa
+                aquí, con quien se parece y el enlace para compararlas. */}
+            {posiblesDuplicados.length > 0 ? (
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-panel border border-warn/40 bg-warn/5 px-4 py-3">
+                    <p className="text-sm text-chalk">
+                        <span className="font-medium text-warn">¿Está dos veces?</span>{' '}
+                        {posiblesDuplicados.map((d, i) => (
+                            <span key={d.uuid}>
+                                {i > 0 ? ', ' : ''}
+                                <Link href={`/panel/clientes/${d.uuid}`} className="underline-offset-2 hover:underline">
+                                    {d.nombre}
+                                </Link>
+                                <span className="text-fog"> ({d.rut ?? 'sin RUT'}, {d.porque.toLowerCase()})</span>
+                            </span>
+                        ))}
+                    </p>
+                    <Link
+                        href={`/panel/clientes/duplicados?socio=${cliente.uuid}`}
+                        className="shrink-0 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        Comparar
+                    </Link>
+                </div>
+            ) : null}
 
             {enVentana ? (
                 <ModalDePagina

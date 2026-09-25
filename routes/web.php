@@ -476,6 +476,12 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // ¿Ya está registrado? Lo pregunta el alta mientras se escribe. Va antes
         // de /clientes/{cliente} por lo mismo que «buscar».
         Route::get('/clientes/verificar', [\App\Http\Controllers\Panel\ClienteController::class, 'verificar'])->name('clientes.verificar');
+        // Fichas que pueden ser de la misma persona (las planillas traían
+        // fichas sin RUT). Antes de /clientes/{cliente}, o «duplicados» se
+        // tomaría por el identificador de un socio.
+        Route::get('/clientes/duplicados', [\App\Http\Controllers\Panel\DuplicadosController::class, 'index'])->name('clientes.duplicados');
+        Route::post('/clientes/duplicados/juntar', [\App\Http\Controllers\Panel\DuplicadosController::class, 'juntar'])->name('clientes.juntar');
+        Route::post('/clientes/duplicados/distintos', [\App\Http\Controllers\Panel\DuplicadosController::class, 'distintos'])->name('clientes.distintos');
         Route::get('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/crear', [\App\Http\Controllers\Panel\ClienteController::class, 'create'])->name('clientes.create');
         Route::post('/clientes', [\App\Http\Controllers\Panel\ClienteController::class, 'store'])->name('clientes.store');

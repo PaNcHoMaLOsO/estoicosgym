@@ -16,6 +16,15 @@ en sus comentarios; esto es el mapa.
   si está de baja o en la papelera— con el botón que corresponde: abrir su
   ficha, venderle un plan o restaurarla. Sin RUT solo se sospecha: mismo
   celular o mismo nombre y apellido. Se avisa y no se bloquea.
+- **Posibles duplicados** (`/panel/clientes/duplicados`, `App\Support\FichasRepetidas`):
+  las planillas traían fichas sin RUT y la misma persona quedó dos veces. Se
+  sospecha por mismo RUT, mismo nombre y apellido paterno (si las dos tienen
+  segundo apellido, tiene que coincidir) o mismo celular. Primero salen los
+  probables —una ficha con RUT y otra sin él— y aparte los de RUT distinto.
+  **Juntar** (solo el administrador, `JuntarFichas`) pasa membresías, pagos,
+  fiado, contratos y correos a la que queda, completa lo que le falta y manda
+  la otra a la papelera. **Son personas distintas** (también recepción) se
+  recuerda y no vuelve a salir. La ficha del socio avisa si puede estar dos veces.
 - **Activo o de baja.** Un socio queda de baja cuando su última membresía venció
   y no tiene otra (ver [la revisión del día](#la-revisión-del-día)). Venderle un
   plan lo reactiva.

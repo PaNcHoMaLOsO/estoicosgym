@@ -43,6 +43,10 @@ class ClienteFichaController extends Controller
         $hoy = Carbon::today();
 
         return Inertia::render('Clientes/Ficha', [
+            // Otra ficha que puede ser de la misma persona: se avisa arriba,
+            // con el enlace para compararlas. Las planillas traían fichas sin
+            // RUT y la misma persona quedó dos veces.
+            'posiblesDuplicados' => $cliente->datos_borrados_en ? [] : \App\Support\FichasRepetidas::de($cliente),
             'cliente' => [
                 'uuid' => $cliente->uuid,
                 // El id, solo para apuntarle algo fiado desde aquí: la libreta

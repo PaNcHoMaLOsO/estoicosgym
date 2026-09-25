@@ -25,6 +25,7 @@ class Permisos
         'buscar',
         // Preguntar si alguien ya está registrado: solo se mira.
         'verificar',
+        'duplicados',
         'preview', 'plantillas', 'editar', 'traspaso.show',
         // Ver e imprimir el contrato de un socio: solo se mira.
         'contrato.ver',
@@ -52,6 +53,7 @@ class Permisos
         'alternar',
         // Cobrar lo fiado: se marca como pagado, no se crea nada.
         'saldar',
+        'distintos',
         // La foto del socio. Es editar su ficha, aunque vaya por su cuenta.
         'foto',
         // Anotar que firmo el contrato y que permisos dio. Tambien es su ficha.
@@ -81,6 +83,8 @@ class Permisos
         'cotizaciones.destroy',
         // Los datos personales de un socio (Ley 21.719): tampoco se deshace.
         'borrar-datos',
+        // Juntar dos fichas manda una a la papelera y le mueve los pagos.
+        'juntar',
     ];
 
     /**
