@@ -72,9 +72,7 @@ espacio ya está en Configuración → Google y redes) y el correo podría salir
 | Integración | Qué juntaría |
 |---|---|
 | **Cotización → horas del mes** | La cotización aceptada ya tiene las clases del mes: podría dejarlas anotadas de una vez, y al cerrar el mes mostrar lo cotizado contra lo cobrado |
-| **Medio de pago del fiado** | Al cobrar lo fiado no se anota si fue efectivo o transferencia; la caja no puede decir cuánto efectivo entró por el mesón |
-| **Venta del mesón con Estoicos Suplementos** | El espacio está reservado en el Resumen. Venta al contado de barritas y bebidas con el catálogo de la tienda, no solo fiado |
-| **La caja, neta de IVA** | Los talleres entran con IVA incluido; ese IVA no es del gimnasio. Una vista neta ayudaría a leer la ganancia real |
+| **Venta del mesón con Estoicos Suplementos** | El espacio está reservado en el Resumen. Venta al contado de barritas y bebidas con el catálogo de la tienda, no solo fiado. En pausa mientras se termina la tienda |
 
 ---
 

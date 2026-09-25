@@ -202,6 +202,51 @@ class CajaTest extends CasoConCatalogos
         // El gráfico mes a mes trae las mismas partes.
         $this->assertSame(642000, end($props['porMes'])['total']);
     }
+
+    /**
+     * Sin el IVA de los talleres: el IVA de la factura al colegio es del SII.
+     * Los talleres cuentan su neto; membresías y mesón no cambian.
+     */
+    public function test_la_caja_sin_el_iva_de_los_talleres(): void
+    {
+        $this->travelTo(Carbon::parse('2026-09-10 12:00', 'America/Santiago'));
+
+        $this->cobrar($this->membresia(40000), 40000, '2026-09-05');
+
+        $institucion = \App\Models\Institucion::create(['nombre' => 'Colegio']);
+        $taller = \App\Models\Taller::create(['id_institucion' => $institucion->id, 'nombre' => 'Clases', 'precio_hora' => 30000]);
+        $taller->cobros()->create(['periodo' => '2026-08', 'horas' => 20, 'precio_hora' => 30000, 'total' => 600000, 'neto' => 504202, 'iva' => 95798, 'pagado_en' => '2026-09-08']);
+        $taller->cobros()->create(['periodo' => '2026-07', 'horas' => 10, 'precio_hora' => 30000, 'total' => 300000, 'neto' => 252101, 'iva' => 47899]);
+
+        $props = $this->actingAs($this->administrador())->get('/panel/caja?iva=sin')->viewData('page')['props'];
+
+        $this->assertTrue($props['sinIva']);
+        $this->assertSame(['membresias' => 40000, 'talleres' => 504202, 'meson' => 0, 'total' => 544202], $props['caja']['mes']);
+        $this->assertSame(252101, $props['talleres']['por_cobrar']);
+        $this->assertSame(95798, $props['talleres']['iva_mes']);
+        $this->assertSame(544202, end($props['porMes'])['total']);
+        $this->assertSame(504202, collect($props['porDia'])->firstWhere('mes', '8')['partes']['talleres']);
+
+        // Con IVA, como siempre.
+        $this->assertSame(600000, $this->caja()['caja']['mes']['talleres']);
+    }
+
+    /** Lo cobrado del fiado cuenta en «Con qué pagan», con su medio. */
+    public function test_el_fiado_cobrado_sale_con_su_medio(): void
+    {
+        $this->travelTo(Carbon::parse('2026-09-10 12:00', 'America/Santiago'));
+
+        $efectivo = MetodoPago::where('nombre', 'like', '%fectivo%')->first();
+        $socio = Cliente::factory()->create();
+        $quien = $this->administrador()->id;
+        \App\Models\Fiado::create(['id_cliente' => $socio->id, 'concepto' => 'Barrita', 'monto' => 2000, 'pagado' => true, 'pagado_en' => now(), 'id_usuario' => $quien, 'id_metodo_pago' => $efectivo->id]);
+        \App\Models\Fiado::create(['id_cliente' => $socio->id, 'concepto' => 'Agua', 'monto' => 1000, 'pagado' => true, 'pagado_en' => now()->subDay(), 'id_usuario' => $quien]);
+
+        $medios = collect($this->caja()['porMetodo'])->keyBy('nombre');
+
+        $this->assertSame(2000, $medios[$efectivo->nombre]['total']);
+        $this->assertSame(1000, $medios['Sin anotar']['total']);
+    }
     /**
      * EL INFORME DEL AÑO CUENTA LO MISMO QUE LA CAJA, partido igual, y cada
      * parte con su detalle: el colegio que pagó, el producto del mesón.

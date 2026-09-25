@@ -237,7 +237,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id])
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()])
             ->assertSessionHasNoErrors();
 
         $this->assertSame(0, Fiado::debiendo()->count());
@@ -253,7 +253,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $uno->id, 'nombre' => null, 'monto' => 1000]);
         $this->fiar(['id_cliente' => $otro->id, 'nombre' => null, 'monto' => 2000]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id, 'id_metodo_pago' => $this->efectivo()]);
 
         $this->assertSame(
             2000,
@@ -266,7 +266,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $socio = Cliente::factory()->create(['activo' => true]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()]);
 
         $fiado = Fiado::first();
 
@@ -430,7 +430,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 2500]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()]);
         $this->assertSame(0, Fiado::debiendo()->count());
 
         $unaLinea = Fiado::where('id_cliente', $socio->id)->first();
@@ -465,7 +465,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1500]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()]);
 
         $marcas = Fiado::where('id_cliente', $socio->id)
             ->get()
@@ -488,8 +488,8 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->fiar(['id_cliente' => $uno->id, 'nombre' => null, 'monto' => 1000]);
         $this->fiar(['id_cliente' => $otro->id, 'nombre' => null, 'monto' => 2000]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id]);
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $otro->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $uno->id, 'id_metodo_pago' => $this->efectivo()]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $otro->id, 'id_metodo_pago' => $this->efectivo()]);
 
         $deUno = Fiado::where('id_cliente', $uno->id)->first();
         $this->como()->patch("/panel/fiados/{$deUno->uuid}/reabrir");
@@ -543,7 +543,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $socio = Cliente::factory()->create(['activo' => true]);
         $this->fiar(['id_cliente' => $socio->id, 'nombre' => null, 'monto' => 1000]);
 
-        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id]);
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()]);
 
         $this->assertNull(
             $this->como()->get("/panel/clientes/{$socio->uuid}")->viewData('page')['props']['fiado']
@@ -687,5 +687,31 @@ class LibretaDelMesonTest extends CasoConCatalogos
 
         $this->assertSame('912345678', $cuenta['celular']);
         $this->assertArrayHasKey('foto', $cuenta);
+    }
+
+    private function efectivo(): int
+    {
+        return (int) \App\Models\MetodoPago::where('nombre', 'like', '%fectivo%')->value('id');
+    }
+
+    /** Cobrar lo fiado pide con qué se pagó, y lo deja anotado. */
+    public function test_cobrar_lo_fiado_anota_con_que_se_pago(): void
+    {
+        $socio = Cliente::factory()->create();
+        Fiado::create(['id_cliente' => $socio->id, 'concepto' => 'Barra', 'monto' => 2500, 'id_usuario' => $this->usuario()->id]);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id])
+            ->assertSessionHasErrors('id_metodo_pago');
+        $this->assertFalse((bool) Fiado::first()->pagado);
+
+        $this->como()->post('/panel/fiados/saldar', ['id_cliente' => $socio->id, 'id_metodo_pago' => $this->efectivo()]);
+
+        $fiado = Fiado::first();
+        $this->assertTrue((bool) $fiado->pagado);
+        $this->assertSame($this->efectivo(), (int) $fiado->id_metodo_pago);
+
+        // Deshacer el cobro borra también el medio.
+        $this->como()->patch("/panel/fiados/{$fiado->uuid}/reabrir");
+        $this->assertNull($fiado->fresh()->id_metodo_pago);
     }
 }

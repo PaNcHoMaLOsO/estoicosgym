@@ -375,7 +375,10 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                                             )}
                                         </td>
                                         <td className="px-3 py-2 text-fog">{c.concepto}</td>
-                                        <td className="px-3 py-2 tabular-nums text-fog">{c.cuando ?? '-'}</td>
+                                        <td className="px-3 py-2 tabular-nums text-fog">
+                                            {c.cuando ?? '-'}
+                                            {c.medio ? <span className="apoyo block">{c.medio}</span> : null}
+                                        </td>
                                         <td className="px-3 py-2 text-right tabular-nums text-chalk">
                                             <Reservado ancho="w-14">{pesos.format(c.monto)}</Reservado>
                                         </td>
@@ -428,7 +431,8 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                 quien={cobrando?.quien ?? ''}
                 monto={cobrando?.total ?? 0}
                 detalle={cobrando?.lineas}
-                consecuencia="Su cuenta queda saldada. Esto no entra en la caja del gimnasio."
+                consecuencia="Su cuenta queda saldada y entra a la caja del mesón."
+                conMedio
                 etiquetaConfirmar="Pagó"
                 accion="/panel/fiados/saldar"
                 metodo="post"

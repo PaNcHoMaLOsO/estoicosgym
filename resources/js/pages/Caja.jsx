@@ -117,7 +117,7 @@ function Deuda({ etiqueta, total, detalle, explicacion, href }) {
     );
 }
 
-export default function Caja({ caja, deuda, fiado, talleres, fuentes, porDia, porMes, porMetodo, altas, porPlan }) {
+export default function Caja({ caja, deuda, fiado, talleres, fuentes, porDia, porMes, porMetodo, altas, porPlan, sinIva = false }) {
     // Quién debe, escondido desde Configuración. Son dos ajustes distintos:
     // lo fiado del mesón por un lado y lo que deben de su membresía por otro.
     const { privado } = usePage().props;
@@ -136,9 +136,39 @@ export default function Caja({ caja, deuda, fiado, talleres, fuentes, porDia, po
         <>
             <Head title="Caja" />
 
-            <header className="mb-5">
-                <h1 className="text-lg font-semibold text-chalk">Caja</h1>
-                <p className="apoyo text-fog">Lo que entra, de dónde viene y lo que se debe</p>
+            <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h1 className="text-lg font-semibold text-chalk">Caja</h1>
+                    <p className="apoyo text-fog">Lo que entra, de dónde viene y lo que se debe</p>
+                </div>
+
+                {/* El IVA de la factura del colegio es del SII: sin él se ve lo
+                    que le queda al gimnasio. */}
+                <div className="flex flex-col items-end gap-1">
+                    <div role="group" aria-label="Talleres con o sin IVA" className="inline-flex rounded-control border border-line p-0.5 text-sm">
+                        {[
+                            ['Con IVA', '/panel/caja', ! sinIva],
+                            ['Sin IVA', '/panel/caja?iva=sin', sinIva],
+                        ].map(([texto, href, activo]) => (
+                            <Link
+                                key={texto}
+                                href={href}
+                                preserveScroll
+                                aria-current={activo ? 'true' : undefined}
+                                className={`rounded-control px-3 py-1 transition-colors ${
+                                    activo ? 'bg-surface-2 font-medium text-chalk' : 'text-fog hover:text-chalk'
+                                }`}
+                            >
+                                {texto}
+                            </Link>
+                        ))}
+                    </div>
+                    {talleres.iva_mes > 0 ? (
+                        <p className="apoyo text-fog">
+                            IVA de talleres este mes: <Reservado ancho="w-14">{pesos.format(talleres.iva_mes)}</Reservado>
+                        </p>
+                    ) : null}
+                </div>
             </header>
 
             {/* ===== JUNTO: el total del mes y de hoy ===== */}
@@ -248,10 +278,10 @@ export default function Caja({ caja, deuda, fiado, talleres, fuentes, porDia, po
                 </Panel>
 
                 <Panel
-                    titulo="Cómo pagan las membresías"
-                    descripcion="Con qué medio entró la plata de los socios este mes. Un pago repartido cuenta en cada medio."
+                    titulo="Con qué pagan"
+                    descripcion="Membresías y mesón, este mes. Un pago repartido cuenta en cada medio."
                 >
-                    <Barras filas={porMetodo} formato={plata} vacio="Todavía no se cobró ninguna membresía este mes." />
+                    <Barras filas={porMetodo} formato={plata} vacio="Todavía no se cobró nada este mes." />
                 </Panel>
             </div>
 

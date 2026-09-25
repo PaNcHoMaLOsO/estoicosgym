@@ -1,6 +1,8 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { BanknoteIcon, Trash2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { Botones, metodoPorDefecto } from '@/components/Cobro';
 
 import {
     Dialog,
@@ -41,13 +43,25 @@ export default function ConfirmarDinero({
     accion,
     metodo = 'post',
     datos = {},
+    // Pedir con qué se pagó: el cobro del fiado. Viaja como `id_metodo_pago`.
+    conMedio = false,
 }) {
     const [enviando, setEnviando] = useState(false);
+    const medios = usePage().props.medios_de_pago ?? [];
+    const [medio, setMedio] = useState('');
+
+    // Cada vez que se abre parte en efectivo, lo más común en el mesón.
+    useEffect(() => {
+        if (abierto && conMedio) {
+            setMedio(metodoPorDefecto(medios));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [abierto, conMedio]);
 
     function confirmar() {
         setEnviando(true);
 
-        router[metodo](accion, datos, {
+        router[metodo](accion, conMedio ? { ...datos, id_metodo_pago: medio } : datos, {
             preserveScroll: true,
             onFinish: () => {
                 setEnviando(false);
@@ -96,6 +110,20 @@ export default function ConfirmarDinero({
                     ) : null}
                 </div>
 
+                {conMedio ? (
+                    <div>
+                        <p className="mb-1.5 text-sm font-medium text-chalk">Con qué pagó</p>
+                        <Botones
+                            opciones={medios.map((m) => ({ valor: m.id, etiqueta: m.nombre }))}
+                            valor={medio}
+                            alElegir={setMedio}
+                            nombre="Con qué pagó"
+                            columnas="grid-cols-2"
+                            compacto
+                        />
+                    </div>
+                ) : null}
+
                 <DialogFooter>
                     <button
                         type="button"
@@ -109,7 +137,7 @@ export default function ConfirmarDinero({
                     <button
                         type="button"
                         onClick={confirmar}
-                        disabled={enviando}
+                        disabled={enviando || (conMedio && ! medio)}
                         className={`rounded-control px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
                             peligrosa ? 'bg-danger text-white' : 'bg-volt text-on-volt'
                         }`}

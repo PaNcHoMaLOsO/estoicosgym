@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Fiado;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -30,9 +31,8 @@ class FiadoController extends Controller
      * porque eso no se mira todos los días pero hace falta cuando alguien
      * discute una cifra o hay que cuadrar el mes.
      *
-     * ESTO NO ES CAJA DEL GIMNASIO. Lo cobrado aquí no aparece en los ingresos
-     * ni en ningún informe de membresías: es la libreta del mesón, y su cuenta
-     * se lleva aparte a propósito.
+     * Lo cobrado entra a la caja como «Mesón», el día que se cobró y con el
+     * medio con que se pagó. Lo que se sigue debiendo no es ingreso.
      */
     public function index(Request $request)
     {
@@ -109,6 +109,12 @@ class FiadoController extends Controller
         $datos = $request->validate([
             'id_cliente' => 'nullable|exists:clientes,id',
             'nombre' => 'nullable|string|max:100',
+            // CON QUÉ SE PAGÓ. Sin esto la caja sabía cuánto entró del mesón
+            // pero no cuánto había en efectivo en el cajón.
+            'id_metodo_pago' => ['required', Rule::exists('metodos_pago', 'id')->where('activo', true)->whereNull('deleted_at')],
+        ], [
+            'id_metodo_pago.required' => 'Elige con qué pagó.',
+            'id_metodo_pago.exists' => 'Ese medio de pago no está disponible.',
         ]);
 
         $pendientes = Fiado::debiendo()
@@ -133,12 +139,13 @@ class FiadoController extends Controller
         // la deuda se quedaba dada por pagada sin que nadie la volviera a ver.
         $momento = now();
 
-        DB::transaction(function () use ($pendientes, $request, $momento) {
+        DB::transaction(function () use ($pendientes, $request, $momento, $datos) {
             foreach ($pendientes as $fiado) {
                 $fiado->update([
                     'pagado' => true,
                     'pagado_en' => $momento,
                     'id_usuario_cobro' => $request->user()->id,
+                    'id_metodo_pago' => $datos['id_metodo_pago'],
                 ]);
             }
         });
@@ -183,6 +190,7 @@ class FiadoController extends Controller
                     'pagado' => false,
                     'pagado_en' => null,
                     'id_usuario_cobro' => null,
+                    'id_metodo_pago' => null,
                 ]);
             }
         });
@@ -280,7 +288,7 @@ class FiadoController extends Controller
     private function loYaCobrado(): array
     {
         return Fiado::where('pagado', true)
-            ->with(['cliente:id,uuid,nombres,apellido_paterno', 'autor:id,name'])
+            ->with(['cliente:id,uuid,nombres,apellido_paterno', 'autor:id,name', 'metodoPago:id,nombre'])
             ->orderByDesc('pagado_en')
             ->limit(100)
             ->get()
@@ -292,6 +300,7 @@ class FiadoController extends Controller
                 'monto' => $f->monto,
                 'cuando' => $f->pagado_en?->format('d/m/Y H:i'),
                 'apunto' => $f->autor?->name,
+                'medio' => $f->metodoPago?->nombre,
             ])
             ->all();
     }

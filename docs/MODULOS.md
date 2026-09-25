@@ -90,8 +90,9 @@ con la fecha vencida, y la caja contándolas como vigentes.
 
 **Dónde:** `FiadoController`, `components/Libreta.jsx`.
 
-La libreta del mesón: lo que alguien se lleva y paga después. Al cobrarlo pasa
-a ser ingreso del **mesón** en la caja. No anota con qué medio se pagó.
+La libreta del mesón: lo que alguien se lleva y paga después. Al cobrarlo se
+elige **con qué pagó** y pasa a ser ingreso del **mesón** en la caja. Lo cobrado
+antes del 25 de septiembre de 2026 no tiene medio y sale como «Sin anotar».
 
 ## Talleres y arriendos
 
@@ -128,6 +129,12 @@ Lo que entró viene de **tres fuentes**, y se ve cada una y el total:
 
 Lo que se sigue debiendo no es ingreso: va en «lo que se debe» —membresías,
 facturas de talleres sin pagar, fiado—.
+
+- **Con IVA / Sin IVA** (`/panel/caja?iva=sin`): el IVA de la factura al colegio
+  es del SII. Sin él, los talleres cuentan su neto; membresías y mesón no
+  cambian. Arriba se ve el IVA de talleres del mes.
+- **Con qué pagan** junta membresías y mesón por medio: es lo que se cuadra
+  contra el cajón y la cuenta.
 
 `/panel/reportes/negocio` mide altas, renovaciones y bajas por mes. Con los
 datos de las planillas la retención no es confiable: las planillas pisaban las

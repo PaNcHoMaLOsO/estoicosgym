@@ -846,7 +846,8 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado })
                 quien={cliente.nombre}
                 monto={fiado?.total ?? 0}
                 detalle={fiado?.lineas}
-                consecuencia="Su cuenta del mesón queda saldada. Esto no entra en la caja del gimnasio."
+                consecuencia="Su cuenta queda saldada y entra a la caja del mesón."
+                conMedio
                 etiquetaConfirmar="Pagó"
                 accion="/panel/fiados/saldar"
                 metodo="post"

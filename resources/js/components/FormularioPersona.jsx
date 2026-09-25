@@ -87,90 +87,248 @@ function ConPrefijo({ prefijo, error, ...resto }) {
     );
 }
 
-/**
- * El panel tal como sale en la web: la foto a todo el alto, el fundido negro
- * abajo y encima la especialidad, el nombre y los enlaces.
+/*
+ * EL PANEL, IGUAL QUE EN LA WEB. La primera vista previa era un dibujo
+ * parecido —otra letra, otra proporción— y en la web se veía distinto. Ahora se
+ * arma con las mismas medidas, la misma letra (Oswald y Poppins) y los mismos
+ * colores que la página, al ANCHO REAL que tendrá allá, y se achica entera para
+ * caber aquí: el nombre corta en la misma palabra y la foto recorta igual.
+ *
+ * El ancho depende de cuántos se muestran: la web reparte la fila entre ellos
+ * (uno a lo ancho, dos a media pantalla… hasta cuatro). Los embajadores van
+ * siempre de a cuatro. En el celular cada panel ocupa casi toda la pantalla.
  */
-function VistaPrevia({ tipo, data, foto, preparando, alElegir, alSoltar }) {
-    const [encima, setEncima] = useState(false);
-    const nombre = data.nombre.trim();
-    const especialidad = data.especialidad.trim();
-    const usuario = limpiarInstagram(data.instagram);
+const WEB = {
+    // 1520 de ancho máximo menos 80 de margen a cada lado; 16 entre paneles.
+    contenido: 1360,
+    separacion: 16,
+    // El 82% (especialistas) y el 72% (embajadores) de un celular de 375.
+    celular: { especialista: 308, embajador: 270 },
+};
 
+const OSWALD = "font-['Oswald',sans-serif]";
+const POPPINS = "font-['Poppins',sans-serif]";
+
+function anchoEnLaWeb(tipo, pantalla, columnas) {
+    if (pantalla === 'celular') {
+        return WEB.celular[tipo === 'embajador' ? 'embajador' : 'especialista'];
+    }
+
+    const cuantas = tipo === 'embajador' ? 4 : Math.min(Math.max(columnas, 1), 4);
+
+    return (WEB.contenido - WEB.separacion * (cuantas - 1)) / cuantas;
+}
+
+function IconoWhatsapp() {
     return (
-        <button
-            type="button"
-            onClick={alElegir}
-            onDragOver={(e) => {
-                e.preventDefault();
-                setEncima(true);
-            }}
-            onDragLeave={() => setEncima(false)}
-            onDrop={(e) => {
-                e.preventDefault();
-                setEncima(false);
-                alSoltar(e.dataTransfer.files?.[0]);
-            }}
-            aria-label={foto ? 'Cambiar la foto' : 'Elegir una foto'}
-            className={`group relative flex aspect-[3/4] w-full flex-col justify-end overflow-hidden bg-[#161616] text-left outline-offset-2 ${
-                encima ? 'outline outline-2 outline-[#dd2a32]' : ''
-            }`}
-        >
-            {foto ? (
-                <img
-                    src={foto}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0"
-                />
-            ) : (
-                <span
-                    className="absolute -right-4 -top-8 select-none text-[13rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)]"
-                    aria-hidden="true"
-                >
-                    {(nombre[0] ?? '?').toUpperCase()}
-                </span>
-            )}
-
-            <span className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/80 to-transparent" aria-hidden="true" />
-
-            {/* Lo que se hace con la foto, a la vista solo al pasar por encima. */}
-            <span className="absolute inset-x-0 top-0 bg-black/60 py-1.5 text-center text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                {preparando ? 'Preparando la foto…' : foto ? 'Cambiar foto' : 'Elegir o arrastrar una foto'}
-            </span>
-
-            {! data.activo ? (
-                <span className="absolute left-2 top-2 bg-black/70 px-2 py-0.5 text-[11px] uppercase tracking-wider text-white/80">
-                    Oculto
-                </span>
-            ) : null}
-
-            <span className="relative block p-4">
-                <span className="block h-0.5 w-8 bg-[#dd2a32]" aria-hidden="true" />
-                <span className={`mt-3 block text-[11px] uppercase tracking-[0.2em] ${especialidad ? 'text-[#ef5b62]' : 'text-white/25'}`}>
-                    {especialidad || (tipo === 'embajador' ? 'Disciplina' : 'Especialidad')}
-                </span>
-                <span className={`mt-1 block text-2xl font-black uppercase leading-none ${nombre ? 'text-[#f4f1ea]' : 'text-white/25'}`}>
-                    {nombre || 'Nombre'}
-                </span>
-
-                {tipo !== 'embajador' && data.descripcion.trim() ? (
-                    <span className="mt-2 line-clamp-4 block text-xs leading-relaxed text-[#f4f1ea]/70">{data.descripcion}</span>
-                ) : null}
-
-                {tipo === 'embajador' ? (
-                    usuario ? <span className="mt-2 block text-xs text-[#f4f1ea]/70">@{usuario}</span> : null
-                ) : data.whatsapp || usuario ? (
-                    <span className="mt-3 flex gap-4 text-xs text-[#f4f1ea]">
-                        {data.whatsapp ? <span className="border-b border-white/30 pb-0.5">WhatsApp</span> : null}
-                        {usuario ? <span className="border-b border-white/30 pb-0.5">Instagram</span> : null}
-                    </span>
-                ) : null}
-            </span>
-        </button>
+        <svg viewBox="0 0 24 24" className="size-[1em]" fill="currentColor" aria-hidden="true">
+            <path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.98L2 22l5.16-1.5A9.9 9.9 0 1 0 12.04 2Zm0 18.1a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.07.9.92-3-.2-.31a8.2 8.2 0 1 1 6.83 3.74Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.22-.08-.39-.12-.55.13-.16.24-.63.8-.78.96-.14.16-.29.18-.53.06a6.7 6.7 0 0 1-3.34-2.92c-.25-.43.25-.4.72-1.34.08-.16.04-.3-.02-.42l-.75-1.8c-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.74 2.74 0 0 0-.86 2.04 4.77 4.77 0 0 0 1 2.53 10.9 10.9 0 0 0 4.180 3.69c1.55.67 2.16.72 2.94.61.47-.07 1.46-.6 1.66-1.18.2-.57.2-1.07.14-1.170-.06-.1-.22-.16-.46-.28Z" />
+        </svg>
     );
 }
 
-export default function FormularioPersona({ abierto, alCerrar, tipo, persona, existentes = [] }) {
+function IconoInstagram() {
+    return (
+        <svg viewBox="0 0 24 24" className="size-[1em]" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+        </svg>
+    );
+}
+
+/** La inicial en hueco que llena el panel cuando no hay foto, como en la web. */
+function Inicial({ nombre, embajador }) {
+    return (
+        <span
+            className={`absolute select-none ${OSWALD} leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)] ${
+                embajador ? '-right-4 -top-6 text-[14rem]' : '-right-6 -top-10 text-[18rem]'
+            }`}
+            aria-hidden="true"
+        >
+            {(nombre[0] ?? '?').toUpperCase()}
+        </span>
+    );
+}
+
+/** El panel de un especialista, copiado de landing/especialistas.blade.php. */
+function PanelEspecialista({ data, foto, celular, ancho }) {
+    const nombre = data.nombre.trim();
+    const usuario = limpiarInstagram(data.instagram);
+
+    return (
+        <article
+            style={{ width: ancho }}
+            className={`group relative flex flex-col justify-end overflow-hidden bg-[#121214] ${celular ? 'min-h-[22rem]' : 'min-h-[26rem]'}`}
+        >
+            {foto ? (
+                <img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover object-top grayscale transition duration-700 group-hover:grayscale-0" />
+            ) : (
+                <Inicial nombre={nombre} />
+            )}
+
+            <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/80 to-transparent" aria-hidden="true" />
+
+            <div className={`relative ${celular ? 'p-5' : 'p-7'}`}>
+                <span className="block h-0.5 w-8 bg-[#dd2a32]" aria-hidden="true" />
+                <p className={`mt-4 ${POPPINS} text-xs uppercase tracking-[0.2em] ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
+                    {data.especialidad.trim() || 'Especialidad'}
+                </p>
+                <p className={`mt-1 ${OSWALD} ${celular ? 'text-3xl' : 'text-4xl'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
+                    {nombre || 'Nombre'}
+                </p>
+
+                {data.descripcion.trim() ? (
+                    <p className={`mt-3 ${POPPINS} text-sm leading-relaxed text-[#f2f2f4]/70`}>{data.descripcion}</p>
+                ) : null}
+
+                {data.whatsapp || usuario ? (
+                    <div className={`mt-5 flex flex-wrap gap-x-5 gap-y-2 ${POPPINS} text-sm`}>
+                        {data.whatsapp ? (
+                            <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">
+                                <IconoWhatsapp /> Escribirle
+                            </span>
+                        ) : null}
+                        {usuario ? (
+                            <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">
+                                <IconoInstagram /> Instagram
+                            </span>
+                        ) : null}
+                    </div>
+                ) : null}
+            </div>
+        </article>
+    );
+}
+
+/** El de un embajador, copiado de landing/partes/embajadores.blade.php. */
+function PanelEmbajador({ data, foto, celular, ancho }) {
+    const nombre = data.nombre.trim();
+    const usuario = limpiarInstagram(data.instagram);
+
+    return (
+        <figure style={{ width: ancho }} className="group relative aspect-[3/4] overflow-hidden bg-[#121214]">
+            {foto ? (
+                <img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover grayscale transition duration-700 group-hover:grayscale-0" />
+            ) : (
+                <Inicial nombre={nombre} embajador />
+            )}
+
+            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/70 to-transparent" aria-hidden="true" />
+
+            <figcaption className={`absolute inset-x-0 bottom-0 ${celular ? 'p-4' : 'p-5'}`}>
+                <span className="block h-0.5 w-8 bg-[#dd2a32]" aria-hidden="true" />
+                <p className={`mt-3 ${POPPINS} text-xs uppercase tracking-[0.2em] ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
+                    {data.especialidad.trim() || 'Disciplina'}
+                </p>
+                <p className={`mt-1 ${OSWALD} ${celular ? 'text-2xl' : 'text-3xl'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
+                    {nombre || 'Nombre'}
+                </p>
+                {usuario ? (
+                    <span className={`mt-2 inline-flex items-center gap-1.5 ${POPPINS} text-sm text-[#f2f2f4]/70`}>
+                        <IconoInstagram />@{usuario}
+                    </span>
+                ) : null}
+            </figcaption>
+        </figure>
+    );
+}
+
+/**
+ * La vista previa: el panel al ancho real, achicado para caber. Es también
+ * donde se pone la foto, con un clic o arrastrándola encima.
+ */
+function VistaPrevia({ tipo, data, foto, columnas, preparando, alElegir, alSoltar }) {
+    const [pantalla, setPantalla] = useState('computador');
+    const [encima, setEncima] = useState(false);
+    const [caja, setCaja] = useState(0);
+    const [alto, setAlto] = useState(0);
+    const marco = useRef(null);
+    const panel = useRef(null);
+    const celular = pantalla === 'celular';
+    const ancho = anchoEnLaWeb(tipo, pantalla, columnas);
+    const escala = caja ? Math.min(1, caja / ancho) : 0;
+
+    // Se mide el hueco disponible y el alto real del panel: el alto cambia con
+    // lo que se escribe (la descripción, los enlaces).
+    useEffect(() => {
+        const mirar = new ResizeObserver(() => {
+            setCaja(marco.current?.clientWidth ?? 0);
+            setAlto(panel.current?.offsetHeight ?? 0);
+        });
+
+        if (marco.current) mirar.observe(marco.current);
+        if (panel.current) mirar.observe(panel.current);
+
+        return () => mirar.disconnect();
+    }, []);
+
+    const Panel = tipo === 'embajador' ? PanelEmbajador : PanelEspecialista;
+
+    return (
+        <div>
+            {/* La misma letra que la web. */}
+            <link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+                precedence="default"
+            />
+
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="apoyo text-fog">Así se ve en la web</span>
+                <div role="group" aria-label="Pantalla" className="inline-flex rounded-control border border-line p-0.5">
+                    {['computador', 'celular'].map((p) => (
+                        <button
+                            key={p}
+                            type="button"
+                            onClick={() => setPantalla(p)}
+                            aria-pressed={pantalla === p}
+                            className={`rounded-control px-2 py-0.5 text-xs capitalize transition-colors ${
+                                pantalla === p ? 'bg-surface-2 text-chalk' : 'text-fog hover:text-chalk'
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div ref={marco} className={celular ? 'mx-auto w-3/4' : 'w-full'}>
+                <button
+                    type="button"
+                    onClick={alElegir}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setEncima(true);
+                    }}
+                    onDragLeave={() => setEncima(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        setEncima(false);
+                        alSoltar(e.dataTransfer.files?.[0]);
+                    }}
+                    aria-label={foto ? 'Cambiar la foto' : 'Elegir una foto'}
+                    style={{ height: alto * escala || undefined }}
+                    className={`group/foto relative block w-full overflow-hidden text-left outline-offset-2 ${encima ? 'outline outline-2 outline-[#dd2a32]' : ''}`}
+                >
+                    <div ref={panel} style={{ width: ancho, transform: `scale(${escala})`, transformOrigin: 'top left' }} className="absolute left-0 top-0">
+                        <Panel data={data} foto={foto} celular={celular} ancho={ancho} />
+                    </div>
+
+                    <span className="absolute inset-x-0 top-0 bg-black/60 py-1.5 text-center text-xs text-white opacity-0 transition-opacity group-hover/foto:opacity-100 group-focus-visible/foto:opacity-100">
+                        {preparando ? 'Preparando la foto…' : foto ? 'Cambiar foto' : 'Elegir o arrastrar una foto'}
+                    </span>
+
+                    {! data.activo ? (
+                        <span className="absolute left-2 top-2 bg-black/70 px-2 py-0.5 text-[11px] uppercase tracking-wider text-white/80">Oculto</span>
+                    ) : null}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default function FormularioPersona({ abierto, alCerrar, tipo, persona, existentes = [], otrosEnLaWeb = 0 }) {
     const valores = valoresDeEspecialista(persona, tipo);
     const { data, setData, post, put, processing, errors, clearErrors, setError, transform } = useForm(valores);
     const [vista, setVista] = useState(null);
@@ -269,7 +427,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
     return (
         <Dialog open={abierto} onOpenChange={(v) => (! v && ! processing ? alCerrar() : null)}>
             <DialogContent
-                className="sm:max-w-3xl"
+                className="sm:max-w-4xl"
                 onOpenAutoFocus={(e) => {
                     e.preventDefault();
                     primerCampo.current?.focus();
@@ -282,7 +440,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                     <DialogDescription>Su foto y su contacto quedan a la vista de cualquiera: súbelos con su permiso.</DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={enviar} className="grid gap-5 md:grid-cols-[1fr_16rem]">
+                <form onSubmit={enviar} className="grid gap-5 md:grid-cols-[1fr_20rem]">
                     <div className="space-y-3">
                         <Campo etiqueta="Nombre" nombre="nombre" error={errors.nombre} requerido>
                             <Texto
@@ -375,9 +533,10 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                     </div>
 
                     {/* En el celular, la foto primero y más chica. */}
-                    <div className="order-first mx-auto w-44 md:order-none md:w-full">
+                    <div className="order-first md:order-none">
                         <VistaPrevia
                             tipo={tipo}
+                            columnas={otrosEnLaWeb + (data.activo ? 1 : 0)}
                             data={data}
                             foto={foto}
                             preparando={preparando}

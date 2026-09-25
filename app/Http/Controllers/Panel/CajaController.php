@@ -10,6 +10,7 @@ use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Support\IngresosDelNegocio;
 use App\Support\IngresosPorMetodo;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -39,8 +40,12 @@ class CajaController extends Controller
     /** Cuántos meses de historia se pintan en las tendencias. */
     private const MESES = 6;
 
-    public function __invoke()
+    /** Los talleres sin su IVA: el IVA de la factura es del SII, no del gimnasio. */
+    private bool $sinIva = false;
+
+    public function __invoke(Request $request)
     {
+        $this->sinIva = $request->query('iva') === 'sin';
         $hoy = Carbon::today();
         $mes = [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()];
 
@@ -84,19 +89,59 @@ class CajaController extends Controller
             // Lo facturado a colegios y empresas que todavía no pagan. Es
             // plata que ya salió en una factura y que nadie estaba mirando.
             'talleres' => [
-                'por_cobrar' => (int) CobroTaller::whereNull('pagado_en')->sum('total'),
+                'por_cobrar' => (int) CobroTaller::whereNull('pagado_en')->sum($this->sinIva ? 'neto' : 'total'),
+                // El IVA de lo que pagaron este mes: lo que se aparta para el SII.
+                'iva_mes' => (int) CobroTaller::whereNotNull('pagado_en')
+                    ->whereBetween('pagado_en', [$mes[0]->toDateString(), $mes[1]->toDateString()])
+                    ->sum('iva'),
                 'facturas' => CobroTaller::whereNull('pagado_en')->count(),
             ],
 
             'fuentes' => IngresosDelNegocio::FUENTES,
             'porDia' => $this->porDiaDelMes($hoy),
             'porMes' => $this->porMes($hoy),
-            // Solo las membresías: los talleres se pagan por transferencia a
-            // la cuenta del gimnasio y el fiado no anota con qué se cobró.
-            'porMetodo' => IngresosPorMetodo::en(fn ($q) => $q->whereBetween('fecha_pago', $mes))->all(),
+            'sinIva' => $this->sinIva,
+            // Membresías y mesón juntos: es lo que se cuadra contra el cajón y
+            // la cuenta. Los talleres no: se pagan siempre por transferencia.
+            'porMetodo' => $this->porMetodo($mes),
             'altas' => $this->altasPorMes($hoy),
             'porPlan' => $this->repartoPorPlan(),
         ]);
+    }
+
+    /**
+     * Con qué medio entró la plata de las membresías y del mesón.
+     *
+     * Lo fiado cobrado antes de que se anotara el medio va como «Sin anotar»:
+     * no se sabe y no se reparte a ojo.
+     */
+    private function porMetodo(array $mes): array
+    {
+        $membresias = IngresosPorMetodo::en(fn ($q) => $q->whereBetween('fecha_pago', $mes));
+
+        $meson = Fiado::where('pagado', true)
+            ->whereBetween('pagado_en', [$mes[0], $mes[1]->copy()->endOfDay()])
+            ->with('metodoPago:id,nombre')
+            ->get()
+            ->groupBy(fn (Fiado $f) => $f->metodoPago?->nombre ?? 'Sin anotar')
+            ->map(fn ($filas, $nombre) => [
+                'nombre' => $nombre,
+                'total' => (int) $filas->sum('monto'),
+                // Un cobro del fiado salda varias líneas de una vez.
+                'cantidad' => $filas->unique(fn (Fiado $f) => $f->pagado_en?->toDateTimeString() . $f->claveDeCuenta())->count(),
+            ])
+            ->values();
+
+        return $membresias->concat($meson)
+            ->groupBy('nombre')
+            ->map(fn ($filas, $nombre) => [
+                'nombre' => $nombre,
+                'total' => (int) $filas->sum('total'),
+                'cantidad' => (int) $filas->sum('cantidad'),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
     }
 
     /**
@@ -106,7 +151,7 @@ class CajaController extends Controller
      */
     private function entre(Carbon $desde, Carbon $hasta): array
     {
-        return IngresosDelNegocio::entre($desde, $hasta);
+        return IngresosDelNegocio::entre($desde, $hasta, $this->sinIva);
     }
 
     /**
@@ -132,7 +177,7 @@ class CajaController extends Controller
      */
     private function porDiaDelMes(Carbon $hoy): array
     {
-        return collect(IngresosDelNegocio::porDia($hoy))
+        return collect(IngresosDelNegocio::porDia($hoy, $this->sinIva))
             ->map(fn (array $partes, string $fecha) => [
                 'mes' => (string) Carbon::parse($fecha)->day,
                 'total' => $partes['total'],

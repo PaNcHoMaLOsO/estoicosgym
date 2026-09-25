@@ -27,6 +27,7 @@ class Fiado extends Model
         'pagado_en',
         'id_usuario',
         'id_usuario_cobro',
+        'id_metodo_pago',
     ];
 
     protected $casts = [
@@ -50,6 +51,12 @@ class Fiado extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class, 'id_cliente');
+    }
+
+    /** Con qué se pagó. En blanco en lo cobrado antes de que se anotara. */
+    public function metodoPago(): BelongsTo
+    {
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago')->withTrashed();
     }
 
     public function autor(): BelongsTo

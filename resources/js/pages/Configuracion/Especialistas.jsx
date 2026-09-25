@@ -165,6 +165,7 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                 tipo={tipo}
                 persona={editando?.uuid ? editando : null}
                 existentes={[...new Set(especialistas.map((e) => e.especialidad).filter(Boolean))]}
+                otrosEnLaWeb={especialistas.filter((e) => e.activo && e.uuid !== editando?.uuid).length}
             />
         </>
     );

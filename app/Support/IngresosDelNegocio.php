@@ -22,6 +22,10 @@ use Illuminate\Support\Carbon;
  *  · Mesón: lo fiado que ya se cobró, el día que se cobró. Lo que se sigue
  *    debiendo no es un ingreso: va en «lo que se debe».
  *
+ * SIN EL IVA DE LOS TALLERES (`$sinIva`): la factura al colegio lleva IVA y
+ * ese IVA se le paga al SII, no es del gimnasio. Sin él, los talleres cuentan
+ * su neto; las membresías y el mesón no cambian.
+ *
  * Vive aquí y no en la caja porque lo pregunta también el informe de ingresos,
  * y con dos copias la primera corrección dejaría las dos cifras distintas.
  */
@@ -39,7 +43,7 @@ class IngresosDelNegocio
      *
      * @return array{membresias:int, talleres:int, meson:int, total:int}
      */
-    public static function entre(Carbon $desde, Carbon $hasta): array
+    public static function entre(Carbon $desde, Carbon $hasta, bool $sinIva = false): array
     {
         $inicio = $desde->copy()->startOfDay();
         $fin = $hasta->copy()->endOfDay();
@@ -50,7 +54,7 @@ class IngresosDelNegocio
                 ->sum('monto_abonado'),
             'talleres' => (int) CobroTaller::whereNotNull('pagado_en')
                 ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
-                ->sum('total'),
+                ->sum($sinIva ? 'neto' : 'total'),
             'meson' => (int) Fiado::where('pagado', true)
                 ->whereBetween('pagado_en', [$inicio, $fin])
                 ->sum('monto'),
@@ -65,7 +69,7 @@ class IngresosDelNegocio
      *
      * @return array<string,array{membresias:int, talleres:int, meson:int, total:int}> por «Y-m-d»
      */
-    public static function porDia(Carbon $mes): array
+    public static function porDia(Carbon $mes, bool $sinIva = false): array
     {
         $inicio = $mes->copy()->startOfMonth();
         $fin = $mes->copy()->endOfMonth();
@@ -78,7 +82,7 @@ class IngresosDelNegocio
 
         $talleres = CobroTaller::whereNotNull('pagado_en')
             ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
-            ->selectRaw('DATE(pagado_en) as dia, SUM(total) as total')
+            ->selectRaw('DATE(pagado_en) as dia, SUM(' . ($sinIva ? 'neto' : 'total') . ') as total')
             ->groupBy('dia')
             ->pluck('total', 'dia');
 
