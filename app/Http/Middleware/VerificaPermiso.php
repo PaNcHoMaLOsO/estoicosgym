@@ -23,11 +23,19 @@ class VerificaPermiso
 {
     public function handle(Request $request, Closure $next, ?string $permiso = null): Response
     {
-        $permiso ??= Permisos::para($request->route()?->getName());
+        $nombre = $request->route()?->getName();
+        $permiso ??= Permisos::para($nombre);
 
-        // Ruta que no pertenece a un modulo protegido: basta con la sesion.
         if ($permiso === null) {
-            return $next($request);
+            // CERRADO POR DEFECTO. Una ruta del panel que no está en la lista
+            // de módulos quedaba abierta a cualquiera con sesión: bastaba con
+            // olvidarse de clasificarla. Ahora la usa solo el administrador
+            // hasta que se clasifique (`permisos:revisar` la señala).
+            if ($nombre === null || str_starts_with($nombre, 'panel.') || str_starts_with($nombre, 'admin.')) {
+                $permiso = '*';
+            } else {
+                return $next($request);
+            }
         }
 
         $usuario = $request->user();

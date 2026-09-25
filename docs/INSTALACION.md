@@ -42,13 +42,18 @@ Solo si hay que crear el contenedor otra vez (la clave va en el `.env`):
 ```bash
 docker run -d --name estoicosgym-pg --restart unless-stopped \
   -e POSTGRES_USER=estoicos -e POSTGRES_PASSWORD=la-clave -e POSTGRES_DB=dbestoicos \
-  -p 5432:5432 -v estoicosgym-pg-datos:/var/lib/postgresql/data postgres:16
+  -p 127.0.0.1:5432:5432 -v estoicosgym-pg-datos:/var/lib/postgresql/data postgres:16
 
 C:/php84/php.exe artisan migrate --seed
 ```
 
-`--seed` carga solo los catálogos: roles, estados, planes, precios y medios de
-pago. Los socios reales se cargan con `datos:importar-planillas` (ver
+`--seed` carga los catálogos —roles, estados, planes, precios y medios de
+pago— y, si no hay ninguna cuenta, crea `admin@progym.cl` y
+`recepcion@progym.cl` con una **clave al azar que muestra una sola vez**:
+anótala y cámbiala al entrar.
+
+El puerto de la base queda solo para este equipo (`127.0.0.1:5432`): con
+`-p 5432:5432` cualquiera en la misma red podía intentar entrar. Los socios reales se cargan con `datos:importar-planillas` (ver
 [MODULOS.md](MODULOS.md#datos-de-las-planillas)).
 
 ### Respaldos
@@ -84,7 +89,8 @@ En el `.env` del servidor:
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` — con `true` cualquier error enseña código y claves |
-| `APP_URL` | la dirección pública, con `https://`. Los enlaces de los correos (contrato, recuperar clave) salen de aquí |
+| `APP_URL` | la dirección pública, con `https://`. Los enlaces de los correos (contrato, recuperar clave) salen de aquí, y **solo se aceptan peticiones a esa dirección** |
+| `SESSION_SECURE_COOKIE` | `true`: la sesión viaja solo por https |
 | `DB_*` | los del PostgreSQL del servidor |
 | `MAIL_*` | la cuenta de correo. También se puede poner desde el panel: Configuración → Cuenta de correo |
 

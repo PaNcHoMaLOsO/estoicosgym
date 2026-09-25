@@ -76,6 +76,51 @@ espacio ya está en Configuración → Google y redes) y el correo podría salir
 
 ---
 
+## Seguridad (revisión del 25-sep-2026)
+
+**Hecho:** el seeder ya no crea cuentas con la clave «password» (y se borró de
+los documentos); se retiró de los documentos una llave de Resend; cabeceras
+contra marcos ajenos en el panel y el login; solo se atiende la dirección de
+`APP_URL` fuera de este equipo; recuperar la clave cierra las otras sesiones;
+el login se frena también por cuenta; una ruta del panel sin clasificar queda
+cerrada; Laravel, Symfony, Guzzle, CommonMark y PHPUnit al día (`composer
+audit` limpio); `node_modules` fuera del repositorio.
+
+**Lo tiene que hacer el dueño:**
+- Cambiar la clave de `admin@progym.cl` en este equipo: todavía es la de fábrica.
+- Revocar en Resend la llave que estuvo en el repositorio (sigue en el
+  historial de git).
+- En el servidor: `APP_ENV=production`, `APP_DEBUG=false`,
+  `SESSION_SECURE_COOKIE=true`.
+
+**Pendiente:**
+- Las fotos de los socios son públicas para quien tenga el enlace (el nombre es
+  al azar, pero no pide sesión). Pasarlas al disco privado y servirlas por el
+  panel.
+- Los códigos del segundo factor se guardan sin cifrar y se limitan por IP, no
+  por código.
+- Los datos del socio entran a los correos sin escapar (solo los escribe el
+  personal).
+- Decidir si recepción debe poder corregir el precio de una membresía y enviar
+  correos a un grupo.
+
+## Formularios por rehacer
+
+Los que quedaron con el diseño viejo, por orden: editar socio (que se parezca
+al alta), convenio (en secciones, con la vista del logo en la web), plan
+(meses o días con botones, precios con $), registrar un pago (con el mismo
+cobro de inscribir), talleres (crear y la ficha), y los contenidos de la web
+(con vista previa y contador).
+
+## Configuración
+
+El menú quedó en: El gimnasio · Ventas · Correos · Página web · Contrato y
+legales · Panel. Falta mover los ajustes que están repartidos: la ubicación
+(dirección y comuna en «Datos», ciudad, región y mapa en «Google, redes y
+tienda») y el contacto (el WhatsApp está con las redes). Los títulos de los
+grupos están en tres lugares (`configuracion.js`, `Ajustes::grupos()` y
+`EstadoDeConfiguracion`): conviene uno solo.
+
 ## Limpieza técnica
 
 - **Comandos del sistema viejo** que probablemente ya no sirven: `test:email`,

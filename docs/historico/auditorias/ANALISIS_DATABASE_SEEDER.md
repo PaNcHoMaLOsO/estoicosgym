@@ -166,8 +166,8 @@ Ejemplos comunes:
 
 | Usuario | Email | Rol | Password |
 |---------|-------|-----|----------|
-| Administrador | admin@progym.cl | Administrador (ID 1) | password |
-| Recepcionista | recepcion@progym.cl | Recepcionista (ID 2) | password |
+| Administrador | admin@progym.cl | Administrador (ID 1) | (al azar, la muestra el seeder) |
+| Recepcionista | recepcion@progym.cl | Recepcionista (ID 2) | (al azar, la muestra el seeder) |
 
 ⚠️ **IMPORTANTE:** Cambiar passwords en producción
 

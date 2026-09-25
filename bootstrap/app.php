@@ -26,6 +26,16 @@ return Application::configure(basePath: dirname(__DIR__))
         // pasar por el proxy.
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
+        // SOLO LA DIRECCIÓN DE APP_URL. El enlace para recuperar la clave se
+        // arma con la dirección que trae la petición: pidiéndolo con otra, el
+        // correo verdadero llevaba a una página ajena. En este equipo (local)
+        // no se aplica, para poder compartirlo por un túnel.
+        $middleware->trustHosts();
+
+        // Lo básico también en el panel y el login, no solo en la web: que
+        // otra página no pueda meterlos dentro de un marco para engañar clics.
+        $middleware->appendToGroup('web', \App\Http\Middleware\CabecerasBasicas::class);
+
         // Alias para middlewares personalizados
         $middleware->alias([
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,

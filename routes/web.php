@@ -142,7 +142,7 @@ Route::middleware('guest')->group(function () {
         return back()->withErrors([
             'email' => 'Las credenciales no coinciden con nuestros registros.',
         ])->onlyInput('email');
-    })->middleware('throttle:8,1'); // 8 intentos por minuto por IP: frena el probar claves en masa sin estorbar a quien se equivoca un par de veces.
+    })->middleware('throttle:login'); // 8 por minuto por IP y 20 por hora por cuenta: ver AppServiceProvider.
     
     // ===== 2FA - Verificación de dos factores =====
     Route::get('/verify-2fa', function () {
@@ -337,7 +337,15 @@ Route::middleware('guest')->group(function () {
         }
         
         $user->password = \Illuminate\Support\Facades\Hash::make(request('password'));
+        // Afuera de todas partes: quien pide recuperar la clave puede ser
+        // porque alguien más la tenía. Sin esto, su sesión abierta y su
+        // «recordarme» seguían valiendo con la clave nueva.
+        $user->remember_token = \Illuminate\Support\Str::random(60);
         $user->save();
+
+        if (config('session.driver') === 'database') {
+            \Illuminate\Support\Facades\DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+        }
         
         // Eliminar token usado
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();

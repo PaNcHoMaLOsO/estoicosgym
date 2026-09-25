@@ -157,7 +157,23 @@ esconder lo fiado, esconder quién debe y abreviar los nombres del Resumen
 El permiso se deduce del nombre de la ruta: `panel.pagos.store` pide
 `pagos.crear`. Recepción hace el mesón —altas, inscripciones, cobros, fiado,
 horas de taller, cotizar— y no entra a configuración ni a informes de dinero, ni
-borra. `php artisan permisos:revisar` falla si alguna ruta quedó sin clasificar.
+borra. `php artisan permisos:revisar --rol=2` lista a qué llega y a qué no.
+
+**Cerrado por defecto:** una ruta del panel que no esté clasificada la usa solo
+el administrador, hasta que se agregue a `Permisos`.
+
+| Recepción **puede** | Recepción **no puede** |
+|---|---|
+| Resumen, buscar y ver socios, alta, editar la ficha, foto, celular | Eliminar socios ni borrar sus datos |
+| Dar de baja y reactivar a un socio | Configuración: planes, precios, convenios, web, correo, usuarios, papelera |
+| Contrato: enviarlo, verlo, anularlo | Caja e informes |
+| Inscribir, renovar, pausar, reanudar, cambiar de plan, traspasar | Eliminar una membresía |
+| **Corregir una membresía** (fechas, precio, descuento) | Corregir o eliminar un pago ya registrado |
+| Cobrar (registrar pagos) | Cerrar el mes de un taller, corregir o borrar cobros y cotizaciones |
+| Fiado: anotar, cobrar, deshacer un cobro. Notas del mesón. Canje | Borrar líneas del fiado o notas |
+| Talleres: crear, anotar horas, cotizar e imprimir | Editar o eliminar un taller |
+| Correos a un socio, reenviar, cancelar; **envío a un grupo** | Crear o cambiar las plantillas de correo |
+| Historial de cambios | |
 
 ## Correo
 

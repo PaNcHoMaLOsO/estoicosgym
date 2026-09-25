@@ -173,8 +173,8 @@ php artisan serve
 Acceder a: http://localhost:8000/admin
 
 **Credenciales:**
-- **Admin:** admin@progym.cl / password
-- **Recepcionista:** recepcion@progym.cl / password
+- **Admin:** admin@progym.cl (la clave la muestra el seeder una vez)
+- **Recepcionista:** recepcion@progym.cl (la clave la muestra el seeder una vez)
 
 ### 3. Flujo de Demostración (15 min)
 

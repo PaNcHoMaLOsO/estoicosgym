@@ -34,21 +34,32 @@ class DatabaseSeeder extends Seeder
         $this->command->newLine();
 
         // ===== USUARIOS DEL SISTEMA =====
-        $this->command->info('👥 Creando usuarios del sistema...');
+        // SIN CLAVE CONOCIDA. Antes las dos cuentas nacían con «password», y
+        // esa clave estaba escrita en los documentos del repositorio, que es
+        // público: cualquier instalación hecha siguiendo la guía quedaba con un
+        // administrador al que entraba cualquiera. Ahora se crean solo si no hay
+        // ninguna cuenta, con una clave al azar que se muestra UNA vez.
+        if (User::query()->exists()) {
+            $this->command->info('👥 Ya hay usuarios: no se crea ninguno.');
+        } else {
+            $this->command->info('👥 Creando usuarios del sistema...');
 
-        User::factory()->create([
-            'name' => 'Administrador',
-            'email' => 'admin@progym.cl',
-            'id_rol' => 1,
-        ]);
+            foreach ([
+                ['Administrador', 'admin@progym.cl', 1],
+                ['Recepcionista', 'recepcion@progym.cl', 2],
+            ] as [$nombre, $correo, $rol]) {
+                $clave = \Illuminate\Support\Str::password(16, symbols: false);
 
-        User::factory()->create([
-            'name' => 'Recepcionista',
-            'email' => 'recepcion@progym.cl',
-            'id_rol' => 2,
-        ]);
+                User::factory()->create([
+                    'name' => $nombre,
+                    'email' => $correo,
+                    'id_rol' => $rol,
+                    'password' => $clave,
+                ]);
 
-        $this->command->info('✅ Usuarios creados');
+                $this->command->warn("   {$correo}  clave: {$clave}  (anótala y cámbiala al entrar)");
+            }
+        }
         $this->command->newLine();
 
         // ===== NOTA: DATOS DE PRUEBA =====

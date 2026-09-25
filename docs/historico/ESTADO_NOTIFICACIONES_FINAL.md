@@ -219,7 +219,7 @@ php artisan test:plantillas-automaticas {email}
 
 ## 🔐 CONFIGURACIÓN RESEND
 
-**API Key:** `re_aj8Luxpg_GYFuWYicXrWGB4QEi1qaU3o4`  
+**API Key:** `(retirada: se guarda en el .env, nunca en un documento)`  
 **From:** `PROGYM <onboarding@resend.dev>`  
 **Rate Limit:** 2 emails/segundo (modo test)  
 **Limitación:** Solo envía a `estoicosgymlosangeles@gmail.com` en modo test
