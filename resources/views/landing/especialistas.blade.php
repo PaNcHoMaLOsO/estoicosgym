@@ -29,17 +29,21 @@
                     // Tantas columnas como especialistas, hasta cuatro: con dos, dos
                     // paneles anchos; nunca un tercio de pantalla vacío.
                     $columnas = [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3'][count($especialistas)] ?? 'lg:grid-cols-4';
+                    // En el celular, de a dos: se ven todos sin deslizar de lado.
+                    // Deslizando se veía uno a medias y había que adivinar que
+                    // había más.
+                    $enCelular = count($especialistas) === 1 ? 'grid-cols-1' : 'grid-cols-2';
                 @endphp
 
-                <div class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 {{ $columnas }} lg:gap-4">
+                <div class="grid {{ $enCelular }} gap-2 sm:grid-cols-2 sm:gap-3 {{ $columnas }} lg:gap-4">
                     @foreach($especialistas as $index => $e)
-                        <article class="animate-on-scroll group relative flex min-h-[22rem] w-[82%] shrink-0 snap-start flex-col justify-end overflow-hidden bg-pg-carbon sm:w-auto lg:min-h-[26rem]" style="animation-delay: {{ ($index % 4) * 0.08 }}s">
+                        <article class="animate-on-scroll group relative flex min-h-[15rem] flex-col justify-end overflow-hidden bg-pg-carbon sm:min-h-[20rem] lg:min-h-[24rem]" style="animation-delay: {{ ($index % 4) * 0.08 }}s">
                             @if($e['foto'])
                                 <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}" loading="lazy"
                                      class="absolute inset-0 h-full w-full object-cover object-top grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0">
                             @else
                                 {{-- Sin foto, la inicial llena el panel: un fondo liso se ve vacío. --}}
-                                <span class="absolute -right-6 -top-10 select-none font-display text-[18rem] leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)] transition-colors duration-700 group-hover:text-pg-rojo/10" aria-hidden="true">
+                                <span class="absolute -right-4 -top-6 select-none font-display text-[10rem] sm:-right-6 sm:-top-10 sm:text-[18rem] leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)] transition-colors duration-700 group-hover:text-pg-rojo/10" aria-hidden="true">
                                     {{ mb_strtoupper(mb_substr($e['nombre'], 0, 1)) }}
                                 </span>
                             @endif
@@ -49,25 +53,25 @@
                             {{-- LO JUSTO PARA ELEGIR. La presentación iba aquí y con más de
                                  dos líneas tapaba la foto; ahora va en su perfil, al que lleva
                                  todo el panel. El WhatsApp queda a mano, para quien ya sabe. --}}
-                            <div class="relative p-5 lg:p-7">
-                                <span class="block h-0.5 w-8 bg-pg-rojo transition-all duration-500 group-hover:w-16" aria-hidden="true"></span>
-                                <p class="mt-4 line-clamp-2 font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro">{{ $e['especialidad'] }}</p>
-                                <h2 class="mt-1 font-display text-3xl lg:text-4xl uppercase leading-none text-pg-tiza">
+                            <div class="relative p-3 sm:p-5 lg:p-6">
+                                <span class="block h-0.5 w-6 bg-pg-rojo transition-all duration-500 group-hover:w-12 sm:w-8" aria-hidden="true"></span>
+                                <p class="mt-2.5 line-clamp-2 font-modern text-[10px] uppercase leading-snug tracking-[0.12em] text-pg-rojo-claro sm:mt-3 sm:text-[11px] sm:tracking-[0.18em]">{{ $e['especialidad'] }}</p>
+                                <h2 class="mt-1 font-display text-lg uppercase leading-none text-pg-tiza sm:text-2xl lg:text-[1.7rem]">
                                     <a href="{{ $e['perfil'] }}" class="after:absolute after:inset-0">{{ $e['nombre'] }}</a>
                                 </h2>
                                 @if($e['modalidad'])
-                                    <p class="mt-2 font-modern text-xs text-pg-tiza/60">{{ $e['modalidad'] }}</p>
+                                    <p class="mt-1.5 font-modern text-[11px] text-pg-tiza/60 sm:text-xs">{{ $e['modalidad'] }}</p>
                                 @endif
 
-                                <div class="mt-5 flex items-center justify-between gap-4 font-modern text-sm">
-                                    <span class="inline-flex items-center gap-2 border-b border-pg-tiza/30 pb-1 text-pg-tiza transition-colors group-hover:border-pg-rojo group-hover:text-pg-rojo-claro">
+                                <div class="mt-3 flex items-center justify-between gap-2 font-modern text-xs sm:mt-4 sm:text-sm">
+                                    <span class="inline-flex items-center gap-1.5 border-b border-pg-tiza/30 pb-0.5 text-pg-tiza transition-colors group-hover:border-pg-rojo group-hover:text-pg-rojo-claro">
                                         Ver perfil <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
                                     </span>
                                     @if($e['whatsapp'])
                                         <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                            aria-label="Escribirle a {{ $e['nombre'] }} por WhatsApp"
-                                           class="relative z-10 flex size-10 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-[#25D366] hover:bg-[#25D366]">
-                                            <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i>
+                                           class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-[#25D366] hover:bg-[#25D366] sm:size-9">
+                                            <i class="fab fa-whatsapp text-sm sm:text-base" aria-hidden="true"></i>
                                         </a>
                                     @endif
                                 </div>

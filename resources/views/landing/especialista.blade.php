@@ -38,7 +38,7 @@
 
                 <div class="min-w-0">
                     <p class="font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro sm:text-sm">{{ $e['especialidad'] }}</p>
-                    <h1 class="mt-2 font-display text-5xl uppercase leading-[0.9] text-pg-tiza md:text-7xl">{{ $e['nombre'] }}</h1>
+                    <h1 class="mt-2 font-display text-4xl uppercase leading-[0.95] text-pg-tiza md:text-6xl">{{ $e['nombre'] }}</h1>
 
                     @if($e['modalidad'])
                         <p class="mt-5 inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5 font-modern text-sm text-pg-tiza/80">

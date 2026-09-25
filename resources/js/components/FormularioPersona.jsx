@@ -166,8 +166,9 @@ const WEB = {
     // 1520 de ancho máximo menos 80 de margen a cada lado; 16 entre paneles.
     contenido: 1360,
     separacion: 16,
-    // El 82% (especialistas) y el 72% (embajadores) de un celular de 375.
-    celular: { especialista: 308, embajador: 270 },
+    // En un celular de 375: los especialistas van de a dos (375 - 40 de
+    // margen - 8 entre medio, partido en dos) y los embajadores al 72%.
+    celular: { especialista: 163, embajador: 270 },
 };
 
 const OSWALD = "font-['Oswald',sans-serif]";
@@ -202,11 +203,11 @@ function IconoInstagram() {
 }
 
 /** La inicial en hueco que llena el panel cuando no hay foto, como en la web. */
-function Inicial({ nombre, embajador }) {
+function Inicial({ nombre, embajador, chica = false }) {
     return (
         <span
             className={`absolute select-none ${OSWALD} leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)] ${
-                embajador ? '-right-4 -top-6 text-[14rem]' : '-right-6 -top-10 text-[18rem]'
+                embajador ? '-right-4 -top-6 text-[14rem]' : chica ? '-right-4 -top-6 text-[10rem]' : '-right-6 -top-10 text-[18rem]'
             }`}
             aria-hidden="true"
         >
@@ -222,30 +223,30 @@ function PanelEspecialista({ data, foto, celular, ancho }) {
     return (
         <article
             style={{ width: ancho }}
-            className={`group relative flex flex-col justify-end overflow-hidden bg-[#121214] ${celular ? 'min-h-[22rem]' : 'min-h-[26rem]'}`}
+            className={`group relative flex flex-col justify-end overflow-hidden bg-[#121214] ${celular ? 'min-h-[15rem]' : 'min-h-[24rem]'}`}
         >
             {foto ? (
                 <img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover object-top grayscale transition duration-700 group-hover:grayscale-0" />
             ) : (
-                <Inicial nombre={nombre} />
+                <Inicial nombre={nombre} chica={celular} />
             )}
 
             <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/70 to-transparent" aria-hidden="true" />
 
-            <div className={`relative ${celular ? 'p-5' : 'p-7'}`}>
-                <span className="block h-0.5 w-8 bg-[#dd2a32]" aria-hidden="true" />
-                <p className={`mt-4 line-clamp-2 ${POPPINS} text-xs uppercase tracking-[0.2em] ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
+            <div className={`relative ${celular ? 'p-3' : 'p-6'}`}>
+                <span className={`block h-0.5 bg-[#dd2a32] ${celular ? 'w-6' : 'w-8'}`} aria-hidden="true" />
+                <p className={`line-clamp-2 ${POPPINS} uppercase leading-snug ${celular ? 'mt-2.5 text-[10px] tracking-[0.12em]' : 'mt-3 text-[11px] tracking-[0.18em]'} ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
                     {data.especialidad.trim() || 'Especialidad'}
                 </p>
-                <p className={`mt-1 ${OSWALD} ${celular ? 'text-3xl' : 'text-4xl'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
+                <p className={`mt-1 ${OSWALD} ${celular ? 'text-lg' : 'text-[1.7rem]'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
                     {nombre || 'Nombre'}
                 </p>
-                {data.modalidad ? <p className={`mt-2 ${POPPINS} text-xs text-[#f2f2f4]/60`}>{TEXTO_MODALIDAD[data.modalidad]}</p> : null}
+                {data.modalidad ? <p className={`mt-1.5 ${POPPINS} ${celular ? 'text-[11px]' : 'text-xs'} text-[#f2f2f4]/60`}>{TEXTO_MODALIDAD[data.modalidad]}</p> : null}
 
-                <div className={`mt-5 flex items-center justify-between gap-4 ${POPPINS} text-sm`}>
-                    <span className="inline-flex items-center gap-2 border-b border-[#f2f2f4]/30 pb-1 text-[#f2f2f4]">Ver perfil →</span>
+                <div className={`flex items-center justify-between gap-2 ${POPPINS} ${celular ? 'mt-3 text-xs' : 'mt-4 text-sm'}`}>
+                    <span className="inline-flex items-center gap-1.5 border-b border-[#f2f2f4]/30 pb-0.5 text-[#f2f2f4]">Ver perfil →</span>
                     {data.whatsapp ? (
-                        <span className="flex size-10 items-center justify-center rounded-full border border-[#f2f2f4]/25 text-lg text-[#f2f2f4]">
+                        <span className={`flex shrink-0 items-center justify-center rounded-full border border-[#f2f2f4]/25 text-[#f2f2f4] ${celular ? 'size-8 text-sm' : 'size-9 text-base'}`}>
                             <IconoWhatsapp />
                         </span>
                     ) : null}
