@@ -137,7 +137,7 @@ class EstadoDeConfiguracion
             default => ['ok', "{$activos} planes a la venta, todos con precio."],
         };
 
-        return self::punto('planes', 'Planes y cobros', 'Planes y precios', '/panel/membresias', $estado, $detalle);
+        return self::punto('planes', 'Ventas', 'Planes y precios', '/panel/membresias', $estado, $detalle);
     }
 
     private static function metodosDePago(): array
@@ -145,7 +145,7 @@ class EstadoDeConfiguracion
         $activos = MetodoPago::where('activo', true)->count();
 
         return self::punto(
-            'metodos', 'Planes y cobros', 'Métodos de pago', '/panel/metodos-pago',
+            'metodos', 'Ventas', 'Métodos de pago', '/panel/metodos-pago',
             $activos ? 'ok' : 'falta',
             match (true) {
                 $activos === 0 => 'Sin ningún método de pago activo no se puede cobrar.',
@@ -169,7 +169,7 @@ class EstadoDeConfiguracion
             default => ['ok', "{$publicados} convenios en la web, todos con su logo."],
         };
 
-        return self::punto('convenios', 'Planes y cobros', 'Convenios', '/panel/convenios', $estado, $detalle);
+        return self::punto('convenios', 'Ventas', 'Convenios', '/panel/convenios', $estado, $detalle);
     }
 
     private static function correo(): array
@@ -287,7 +287,7 @@ class EstadoDeConfiguracion
             ->all();
 
         return self::punto(
-            'textos_legales', 'Contrato y privacidad', 'Contrato, términos y privacidad', '/panel/textos-legales/contrato',
+            'textos_legales', 'Contrato y legales', 'Contrato, términos y privacidad', '/panel/textos-legales/contrato',
             $sinRevisar ? 'falta' : 'ok',
             $sinRevisar
                 ? 'Siguen con el texto base: ' . self::enumerar($sinRevisar) . '. Revísalos antes de mandar contratos a firmar.'

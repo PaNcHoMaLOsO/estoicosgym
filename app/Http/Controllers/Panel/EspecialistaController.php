@@ -172,7 +172,7 @@ class EspecialistaController extends Controller
         $datos = $request->validate([
             // Especialista o embajador: decide dónde sale en la web.
             'tipo' => 'nullable|in:' . implode(',', array_keys(Especialista::TIPOS)),
-            'nombre' => 'required|string|max:100',
+            'nombre' => 'required|string|max:60',
             'especialidad' => 'required|string|max:100',
             // En su perfil: una presentación, no una línea.
             'descripcion' => 'nullable|string|max:1200',

@@ -44,14 +44,19 @@ class WebPublica
     }
 
     /**
-     * El plan más barato a la venta hoy.
+     * La mensualidad más barata que se anuncia en la web hoy.
      *
      * Con el precio VIGENTE de cada plan, igual que la página de planes: un
      * precio viejo que sigue activo en la tabla no cuenta.
      */
     public static function precioDesde(): ?int
     {
+        // Igual que la web: solo los planes que salen en ella y sin los pases
+        // de días. Contándolos, la vista previa de Google en Configuración
+        // decía un «desde» que la página no decía.
         $precio = Membresia::where('activo', true)
+            ->where('en_la_web', true)
+            ->where('duracion_meses', '>=', 1)
             ->with(['precios' => fn ($q) => $q->where('activo', true)
                 ->where('fecha_vigencia_desde', '<=', now())
                 ->orderByDesc('fecha_vigencia_desde')])

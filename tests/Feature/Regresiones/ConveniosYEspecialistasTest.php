@@ -576,4 +576,15 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             'nombre' => 'Otro', 'especialidad' => 'Kine', 'email' => 'no es correo', 'activo' => true,
         ])->assertSessionHasErrors('email');
     }
+
+    /** Corregir el nombre no rompe la dirección que ya se compartió. */
+    public function test_la_direccion_vieja_lleva_a_la_nueva(): void
+    {
+        $e = Especialista::create(['nombre' => 'Jose Perez', 'especialidad' => 'Kine', 'activo' => true]);
+        $e->update(['nombre' => 'José Pérez Soto']);
+
+        $this->get('/especialistas/jose-perez')->assertStatus(301)
+            ->assertRedirect(route('landing.especialista', 'jose-perez-soto'));
+        $this->get('/especialistas/jose-perez-soto')->assertOk();
+    }
 }

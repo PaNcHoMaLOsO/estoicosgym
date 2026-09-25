@@ -181,7 +181,7 @@ export function BotonPrivado({ className = '' }) {
                 </TooltipTrigger>
 
                 <TooltipContent side="bottom">
-                    Las cifras están escondidas desde Configuración → El dinero en pantalla
+                    Las cifras están escondidas desde Configuración → Lo que se ve en pantalla
                 </TooltipContent>
             </Tooltip>
         );

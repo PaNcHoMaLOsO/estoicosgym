@@ -66,7 +66,7 @@ function camposDe(tipo, iconos) {
         default:
             return [
                 { nombre: 'titulo', etiqueta: 'Nombre', requerido: true, ejemplo: 'Camila R.' },
-                { nombre: 'texto', etiqueta: 'Lo que dijo', tipo: 'area', requerido: true },
+                { nombre: 'texto', etiqueta: 'Lo que dijo', tipo: 'area', requerido: true, ayuda: 'Hasta 200 caracteres: sale en letra grande en la portada.' },
                 {
                     nombre: 'con_permiso',
                     etiqueta: 'Permiso',

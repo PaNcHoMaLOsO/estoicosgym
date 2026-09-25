@@ -39,11 +39,11 @@ export default function Membresias({ membresias }) {
 
     return (
         <>
-            <Head title="Membresías" />
+            <Head title="Planes y precios" />
 
             <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-lg font-semibold text-chalk">Membresías</h1>
+                    <h1 className="text-lg font-semibold text-chalk">Planes y precios</h1>
                     <p className="apoyo text-fog">Los planes que se pueden vender</p>
                 </div>
 

@@ -119,4 +119,20 @@ class ConfiguracionTest extends CasoConCatalogos
         $this->assertSame('PRO GYM | Gimnasio en Los Ángeles, Biobío', $vista['titulo']);
         $this->assertStringContainsString('Gimnasio en Los Ángeles', $vista['descripcionAutomatica']);
     }
+
+    /**
+     * La vista previa de Google dice el mismo «desde» que la web. Contaba los
+     * planes que no salen en la web y los pases de días, y decía otro precio.
+     */
+    public function test_la_vista_previa_de_google_dice_lo_mismo_que_la_web(): void
+    {
+        \App\Models\Membresia::query()->update(['en_la_web' => false]);
+        \App\Models\Membresia::where('duracion_meses', 1)->update(['en_la_web' => true]);
+
+        $vista = $this->props('/panel/configuracion/web')['extra']['vistaGoogle'];
+        $portada = $this->get('/')->assertOk()->getContent();
+
+        preg_match('/<meta name="description" content="([^"]*)"/', $portada, $m);
+        $this->assertSame(html_entity_decode($m[1]), $vista['descripcionAutomatica']);
+    }
 }

@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * ESTO NO ES UN PERMISO Y NO PRETENDE SERLO. Quien tenga el permiso de
  * informes lo sigue teniendo: lo que se apagó aquí se vuelve a encender en
- * Configuración → El dinero en pantalla, y quien puede entrar ahí puede
+ * Configuración → Lo que se ve en pantalla, y quien puede entrar ahí puede
  * hacerlo. Es una decisión del dueño sobre lo que quiere tener delante, no una
  * barrera contra nadie.
  *
@@ -46,8 +46,8 @@ class EscondeElDinero
         return redirect('/panel')->with(
             'info',
             $que === 'pendientes'
-                ? 'Lo que deben de sus membresías está escondido. Se vuelve a ver en Configuración → El dinero en pantalla.'
-                : 'Las cifras de caja están escondidas. Se vuelven a ver en Configuración → El dinero en pantalla.'
+                ? 'Lo que deben de sus membresías está escondido. Se vuelve a ver en Configuración → Lo que se ve en pantalla.'
+                : 'Las cifras de caja están escondidas. Se vuelven a ver en Configuración → Lo que se ve en pantalla.'
         );
     }
 }

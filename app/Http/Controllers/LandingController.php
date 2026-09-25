@@ -176,7 +176,15 @@ class LandingController extends Controller
         $comun = $this->comun();
         $especialista = collect($comun['especialistas'])->firstWhere('slug', $slug);
 
-        abort_if(! $especialista, 404);
+        if (! $especialista) {
+            // Una dirección vieja, de antes de corregirle el nombre: a la nueva.
+            $actual = Especialista::where('activo', true)->where('tipo', 'especialista')->get()
+                ->first(fn (Especialista $e) => in_array($slug, $e->slugs_anteriores ?? [], true));
+
+            abort_if(! $actual, 404);
+
+            return redirect()->route('landing.especialista', $actual->slug, 301);
+        }
 
         $otros = collect($comun['especialistas'])->where('slug', '!=', $slug)->take(3)->values()->all();
         $nombreGimnasio = $comun['gimnasio']['nombre'];
@@ -940,7 +948,7 @@ class LandingController extends Controller
             ['landing.planes', '0.9'],
             $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8'] : null,
             ['landing.gimnasio', '0.8'],
-            Especialista::where('activo', true)->exists() ? ['landing.especialistas', '0.7'] : null,
+            Especialista::where('activo', true)->where('tipo', 'especialista')->exists() ? ['landing.especialistas', '0.7'] : null,
             ['landing.contacto', '0.7'],
             ['landing.membresia', '0.5'],
             ['landing.privacidad', '0.2'],

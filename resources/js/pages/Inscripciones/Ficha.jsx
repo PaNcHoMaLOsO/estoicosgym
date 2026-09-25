@@ -65,7 +65,7 @@ function Vigencia({ dias }) {
 }
 
 export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, movimientos }) {
-    // Lo que debe, escondido desde Configuracion → El dinero en pantalla.
+    // Lo que debe, escondido desde Configuracion → Lo que se ve en pantalla.
     const sinDeudas = Boolean(usePage().props.privado?.sin_pendientes);
 
     // Cual esta abierto: null, 'pausar', 'reanudar' o 'traspasar'.

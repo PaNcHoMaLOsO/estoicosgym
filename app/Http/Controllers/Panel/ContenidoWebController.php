@@ -278,7 +278,9 @@ class ContenidoWebController extends Controller
     private function validar(Request $request, string $tipo, bool $creando): array
     {
         $largoTitulo = ['servicio' => 60, 'foto' => 150, 'pregunta' => 150, 'testimonio' => 60][$tipo];
-        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 400][$tipo];
+        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 200][$tipo];
+        // El testimonio sale en letra grande en la portada: con 400 caracteres
+        // la diapositiva quedaba altísima y el carrusel saltaba de alto.
 
         $reglas = [
             'titulo' => ['required', 'string', "max:{$largoTitulo}"],

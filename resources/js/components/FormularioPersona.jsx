@@ -505,7 +505,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                 alCambiar={(v) => setData('nombre', v)}
                                 error={errors.nombre}
                                 placeholder={esEmbajador ? 'Diego Riquelme' : 'Camila Rojas'}
-                                maxLength={100}
+                                maxLength={60}
                                 autoComplete="off"
                             />
                         </Campo>

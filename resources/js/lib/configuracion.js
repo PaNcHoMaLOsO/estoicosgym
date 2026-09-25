@@ -25,8 +25,9 @@ export const SECCIONES_CONFIGURACION = [
         ],
     },
     {
-        // Qué se vende y a qué precio. Es lo que más se vuelve a abrir.
-        titulo: 'Planes y cobros',
+        // Qué se vende, a qué precio y con qué reglas. Es lo que más se
+        // vuelve a abrir.
+        titulo: 'Ventas',
         icono: 'cobros',
         secciones: [
             { href: '/panel/membresias', etiqueta: 'Planes y precios', permiso: 'configuracion.ver' },
@@ -48,7 +49,7 @@ export const SECCIONES_CONFIGURACION = [
         icono: 'correos',
         secciones: [
             { href: '/panel/configuracion/correo', etiqueta: 'Cuenta de correo', permiso: 'configuracion.ver' },
-            { href: '/panel/notificaciones/plantillas', etiqueta: 'Qué dice cada correo', permiso: 'notificaciones.ver' },
+            { href: '/panel/notificaciones/plantillas', etiqueta: 'Plantillas de correo', permiso: 'notificaciones.ver' },
             { href: '/panel/configuracion/tareas', etiqueta: 'Avisos automáticos', permiso: 'configuracion.ver' },
         ],
     },
@@ -59,15 +60,14 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/configuracion/portada', etiqueta: 'Portada y aviso', permiso: 'configuracion.ver' },
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
-            { href: '/panel/web/pregunta', etiqueta: 'Preguntas frecuentes', permiso: 'configuracion.ver' },
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
             { href: '/panel/especialistas', etiqueta: 'Especialistas', permiso: 'configuracion.ver' },
             { href: '/panel/embajadores', etiqueta: 'Embajadores', permiso: 'configuracion.ver' },
-            { href: '/panel/configuracion/web', etiqueta: 'Google y redes', permiso: 'configuracion.ver' },
+            { href: '/panel/configuracion/web', etiqueta: 'Google, redes y tienda', permiso: 'configuracion.ver' },
         ],
     },
     {
-        titulo: 'Contrato y privacidad',
+        titulo: 'Contrato y legales',
         icono: 'legal',
         secciones: [
             { href: '/panel/textos-legales/contrato', etiqueta: 'Contrato', permiso: 'configuracion.ver' },
@@ -76,13 +76,15 @@ export const SECCIONES_CONFIGURACION = [
         ],
     },
     {
-        titulo: 'Sistema',
+        // El panel mismo: qué se ve en la pantalla del mesón, quién entra y
+        // lo que se borró.
+        titulo: 'Panel',
         icono: 'sistema',
         secciones: [
             // Si las cifras del negocio se ven o no. Aqui y no en «El
             // gimnasio»: no es como trabaja el gimnasio, es que decide este
             // panel enseñar.
-            { href: '/panel/configuracion/privacidad', etiqueta: 'El dinero en pantalla', permiso: 'configuracion.ver' },
+            { href: '/panel/configuracion/privacidad', etiqueta: 'Lo que se ve en pantalla', permiso: 'configuracion.ver' },
             { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
             { href: '/panel/papelera', etiqueta: 'Papelera', permiso: 'configuracion.ver' },
         ],

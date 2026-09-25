@@ -94,6 +94,7 @@ class Ajustes
                 'ayuda' => 'Calle y número, como en Google Maps. Sale en los correos, en la web y en la ficha de Google.',
                 'ejemplo' => 'Colón 123',
                 'tipo' => 'texto',
+                'max' => 120,
                 'defecto' => '',
             ],
             'gimnasio.comuna' => [
@@ -488,6 +489,7 @@ class Ajustes
                 'etiqueta' => 'Ciudad',
                 'ayuda' => 'La que la gente escribe en Google: «gimnasio en Los Ángeles». Va en el título de la página y en la ficha que lee Google.',
                 'tipo' => 'texto',
+                'max' => 40,
                 'defecto' => 'Los Ángeles',
             ],
             'web.region' => [
@@ -496,6 +498,7 @@ class Ajustes
                 'etiqueta' => 'Región',
                 'ayuda' => 'Para que Google no la confunda con Los Ángeles de California.',
                 'tipo' => 'texto',
+                'max' => 40,
                 'defecto' => 'Biobío',
             ],
             'web.comunas' => [
@@ -618,6 +621,7 @@ class Ajustes
                 'etiqueta' => 'Qué se dice de la tienda',
                 'ayuda' => 'Un par de frases. Sale bajo el título, antes del botón.',
                 'tipo' => 'area',
+                'max' => 300,
                 'defecto' => '',
             ],
             'web.google_analytics' => [
@@ -694,7 +698,7 @@ class Ajustes
                 'descripcion' => 'Lo primero que se lee en la página web, y un aviso con fecha que se quita solo.',
             ],
             'web' => [
-                'titulo' => 'Google y redes',
+                'titulo' => 'Google, redes y tienda',
                 'descripcion' => 'Cómo encuentra Google al gimnasio, sus redes sociales y cómo se miden las visitas.',
             ],
         ];

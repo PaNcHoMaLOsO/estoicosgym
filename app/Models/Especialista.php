@@ -30,6 +30,7 @@ class Especialista extends Model
         'tipo',
         'nombre',
         'slug',
+        'slugs_anteriores',
         'especialidad',
         'descripcion',
         'temas',
@@ -46,6 +47,7 @@ class Especialista extends Model
         'activo' => 'boolean',
         'orden' => 'integer',
         'temas' => 'array',
+        'slugs_anteriores' => 'array',
     ];
 
     /** Cómo atiende. Sin elegir, el perfil no dice nada. */
@@ -67,7 +69,17 @@ class Especialista extends Model
         // el nombre: una dirección con el nombre mal escrito no sirve a nadie.
         static::saving(function (Especialista $especialista) {
             if (! $especialista->slug || $especialista->isDirty('nombre')) {
+                $anterior = $especialista->getOriginal('slug');
                 $especialista->slug = $especialista->slugLibre();
+
+                // La vieja queda guardada para redirigir: ya puede estar
+                // compartida.
+                if ($anterior && $anterior !== $especialista->slug) {
+                    $especialista->slugs_anteriores = array_values(array_unique([
+                        ...($especialista->slugs_anteriores ?? []),
+                        $anterior,
+                    ]));
+                }
             }
         });
     }

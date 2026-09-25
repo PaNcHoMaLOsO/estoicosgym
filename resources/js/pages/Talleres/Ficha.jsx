@@ -38,7 +38,7 @@ function otroMes(periodo, cuantos) {
 
 /** El horario semanal: de aquí salen propuestas las clases de cada mes. */
 function Horario({ taller }) {
-    const { data, setData, patch, processing } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         nombre: taller.nombre,
         descripcion_factura: taller.descripcion_factura ?? '',
         precio_hora: taller.precio_hora,
@@ -155,6 +155,8 @@ function Horario({ taller }) {
                 </span>
             </label>
 
+            <Errores errores={errors} />
+
             <button
                 type="submit"
                 disabled={processing}
@@ -234,9 +236,29 @@ function ParaLaFactura({ taller, cuenta, periodo, mesLegible }) {
     );
 }
 
+/**
+ * Lo que el servidor rechazó. Estos formularios no mostraban nada: se apretaba
+ * «Guardar», no se guardaba y no decía por qué.
+ */
+function Errores({ errores }) {
+    const lista = Object.values(errores ?? {});
+
+    if (lista.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul className="apoyo space-y-0.5 text-danger" role="alert">
+            {lista.map((e) => (
+                <li key={e}>{e}</li>
+            ))}
+        </ul>
+    );
+}
+
 /** El folio y las fechas de una factura ya emitida. */
 function DatosDelCobro({ cobro }) {
-    const { data, setData, patch, processing } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         folio: cobro.folio ?? '',
         emitido_en: cobro.emitido_en ?? '',
         pagado_en: cobro.pagado_en ?? '',
@@ -269,6 +291,18 @@ function DatosDelCobro({ cobro }) {
                 </label>
             </div>
 
+            <label className="block">
+                <span className="rotulo">Observaciones</span>
+                <textarea
+                    rows={2}
+                    value={data.observaciones}
+                    onChange={(e) => setData('observaciones', e.target.value)}
+                    className={`${campo} mt-1`}
+                />
+            </label>
+
+            <Errores errores={errors} />
+
             <button
                 type="submit"
                 disabled={processing}
@@ -289,7 +323,7 @@ function DatosDelCobro({ cobro }) {
  * aquí, que es donde se miran.
  */
 function DatosDeLaInstitucion({ institucion }) {
-    const { data, setData, patch, processing } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         nombre: institucion.nombre ?? '',
         rut: institucion.rut ?? '',
         giro: institucion.giro ?? '',
@@ -311,6 +345,7 @@ function DatosDeLaInstitucion({ institucion }) {
         ['comuna', 'Comuna y región'],
         ['contacto_nombre', 'Contacto'],
         ['contacto_email', 'Correo del contacto'],
+        ['contacto_telefono', 'Teléfono del contacto'],
     ];
 
     return (
@@ -332,6 +367,8 @@ function DatosDeLaInstitucion({ institucion }) {
                     />
                 </label>
             ))}
+
+            <Errores errores={errors} />
 
             <button
                 type="submit"
