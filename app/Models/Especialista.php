@@ -37,6 +37,7 @@ class Especialista extends Model
         'foto',
         'whatsapp',
         'instagram',
+        'email',
         'orden',
         'activo',
     ];

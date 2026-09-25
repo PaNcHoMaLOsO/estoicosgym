@@ -877,6 +877,7 @@ class LandingController extends Controller
                 'whatsapp' => $e->enlaceWhatsapp($gimnasio),
                 'instagram' => $e->enlaceInstagram(),
                 'usuario' => $e->instagram,
+                'email' => $e->email,
             ])
             ->all();
     }

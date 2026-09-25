@@ -562,4 +562,18 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $this->get('/sitemap.xml')->assertOk()->assertSee(route('landing.especialista', 'camila-rojas'), false);
     }
+
+    public function test_el_correo_sale_en_su_perfil(): void
+    {
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'email' => 'Camila@Correo.CL', 'activo' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('camila@correo.cl', Especialista::first()->email);
+        $this->get('/especialistas/camila-rojas')->assertOk()->assertSee('mailto:camila@correo.cl', false);
+
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Otro', 'especialidad' => 'Kine', 'email' => 'no es correo', 'activo' => true,
+        ])->assertSessionHasErrors('email');
+    }
 }

@@ -49,8 +49,8 @@
 
                     {{-- ESCRIBIRLE, ARRIBA. Es a lo que se viene: no tiene que
                          quedar debajo de la presentación. --}}
-                    @if($e['whatsapp'] || $e['instagram'])
-                        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    @if($e['whatsapp'] || $e['instagram'] || $e['email'])
+                        <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             @if($e['whatsapp'])
                                 <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                    class="inline-flex items-center justify-center gap-2.5 bg-[#25D366] px-6 py-3.5 font-modern text-sm font-semibold text-pg-negro transition-opacity hover:opacity-90">
@@ -61,6 +61,12 @@
                                 <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                    class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
                                     <i class="fab fa-instagram text-lg" aria-hidden="true"></i> {{ '@' . $e['usuario'] }}
+                                </a>
+                            @endif
+                            @if($e['email'])
+                                <a href="mailto:{{ $e['email'] }}" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
+                                   class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
+                                    <i class="fas fa-envelope text-base" aria-hidden="true"></i> Enviar correo
                                 </a>
                             @endif
                         </div>

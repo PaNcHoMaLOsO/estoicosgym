@@ -591,6 +591,22 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                     error={errors.instagram}
                                 />
                             </Campo>
+
+                            {! esEmbajador ? (
+                                <div className="sm:col-span-2">
+                                    <Campo etiqueta="Correo" nombre="email" error={errors.email}>
+                                        <Texto
+                                            nombre="email"
+                                            tipo="email"
+                                            valor={data.email}
+                                            alCambiar={(v) => setData('email', v.trim())}
+                                            error={errors.email}
+                                            placeholder="nombre@correo.cl"
+                                            autoComplete="off"
+                                        />
+                                    </Campo>
+                                </div>
+                            ) : null}
                         </div>
 
                         <label className="flex items-center gap-2 pt-1 text-sm text-chalk">

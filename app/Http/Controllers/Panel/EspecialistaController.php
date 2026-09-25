@@ -58,6 +58,7 @@ class EspecialistaController extends Controller
                 // Se enseñan como se escriben, no como se guardan.
                 'whatsapp' => $e->whatsapp ? $this->comoSeLee($e->whatsapp) : '',
                 'instagram' => $e->instagram ? '@' . $e->instagram : '',
+                'email' => $e->email ?? '',
                 'orden' => $e->orden,
                 'activo' => (bool) $e->activo,
             ]);
@@ -180,6 +181,7 @@ class EspecialistaController extends Controller
             'modalidad' => 'nullable|in:' . implode(',', array_keys(Especialista::MODALIDADES)),
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:150',
             'activo' => 'boolean',
             // Sin SVG: puede llevar código, y se ejecutaría al abrirlo desde la web.
             'foto' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
@@ -188,6 +190,7 @@ class EspecialistaController extends Controller
             'foto.image' => 'Ese archivo no es una imagen.',
             'foto.mimes' => 'La foto tiene que ser JPG, PNG o WEBP.',
             'foto.max' => 'La foto no puede pesar más de 2 MB.',
+            'email.email' => 'Ese correo no está bien escrito.',
         ]);
 
         $fila = [
@@ -204,6 +207,7 @@ class EspecialistaController extends Controller
             'modalidad' => ($datos['modalidad'] ?? null) ?: null,
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
+            'email' => filled($datos['email'] ?? null) ? mb_strtolower(trim($datos['email'])) : null,
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
 

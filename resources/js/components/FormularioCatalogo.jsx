@@ -223,6 +223,7 @@ export function valoresDeEspecialista(especialista, tipo = 'especialista') {
         foto_url: especialista?.foto_url ?? null,
         whatsapp: especialista?.whatsapp ?? '',
         instagram: especialista?.instagram ?? '',
+        email: especialista?.email ?? '',
         activo: especialista?.uuid ? Boolean(especialista.activo) : true,
     };
 }
