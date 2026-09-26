@@ -71,6 +71,8 @@ class RevisaElDia
                 Artisan::call('inscripciones:actualizar-estados');
                 Artisan::call('pagos:sincronizar-estados');
                 Artisan::call('clientes:desactivar-vencidos');
+                // Las fallas que no se repiten hace tres meses ya no dicen nada.
+                \App\Support\RegistroDeFallas::limpiar();
                 Programador::registrar('revision');
             } catch (\Throwable $e) {
                 // Que falle la revisión no puede tumbar el panel: se anota y

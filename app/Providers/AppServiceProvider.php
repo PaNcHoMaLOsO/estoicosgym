@@ -23,6 +23,13 @@ class AppServiceProvider extends ServiceProvider
         // lo que usa el servidor: ver App\Support\Parecido.
         \App\Support\Parecido::registrar();
 
+        // Todo lo que se registre como error va también al registro de fallas
+        // del panel (Configuración → Panel → Registro de fallas).
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Log\Events\MessageLogged::class,
+            [\App\Support\RegistroDeFallas::class, 'delLog'],
+        );
+
         /*
          * EL LOGIN SE FRENA POR IP Y POR CUENTA. Solo por IP, quien prueba
          * claves desde muchas direcciones no se frenaba nunca. Por cuenta: 20

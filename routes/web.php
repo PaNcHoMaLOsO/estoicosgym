@@ -383,6 +383,12 @@ Route::post('/logout', function () {
  * como estaba TODO hasta ahora: la tabla `roles` guardaba permisos y no habia
  * nada que los leyera.
  */
+// Una pantalla del panel que se rompió en el navegador de quien la usa. Fuera
+// del grupo con permisos: la avisa cualquiera con sesión, también recepción.
+Route::post('/fallas/navegador', [\App\Http\Controllers\Panel\FallaController::class, 'navegador'])
+    ->middleware(['auth', 'throttle:20,1'])
+    ->name('fallas.navegador');
+
 Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
     
     // Dashboard
@@ -663,6 +669,10 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // mensualidad en 15.000 en vez del precio con convenio general.
         // Mandar un correo de prueba: lo único que dice de verdad si el
         // correo de salida funciona.
+        // El registro de fallas: lo que salió mal, en el servidor o en el navegador.
+        Route::get('/fallas', [\App\Http\Controllers\Panel\FallaController::class, 'index'])->name('fallas.index');
+        Route::patch('/fallas/{falla}/resolver', [\App\Http\Controllers\Panel\FallaController::class, 'resolver'])->name('fallas.resolver');
+        Route::delete('/fallas/{falla}', [\App\Http\Controllers\Panel\FallaController::class, 'destroy'])->name('fallas.destroy');
         Route::post('/configuracion/correo/probar', [\App\Http\Controllers\Panel\AjustesController::class, 'probarCorreo'])->name('configuracion.correo.probar');
 
         Route::put('/convenios/{convenio}/precios', [\App\Http\Controllers\Panel\CatalogoController::class, 'preciosDelConvenio'])->name('convenios.precios');

@@ -159,6 +159,24 @@ esconder lo fiado, esconder quién debe y abreviar los nombres del Resumen
 («Camila R.»). No cambia permisos: solo lo que hay a la vista. El ojo de arriba
 (o la tecla O) tapa las cifras en el momento.
 
+## Registro de fallas
+
+**Dónde:** Configuración → Panel → Registro de fallas (`/panel/fallas`),
+`App\Support\RegistroDeFallas`, `resources/js/lib/avisarFallas.js`.
+
+- Anota solo **todo lo que se registra como error**: las excepciones y los
+  `Log::error` que ya escribe el código (un correo que no salió, la revisión
+  del día que falló). También las pantallas que se rompen en el **navegador**
+  de quien usa el panel.
+- La misma falla repetida es una fila con su contador (se agrupa sin mirar
+  los números del mensaje). **Resuelta** la saca de la lista; si vuelve a
+  pasar, se reabre sola.
+- No guarda claves: lo que se llame clave, contraseña, token o parecido se
+  guarda como «(oculto)». Aun así los mensajes pueden traer datos de socios:
+  lo ve solo el administrador.
+- La revisión del día borra las que no se repiten hace 90 días.
+- Si la base no responde, la falla queda igual en `storage/logs/laravel.log`.
+
 ## Permisos
 
 **Dónde:** `App\Support\Permisos`, `RolesSeeder`.

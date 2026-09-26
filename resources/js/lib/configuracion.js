@@ -87,6 +87,8 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/configuracion/privacidad', etiqueta: 'Lo que se ve en pantalla', permiso: 'configuracion.ver' },
             { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
             { href: '/panel/papelera', etiqueta: 'Papelera', permiso: 'configuracion.ver' },
+            // Lo que salió mal, en el servidor o en el navegador.
+            { href: '/panel/fallas', etiqueta: 'Registro de fallas', permiso: 'configuracion.ver' },
         ],
     },
 ];
@@ -105,6 +107,7 @@ export const PREFIJOS_CONFIGURACION = [
     '/panel/usuarios',
     '/panel/papelera',
     '/panel/textos-legales',
+    '/panel/fallas',
 ];
 
 /** La ruta sin la consulta ni la barra final: «/panel/convenios». */

@@ -54,6 +54,7 @@ class Permisos
         // Cobrar lo fiado: se marca como pagado, no se crea nada.
         'saldar',
         'distintos',
+        'resolver',
         // La foto del socio. Es editar su ficha, aunque vaya por su cuenta.
         'foto',
         // Anotar que firmo el contrato y que permisos dio. Tambien es su ficha.
@@ -162,6 +163,7 @@ class Permisos
         // Lo que se le hace firmar a todos y se publica en la web lo cambia
         // quien configura.
         'textos-legales' => 'configuracion',
+        'fallas' => 'configuracion',
     ];
 
     /**

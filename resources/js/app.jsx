@@ -8,6 +8,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 import MarcoConfiguracion from './components/MarcoConfiguracion';
+import { escucharFallas } from './lib/avisarFallas';
 import Layout from './Layout';
 
 const paginas = import.meta.glob('./pages/**/*.jsx');
@@ -40,6 +41,8 @@ createInertiaApp({
     },
 
     setup({ el, App, props }) {
+        // El panel solo se ve con sesión: lo que se rompa aquí va al registro.
+        escucharFallas();
         createRoot(el).render(<App {...props} />);
     },
 
