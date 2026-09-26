@@ -45,7 +45,7 @@ export default function Configuracion({ grupo, extra }) {
     }
 
     return (
-        <form onSubmit={guardar} className="max-w-3xl">
+        <div className="max-w-3xl">
             <Head title={grupo.titulo} />
 
             <header className="mb-4">
@@ -63,6 +63,11 @@ export default function Configuracion({ grupo, extra }) {
                 <VistaEnGoogle vista={extra.vistaGoogle} descripcion={data['web.descripcion']} />
             ) : null}
 
+            {/* EL FORMULARIO DE LOS AJUSTES EMPIEZA AQUÍ, no arriba. La prueba de
+                correo tiene su propio formulario y quedaba DENTRO de este: al
+                apretar «Mandar prueba» se disparaba también «Guardar», y ese
+                segundo envío cancelaba la prueba antes de llegar al servidor. */}
+            <form onSubmit={guardar}>
             <div className="space-y-4">
                 {bloques.map((bloque, i) => (
                     <section key={bloque.seccion ?? i} className="overflow-hidden rounded-panel border border-line bg-surface">
@@ -117,7 +122,8 @@ export default function Configuracion({ grupo, extra }) {
 
                 {errors.ajustes ? <span className="apoyo text-danger">{errors.ajustes}</span> : null}
             </div>
-        </form>
+            </form>
+        </div>
     );
 }
 
