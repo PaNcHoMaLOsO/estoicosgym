@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { router } from '@inertiajs/react';
 
 /**
@@ -47,6 +48,15 @@ export function Tabla({ columnas, children, vacia = false, mensajeVacio = 'No ha
  * enlace del nombre.
  */
 export function Fila({ children, href }) {
+    const espera = useRef(null);
+
+    // Se pide la ficha si el mouse se queda un momento sobre la fila; pasar
+    // de largo por la tabla no pide nada.
+    function precargar() {
+        clearTimeout(espera.current);
+        espera.current = setTimeout(() => router.prefetch(href, { method: 'get' }, { cacheFor: '30s' }), 120);
+    }
+
     function abrir(evento) {
         if (!href || evento.target.closest('a, button, input, label')) {
             return;
@@ -64,6 +74,8 @@ export function Fila({ children, href }) {
     return (
         <tr
             onClick={href ? abrir : undefined}
+            onMouseEnter={href ? precargar : undefined}
+            onMouseLeave={href ? () => clearTimeout(espera.current) : undefined}
             className={`border-b border-line last:border-0 hover:bg-surface-2 ${href ? 'cursor-pointer' : ''}`}
         >
             {children}

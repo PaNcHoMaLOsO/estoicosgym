@@ -805,7 +805,7 @@ class Ajustes
             );
         }
 
-        Cache::forget(self::CACHE);
+        self::olvidar();
     }
 
     /**
@@ -849,7 +849,11 @@ class Ajustes
      */
     private static function todos(): array
     {
-        return Cache::rememberForever(
+        // UNA VEZ POR PETICIÓN. El caché vive en la base, así que cada
+        // lectura de un ajuste era una consulta: seis o siete por pantalla
+        // solo para saber el nombre del gimnasio y si se tapan las cifras.
+        // memo() lo guarda además en memoria mientras dura la petición.
+        return Cache::memo()->rememberForever(
             self::CACHE,
             fn () => DB::table('ajustes')->pluck('valor', 'clave')->all()
         );
@@ -858,6 +862,8 @@ class Ajustes
     /** Para las pruebas y para después de guardar. */
     public static function olvidar(): void
     {
+        Cache::memo()->forget(self::CACHE);
         Cache::forget(self::CACHE);
+        Cache::forget(EstadoDeConfiguracion::CACHE_AVISOS);
     }
 }

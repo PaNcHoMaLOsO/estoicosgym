@@ -3,8 +3,8 @@
 namespace App\Support;
 
 use App\Models\Cliente;
-use App\Models\Inscripcion;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -30,7 +30,42 @@ class FichasRepetidas
      *
      * @return list<array{clave:string, porque:string, fichas:list<array<string,mixed>>}>
      */
+    public const CACHE = 'fichas-repetidas';
+
     public static function grupos(): array
+    {
+        return self::conDetalle(self::agrupados());
+    }
+
+    /** Cuántos grupos probables hay: para el botón de la lista de socios. */
+    public static function cuantosProbables(): int
+    {
+        return count(array_filter(self::agrupados(), fn (array $g) => $g['probable']));
+    }
+
+    /** Se recalcula en la próxima visita: cambió un socio o se revisó un grupo. */
+    public static function olvidar(): void
+    {
+        Cache::memo()->forget(self::CACHE);
+        Cache::forget(self::CACHE);
+    }
+
+    /**
+     * Los grupos, solo con los ids.
+     *
+     * EN CACHÉ DIEZ MINUTOS, Y SE BORRA CUANDO CAMBIA UN SOCIO. Agrupar mil
+     * setecientos socios y traer los datos de cada ficha sospechosa —tres
+     * consultas por ficha— se hacía en la lista de socios y en cada ficha:
+     * ciento cincuenta consultas por pantalla.
+     *
+     * @return list<array{clave:string, porque:string, probable:bool, ids:list<int>}>
+     */
+    private static function agrupados(): array
+    {
+        return Cache::memo()->remember(self::CACHE, now()->addMinutes(10), fn () => self::calcular());
+    }
+
+    private static function calcular(): array
     {
         $socios = Cliente::query()
             ->whereNull('datos_borrados_en')
@@ -79,7 +114,7 @@ class FichasRepetidas
                     // Con dos RUT distintos lo más probable es que sean dos
                     // personas que se llaman igual: se muestran aparte.
                     'probable' => $ruts->count() <= 1,
-                    'fichas' => $fichas->map(fn (Cliente $c) => self::ficha($c))->values()->all(),
+                    'ids' => $quedan->all(),
                 ];
             }
         }
@@ -93,8 +128,12 @@ class FichasRepetidas
     /** Las otras fichas que pueden ser de esta persona, para avisar en su ficha. */
     public static function de(Cliente $cliente): array
     {
-        return collect(self::grupos())
-            ->filter(fn (array $g) => $g['probable'] && collect($g['fichas'])->contains('id', $cliente->id))
+        $suyos = array_values(array_filter(
+            self::agrupados(),
+            fn (array $g) => $g['probable'] && in_array($cliente->id, $g['ids'], true)
+        ));
+
+        return collect(self::conDetalle($suyos))
             ->flatMap(fn (array $g) => collect($g['fichas'])
                 ->where('id', '!=', $cliente->id)
                 ->map(fn (array $f) => $f + ['porque' => $g['porque']]))
@@ -106,6 +145,8 @@ class FichasRepetidas
     /** Marca que las fichas son de personas distintas: no vuelven a salir juntas. */
     public static function sonDistintos(array $ids, ?int $usuario): void
     {
+        self::olvidar();
+
         $ids = array_values(array_unique(array_map('intval', $ids)));
 
         foreach ($ids as $i => $a) {
@@ -166,26 +207,62 @@ class FichasRepetidas
             ->all();
     }
 
-    /** Lo que se compara lado a lado. */
-    private static function ficha(Cliente $c): array
+    /**
+     * Lo que se compara lado a lado, para todas las fichas de una vez: cuatro
+     * consultas en total, no tres por ficha.
+     */
+    private static function conDetalle(array $grupos): array
     {
-        $membresias = Inscripcion::where('id_cliente', $c->id)
-            ->orderByDesc('fecha_vencimiento')
-            ->get(['fecha_vencimiento']);
+        $ids = array_values(array_unique(array_merge(...array_map(fn ($g) => $g['ids'], $grupos ?: [['ids' => []]]))));
 
-        return [
-            'id' => $c->id,
-            'uuid' => $c->uuid,
-            'nombre' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
-            'rut' => $c->run_pasaporte,
-            'celular' => $c->celular,
-            'email' => $c->email,
-            'activo' => (bool) $c->activo,
-            'membresias' => $membresias->count(),
-            'ultima_vence' => $membresias->first()?->fecha_vencimiento?->format('d/m/Y'),
-            'pagos' => DB::table('pagos')->where('id_cliente', $c->id)->count(),
-            'fiado' => DB::table('fiados')->where('id_cliente', $c->id)->count(),
-            'registrada' => $c->created_at?->format('d/m/Y'),
-        ];
+        if ($ids === []) {
+            return [];
+        }
+
+        $socios = Cliente::whereIn('id', $ids)
+            ->get(['id', 'uuid', 'run_pasaporte', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'activo', 'created_at'])
+            ->keyBy('id');
+        $membresias = DB::table('inscripciones')->whereIn('id_cliente', $ids)
+            ->groupBy('id_cliente')
+            ->selectRaw('id_cliente, count(*) as cuantas, max(fecha_vencimiento) as ultima')
+            ->get()->keyBy('id_cliente');
+        $pagos = DB::table('pagos')->whereIn('id_cliente', $ids)->groupBy('id_cliente')
+            ->selectRaw('id_cliente, count(*) as cuantos')->pluck('cuantos', 'id_cliente');
+        $fiado = DB::table('fiados')->whereIn('id_cliente', $ids)->groupBy('id_cliente')
+            ->selectRaw('id_cliente, count(*) as cuantos')->pluck('cuantos', 'id_cliente');
+
+        return array_values(array_filter(array_map(function (array $g) use ($socios, $membresias, $pagos, $fiado) {
+            $fichas = collect($g['ids'])
+                ->filter(fn ($id) => isset($socios[$id]))
+                ->map(function ($id) use ($socios, $membresias, $pagos, $fiado) {
+                    $c = $socios[$id];
+                    $m = $membresias[$id] ?? null;
+
+                    return [
+                        'id' => $c->id,
+                        'uuid' => (string) $c->uuid,
+                        'nombre' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
+                        'rut' => $c->run_pasaporte,
+                        'celular' => $c->celular,
+                        'email' => $c->email,
+                        'activo' => (bool) $c->activo,
+                        'membresias' => (int) ($m->cuantas ?? 0),
+                        'ultima_vence' => $m?->ultima ? \Illuminate\Support\Carbon::parse($m->ultima)->format('d/m/Y') : null,
+                        'pagos' => (int) ($pagos[$id] ?? 0),
+                        'fiado' => (int) ($fiado[$id] ?? 0),
+                        'registrada' => $c->created_at?->format('d/m/Y'),
+                    ];
+                })
+                ->values()
+                ->all();
+
+            // Si se juntó o se borró una mientras estaba en caché, sin grupo.
+            return count($fichas) < 2 ? null : [
+                'clave' => $g['clave'],
+                'porque' => $g['porque'],
+                'probable' => $g['probable'],
+                'fichas' => $fichas,
+            ];
+        }, $grupos)));
     }
 }

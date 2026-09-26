@@ -194,6 +194,8 @@ function Marco({ grupos, actual, grupoActual, pendientes, avisos, url, children 
                                                     <Link
                                                         key={s.href}
                                                         href={s.href}
+                                                        prefetch
+                                                        cacheFor="30s"
                                                         aria-current={activa ? 'page' : undefined}
                                                         title={aviso ?? undefined}
                                                         className={`relative flex items-center justify-between gap-2 rounded-control px-3 py-2 text-sm transition-colors ${

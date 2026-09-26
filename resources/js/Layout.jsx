@@ -210,6 +210,9 @@ function Enlace({ seccion, url, onIr }) {
         <Componente
             href={seccion.href}
             onClick={onIr}
+            // Se trae al pasar el mouse: al hacer clic ya está. Lo traído se
+            // descarta apenas se guarda algo (ver app.jsx).
+            {...(seccion.externa ? {} : { prefetch: true, cacheFor: '30s' })}
             aria-current={activa ? 'page' : undefined}
             className={`relative flex items-center gap-2 rounded-control py-1.5 pr-2 pl-3 text-sm transition-colors ${
                 activa

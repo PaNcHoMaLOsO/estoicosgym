@@ -139,7 +139,8 @@ class RegistroDeFallas
                     'contexto' => $datos['contexto'],
                 ]);
             } else {
-                Falla::create($datos + [
+                Falla::create([
+                    ...$datos,
                     'huella' => $huella,
                     'mensaje' => $mensaje,
                     'id_usuario' => $usuario,

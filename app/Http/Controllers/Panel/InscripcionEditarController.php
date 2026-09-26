@@ -112,10 +112,13 @@ class InscripcionEditarController extends Controller
         }
 
         DB::transaction(function () use ($inscripcion, $datos, $descuento, $final) {
-            $inscripcion->update($datos + [
+            // array_merge y no «+»: con «+» manda lo que llegó del formulario,
+            // y un descuento en blanco llegaba como null a una columna que no
+            // lo acepta (la membresía no se podía corregir).
+            $inscripcion->update(array_merge($datos, [
                 'descuento_aplicado' => $descuento,
                 'precio_final' => $final,
-            ]);
+            ]));
 
             // Cambiar el precio mueve el saldo de todos sus pagos.
             $inscripcion->recalcularSusPagos();

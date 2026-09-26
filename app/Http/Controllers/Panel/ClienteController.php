@@ -128,7 +128,7 @@ class ClienteController extends Controller
             'filtros' => ['buscar' => $busqueda, 'bajas' => $verBajas, 'filtro' => $filtro],
             'resumen' => $this->resumen(),
             // Cuántos grupos de fichas pueden ser de la misma persona.
-            'duplicados' => collect(\App\Support\FichasRepetidas::grupos())->where('probable', true)->count(),
+            'duplicados' => \App\Support\FichasRepetidas::cuantosProbables(),
         ]);
     }
 

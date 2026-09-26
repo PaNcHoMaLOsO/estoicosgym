@@ -7,6 +7,7 @@ use App\Models\Convenio;
 use App\Models\Membresia;
 use App\Models\MetodoPago;
 use App\Models\Notificacion;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Lo que falta configurar, en una lista.
@@ -52,17 +53,30 @@ class EstadoDeConfiguracion
      *
      * @return array<string,string> dirección => qué falta
      */
+    public const CACHE_AVISOS = 'configuracion:avisos-del-menu';
+
+    /**
+     * Los triángulos del menú de Configuración.
+     *
+     * Se guardan cinco minutos: calcularlos son veintisiete consultas, y se
+     * pedían en CADA pantalla del panel. Guardar un ajuste los recalcula al
+     * tiro; lo demás —un convenio sin logo, un plan sin precio— puede tardar
+     * cinco minutos en verse en el menú, y la portada de Configuración sigue
+     * calculándose al momento.
+     */
     public static function avisosDelMenu(): array
     {
-        $avisos = [];
+        return Cache::memo()->remember(self::CACHE_AVISOS, now()->addMinutes(5), function () {
+            $avisos = [];
 
-        foreach (self::puntos() as $punto) {
-            if ($punto['estado'] === 'falta') {
-                $avisos[$punto['href']] ??= $punto['detalle'];
+            foreach (self::puntos() as $punto) {
+                if ($punto['estado'] === 'falta') {
+                    $avisos[$punto['href']] ??= $punto['detalle'];
+                }
             }
-        }
 
-        return $avisos;
+            return $avisos;
+        });
     }
 
     /**

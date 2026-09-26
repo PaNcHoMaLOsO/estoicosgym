@@ -43,6 +43,10 @@ class ClienteFichaController extends Controller
         $hoy = Carbon::today();
 
         return Inertia::render('Clientes/Ficha', [
+            // Con qué se cobra lo fiado (ConfirmarDinero los lee de aquí). Solo
+            // en las pantallas donde se cobra: compartidos, se consultaban en
+            // todas.
+            'medios_de_pago' => \App\Models\MetodoPago::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             // Otra ficha que puede ser de la misma persona: se avisa arriba,
             // con el enlace para compararlas. Las planillas traían fichas sin
             // RUT y la misma persona quedó dos veces.

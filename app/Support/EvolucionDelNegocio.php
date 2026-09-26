@@ -35,6 +35,9 @@ class EvolucionDelNegocio
     /** @var Collection<int,object> */
     private Collection $membresias;
 
+    /** Las membresías de cada socio, para no recorrerlas todas por cada uno. */
+    private Collection $porSocio;
+
     public function __construct(private readonly int $meses = 24)
     {
         $this->membresias = Inscripcion::query()
@@ -52,6 +55,8 @@ class EvolucionDelNegocio
                 'precio' => (int) $i->precio_final,
             ])
             ->values();
+
+        $this->porSocio = $this->membresias->groupBy('socio');
     }
 
     /**
@@ -125,8 +130,10 @@ class EvolucionDelNegocio
             ->filter(function (int $socio) use ($fin) {
                 $gracia = $fin->copy()->addDays(self::DIAS_DE_GRACIA);
 
-                return ! $this->membresias->contains(
-                    fn ($m) => $m->socio === $socio && $m->desde->gt($fin) && $m->desde->lte($gracia)
+                // Solo las suyas: antes se recorrían las mil setecientas por
+                // cada socio y cada mes, y el informe tardaba medio segundo.
+                return ! $this->porSocio[$socio]->contains(
+                    fn ($m) => $m->desde->gt($fin) && $m->desde->lte($gracia)
                 );
             })
             ->count();

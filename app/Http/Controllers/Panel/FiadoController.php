@@ -43,6 +43,10 @@ class FiadoController extends Controller
             ->sum('monto');
 
         return Inertia::render('Fiados', [
+            // Con qué se cobra lo fiado (ConfirmarDinero los lee de aquí). Solo
+            // en las pantallas donde se cobra: compartidos, se consultaban en
+            // todas.
+            'medios_de_pago' => \App\Models\MetodoPago::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']),
             'cuentas' => $this->cuentasPendientes(),
             'cobrado' => $this->loYaCobrado(),
             'cifras' => [

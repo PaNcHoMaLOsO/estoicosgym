@@ -3,7 +3,7 @@ import '../css/app.css';
 // gane a cualquier `animation` que Tailwind pudiera emitir para lo mismo.
 import './ui.css';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
@@ -41,6 +41,15 @@ createInertiaApp({
     },
 
     setup({ el, App, props }) {
+        // LO PRECARGADO NO SOBREVIVE A UN CAMBIO. Las pantallas se traen al
+        // pasar el mouse (menú, filas de las tablas); si después se cobra, se
+        // guarda o se borra algo, lo traído antes ya no vale: se descarta.
+        router.on('finish', (evento) => {
+            if (String(evento.detail.visit.method).toLowerCase() !== 'get') {
+                router.flushAll();
+            }
+        });
+
         // El panel solo se ve con sesión: lo que se rompa aquí va al registro.
         escucharFallas();
         createRoot(el).render(<App {...props} />);

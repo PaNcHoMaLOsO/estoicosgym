@@ -120,6 +120,9 @@ class BuscarPorRutTest extends CasoConCatalogos
             'activo' => true,
             'nombres' => 'Rosa',
             'apellido_paterno' => 'Pinto',
+            // Fijos: al azar, a veces salía «Hernández» y la prueba fallaba.
+            'apellido_materno' => 'Soto',
+            'email' => 'rosa.pinto@correo.cl',
             'run_pasaporte' => '15.628.245-6',
         ]);
 

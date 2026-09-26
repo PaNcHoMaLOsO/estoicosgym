@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\MetodoPago;
 use App\Support\Ajustes;
 use App\Support\EstadoDeConfiguracion;
 use Illuminate\Http\Request;
@@ -75,11 +74,6 @@ class HandleInertiaRequests extends Middleware
              * Los ajustes viven en caché, así que esto no es una consulta por
              * página.
              */
-            // Los medios con que se cobra en el mesón: el fiado y la venta al
-            // contado se cobran desde el Resumen, el Fiado y la ficha del socio.
-            'medios_de_pago' => fn () => $request->user()
-                ? MetodoPago::where('activo', true)->orderBy('nombre')->get(['id', 'nombre'])
-                : [],
 
             'privado' => fn () => [
                 'sin_montos' => Ajustes::activo('privacidad.ocultar_montos'),

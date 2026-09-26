@@ -218,4 +218,19 @@ class CorreccionDeMembresiaTest extends CasoConCatalogos
             $respuesta->viewData('page')['props']['inscripcion']['cobrado']
         );
     }
+
+    /**
+     * El descuento en blanco se guarda como 0. Llegaba null a la base —«+»
+     * no pisa lo que ya trae el formulario— y la membresía importada a $0 no
+     * se podía corregir: reventaba al guardar.
+     */
+    public function test_el_descuento_en_blanco_se_guarda_como_cero(): void
+    {
+        $inscripcion = $this->membresia(['precio_base' => 0, 'precio_final' => 0]);
+
+        $this->corregir($inscripcion, ['precio_base' => 0, 'descuento_aplicado' => null])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, (int) $inscripcion->fresh()->descuento_aplicado);
+    }
 }

@@ -25,6 +25,27 @@ class AppServiceProvider extends ServiceProvider
 
         // Todo lo que se registre como error va también al registro de fallas
         // del panel (Configuración → Panel → Registro de fallas).
+        // Los posibles duplicados se guardan diez minutos: si cambia un
+        // socio —alta, edición, juntar, papelera—, se recalculan.
+        foreach (['saved', 'deleted', 'restored'] as $evento) {
+            \Illuminate\Support\Facades\Event::listen(
+                "eloquent.{$evento}: " . \App\Models\Cliente::class,
+                fn () => \App\Support\FichasRepetidas::olvidar(),
+            );
+        }
+
+        // Los avisos del menú de Configuración se guardan cinco minutos; si
+        // cambia algo de lo que miran, se recalculan en la próxima pantalla.
+        foreach ([\App\Models\Convenio::class, \App\Models\Membresia::class, \App\Models\PrecioMembresia::class,
+            \App\Models\MetodoPago::class, \App\Models\ContenidoWeb::class, \App\Models\Especialista::class] as $modelo) {
+            foreach (['saved', 'deleted'] as $evento) {
+                \Illuminate\Support\Facades\Event::listen(
+                    "eloquent.{$evento}: {$modelo}",
+                    fn () => \Illuminate\Support\Facades\Cache::forget(\App\Support\EstadoDeConfiguracion::CACHE_AVISOS),
+                );
+            }
+        }
+
         \Illuminate\Support\Facades\Event::listen(
             \Illuminate\Log\Events\MessageLogged::class,
             [\App\Support\RegistroDeFallas::class, 'delLog'],
