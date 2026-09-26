@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -23,7 +24,7 @@ const pesos = new Intl.NumberFormat('es-CL', {
  * se saltaria enteras.
  */
 export default function Editar({ inscripcion, motivos, formToken }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, isDirty } = useForm({
         form_submit_token: formToken,
         fecha_inicio: inscripcion.fecha_inicio ?? '',
         fecha_vencimiento: inscripcion.fecha_vencimiento ?? '',
@@ -57,6 +58,9 @@ export default function Editar({ inscripcion, motivos, formToken }) {
         return Math.round((hasta - desde) / 86400000) + 1;
     }, [data.fecha_inicio, data.fecha_vencimiento]);
 
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
+
     function enviar(e) {
         e.preventDefault();
         put(`/panel/inscripciones/${inscripcion.uuid}`, { preserveScroll: true });
@@ -89,7 +93,7 @@ export default function Editar({ inscripcion, motivos, formToken }) {
                 renovar, usa los botones de la membresía: cada una lleva sus propias cuentas.
             </p>
 
-            <form onSubmit={enviar} className="max-w-2xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-2xl space-y-5">
                 <Grupo titulo="Cuándo corre">
                     <Campo
                         etiqueta="Empieza"

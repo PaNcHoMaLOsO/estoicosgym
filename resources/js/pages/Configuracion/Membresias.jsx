@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { PencilIcon, PlusIcon } from 'lucide-react';
@@ -31,7 +32,11 @@ export default function Membresias({ membresias }) {
 
     // Desactivar, no borrar: las inscripciones vendidas apuntan al plan y
     // borrarlo las dejaria sin decir que se vendio.
-    function alternar(membresia) {
+    async function alternar(membresia) {
+        if (membresia.activo && ! (await confirmar({ titulo: `¿Dejar de vender «${membresia.nombre}»?`, mensaje: 'No se ofrece al inscribir ni sale en la web. Las membresías que ya se vendieron no cambian.', confirmar: 'Apagar' }))) {
+            return;
+        }
+
         router.patch(`/panel/catalogos/membresias/${membresia.uuid}/alternar`, {}, {
             preserveScroll: true,
         });

@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
@@ -47,8 +48,13 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
     }
 
     /** Borrar no se deshace, así que se pregunta antes. */
-    function eliminar(especialista) {
-        if (window.confirm(`¿Eliminar a ${especialista.nombre}? Se borra también su foto y no se puede deshacer.`)) {
+    async function eliminar(especialista) {
+        if (await confirmar({
+            titulo: `¿Eliminar a ${especialista.nombre}?`,
+            mensaje: 'Se borra también su foto. No se puede deshacer.',
+            confirmar: 'Eliminar',
+            peligrosa: true,
+        })) {
             router.delete(`/panel/especialistas/${especialista.uuid}`, { preserveScroll: true });
         }
     }

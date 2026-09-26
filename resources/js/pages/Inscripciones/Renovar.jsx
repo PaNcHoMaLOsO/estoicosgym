@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -64,7 +65,7 @@ function precioCon(plan, idConvenio, preciosDeConvenio) {
 export default function Renovar({ inscripcion, membresias, convenios, motivos, metodosPago, formToken, volverA = '', preciosDeConvenio = {} }) {
     const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, isDirty } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
@@ -112,6 +113,9 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
     const sinPrecioAnterior = ! inscripcion.precio_anterior;
 
 
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
+
     function enviar(e) {
         e.preventDefault();
 
@@ -141,7 +145,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                 <p className="apoyo text-fog">{inscripcion.socio}</p>
             </header>
 
-            <form onSubmit={enviar} className="max-w-3xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
                 {/* Lo que tenía, arriba del todo: es contra esto que se decide. */}
                 <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">
                     <p className="rotulo mb-1">Lo que termina</p>

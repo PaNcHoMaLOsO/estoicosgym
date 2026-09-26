@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeftIcon, Trash2Icon } from 'lucide-react';
@@ -21,7 +22,7 @@ const pesos = new Intl.NumberFormat('es-CL', {
 export default function Editar({ pago, metodosPago, formToken }) {
     const [anulando, setAnulando] = useState(false);
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, isDirty } = useForm({
         form_submit_token: formToken,
         monto_abonado: pago.monto_abonado,
         fecha_pago: pago.fecha_pago ?? '',
@@ -29,6 +30,9 @@ export default function Editar({ pago, metodosPago, formToken }) {
         referencia_pago: pago.referencia_pago ?? '',
         observaciones: pago.observaciones ?? '',
     });
+
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
 
     function enviar(e) {
         e.preventDefault();
@@ -57,7 +61,7 @@ export default function Editar({ pago, metodosPago, formToken }) {
                 </p>
             </header>
 
-            <form onSubmit={enviar} className="max-w-2xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-2xl space-y-5">
                 <Grupo titulo="Qué se cobró">
                     <Campo
                         etiqueta="Monto"

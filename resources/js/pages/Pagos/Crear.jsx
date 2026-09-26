@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -33,7 +34,7 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
     const [resultados, setResultados] = useState(null);
     const [buscando, setBuscando] = useState(false);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, isDirty } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
@@ -107,6 +108,9 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
     const sumaMixto = (Number(data.monto_metodo1) || 0) + (Number(data.monto_metodo2) || 0);
     const mixtoDescuadra = data.tipo_pago === 'mixto' && sumaMixto !== pendiente;
 
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
+
     function enviar(e) {
         e.preventDefault();
         post('/panel/pagos/registrar', { preserveScroll: true });
@@ -127,7 +131,7 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
                 <h1 className="mt-1 text-lg font-semibold text-chalk">Registrar pago</h1>
             </header>
 
-            <form onSubmit={enviar} className="max-w-3xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
                 <Grupo titulo="¿A quién se le cobra?">
                     {elegida ? (
                         <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">

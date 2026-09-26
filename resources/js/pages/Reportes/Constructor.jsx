@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import Nota from '@/components/Nota';
@@ -136,7 +137,11 @@ export default function Constructor({ catalogo, limites, tope, guardados = [] })
         setFallo(null);
     }
 
-    function olvidar(informeGuardado) {
+    async function olvidar(informeGuardado) {
+        if (! (await confirmar({ titulo: '¿Borrar este informe guardado?', mensaje: 'Solo se borra la receta: los datos no se tocan.', confirmar: 'Borrar', peligrosa: true }))) {
+            return;
+        }
+
         router.delete(`/panel/reportes/constructor/guardados/${informeGuardado.uuid}`, {
             preserveScroll: true,
             preserveState: true,

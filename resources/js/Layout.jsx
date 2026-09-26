@@ -26,6 +26,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { VentanaDeConfirmar } from '@/components/Confirmar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -502,6 +503,7 @@ export default function Layout({ children }) {
                         <Aviso flash={flash} />
                         {children}
                     </main>
+                    <VentanaDeConfirmar />
                 </div>
             </div>
             </ProveedorPrivado>

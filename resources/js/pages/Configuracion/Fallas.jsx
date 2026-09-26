@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckIcon, ChevronDownIcon, MonitorIcon, RotateCcwIcon, ServerIcon, TrashIcon } from 'lucide-react';
@@ -120,8 +121,8 @@ function Falla({ falla }) {
                         </button>
                         <button
                             type="button"
-                            onClick={() => {
-                                if (window.confirm('¿Borrar esta falla del registro?')) {
+                            onClick={async () => {
+                                if (await confirmar({ titulo: '¿Borrar esta falla del registro?', confirmar: 'Borrar', peligrosa: true })) {
                                     router.delete(`/panel/fallas/${falla.id}`, { preserveScroll: true });
                                 }
                             }}

@@ -475,7 +475,16 @@ function FirmaPorCorreo({ cliente }) {
                 {pendiente ? (
                     <button
                         type="button"
-                        onClick={() => router.post(`/panel/contratos/${ultimo.uuid}/anular`, {}, { preserveScroll: true })}
+                        onClick={async () => {
+                            if (await confirmar({
+                                titulo: '¿Anular el enlace del contrato?',
+                                mensaje: 'Con ese enlace ya no se podrá firmar. Después se puede mandar otro.',
+                                confirmar: 'Anular',
+                                peligrosa: true,
+                            })) {
+                                router.post(`/panel/contratos/${ultimo.uuid}/anular`, {}, { preserveScroll: true });
+                            }
+                        }}
                         className="apoyo text-fog transition-colors hover:text-danger"
                     >
                         Anular el enlace
@@ -703,7 +712,15 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                         ) : (
                             <button
                                 type="button"
-                                onClick={() => router.patch(`/panel/clientes/${cliente.uuid}/reactivar`, {}, { preserveScroll: true })}
+                                onClick={async () => {
+                                    if (await confirmar({
+                                        titulo: `¿Reactivar a ${cliente.nombre}?`,
+                                        mensaje: 'Vuelve a la lista de socios activos.',
+                                        confirmar: 'Reactivar',
+                                    })) {
+                                        router.patch(`/panel/clientes/${cliente.uuid}/reactivar`, {}, { preserveScroll: true });
+                                    }
+                                }}
                                 className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
                             >
                                 <UserPlusIcon className="size-4" aria-hidden="true" />

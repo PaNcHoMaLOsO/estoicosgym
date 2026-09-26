@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
@@ -266,10 +267,15 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                                 </Link>
                                 <button
                                     type="button"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                         e.stopPropagation();
 
-                                        if (window.confirm(`¿Mandar «${t.nombre}» a la papelera? Sus horas y cobros se van con él y se recuperan desde ahí.`)) {
+                                        if (await confirmar({
+                                            titulo: `¿Mandar «${t.nombre}» a la papelera?`,
+                                            mensaje: 'Sus horas y cobros se van con él y se recuperan desde ahí.',
+                                            confirmar: 'Mandar a la papelera',
+                                            peligrosa: true,
+                                        })) {
                                             router.delete(`/panel/talleres/${t.uuid}`, { preserveScroll: true });
                                         }
                                     }}

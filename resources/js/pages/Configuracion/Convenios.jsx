@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { PencilIcon, PlusIcon } from 'lucide-react';
@@ -33,7 +34,11 @@ export default function Convenios({ convenios }) {
 
     // Desactivar, no borrar: los socios que vinieron por este convenio lo
     // apuntan en su ficha.
-    function alternar(convenio) {
+    async function alternar(convenio) {
+        if (convenio.activo && ! (await confirmar({ titulo: `¿Apagar el convenio «${convenio.nombre}»?`, mensaje: 'No se puede elegir al inscribir y sale de la web. Los socios que ya lo tienen no cambian.', confirmar: 'Apagar' }))) {
+            return;
+        }
+
         router.patch(`/panel/catalogos/convenios/${convenio.uuid}/alternar`, {}, {
             preserveScroll: true,
         });

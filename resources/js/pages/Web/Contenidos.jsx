@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon, WandSparklesIcon } from 'lucide-react';
@@ -114,12 +115,12 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
     const nombreIcono = useMemo(() => Object.fromEntries(iconos.map((i) => [i.valor, i.etiqueta])), [iconos]);
 
     /** Un orden razonable de una vez, sin ir foto por foto. */
-    function ordenarSolas() {
-        const aviso =
-            'Se ordenan solas: las panorámicas primero y sin dos parecidas seguidas.\n\n'
-            + 'Se pierde el orden que hayas puesto a mano. ¿Seguir?';
-
-        if (window.confirm(aviso)) {
+    async function ordenarSolas() {
+        if (await confirmar({
+            titulo: '¿Ordenarlas solas?',
+            mensaje: 'Las panorámicas primero y sin dos parecidas seguidas. Se pierde el orden que hayas puesto a mano.',
+            confirmar: 'Ordenar',
+        })) {
             router.post(`/panel/web/${tipo}/ordenar`, {}, { preserveScroll: true });
         }
     }
@@ -134,10 +135,10 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
     }
 
     /** Borrar no se deshace, así que se pregunta antes. */
-    function eliminar(fila) {
+    async function eliminar(fila) {
         const que = fila.titulo || `esta ${datos.singular}`;
 
-        if (window.confirm(`¿Eliminar ${que}? No se puede deshacer.`)) {
+        if (await confirmar({ titulo: `¿Eliminar ${que}?`, mensaje: 'No se puede deshacer.', confirmar: 'Eliminar', peligrosa: true })) {
             router.delete(`/panel/web/contenido/${fila.uuid}`, { preserveScroll: true });
         }
     }

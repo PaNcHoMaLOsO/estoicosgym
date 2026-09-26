@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -451,10 +452,15 @@ function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
                                     borrador no hace falta entrar en él. */}
                                 <button
                                     type="button"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                         e.stopPropagation();
 
-                                        if (window.confirm(`¿Mandar la cotización N° ${c.numero} a la papelera?`)) {
+                                        if (await confirmar({
+                                            titulo: `¿Mandar la cotización N° ${c.numero} a la papelera?`,
+                                            mensaje: 'Se recupera desde Configuración → Papelera.',
+                                            confirmar: 'Mandar a la papelera',
+                                            peligrosa: true,
+                                        })) {
                                             router.delete(`/panel/talleres/cotizaciones/${c.uuid}`, { preserveScroll: true });
                                         }
                                     }}
@@ -677,13 +683,19 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                                    antes había que abrir su formulario. */
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        router.patch(
-                                                            `/panel/talleres/cobros/${c.uuid}`,
-                                                            { pagado_en: new Date().toISOString().slice(0, 10) },
-                                                            { preserveScroll: true },
-                                                        )
-                                                    }
+                                                    onClick={async () => {
+                                                        if (await confirmar({
+                                                            titulo: '¿Marcar la factura como pagada hoy?',
+                                                            mensaje: 'Entra a la caja con la fecha de hoy.',
+                                                            confirmar: 'Marcar pagada',
+                                                        })) {
+                                                            router.patch(
+                                                                `/panel/talleres/cobros/${c.uuid}`,
+                                                                { pagado_en: new Date().toISOString().slice(0, 10) },
+                                                                { preserveScroll: true },
+                                                            );
+                                                        }
+                                                    }}
                                                     className="apoyo inline-flex items-center gap-1 text-warn transition-colors hover:text-ok"
                                                 >
                                                     <CheckIcon className="size-3.5" aria-hidden="true" />
@@ -722,9 +734,16 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                     una clase que no estaba anotada. */}
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        router.delete(`/panel/talleres/cobros/${cobro.uuid}`, { preserveScroll: true })
-                                    }
+                                    onClick={async () => {
+                                        if (await confirmar({
+                                            titulo: '¿Reabrir el mes?',
+                                            mensaje: 'Se borra la cuenta cerrada, con su folio y las fechas de la factura, y se vuelven a poder anotar horas.',
+                                            confirmar: 'Reabrir el mes',
+                                            peligrosa: true,
+                                        })) {
+                                            router.delete(`/panel/talleres/cobros/${cobro.uuid}`, { preserveScroll: true });
+                                        }
+                                    }}
                                     className="apoyo mt-3 text-fog transition-colors hover:text-danger"
                                 >
                                     Reabrir el mes
@@ -734,7 +753,15 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                             <button
                                 type="button"
                                 disabled={cuenta.horas === 0}
-                                onClick={() => router.post(`/panel/talleres/${uuid}/cerrar`, { periodo }, { preserveScroll: true })}
+                                onClick={async () => {
+                                    if (await confirmar({
+                                        titulo: '¿Cerrar el mes?',
+                                        mensaje: `Queda la cuenta con ${cuenta.horas} ${cuenta.horas === 1 ? 'hora' : 'horas'} y el precio de hoy. Si falta una clase, se puede reabrir.`,
+                                        confirmar: 'Cerrar el mes',
+                                    })) {
+                                        router.post(`/panel/talleres/${uuid}/cerrar`, { periodo }, { preserveScroll: true });
+                                    }
+                                }}
                                 className="mt-3 w-full rounded-control bg-volt px-3 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                             >
                                 Cerrar el mes y dejar la cuenta
@@ -744,8 +771,13 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
 
                     <button
                         type="button"
-                        onClick={() => {
-                            if (window.confirm(`¿Mandar «${taller.nombre}» a la papelera? Sus cobros se van con él.`)) {
+                        onClick={async () => {
+                            if (await confirmar({
+                                titulo: `¿Mandar «${taller.nombre}» a la papelera?`,
+                                mensaje: 'Sus horas y cobros se van con él. Se recupera desde Configuración → Papelera.',
+                                confirmar: 'Mandar a la papelera',
+                                peligrosa: true,
+                            })) {
                                 router.delete(`/panel/talleres/${uuid}`);
                             }
                         }}

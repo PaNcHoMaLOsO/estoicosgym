@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { PencilIcon, PlusIcon } from 'lucide-react';
@@ -37,7 +38,11 @@ export default function MotivosDescuento({ motivos }) {
 
     // No hay «eliminar»: las inscripciones que llevan este motivo lo apuntan, y
     // borrarlo dejaria sin explicar por que pagaron menos. Se desactiva.
-    function alternar(motivo) {
+    async function alternar(motivo) {
+        if (motivo.activo && ! (await confirmar({ titulo: `¿Apagar «${motivo.nombre}»?`, mensaje: 'No se ofrece al inscribir. Los descuentos ya dados no cambian.', confirmar: 'Apagar' }))) {
+            return;
+        }
+
         router.patch(`/panel/catalogos/motivos-descuento/${motivo.id}/alternar`, {}, {
             preserveScroll: true,
         });

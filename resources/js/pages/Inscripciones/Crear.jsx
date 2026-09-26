@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, UserPlusIcon } from 'lucide-react';
@@ -76,7 +77,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
     // crece y el backend las espera como un solo campo JSON.
     const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, isDirty } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
@@ -169,6 +170,9 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
     }
 
 
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
+
     function enviar(e) {
         e.preventDefault();
 
@@ -201,7 +205,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                 <h1 className="mt-1 text-lg font-semibold text-chalk">Nueva inscripción</h1>
             </header>
 
-            <form onSubmit={enviar} className="max-w-3xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
                 <Grupo titulo="¿A quién se inscribe?">
                     {socio ? (
                         <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">
@@ -273,6 +277,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                         </p>
                                         <button
                                             type="button"
+                                            data-sin-aviso
                                             onClick={() => {
                                                 try {
                                                     sessionStorage.setItem('alta-desde-busqueda', busqueda.trim());

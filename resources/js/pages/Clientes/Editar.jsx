@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
 
@@ -12,7 +13,7 @@ import { Area, Campo, Grupo, Texto } from '@/components/Campo';
  * que se cobro.
  */
 export default function Editar({ cliente }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, isDirty } = useForm({
         run_pasaporte: cliente.run_pasaporte ?? '',
         nombres: cliente.nombres ?? '',
         apellido_paterno: cliente.apellido_paterno ?? '',
@@ -33,6 +34,9 @@ export default function Editar({ cliente }) {
         apoderado_parentesco: cliente.apoderado_parentesco ?? '',
         apoderado_observaciones: cliente.apoderado_observaciones ?? '',
     });
+
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
 
     function enviar(e) {
         e.preventDefault();
@@ -55,7 +59,7 @@ export default function Editar({ cliente }) {
                 <p className="apoyo text-fog">{cliente.nombre}</p>
             </header>
 
-            <form onSubmit={enviar} className="max-w-3xl space-y-5">
+            <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
                 <Grupo titulo="Quién es">
                     <Campo etiqueta="Nombres" nombre="nombres" error={errors.nombres} requerido>
                         <Texto

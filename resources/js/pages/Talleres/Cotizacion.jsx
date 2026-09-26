@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeftIcon, CalendarPlusIcon, PlusIcon, PrinterIcon, TrashIcon } from 'lucide-react';
@@ -404,8 +405,8 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
 
                     <button
                         type="button"
-                        onClick={() => {
-                            if (window.confirm('¿Tirar esta cotización?')) {
+                        onClick={async () => {
+                            if (await confirmar({ titulo: '¿Tirar esta cotización?', mensaje: 'Queda en la papelera.', confirmar: 'Tirar', peligrosa: true })) {
                                 router.delete(`/panel/talleres/cotizaciones/${cotizacion.uuid}`);
                             }
                         }}

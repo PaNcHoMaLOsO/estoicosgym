@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckIcon, PencilIcon, PlusIcon } from 'lucide-react';
@@ -53,7 +54,11 @@ export default function MetodosPago({ metodos }) {
      * borraria esas cifras de los informes de años anteriores—. Desactivar hace
      * lo que de verdad se quiere: que no vuelva a ofrecerse.
      */
-    function alternar(metodo) {
+    async function alternar(metodo) {
+        if (metodo.activo && ! (await confirmar({ titulo: `¿Apagar «${metodo.nombre}»?`, mensaje: 'No se ofrece al cobrar. Los pagos que ya se hicieron con él no cambian.', confirmar: 'Apagar' }))) {
+            return;
+        }
+
         router.patch(`/panel/catalogos/metodos-pago/${metodo.id}/alternar`, {}, {
             preserveScroll: true,
         });

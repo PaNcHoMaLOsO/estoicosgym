@@ -1,3 +1,4 @@
+import { confirmar } from '@/components/Confirmar';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { CheckIcon, PlusIcon, TrashIcon } from 'lucide-react';
@@ -28,8 +29,10 @@ export function Notas({ notas }) {
         router.patch(`/panel/notas/${nota.uuid}`, {}, { preserveScroll: true });
     }
 
-    function quitar(nota) {
-        router.delete(`/panel/notas/${nota.uuid}`, { preserveScroll: true });
+    async function quitar(nota) {
+        if (await confirmar({ titulo: '¿Borrar la nota?', mensaje: nota.texto, confirmar: 'Borrar', peligrosa: true })) {
+            router.delete(`/panel/notas/${nota.uuid}`, { preserveScroll: true });
+        }
     }
 
     return (

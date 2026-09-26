@@ -1,3 +1,4 @@
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, CameraIcon, ChevronDownIcon, ImageIcon } from 'lucide-react';
@@ -397,6 +398,7 @@ function AccionDelRegistrado({ socio, principal = false }) {
         return (
             <button
                 type="button"
+                data-sin-aviso
                 className={boton}
                 onClick={() =>
                     router.patch(`/panel/papelera/clientes/${socio.id}/restaurar`, {}, {
@@ -411,14 +413,14 @@ function AccionDelRegistrado({ socio, principal = false }) {
 
     if (socio.estado === 'vigente') {
         return (
-            <Link href={`/panel/clientes/${socio.uuid}`} className={boton}>
+            <Link href={`/panel/clientes/${socio.uuid}`} data-sin-aviso className={boton}>
                 Abrir su ficha
             </Link>
         );
     }
 
     return (
-        <Link href={`/panel/inscripciones/crear?cliente=${socio.uuid}`} className={boton}>
+        <Link href={`/panel/inscripciones/crear?cliente=${socio.uuid}`} data-sin-aviso className={boton}>
             Venderle un plan
         </Link>
     );
@@ -440,7 +442,7 @@ function YaRegistrado({ socio }) {
             <div className="mt-2 flex flex-wrap items-center gap-3">
                 <AccionDelRegistrado socio={socio} principal />
                 {socio.estado !== 'vigente' && socio.estado !== 'papelera' && socio.estado !== 'datos_borrados' ? (
-                    <Link href={`/panel/clientes/${socio.uuid}`} className="apoyo text-fog underline underline-offset-4 hover:text-chalk">
+                    <Link href={`/panel/clientes/${socio.uuid}`} data-sin-aviso className="apoyo text-fog underline underline-offset-4 hover:text-chalk">
                         Ver su ficha
                     </Link>
                 ) : null}
@@ -476,7 +478,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
     const metodoPorDefecto =
         metodosPago.find((m) => /efectivo/i.test(m.nombre))?.id ?? metodosPago[0]?.id ?? '';
 
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const { data, setData, post, processing, errors, transform, isDirty } = useForm({
         form_submit_token: formToken,
         flujo_cliente: 'completo',
 
@@ -675,6 +677,9 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
     const precioFinal = Math.max(0, precioBase - descuento);
     const motivo = motivos.find((m) => String(m.id) === String(data.id_motivo_descuento));
 
+    // Sin guardar y con algo escrito: pregunta antes de salir.
+    const tocar = useAvisoAlSalir(isDirty && ! processing);
+
     const enviar = (e) => {
         e.preventDefault();
 
@@ -714,7 +719,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                 <h1 className="text-lg font-semibold text-chalk">Nuevo socio</h1>
             </header>
 
-            <form onSubmit={enviar} className="grid items-start gap-4 lg:grid-cols-3">
+            <form onSubmit={enviar} {...tocar} className="grid items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-4 lg:col-span-2">
                     <Isla titulo="Datos del socio">
                         <Campo etiqueta={esRut ? 'RUT' : 'Pasaporte'} nombre="run_pasaporte" error={errors.run_pasaporte}>
