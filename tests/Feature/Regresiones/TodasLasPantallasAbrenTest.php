@@ -35,10 +35,14 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
      */
     private function sembrar(): array
     {
+        // Con foto: así también se mira que la foto se sirva por el panel.
+        \Illuminate\Support\Facades\Storage::fake('local');
+        \Illuminate\Support\Facades\Storage::disk('local')->put('clientes/prueba.jpg', 'foto');
+
         $socio = Cliente::factory()->create([
             'activo' => true,
             'email' => 'socio@progym.cl',
-            'foto_perfil' => null,
+            'foto_perfil' => 'clientes/prueba.jpg',
         ]);
 
         $convenio = Convenio::create([

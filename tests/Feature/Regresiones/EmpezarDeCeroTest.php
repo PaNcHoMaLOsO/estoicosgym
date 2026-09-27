@@ -40,7 +40,7 @@ class EmpezarDeCeroTest extends CasoConCatalogos
     {
         $admin = $this->administrador();
 
-        Storage::disk('public')->put('clientes/camila.jpg', 'foto');
+        Storage::disk('local')->put('clientes/camila.jpg', 'foto');
         $cliente = Cliente::factory()->create(['activo' => true, 'foto_perfil' => 'clientes/camila.jpg']);
 
         $inscripcion = Inscripcion::factory()->create([
@@ -118,7 +118,7 @@ class EmpezarDeCeroTest extends CasoConCatalogos
             'usuarios' => User::count(),
         ]);
 
-        Storage::disk('public')->assertMissing('clientes/camila.jpg');
+        Storage::disk('local')->assertMissing('clientes/camila.jpg');
 
         // La numeración empieza de nuevo: el primer socio de verdad es el 1.
         $this->assertSame(1, Cliente::factory()->create()->id);

@@ -93,12 +93,12 @@ audit` limpio); `node_modules` fuera del repositorio.
 - En el servidor: `APP_ENV=production`, `APP_DEBUG=false`,
   `SESSION_SECURE_COOKIE=true`.
 
+**Hecho el 27-sep:** las fotos de los socios en la carpeta privada, servidas
+solo por el panel; tope diario de correos (400, con 80 de reserva para
+recuperar la clave); los códigos del segundo factor guardados como huella y
+anulados a los 5 intentos fallidos; respaldo diario automático.
+
 **Pendiente:**
-- Las fotos de los socios son públicas para quien tenga el enlace (el nombre es
-  al azar, pero no pide sesión). Pasarlas al disco privado y servirlas por el
-  panel.
-- Los códigos del segundo factor se guardan sin cifrar y se limitan por IP, no
-  por código.
 - Los datos del socio entran a los correos sin escapar (solo los escribe el
   personal).
 - Decidir si recepción debe poder corregir el precio de una membresía y enviar

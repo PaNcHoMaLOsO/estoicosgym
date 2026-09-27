@@ -26,6 +26,7 @@ class FotoDelSocioTest extends CasoConCatalogos
 
         // Disco de mentira: las pruebas no escriben en storage/app/public.
         Storage::fake('public');
+        Storage::fake('local');
     }
 
     private function socio(array $extra = []): Cliente
@@ -51,7 +52,7 @@ class FotoDelSocioTest extends CasoConCatalogos
         $ruta = $socio->refresh()->foto_perfil;
 
         $this->assertNotNull($ruta);
-        Storage::disk('public')->assertExists($ruta);
+        Storage::disk('local')->assertExists($ruta);
     }
 
     /**
@@ -71,8 +72,8 @@ class FotoDelSocioTest extends CasoConCatalogos
         $nueva = $socio->refresh()->foto_perfil;
 
         $this->assertNotSame($vieja, $nueva);
-        Storage::disk('public')->assertMissing($vieja);
-        Storage::disk('public')->assertExists($nueva);
+        Storage::disk('local')->assertMissing($vieja);
+        Storage::disk('local')->assertExists($nueva);
     }
 
     public function test_se_le_quita_la_foto_y_el_archivo_se_va(): void
@@ -87,7 +88,7 @@ class FotoDelSocioTest extends CasoConCatalogos
             ->assertSessionHasNoErrors();
 
         $this->assertNull($socio->refresh()->foto_perfil);
-        Storage::disk('public')->assertMissing($ruta);
+        Storage::disk('local')->assertMissing($ruta);
     }
 
     // ---------- Lo que no se acepta ----------
@@ -162,7 +163,7 @@ class FotoDelSocioTest extends CasoConCatalogos
         // El modelo guarda el celular sin el +56: nueve dígitos y ya.
         $this->assertSame('987654321', $socio->celular);
         $this->assertSame($ruta, $socio->foto_perfil);
-        Storage::disk('public')->assertExists($ruta);
+        Storage::disk('local')->assertExists($ruta);
     }
 
     /**
@@ -182,7 +183,7 @@ class FotoDelSocioTest extends CasoConCatalogos
         $this->actingAs($this->administrador())
             ->patch("/panel/clientes/{$socio->uuid}/desactivar");
 
-        Storage::disk('public')->assertExists($ruta);
+        Storage::disk('local')->assertExists($ruta);
         $this->assertSame($ruta, $socio->refresh()->foto_perfil);
     }
 
@@ -199,7 +200,7 @@ class FotoDelSocioTest extends CasoConCatalogos
             ->viewData('page')['props'];
 
         $this->assertNotNull($props['cliente']['foto']);
-        $this->assertStringContainsString('storage/clientes/', $props['cliente']['foto']);
+        $this->assertStringContainsString('/retrato', $props['cliente']['foto']);
     }
 
     /** Y quien no tiene foto no rompe nada: sale en null y la pantalla pinta iniciales. */
@@ -227,5 +228,19 @@ class FotoDelSocioTest extends CasoConCatalogos
         $fila = collect($props['clientes']['data'])->firstWhere('uuid', $socio->uuid);
 
         $this->assertNotNull($fila['foto']);
+    }
+
+    /**
+     * LA FOTO NO ES PÚBLICA. Estaba en la carpeta pública y la veía cualquiera
+     * con el enlace; ahora se sirve solo por el panel, con sesión.
+     */
+    public function test_la_foto_solo_se_ve_con_sesion(): void
+    {
+        Storage::disk('local')->put('clientes/cara.jpg', 'foto');
+        $socio = \App\Models\Cliente::factory()->create(['foto_perfil' => 'clientes/cara.jpg'])->fresh();
+
+        $this->get("/panel/clientes/{$socio->uuid}/retrato")->assertRedirect(route('login'));
+        $this->actingAs($this->recepcionista())->get("/panel/clientes/{$socio->uuid}/retrato")->assertOk();
+        $this->assertFalse(Storage::disk('public')->exists('clientes/cara.jpg'));
     }
 }

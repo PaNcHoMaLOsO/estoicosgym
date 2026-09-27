@@ -430,6 +430,28 @@ class ClienteController extends Controller
         return response()->json(['celular' => $cliente->celular]);
     }
 
+    /**
+     * La foto del socio, solo para quien puede verlo en el panel.
+     *
+     * Se guarda en la carpeta privada; las subidas antes del cambio que no se
+     * alcanzaron a mover se buscan todavía en la pública.
+     */
+    public function retrato(Cliente $cliente)
+    {
+        $ruta = $cliente->foto_perfil;
+
+        foreach ([Cliente::DISCO_FOTOS, 'public'] as $disco) {
+            if ($ruta && \Illuminate\Support\Facades\Storage::disk($disco)->exists($ruta)) {
+                return response()->file(\Illuminate\Support\Facades\Storage::disk($disco)->path($ruta), [
+                    // Solo en el navegador de quien la pidió, un día.
+                    'Cache-Control' => 'private, max-age=86400',
+                ]);
+            }
+        }
+
+        abort(404);
+    }
+
     public function reactivar(Cliente $cliente)
     {
         if ($cliente->datos_borrados_en) {

@@ -184,6 +184,9 @@ class AjustesController extends Controller
             // que después de cambiar la cuenta en esta misma pantalla seguía
             // enseñando la vieja y parecía que no se había guardado.
             'remitente' => $correo->remitente()['direccion'],
+            // Cuántos salieron hoy, contra el tope del día (Gmail corta a los 500).
+            'enviados_hoy' => \App\Services\CorreoService::enviadosHoy(),
+            'tope_diario' => \App\Services\CorreoService::topeDiario(),
             'nombre_remitente' => $correo->remitente()['nombre'],
             // Qué vías están listas para usarse, para avisar antes de elegir
             // una que no tiene credenciales y dejar al gimnasio sin avisos.
@@ -215,6 +218,7 @@ class AjustesController extends Controller
                 '<p>Este es un correo de prueba del panel.</p>'
                 . '<p>Si te llegó, el correo de salida está funcionando: salió por '
                 . e($correo->descripcion()) . '.</p>',
+                urgente: true,
             );
         } catch (\Throwable $e) {
             // El motivo completo, no un «no se pudo»: quien configura el correo

@@ -100,7 +100,7 @@ class SegundoFactorTest extends CasoConCatalogos
         $usuario = $this->usuarioCon2fa();
         $codigo = VerificationCode::createFor($usuario, 'login');
 
-        $verificado = VerificationCode::verify($usuario, $codigo->code, 'login');
+        $verificado = VerificationCode::verify($usuario, $codigo->codigoPlano, 'login');
 
         $this->assertNotNull($verificado, 'Un código correcto debe darse por bueno.');
         $this->assertTrue((bool) $verificado->fresh()->is_used);
@@ -113,10 +113,10 @@ class SegundoFactorTest extends CasoConCatalogos
         $usuario = $this->usuarioCon2fa();
         $codigo = VerificationCode::createFor($usuario, 'login');
 
-        VerificationCode::verify($usuario, $codigo->code, 'login');
+        VerificationCode::verify($usuario, $codigo->codigoPlano, 'login');
 
         $this->assertNull(
-            VerificationCode::verify($usuario, $codigo->code, 'login'),
+            VerificationCode::verify($usuario, $codigo->codigoPlano, 'login'),
             'Un código usado se aceptó por segunda vez.'
         );
     }
@@ -128,7 +128,7 @@ class SegundoFactorTest extends CasoConCatalogos
         $codigo = VerificationCode::createFor($usuario, 'login');
         $codigo->update(['expires_at' => now()->subMinute()]);
 
-        $this->assertNull(VerificationCode::verify($usuario, $codigo->code, 'login'));
+        $this->assertNull(VerificationCode::verify($usuario, $codigo->codigoPlano, 'login'));
     }
 
     /** Pedir uno nuevo invalida el anterior: solo vale el último enviado. */
@@ -154,5 +154,30 @@ class SegundoFactorTest extends CasoConCatalogos
         $codigoAjeno = VerificationCode::createFor($ajeno, 'login');
 
         $this->assertNull(VerificationCode::verify($mio, $codigoAjeno->code, 'login'));
+    }
+
+    /** El código no queda legible en la base: se guarda su huella. */
+    public function test_el_codigo_no_se_guarda_tal_cual(): void
+    {
+        $usuario = $this->usuarioCon2fa();
+        $verificacion = \App\Models\VerificationCode::createFor($usuario);
+
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $verificacion->codigoPlano);
+        $this->assertNotSame($verificacion->codigoPlano, $verificacion->fresh()->code);
+        $this->assertNotNull(\App\Models\VerificationCode::verify($usuario, $verificacion->codigoPlano));
+    }
+
+    /** Cinco intentos fallidos y el código ya no sirve, aunque después se acierte. */
+    public function test_el_codigo_se_anula_tras_cinco_intentos(): void
+    {
+        $usuario = $this->usuarioCon2fa();
+        $verificacion = \App\Models\VerificationCode::createFor($usuario);
+        $malo = $verificacion->codigoPlano === '000000' ? '111111' : '000000';
+
+        foreach (range(1, 5) as $i) {
+            $this->assertNull(\App\Models\VerificationCode::verify($usuario, $malo));
+        }
+
+        $this->assertNull(\App\Models\VerificationCode::verify($usuario, $verificacion->codigoPlano));
     }
 }

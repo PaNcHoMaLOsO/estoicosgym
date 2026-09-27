@@ -458,6 +458,19 @@ function CorreoDeSalida({ correo }) {
                     {correo.respaldo ? (VIAS[correo.respaldo] ?? correo.respaldo) : 'nada: se da por perdido'}
                 </dd>
 
+                {correo.tope_diario ? (
+                    <>
+                        <dt className="text-fog">Hoy</dt>
+                        <dd className={correo.enviados_hoy >= correo.tope_diario ? 'text-warn' : 'text-chalk'}>
+                            {correo.enviados_hoy} de {correo.tope_diario} correos
+                            <span className="apoyo block text-fog">
+                                {correo.enviados_hoy >= correo.tope_diario
+                                    ? 'Llegó al tope: los avisos salen mañana. Recuperar la clave sigue funcionando.'
+                                    : 'El tope evita que Gmail bloquee la cuenta (corta a los 500).'}
+                            </span>
+                        </dd>
+                    </>
+                ) : null}
                 <dt className="text-fog">Escribe desde</dt>
                 <dd className="text-chalk">
                     {correo.remitente || 'sin dirección'}

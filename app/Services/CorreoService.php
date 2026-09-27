@@ -42,7 +42,7 @@ class CorreoService
      *
      * @throws RuntimeException Si el envío falla por todas las vías.
      */
-    public function enviar(string $para, string $asunto, string $html, ?string $nombreDestino = null): string
+    public function enviar(string $para, string $asunto, string $html, ?string $nombreDestino = null, bool $urgente = false): string
     {
         if ($this->esDireccionReservada($para)) {
             throw new RuntimeException(
@@ -50,8 +50,13 @@ class CorreoService
             );
         }
 
+        $this->revisarElTope($urgente);
+
         try {
-            return $this->principal()->enviar($para, $asunto, $html, $nombreDestino);
+            $id = $this->principal()->enviar($para, $asunto, $html, $nombreDestino);
+            self::contarUno();
+
+            return $id;
         } catch (RuntimeException $e) {
             $respaldo = $this->respaldo();
 
@@ -68,8 +73,67 @@ class CorreoService
                 'destinatario' => $para,
             ]);
 
-            return $respaldo->enviar($para, $asunto, $html, $nombreDestino);
+            $id = $respaldo->enviar($para, $asunto, $html, $nombreDestino);
+            self::contarUno();
+
+            return $id;
         }
+    }
+
+    /**
+     * EL TOPE DEL DÍA.
+     *
+     * Gmail gratis corta a los 500 correos diarios y deja la cuenta sin
+     * enviar hasta 24 horas: ese día tampoco saldrían los enlaces para
+     * recuperar la clave ni los contratos. Se para antes (400 por defecto,
+     * en Configuración → Avisos automáticos), y lo urgente —recuperar la
+     * clave, el correo de prueba— tiene una reserva de 80 más.
+     */
+    public const RESERVA_URGENTE = 80;
+
+    public static function enviadosHoy(): int
+    {
+        return (int) \Illuminate\Support\Facades\Cache::get(self::claveDelDia(), 0);
+    }
+
+    public static function topeDiario(): int
+    {
+        return max(10, (int) (\App\Support\Ajustes::obtener('correo.tope_diario') ?: 400));
+    }
+
+    private function revisarElTope(bool $urgente): void
+    {
+        try {
+            $tope = self::topeDiario() + ($urgente ? self::RESERVA_URGENTE : 0);
+            $enviados = self::enviadosHoy();
+        } catch (\Throwable) {
+            // Sin cómo leer la cuenta (la base no responde), el correo sale:
+            // un contador caído no puede dejar sin correos al gimnasio.
+            return;
+        }
+
+        if ($enviados >= $tope) {
+            throw new RuntimeException(
+                "Hoy ya salieron {$tope} correos, el tope del día: Gmail bloquea la cuenta si se pasa de 500. "
+                . 'Los que faltan salen mañana.'
+            );
+        }
+    }
+
+    private static function contarUno(): void
+    {
+        try {
+            $clave = self::claveDelDia();
+            \Illuminate\Support\Facades\Cache::add($clave, 0, now()->endOfDay());
+            \Illuminate\Support\Facades\Cache::increment($clave);
+        } catch (\Throwable) {
+            // El correo ya salió: no contarlo no es motivo para decir que falló.
+        }
+    }
+
+    private static function claveDelDia(): string
+    {
+        return 'correos-enviados:' . now()->toDateString();
     }
 
     /**

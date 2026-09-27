@@ -26,6 +26,7 @@ class Permisos
         // Preguntar si alguien ya está registrado: solo se mira.
         'verificar',
         'duplicados',
+        'retrato',
         'preview', 'plantillas', 'editar', 'traspaso.show',
         // Ver e imprimir el contrato de un socio: solo se mira.
         'contrato.ver',

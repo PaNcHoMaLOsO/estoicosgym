@@ -335,16 +335,32 @@ class Cliente extends Model
     }
 
     /**
-     * La direccion publica de la foto, o null si no tiene.
+     * Dónde se guardan las fotos de los socios: la carpeta PRIVADA.
      *
-     * La columna guarda una ruta relativa dentro de storage/app/public y el
-     * navegador necesita una URL. Se hace aqui y no en cada controlador porque
-     * ya estaba escrito a mano en cuatro sitios, y el dia que cambie el disco
-     * habria que acordarse de los cuatro.
+     * Estaban en la pública (storage/app/public), y cualquiera con el enlace
+     * veía la cara de un socio sin entrar al panel. El nombre del archivo era
+     * al azar, pero una foto es un dato personal (Ley 21.719): ahora se sirve
+     * solo por el panel, con sesión y permiso para ver socios.
+     */
+    public const DISCO_FOTOS = 'local';
+
+    public static function discoDeFotos(): \Illuminate\Contracts\Filesystem\Filesystem
+    {
+        return \Illuminate\Support\Facades\Storage::disk(self::DISCO_FOTOS);
+    }
+
+    /**
+     * La dirección de la foto en el panel, o null si no tiene.
+     *
+     * Se arma aquí y no en cada controlador: estaba escrita a mano en cuatro
+     * sitios. La «v» cambia con la foto, para que el navegador no muestre la
+     * vieja después de cambiarla.
      */
     public function urlDeFoto(): ?string
     {
-        return $this->foto_perfil ? asset('storage/' . $this->foto_perfil) : null;
+        return $this->foto_perfil
+            ? route('panel.clientes.retrato', ['cliente' => (string) $this->uuid, 'v' => substr(md5($this->foto_perfil), 0, 8)])
+            : null;
     }
 
     /** Los contratos que se le mandaron a firmar por correo. */

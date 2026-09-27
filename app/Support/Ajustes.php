@@ -416,6 +416,17 @@ class Ajustes
                 'tipo' => 'hora',
                 'defecto' => '14:00',
             ],
+            'correo.tope_diario' => [
+                'grupo' => 'tareas',
+                'seccion' => 'Envíos a un grupo',
+                'etiqueta' => 'Máximo de correos por día',
+                'ayuda' => 'Gmail gratis bloquea la cuenta un día entero si se pasa de 500. Recuperar la clave tiene 80 más de reserva.',
+                'tipo' => 'numero',
+                'min' => 10,
+                'max' => 2000,
+                'defecto' => 400,
+                'unidad' => 'correos',
+            ],
             'correo.tope_masivo' => [
                 'grupo' => 'tareas',
                 'seccion' => 'Envíos a un grupo',

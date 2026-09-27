@@ -39,6 +39,8 @@ class AligerarFotos extends Command
 
     private int $cambiadas = 0;
 
+    private string $discoViejo = 'public';
+
     public function handle(): int
     {
         $disco = Storage::disk('public');
@@ -59,7 +61,7 @@ class AligerarFotos extends Command
         }
 
         foreach (Cliente::withTrashed()->whereNotNull('foto_perfil')->get() as $socio) {
-            if ($nueva = $this->aligerar($socio->foto_perfil, 'clientes', 800, $hacer)) {
+            if ($nueva = $this->aligerar($socio->foto_perfil, 'clientes', 800, $hacer, null, Cliente::DISCO_FOTOS)) {
                 $socio->update(['foto_perfil' => $nueva]);
                 $this->borrarViejaSiSePidio();
             }
@@ -95,9 +97,10 @@ class AligerarFotos extends Command
     /**
      * La versión liviana de una foto: su ruta nueva, o null si no conviene.
      */
-    private function aligerar(string $ruta, string $carpeta, int $maximo, bool $hacer, ?string $mismoNombre = null): ?string
+    private function aligerar(string $ruta, string $carpeta, int $maximo, bool $hacer, ?string $mismoNombre = null, string $nombreDisco = 'public'): ?string
     {
-        $disco = Storage::disk('public');
+        $disco = Storage::disk($nombreDisco);
+        $this->discoViejo = $nombreDisco;
 
         if (str_ends_with(strtolower($ruta), '.webp') || ! $disco->exists($ruta)) {
             return null;
@@ -129,7 +132,7 @@ class AligerarFotos extends Command
     private function borrarViejaSiSePidio(): void
     {
         if ($this->option('borrar-viejas') && $this->viejo !== '') {
-            Storage::disk('public')->delete($this->viejo);
+            Storage::disk($this->discoViejo)->delete($this->viejo);
         }
     }
 

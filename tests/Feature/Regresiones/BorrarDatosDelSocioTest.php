@@ -30,6 +30,7 @@ class BorrarDatosDelSocioTest extends CasoConCatalogos
         parent::setUp();
 
         Storage::fake('public');
+        Storage::fake('local');
     }
 
     /**
@@ -40,7 +41,7 @@ class BorrarDatosDelSocioTest extends CasoConCatalogos
      */
     private function exSocio(): array
     {
-        Storage::disk('public')->put('clientes/camila.jpg', 'foto');
+        Storage::disk('local')->put('clientes/camila.jpg', 'foto');
 
         $cliente = Cliente::factory()->create([
             'activo' => true,
@@ -136,7 +137,7 @@ class BorrarDatosDelSocioTest extends CasoConCatalogos
         $this->assertFalse((bool) $cliente->activo);
         $this->assertNotNull($cliente->datos_borrados_en);
         $this->assertSame('solicitud', $cliente->datos_borrados_motivo);
-        Storage::disk('public')->assertMissing('clientes/camila.jpg');
+        Storage::disk('local')->assertMissing('clientes/camila.jpg');
 
         // Las cuentas: la membresía y el pago siguen, con sus montos...
         $this->assertSame(40000, (int) $inscripcion->fresh()->precio_final);

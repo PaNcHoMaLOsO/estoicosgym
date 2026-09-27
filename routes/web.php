@@ -494,6 +494,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // La ficha va DESPUES del alta: si fuera antes, /clientes/crear
         // entraria por {cliente} y buscaria un socio con uuid «crear».
         Route::get('/clientes/{cliente}', \App\Http\Controllers\Panel\ClienteFichaController::class)->name('clientes.show');
+        // La foto del socio: se sirve por aquí, con sesión, no desde la carpeta pública.
+        Route::get('/clientes/{cliente}/retrato', [\App\Http\Controllers\Panel\ClienteController::class, 'retrato'])->name('clientes.retrato');
         Route::get('/clientes/{cliente}/editar', [\App\Http\Controllers\Panel\ClienteController::class, 'edit'])->name('clientes.edit');
         Route::put('/clientes/{cliente}', [\App\Http\Controllers\Panel\ClienteController::class, 'update'])->name('clientes.update');
         // La foto va aparte de la edicion: un archivo obliga a multipart, e

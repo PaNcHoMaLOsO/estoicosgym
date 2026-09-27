@@ -59,7 +59,7 @@ class EmpezarDeCero extends Command
     public function handle(): int
     {
         $filas = collect(array_reverse(self::TABLAS))->mapWithKeys(fn (string $tabla) => [$tabla => DB::table($tabla)->count()]);
-        $fotos = Storage::disk('public')->allFiles(self::FOTOS);
+        $fotos = \App\Models\Cliente::discoDeFotos()->allFiles(self::FOTOS);
 
         $this->table(
             ['Se borra', 'Cuántos'],
@@ -83,7 +83,7 @@ class EmpezarDeCero extends Command
         Storage::disk('local')->put("{$carpeta}/datos.sql", $this->respaldo());
 
         foreach ($fotos as $foto) {
-            Storage::disk('local')->put("{$carpeta}/fotos/" . basename($foto), Storage::disk('public')->get($foto));
+            Storage::disk('local')->put("{$carpeta}/fotos/" . basename($foto), \App\Models\Cliente::discoDeFotos()->get($foto));
         }
 
         Schema::disableForeignKeyConstraints();
@@ -97,7 +97,7 @@ class EmpezarDeCero extends Command
             Schema::enableForeignKeyConstraints();
         }
 
-        Storage::disk('public')->deleteDirectory(self::FOTOS);
+        \App\Models\Cliente::discoDeFotos()->deleteDirectory(self::FOTOS);
 
         $this->info('Listo: el sistema quedó sin socios ni movimientos. La configuración sigue igual.');
         $this->line('Respaldo de lo borrado: ' . Storage::disk('local')->path($carpeta));

@@ -25,6 +25,7 @@ class ContratoDelSocioTest extends CasoConCatalogos
         parent::setUp();
 
         Storage::fake('public');
+        Storage::fake('local');
         // La caché de ajustes vive entre pruebas y arrastraría la anterior.
         Ajustes::olvidar();
     }
@@ -154,7 +155,7 @@ class ContratoDelSocioTest extends CasoConCatalogos
         $this->anotar($socio, ['consentimiento_imagen' => false]);
 
         $this->assertNull($socio->refresh()->foto_perfil);
-        Storage::disk('public')->assertMissing($ruta);
+        Storage::disk('local')->assertMissing($ruta);
     }
 
     /** Y guardar sin tocar el permiso no se lleva nada por delante. */
@@ -172,7 +173,7 @@ class ContratoDelSocioTest extends CasoConCatalogos
         ]);
 
         $this->assertSame($ruta, $socio->refresh()->foto_perfil);
-        Storage::disk('public')->assertExists($ruta);
+        Storage::disk('local')->assertExists($ruta);
     }
 
     // ---------- El alta ----------

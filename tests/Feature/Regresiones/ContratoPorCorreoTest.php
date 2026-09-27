@@ -35,6 +35,7 @@ class ContratoPorCorreoTest extends CasoConCatalogos
         parent::setUp();
 
         Storage::fake('public');
+        Storage::fake('local');
         $this->fingirCorreo();
     }
 

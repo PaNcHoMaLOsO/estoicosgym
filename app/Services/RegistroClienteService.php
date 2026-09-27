@@ -267,11 +267,11 @@ class RegistroClienteService
         $liviana = \App\Support\FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), 800, 80, $archivo->getRealPath());
 
         if (! $liviana) {
-            return $archivo->store('clientes', 'public');
+            return $archivo->store('clientes', Cliente::DISCO_FOTOS);
         }
 
         $ruta = 'clientes/' . \Illuminate\Support\Str::random(40) . '.' . $liviana['extension'];
-        Storage::disk('public')->put($ruta, $liviana['bytes']);
+        Cliente::discoDeFotos()->put($ruta, $liviana['bytes']);
 
         return $ruta;
     }
@@ -291,6 +291,8 @@ class RegistroClienteService
         // El borrado va DESPUES de guardar, no antes: si el update fallara,
         // borrar primero dejaria la ficha apuntando a un archivo que ya no esta.
         if ($anterior && $anterior !== $cliente->foto_perfil) {
+            Cliente::discoDeFotos()->delete($anterior);
+            // Las de antes de pasar a la carpeta privada.
             Storage::disk('public')->delete($anterior);
         }
 

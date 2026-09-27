@@ -28,15 +28,15 @@ class TwoFactorService
         $channel = $user->two_factor_channel ?? 'whatsapp';
         
         $sent = match($channel) {
-            'whatsapp' => $this->sendWhatsApp($user->phone, $verification->code),
-            'sms' => $this->sendSms($user->phone, $verification->code),
-            default => $this->sendWhatsApp($user->phone, $verification->code),
+            'whatsapp' => $this->sendWhatsApp($user->phone, $verification->codigoPlano),
+            'sms' => $this->sendSms($user->phone, $verification->codigoPlano),
+            default => $this->sendWhatsApp($user->phone, $verification->codigoPlano),
         };
 
         if ($sent) {
             // En desarrollo, guardar código en sesión para mostrar en pantalla
             if (app()->environment('local', 'development')) {
-                session(['dev_2fa_code' => $verification->code]);
+                session(['dev_2fa_code' => $verification->codigoPlano]);
             }
             
             return [
@@ -44,7 +44,7 @@ class TwoFactorService
                 'message' => 'Código enviado a ' . $this->maskPhone($user->phone),
                 'channel' => $channel,
                 'expires_in' => 10, // minutos
-                'dev_code' => app()->environment('local', 'development') ? $verification->code : null,
+                'dev_code' => app()->environment('local', 'development') ? $verification->codigoPlano : null,
             ];
         }
 

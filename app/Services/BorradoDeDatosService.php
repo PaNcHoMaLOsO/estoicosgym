@@ -175,6 +175,8 @@ class BorradoDeDatosService
         // La foto, después: si la transacción fallara, la ficha seguiría
         // apuntando a un archivo que ya no está.
         if ($foto) {
+            \App\Models\Cliente::discoDeFotos()->delete($foto);
+            // Por si quedó alguna en la carpeta pública de antes.
             Storage::disk('public')->delete($foto);
         }
     }

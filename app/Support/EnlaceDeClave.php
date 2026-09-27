@@ -49,6 +49,7 @@ class EnlaceDeClave
             'Restablece tu contraseña · ' . (Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM'),
             view('emails.reset-password', ['enlace' => $enlace, 'nombre' => $usuario->name])->render(),
             $usuario->name,
+            urgente: true,
         );
 
         if ($salio === false) {
