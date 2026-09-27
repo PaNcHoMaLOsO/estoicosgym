@@ -34,7 +34,7 @@ class RutinaSugerida
     {
         $con = fn (array $filtros) => Rutina::where('activa', true)
             ->where($filtros)
-            ->with(['dias.ejercicios.ejercicio'])
+            ->with(['dias.ejercicios.ejercicio', 'dias.ejercicios.alternativa'])
             ->orderBy('orden')
             ->first();
 
@@ -43,7 +43,31 @@ class RutinaSugerida
             ?? $con(['objetivo' => $objetivo, 'nivel' => $nivel])
             ?? $con(['objetivo' => $objetivo])
             ?? $con(['nivel' => $nivel, 'dias_por_semana' => $dias])
-            ?? Rutina::where('activa', true)->with(['dias.ejercicios.ejercicio'])->orderBy('orden')->first();
+            ?? Rutina::where('activa', true)->with(['dias.ejercicios.ejercicio', 'dias.ejercicios.alternativa'])->orderBy('orden')->first();
+    }
+
+    /**
+     * Las otras rutinas del mismo objetivo: la misma idea con más o menos
+     * días, o para otro nivel. Quien puede venir un día más, o ya se le quedó
+     * corta la suya, pasa a la otra desde abajo de la rutina.
+     *
+     * @return list<array{nombre:string, nivel:string, dias:int, url:string}>
+     */
+    public static function variantes(Rutina $actual): array
+    {
+        return Rutina::where('activa', true)
+            ->where('objetivo', $actual->objetivo)
+            ->whereKeyNot($actual->getKey())
+            ->orderBy('dias_por_semana')
+            ->orderBy('orden')
+            ->get()
+            ->map(fn (Rutina $r) => [
+                'nombre' => $r->nombre,
+                'nivel' => Rutina::NIVELES[$r->nivel] ?? $r->nivel,
+                'dias' => $r->dias_por_semana,
+                'url' => route('landing.rutina', ['objetivo' => $r->objetivo, 'nivel' => $r->nivel, 'dias' => $r->dias_por_semana]),
+            ])
+            ->all();
     }
 
     /** Si lo que respondió tiene sentido: si no, se le vuelven a hacer las preguntas. */

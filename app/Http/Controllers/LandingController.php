@@ -253,6 +253,7 @@ class LandingController extends Controller
         $nivel = (string) $request->query('nivel', '');
         $dias = (int) $request->query('dias', 0);
         $respondido = RutinaSugerida::respondido($objetivo, $nivel, $dias);
+        $rutina = $respondido ? RutinaSugerida::buscar($objetivo, $nivel, $dias) : null;
 
         return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',
             'Rutinas del gimnasio para empezar, bajar de peso o ganar fuerza, con las máquinas que hay en la sala.',
@@ -261,7 +262,8 @@ class LandingController extends Controller
                 'niveles' => \App\Models\Rutina::NIVELES,
                 'diasPosibles' => RutinaSugerida::diasPosibles(),
                 'elegido' => ['objetivo' => $objetivo, 'nivel' => $nivel, 'dias' => $dias],
-                'rutina' => $respondido ? RutinaSugerida::buscar($objetivo, $nivel, $dias) : null,
+                'rutina' => $rutina,
+                'variantes' => $rutina ? RutinaSugerida::variantes($rutina) : [],
                 'respondido' => $respondido,
             ],
             $this->comun());

@@ -233,6 +233,26 @@ el administrador, hasta que se agregue a `Permisos`.
 - **Consulta tu membresía**: con RUT, o con celular y primer nombre. Se bloquea
   tras varios intentos fallidos.
 
+## Rutinas de la sala (QR)
+
+**Dónde:** `/rutina` («Qué entrenar hoy»), `App\Support\RutinaSugerida`,
+`App\Support\RutinasDeEjemplo`.
+
+Quien escanea el QR responde qué busca, cuánto lleva entrenando y cuántos días
+puede venir, y ve su semana. No guarda nada de quien lo mira.
+
+- `php artisan rutinas:ejemplos` carga **45 ejercicios y 17 rutinas**: los
+  cuatro objetivos (empezar, bajar de peso, fuerza, mantenerse), los tres
+  niveles y de 2 a 6 días. Se puede volver a correr; `--quitar` las saca.
+- Cada ejercicio con máquina trae su **variante «Si está ocupada»**, que
+  trabaja lo mismo con otro equipo.
+- Debajo de cada rutina, **otras variantes** del mismo objetivo: con más o
+  menos días, u otro nivel.
+- Si no hay una rutina exacta, se afloja primero el nivel y después los días:
+  siempre sale una del objetivo elegido.
+- Son guías generales: conviene que las revise el entrenador de la sala.
+  Todavía no se editan desde el panel.
+
 ## Datos de las planillas
 
 **Dónde:** `datos:importar-planillas`, `scripts/planillas_a_csv.py`.

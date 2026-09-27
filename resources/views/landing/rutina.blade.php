@@ -129,6 +129,13 @@
                                                 {{ $linea->nota ?: $linea->ejercicio->indicacion }}
                                             </p>
                                         @endif
+                                        {{-- La sala llena: si la máquina tiene a alguien, esto
+                                             otro trabaja lo mismo y no hay que esperar. --}}
+                                        @if($linea->alternativa)
+                                            <p class="mt-1.5 font-modern text-xs text-pg-tiza/45">
+                                                <span class="text-pg-rojo-claro">Si está ocupada:</span> {{ $linea->alternativa->nombre }}
+                                            </p>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ul>
@@ -140,6 +147,27 @@
                         </article>
                     @endforeach
                 </div>
+
+                {{-- OTRAS VARIANTES del mismo objetivo: con más o menos días, u
+                     otro nivel. Quien ya puede venir un día más pasa a esa. --}}
+                @if($variantes)
+                    <div class="mt-8">
+                        <h3 class="font-display text-lg uppercase text-pg-tiza">Otras variantes</h3>
+                        <ul class="mt-3 divide-y divide-pg-tiza/10 border-y border-pg-tiza/10">
+                            @foreach($variantes as $v)
+                                <li>
+                                    <a href="{{ $v['url'] }}" class="flex items-center justify-between gap-4 py-3 font-modern text-pg-tiza/80 transition-colors hover:text-pg-tiza">
+                                        <span>
+                                            <span class="block text-sm font-semibold">{{ $v['nombre'] }}</span>
+                                            <span class="block text-xs text-pg-tiza/50">{{ $v['nivel'] }} · {{ $v['dias'] }} días</span>
+                                        </span>
+                                        <i class="fas fa-arrow-right text-xs text-pg-tiza/40" aria-hidden="true"></i>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 {{-- EL AVISO VA SIEMPRE Y ABAJO DE LA RUTINA, que es donde se
                      termina de leer. Esto es una guía general de sala: no la
