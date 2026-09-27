@@ -102,8 +102,14 @@ class ClienteController extends Controller
                         ->limit(1)
                 ),
             )
-            ->orderBy('apellido_paterno')
-            ->orderBy('nombres')
+            // EL ÚLTIMO INGRESADO, ARRIBA. Por apellido el que se acababa de
+            // registrar quedaba perdido en la página 30; «Por apellido» sigue
+            // en el selector.
+            ->when(
+                $request->query('orden') === 'apellido',
+                fn ($q) => $q->orderBy('apellido_paterno')->orderBy('nombres'),
+                fn ($q) => $q->orderByDesc('clientes.created_at')->orderByDesc('clientes.id'),
+            )
             ->paginate(25)
             ->withQueryString()
             ->through(function (Cliente $cliente) {
@@ -135,6 +141,9 @@ class ClienteController extends Controller
             'clientes' => $clientes,
             'filtros' => ['buscar' => $busqueda, 'bajas' => $filtro === 'bajas', 'filtro' => $filtro],
             'resumen' => $this->resumen(),
+            'orden' => $request->query('orden') === 'apellido' ? 'apellido' : '',
+            // Quién fue el último en registrarse, siempre a la vista.
+            'ultimo' => \App\Support\UltimoIngresado::socio(),
             // Cuántos grupos de fichas pueden ser de la misma persona.
             'duplicados' => \App\Support\FichasRepetidas::cuantosProbables(),
         ]);

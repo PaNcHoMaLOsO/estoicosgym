@@ -1,3 +1,5 @@
+import Selector from '@/components/Selector';
+import UltimoIngresado from '@/components/UltimoIngresado';
 import { Head, Link } from '@inertiajs/react';
 import { CopyIcon, MailIcon, MessageCircleIcon, UserPlusIcon } from 'lucide-react';
 
@@ -56,25 +58,25 @@ function Contacto({ celular, email }) {
     );
 }
 
-export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
+export default function Index({ clientes, filtros, resumen, duplicados = 0, orden = '', ultimo = null }) {
     /*
-     * Los activos primero —a quienes se atiende—, y aparte los que se fueron.
-     * «De baja» era un enlace escondido y la lista decía «Todos 43» con 1.491
-     * socios. Los que dan 0 no se muestran (ver Filtros).
+     * Los de siempre, en su lugar, y aparte los que no están activos: los que
+     * se fueron este mes (a quién llamar) y todos los dados de baja.
      */
     const opciones = [
-        { valor: '', etiqueta: 'Activos', cantidad: resumen.total },
+        { valor: '', etiqueta: 'Todos', cantidad: resumen.total },
+        { valor: 'al_dia', etiqueta: 'Con plan vigente', cantidad: resumen.activos },
         { valor: 'por_vencer', etiqueta: 'Vencen esta semana', cantidad: resumen.por_vencer, tono: 'warn' },
         { valor: 'vencidos', etiqueta: 'Vencidos', cantidad: resumen.vencidos, tono: 'danger' },
         { valor: 'pausados', etiqueta: 'Pausados', cantidad: resumen.pausados },
         { valor: 'sin_plan', etiqueta: 'Sin plan', cantidad: resumen.sin_plan },
+        // Quien solo compró pases está de paso: no es un socio más de la lista.
+        { valor: 'pases', etiqueta: 'Solo pase diario', cantidad: resumen.pases },
         // Para pedírselo cuando venga: sin celular no le llegan los avisos.
         { valor: 'sin_celular', etiqueta: 'Sin celular', cantidad: resumen.sin_celular },
         // A quién llamar: se le venció en los últimos 30 días.
         { valor: 'se_fueron', etiqueta: 'Se fueron este mes', cantidad: resumen.se_fueron, tono: 'warn', aparte: true },
         { valor: 'bajas', etiqueta: 'De baja', cantidad: resumen.bajas, aparte: true },
-        // Quien solo compró pases está de paso: no es un socio más de la lista.
-        { valor: 'pases', etiqueta: 'Solo pase diario', cantidad: resumen.pases, aparte: true },
     ];
 
     const extra = filtros.buscar ? { buscar: filtros.buscar } : {};
@@ -110,6 +112,8 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
                 </div>
             </header>
 
+            <UltimoIngresado titulo="Último socio ingresado" ultimo={ultimo} />
+
             <div className="mb-3 flex flex-col gap-3">
                 <Buscador
                     ruta="/panel/clientes"
@@ -121,7 +125,21 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
                     extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
                 />
 
-                <Filtros ruta="/panel/clientes" actual={filtros.filtro} opciones={opciones} extra={extra} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Filtros ruta="/panel/clientes" actual={filtros.filtro} opciones={opciones} extra={{ ...extra, ...(orden ? { orden } : {}) }} />
+                    {/* Los últimos ingresados arriba; por apellido para buscar a ojo. */}
+                    <Selector
+                        etiqueta="Ordenar"
+                        nombre="orden"
+                        valor={orden}
+                        ruta="/panel/clientes"
+                        extra={{ ...extra, ...(filtros.filtro ? { filtro: filtros.filtro } : {}) }}
+                        opciones={[
+                            { valor: '', etiqueta: 'Últimos ingresados' },
+                            { valor: 'apellido', etiqueta: 'Por apellido' },
+                        ]}
+                    />
+                </div>
             </div>
 
             <Tabla

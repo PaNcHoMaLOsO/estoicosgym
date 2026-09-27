@@ -66,7 +66,9 @@ class PagoController extends Controller
                 'monto_desc' => $q->orderByDesc('monto_abonado'),
                 'monto_asc' => $q->orderBy('monto_abonado'),
                 'antiguos' => $q->orderBy('fecha_pago'),
-                default => $q->orderByDesc('fecha_pago'),
+                // Lo último que se registró, arriba (un pago con fecha de
+                // ayer anotado hoy también).
+                default => $q->orderByDesc('pagos.created_at'),
             })
             ->orderByDesc('id')
             ->paginate(25)
@@ -119,6 +121,7 @@ class PagoController extends Controller
                 ])
                 ->filter(fn ($m) => $m['cantidad'] > 0 || (string) $medio === $m['valor'])
                 ->values(),
+            'ultimo' => \App\Support\UltimoIngresado::pago(),
             'cantidades' => [
                 'total' => $this->filtrar(Pago::query(), '')->count(),
                 'hoy' => $this->filtrar(Pago::query(), 'hoy')->count(),

@@ -1,3 +1,4 @@
+import UltimoIngresado from '@/components/UltimoIngresado';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
@@ -59,7 +60,7 @@ const ORDENES = [
     { valor: 'antiguos', etiqueta: 'Lo más antiguo' },
 ];
 
-export default function Index({ pagos, filtros, resumen, cantidades, medios = [] }) {
+export default function Index({ pagos, filtros, resumen, cantidades, medios = [], ultimo = null }) {
     const { privado } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
 
@@ -122,6 +123,8 @@ export default function Index({ pagos, filtros, resumen, cantidades, medios = []
                 />
                 )}
             </div>
+
+            <UltimoIngresado titulo="Último pago ingresado" ultimo={ultimo} />
 
             <div className="mb-3 flex flex-col gap-3">
                 <Buscador

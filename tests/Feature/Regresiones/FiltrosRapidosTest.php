@@ -88,4 +88,21 @@ class FiltrosRapidosTest extends CasoConCatalogos
 
         $this->assertCount(2, $this->props("/panel/pagos?medio={$efectivo->id}")['pagos']['data']);
     }
+
+    /** El último ingresado se ve arriba y va primero en la lista. */
+    public function test_el_ultimo_socio_ingresado_va_primero(): void
+    {
+        $viejo = Cliente::factory()->create(['activo' => true, 'apellido_paterno' => 'Aguilera', 'created_at' => now()->subDays(3)]);
+        $nuevo = Cliente::factory()->create(['activo' => true, 'apellido_paterno' => 'Zúñiga', 'created_at' => now()]);
+        $this->membresia($viejo, 100, now()->addMonth()->toDateString());
+        $this->membresia($nuevo, 100, now()->addMonth()->toDateString());
+
+        $props = $this->props('/panel/clientes');
+        $this->assertSame('/panel/clientes/' . $nuevo->fresh()->uuid, $props['ultimo']['href']);
+        $this->assertSame((string) $nuevo->fresh()->uuid, (string) $props['clientes']['data'][0]['uuid']);
+
+        // Por apellido, como antes.
+        $porApellido = $this->props('/panel/clientes?orden=apellido');
+        $this->assertSame((string) $viejo->fresh()->uuid, (string) $porApellido['clientes']['data'][0]['uuid']);
+    }
 }

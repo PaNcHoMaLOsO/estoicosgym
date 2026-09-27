@@ -64,9 +64,11 @@ class InscripcionController extends Controller
                 'monto_asc' => $q->orderBy('precio_final'),
                 'vence' => $q->orderBy('fecha_vencimiento'),
                 'antiguas' => $q->orderBy('fecha_inicio'),
+                // Lo último que se vendió, arriba: por vencimiento, la que se
+                // acababa de inscribir quedaba entre las anuales de otros.
                 default => $filtro === 'por_vencer'
                     ? $q->orderBy('fecha_vencimiento')
-                    : $q->orderByDesc('fecha_vencimiento'),
+                    : $q->orderByDesc('inscripciones.created_at')->orderByDesc('inscripciones.id'),
             })
             ->paginate(25)
             ->withQueryString()
@@ -132,6 +134,7 @@ class InscripcionController extends Controller
                     'activo' => (bool) $m->activo,
                 ])
                 ->all(),
+            'ultimo' => \App\Support\UltimoIngresado::membresia(),
             'resumen' => [
                 'total' => $this->filtrar(Inscripcion::query(), '')->count(),
                 'activas' => $this->filtrar(Inscripcion::query(), 'al_dia')->count(),

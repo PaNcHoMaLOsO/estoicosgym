@@ -21,9 +21,9 @@ export default function Filtros({
   opciones,
   extra = {},
   nombre = "filtro",
-  // Los que dan 0 se esconden: «Pausados 0 · Sin plan 0 · Vencidos 0» era
-  // ruido. El elegido y el de «todos» se ven siempre.
-  ocultarCeros = true,
+  // Todos a la vista, también los que dan 0 (se ven apagados): así el mesón
+  // los encuentra siempre en el mismo lugar.
+  ocultarCeros = false,
   etiqueta = "Filtrar la lista",
 }) {
   function elegir(valor) {
