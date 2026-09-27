@@ -3,7 +3,8 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
 
-import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
+import { Area, Campo, Grupo, Texto } from '@/components/Campo';
+import Cobro, { metodoPorDefecto, partesIniciales } from '@/components/Cobro';
 
 const hoy = new Date().toISOString().slice(0, 10);
 
@@ -12,12 +13,6 @@ const pesos = new Intl.NumberFormat('es-CL', {
     currency: 'CLP',
     maximumFractionDigits: 0,
 });
-
-const FORMAS = [
-    { valor: 'completo', etiqueta: 'Paga todo el saldo' },
-    { valor: 'abono', etiqueta: 'Abona una parte' },
-    { valor: 'mixto', etiqueta: 'Reparte entre dos métodos' },
-];
 
 /**
  * Cobro de una inscripcion.
@@ -34,14 +29,19 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
     const [resultados, setResultados] = useState(null);
     const [buscando, setBuscando] = useState(false);
 
-    const { data, setData, post, processing, errors, isDirty } = useForm({
+    // Los dos medios de un pago repartido: el mismo bloque de cobro que al
+    // inscribir y renovar, con botones en vez de desplegables.
+    const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
+
+    const { data, setData, post, processing, errors, isDirty, transform } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
         id_inscripcion: preseleccionada?.id ?? '',
         tipo_pago: 'completo',
         monto_abonado: '',
-        id_metodo_pago: '',
+        // Marcado en efectivo: es lo que más se usa en el mesón.
+        id_metodo_pago: metodoPorDefecto(metodosPago),
         id_metodo_pago1: '',
         id_metodo_pago2: '',
         monto_metodo1: '',
@@ -100,19 +100,29 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
         setData('id_inscripcion', '');
     }
 
-    const opcionesMetodo = metodosPago.map((m) => ({ valor: String(m.id), etiqueta: m.nombre }));
-
-    // En mixto los dos montos tienen que sumar EXACTAMENTE el saldo. Se dice
-    // aquí mientras se escribe, en vez de dejar que el servidor lo rechace
-    // después de haber rellenado el resto del formulario.
-    const sumaMixto = (Number(data.monto_metodo1) || 0) + (Number(data.monto_metodo2) || 0);
-    const mixtoDescuadra = data.tipo_pago === 'mixto' && sumaMixto !== pendiente;
+    // En mixto los dos montos tienen que sumar EXACTAMENTE el saldo: un pago
+    // repartido salda la cuenta. El bloque de cobro lo dice mientras se escribe.
+    const sumaMixto = partes.reduce((t, p) => t + (Number(p.monto) || 0), 0);
+    const mixtoDescuadra = data.tipo_pago === 'mixto'
+        && (sumaMixto !== pendiente || partes.some((p) => ! p.id_metodo_pago) || partes[0]?.id_metodo_pago === partes[1]?.id_metodo_pago);
 
     // Sin guardar y con algo escrito: pregunta antes de salir.
     const tocar = useAvisoAlSalir(isDirty && ! processing);
 
     function enviar(e) {
         e.preventDefault();
+
+        // El servidor guarda un pago repartido como dos medios con su monto.
+        transform((d) => (d.tipo_pago === 'mixto'
+            ? {
+                ...d,
+                id_metodo_pago1: partes[0]?.id_metodo_pago ?? '',
+                monto_metodo1: partes[0]?.monto ?? '',
+                id_metodo_pago2: partes[1]?.id_metodo_pago ?? '',
+                monto_metodo2: partes[1]?.monto ?? '',
+            }
+            : d));
+
         post('/panel/pagos/registrar', { preserveScroll: true });
     }
 
@@ -233,138 +243,31 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
                     «abona una parte» no tiene contra qué compararse. */}
                 {elegida ? (
                     <>
-                        <Grupo titulo="¿Cómo paga?">
-                            <Campo etiqueta="Forma de pago" nombre="tipo_pago" error={errors.tipo_pago} requerido>
-                                <Seleccion
-                                    nombre="tipo_pago"
-                                    valor={data.tipo_pago}
-                                    alCambiar={(v) => setData('tipo_pago', v)}
-                                    opciones={FORMAS}
-                                    error={errors.tipo_pago}
-                                    vacio="Elige…"
-                                />
-                            </Campo>
-
-                            {data.tipo_pago === 'completo' ? (
-                                <p className="apoyo text-fog">
-                                    Se cobra {pesos.format(pendiente)} y la membresía queda al día.
-                                </p>
+                        <section className="rounded-panel border border-line bg-surface p-4">
+                            <h2 className="mb-3 text-sm font-semibold text-chalk">¿Cómo paga?</h2>
+                            <Cobro
+                                total={pendiente}
+                                forma={data.tipo_pago}
+                                alCambiarForma={(v) => setData('tipo_pago', v)}
+                                abono="abono"
+                                monto={data.monto_abonado}
+                                alCambiarMonto={(v) => setData('monto_abonado', v)}
+                                metodo={data.id_metodo_pago}
+                                alCambiarMetodo={(v) => setData('id_metodo_pago', v)}
+                                metodosPago={metodosPago}
+                                partes={partes}
+                                setPartes={setPartes}
+                                sinPendiente
+                                maxPartes={2}
+                                errores={{
+                                    ...errors,
+                                    detalle_pagos_mixto: errors.id_metodo_pago1 ?? errors.monto_metodo1 ?? errors.id_metodo_pago2 ?? errors.monto_metodo2,
+                                }}
+                            />
+                            {data.tipo_pago === 'mixto' && partes[0]?.id_metodo_pago && partes[0]?.id_metodo_pago === partes[1]?.id_metodo_pago ? (
+                                <p className="apoyo mt-2 text-warn">Los dos medios tienen que ser distintos.</p>
                             ) : null}
-
-                            {data.tipo_pago === 'abono' ? (
-                                <Campo
-                                    etiqueta="Monto del abono"
-                                    nombre="monto_abonado"
-                                    error={errors.monto_abonado}
-                                    requerido
-                                    ayuda={`Entre $1.000 y ${pesos.format(pendiente)}.`}
-                                >
-                                    <Texto
-                                        nombre="monto_abonado"
-                                        tipo="number"
-                                        min={1000}
-                                        max={pendiente}
-                                        valor={data.monto_abonado}
-                                        alCambiar={(v) => setData('monto_abonado', v)}
-                                        error={errors.monto_abonado}
-                                    />
-                                </Campo>
-                            ) : null}
-
-                            {data.tipo_pago !== 'mixto' ? (
-                                <Campo
-                                    etiqueta="Método de pago"
-                                    nombre="id_metodo_pago"
-                                    error={errors.id_metodo_pago}
-                                    requerido
-                                >
-                                    <Seleccion
-                                        nombre="id_metodo_pago"
-                                        valor={data.id_metodo_pago}
-                                        alCambiar={(v) => setData('id_metodo_pago', v)}
-                                        opciones={opcionesMetodo}
-                                        error={errors.id_metodo_pago}
-                                    />
-                                </Campo>
-                            ) : (
-                                <>
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <Campo
-                                            etiqueta="Primer método"
-                                            nombre="id_metodo_pago1"
-                                            error={errors.id_metodo_pago1}
-                                            requerido
-                                        >
-                                            <Seleccion
-                                                nombre="id_metodo_pago1"
-                                                valor={data.id_metodo_pago1}
-                                                alCambiar={(v) => setData('id_metodo_pago1', v)}
-                                                opciones={opcionesMetodo}
-                                                error={errors.id_metodo_pago1}
-                                            />
-                                        </Campo>
-                                        <Campo
-                                            etiqueta="Monto"
-                                            nombre="monto_metodo1"
-                                            error={errors.monto_metodo1}
-                                            requerido
-                                        >
-                                            <Texto
-                                                nombre="monto_metodo1"
-                                                tipo="number"
-                                                min={1}
-                                                valor={data.monto_metodo1}
-                                                alCambiar={(v) => setData('monto_metodo1', v)}
-                                                error={errors.monto_metodo1}
-                                            />
-                                        </Campo>
-                                    </div>
-
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <Campo
-                                            etiqueta="Segundo método"
-                                            nombre="id_metodo_pago2"
-                                            error={errors.id_metodo_pago2}
-                                            requerido
-                                            ayuda="Tiene que ser distinto del primero."
-                                        >
-                                            <Seleccion
-                                                nombre="id_metodo_pago2"
-                                                valor={data.id_metodo_pago2}
-                                                alCambiar={(v) => setData('id_metodo_pago2', v)}
-                                                opciones={opcionesMetodo}
-                                                error={errors.id_metodo_pago2}
-                                            />
-                                        </Campo>
-                                        <Campo
-                                            etiqueta="Monto"
-                                            nombre="monto_metodo2"
-                                            error={errors.monto_metodo2}
-                                            requerido
-                                        >
-                                            <Texto
-                                                nombre="monto_metodo2"
-                                                tipo="number"
-                                                min={1}
-                                                valor={data.monto_metodo2}
-                                                alCambiar={(v) => setData('monto_metodo2', v)}
-                                                error={errors.monto_metodo2}
-                                            />
-                                        </Campo>
-                                    </div>
-
-                                    <p
-                                        className={`apoyo ${mixtoDescuadra ? 'font-medium text-warn' : 'text-fog'}`}
-                                        role="status"
-                                    >
-                                        Suman {pesos.format(sumaMixto)} de {pesos.format(pendiente)}
-                                        {mixtoDescuadra
-                                            ? ` · faltan ${pesos.format(Math.abs(pendiente - sumaMixto))}`
-                                            : ' · cuadra'}
-                                    </p>
-                                </>
-                            )}
-                        </Grupo>
+                        </section>
 
                         <Grupo titulo="Datos del cobro">
                             <div className="grid gap-3 sm:grid-cols-2">

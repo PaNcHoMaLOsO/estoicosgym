@@ -96,6 +96,10 @@ export default function Cobro({
     partes,
     setPartes,
     errores = {},
+    // Registrar un pago no tiene «Nada todavía» (sería no registrar nada), y
+    // un pago guarda a lo más dos medios.
+    sinPendiente = false,
+    maxPartes = null,
 }) {
     const opcionesMetodo = metodosPago.map((m) => ({ valor: m.id, etiqueta: m.nombre }));
     const suma = partes.reduce((t, p) => t + (Number(p.monto) || 0), 0);
@@ -129,12 +133,12 @@ export default function Cobro({
                     nombre="Cómo paga"
                     valor={forma}
                     alElegir={alCambiarForma}
-                    columnas="grid-cols-2 sm:grid-cols-4"
+                    columnas={sinPendiente ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}
                     opciones={[
                         { valor: 'completo', etiqueta: 'Todo', pie: pesos.format(total) },
                         { valor: abono, etiqueta: 'Una parte', pie: 'abono' },
-                        { valor: 'mixto', etiqueta: 'Varios medios', pie: 'efectivo y tarjeta…' },
-                        { valor: 'pendiente', etiqueta: 'Nada todavía', pie: 'queda debiendo' },
+                        { valor: 'mixto', etiqueta: maxPartes === 2 ? 'Dos medios' : 'Varios medios', pie: 'efectivo y tarjeta…' },
+                        ...(sinPendiente ? [] : [{ valor: 'pendiente', etiqueta: 'Nada todavía', pie: 'queda debiendo' }]),
                     ]}
                 />
             </Campo>
@@ -202,7 +206,7 @@ export default function Cobro({
                         ))}
 
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            {partes.length < metodosPago.length ? (
+                            {partes.length < Math.min(metodosPago.length, maxPartes ?? Infinity) ? (
                                 <button
                                     type="button"
                                     onClick={() => setPartes((ps) => [...ps, { id_metodo_pago: '', monto: falta > 0 ? String(falta) : '' }])}
