@@ -40,6 +40,25 @@ class Taller extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $taller) => $taller->uuid ??= (string) Str::uuid());
+
+        // A LA PAPELERA CON SUS COTIZACIONES. Se quedaban sueltas: la del mes
+        // seguía abriéndose con los datos del taller en blanco.
+        static::deleted(function (self $taller) {
+            if (! $taller->isForceDeleting()) {
+                $taller->cotizaciones()->get()->each->delete();
+            }
+        });
+
+        // Y vuelven con él: las que se fueron en el mismo momento, no las que
+        // ya se habían tirado antes.
+        static::restoring(function (self $taller) {
+            // Antes de restaurar, que es cuando todavía se sabe cuándo se borró.
+            CotizacionTaller::onlyTrashed()
+                ->where('id_taller', $taller->id)
+                ->where('deleted_at', '>=', $taller->deleted_at?->copy()->subSeconds(5) ?? now()->subMinute())
+                ->get()
+                ->each->restore();
+        });
     }
 
     public function getRouteKeyName(): string

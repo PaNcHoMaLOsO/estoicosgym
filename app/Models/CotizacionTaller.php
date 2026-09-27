@@ -64,7 +64,8 @@ class CotizacionTaller extends Model
 
     public function taller(): BelongsTo
     {
-        return $this->belongsTo(Taller::class, 'id_taller');
+        // También si el taller está en la papelera: el papel lo nombra igual.
+        return $this->belongsTo(Taller::class, 'id_taller')->withTrashed();
     }
 
     /**

@@ -47,9 +47,19 @@ class CobroTaller extends Model
         return 'uuid';
     }
 
+    /**
+     * Los cobros de talleres que siguen vigentes. Un taller en la papelera
+     * se lleva sus cobros: no suman en la caja ni en lo que se debe.
+     */
+    public function scopeDeTalleresVigentes($consulta)
+    {
+        return $consulta->whereHas('taller', fn ($q) => $q->withoutTrashed());
+    }
+
     public function taller(): BelongsTo
     {
-        return $this->belongsTo(Taller::class, 'id_taller');
+        // También si el taller está en la papelera: el papel lo nombra igual.
+        return $this->belongsTo(Taller::class, 'id_taller')->withTrashed();
     }
 
     public function horas(): HasMany

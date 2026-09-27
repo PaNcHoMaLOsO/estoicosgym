@@ -131,7 +131,7 @@ class ReporteController extends Controller
         $desde = Carbon::create($anio, 1, 1)->startOfDay();
         $hasta = Carbon::create($anio, 12, 31)->endOfDay();
 
-        $porInstitucion = CobroTaller::with('taller.institucion')
+        $porInstitucion = CobroTaller::deTalleresVigentes()->with('taller.institucion')
             ->whereNotNull('pagado_en')
             ->whereBetween('pagado_en', [$desde->toDateString(), $hasta->toDateString()])
             ->get()

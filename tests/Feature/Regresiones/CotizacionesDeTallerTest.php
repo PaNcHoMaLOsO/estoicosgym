@@ -256,4 +256,30 @@ class CotizacionesDeTallerTest extends CasoConCatalogos
 
         $this->assertSame(1, CotizacionTaller::count());
     }
+
+    /**
+     * BORRAR EL TALLER SE LLEVA SUS COTIZACIONES, Y RESTAURARLO LAS DEVUELVE.
+     * Quedaban sueltas y la cotización se abría con el taller en blanco.
+     * Y sus cobros dejan de sumar en la caja.
+     */
+    public function test_el_taller_en_la_papelera_se_lleva_sus_cotizaciones_y_cobros(): void
+    {
+        $taller = $this->taller();
+        $this->actingAs($this->administrador())->post("/panel/talleres/{$taller->uuid}/cotizaciones", ['periodo' => '2026-07']);
+        $cotizacion = CotizacionTaller::firstOrFail();
+        $taller->cobros()->create(['periodo' => '2026-06', 'horas' => 10, 'precio_hora' => 30000, 'total' => 300000, 'neto' => 252101, 'iva' => 47899]);
+
+        $caja = fn () => $this->actingAs($this->administrador())->get('/panel/caja')->viewData('page')['props']['talleres']['por_cobrar'];
+        $this->assertSame(300000, $caja());
+
+        $this->actingAs($this->administrador())->delete("/panel/talleres/{$taller->uuid}");
+
+        $this->assertSoftDeleted('cotizaciones_taller', ['id' => $cotizacion->id]);
+        $this->assertSame(0, $caja());
+
+        $taller->fresh()->restore();
+
+        $this->assertNotSoftDeleted('cotizaciones_taller', ['id' => $cotizacion->id]);
+        $this->assertSame(300000, $caja());
+    }
 }

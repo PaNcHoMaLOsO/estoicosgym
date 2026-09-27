@@ -89,12 +89,12 @@ class CajaController extends Controller
             // Lo facturado a colegios y empresas que todavía no pagan. Es
             // plata que ya salió en una factura y que nadie estaba mirando.
             'talleres' => [
-                'por_cobrar' => (int) CobroTaller::whereNull('pagado_en')->sum($this->sinIva ? 'neto' : 'total'),
+                'por_cobrar' => (int) CobroTaller::deTalleresVigentes()->whereNull('pagado_en')->sum($this->sinIva ? 'neto' : 'total'),
                 // El IVA de lo que pagaron este mes: lo que se aparta para el SII.
-                'iva_mes' => (int) CobroTaller::whereNotNull('pagado_en')
+                'iva_mes' => (int) CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
                     ->whereBetween('pagado_en', [$mes[0]->toDateString(), $mes[1]->toDateString()])
                     ->sum('iva'),
-                'facturas' => CobroTaller::whereNull('pagado_en')->count(),
+                'facturas' => CobroTaller::deTalleresVigentes()->whereNull('pagado_en')->count(),
             ],
 
             'fuentes' => IngresosDelNegocio::FUENTES,

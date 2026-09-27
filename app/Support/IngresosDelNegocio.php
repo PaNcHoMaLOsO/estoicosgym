@@ -52,7 +52,7 @@ class IngresosDelNegocio
             'membresias' => (int) Pago::ingresos()
                 ->whereBetween('fecha_pago', [$inicio, $fin])
                 ->sum('monto_abonado'),
-            'talleres' => (int) CobroTaller::whereNotNull('pagado_en')
+            'talleres' => (int) CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
                 ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
                 ->sum($sinIva ? 'neto' : 'total'),
             'meson' => (int) Fiado::where('pagado', true)
@@ -80,7 +80,7 @@ class IngresosDelNegocio
             ->groupBy('dia')
             ->pluck('total', 'dia');
 
-        $talleres = CobroTaller::whereNotNull('pagado_en')
+        $talleres = CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
             ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
             ->selectRaw('DATE(pagado_en) as dia, SUM(' . ($sinIva ? 'neto' : 'total') . ') as total')
             ->groupBy('dia')

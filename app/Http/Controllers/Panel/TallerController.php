@@ -497,7 +497,7 @@ class TallerController extends Controller
      */
     private function porCobrar(): array
     {
-        $pendientes = CobroTaller::whereNull('pagado_en')->get(['total']);
+        $pendientes = CobroTaller::deTalleresVigentes()->whereNull('pagado_en')->get(['total']);
 
         return ['total' => (int) $pendientes->sum('total'), 'cuantos' => $pendientes->count()];
     }
