@@ -1,3 +1,5 @@
+import PedirCelular from '@/components/PedirCelular';
+import { PREFIJO } from '@/lib/socio';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
@@ -69,6 +71,8 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
+        // Solo se manda si no tenía: ver PedirCelular.
+        celular_socio: inscripcion.celular ? '' : PREFIJO,
         // Se llega con el mismo plan y el mismo convenio ya puestos: lo normal
         // es renovar igual, y cambiar es la excepcion.
         id_membresia: String(inscripcion.id_membresia ?? ''),
@@ -146,6 +150,10 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
             </header>
 
             <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
+                {inscripcion.celular ? null : (
+                    <PedirCelular valor={data.celular_socio} alCambiar={(v) => setData('celular_socio', v)} error={errors.celular_socio} />
+                )}
+
                 {/* Lo que tenía, arriba del todo: es contra esto que se decide. */}
                 <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">
                     <p className="rotulo mb-1">Lo que termina</p>

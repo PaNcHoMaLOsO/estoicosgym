@@ -199,4 +199,32 @@ class EdicionDeFichaTest extends CasoConCatalogos
         $this->assertSame(100, (int) $inscripcion->id_estado);
         $this->assertEquals(40000, $inscripcion->precio_final);
     }
+
+    /**
+     * A un socio de las planillas sin celular se le puede corregir el nombre
+     * sin inventarle uno. Al que ya tenía, no se le puede borrar.
+     */
+    public function test_el_celular_solo_se_exige_si_ya_tenia(): void
+    {
+        $sinCelular = $this->socio(['celular' => null, 'run_pasaporte' => null, 'email' => null]);
+
+        $this->guardar($sinCelular, $this->ficha($sinCelular, ['nombres' => 'Juana', 'celular' => '']))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Juana', $sinCelular->fresh()->nombres);
+
+        $conCelular = $this->socio(['run_pasaporte' => '11.111.111-1', 'email' => 'otro@correo.cl']);
+
+        $this->guardar($conCelular, $this->ficha($conCelular, ['celular' => '']))
+            ->assertSessionHasErrors('celular');
+    }
+
+    /** Un pasaporte se puede guardar al editar: antes se validaba como RUT. */
+    public function test_se_edita_un_socio_con_pasaporte(): void
+    {
+        $socio = $this->socio(['run_pasaporte' => 'AB123456', 'email' => 'pasaporte@correo.cl']);
+
+        $this->guardar($socio, $this->ficha($socio, ['tipo_documento' => 'pasaporte', 'nombres' => 'Pierre']))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Pierre', $socio->fresh()->nombres);
+    }
 }

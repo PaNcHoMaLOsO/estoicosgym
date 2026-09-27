@@ -1,36 +1,64 @@
-import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon, CheckIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Texto } from '@/components/Campo';
+import { Botones } from '@/components/Cobro';
+import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
+import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 
 /**
- * Correccion de la ficha de un socio.
+ * Corrección de la ficha de un socio.
  *
- * SOLO SUS DATOS. La membresia y los pagos no se tocan aqui: tienen sus
+ * SOLO SUS DATOS. La membresía y los pagos no se tocan aquí: tienen sus
  * propias pantallas —renovar, cobrar— con sus propias reglas. Esto es para
- * arreglar un telefono mal escrito o un correo que rebota, no para cambiar lo
- * que se cobro.
+ * arreglar un teléfono mal escrito o un correo que rebota, no para cambiar lo
+ * que se cobró.
+ *
+ * Escribe igual que el alta (lib/socio.js): el RUT se ordena solo con puntos
+ * y guion y avisa si el dígito verificador no calza; el celular trae el +56 9.
+ * El celular es obligatorio solo si ya tenía: a los de las planillas, que casi
+ * nunca traían, no se les obliga a inventar uno para corregir el nombre.
  */
+
+/** «+56 9 …» si está vacío, para escribir solo los ocho dígitos. */
+const conPrefijo = (telefono) => (telefono && String(telefono).trim() !== '' ? telefono : PREFIJO);
+
+/** Si el RUT se ve completo pero el verificador no calza, se dice al tiro. */
+function AvisoDeRut({ rut }) {
+    const limpio = String(rut ?? '').replace(/[^0-9kK]/g, '');
+
+    if (limpio.length < 8) {
+        return null;
+    }
+
+    return rutValido(rut) ? (
+        <span className="apoyo inline-flex items-center gap-1 text-ok">
+            <CheckIcon className="size-3.5" aria-hidden="true" /> RUT válido
+        </span>
+    ) : (
+        <span className="apoyo text-warn">El dígito verificador no calza: revisa el carnet.</span>
+    );
+}
+
 export default function Editar({ cliente }) {
-    const { data, setData, put, processing, errors, isDirty } = useForm({
+    const { data, setData, put, processing, errors, isDirty, transform } = useForm({
         run_pasaporte: cliente.run_pasaporte ?? '',
         nombres: cliente.nombres ?? '',
         apellido_paterno: cliente.apellido_paterno ?? '',
         apellido_materno: cliente.apellido_materno ?? '',
-        celular: cliente.celular ?? '',
+        celular: conPrefijo(cliente.celular),
         email: cliente.email ?? '',
         direccion: cliente.direccion ?? '',
         fecha_nacimiento: cliente.fecha_nacimiento ?? '',
         contacto_emergencia: cliente.contacto_emergencia ?? '',
-        telefono_emergencia: cliente.telefono_emergencia ?? '',
+        telefono_emergencia: conPrefijo(cliente.telefono_emergencia),
         observaciones: cliente.observaciones ?? '',
-        es_menor_edad: cliente.es_menor_edad,
-        consentimiento_apoderado: cliente.consentimiento_apoderado,
+        es_menor_edad: Boolean(cliente.es_menor_edad),
+        consentimiento_apoderado: Boolean(cliente.consentimiento_apoderado),
         apoderado_nombre: cliente.apoderado_nombre ?? '',
         apoderado_rut: cliente.apoderado_rut ?? '',
         apoderado_email: cliente.apoderado_email ?? '',
-        apoderado_telefono: cliente.apoderado_telefono ?? '',
+        apoderado_telefono: conPrefijo(cliente.apoderado_telefono),
         apoderado_parentesco: cliente.apoderado_parentesco ?? '',
         apoderado_observaciones: cliente.apoderado_observaciones ?? '',
     });
@@ -38,10 +66,32 @@ export default function Editar({ cliente }) {
     // Sin guardar y con algo escrito: pregunta antes de salir.
     const tocar = useAvisoAlSalir(isDirty && ! processing);
 
+    // Un pasaporte trae letras: ahí no se ordena como RUT.
+    const esPasaporte = /[A-JL-Za-jl-z]/.test(data.run_pasaporte);
+    const celularObligatorio = Boolean(cliente.celular);
+
     function enviar(e) {
         e.preventDefault();
+
+        // El prefijo solo, sin número, es un teléfono vacío.
+        transform((d) => ({
+            ...d,
+            celular: soloPrefijo(d.celular) ? '' : d.celular,
+            telefono_emergencia: soloPrefijo(d.telefono_emergencia) ? '' : d.telefono_emergencia,
+            apoderado_telefono: soloPrefijo(d.apoderado_telefono) ? '' : d.apoderado_telefono,
+            tipo_documento: esPasaporte ? 'pasaporte' : 'rut',
+        }));
+
         put(`/panel/clientes/${cliente.uuid}`, { preserveScroll: true });
     }
+
+    const texto = (clave, extra = {}) => ({
+        nombre: clave,
+        valor: data[clave],
+        error: errors[clave],
+        alCambiar: (v) => setData(clave, v),
+        ...extra,
+    });
 
     return (
         <>
@@ -55,271 +105,179 @@ export default function Editar({ cliente }) {
                     <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
                     Volver a la ficha
                 </Link>
-                <h1 className="mt-1 text-lg font-semibold text-chalk">Editar ficha</h1>
-                <p className="apoyo text-fog">{cliente.nombre}</p>
+                <h1 className="mt-1 text-xl font-semibold text-chalk">Editar ficha</h1>
+                <p className="mt-0.5 text-sm text-fog">{cliente.nombre}</p>
             </header>
 
-            <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
-                <Grupo titulo="Quién es">
-                    <Campo etiqueta="Nombres" nombre="nombres" error={errors.nombres} requerido>
-                        <Texto
-                            nombre="nombres"
-                            valor={data.nombres}
-                            alCambiar={(v) => setData('nombres', v)}
-                        />
-                    </Campo>
+            <form onSubmit={enviar} {...tocar} className="max-w-4xl">
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <Grupo titulo="Quién es">
+                        <Campo etiqueta="Nombres" nombre="nombres" error={errors.nombres} requerido>
+                            <Texto {...texto('nombres', { autoComplete: 'off' })} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="Apellido paterno"
-                        nombre="apellido_paterno"
-                        error={errors.apellido_paterno}
-                        requerido
-                    >
-                        <Texto
-                            nombre="apellido_paterno"
-                            valor={data.apellido_paterno}
-                            alCambiar={(v) => setData('apellido_paterno', v)}
-                        />
-                    </Campo>
+                        <Campo etiqueta="Apellido paterno" nombre="apellido_paterno" error={errors.apellido_paterno} requerido>
+                            <Texto {...texto('apellido_paterno', { autoComplete: 'off' })} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="Apellido materno"
-                        nombre="apellido_materno"
-                        error={errors.apellido_materno}
-                    >
-                        <Texto
-                            nombre="apellido_materno"
-                            valor={data.apellido_materno}
-                            alCambiar={(v) => setData('apellido_materno', v)}
-                        />
-                    </Campo>
+                        <Campo etiqueta="Apellido materno" nombre="apellido_materno" error={errors.apellido_materno}>
+                            <Texto {...texto('apellido_materno', { autoComplete: 'off' })} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="RUT o pasaporte"
-                        nombre="run_pasaporte"
-                        error={errors.run_pasaporte}
-                        ayuda="Con guion y dígito verificador. Puede quedar vacío."
-                    >
-                        <Texto
-                            nombre="run_pasaporte"
-                            valor={data.run_pasaporte}
-                            alCambiar={(v) => setData('run_pasaporte', v)}
-                            placeholder="12.345.678-9"
-                        />
-                    </Campo>
+                        <Campo etiqueta="Fecha de nacimiento" nombre="fecha_nacimiento" error={errors.fecha_nacimiento}>
+                            <Texto {...texto('fecha_nacimiento', { tipo: 'date' })} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="Fecha de nacimiento"
-                        nombre="fecha_nacimiento"
-                        error={errors.fecha_nacimiento}
-                    >
-                        <Texto
-                            nombre="fecha_nacimiento"
-                            tipo="date"
-                            valor={data.fecha_nacimiento}
-                            alCambiar={(v) => setData('fecha_nacimiento', v)}
-                        />
-                    </Campo>
-                </Grupo>
+                        <div className="sm:col-span-2">
+                            <Campo
+                                etiqueta="RUT o pasaporte"
+                                nombre="run_pasaporte"
+                                error={errors.run_pasaporte}
+                                ayuda={data.run_pasaporte ? null : 'Puede quedar vacío.'}
+                            >
+                                <Texto
+                                    {...texto('run_pasaporte', {
+                                        alCambiar: (v) => setData('run_pasaporte', /[A-JL-Za-jl-z]/.test(v) ? v.toUpperCase().replace(/[^A-Z0-9]/g, '') : formatearRut(v)),
+                                        placeholder: '12.345.678-9',
+                                        autoComplete: 'off',
+                                    })}
+                                />
+                                {esPasaporte ? null : <AvisoDeRut rut={data.run_pasaporte} />}
+                            </Campo>
+                        </div>
+                    </Grupo>
 
-                <Grupo titulo="Cómo se le avisa">
-                    <Campo etiqueta="Celular" nombre="celular" error={errors.celular} requerido>
-                        <Texto
+                    <Grupo titulo="Cómo se le avisa">
+                        <Campo
+                            etiqueta="Celular"
                             nombre="celular"
-                            valor={data.celular}
-                            alCambiar={(v) => setData('celular', v)}
-                            placeholder="+56 9 1234 5678"
-                        />
-                    </Campo>
+                            error={errors.celular}
+                            requerido={celularObligatorio}
+                            ayuda={celularObligatorio ? null : 'No tiene: pídeselo, así le llegan los avisos.'}
+                        >
+                            <Texto {...texto('celular', { tipo: 'tel', inputMode: 'tel' })} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="Correo"
-                        nombre="email"
-                        error={errors.email}
-                        requerido
-                        ayuda="Ahí llegan los avisos de vencimiento."
-                    >
-                        <Texto
-                            nombre="email"
-                            tipo="email"
-                            valor={data.email}
-                            alCambiar={(v) => setData('email', v)}
-                        />
-                    </Campo>
+                        <Campo etiqueta="Correo" nombre="email" error={errors.email}>
+                            <Texto {...texto('email', { tipo: 'email', placeholder: 'nombre@correo.cl' })} />
+                        </Campo>
 
-                    <Campo etiqueta="Dirección" nombre="direccion" error={errors.direccion}>
-                        <Texto
-                            nombre="direccion"
-                            valor={data.direccion}
-                            alCambiar={(v) => setData('direccion', v)}
-                        />
-                    </Campo>
-                </Grupo>
+                        <div className="sm:col-span-2">
+                            <Campo etiqueta="Dirección" nombre="direccion" error={errors.direccion}>
+                                <Texto {...texto('direccion')} />
+                            </Campo>
+                        </div>
+                    </Grupo>
 
-                <Grupo titulo="A quién llamar si pasa algo">
-                    <Campo
-                        etiqueta="Nombre"
-                        nombre="contacto_emergencia"
-                        error={errors.contacto_emergencia}
-                    >
-                        <Texto
-                            nombre="contacto_emergencia"
-                            valor={data.contacto_emergencia}
-                            alCambiar={(v) => setData('contacto_emergencia', v)}
-                        />
-                    </Campo>
+                    <Grupo titulo="A quién llamar si pasa algo">
+                        <Campo etiqueta="Nombre" nombre="contacto_emergencia" error={errors.contacto_emergencia}>
+                            <Texto {...texto('contacto_emergencia')} />
+                        </Campo>
 
-                    <Campo
-                        etiqueta="Teléfono"
-                        nombre="telefono_emergencia"
-                        error={errors.telefono_emergencia}
-                    >
-                        <Texto
-                            nombre="telefono_emergencia"
-                            valor={data.telefono_emergencia}
-                            alCambiar={(v) => setData('telefono_emergencia', v)}
-                            placeholder="+56 9 1234 5678"
-                        />
-                    </Campo>
-                </Grupo>
+                        <Campo etiqueta="Teléfono" nombre="telefono_emergencia" error={errors.telefono_emergencia}>
+                            <Texto {...texto('telefono_emergencia', { tipo: 'tel', inputMode: 'tel' })} />
+                        </Campo>
+                    </Grupo>
 
-                <Grupo titulo="¿Es menor de edad?">
-                    <label className="flex items-center gap-2 text-sm text-chalk">
-                        <input
-                            type="checkbox"
-                            checked={data.es_menor_edad}
-                            onChange={(e) => setData('es_menor_edad', e.target.checked)}
-                            className="size-4 accent-[var(--color-volt)]"
-                        />
-                        Sí, necesita apoderado
-                    </label>
-
-                    {/* Al desmarcarlo, el servidor BORRA los datos del
-                        apoderado: dejarlos escondidos haria que, si se vuelve a
-                        marcar por error, aparecieran como si siguieran valiendo. */}
-                    {data.es_menor_edad ? (
-                        <>
+                    <Grupo titulo="Observaciones">
+                        <div className="sm:col-span-2">
                             <Campo
-                                etiqueta="Nombre del apoderado"
-                                nombre="apoderado_nombre"
-                                error={errors.apoderado_nombre}
-                                requerido
+                                etiqueta="Notas"
+                                nombre="observaciones"
+                                error={errors.observaciones}
+                                ayuda="Lesiones, restricciones, lo que haga falta saber."
                             >
-                                <Texto
-                                    nombre="apoderado_nombre"
-                                    valor={data.apoderado_nombre}
-                                    alCambiar={(v) => setData('apoderado_nombre', v)}
+                                <Area {...texto('observaciones')} filas={3} />
+                            </Campo>
+                        </div>
+                    </Grupo>
+
+                    <div className="lg:col-span-2">
+                        <Grupo titulo="¿Es menor de edad?">
+                            <div className="sm:col-span-2">
+                                <Botones
+                                    opciones={[
+                                        { valor: 'no', etiqueta: 'No' },
+                                        { valor: 'si', etiqueta: 'Sí, con apoderado' },
+                                    ]}
+                                    valor={data.es_menor_edad ? 'si' : 'no'}
+                                    alElegir={(v) => setData('es_menor_edad', v === 'si')}
+                                    nombre="¿Es menor de edad?"
+                                    columnas="grid-cols-2 sm:max-w-sm"
+                                    compacto
                                 />
-                            </Campo>
+                            </div>
 
-                            <Campo
-                                etiqueta="RUT del apoderado"
-                                nombre="apoderado_rut"
-                                error={errors.apoderado_rut}
-                                requerido
-                            >
-                                <Texto
-                                    nombre="apoderado_rut"
-                                    valor={data.apoderado_rut}
-                                    alCambiar={(v) => setData('apoderado_rut', v)}
-                                    placeholder="12.345.678-9"
-                                />
-                            </Campo>
+                            {/* Al marcar «No», el servidor BORRA los datos del
+                                apoderado: dejarlos escondidos haría que, si se
+                                vuelve a marcar por error, aparecieran como si
+                                siguieran valiendo. */}
+                            {data.es_menor_edad ? (
+                                <>
+                                    <Campo etiqueta="Nombre del apoderado" nombre="apoderado_nombre" error={errors.apoderado_nombre} requerido>
+                                        <Texto {...texto('apoderado_nombre')} />
+                                    </Campo>
 
-                            <Campo
-                                etiqueta="Correo del apoderado"
-                                nombre="apoderado_email"
-                                error={errors.apoderado_email}
-                                requerido
-                                ayuda="Ahí se manda la confirmación de la inscripción."
-                            >
-                                <Texto
-                                    nombre="apoderado_email"
-                                    tipo="email"
-                                    valor={data.apoderado_email}
-                                    alCambiar={(v) => setData('apoderado_email', v)}
-                                />
-                            </Campo>
+                                    <Campo etiqueta="RUT del apoderado" nombre="apoderado_rut" error={errors.apoderado_rut} requerido>
+                                        <Texto
+                                            {...texto('apoderado_rut', {
+                                                alCambiar: (v) => setData('apoderado_rut', formatearRut(v)),
+                                                placeholder: '12.345.678-9',
+                                            })}
+                                        />
+                                        <AvisoDeRut rut={data.apoderado_rut} />
+                                    </Campo>
 
-                            <Campo
-                                etiqueta="Teléfono del apoderado"
-                                nombre="apoderado_telefono"
-                                error={errors.apoderado_telefono}
-                                requerido
-                            >
-                                <Texto
-                                    nombre="apoderado_telefono"
-                                    valor={data.apoderado_telefono}
-                                    alCambiar={(v) => setData('apoderado_telefono', v)}
-                                />
-                            </Campo>
+                                    <Campo
+                                        etiqueta="Correo del apoderado"
+                                        nombre="apoderado_email"
+                                        error={errors.apoderado_email}
+                                        requerido
+                                        ayuda="Ahí se manda la confirmación de la inscripción."
+                                    >
+                                        <Texto {...texto('apoderado_email', { tipo: 'email' })} />
+                                    </Campo>
 
-                            <Campo
-                                etiqueta="Parentesco"
-                                nombre="apoderado_parentesco"
-                                error={errors.apoderado_parentesco}
-                                requerido
-                            >
-                                <Texto
-                                    nombre="apoderado_parentesco"
-                                    valor={data.apoderado_parentesco}
-                                    alCambiar={(v) => setData('apoderado_parentesco', v)}
-                                    placeholder="Madre, padre, tutor…"
-                                />
-                            </Campo>
+                                    <Campo etiqueta="Teléfono del apoderado" nombre="apoderado_telefono" error={errors.apoderado_telefono} requerido>
+                                        <Texto {...texto('apoderado_telefono', { tipo: 'tel', inputMode: 'tel' })} />
+                                    </Campo>
 
-                            <Campo
-                                etiqueta="Autorización"
-                                nombre="consentimiento_apoderado"
-                                error={errors.consentimiento_apoderado}
-                                requerido
-                            >
-                                <label className="flex items-center gap-2 text-sm text-chalk">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.consentimiento_apoderado}
-                                        onChange={(e) =>
-                                            setData('consentimiento_apoderado', e.target.checked)
-                                        }
-                                        className="size-4 accent-[var(--color-volt)]"
-                                    />
-                                    El apoderado autorizó la inscripción
-                                </label>
-                            </Campo>
-                        </>
-                    ) : null}
-                </Grupo>
+                                    <Campo etiqueta="Parentesco" nombre="apoderado_parentesco" error={errors.apoderado_parentesco} requerido>
+                                        <Texto {...texto('apoderado_parentesco', { placeholder: 'Madre, padre, tutor…' })} />
+                                    </Campo>
 
-                <Grupo titulo="Observaciones">
-                    <Campo
-                        etiqueta="Notas"
-                        nombre="observaciones"
-                        error={errors.observaciones}
-                        ayuda="Lesiones, restricciones, lo que haga falta saber."
-                    >
-                        <Area
-                            nombre="observaciones"
-                            valor={data.observaciones}
-                            alCambiar={(v) => setData('observaciones', v)}
-                        />
-                    </Campo>
-                </Grupo>
+                                    <Campo etiqueta="Autorización" nombre="consentimiento_apoderado" error={errors.consentimiento_apoderado} requerido>
+                                        <label className="flex items-center gap-2 text-sm text-chalk">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.consentimiento_apoderado}
+                                                onChange={(e) => setData('consentimiento_apoderado', e.target.checked)}
+                                                className="size-4 accent-[var(--color-volt)]"
+                                            />
+                                            El apoderado autorizó la inscripción
+                                        </label>
+                                    </Campo>
+                                </>
+                            ) : null}
+                        </Grupo>
+                    </div>
+                </div>
 
-                <div className="flex items-center gap-3">
+                {/* Pegada abajo: en una ficha larga, «Guardar» no se pierde al bajar. */}
+                <div className="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface/95 px-4 py-3 backdrop-blur">
                     <button
                         type="submit"
-                        disabled={processing}
-                        className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
+                        disabled={processing || ! isDirty}
+                        className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                     >
                         {processing ? 'Guardando…' : 'Guardar cambios'}
                     </button>
 
-                    <Link
-                        href={`/panel/clientes/${cliente.uuid}`}
-                        className="apoyo text-fog hover:text-chalk"
-                    >
+                    <Link href={`/panel/clientes/${cliente.uuid}`} className="text-sm text-fog hover:text-chalk">
                         Cancelar
                     </Link>
+
+                    <span className="apoyo ml-auto text-fog">{isDirty ? 'Hay cambios sin guardar.' : 'Sin cambios.'}</span>
                 </div>
             </form>
         </>

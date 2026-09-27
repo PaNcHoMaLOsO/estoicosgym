@@ -72,11 +72,11 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
 
     return (
         <>
-            <Head title="Clientes" />
+            <Head title="Socios" />
 
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-lg font-semibold text-chalk">{filtros.bajas ? 'Dados de baja' : 'Clientes'}</h1>
+                    <h1 className="text-lg font-semibold text-chalk">{filtros.bajas ? 'Dados de baja' : 'Socios'}</h1>
                     <p className="apoyo text-fog">Haz clic en un socio para abrir su ficha</p>
                 </div>
 
@@ -143,7 +143,7 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
                           ? 'No hay ningún socio dado de baja.'
                           : filtros.filtro
                             ? 'No hay socios en este grupo.'
-                            : 'Todavía no hay clientes registrados.'
+                            : 'Todavía no hay socios registrados.'
                 }
             >
                 {clientes.data.map((cliente) => (

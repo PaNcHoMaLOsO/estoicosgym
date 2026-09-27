@@ -97,6 +97,8 @@ class InscripcionCrearController extends Controller
         // Validar PRIMERO: si se reservara el turno antes, un formulario
         // rechazado lo dejaría pillado y al corregirlo no se podría reenviar.
         $resultado = $registro->validar($request);
+        // El celular, si no tenía y se lo pidieron ahora.
+        $celular = \App\Support\CelularDelSocio::validar($request);
 
         if (! $this->validateFormToken($request, 'inscripcion_create')) {
             return back()->with('error', 'Esta inscripción ya se registró. Búscala en el listado antes de repetirla.');
@@ -112,6 +114,7 @@ class InscripcionCrearController extends Controller
         }
 
         $socio = $resultado['cliente'];
+        \App\Support\CelularDelSocio::anotar($socio, $celular);
         $nombre = trim("{$socio->nombres} {$socio->apellido_paterno}");
 
         // El mensaje NO concuerda en genero con el nombre: la ficha del socio

@@ -182,7 +182,7 @@ export default function Duplicados({ grupos, enfocar, puedeJuntar }) {
             <header className="mb-6">
                 <Link href="/panel/clientes" className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk">
                     <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                    Clientes
+                    Socios
                 </Link>
                 <h1 className="mt-1 text-xl font-semibold text-chalk">Posibles duplicados</h1>
                 <p className="mt-1 text-sm text-fog">

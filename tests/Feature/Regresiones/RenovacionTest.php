@@ -337,4 +337,41 @@ class RenovacionTest extends CasoConCatalogos
         $this->assertSame((string) $vencida->uuid, (string) $props['sinRenovar'][0]['uuid']);
         $this->assertSame(5, $props['sinRenovar'][0]['dias']);
     }
+
+    /**
+     * EL CELULAR SE PIDE CUANDO VUELVE. Casi ningún socio de las planillas
+     * tenía: al renovar se escribe y queda en su ficha.
+     */
+    public function test_al_renovar_se_anota_el_celular_que_faltaba(): void
+    {
+        $anterior = $this->porVencer();
+        $anterior->cliente->update(['celular' => null]);
+
+        $this->renovar($anterior, ['celular_socio' => '+56 9 8765 4321'])->assertSessionHasNoErrors();
+
+        $this->assertNotNull($anterior->cliente->fresh()->celular);
+        $this->assertStringContainsString('8765', $anterior->cliente->fresh()->celular);
+    }
+
+    public function test_el_celular_que_ya_tenia_no_se_pisa(): void
+    {
+        $anterior = $this->porVencer();
+        $anterior->cliente->update(['celular' => '+56 9 1111 2222']);
+
+        $this->renovar($anterior, ['celular_socio' => '+56 9 8765 4321'])->assertSessionHasNoErrors();
+
+        $this->assertStringContainsString('1111', $anterior->cliente->fresh()->celular);
+    }
+
+    /** Solo el prefijo es no haberlo escrito; un número mal escrito se rechaza. */
+    public function test_el_celular_vacio_se_ignora_y_el_malo_se_rechaza(): void
+    {
+        $anterior = $this->porVencer();
+        $anterior->cliente->update(['celular' => null]);
+
+        $this->renovar($anterior, ['celular_socio' => '+56 9 12'])->assertSessionHasErrors('celular_socio');
+
+        $this->renovar($anterior, ['celular_socio' => '+56 9 '])->assertSessionHasNoErrors();
+        $this->assertNull($anterior->cliente->fresh()->celular);
+    }
 }

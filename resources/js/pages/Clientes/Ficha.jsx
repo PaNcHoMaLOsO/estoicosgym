@@ -652,7 +652,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                     className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
                 >
                     <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                    Clientes
+                    Socios
                 </Link>
 
                 <div className="mt-1 flex flex-wrap items-start justify-between gap-3">

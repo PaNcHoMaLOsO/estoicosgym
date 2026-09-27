@@ -1,3 +1,5 @@
+import PedirCelular from '@/components/PedirCelular';
+import { PREFIJO } from '@/lib/socio';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
@@ -82,6 +84,8 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         volver: volverA,
         form_submit_token: formToken,
         id_cliente: preseleccionado?.id ?? '',
+        // Solo se manda si el socio elegido no tiene: ver PedirCelular.
+        celular_socio: PREFIJO,
         id_membresia: '',
         id_convenio: '',
         id_motivo_descuento: '',
@@ -321,6 +325,10 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                     forma de pago se preguntan sobre alguien concreto. */}
                 {socio ? (
                     <>
+                        {socio.celular ? null : (
+                            <PedirCelular valor={data.celular_socio} alCambiar={(v) => setData('celular_socio', v)} error={errors.celular_socio} />
+                        )}
+
                         <Grupo titulo="¿Qué plan?">
                             <Campo
                                 etiqueta="Plan"

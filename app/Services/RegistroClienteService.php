@@ -323,7 +323,7 @@ class RegistroClienteService
             ]);
 
             if ($datos['flujo'] === 'solo_cliente') {
-                return ['cliente' => $cliente, 'mensaje' => 'Cliente registrado exitosamente.'];
+                return ['cliente' => $cliente, 'mensaje' => 'Socio registrado.'];
             }
 
             $inscripcion = $this->crearInscripcion($cliente, $datos);
@@ -331,7 +331,7 @@ class RegistroClienteService
             if ($datos['flujo'] === 'con_membresia') {
                 return [
                     'cliente' => $cliente,
-                    'mensaje' => 'Cliente y membresía registrados. Pago pendiente.',
+                    'mensaje' => 'Socio y membresía registrados. Pago pendiente.',
                 ];
             }
 
@@ -395,7 +395,10 @@ class RegistroClienteService
             'nombres' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El nombre')],
             'apellido_paterno' => ['required', 'string', 'max:50', ...$this->reglasDeNombre('El apellido')],
             'apellido_materno' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/'],
-            'celular' => ['required', 'string', 'regex:' . self::TELEFONO],
+            // Obligatorio al dar de alta. Al editar, solo si ya tenía: los socios
+            // de las planillas casi nunca traían, y sin esto no se les podía
+            // corregir ni el nombre sin inventar un número.
+            'celular' => [$actual && blank($actual->celular) ? 'nullable' : 'required', 'string', 'regex:' . self::TELEFONO],
             // El correo NO es obligatorio: hay socios que no tienen o no lo
             // quieren dar, y el celular ya sirve para ubicarlos.
             'email' => [
@@ -409,7 +412,7 @@ class RegistroClienteService
                         ->exists();
 
                     if ($existe) {
-                        $fail('Este correo ya está registrado en otro cliente.');
+                        $fail('Este correo ya está registrado en otro socio.');
                     }
                 },
             ],
@@ -466,12 +469,12 @@ class RegistroClienteService
             'nombres.regex' => 'El nombre solo debe contener letras y espacios.',
             'apellido_paterno.regex' => 'El apellido solo debe contener letras y espacios.',
             'apellido_materno.regex' => 'El apellido materno solo debe contener letras y espacios.',
-            'fecha_nacimiento.before_or_equal' => 'El cliente debe tener al menos 14 años.',
+            'fecha_nacimiento.before_or_equal' => 'El socio debe tener al menos 14 años.',
             'fecha_nacimiento.after_or_equal' => 'La fecha de nacimiento no es válida.',
             'celular.regex' => 'Celular no válido. Uno chileno es +56 9 1234 5678; uno extranjero, con su código de país.',
             'telefono_emergencia.regex' => 'Teléfono no válido. Uno chileno es +56 9 1234 5678; uno extranjero, con su código de país.',
             'run_pasaporte.regex' => 'El pasaporte lleva solo letras y números.',
-            'email.unique' => 'Este correo ya está registrado en otro cliente.',
+            'email.unique' => 'Este correo ya está registrado en otro socio.',
         ];
     }
 

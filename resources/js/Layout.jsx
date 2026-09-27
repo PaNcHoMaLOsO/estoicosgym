@@ -65,7 +65,7 @@ const GRUPOS = [
         // La persona y su plan: lo que se abre con el socio delante.
         titulo: 'Socios',
         secciones: [
-            { href: '/panel/clientes', etiqueta: 'Clientes', Icono: UsersIcon, permiso: 'clientes.ver' },
+            { href: '/panel/clientes', etiqueta: 'Socios', Icono: UsersIcon, permiso: 'clientes.ver' },
             { href: '/panel/inscripciones', etiqueta: 'Inscripciones', Icono: ClipboardListIcon, permiso: 'inscripciones.ver' },
             { href: '/panel/pagos', etiqueta: 'Pagos', Icono: CreditCardIcon, permiso: 'pagos.ver' },
         ],

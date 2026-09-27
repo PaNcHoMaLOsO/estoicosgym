@@ -62,6 +62,8 @@ class InscripcionRenovarController extends Controller
                 'uuid' => $inscripcion->uuid,
                 'socio' => trim("{$socio->nombres} {$socio->apellido_paterno} {$socio->apellido_materno}"),
                 'rut' => $socio->run_pasaporte,
+                // Sin celular, la pantalla lo pide: es cuando está delante.
+                'celular' => $socio->celular,
                 'plan' => $inscripcion->membresia?->nombre,
                 'id_membresia' => $inscripcion->id_membresia,
                 'id_convenio' => $inscripcion->id_convenio,
@@ -99,6 +101,8 @@ class InscripcionRenovarController extends Controller
         // Validar PRIMERO: reservando el turno antes, un formulario rechazado lo
         // dejaria pillado y al corregirlo no se podria reenviar.
         $resultado = $registro->validarRenovacion($request, $inscripcion);
+        // El celular, si no tenía y se lo pidieron ahora.
+        $celular = \App\Support\CelularDelSocio::validar($request);
 
         if (! $this->validateFormToken($request, 'inscripcion_renovar')) {
             return back()->with('error', 'Esta renovación ya se registró. Búscala en el listado antes de repetirla.');
@@ -112,6 +116,8 @@ class InscripcionRenovarController extends Controller
 
             return back()->withInput()->with('error', 'No se pudo renovar. Inténtalo nuevamente.');
         }
+
+        \App\Support\CelularDelSocio::anotar($inscripcion->cliente, $celular);
 
         return redirect()->to($this->volverA($request, 'panel.inscripciones.show', $nueva->uuid))->with(
             'success',
