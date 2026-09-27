@@ -79,6 +79,16 @@ class RevisaElDia
                 // mañana se intenta otra vez.
                 Log::error('La revisión del día falló: ' . $e->getMessage());
             }
+
+            // El respaldo del día, aparte: si falla, la revisión ya quedó
+            // hecha, y el motivo va al registro de fallas.
+            if (Programador::ultimaVez('respaldo')?->toDateString() !== $hoy) {
+                try {
+                    Artisan::call('base:respaldar');
+                } catch (\Throwable $e) {
+                    Log::error('El respaldo del día falló: ' . $e->getMessage());
+                }
+            }
         });
     }
 }

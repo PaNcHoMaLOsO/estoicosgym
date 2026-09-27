@@ -18,6 +18,10 @@ equipo PostgreSQL va en Docker; en el servidor, el que tenga instalado.
 
 ### Arrancarlo
 
+Doble clic en **`Arrancar PRO GYM.bat`**, en la carpeta del proyecto: abre
+Docker (y lo destraba si se quedó pegado), la base, el servidor y el panel.
+A mano:
+
 ```bash
 C:/php84/php.exe artisan serve --host=127.0.0.1 --port=8000
 ```
@@ -57,6 +61,20 @@ El puerto de la base queda solo para este equipo (`127.0.0.1:5432`): con
 [MODULOS.md](MODULOS.md#datos-de-las-planillas)).
 
 ### Respaldos
+
+**Se hacen solos, uno por día** (`base:respaldar`): de madrugada con el
+programador o, sin él, con la revisión del día. Quedan los últimos 14 en
+`storage/app/private/respaldos/diarios/`, comprimidos. En este equipo
+`pg_dump` vive dentro del contenedor: `RESPALDO_CONTENEDOR=estoicosgym-pg` en
+el `.env`. En el servidor esa línea va vacía y usa el `pg_dump` instalado.
+
+Para volver a uno:
+
+```bash
+gunzip -c respaldo-2026-09-27-033000.sql.gz | docker exec -i estoicosgym-pg psql -U estoicos dbestoicos
+```
+
+A mano, como siempre:
 
 ```bash
 docker exec estoicosgym-pg pg_dump -U estoicos dbestoicos > respaldo.sql

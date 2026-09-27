@@ -97,3 +97,10 @@ Schedule::command('notificaciones:enviar --reintentar')
     ->onFailure(function () {
         Log::error('❌ Error al reintentar notificaciones');
     });
+
+// El respaldo completo de la base, de madrugada: se guardan los últimos 14.
+// Sin programador lo hace la revisión del día (RevisaElDia).
+Schedule::command('base:respaldar')
+    ->dailyAt('03:30')
+    ->withoutOverlapping()
+    ->name('respaldo-de-la-base');
