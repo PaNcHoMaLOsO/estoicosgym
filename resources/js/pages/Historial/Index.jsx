@@ -1,4 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+
+import Buscador from '@/components/Buscador';
 import { ArrowRightIcon, PencilIcon, RepeatIcon } from 'lucide-react';
 
 /**
@@ -28,19 +30,49 @@ const CLASES = {
     traspaso: { Icono: RepeatIcon, color: 'text-volt' },
 };
 
-export default function Index({ movimientos }) {
+export default function Index({ movimientos, filtros = {}, hayMas = false, tipos = [] }) {
+    const conFiltros = (cambios) => {
+        const q = { ...(filtros.buscar ? { buscar: filtros.buscar } : {}), ...(filtros.tipo ? { tipo: filtros.tipo } : {}), ...cambios };
+
+        return Object.fromEntries(Object.entries(q).filter(([, v]) => v !== '' && v !== null && v !== undefined));
+    };
+    const filtrando = Boolean(filtros.buscar || filtros.tipo);
+
     return (
         <>
             <Head title="Historial" />
 
-            <header className="mb-5">
+            <header className="mb-4">
                 <h1 className="text-lg font-semibold text-chalk">Historial</h1>
-                <p className="apoyo text-fog">Los últimos 100 movimientos del sistema</p>
+                <p className="apoyo text-fog">Qué pasó con cada membresía, cuándo y quién lo hizo</p>
             </header>
+
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+                <Buscador
+                    ruta="/panel/historial"
+                    valor={filtros.buscar ?? ''}
+                    etiqueta="Buscar por socio o RUT"
+                    extra={filtros.tipo ? { tipo: filtros.tipo } : {}}
+                />
+
+                <select
+                    aria-label="Tipo de movimiento"
+                    value={filtros.tipo ?? ''}
+                    onChange={(e) => router.get('/panel/historial', conFiltros({ tipo: e.target.value }), { preserveState: true, preserveScroll: true, replace: true })}
+                    className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+                >
+                    <option value="">Todos los movimientos</option>
+                    {tipos.map((t) => (
+                        <option key={t.valor} value={t.valor}>
+                            {t.etiqueta}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
             {movimientos.length === 0 ? (
                 <div className="rounded-panel border border-line bg-surface px-3 py-8 text-center text-fog">
-                    Todavía no hay movimientos registrados.
+                    {filtrando ? 'Nada con esa búsqueda.' : 'Todavía no hay movimientos registrados.'}
                 </div>
             ) : (
                 <ol className="overflow-hidden rounded-panel border border-line bg-surface">
@@ -106,6 +138,20 @@ export default function Index({ movimientos }) {
                     })}
                 </ol>
             )}
+
+            {hayMas ? (
+                <div className="mt-3 text-center">
+                    <Link
+                        href="/panel/historial"
+                        data={conFiltros({ cuantos: (filtros.cuantos ?? 100) * 2 })}
+                        preserveScroll
+                        preserveState
+                        className="inline-flex rounded-control border border-line px-4 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        Ver más antiguos
+                    </Link>
+                </div>
+            ) : null}
         </>
     );
 }

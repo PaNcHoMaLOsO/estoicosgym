@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Support\BusquedaDeSocio;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Estado;
 use App\Models\HistorialCambio;
@@ -39,16 +41,31 @@ class HistorialController extends Controller
         'vencimiento' => 'Vencimiento',
     ];
 
-    public function index()
+    /**
+     * BUSCAR, FILTRAR Y VER MÁS. Eran los últimos 100 movimientos sin más:
+     * para saber cuándo se pausó la membresía de alguien había que bajar la
+     * lista a ojo, y lo que pasó antes de esos 100 no se veía nunca.
+     */
+    public function index(Request $request)
     {
+        $buscar = trim((string) $request->query('buscar', ''));
+        $tipo = (string) $request->query('tipo', '');
+        $tipo = $tipo === 'traspaso' || isset(self::COMO_SE_LLAMA[$tipo]) ? $tipo : '';
+        // Cuántos se ven: 100, y «Ver más» los va doblando hasta 1.600.
+        $cuantos = min(1600, max(100, (int) $request->query('cuantos', 100)));
+        $delSocio = fn ($q) => BusquedaDeSocio::aplicar($q, $buscar);
+
         // Los codigos de estado se resuelven a nombre AQUI y de una sola vez:
         // la fila guarda el codigo (100, 101…) y en pantalla eso no dice nada.
         $estados = Estado::pluck('nombre', 'codigo');
 
         $cambios = HistorialCambio::query()
             ->with(['cliente', 'usuario'])
+            ->when($buscar !== '', fn ($q) => $q->whereHas('cliente', $delSocio))
+            ->when($tipo === 'traspaso', fn ($q) => $q->whereRaw('1 = 0'))
+            ->when($tipo !== '' && $tipo !== 'traspaso', fn ($q) => $q->where('tipo_cambio', $tipo))
             ->orderByDesc('fecha_cambio')
-            ->limit(100)
+            ->limit($cuantos + 1)
             ->get()
             ->map(fn (HistorialCambio $c) => [
                 'id' => "cambio-{$c->id}",
@@ -70,8 +87,12 @@ class HistorialController extends Controller
 
         $traspasos = HistorialTraspaso::query()
             ->with(['clienteOrigen', 'clienteDestino', 'usuario'])
+            ->when($buscar !== '', fn ($q) => $q->where(fn ($q) => $q
+                ->whereHas('clienteOrigen', $delSocio)
+                ->orWhereHas('clienteDestino', $delSocio)))
+            ->when($tipo !== '' && $tipo !== 'traspaso', fn ($q) => $q->whereRaw('1 = 0'))
             ->orderByDesc('fecha_traspaso')
-            ->limit(100)
+            ->limit($cuantos + 1)
             ->get()
             ->map(fn (HistorialTraspaso $t) => [
                 'id' => "traspaso-{$t->id}",
@@ -95,17 +116,29 @@ class HistorialController extends Controller
 
         // Se ordena despues de unir: cada consulta viene ordenada por su cuenta
         // y concatenarlas sin mas dejaria los traspasos todos al final.
-        $movimientos = $cambios
-            ->concat($traspasos)
-            ->sortByDesc('cuando')
-            ->take(100)
+        $todos = $cambios->concat($traspasos)->sortByDesc('cuando');
+        $hayMas = $todos->count() > $cuantos;
+
+        $movimientos = $todos
+            ->take($cuantos)
             ->map(fn (array $m) => [
                 ...$m,
                 'cuando' => $m['cuando']?->format('d/m/Y H:i'),
             ])
             ->values();
 
-        return Inertia::render('Historial/Index', ['movimientos' => $movimientos]);
+        return Inertia::render('Historial/Index', [
+            'movimientos' => $movimientos,
+            'filtros' => ['buscar' => $buscar, 'tipo' => $tipo, 'cuantos' => $cuantos],
+            'hayMas' => $hayMas,
+            'tipos' => collect(self::COMO_SE_LLAMA)
+                ->reject(fn ($nombre, $clave) => $clave === 'traspaso')
+                ->map(fn ($nombre, $clave) => ['valor' => $clave, 'etiqueta' => $nombre])
+                ->values()
+                ->push(['valor' => 'traspaso', 'etiqueta' => 'Traspaso'])
+                ->sortBy('etiqueta')
+                ->values(),
+        ]);
     }
 
     /**

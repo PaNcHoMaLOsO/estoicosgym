@@ -89,6 +89,17 @@ export default function Papelera({ grupos }) {
 
     const total = grupos.reduce((t, g) => t + g.cuantos, 0);
 
+    // Buscar dentro de lo que se ve: con cincuenta fichas de socios juntadas
+    // o borradas, encontrar una a ojo no se puede.
+    const [buscar, setBuscar] = useState('');
+    const sinTildes = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const q = sinTildes(buscar.trim());
+    const visibles = q
+        ? grupos
+              .map((g) => ({ ...g, filas: g.filas.filter((f) => sinTildes(`${f.que} ${f.detalle ?? ''}`).includes(q)) }))
+              .filter((g) => g.filas.length > 0)
+        : grupos;
+
     return (
         <>
             <Head title="Papelera" />
@@ -102,6 +113,21 @@ export default function Papelera({ grupos }) {
                 </p>
             </header>
 
+            {total > 5 ? (
+                <input
+                    type="search"
+                    value={buscar}
+                    onChange={(e) => setBuscar(e.target.value)}
+                    placeholder="Buscar por nombre, RUT o plan"
+                    aria-label="Buscar en la papelera"
+                    className="mb-4 w-full max-w-sm rounded-control border border-line bg-surface px-3 py-1.5 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
+                />
+            ) : null}
+
+            {q && visibles.length === 0 ? (
+                <p className="mb-4 text-sm text-fog">Nada con «{buscar}» en la papelera.</p>
+            ) : null}
+
             {grupos.length === 0 ? (
                 <div className="rounded-panel border border-dashed border-line px-4 py-12 text-center">
                     <p className="text-sm text-fog">
@@ -110,7 +136,7 @@ export default function Papelera({ grupos }) {
                 </div>
             ) : (
                 <div className="space-y-5">
-                    {grupos.map((grupo) => (
+                    {visibles.map((grupo) => (
                         <section key={grupo.clave}>
                             <h2 className="rotulo mb-2">
                                 {grupo.titulo} ({grupo.cuantos})
