@@ -3,7 +3,9 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
+import { Campo, Texto } from '@/components/Campo';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
+import { formatearRut } from '@/lib/socio';
 import { Cifra, pesos } from '@/components/Tablero';
 import { Reservado } from '@/Privado';
 
@@ -24,6 +26,13 @@ function otroMes(periodo, cuantos) {
     return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/**
+ * Un taller nuevo: a quién se le factura, qué es y cuánto vale la hora.
+ *
+ * Cada error va junto a su campo (antes se juntaban abajo y el del RUT no se
+ * mostraba nunca), el RUT se escribe con puntos y guion solo, y la hora con
+ * $ y puntos de miles.
+ */
 function NuevoTaller({ instituciones, alCerrar }) {
     const { data, setData, post, processing, errors } = useForm({
         institucion_uuid: '',
@@ -34,8 +43,7 @@ function NuevoTaller({ instituciones, alCerrar }) {
         precio_hora: '',
     });
 
-    const campo =
-        'w-full rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none';
+    const nueva = data.institucion_uuid === '';
 
     return (
         <form
@@ -43,20 +51,20 @@ function NuevoTaller({ instituciones, alCerrar }) {
                 e.preventDefault();
                 post('/panel/talleres', { onSuccess: alCerrar });
             }}
-            className="mb-4 space-y-3 rounded-panel border border-line bg-surface p-4"
+            className="mb-4 space-y-4 rounded-panel border border-line bg-surface p-4"
         >
-            <h2 className="rotulo">Nuevo taller o arriendo</h2>
+            <h2 className="text-sm font-semibold text-chalk">Nuevo taller o arriendo</h2>
 
             <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                    <span className="rotulo">A quién se le factura</span>
-                    {/* Se elige una institución que ya esté o se escribe una
-                        nueva: pedir primero «crear institución» y después
-                        «crear taller» son dos pantallas para una sola cosa. */}
+                {/* Se elige una institución que ya esté o se escribe una nueva:
+                    «crear institución» y después «crear taller» eran dos
+                    pantallas para una sola cosa. */}
+                <Campo etiqueta="A quién se le factura" nombre="institucion_uuid" error={errors.institucion_uuid}>
                     <select
+                        id="institucion_uuid"
                         value={data.institucion_uuid}
                         onChange={(e) => setData('institucion_uuid', e.target.value)}
-                        className={`${campo} mt-1`}
+                        className="w-full rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
                     >
                         <option value="">Una nueva…</option>
                         {instituciones.map((i) => (
@@ -66,72 +74,66 @@ function NuevoTaller({ instituciones, alCerrar }) {
                             </option>
                         ))}
                     </select>
-                </label>
+                </Campo>
 
-                {data.institucion_uuid === '' ? (
-                    <div className="grid grid-cols-[1fr_9rem] gap-2">
-                        <label className="block">
-                            <span className="rotulo">Nombre</span>
-                            <input
-                                type="text"
-                                value={data.institucion_nombre}
-                                onChange={(e) => setData('institucion_nombre', e.target.value)}
+                {nueva ? (
+                    <div className="grid grid-cols-[1fr_10rem] gap-2">
+                        <Campo etiqueta="Nombre" nombre="institucion_nombre" error={errors.institucion_nombre} requerido>
+                            <Texto
+                                nombre="institucion_nombre"
+                                valor={data.institucion_nombre}
+                                alCambiar={(v) => setData('institucion_nombre', v)}
+                                error={errors.institucion_nombre}
                                 placeholder="Corporación Educacional…"
-                                className={`${campo} mt-1`}
+                                autoFocus
                             />
-                        </label>
-                        <label className="block">
-                            <span className="rotulo">RUT</span>
-                            <input
-                                type="text"
-                                value={data.institucion_rut}
-                                onChange={(e) => setData('institucion_rut', e.target.value)}
+                        </Campo>
+                        <Campo etiqueta="RUT" nombre="institucion_rut" error={errors.institucion_rut}>
+                            <Texto
+                                nombre="institucion_rut"
+                                valor={data.institucion_rut}
+                                alCambiar={(v) => setData('institucion_rut', formatearRut(v))}
+                                error={errors.institucion_rut}
                                 placeholder="65.154.436-K"
-                                className={`${campo} mt-1`}
                             />
-                        </label>
+                        </Campo>
                     </div>
                 ) : null}
             </div>
 
-            {errors.institucion_nombre ? <p className="apoyo text-danger">{errors.institucion_nombre}</p> : null}
-
-            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_10rem]">
-                <label className="block">
-                    <span className="rotulo">Qué es</span>
-                    <input
-                        type="text"
-                        value={data.nombre}
-                        onChange={(e) => setData('nombre', e.target.value)}
-                        placeholder="Clases grupales del colegio"
-                        className={`${campo} mt-1`}
-                    />
-                </label>
-                <label className="block">
-                    <span className="rotulo">Cómo va en la factura</span>
-                    <input
-                        type="text"
-                        value={data.descripcion_factura}
-                        onChange={(e) => setData('descripcion_factura', e.target.value)}
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_11rem]">
+                <Campo etiqueta="Qué es" nombre="nombre" error={errors.nombre} requerido>
+                    <Texto nombre="nombre" valor={data.nombre} alCambiar={(v) => setData('nombre', v)} error={errors.nombre} placeholder="Clases grupales del colegio" />
+                </Campo>
+                <Campo etiqueta="Cómo va en la factura" nombre="descripcion_factura" error={errors.descripcion_factura}>
+                    <Texto
+                        nombre="descripcion_factura"
+                        valor={data.descripcion_factura}
+                        alCambiar={(v) => setData('descripcion_factura', v)}
+                        error={errors.descripcion_factura}
                         placeholder="Uso instalaciones para clase grupal"
-                        className={`${campo} mt-1`}
                     />
-                </label>
-                <label className="block">
-                    <span className="rotulo">La hora (con IVA)</span>
-                    <input
-                        type="number"
-                        min="1"
-                        value={data.precio_hora}
-                        onChange={(e) => setData('precio_hora', e.target.value)}
-                        placeholder="30000"
-                        className={`${campo} mt-1 tabular-nums`}
-                    />
-                </label>
+                </Campo>
+                <Campo etiqueta="La hora, con IVA" nombre="precio_hora" error={errors.precio_hora} requerido>
+                    <div className="flex">
+                        <span className="flex items-center rounded-l-control border border-r-0 border-line bg-surface-2 px-2.5 text-sm text-fog">$</span>
+                        <input
+                            id="precio_hora"
+                            inputMode="numeric"
+                            value={data.precio_hora === '' ? '' : Number(data.precio_hora).toLocaleString('es-CL')}
+                            onChange={(e) => {
+                                const digitos = e.target.value.replace(/\D/g, '');
+                                setData('precio_hora', digitos === '' ? '' : Number(digitos));
+                            }}
+                            placeholder="30.000"
+                            aria-invalid={errors.precio_hora ? 'true' : undefined}
+                            className={`w-full min-w-0 rounded-r-control border bg-surface px-2.5 py-1.5 text-sm tabular-nums text-chalk placeholder:text-fog focus:outline-none ${
+                                errors.precio_hora ? 'border-danger' : 'border-line focus:border-line-strong'
+                            }`}
+                        />
+                    </div>
+                </Campo>
             </div>
-
-            {errors.nombre ? <p className="apoyo text-danger">{errors.nombre}</p> : null}
-            {errors.precio_hora ? <p className="apoyo text-danger">{errors.precio_hora}</p> : null}
 
             <div className="flex items-center gap-3">
                 <button
@@ -139,9 +141,9 @@ function NuevoTaller({ instituciones, alCerrar }) {
                     disabled={processing}
                     className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                    Crear
+                    {processing ? 'Creando…' : 'Crear'}
                 </button>
-                <button type="button" onClick={alCerrar} className="apoyo text-fog transition-colors hover:text-chalk">
+                <button type="button" onClick={alCerrar} className="text-sm text-fog transition-colors hover:text-chalk">
                     Cancelar
                 </button>
             </div>

@@ -1,7 +1,9 @@
 import { useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
+import { Botones } from '@/components/Cobro';
+import { PREFIJO, soloPrefijo } from '@/lib/socio';
 import {
     Dialog,
     DialogContent,
@@ -35,65 +37,53 @@ import {
  * guardar.
  */
 export const CAMPOS_PLAN = [
-    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Mensual, Trimestral…' },
+    { seccion: 'El plan', nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'Mensual, Trimestral…' },
+    { seccion: 'El plan', nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'area', max: 500, ayuda: 'Opcional. Qué incluye.' },
+
+    /* DURA MESES O DÍAS, una de las dos. Eran dos casillas obligatorias con la
+       regla «si pones días, mandan los días» escrita abajo: se elige cuál y se
+       escribe solo esa. La otra se manda en 0. */
     {
-        nombre: 'descripcion',
-        etiqueta: 'Descripción',
-        tipo: 'area',
-        ayuda: 'Opcional. Qué incluye el plan.',
+        seccion: 'Duración',
+        nombre: 'unidad',
+        etiqueta: 'Se cuenta en',
+        tipo: 'opciones',
+        botones: true,
+        columnas: 'grid-cols-2',
+        opciones: [
+            { valor: 'meses', etiqueta: 'Meses' },
+            { valor: 'dias', etiqueta: 'Días' },
+        ],
+        alEnviar: (d) => (d.unidad === 'dias' ? { ...d, duracion_meses: 0 } : { ...d, duracion_dias: 0 }),
     },
+    { seccion: 'Duración', nombre: 'duracion_meses', etiqueta: 'Meses', tipo: 'number', min: 1, requerido: true, mostrarSi: (d) => d.unidad !== 'dias' },
+    { seccion: 'Duración', nombre: 'duracion_dias', etiqueta: 'Días', tipo: 'number', min: 1, requerido: true, mostrarSi: (d) => d.unidad === 'dias' },
     {
-        nombre: 'duracion_meses',
-        etiqueta: 'Dura (meses)',
-        tipo: 'number',
-        min: 0,
-        requerido: true,
-        ayuda: 'Pon los meses o los días, lo que corresponda. Si pones días, mandan los días.',
-    },
-    { nombre: 'duracion_dias', etiqueta: 'Dura (días)', tipo: 'number', min: 0, requerido: true },
-    {
+        seccion: 'Duración',
         nombre: 'dias_regalo',
         etiqueta: 'Días de regalo',
         tipo: 'number',
         min: 0,
-        ayuda: 'Los que se suman al vencimiento por pagar todo junto. El anual con 5 dura un año y cinco días. Cero si no se regala nada.',
+        ayuda: 'Se suman al vencimiento. 0 si no hay.',
     },
+    { seccion: 'Duración', nombre: 'max_pausas', etiqueta: 'Pausas permitidas', tipo: 'number', min: 0, requerido: true },
+
     {
-        nombre: 'max_pausas',
-        etiqueta: 'Pausas permitidas',
-        tipo: 'number',
-        min: 0,
-        requerido: true,
-        ayuda: 'Cuántas veces puede congelar la membresía.',
-    },
-    {
+        seccion: 'Precio',
         nombre: 'precio',
         etiqueta: 'Precio',
-        tipo: 'number',
-        min: 0,
+        tipo: 'dinero',
         requerido: true,
-        /* Un plan sin precio vigente no se puede vender: el alta de inscripcion
-           lo rechaza. Cambiarlo NO pisa el anterior, abre un tramo nuevo. */
-        ayuda: 'Al cambiarlo, lo que ya se cobró no se toca: queda como histórico.',
+        /* Cambiarlo NO pisa el anterior: abre un tramo nuevo. */
+        ayuda: 'Lo ya cobrado no cambia.',
     },
-    {
-        nombre: 'precio_convenio',
-        etiqueta: 'Precio con convenio',
-        tipo: 'number',
-        min: 0,
-        ayuda: 'Opcional. Lo que paga quien viene por un convenio. Tiene que ser menor que el normal.',
-    },
-    { nombre: 'activo', etiqueta: 'Disponibilidad', tipo: 'si-no', textoCasilla: 'Se puede vender' },
+    { seccion: 'Precio', nombre: 'precio_convenio', etiqueta: 'Con convenio', tipo: 'dinero', ayuda: 'Opcional. Menor que el normal.' },
+
+    { seccion: 'Dónde se ofrece', nombre: 'activo', etiqueta: 'Mesón', tipo: 'si-no', textoCasilla: 'Se puede vender' },
     /* Aparte de venderse: la Semana o la Quincena se venden en el mesón a un
        precio que se arregla con cada uno, y puesto en la web ese precio pasa
        a ser el de todos. */
-    {
-        nombre: 'en_la_web',
-        etiqueta: 'Página web',
-        tipo: 'si-no',
-        textoCasilla: 'Sale en la página de planes',
-        ayuda: 'Apágalo en los precios que se arreglan con cada persona: se siguen vendiendo en el mesón, pero no se anuncian.',
-    },
+    { seccion: 'Dónde se ofrece', nombre: 'en_la_web', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Sale en la página de planes' },
 ];
 
 export const TIPOS_CONVENIO = [
@@ -107,65 +97,61 @@ export const TIPOS_CONVENIO = [
 ];
 
 export const CAMPOS_CONVENIO = [
-    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'INACAP, Banco Santander…' },
-    { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'opciones', opciones: TIPOS_CONVENIO, requerido: true },
-    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'area' },
+    { seccion: 'El convenio', nombre: 'nombre', etiqueta: 'Nombre', requerido: true, ejemplo: 'INACAP, Banco Santander…' },
+    { seccion: 'El convenio', nombre: 'tipo', etiqueta: 'Tipo', tipo: 'opciones', botones: true, opciones: TIPOS_CONVENIO, requerido: true },
+    { seccion: 'El convenio', nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'area', max: 500 },
+
+    /*
+     * AVISO IMPORTANTE. La rebaja que se aplica al inscribir NO sale de aquí:
+     * sale del «precio con convenio» de cada plan. Esto deja por escrito lo
+     * acordado.
+     */
     {
+        seccion: 'Descuento acordado',
         nombre: 'descuento_porcentaje',
-        etiqueta: 'Descuento (%)',
+        etiqueta: 'Porcentaje',
         tipo: 'number',
         min: 0,
         max: 100,
-        /*
-         * AVISO IMPORTANTE. La rebaja que se aplica al inscribir NO sale de
-         * aqui: sale del «precio con convenio» que tenga cargado cada plan. Un
-         * plan sin ese precio no rebaja nada, se ponga aqui lo que se ponga.
-         */
-        ayuda: 'Informativo. La rebaja real sale del «precio con convenio» de cada plan.',
+        ayuda: 'Solo para dejarlo anotado: la rebaja real es el «precio con convenio» de cada plan.',
     },
+    { seccion: 'Descuento acordado', nombre: 'descuento_monto', etiqueta: 'O un monto fijo', tipo: 'dinero' },
+
+    { seccion: 'Contacto', nombre: 'contacto_nombre', etiqueta: 'Persona de contacto' },
+    { seccion: 'Contacto', nombre: 'contacto_telefono', etiqueta: 'Teléfono', tipo: 'tel', ejemplo: '+56 9 1234 5678' },
+    { seccion: 'Contacto', nombre: 'contacto_email', etiqueta: 'Correo', tipo: 'email' },
+
     {
-        nombre: 'descuento_monto',
-        etiqueta: 'Descuento fijo',
-        tipo: 'number',
-        min: 0,
-        ayuda: 'También informativo, para dejar por escrito lo acordado.',
-    },
-    { nombre: 'contacto_nombre', etiqueta: 'Persona de contacto' },
-    { nombre: 'contacto_telefono', etiqueta: 'Teléfono' },
-    { nombre: 'contacto_email', etiqueta: 'Correo', tipo: 'email' },
-    {
+        seccion: 'Canje',
         nombre: 'canje',
         etiqueta: 'Canje',
         tipo: 'si-no',
         textoCasilla: 'Entran sin pagar (por ejemplo, huéspedes de un hotel con tarjeta)',
-        ayuda: 'Sus entradas se anotan en Mesón → Canje, con nombre y n.º de tarjeta.',
+        ayuda: 'Sus entradas se anotan en Mesón → Canje.',
     },
+
+    { seccion: 'Página web', nombre: 'mostrar_en_web', etiqueta: 'Página web', tipo: 'si-no', textoCasilla: 'Sale en la sección de convenios' },
+    // Lo de la web, solo si sale en la web.
     {
-        nombre: 'mostrar_en_web',
-        etiqueta: 'Página web',
-        tipo: 'si-no',
-        textoCasilla: 'Mostrarlo en la sección de convenios de la web',
-    },
-    {
+        seccion: 'Página web',
         nombre: 'requisito_web',
         etiqueta: 'Quién accede',
         ejemplo: 'Estudiantes con credencial vigente',
-        ayuda: 'Se lee debajo del logo en la web.',
+        ayuda: 'Se lee debajo del logo.',
+        mostrarSi: (d) => Boolean(d.mostrar_en_web),
     },
     {
+        seccion: 'Página web',
         nombre: 'logo',
         etiqueta: 'Logo',
         tipo: 'imagen',
         actual: 'logo_url',
         quitar: 'quitar_logo',
-        ayuda: 'PNG, JPG o WEBP, hasta 2 MB. Mejor con fondo blanco o transparente.',
+        ayuda: 'PNG, JPG o WEBP. Mejor con fondo blanco o transparente.',
+        mostrarSi: (d) => Boolean(d.mostrar_en_web),
     },
-    {
-        nombre: 'activo',
-        etiqueta: 'Disponibilidad',
-        tipo: 'si-no',
-        textoCasilla: 'Se puede elegir al inscribir',
-    },
+
+    { seccion: 'Disponibilidad', nombre: 'activo', etiqueta: 'Al inscribir', tipo: 'si-no', textoCasilla: 'Se puede elegir' },
 ];
 
 /** Lo que hay que mandar para guardar un plan, a partir de su ficha o su fila. */
@@ -173,6 +159,8 @@ export function valoresDePlan(plan) {
     return {
         nombre: plan?.nombre ?? '',
         descripcion: plan?.descripcion ?? '',
+        // Meses o días: el que tenga. Un plan nuevo, en meses.
+        unidad: Number(plan?.duracion_dias ?? 0) > 0 ? 'dias' : 'meses',
         duracion_meses: plan?.duracion_meses ?? 1,
         duracion_dias: plan?.duracion_dias ?? 0,
         dias_regalo: plan?.dias_regalo ?? 0,
@@ -297,7 +285,129 @@ function CampoImagen({ campo, data, setData }) {
 }
 
 /** Los campos que caben en media fila cuando la ventana va en dos columnas. */
-const CORTOS = ['number', 'date', 'time', 'opciones', 'email', 'tel', 'password'];
+const CORTOS = ['number', 'date', 'time', 'opciones', 'email', 'tel', 'password', 'dinero', 'celular'];
+
+const miles = (valor) => (valor === '' || valor === null || valor === undefined ? '' : Number(valor).toLocaleString('es-CL'));
+
+/**
+ * El control de un campo según su tipo.
+ *
+ *  · area: texto largo; con `max`, un contador.
+ *  · si-no: casilla.  · imagen: CampoImagen.
+ *  · opciones: desplegable; con `botones: true`, botones (para pocas opciones).
+ *  · dinero: con $ y puntos de miles mientras se escribe; se guarda el número.
+ *  · celular: con el +56 9 puesto; el prefijo solo se manda vacío.
+ *  · lo demás: texto, número, correo…
+ */
+function Control({ campo, data, setData }) {
+    const valor = data[campo.nombre];
+
+    if (campo.tipo === 'area') {
+        return (
+            <>
+                <Area nombre={campo.nombre} valor={valor ?? ''} alCambiar={(v) => setData(campo.nombre, v)} filas={campo.filas ?? 2} maxLength={campo.max} />
+                {campo.max ? (
+                    <span className="apoyo -mt-0.5 self-end tabular-nums text-fog">
+                        {String(valor ?? '').length}/{campo.max}
+                    </span>
+                ) : null}
+            </>
+        );
+    }
+
+    if (campo.tipo === 'si-no') {
+        return (
+            <label className="flex items-center gap-2 text-sm text-chalk">
+                <input type="checkbox" checked={Boolean(valor)} onChange={(e) => setData(campo.nombre, e.target.checked)} className="size-4 accent-[var(--color-volt)]" />
+                {campo.textoCasilla}
+            </label>
+        );
+    }
+
+    if (campo.tipo === 'imagen') {
+        return <CampoImagen campo={campo} data={data} setData={setData} />;
+    }
+
+    if (campo.tipo === 'opciones' && campo.botones) {
+        return (
+            <Botones
+                opciones={campo.opciones}
+                valor={valor}
+                alElegir={(v) => setData(campo.nombre, v)}
+                nombre={campo.etiqueta}
+                columnas={campo.columnas ?? 'grid-cols-2 sm:grid-cols-3'}
+                compacto
+            />
+        );
+    }
+
+    if (campo.tipo === 'opciones') {
+        return (
+            <select
+                id={campo.nombre}
+                name={campo.nombre}
+                value={valor ?? ''}
+                onChange={(e) => setData(campo.nombre, e.target.value)}
+                className="w-full rounded-control border border-line bg-surface-2 px-2 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+            >
+                {campo.opciones.map((o) => (
+                    <option key={o.valor} value={o.valor}>
+                        {o.etiqueta}
+                    </option>
+                ))}
+            </select>
+        );
+    }
+
+    if (campo.tipo === 'dinero') {
+        return (
+            <div className="flex">
+                <span className="flex items-center rounded-l-control border border-r-0 border-line bg-surface-2 px-2.5 text-sm text-fog">$</span>
+                <input
+                    id={campo.nombre}
+                    name={campo.nombre}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={miles(valor)}
+                    onChange={(e) => {
+                        const digitos = e.target.value.replace(/\D/g, '');
+                        setData(campo.nombre, digitos === '' ? '' : Number(digitos));
+                    }}
+                    placeholder={campo.ejemplo ?? '0'}
+                    className="w-full min-w-0 rounded-r-control border border-line bg-surface px-2.5 py-1.5 text-sm tabular-nums text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
+                />
+            </div>
+        );
+    }
+
+    if (campo.tipo === 'celular') {
+        return (
+            <Texto
+                nombre={campo.nombre}
+                tipo="tel"
+                inputMode="tel"
+                valor={valor && String(valor).trim() !== '' ? valor : PREFIJO}
+                alCambiar={(v) => setData(campo.nombre, v)}
+                autoComplete="off"
+            />
+        );
+    }
+
+    return (
+        <Texto
+            nombre={campo.nombre}
+            tipo={campo.tipo ?? 'text'}
+            min={campo.min}
+            max={campo.max}
+            valor={valor ?? ''}
+            alCambiar={(v) => setData(campo.nombre, v)}
+            placeholder={campo.ejemplo}
+            // «new-password» en las contraseñas de una cuenta ajena: sin
+            // él, el navegador rellena la del administrador que tiene guardada.
+            autoComplete={campo.autocompletar}
+        />
+    );
+}
 
 export default function FormularioCatalogo({
     abierto,
@@ -326,6 +436,18 @@ export default function FormularioCatalogo({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [abierto, accion]);
 
+    // Lo que cada campo pide ajustar antes de enviar (el celular sin el
+    // prefijo solo, los meses en 0 si el plan dura días…).
+    const preparar = (datos) => campos.reduce((d, c) => {
+        let nuevo = c.alEnviar ? c.alEnviar(d) : d;
+
+        if (c.tipo === 'celular' && soloPrefijo(nuevo[c.nombre])) {
+            nuevo = { ...nuevo, [c.nombre]: '' };
+        }
+
+        return nuevo;
+    }, datos);
+
     function enviar(e) {
         e.preventDefault();
 
@@ -338,13 +460,13 @@ export default function FormularioCatalogo({
          * entiende y la ruta es la misma.
          */
         if (metodo === 'put' && conArchivo) {
-            transform((datos) => ({ ...datos, _method: 'put' }));
+            transform((datos) => ({ ...preparar(datos), _method: 'put' }));
             post(accion, opciones);
 
             return;
         }
 
-        transform((datos) => datos);
+        transform((datos) => preparar(datos));
         (metodo === 'put' ? put : post)(accion, opciones);
     }
 
@@ -363,65 +485,28 @@ export default function FormularioCatalogo({
                 </DialogHeader>
 
                 <form onSubmit={enviar} className={ancha ? 'grid gap-x-4 gap-y-3 sm:grid-cols-2' : 'space-y-3'}>
-                    {campos.map((campo) => (
-                        <div key={campo.nombre} className={ancha && ! CORTOS.includes(campo.tipo) ? 'sm:col-span-2' : ''}>
-                        <Campo
-                            etiqueta={campo.etiqueta}
-                            nombre={campo.nombre}
-                            error={errors[campo.nombre]}
-                            requerido={campo.requerido}
-                            ayuda={campo.ayuda}
-                        >
-                            {campo.tipo === 'area' ? (
-                                <Area
-                                    nombre={campo.nombre}
-                                    valor={data[campo.nombre] ?? ''}
-                                    alCambiar={(v) => setData(campo.nombre, v)}
-                                    filas={2}
-                                />
-                            ) : campo.tipo === 'si-no' ? (
-                                <label className="flex items-center gap-2 text-sm text-chalk">
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean(data[campo.nombre])}
-                                        onChange={(e) => setData(campo.nombre, e.target.checked)}
-                                        className="size-4 accent-[var(--color-volt)]"
-                                    />
-                                    {campo.textoCasilla}
-                                </label>
-                            ) : campo.tipo === 'imagen' ? (
-                                <CampoImagen campo={campo} data={data} setData={setData} />
-                            ) : campo.tipo === 'opciones' ? (
-                                <select
-                                    id={campo.nombre}
-                                    name={campo.nombre}
-                                    value={data[campo.nombre] ?? ''}
-                                    onChange={(e) => setData(campo.nombre, e.target.value)}
-                                    className="w-full rounded-control border border-line bg-surface-2 px-2 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
-                                >
-                                    {campo.opciones.map((o) => (
-                                        <option key={o.valor} value={o.valor}>
-                                            {o.etiqueta}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <Texto
-                                    nombre={campo.nombre}
-                                    tipo={campo.tipo ?? 'text'}
-                                    min={campo.min}
-                                    max={campo.max}
-                                    valor={data[campo.nombre] ?? ''}
-                                    alCambiar={(v) => setData(campo.nombre, v)}
-                                    placeholder={campo.ejemplo}
-                                    // «new-password» en las contraseñas de una cuenta ajena: sin
-                                    // él, el navegador rellena la del administrador que tiene guardada.
-                                    autoComplete={campo.autocompletar}
-                                />
-                            )}
-                        </Campo>
-                        </div>
-                    ))}
+                    {campos
+                        .filter((campo) => ! campo.mostrarSi || campo.mostrarSi(data))
+                        .map((campo, i, visibles) => (
+                            <Fragment key={campo.nombre}>
+                                {/* Un título cuando empieza otra sección: el convenio
+                                    mezclaba el acuerdo, el contacto y la web en una tira. */}
+                                {campo.seccion && campo.seccion !== visibles[i - 1]?.seccion ? (
+                                    <h3 className={`rotulo border-b border-line pb-1 ${i > 0 ? 'pt-2' : ''} ${ancha ? 'sm:col-span-2' : ''}`}>{campo.seccion}</h3>
+                                ) : null}
+                                <div className={ancha && ! CORTOS.includes(campo.tipo) ? 'sm:col-span-2' : ''}>
+                                    <Campo
+                                        etiqueta={campo.etiqueta}
+                                        nombre={campo.nombre}
+                                        error={errors[campo.nombre]}
+                                        requerido={campo.requerido}
+                                        ayuda={campo.ayuda}
+                                    >
+                                        <Control campo={campo} data={data} setData={setData} />
+                                    </Campo>
+                                </div>
+                            </Fragment>
+                        ))}
 
                     {/* Pegados abajo: en una ventana que se desplaza, «Guardar» no se pierde. */}
                     <div className="sticky -bottom-4 -mx-4 -mb-4 flex items-center justify-end gap-3 border-t border-line bg-raise px-4 py-3 sm:col-span-2">

@@ -29,7 +29,8 @@ function camposDe(tipo, iconos) {
                     etiqueta: 'Descripción',
                     tipo: 'area',
                     requerido: true,
-                    ayuda: 'Una línea: qué encuentra quien viene. Hasta 200 caracteres.',
+                    max: 200,
+                    ayuda: 'Una línea: qué encuentra quien viene.',
                 },
                 {
                     nombre: 'icono',
@@ -67,7 +68,7 @@ function camposDe(tipo, iconos) {
         default:
             return [
                 { nombre: 'titulo', etiqueta: 'Nombre', requerido: true, ejemplo: 'Camila R.' },
-                { nombre: 'texto', etiqueta: 'Lo que dijo', tipo: 'area', requerido: true, ayuda: 'Hasta 200 caracteres: sale en letra grande en la portada.' },
+                { nombre: 'texto', etiqueta: 'Lo que dijo', tipo: 'area', requerido: true, max: 200, filas: 3, ayuda: 'Sale en letra grande en la portada: mejor corto.' },
                 {
                     nombre: 'con_permiso',
                     etiqueta: 'Permiso',
