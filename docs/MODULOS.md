@@ -268,6 +268,13 @@ en $0 y sin pagos (`datos:quitar-pagos-importados`). `--con-pagos` los vuelve a
 traer. El CSV con datos personales vive en `storage/app/private/importacion/`
 y **no va a git**.
 
+**Solo socios con RUT** (27-sep-2026, `datos:quitar-sin-rut --confirmar`): las
+210 fichas sin RUT de las planillas se sacaron de la vista. Las 2 que eran de
+alguien con otra ficha con RUT se juntaron con esa; las otras 208 están en la
+papelera con sus membresías y se pueden restaurar. Quedaron 1.491 socios. Las
+membresías importadas tienen solo fechas de inicio y término: sin monto ni
+medio de pago.
+
 ## PostgreSQL
 
 El servidor usa PostgreSQL. El código nuevo tiene que respetar:
