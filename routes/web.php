@@ -671,6 +671,20 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // mensualidad en 15.000 en vez del precio con convenio general.
         // Mandar un correo de prueba: lo único que dice de verdad si el
         // correo de salida funciona.
+        // Las rutinas de la sala (el QR «Qué entrenar hoy») y su catálogo de ejercicios.
+        Route::get('/rutinas', [\App\Http\Controllers\Panel\RutinaController::class, 'index'])->name('rutinas.index');
+        Route::get('/rutinas/crear', [\App\Http\Controllers\Panel\RutinaController::class, 'create'])->name('rutinas.create');
+        Route::post('/rutinas', [\App\Http\Controllers\Panel\RutinaController::class, 'store'])->name('rutinas.store');
+        Route::get('/rutinas/{rutina}/editar', [\App\Http\Controllers\Panel\RutinaController::class, 'edit'])->name('rutinas.edit');
+        Route::put('/rutinas/{rutina}', [\App\Http\Controllers\Panel\RutinaController::class, 'update'])->name('rutinas.update');
+        Route::post('/rutinas/{rutina}/duplicar', [\App\Http\Controllers\Panel\RutinaController::class, 'duplicar'])->name('rutinas.duplicar');
+        Route::patch('/rutinas/{rutina}/alternar', [\App\Http\Controllers\Panel\RutinaController::class, 'alternar'])->name('rutinas.alternar');
+        Route::delete('/rutinas/{rutina}', [\App\Http\Controllers\Panel\RutinaController::class, 'destroy'])->name('rutinas.destroy');
+        Route::get('/ejercicios', [\App\Http\Controllers\Panel\EjercicioController::class, 'index'])->name('ejercicios.index');
+        Route::post('/ejercicios', [\App\Http\Controllers\Panel\EjercicioController::class, 'store'])->name('ejercicios.store');
+        Route::put('/ejercicios/{ejercicio}', [\App\Http\Controllers\Panel\EjercicioController::class, 'update'])->name('ejercicios.update');
+        Route::patch('/ejercicios/{ejercicio}/alternar', [\App\Http\Controllers\Panel\EjercicioController::class, 'alternar'])->name('ejercicios.alternar');
+
         // El registro de fallas: lo que salió mal, en el servidor o en el navegador.
         Route::get('/fallas', [\App\Http\Controllers\Panel\FallaController::class, 'index'])->name('fallas.index');
         Route::patch('/fallas/{falla}/resolver', [\App\Http\Controllers\Panel\FallaController::class, 'resolver'])->name('fallas.resolver');

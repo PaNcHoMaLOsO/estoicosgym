@@ -63,6 +63,9 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
             { href: '/panel/especialistas', etiqueta: 'Especialistas', permiso: 'configuracion.ver' },
             { href: '/panel/embajadores', etiqueta: 'Embajadores', permiso: 'configuracion.ver' },
+            // El QR de la sala: «Qué entrenar hoy».
+            { href: '/panel/rutinas', etiqueta: 'Rutinas de la sala', permiso: 'configuracion.ver' },
+            { href: '/panel/ejercicios', etiqueta: 'Ejercicios', permiso: 'configuracion.ver' },
             { href: '/panel/configuracion/web', etiqueta: 'Google, redes y tienda', permiso: 'configuracion.ver' },
         ],
     },
@@ -108,6 +111,8 @@ export const PREFIJOS_CONFIGURACION = [
     '/panel/papelera',
     '/panel/textos-legales',
     '/panel/fallas',
+    '/panel/rutinas',
+    '/panel/ejercicios',
 ];
 
 /** La ruta sin la consulta ni la barra final: «/panel/convenios». */

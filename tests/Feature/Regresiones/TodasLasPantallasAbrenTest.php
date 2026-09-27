@@ -126,6 +126,9 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
         $cotizacion->rehacerLaCuenta([['fecha' => '2026-07-03', 'detalle' => '15:00 a 16:00', 'horas' => 1, 'incluida' => true]]);
         $cotizacion->save();
 
+        // Las rutinas de la sala, con sus ejercicios.
+        \App\Support\RutinasDeEjemplo::cargar();
+
         // Algo en la papelera, para que esa pantalla tenga filas.
         $borrable = Cliente::factory()->create(['activo' => true]);
         $borrable->delete();
@@ -148,6 +151,8 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
             'contrato' => $contrato->uuid,
             'taller' => $taller->uuid,
             'cotizacion' => $cotizacion->uuid,
+            'rutina' => \App\Models\Rutina::first()->uuid,
+            'ejercicio' => \App\Models\Ejercicio::first()->uuid,
         ];
     }
 

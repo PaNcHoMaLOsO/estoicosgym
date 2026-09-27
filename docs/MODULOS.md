@@ -250,8 +250,12 @@ puede venir, y ve su semana. No guarda nada de quien lo mira.
   menos días, u otro nivel.
 - Si no hay una rutina exacta, se afloja primero el nivel y después los días:
   siempre sale una del objetivo elegido.
+- **Se editan en Configuración → Página web → Rutinas de la sala**: la
+  rutina entera en una pantalla (días, ejercicios, series, repeticiones,
+  descanso, variante y nota); los días de la semana son los días que tiene.
+  «Duplicar» deja una copia apagada para armar otra variante. El catálogo de
+  ejercicios, en «Ejercicios»: corregir una indicación la corrige en todas.
 - Son guías generales: conviene que las revise el entrenador de la sala.
-  Todavía no se editan desde el panel.
 
 ## Datos de las planillas
 

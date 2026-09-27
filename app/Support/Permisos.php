@@ -44,6 +44,7 @@ class Permisos
         // Cotizar un mes de taller: es preparar un papel para mandarlo, no
         // cobrarlo. Lo que se cobra se cierra aparte, al final del mes.
         'cotizaciones.store',
+        'duplicar',
     ];
 
     /** Modificar lo que ya existe, incluido activar y desactivar. */
@@ -165,6 +166,8 @@ class Permisos
         // quien configura.
         'textos-legales' => 'configuracion',
         'fallas' => 'configuracion',
+        'rutinas' => 'configuracion',
+        'ejercicios' => 'configuracion',
     ];
 
     /**
