@@ -9,3 +9,7 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# Los scripts de Windows, siempre con CRLF: con LF el .bat puede fallar.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
