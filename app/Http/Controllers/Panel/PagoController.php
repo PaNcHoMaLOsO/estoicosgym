@@ -26,6 +26,9 @@ class PagoController extends Controller
 
         $filtro = (string) $request->query('filtro', '');
         $orden = (string) $request->query('orden', '');
+        // Por medio de pago: para cuadrar el efectivo del cajón o las
+        // transferencias contra la cuenta. Un pago repartido cuenta en los dos.
+        $medio = (int) $request->query('medio', 0);
         $hoy = Carbon::today();
         // El segundo medio de un pago mixto no tiene relación en el modelo: se
         // busca aquí por su id, una sola vez para toda la página.
@@ -51,6 +54,7 @@ class PagoController extends Controller
                 fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda),
             ))
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
+            ->when($medio > 0, fn ($q) => $q->where(fn ($q) => $q->where('id_metodo_pago', $medio)->orWhere('id_metodo_pago2', $medio)))
             // Los pases diarios, en su grupo; al buscar se encuentran igual.
             ->when(
                 isset(self::FILTROS[$filtro]) || $busqueda === '',
@@ -102,7 +106,19 @@ class PagoController extends Controller
 
         return Inertia::render('Pagos/Index', [
             'pagos' => $pagos,
-            'filtros' => ['buscar' => $busqueda, 'estado' => $estado, 'filtro' => $filtro, 'orden' => $orden],
+            'filtros' => ['buscar' => $busqueda, 'estado' => $estado, 'filtro' => $filtro, 'orden' => $orden, 'medio' => $medio ?: ''],
+            // Cuántos pagos hay con cada medio, dentro del grupo elegido (hoy,
+            // este mes…): «efectivo hoy» es lo que se cuadra al cerrar.
+            'medios' => \App\Models\MetodoPago::withTrashed()->orderBy('nombre')->get(['id', 'nombre'])
+                ->map(fn ($m) => [
+                    'valor' => (string) $m->id,
+                    'etiqueta' => $m->nombre,
+                    'cantidad' => $this->filtrar(Pago::query(), isset(self::FILTROS[$filtro]) ? $filtro : '')
+                        ->where(fn ($q) => $q->where('id_metodo_pago', $m->id)->orWhere('id_metodo_pago2', $m->id))
+                        ->count(),
+                ])
+                ->filter(fn ($m) => $m['cantidad'] > 0 || (string) $medio === $m['valor'])
+                ->values(),
             'cantidades' => [
                 'total' => $this->filtrar(Pago::query(), '')->count(),
                 'hoy' => $this->filtrar(Pago::query(), 'hoy')->count(),

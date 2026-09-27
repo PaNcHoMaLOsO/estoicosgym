@@ -59,7 +59,7 @@ const ORDENES = [
     { valor: 'antiguos', etiqueta: 'Lo más antiguo' },
 ];
 
-export default function Index({ pagos, filtros, resumen, cantidades }) {
+export default function Index({ pagos, filtros, resumen, cantidades, medios = [] }) {
     const { privado } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
 
@@ -68,6 +68,7 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
         ...(filtros.buscar ? { buscar: filtros.buscar } : {}),
         ...(filtros.filtro ? { filtro: filtros.filtro } : {}),
         ...(filtros.orden ? { orden: filtros.orden } : {}),
+        ...(filtros.medio ? { medio: filtros.medio } : {}),
     };
 
     const opciones = [
@@ -130,7 +131,21 @@ export default function Index({ pagos, filtros, resumen, cantidades }) {
                     extra={conservar}
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Filtros ruta="/panel/pagos" actual={filtros.filtro} opciones={opciones} extra={conservar} />
+                    <div className="flex flex-col gap-2">
+                        <Filtros ruta="/panel/pagos" actual={filtros.filtro} opciones={opciones} extra={conservar} />
+                        {/* Con qué se pagó: se combina con el de arriba («Hoy» +
+                            «Efectivo» es lo que se cuadra al cerrar el cajón). */}
+                        {medios.length > 1 || filtros.medio ? (
+                            <Filtros
+                                ruta="/panel/pagos"
+                                nombre="medio"
+                                etiqueta="Filtrar por medio de pago"
+                                actual={String(filtros.medio ?? '')}
+                                opciones={[{ valor: '', etiqueta: 'Todos los medios' }, ...medios]}
+                                extra={conservar}
+                            />
+                        ) : null}
+                    </div>
 
                     {/* «¿Cuál fue el cobro más grande del mes?» no se responde
                         bajando una lista de trescientas filas. */}

@@ -49,9 +49,16 @@ class ClienteController extends Controller
          * alguien lo haria desaparecer del panel entero y no habria manera de
          * reactivarlo salvo sabiendose la URL de su ficha.
          */
-        $verBajas = $request->boolean('bajas');
+        $filtro = (string) $request->query('filtro', '');
 
-        $filtro = $verBajas ? '' : (string) $request->query('filtro', '');
+        // «De baja» y «Se fueron este mes» son filtros como los demás: antes
+        // los dados de baja estaban detrás de un enlace aparte y la lista
+        // decía «Todos 43» con 1.491 socios. ?bajas=1 sigue sirviendo.
+        if ($request->boolean('bajas')) {
+            $filtro = 'bajas';
+        }
+
+        $verBajas = in_array($filtro, ['bajas', 'se_fueron'], true);
 
         $clientes = Cliente::query()
             ->where('activo', ! $verBajas)
@@ -68,6 +75,7 @@ class ClienteController extends Controller
                 ! $verBajas && (isset(self::FILTROS[$filtro]) || $busqueda === ''),
                 fn ($q) => $this->filtrar($q, isset(self::FILTROS[$filtro]) ? $filtro : ''),
             )
+            ->when($filtro === 'se_fueron', fn ($q) => $this->seFueronEsteMes($q))
             // La membresía que VALE: la vigente o pausada si hay una, y si no la
             // última. Con solo «la última», quien renovó por adelantado salía
             // con la nueva sin empezar y quien tenía una vieja cancelada, con esa.
@@ -125,7 +133,7 @@ class ClienteController extends Controller
 
         return Inertia::render('Clientes/Index', [
             'clientes' => $clientes,
-            'filtros' => ['buscar' => $busqueda, 'bajas' => $verBajas, 'filtro' => $filtro],
+            'filtros' => ['buscar' => $busqueda, 'bajas' => $filtro === 'bajas', 'filtro' => $filtro],
             'resumen' => $this->resumen(),
             // Cuántos grupos de fichas pueden ser de la misma persona.
             'duplicados' => \App\Support\FichasRepetidas::cuantosProbables(),
@@ -578,7 +586,22 @@ class ClienteController extends Controller
         'vencidos' => 'Vencidos',
         'sin_plan' => 'Sin plan',
         'pases' => 'Solo pase diario',
+        'sin_celular' => 'Sin celular',
     ];
+
+    /** Días hacia atrás que cuentan como «se fue este mes». */
+    private const DIAS_SE_FUERON = 30;
+
+    /**
+     * Dados de baja a los que se les venció la mensualidad en los últimos 30
+     * días: los que todavía se pueden recuperar con un llamado. Los que se
+     * fueron el año pasado ya no se llaman.
+     */
+    private function seFueronEsteMes($consulta)
+    {
+        return $consulta->whereHas('inscripciones', fn ($q) => $q->sinPases()
+            ->whereBetween('fecha_vencimiento', [Carbon::today()->subDays(self::DIAS_SE_FUERON), Carbon::today()]));
+    }
 
     /** Días que cuentan como «vence esta semana». */
     private const DIAS_POR_VENCER = 7;
@@ -608,6 +631,8 @@ class ClienteController extends Controller
             'vencidos' => $consulta->whereHas('inscripciones', $mensualidad())
                 ->whereDoesntHave('inscripciones', $mensualidad([100, 101])),
             'sin_plan' => $consulta->whereDoesntHave('inscripciones'),
+            'sin_celular' => $consulta->where(fn ($q) => $q->whereNull('celular')->orWhere('celular', ''))
+                ->whereNot(fn ($q) => $soloPases($q)),
             'pases' => $soloPases($consulta),
             // «Todos» son los socios: todos menos los que solo vinieron por el día.
             default => $consulta->whereNot(fn ($q) => $soloPases($q)),
@@ -627,8 +652,11 @@ class ClienteController extends Controller
             'vencidos' => $contar('vencidos'),
             'sin_plan' => $contar('sin_plan'),
             'pases' => $contar('pases'),
-            // Para poder ofrecer el enlace solo cuando hay alguno.
+            // Para pedírselo cuando venga: sin celular no le llegan los avisos.
+            'sin_celular' => $contar('sin_celular'),
             'bajas' => Cliente::where('activo', false)->whereNull('datos_borrados_en')->count(),
+            // A quién llamar para que vuelva: se le venció hace poco.
+            'se_fueron' => $this->seFueronEsteMes(Cliente::where('activo', false)->whereNull('datos_borrados_en'))->count(),
         ];
     }
 }

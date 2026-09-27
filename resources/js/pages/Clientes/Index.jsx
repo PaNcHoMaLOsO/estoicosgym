@@ -57,18 +57,28 @@ function Contacto({ celular, email }) {
 }
 
 export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
+    /*
+     * Los activos primero —a quienes se atiende—, y aparte los que se fueron.
+     * «De baja» era un enlace escondido y la lista decía «Todos 43» con 1.491
+     * socios. Los que dan 0 no se muestran (ver Filtros).
+     */
     const opciones = [
-        { valor: '', etiqueta: 'Todos', cantidad: resumen.total },
-        { valor: 'al_dia', etiqueta: 'Con plan vigente', cantidad: resumen.activos },
+        { valor: '', etiqueta: 'Activos', cantidad: resumen.total },
         { valor: 'por_vencer', etiqueta: 'Vencen esta semana', cantidad: resumen.por_vencer, tono: 'warn' },
         { valor: 'vencidos', etiqueta: 'Vencidos', cantidad: resumen.vencidos, tono: 'danger' },
         { valor: 'pausados', etiqueta: 'Pausados', cantidad: resumen.pausados },
         { valor: 'sin_plan', etiqueta: 'Sin plan', cantidad: resumen.sin_plan },
+        // Para pedírselo cuando venga: sin celular no le llegan los avisos.
+        { valor: 'sin_celular', etiqueta: 'Sin celular', cantidad: resumen.sin_celular },
+        // A quién llamar: se le venció en los últimos 30 días.
+        { valor: 'se_fueron', etiqueta: 'Se fueron este mes', cantidad: resumen.se_fueron, tono: 'warn', aparte: true },
+        { valor: 'bajas', etiqueta: 'De baja', cantidad: resumen.bajas, aparte: true },
         // Quien solo compró pases está de paso: no es un socio más de la lista.
         { valor: 'pases', etiqueta: 'Solo pase diario', cantidad: resumen.pases, aparte: true },
     ];
 
     const extra = filtros.buscar ? { buscar: filtros.buscar } : {};
+    const deBaja = filtros.filtro === 'bajas' || filtros.filtro === 'se_fueron';
 
     return (
         <>
@@ -76,7 +86,7 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
 
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-lg font-semibold text-chalk">{filtros.bajas ? 'Dados de baja' : 'Socios'}</h1>
+                    <h1 className="text-lg font-semibold text-chalk">{filtros.filtro === 'se_fueron' ? 'Se fueron este mes' : deBaja ? 'Dados de baja' : 'Socios'}</h1>
                     <p className="apoyo text-fog">Haz clic en un socio para abrir su ficha</p>
                 </div>
 
@@ -108,29 +118,10 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
                     /* Se mantiene mientras se busca: si no, escribir un nombre
                        devolveria al listado de activos y el socio dado de baja
                        que se estaba buscando desapareceria. */
-                    extra={filtros.bajas ? { bajas: 1 } : filtros.filtro ? { filtro: filtros.filtro } : {}}
+                    extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
                 />
 
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    {filtros.bajas ? (
-                        <Link
-                            href="/panel/clientes"
-                            className="inline-flex items-center rounded-pill border border-line px-3 py-1 text-sm text-chalk transition-colors hover:bg-surface-2"
-                        >
-                            ← Volver a los activos
-                        </Link>
-                    ) : (
-                        <Filtros ruta="/panel/clientes" actual={filtros.filtro} opciones={opciones} extra={extra} />
-                    )}
-
-                    {/* Sin esto, dar de baja a alguien lo hace desaparecer del
-                        panel entero. Solo se ofrece cuando hay alguno. */}
-                    {!filtros.bajas && resumen.bajas > 0 ? (
-                        <Link href="/panel/clientes?bajas=1" className="apoyo text-fog transition-colors hover:text-chalk">
-                            Ver {resumen.bajas} {resumen.bajas === 1 ? 'dado' : 'dados'} de baja
-                        </Link>
-                    ) : null}
-                </div>
+                <Filtros ruta="/panel/clientes" actual={filtros.filtro} opciones={opciones} extra={extra} />
             </div>
 
             <Tabla
@@ -139,7 +130,9 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0 }) {
                 mensajeVacio={
                     filtros.buscar
                         ? `Ningún socio coincide con «${filtros.buscar}».`
-                        : filtros.bajas
+                        : filtros.filtro === 'se_fueron'
+                          ? 'Nadie se fue en los últimos 30 días.'
+                          : filtros.bajas
                           ? 'No hay ningún socio dado de baja.'
                           : filtros.filtro
                             ? 'No hay socios en este grupo.'

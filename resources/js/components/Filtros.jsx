@@ -21,11 +21,19 @@ export default function Filtros({
   opciones,
   extra = {},
   nombre = "filtro",
+  // Los que dan 0 se esconden: «Pausados 0 · Sin plan 0 · Vencidos 0» era
+  // ruido. El elegido y el de «todos» se ven siempre.
+  ocultarCeros = true,
+  etiqueta = "Filtrar la lista",
 }) {
   function elegir(valor) {
+    // Sin el valor viejo de este mismo filtro: si «extra» lo traía, elegir
+    // «Todos» no volvía a todos.
+    const { [nombre]: _viejo, ...resto } = extra;
+
     router.get(
       ruta,
-      { ...extra, ...(valor ? { [nombre]: valor } : {}) },
+      { ...resto, ...(valor ? { [nombre]: valor } : {}) },
       { preserveScroll: true, preserveState: true, replace: true },
     );
   }
@@ -33,18 +41,29 @@ export default function Filtros({
   return (
     <div
       role="group"
-      aria-label="Filtrar la lista"
+      aria-label={etiqueta}
       className="flex flex-wrap gap-1.5"
     >
-      {opciones.map(({ valor, etiqueta, cantidad, tono, aparte }) => {
-        const elegido = (actual ?? "") === valor;
+      {opciones
+        .filter(
+          (o) =>
+            !ocultarCeros ||
+            o.cantidad !== 0 ||
+            o.valor === "" ||
+            String(actual ?? "") === String(o.valor),
+        )
+        .map(({ valor, etiqueta, cantidad, tono, aparte }, i, visibles) => {
+        const elegido = String(actual ?? "") === String(valor);
         const apagado = cantidad === 0 && !elegido;
+        // La raya va antes del primero «aparte» que se VE: si el primero
+        // del grupo estaba en 0 y se escondió, la raya iba con él.
+        const raya = aparte && !visibles[i - 1]?.aparte;
 
         return (
           <span key={valor || "todos"} className="contents">
             {/* Lo que va «aparte» (los pases diarios) se separa con
                         una raya: no es un estado más de los socios. */}
-            {aparte ? (
+            {raya ? (
               <span
                 className="mx-1 w-px self-stretch bg-line"
                 aria-hidden="true"

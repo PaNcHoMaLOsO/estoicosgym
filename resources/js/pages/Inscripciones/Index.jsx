@@ -122,7 +122,9 @@ export default function Index({ inscripciones, filtros, resumen, planes = [] }) 
         { valor: 'por_vencer', etiqueta: 'Vencen esta semana', cantidad: resumen.por_vencer, tono: 'warn' },
         // El filtro de «con deuda» es una lista de deudores con otro nombre.
         ...(sinDeudas ? [] : [{ valor: 'con_deuda', etiqueta: 'Con deuda', cantidad: resumen.con_deuda, tono: 'warn' }]),
-        { valor: 'vencidas', etiqueta: 'Vencidas', cantidad: resumen.vencidas, tono: 'danger' },
+        // A quién llamar: venció hace poco y no renovó.
+        { valor: 'vencieron', etiqueta: 'Vencieron este mes', cantidad: resumen.vencieron, tono: 'danger' },
+        { valor: 'vencidas', etiqueta: 'Todas las vencidas', cantidad: resumen.vencidas },
         { valor: 'pausadas', etiqueta: 'Pausadas', cantidad: resumen.pausadas },
         { valor: 'pases', etiqueta: 'Pases diarios', cantidad: resumen.pases, aparte: true },
     ];

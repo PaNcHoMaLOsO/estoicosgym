@@ -138,13 +138,14 @@ class InscripcionController extends Controller
                 'por_vencer' => $this->filtrar(Inscripcion::query(), 'por_vencer')->count(),
                 'pausadas' => $this->filtrar(Inscripcion::query(), 'pausadas')->count(),
                 'vencidas' => $this->filtrar(Inscripcion::query(), 'vencidas')->count(),
+                'vencieron' => $this->filtrar(Inscripcion::query(), 'vencieron')->count(),
                 'con_deuda' => $this->filtrar(Inscripcion::query(), 'con_deuda')->count(),
                 'pases' => $this->filtrar(Inscripcion::query(), 'pases')->count(),
             ],
         ]);
     }
 
-    private const FILTROS = ['al_dia' => 1, 'por_vencer' => 1, 'pausadas' => 1, 'vencidas' => 1, 'con_deuda' => 1, 'pases' => 1];
+    private const FILTROS = ['al_dia' => 1, 'por_vencer' => 1, 'pausadas' => 1, 'vencidas' => 1, 'vencieron' => 1, 'con_deuda' => 1, 'pases' => 1];
 
     /** Días que cuentan como «vence esta semana». */
     private const DIAS_POR_VENCER = 7;
@@ -174,6 +175,14 @@ class InscripcionController extends Controller
                 ->whereBetween('fecha_vencimiento', [Carbon::today(), Carbon::today()->addDays(self::DIAS_POR_VENCER)]),
             'pausadas' => $consulta->where('id_estado', self::PAUSADA),
             'vencidas' => $consulta->where('id_estado', self::VENCIDA),
+            // Vencieron en los últimos 30 días y el socio no renovó: a quién
+            // llamar. Las vencidas de hace años (las planillas) no se llaman.
+            'vencieron' => $consulta->where('id_estado', self::VENCIDA)
+                ->whereBetween('fecha_vencimiento', [Carbon::today()->subDays(30), Carbon::today()])
+                ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('inscripciones as otra')
+                    ->whereColumn('otra.id_cliente', 'inscripciones.id_cliente')
+                    ->whereIn('otra.id_estado', [self::ACTIVA, self::PAUSADA])
+                    ->whereNull('otra.deleted_at')),
             default => $consulta,
         };
     }
