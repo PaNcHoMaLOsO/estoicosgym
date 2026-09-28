@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Nada del disco privado se sirve por /storage: ahí están los
+            // respaldos de la base y las fotos de los socios.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

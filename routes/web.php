@@ -51,15 +51,15 @@ Route::middleware('security.headers')->group(function () {
      * tonto por si un dia fallan: nadie de verdad manda diez formularios en un
      * minuto.
      */
-    Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:10,1')->name('landing.contacto.enviar');
-    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:10,1')->name('landing.consultar-membresia');
+    Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:publico')->name('landing.contacto.enviar');
+    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:publico')->name('landing.consultar-membresia');
 
     /*
      * El contrato por firmar. El socio llega desde el correo, sin cuenta: la
      * llave es el enlace (ver ContratoPublicoController).
      */
-    Route::get('/contrato/{token}', [ContratoPublicoController::class, 'mostrar'])->middleware('throttle:30,1')->name('contrato.mostrar');
-    Route::post('/contrato/{token}', [ContratoPublicoController::class, 'firmar'])->middleware('throttle:10,1')->name('contrato.firmar');
+    Route::get('/contrato/{token}', [ContratoPublicoController::class, 'mostrar'])->middleware('throttle:contrato')->name('contrato.mostrar');
+    Route::post('/contrato/{token}', [ContratoPublicoController::class, 'firmar'])->middleware('throttle:publico')->name('contrato.firmar');
 });
 
 // ===== AUTENTICACIÓN =====
@@ -83,11 +83,31 @@ Route::middleware('guest')->group(function () {
         if ($guardado) {
             $credentials['email'] = $guardado;
         }
+
+        /*
+         * CLAVES EQUIVOCADAS POR CUENTA. Se cuentan solo los fallos: desde la
+         * misma dirección, 10 por hora; desde todas juntas, 50. Así quien
+         * prueba claves desde muchas direcciones se frena, y quien quiere
+         * dejar afuera al administrador necesita muchísimo más que su correo.
+         */
+        $cuenta = mb_strtolower(trim($credentials['email']));
+        $fallosAqui = 'login-fallos:' . $cuenta . '|' . \App\Support\IpDelCliente::paraLimitar();
+        $fallosTodos = 'login-fallos:' . $cuenta;
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+
+        if ($limiter->tooManyAttempts($fallosAqui, 10) || $limiter->tooManyAttempts($fallosTodos, 50)) {
+            $minutos = max(1, (int) ceil(max($limiter->availableIn($fallosAqui), $limiter->availableIn($fallosTodos)) / 60));
+
+            return back()->withErrors([
+                'email' => "Demasiados intentos con esta cuenta. Prueba de nuevo en {$minutos} minutos.",
+            ])->onlyInput('email');
+        }
         
         // Solo cuentas activas: una desactivada en Configuración → Usuarios no
         // entra, aunque la contraseña sea la correcta.
         if (Auth::attempt([...$credentials, 'activo' => true], request()->boolean('remember'))) {
             $user = Auth::user();
+            $limiter->clear($fallosAqui);
             
             // Verificar si tiene 2FA habilitado
             if ($user->two_factor_enabled && $user->phone) {
@@ -139,10 +159,13 @@ Route::middleware('guest')->group(function () {
             return redirect()->intended(route('panel.resumen'));
         }
         
+        $limiter->hit($fallosAqui, 3600);
+        $limiter->hit($fallosTodos, 3600);
+
         return back()->withErrors([
             'email' => 'Las credenciales no coinciden con nuestros registros.',
         ])->onlyInput('email');
-    })->middleware('throttle:login'); // 8 por minuto por IP y 20 por hora por cuenta: ver AppServiceProvider.
+    })->middleware('throttle:login'); // 8 por minuto por IP (AppServiceProvider); los fallos por cuenta, arriba.
     
     // ===== 2FA - Verificación de dos factores =====
     Route::get('/verify-2fa', function () {
@@ -183,11 +206,30 @@ Route::middleware('guest')->group(function () {
         request()->validate([
             'code' => 'required|string|size:6',
         ]);
-        
+
+        /*
+         * CINCO CÓDIGOS MALOS Y VUELTA AL LOGIN. El límite por código no
+         * bastaba: cada reenvío traía un código nuevo con cinco intentos más,
+         * y desde varias direcciones se podía adivinar uno. Ahora los fallos
+         * se cuentan por cuenta y, al quinto, hay que poner la clave de nuevo.
+         */
+        $fallos2fa = '2fa-fallos:' . $user->id;
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+
+        if ($limiter->tooManyAttempts($fallos2fa, 5)) {
+            session()->forget(['2fa_user_id', '2fa_remember']);
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Demasiados códigos equivocados. Espera 30 minutos e inicia sesión de nuevo.',
+            ]);
+        }
+
         $twoFactorService = new \App\Services\TwoFactorService();
         $result = $twoFactorService->verifyCode($user, request('code'), 'login');
-        
+
         if ($result['success']) {
+            $limiter->clear($fallos2fa);
+
             // Limpiar sesión temporal
             session()->forget(['2fa_user_id', '2fa_remember']);
             
@@ -198,9 +240,11 @@ Route::middleware('guest')->group(function () {
             // Al panel de PRO GYM. «dashboard» era el tablero viejo de AdminLTE.
             return redirect()->intended(route('panel.resumen'));
         }
-        
+
+        $limiter->hit($fallos2fa, 1800);
+
         return back()->withErrors(['code' => $result['message']]);
-    })->middleware('throttle:6,1')->name('2fa.verify');
+    })->middleware('throttle:acceso')->name('2fa.verify');
     
     Route::post('/resend-2fa', function () {
         // El usuario SOLO sale de la sesion del login a medias, nunca del
@@ -220,13 +264,18 @@ Route::middleware('guest')->group(function () {
 
         $user = \App\Models\User::find($userId);
 
-        if ($user) {
+        // Cinco códigos por hora por cuenta: cada reenvío es un mensaje al
+        // teléfono de la persona y un código nuevo para adivinar.
+        $reenvios = '2fa-reenvios:' . $userId;
+
+        if ($user && ! app(\Illuminate\Cache\RateLimiter::class)->tooManyAttempts($reenvios, 5)) {
+            app(\Illuminate\Cache\RateLimiter::class)->hit($reenvios, 3600);
             (new \App\Services\TwoFactorService())->sendVerificationCode($user, 'login');
         }
 
         // Misma respuesta pase lo que pase: no se revela si el codigo salio.
         return $neutro;
-    })->middleware('throttle:4,1')->name('2fa.resend');
+    })->middleware('throttle:reenvio')->name('2fa.resend');
     
     // Recuperar contraseña - Solicitar enlace
     Route::get('/forgot-password', function () {
@@ -243,6 +292,18 @@ Route::middleware('guest')->group(function () {
 
         // Sin mirar mayúsculas: en PostgreSQL el correo se compara tal cual.
         $user = \App\Models\User::whereRaw('LOWER(email) = ?', [mb_strtolower((string) request('email'))])->first();
+
+        // Tres enlaces por hora por correo. Sin esto, desde varias direcciones
+        // se llenaba el buzón de la persona y se gastaba el tope diario de
+        // correos del gimnasio. La respuesta es la misma igual.
+        $pedidos = 'clave-olvidada:' . mb_strtolower(trim((string) request('email')));
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+
+        if ($limiter->tooManyAttempts($pedidos, 3)) {
+            return back()->with('status', $neutro);
+        }
+
+        $limiter->hit($pedidos, 3600);
 
         if ($user) {
             // Token nuevo, guardado hasheado y que caduca a la hora: el mismo
@@ -282,7 +343,7 @@ Route::middleware('guest')->group(function () {
         }
 
         return back()->with('status', $neutro);
-    })->middleware('throttle:4,1')->name('password.email');
+    })->middleware('throttle:reenvio')->name('password.email');
     
     // Restablecer contraseña - Formulario
     Route::get('/reset-password/{token}', function ($token) {
@@ -351,7 +412,7 @@ Route::middleware('guest')->group(function () {
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', request('email'))->delete();
         
         return redirect()->route('login')->with('status', '¡Contraseña actualizada! Ya puedes iniciar sesión.');
-    })->middleware('throttle:6,1')->name('password.update');
+    })->middleware('throttle:acceso')->name('password.update');
 });
 
 Route::post('/logout', function () {

@@ -109,6 +109,8 @@ En el `.env` del servidor:
 | `APP_DEBUG` | `false` — con `true` cualquier error enseña código y claves |
 | `APP_URL` | la dirección pública, con `https://`. Los enlaces de los correos (contrato, recuperar clave) salen de aquí, y **solo se aceptan peticiones a esa dirección** |
 | `SESSION_SECURE_COOKIE` | `true`: la sesión viaja solo por https |
+| `LOG_STACK` / `LOG_LEVEL` | `daily` y `warning`: el registro se corta por día (`LOG_DAILY_DAYS=14`) y no guarda lo que no es un problema |
+| `INERTIA_DEVTOOLS_ENABLED` | `false`: esa herramienta graba las pantallas del panel con datos de socios |
 | `DB_*` | los del PostgreSQL del servidor |
 | `MAIL_*` | la cuenta de correo. También se puede poner desde el panel: Configuración → Cuenta de correo |
 

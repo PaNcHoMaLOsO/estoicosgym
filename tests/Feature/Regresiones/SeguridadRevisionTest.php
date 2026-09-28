@@ -38,16 +38,29 @@ class SeguridadRevisionTest extends CasoConCatalogos
     /** Probar claves contra una cuenta se frena aunque cambie la IP. */
     public function test_el_login_se_frena_por_cuenta(): void
     {
-        RateLimiter::clear('cuenta:alguien@progym.cl');
-
-        for ($i = 0; $i < 20; $i++) {
-            $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
+        for ($i = 0; $i < 50; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.0.{$i}.1"])
                 ->post('/login', ['email' => 'alguien@progym.cl', 'password' => "mala{$i}"]);
         }
 
-        $this->withServerVariables(['REMOTE_ADDR' => '10.0.1.99'])
+        $this->withServerVariables(['REMOTE_ADDR' => '10.9.9.9'])
             ->post('/login', ['email' => 'Alguien@progym.cl', 'password' => 'otra'])
-            ->assertStatus(429);
+            ->assertSessionHasErrors(['email' => 'Demasiados intentos con esta cuenta. Prueba de nuevo en 60 minutos.']);
+    }
+
+    /** Veinte claves malas desde otras direcciones no dejan afuera al dueño de la cuenta. */
+    public function test_nadie_deja_afuera_al_administrador_con_su_correo(): void
+    {
+        $admin = $this->administrador();
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.1.{$i}.1"])
+                ->post('/login', ['email' => $admin->email, 'password' => "mala{$i}"]);
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.2.0.1'])
+            ->post('/login', ['email' => $admin->email, 'password' => 'password'])
+            ->assertRedirect(route('panel.resumen'));
     }
 
     /** Recuperar la clave saca de las sesiones y anula el «recordarme». */

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Models\HistorialCambio;
 use App\Models\Inscripcion;
 use App\Models\MotivoDescuento;
 use Illuminate\Http\Request;
@@ -63,6 +64,7 @@ class InscripcionEditarController extends Controller
                 ->orderBy('nombre')
                 ->get(['id', 'nombre']),
             'formToken' => (string) Str::uuid(),
+            'puedeCambiarPrecio' => request()->user()->puede('configuracion.editar'),
         ]);
     }
 
@@ -81,6 +83,31 @@ class InscripcionEditarController extends Controller
         ]);
 
         $descuento = (int) ($datos['descuento_aplicado'] ?? 0);
+
+        /*
+         * EL PRECIO LO CORRIGE QUIEN FIJA LOS PRECIOS. Recepción corrige el
+         * error de tecleo en las fechas, pero no el precio ni el descuento, ni
+         * alarga o acorta el periodo: con eso se podía dar por pagada una
+         * membresía de $100.000 y estirarla diez años sin dejar rastro.
+         */
+        if (! $request->user()->puede('configuracion.editar')) {
+            $diasAntes = $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento);
+            $diasAhora = \Illuminate\Support\Carbon::parse($datos['fecha_inicio'])->diffInDays(\Illuminate\Support\Carbon::parse($datos['fecha_vencimiento']));
+
+            if ((int) $datos['precio_base'] !== (int) $inscripcion->precio_base
+                || $descuento !== (int) $inscripcion->descuento_aplicado
+                || (int) ($datos['id_motivo_descuento'] ?? 0) !== (int) ($inscripcion->id_motivo_descuento ?? 0)) {
+                throw ValidationException::withMessages([
+                    'precio_base' => 'El precio y el descuento los corrige un administrador.',
+                ]);
+            }
+
+            if ((int) round($diasAntes) !== (int) round($diasAhora)) {
+                throw ValidationException::withMessages([
+                    'fecha_vencimiento' => 'Puedes mover las fechas, pero el periodo tiene que durar lo mismo. Para alargarlo, pídeselo a un administrador.',
+                ]);
+            }
+        }
 
         if ($descuento > $datos['precio_base']) {
             throw ValidationException::withMessages([
@@ -111,7 +138,13 @@ class InscripcionEditarController extends Controller
             return back()->with('error', 'Ese cambio ya se guardó.');
         }
 
-        DB::transaction(function () use ($inscripcion, $datos, $descuento, $final) {
+        $antes = [
+            'fecha_inicio' => $inscripcion->fecha_inicio?->format('Y-m-d'),
+            'fecha_vencimiento' => $inscripcion->fecha_vencimiento?->format('Y-m-d'),
+            'precio_final' => (int) $inscripcion->precio_final,
+        ];
+
+        DB::transaction(function () use ($inscripcion, $datos, $descuento, $final, $antes) {
             // array_merge y no «+»: con «+» manda lo que llegó del formulario,
             // y un descuento en blanco llegaba como null a una columna que no
             // lo acepta (la membresía no se podía corregir).
@@ -122,6 +155,29 @@ class InscripcionEditarController extends Controller
 
             // Cambiar el precio mueve el saldo de todos sus pagos.
             $inscripcion->recalcularSusPagos();
+
+            // Quién corrigió qué, en el historial.
+            $despues = [
+                'fecha_inicio' => $inscripcion->fecha_inicio?->format('Y-m-d'),
+                'fecha_vencimiento' => $inscripcion->fecha_vencimiento?->format('Y-m-d'),
+                'precio_final' => (int) $inscripcion->precio_final,
+            ];
+
+            if ($antes !== $despues) {
+                HistorialCambio::create([
+                    'tipo_cambio' => 'correccion',
+                    'entidad' => 'inscripcion',
+                    'entidad_id' => $inscripcion->id,
+                    'cliente_id' => $inscripcion->id_cliente,
+                    'inscripcion_id' => $inscripcion->id,
+                    // El estado no cambia al corregir: el mismo antes y después.
+                    'estado_anterior' => $inscripcion->id_estado,
+                    'estado_nuevo' => $inscripcion->id_estado,
+                    'detalles' => ['antes' => $antes, 'despues' => $despues],
+                    'motivo' => $datos['observaciones'] ?? null,
+                    'usuario_id' => auth()->id(),
+                ]);
+            }
         });
 
         return redirect()

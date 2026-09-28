@@ -33,7 +33,7 @@
         </div>
     @endif
 
-    @if (app()->environment('local', 'development') && session('dev_2fa_code'))
+    @if (\App\Services\TwoFactorService::codigoEnPantalla() && session('dev_2fa_code'))
         <div class="alerta alerta-dev">
             <i class="fas fa-bug" aria-hidden="true"></i>
             <span><strong>DEV MODE:</strong> Código: <strong>{{ session('dev_2fa_code') }}</strong></span>

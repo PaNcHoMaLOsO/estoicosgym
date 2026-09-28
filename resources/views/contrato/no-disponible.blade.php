@@ -14,6 +14,8 @@
         <p class="mx-auto mt-4 max-w-md leading-relaxed text-pg-tiza/70">
             @if ($motivo === 'vencido')
                 Servía hasta el {{ $contrato?->vence_en?->format('d/m/Y') }}. Pídele al gimnasio que te mande uno nuevo.
+            @elseif ($motivo === 'archivado')
+                Tu contrato está firmado. La copia te llegó por correo; si la necesitas otra vez, pídela en el mesón.
             @else
                 Puede que el gimnasio te haya mandado uno más nuevo: busca el último correo. Si no lo encuentras, pídelo en el mesón.
             @endif

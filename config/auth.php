@@ -39,6 +39,9 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            // «Recordarme» vale 30 días (en minutos), no los 400 que trae
+            // Laravel: el computador del mesón es compartido.
+            'remember' => 60 * 24 * 30,
         ],
     ],
 

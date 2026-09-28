@@ -102,9 +102,15 @@ export default function Index({ pagos, filtros, resumen, cantidades, medios = []
                 </Link>
             </header>
 
-            <div className={`mb-4 grid gap-3 ${sinDeudas ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-                <Tarjeta etiqueta="Entró hoy" valor={<Reservado>{pesos.format(resumen.recaudado_hoy)}</Reservado>} />
-                <Tarjeta etiqueta="Entró este mes" valor={<Reservado>{pesos.format(resumen.recaudado_mes)}</Reservado>} />
+            {/* Lo que entró solo llega a quien ve la caja. */}
+            {resumen.recaudado_mes === undefined && sinDeudas ? null : (
+            <div className={`mb-4 grid gap-3 ${resumen.recaudado_mes === undefined ? 'sm:grid-cols-1' : sinDeudas ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                {resumen.recaudado_mes === undefined ? null : (
+                    <>
+                        <Tarjeta etiqueta="Entró hoy" valor={<Reservado>{pesos.format(resumen.recaudado_hoy)}</Reservado>} />
+                        <Tarjeta etiqueta="Entró este mes" valor={<Reservado>{pesos.format(resumen.recaudado_mes)}</Reservado>} />
+                    </>
+                )}
                 {/* La única cifra que pide hacer algo, y la primera que se va
                     cuando se pidió esconder quién debe. */}
                 {sinDeudas ? null : (
@@ -123,6 +129,7 @@ export default function Index({ pagos, filtros, resumen, cantidades, medios = []
                 />
                 )}
             </div>
+            )}
 
             <UltimoIngresado titulo="Último pago ingresado" ultimo={ultimo} />
 

@@ -55,7 +55,9 @@ class SecurityHeaders
 
         // 4. X-XSS-Protection
         // Activa filtro XSS del navegador (legacy, pero útil)
-        $response->headers->set('X-XSS-Protection', '1; mode=block');
+        // «0» es lo recomendado hoy: el filtro viejo de los navegadores abría
+        // más agujeros de los que tapaba.
+        $response->headers->set('X-XSS-Protection', '0');
 
         // 5. Referrer-Policy
         // Controla información enviada en el header Referer

@@ -149,7 +149,11 @@ class UsuarioController extends Controller
         // Desactivada o con contraseña nueva: afuera de donde tuviera la sesión
         // abierta. Si no, la cuenta de alguien que se fue seguiría adentro en
         // el computador donde quedó abierta.
-        if (! $activo || $claveNueva) {
+        // También al activar el segundo factor o cambiar el correo: un
+        // «recordarme» viejo seguía entrando sin pedir el código.
+        $masSeguro = $usuario->wasChanged('two_factor_enabled') && $usuario->two_factor_enabled;
+
+        if (! $activo || $claveNueva || $masSeguro || $usuario->wasChanged('email')) {
             $this->cerrarSesiones($usuario, $request);
         }
 

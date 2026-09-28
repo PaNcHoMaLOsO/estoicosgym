@@ -23,7 +23,7 @@ const pesos = new Intl.NumberFormat('es-CL', {
  * compensados, el credito del plan anterior— que un formulario de correccion
  * se saltaria enteras.
  */
-export default function Editar({ inscripcion, motivos, formToken }) {
+export default function Editar({ inscripcion, motivos, formToken, puedeCambiarPrecio = true }) {
     const { data, setData, put, processing, errors, isDirty } = useForm({
         form_submit_token: formToken,
         fecha_inicio: inscripcion.fecha_inicio ?? '',
@@ -132,6 +132,9 @@ export default function Editar({ inscripcion, motivos, formToken }) {
                 </Grupo>
 
                 <Grupo titulo="Cuánto vale">
+                    {/* El precio lo corrige quien fija los precios. */}
+                    {puedeCambiarPrecio ? (
+                    <>
                     <Campo
                         etiqueta="Precio"
                         nombre="precio_base"
@@ -185,6 +188,8 @@ export default function Editar({ inscripcion, motivos, formToken }) {
                                 vacio="Sin especificar"
                             />
                         </Campo>
+                    ) : null}
+                    </>
                     ) : null}
 
                     <div className="rounded-panel border border-line bg-surface-2 p-3 text-sm">

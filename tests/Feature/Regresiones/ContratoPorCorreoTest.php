@@ -427,4 +427,17 @@ class ContratoPorCorreoTest extends CasoConCatalogos
         $this->assertSame('camila.rojas@example.com', $this->enviados[0]['para'] ?? null);
         $this->assertSame(1, Contrato::count());
     }
+
+    public function test_un_mes_despues_de_firmado_el_enlace_ya_no_muestra_el_contrato(): void
+    {
+        $token = $this->mandar($this->socio());
+        $this->post("/contrato/{$token}", $this->datosDeFirma());
+
+        $this->travel(31)->days();
+
+        $this->get("/contrato/{$token}")
+            ->assertStatus(410)
+            ->assertSee('Tu contrato está firmado')
+            ->assertDontSee('Camila Rojas Soto');
+    }
 }

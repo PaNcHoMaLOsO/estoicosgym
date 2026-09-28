@@ -131,10 +131,15 @@ class PagoController extends Controller
                 'pases' => $this->filtrar(Pago::query(), 'pases')->count(),
             ],
             'resumen' => [
-                'recaudado_hoy' => (int) Pago::ingresos()->whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
-                'recaudado_mes' => (int) Pago::ingresos()->whereYear('fecha_pago', $hoy->year)
-                    ->whereMonth('fecha_pago', $hoy->month)
-                    ->sum('monto_abonado'),
+                // Lo que entró es la caja, y la caja la ve quien ve los
+                // informes. Antes viajaba igual a recepción, tapado solo en
+                // pantalla.
+                ...($request->user()->puede('reportes.ver') ? [
+                    'recaudado_hoy' => (int) Pago::ingresos()->whereDate('fecha_pago', $hoy)->sum('monto_abonado'),
+                    'recaudado_mes' => (int) Pago::ingresos()->whereYear('fecha_pago', $hoy->year)
+                        ->whereMonth('fecha_pago', $hoy->month)
+                        ->sum('monto_abonado'),
+                ] : []),
                 // Lo que queda por cobrar es la cifra que mueve a actuar.
                 // De las membresías, no de los pagos: ver Inscripcion::conDeuda().
                 'por_cobrar' => Inscripcion::porCobrar(),

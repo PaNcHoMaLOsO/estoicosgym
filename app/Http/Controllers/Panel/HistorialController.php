@@ -34,6 +34,7 @@ class HistorialController extends Controller
         'renovacion' => 'Renovación',
         'traspaso' => 'Traspaso',
         'inscripcion' => 'Alta',
+        'correccion' => 'Corrección',
         'cambio_estado_inscripcion' => 'Cambio de estado',
         'cambio_estado_cliente' => 'Cambio de estado del socio',
         'cancelacion_inscripcion' => 'Cancelación',

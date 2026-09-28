@@ -23,6 +23,8 @@ class Permisos
         'info-cambio-plan', 'buscar-clientes-traspaso', 'buscar-cliente',
         'buscar-cliente-individual', 'contar-destinatarios', 'obtener-destinatarios',
         'buscar',
+        // Buscar al socio al vender y los fiados de siempre: solo se mira.
+        'buscar-socio', 'frecuentes',
         // Preguntar si alguien ya está registrado: solo se mira.
         'verificar',
         'duplicados',
@@ -212,8 +214,30 @@ class Permisos
             return 'inscripciones.gestionar';
         }
 
+        /*
+         * EL ENVÍO A GRUPOS, CON LA PANTALLA. La pantalla del envío masivo
+         * pedía «editar» y recepción no la veía, pero el POST caía en «enviar»
+         * y la lista de correos en «ver»: con una petición a mano se mandaba
+         * un correo a todo el padrón y se bajaban todos los correos. Ahora todo
+         * lo del envío masivo pide lo mismo que su pantalla, y el envío suelto
+         * lo mismo que la suya.
+         */
+        if ($modulo === 'notificaciones' && in_array($accion, ['crear-masivo', 'enviar-masivo', 'obtener-destinatarios', 'preview-masivo'], true)) {
+            return 'notificaciones.editar';
+        }
+
+        if ($modulo === 'notificaciones' && $accion === 'enviar-individual') {
+            return 'notificaciones.crear';
+        }
+
         if ($modulo === 'notificaciones' && in_array($accion, self::ENVIO_NOTIFICACION, true)) {
             return 'notificaciones.enviar';
+        }
+
+        // Crear un taller es fijarle el precio por hora: lo mismo que
+        // editarlo, no lo que hace el mesón al anotar las clases.
+        if ($modulo === 'talleres' && $accion === 'store') {
+            return 'pagos.editar';
         }
 
         // Las plantillas de correo son configuracion: cambian lo que reciben

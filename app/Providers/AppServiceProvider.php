@@ -52,13 +52,21 @@ class AppServiceProvider extends ServiceProvider
         );
 
         /*
-         * EL LOGIN SE FRENA POR IP Y POR CUENTA. Solo por IP, quien prueba
-         * claves desde muchas direcciones no se frenaba nunca. Por cuenta: 20
-         * intentos por hora; quien se equivoca un par de veces no lo nota.
+         * EL LOGIN SE FRENA POR IP. Por cuenta se cuentan solo los FALLOS, en
+         * la ruta del login (routes/web.php): antes se contaba todo intento, y
+         * cualquiera que supiera el correo del administrador lo dejaba afuera
+         * una hora con 20 intentos desde 20 direcciones.
          */
         \Illuminate\Support\Facades\RateLimiter::for('login', fn (\Illuminate\Http\Request $request) => [
-            \Illuminate\Cache\RateLimiting\Limit::perMinute(8)->by('ip:' . $request->ip()),
-            \Illuminate\Cache\RateLimiting\Limit::perHour(20)->by('cuenta:' . mb_strtolower(trim((string) $request->input('email')))),
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(8)->by('ip:' . \App\Support\IpDelCliente::paraLimitar($request)),
         ]);
+
+        // Los demás frenos de lo que se usa sin sesión, por minuto. Con nombre
+        // en vez de «throttle:10,1» para que cuenten la red IPv6 entera (ver
+        // IpDelCliente) y no cada dirección suelta.
+        foreach (['publico' => 10, 'contrato' => 30, 'acceso' => 6, 'reenvio' => 4] as $nombre => $porMinuto) {
+            \Illuminate\Support\Facades\RateLimiter::for($nombre, fn (\Illuminate\Http\Request $request) => \Illuminate\Cache\RateLimiting\Limit::perMinute($porMinuto)
+                ->by($nombre . ':' . \App\Support\IpDelCliente::paraLimitar($request)));
+        }
     }
 }

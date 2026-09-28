@@ -89,7 +89,14 @@ class FallaController extends Controller
             'pantalla' => 'nullable|string|max:500',
         ]);
 
-        RegistroDeFallas::delNavegador($datos);
+        // Doscientos avisos por persona al día: una pantalla rota en un bucle
+        // (o alguien con mala intención) no llena la base.
+        $cupo = 'fallas-navegador:' . $request->user()->id;
+
+        if (! \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($cupo, 200)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($cupo, 86400);
+            RegistroDeFallas::delNavegador($datos);
+        }
 
         return response()->noContent();
     }

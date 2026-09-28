@@ -23,6 +23,20 @@ class ContratoPublicoController extends Controller
         $motivo = $this->porQueNo($contrato);
         $gimnasio = TextosLegales::datosDelGimnasio();
 
+        /*
+         * FIRMADO HACE MÁS DE UN MES: EL ENLACE YA NO ABRE. Mostraba para
+         * siempre el contrato entero (RUT, celular, precio, la firma) a quien
+         * tuviera el enlace, reenviado o en un correo ajeno. La copia ya llegó
+         * por correo y en el gimnasio la pueden volver a dar.
+         */
+        if ($motivo === 'firmado' && $contrato->firmado_en?->lt(now()->subDays(30))) {
+            return response()->view('contrato.no-disponible', [
+                'motivo' => 'archivado',
+                'contrato' => $contrato,
+                'gimnasio' => $gimnasio,
+            ], 410);
+        }
+
         if ($motivo === 'firmado') {
             return response()->view('contrato.firmado', [
                 'contrato' => $contrato,

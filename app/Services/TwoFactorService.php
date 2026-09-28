@@ -35,7 +35,7 @@ class TwoFactorService
 
         if ($sent) {
             // En desarrollo, guardar código en sesión para mostrar en pantalla
-            if (app()->environment('local', 'development')) {
+            if (self::codigoEnPantalla()) {
                 session(['dev_2fa_code' => $verification->codigoPlano]);
             }
             
@@ -44,7 +44,7 @@ class TwoFactorService
                 'message' => 'Código enviado a ' . $this->maskPhone($user->phone),
                 'channel' => $channel,
                 'expires_in' => 10, // minutos
-                'dev_code' => app()->environment('local', 'development') ? $verification->codigoPlano : null,
+                'dev_code' => self::codigoEnPantalla() ? $verification->codigoPlano : null,
             ];
         }
 
@@ -52,6 +52,20 @@ class TwoFactorService
             'success' => false,
             'message' => 'Error al enviar el código. Intenta nuevamente.',
         ];
+    }
+
+    /**
+     * EL CÓDIGO EN PANTALLA, SOLO EN MODO DESARROLLO Y SENTADO EN ESTE EQUIPO.
+     *
+     * Este PC corre en modo desarrollo y a veces se abre a internet por un
+     * túnel. Con solo mirar el entorno, quien tuviera la clave veía el código en
+     * la pantalla del túnel y el segundo factor no servía de nada. Ahora además
+     * la dirección tiene que ser localhost, como en «olvidé mi contraseña».
+     */
+    public static function codigoEnPantalla(): bool
+    {
+        return app()->environment('local', 'development')
+            && in_array(request()->getHost(), ['localhost', '127.0.0.1', '::1'], true);
     }
 
     /**
@@ -122,16 +136,13 @@ class TwoFactorService
         // laravel.log se la regala a cualquiera que pueda leer ese fichero,
         // copias de respaldo y visores incluidos. Antes se escribia siempre,
         // aunque justo debajo se devolviera false.
-        if (! app()->environment('local', 'development')) {
+        if (! self::codigoEnPantalla()) {
             Log::warning('2FA: no hay ningun canal de envio configurado.', ['canal' => 'whatsapp']);
 
             return false;
         }
 
-        Log::info('2FA WhatsApp (sin enviar, entorno de desarrollo)', [
-            'phone' => $phone,
-            'code' => $code,
-        ]);
+        Log::info('2FA WhatsApp sin enviar: el código se muestra en la pantalla de este equipo.');
 
         return true;
     }
@@ -155,16 +166,13 @@ class TwoFactorService
         // laravel.log se la regala a cualquiera que pueda leer ese fichero,
         // copias de respaldo y visores incluidos. Antes se escribia siempre,
         // aunque justo debajo se devolviera false.
-        if (! app()->environment('local', 'development')) {
+        if (! self::codigoEnPantalla()) {
             Log::warning('2FA: no hay ningun canal de envio configurado.', ['canal' => 'sms']);
 
             return false;
         }
 
-        Log::info('2FA SMS (sin enviar, entorno de desarrollo)', [
-            'phone' => $phone,
-            'code' => $code,
-        ]);
+        Log::info('2FA SMS sin enviar: el código se muestra en la pantalla de este equipo.');
 
         return true;
     }
@@ -192,11 +200,11 @@ class TwoFactorService
                 ]);
 
             if ($response->successful()) {
-                Log::info("Twilio {$channel} sent", ['phone' => $phone, 'sid' => $response->json('sid')]);
+                Log::info("Twilio {$channel} sent", ['phone' => $this->maskPhone($phone), 'sid' => $response->json('sid')]);
                 return true;
             }
 
-            Log::error("Twilio {$channel} failed", ['phone' => $phone, 'error' => $response->json()]);
+            Log::error("Twilio {$channel} failed", ['phone' => $this->maskPhone($phone), 'error' => $response->json()]);
             return false;
 
         } catch (\Exception $e) {

@@ -599,7 +599,8 @@ class InscripcionController extends Controller
         Log::info('=== INICIO TRASPASAR (TRANSFERENCIA) ===', [
             'inscripcion_id' => $inscripcion->id,
             'inscripcion_uuid' => $inscripcion->uuid,
-            'request_data' => $request->all()
+            // Solo a quién va: el motivo es texto libre y puede traer datos personales.
+            'id_cliente_destino' => $request->input('id_cliente_destino'),
         ]);
         
         try {

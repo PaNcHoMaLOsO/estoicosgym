@@ -983,7 +983,7 @@ class LandingController extends Controller
     public function contacto(Request $request)
     {
         // 1. Rate Limiting - Máximo 5 envíos por IP cada 10 minutos
-        $key = 'contacto:' . $request->ip();
+        $key = 'contacto:' . \App\Support\IpDelCliente::paraLimitar($request);
         
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
@@ -1107,6 +1107,20 @@ class LandingController extends Controller
         // Primero el correo de Configuracion: es el que el gimnasio dice que lee.
         $destino = Ajustes::obtener('gimnasio.email') ?: config('correo.contacto') ?: config('mail.from.address');
 
+        /*
+         * TREINTA CORREOS DE CONTACTO AL DÍA, NO MÁS. Cada uno sale del mismo
+         * cupo diario que los contratos y los avisos: desde varias direcciones
+         * se podía gastar el cupo entero y ese día no salía nada más. Pasado el
+         * tope, el mensaje queda en el registro de arriba y no se manda.
+         */
+        if (RateLimiter::tooManyAttempts('contacto:del-dia', 30)) {
+            Log::warning('Contacto de la web sin mandar: se pasó el tope del día.', ['destino' => $destino]);
+
+            return $volver()->with('success', '¡Gracias por contactarnos! Te responderemos pronto.');
+        }
+
+        RateLimiter::hit('contacto:del-dia', 86400);
+
         try {
             app(CorreoService::class)->enviar(
                 $destino,
@@ -1147,7 +1161,7 @@ class LandingController extends Controller
      */
     public function consultarMembresia(Request $request)
     {
-        $ip = (string) $request->ip();
+        $ip = \App\Support\IpDelCliente::paraLimitar($request);
 
         // 1. Trampa para bots: se les responde como a alguien que no existe.
         if ($request->filled('website') || $request->filled('url')) {
@@ -1182,6 +1196,19 @@ class LandingController extends Controller
         }
 
         RateLimiter::hit($keyConsultas, 300);
+
+        /*
+         * DOSCIENTOS FALLOS AL DÍA ENTRE TODOS. Los frenos por dirección y por
+         * RUT no alcanzan contra quien recorre una lista de celulares desde
+         * muchas conexiones. Pasado el tope, la consulta se hace en el mesón.
+         */
+        if (RateLimiter::tooManyAttempts('consulta_fallidos:del-dia', 200)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hoy la consulta en línea no está disponible. Pregunta en el mesón.',
+                'blocked' => true,
+            ], 429);
+        }
 
         // 3. Quién es.
         [$cliente, $llave, $respuesta] = $request->input('tipo', 'rut') === 'celular'
@@ -1314,6 +1341,7 @@ class LandingController extends Controller
         $keyFallidos = 'consulta_fallidos:' . $ip;
 
         RateLimiter::hit($keyFallidos, 900);
+        RateLimiter::hit('consulta_fallidos:del-dia', 86400);
 
         if (RateLimiter::attempts($keyFallidos) >= 5) {
             RateLimiter::hit('consulta_bloqueado:' . $ip, 1800);

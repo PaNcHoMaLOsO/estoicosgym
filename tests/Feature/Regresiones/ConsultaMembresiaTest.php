@@ -190,4 +190,26 @@ class ConsultaMembresiaTest extends CasoConCatalogos
             'El aviso del freno no dice que se intente más tarde.'
         );
     }
+
+    // ---------- IPv6 y el tope del día ----------
+
+    public function test_con_ipv6_se_cuenta_la_red_entera_y_no_cada_direccion(): void
+    {
+        // Tres consultas desde tres direcciones de la misma red: el tope por conexión.
+        for ($i = 1; $i <= 3; $i++) {
+            $this->consultar(['tipo' => 'rut', 'rut' => '11.111.111-2', 'digitos' => '0000'], "2800:150:1:2::{$i}");
+        }
+
+        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '2800:150:1:2::99')
+            ->assertStatus(429);
+    }
+
+    public function test_pasados_los_fallos_del_dia_la_consulta_se_hace_en_el_meson(): void
+    {
+        \Illuminate\Support\Facades\RateLimiter::increment('consulta_fallidos:del-dia', 86400, 200);
+
+        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '10.7.0.1')
+            ->assertStatus(429)
+            ->assertJsonPath('message', 'Hoy la consulta en línea no está disponible. Pregunta en el mesón.');
+    }
 }

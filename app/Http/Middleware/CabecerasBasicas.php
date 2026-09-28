@@ -13,8 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
  * La web pública ya tenía las suyas (SecurityHeaders, con su política de
  * contenidos); el panel no llevaba ninguna, y cualquier página podía cargarlo
  * dentro de un marco invisible y hacer que alguien pulsara «Eliminar» creyendo
- * pulsar otra cosa. Sin política de contenidos ni de permisos aquí: el panel
- * usa la cámara para la foto del socio.
+ * pulsar otra cosa. La política de contenidos es la mínima (sin marcos, sin
+ * <object>, formularios solo hacia aquí) y la de permisos deja la cámara para
+ * la foto del socio y nada más.
  *
  * No pisa lo que ya puso otro middleware.
  */
@@ -28,6 +29,8 @@ class CabecerasBasicas
             'X-Frame-Options' => 'DENY',
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
+            'Content-Security-Policy' => "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+            'Permissions-Policy' => 'camera=(self), microphone=(), geolocation=()',
         ] as $cabecera => $valor) {
             if (! $respuesta->headers->has($cabecera)) {
                 $respuesta->headers->set($cabecera, $valor);

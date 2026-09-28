@@ -121,7 +121,11 @@ class InscripcionFichaController extends Controller
                 ->get()
                 ->map(fn (HistorialCambio $c) => [
                     'id' => $c->id,
-                    'que' => $c->tipo_cambio ? ucfirst(str_replace('_', ' ', $c->tipo_cambio)) : 'Cambio',
+                    'que' => match ($c->tipo_cambio) {
+                        null, '' => 'Cambio',
+                        'correccion' => 'Corrección',
+                        default => ucfirst(str_replace('_', ' ', $c->tipo_cambio)),
+                    },
                     'cuando' => ($c->fecha_cambio ?? $c->created_at)?->format('d/m/Y H:i'),
                     'quien' => $c->usuario?->name,
                     'motivo' => $c->motivo,
