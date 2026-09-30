@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  *  · Membresías: los pagos de los socios, el día que se pagaron.
  *  · Talleres: lo facturado a colegios y empresas, el día que lo PAGARON —no
  *    el día que se emitió la factura—, con IVA incluido, que es lo que entra.
+ *    También los de un taller que después se mandó a la papelera: esa plata
+ *    ya entró, y borrar el taller no la saca del cajón.
  *  · Mesón: lo fiado que ya se cobró, el día que se cobró. Lo que se sigue
  *    debiendo no es un ingreso: va en «lo que se debe».
  *
@@ -52,7 +54,7 @@ class IngresosDelNegocio
             'membresias' => (int) Pago::ingresos()
                 ->whereBetween('fecha_pago', [$inicio, $fin])
                 ->sum('monto_abonado'),
-            'talleres' => (int) CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
+            'talleres' => (int) CobroTaller::whereNotNull('pagado_en')
                 ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
                 ->sum($sinIva ? 'neto' : 'total'),
             'meson' => (int) Fiado::where('pagado', true)
@@ -80,7 +82,7 @@ class IngresosDelNegocio
             ->groupBy('dia')
             ->pluck('total', 'dia');
 
-        $talleres = CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
+        $talleres = CobroTaller::whereNotNull('pagado_en')
             ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
             ->selectRaw('DATE(pagado_en) as dia, SUM(' . ($sinIva ? 'neto' : 'total') . ') as total')
             ->groupBy('dia')
@@ -105,5 +107,51 @@ class IngresosDelNegocio
         }
 
         return $dias;
+    }
+
+    /**
+     * Con qué medio entró la plata de las membresías y del mesón, entre dos
+     * días, ambos incluidos.
+     *
+     * LO PREGUNTAN LA CAJA Y EL INFORME DEL AÑO, y el informe contaba solo las
+     * membresías: lo cobrado del fiado en efectivo no aparecía en «Efectivo»,
+     * y el reparto por medio no cuadraba con el cajón. Los talleres no van: se
+     * pagan siempre por transferencia y no se cuadran contra el cajón.
+     *
+     * Lo fiado cobrado antes de que se anotara el medio va como «Sin anotar»:
+     * no se sabe y no se reparte a ojo.
+     *
+     * @return list<array{nombre:string, total:int, cantidad:int}>
+     */
+    public static function porMetodo(Carbon $desde, Carbon $hasta): array
+    {
+        $inicio = $desde->copy()->startOfDay();
+        $fin = $hasta->copy()->endOfDay();
+
+        $membresias = IngresosPorMetodo::en(fn ($q) => $q->whereBetween('fecha_pago', [$inicio, $fin]));
+
+        $meson = Fiado::where('pagado', true)
+            ->whereBetween('pagado_en', [$inicio, $fin])
+            ->with('metodoPago:id,nombre')
+            ->get()
+            ->groupBy(fn (Fiado $f) => $f->metodoPago?->nombre ?? 'Sin anotar')
+            ->map(fn ($filas, $nombre) => [
+                'nombre' => $nombre,
+                'total' => (int) $filas->sum('monto'),
+                // Un cobro del fiado salda varias líneas de una vez.
+                'cantidad' => $filas->unique(fn (Fiado $f) => $f->pagado_en?->toDateTimeString() . $f->claveDeCuenta())->count(),
+            ])
+            ->values();
+
+        return $membresias->concat($meson)
+            ->groupBy('nombre')
+            ->map(fn ($filas, $nombre) => [
+                'nombre' => $nombre,
+                'total' => (int) $filas->sum('total'),
+                'cantidad' => (int) $filas->sum('cantidad'),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
     }
 }

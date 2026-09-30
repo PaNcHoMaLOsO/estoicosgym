@@ -146,7 +146,15 @@ class PagoCrearController extends Controller
         return $inscripcion ? $this->resumir($inscripcion) : null;
     }
 
-    /** Inscripciones vivas de socios activos. El saldo se filtra al resumir. */
+    /**
+     * Inscripciones vivas de socios activos, más las VENCIDAS de cualquier
+     * socio. El saldo se filtra al resumir.
+     *
+     * La revisión de la noche da de baja a quien se quedó con la membresía
+     * vencida, aunque la deba. Si aquí solo contaran los socios activos, ese
+     * deudor desaparecía del buscador y su deuda no se podía cobrar nunca. Lo
+     * que se ofrece es saldar esa membresía: no lo reactiva ni le vende otra.
+     */
     private function conSaldo()
     {
         return Inscripcion::query()
@@ -155,7 +163,9 @@ class PagoCrearController extends Controller
             // inscripciones devuelva la búsqueda.
             ->withSum('pagos as abonado', 'monto_abonado')
             ->whereNotIn('id_estado', EstadosCodigo::INSCRIPCION_FINALIZADOS)
-            ->whereHas('cliente', fn ($q) => $q->where('activo', true));
+            ->where(fn ($q) => $q
+                ->where('id_estado', EstadosCodigo::INSCRIPCION_VENCIDA)
+                ->orWhereHas('cliente', fn ($c) => $c->where('activo', true)));
     }
 
     /** @return array<string,mixed>|null */

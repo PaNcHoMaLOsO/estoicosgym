@@ -206,7 +206,21 @@ class RegistroInscripcionService
         // cerrara primero anotaría «de Vencida a Activa», que no dice nada.
         HistorialCambio::registrarRenovacion($anterior, $nueva);
 
-        $anterior->update(['id_estado' => EstadosCodigo::INSCRIPCION_VENCIDA]);
+        // Y sin rastro de pausa. Si se cerraba solo el estado, una renovada en
+        // pausa guardaba la marca y los días: «Reanudar» la devolvía a Activa
+        // con esos días, al lado de la nueva. Ya no se deja renovar una pausada
+        // (InscripcionRenovarController), pero las que vengan de antes o de
+        // otro camino tampoco quedan a medio cerrar.
+        $anterior->update([
+            'id_estado' => EstadosCodigo::INSCRIPCION_VENCIDA,
+            'pausada' => false,
+            'dias_pausa' => null,
+            'dias_restantes_al_pausar' => null,
+            'fecha_pausa_inicio' => null,
+            'fecha_pausa_fin' => null,
+            'razon_pausa' => null,
+            'pausa_indefinida' => false,
+        ]);
     }
 
     /**
@@ -478,17 +492,24 @@ class RegistroInscripcionService
             'tipo_pago' => 'required|in:' . implode(',', self::FORMAS),
         ];
 
+        // Un pago no puede tener fecha futura: con la fecha UTC del navegador el
+        // formulario proponía «mañana» desde las 21:00, y ese pago caía en la
+        // caja del día siguiente (o en el mes siguiente, el 30 en la noche).
+        // «today» es el de Chile: la app corre en America/Santiago. Lo mismo
+        // exige el cobro suelto (RegistroPagoService).
+        $fechaDePago = 'required|date|before_or_equal:today';
+
         if ($forma === 'mixto') {
             $reglas['detalle_pagos_mixto'] = 'required|string';
-            $reglas['fecha_pago'] = 'required|date';
+            $reglas['fecha_pago'] = $fechaDePago;
         } elseif ($forma === 'completo') {
             // «Todo» no pregunta cuánto: es el total, y lo pone abonos().
             $reglas['id_metodo_pago'] = 'required|exists:metodos_pago,id';
-            $reglas['fecha_pago'] = 'required|date';
+            $reglas['fecha_pago'] = $fechaDePago;
         } elseif ($forma !== 'pendiente') {
             $reglas['monto_abonado'] = 'required|numeric|min:1';
             $reglas['id_metodo_pago'] = 'required|exists:metodos_pago,id';
-            $reglas['fecha_pago'] = 'required|date';
+            $reglas['fecha_pago'] = $fechaDePago;
         }
 
         return $reglas;
@@ -504,6 +525,7 @@ class RegistroInscripcionService
             'monto_abonado.required' => 'Indica cuánto paga.',
             'monto_abonado.min' => 'El monto tiene que ser mayor que cero.',
             'id_metodo_pago.required' => 'Indica cómo paga.',
+            'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser futura.',
         ];
     }
 

@@ -210,9 +210,15 @@ class Inscripcion extends Model
 
         // El estado es de la membresía entera, no de cada pago suelto: o está
         // saldada o no lo está.
+        //
+        // «Saldada» se mira ANTES que «no se cobró nada». Una cortesía o un
+        // descuento del 100% cuesta $0: se registra con un pago de $0 que ya
+        // la deja al día. Con el orden al revés, la revisión de la noche veía
+        // $0 cobrado y lo marcaba «Pendiente», y ese pendiente fantasma
+        // impedía dar de baja al socio o borrar sus datos.
         $estado = match (true) {
-            $cobrado <= 0 => EstadosCodigo::PAGO_PENDIENTE,
             $cobrado >= $precio => EstadosCodigo::PAGO_PAGADO,
+            $cobrado <= 0 => EstadosCodigo::PAGO_PENDIENTE,
             default => EstadosCodigo::PAGO_PARCIAL,
         };
 
@@ -369,6 +375,32 @@ class Inscripcion extends Model
     }
 
     /**
+     * Por qué no se puede reanudar, o null si se puede.
+     *
+     * No basta con la marca `pausada`. Renovar una membresía en pausa la
+     * cerraba como Vencida pero le dejaba la marca y los días guardados, y la
+     * ficha seguía ofreciendo «Reanudar»: al pulsarlo volvía a Activa con sus
+     * días, y el socio quedaba con DOS membresías vigentes, la vieja revivida
+     * y la nueva que acababa de pagar. Solo se reanuda la que está de verdad en
+     * pausa (101) y que nadie ha reemplazado todavía.
+     *
+     * Lo preguntan reanudar(), el controlador y la ficha: así el botón que se
+     * ve es el mismo que el servidor acepta.
+     */
+    public function porQueNoSePuedeReanudar(): ?string
+    {
+        if (! $this->pausada || (int) $this->id_estado !== EstadosCodigo::INSCRIPCION_PAUSADA) {
+            return 'Esta membresía no está pausada.';
+        }
+
+        if ($this->inscripcionesPosteriores()->exists()) {
+            return 'Esta membresía ya se renovó: la vigente es la nueva.';
+        }
+
+        return null;
+    }
+
+    /**
      * Reanudar la membresía pausada
      * 
      * LÓGICA CORRECTA:
@@ -380,7 +412,7 @@ class Inscripcion extends Model
      */
     public function reanudar()
     {
-        if (!$this->pausada) {
+        if ($this->porQueNoSePuedeReanudar() !== null) {
             return false;
         }
 

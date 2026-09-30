@@ -213,6 +213,13 @@ class RegistroPagoService
     /**
      * No se cobra sobre una membresia que ya termino ni a un socio dado de baja:
      * el dinero entraria a una inscripcion que nadie va a usar.
+     *
+     * SALVO LA DEUDA DE UNA MEMBRESIA VENCIDA. La revision de la noche
+     * (clientes:desactivar-vencidos) da de baja a quien tiene la membresia
+     * vencida y ninguna vigente, deba o no. El socio que se fue debiendo
+     * $30.000 amanecia inactivo, y desde ese momento no habia forma de anotar
+     * esos $30.000 cuando volvia a pagarlos. Cobrar lo que ya debia no lo
+     * reactiva ni le vende nada nuevo: solo salda una membresia que existio.
      */
     private function exigirInscripcionCobrable(Inscripcion $inscripcion): void
     {
@@ -224,7 +231,9 @@ class RegistroPagoService
             ]);
         }
 
-        if ($inscripcion->cliente && ! $inscripcion->cliente->activo) {
+        $deudaDeUnaVencida = (int) $inscripcion->id_estado === EstadosCodigo::INSCRIPCION_VENCIDA;
+
+        if ($inscripcion->cliente && ! $inscripcion->cliente->activo && ! $deudaDeUnaVencida) {
             throw ValidationException::withMessages([
                 'id_inscripcion' => 'No se puede cobrar a un socio dado de baja.',
             ]);

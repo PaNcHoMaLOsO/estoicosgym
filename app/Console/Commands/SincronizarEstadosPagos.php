@@ -19,6 +19,10 @@ use Illuminate\Console\Command;
  * Inscripcion::recalcularSusPagos(). Donde ya cuadra no escribe nada, así que
  * pasar todas las noches no cuesta ni ensucia; donde no cuadra —un pago tocado
  * a mano en la base, una pantalla vieja que no recalculaba— lo deja bien.
+ *
+ * Por eso no hizo falta migración para las cortesías de $0 que quedaron
+ * «Pendiente» (el modelo miraba «no se cobró nada» antes que «está saldada»):
+ * con el modelo corregido, la próxima corrida las deja pagadas.
  */
 class SincronizarEstadosPagos extends Command
 {

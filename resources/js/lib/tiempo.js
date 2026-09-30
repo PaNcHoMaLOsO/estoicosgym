@@ -20,3 +20,16 @@ export function haceCuanto(iso) {
 
     return 'recién';
 }
+
+/**
+ * La fecha de hoy en Chile, como «2026-09-28».
+ *
+ * NO toISOString(): esa da la fecha de Greenwich, y desde las 21:00 (20:00 en
+ * verano) en Chile ya es mañana allá. Los formularios de cobro proponían la
+ * fecha de mañana y el pago caía en el día o el mes equivocado. Se llama al
+ * usarla, no al cargar el archivo: una pestaña abierta desde ayer no se queda
+ * con la fecha de ayer.
+ */
+export function hoyEnChile() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+}

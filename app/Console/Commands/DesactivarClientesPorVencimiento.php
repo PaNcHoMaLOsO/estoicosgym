@@ -42,6 +42,10 @@ class DesactivarClientesPorVencimiento extends Command
          * con quien tiene la membresia en pausa.
          *
          * Se da de baja a quien tiene alguna vencida Y ninguna vigente.
+         *
+         * Aunque deba: la baja no borra la deuda. El saldo de una membresia
+         * vencida se sigue cobrando desde Cobrar, que encuentra al socio
+         * inactivo si tiene saldo (PagoCrearController y RegistroPagoService).
          */
         $clientes = \App\Models\Cliente::where('activo', true)
             ->whereHas('inscripciones', fn ($q) => $q

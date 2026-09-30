@@ -23,23 +23,38 @@ class IngresosPorMetodo
     private const MIXTO = 'pagos.id_metodo_pago2 IS NOT NULL AND pagos.monto_metodo1 IS NOT NULL';
 
     /**
+     * La parte del primer medio, ACOTADA entre cero y el monto del pago.
+     *
+     * El segundo medio se saca por diferencia, así que un monto_metodo1 más
+     * grande que el pago lo dejaba en negativo. Pasó de verdad: un mixto de
+     * $20.000 + $10.000 corregido a $3.000 conservaba los $20.000 del primero
+     * y la caja mostraba «Transferencia −$17.000». La corrección ya exige que
+     * el reparto cuadre; esto es para que una fila vieja o mal guardada no
+     * vuelva a pintar un medio en negativo.
+     */
+    private const PRIMERA_PARTE = 'CASE WHEN pagos.monto_metodo1 < 0 THEN 0'
+        . ' WHEN pagos.monto_metodo1 > pagos.monto_abonado THEN pagos.monto_abonado'
+        . ' ELSE pagos.monto_metodo1 END';
+
+    /**
      * @param callable(\Illuminate\Database\Eloquent\Builder): mixed $periodo  el recorte de fechas
      * @return Collection<int, array{nombre:string,total:int,cantidad:int}>
      */
     public static function en(callable $periodo): Collection
     {
         $mixto = self::MIXTO;
+        $primeraParte = self::PRIMERA_PARTE;
 
         $primero = Pago::ingresos()
             ->tap($periodo)
-            ->selectRaw("pagos.id_metodo_pago as metodo, SUM(CASE WHEN {$mixto} THEN pagos.monto_metodo1 ELSE pagos.monto_abonado END) as total, COUNT(*) as cantidad")
+            ->selectRaw("pagos.id_metodo_pago as metodo, SUM(CASE WHEN {$mixto} THEN {$primeraParte} ELSE pagos.monto_abonado END) as total, COUNT(*) as cantidad")
             ->groupBy('pagos.id_metodo_pago')
             ->get();
 
         $segundo = Pago::ingresos()
             ->tap($periodo)
             ->whereRaw($mixto)
-            ->selectRaw('pagos.id_metodo_pago2 as metodo, SUM(pagos.monto_abonado - pagos.monto_metodo1) as total, COUNT(*) as cantidad')
+            ->selectRaw("pagos.id_metodo_pago2 as metodo, SUM(pagos.monto_abonado - {$primeraParte}) as total, COUNT(*) as cantidad")
             ->groupBy('pagos.id_metodo_pago2')
             ->get();
 

@@ -225,8 +225,13 @@ class ConstructorInformes
                     ],
                     'fecha_pago' => ['titulo' => 'Fecha', 'tipo' => 'fecha'],
                     'monto_abonado' => ['titulo' => 'Abonado', 'tipo' => 'moneda'],
-                    'monto_pendiente' => ['titulo' => 'Pendiente', 'tipo' => 'moneda'],
-                    'monto_total' => ['titulo' => 'Total', 'tipo' => 'moneda'],
+                    // SIN SUMA ABAJO. Cada abono guarda el precio de la membresía
+                    // y lo que quedaba después de él: una de $40.000 pagada en
+                    // dos abonos de $20.000 sumaba «Total $80.000» y «Pendiente
+                    // $20.000» aunque vale 40 y ya no debe nada. Por fila se
+                    // leen bien; sumadas mienten. Lo que sí se suma es lo abonado.
+                    'monto_pendiente' => ['titulo' => 'Pendiente', 'tipo' => 'moneda', 'sin_total' => true],
+                    'monto_total' => ['titulo' => 'Total', 'tipo' => 'moneda', 'sin_total' => true],
                     'metodo' => [
                         'titulo' => 'Método',
                         'tipo' => 'texto',
@@ -634,6 +639,12 @@ class ConstructorInformes
             }
 
             if (isset($config['columnas'][$clave]['derivada'])) {
+                continue;
+            }
+
+            // Las que repiten el mismo dinero en varias filas (el precio de la
+            // membresía en cada uno de sus abonos) no se suman: ver 'pagos'.
+            if (! empty($config['columnas'][$clave]['sin_total'])) {
                 continue;
             }
 

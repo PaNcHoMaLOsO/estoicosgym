@@ -742,7 +742,8 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                                 Reanudar
                             </button>
                         ) : null}
-                        {cliente.activo && vigente ? (
+                        {/* Una pausada se reanuda antes de renovarla. */}
+                        {cliente.activo && vigente && ! pausada ? (
                             <a
                                 href={`/panel/inscripciones/${vigente.uuid}/renovar?volver=${cliente.uuid}`}
                                 onClick={abrirEnVentana({

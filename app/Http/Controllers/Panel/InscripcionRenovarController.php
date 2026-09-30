@@ -125,8 +125,13 @@ class InscripcionRenovarController extends Controller
         );
     }
 
-    /** El motivo por el que esta membresía no se puede renovar, o null. */
-    private function porQueNoSePuede(Inscripcion $inscripcion): ?string
+    /**
+     * El motivo por el que esta membresía no se puede renovar, o null.
+     *
+     * Público porque la ficha lo pregunta antes de ofrecer «Renovar»: el botón
+     * que se ve tiene que ser el que aquí se acepta.
+     */
+    public function porQueNoSePuede(Inscripcion $inscripcion): ?string
     {
         if (in_array($inscripcion->id_estado, EstadosCodigo::INSCRIPCION_FINALIZADOS, true)) {
             return 'Esta membresía ya está cerrada. Crea una inscripción nueva.';
@@ -136,6 +141,33 @@ class InscripcionRenovarController extends Controller
         // crearia una tercera membresia encadenada a una que ya no esta vigente.
         if (Inscripcion::where('id_inscripcion_anterior', $inscripcion->id)->exists()) {
             return 'Esta membresía ya se renovó.';
+        }
+
+        // En pausa, primero se reanuda. Renovarla la cerraba como Vencida pero
+        // la ficha seguía ofreciendo «Reanudar», y al pulsarlo revivía con sus
+        // días guardados al lado de la nueva: dos membresías vigentes.
+        //
+        // Por el estado y no por la marca `pausada`: las renovadas antes de este
+        // arreglo quedaron Vencidas con la marca puesta, y esas sí se tienen
+        // que poder renovar (al cerrarlas se limpia la marca).
+        if ((int) $inscripcion->id_estado === EstadosCodigo::INSCRIPCION_PAUSADA) {
+            return 'Esta membresía está pausada. Reanúdala antes de renovar.';
+        }
+
+        // Una vieja, cuando el socio ya tiene OTRA vigente. Se podía renovar la
+        // de marzo teniendo la de septiembre activa: quedaban dos activas y se
+        // le cobraba dos veces el mismo mes. Lo que toca es renovar la vigente.
+        $otraVigente = Inscripcion::where('id_cliente', $inscripcion->id_cliente)
+            ->whereKeyNot($inscripcion->getKey())
+            ->whereIn('id_estado', [EstadosCodigo::INSCRIPCION_ACTIVA, EstadosCodigo::INSCRIPCION_PAUSADA])
+            ->with('membresia:id,nombre')
+            ->first();
+
+        if ($otraVigente) {
+            $cual = $otraVigente->membresia?->nombre ?? 'otra membresía';
+            $estado = (int) $otraVigente->id_estado === EstadosCodigo::INSCRIPCION_PAUSADA ? 'pausada' : 'vigente';
+
+            return "Ya tiene {$cual} {$estado}: renueva esa.";
         }
 
         $dias = $this->diasQueQuedan($inscripcion);

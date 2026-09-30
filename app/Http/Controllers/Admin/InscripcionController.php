@@ -128,10 +128,14 @@ class InscripcionController extends Controller
         try {
             $inscripcion->load(['cliente', 'estado']);
 
-            if (!$inscripcion->pausada) {
+            // El modelo decide: que esté en pausa de verdad (101) y que no la
+            // haya reemplazado una renovación. Con solo mirar `pausada`, una
+            // membresía pausada que se renovó volvía a la vida y el socio
+            // quedaba con dos vigentes.
+            if ($motivo = $inscripcion->porQueNoSePuedeReanudar()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta membresía no está pausada',
+                    'message' => $motivo,
                 ], 422);
             }
 

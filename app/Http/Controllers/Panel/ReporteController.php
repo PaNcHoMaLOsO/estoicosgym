@@ -10,7 +10,6 @@ use App\Models\MetodoPago;
 use App\Models\CobroTaller;
 use App\Models\Fiado;
 use App\Support\IngresosDelNegocio;
-use App\Support\IngresosPorMetodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -45,10 +44,10 @@ class ReporteController extends Controller
             'cifras' => [
                 'socios' => Cliente::where('activo', true)->count(),
                 'activas' => Inscripcion::where('id_estado', self::ACTIVA)->count(),
-                'ingresos_mes' => (int) Pago::ingresos()
-                    ->whereYear('fecha_pago', $hoy->year)
-                    ->whereMonth('fecha_pago', $hoy->month)
-                    ->sum('monto_abonado'),
+                // Membresías, talleres y mesón: la misma cuenta que la Caja.
+                // Contaba solo las membresías, y «Ingresos del mes» decía
+                // menos que «entró este mes» de la Caja para el mismo mes.
+                'ingresos_mes' => IngresosDelNegocio::entre($hoy->copy()->startOfMonth(), $hoy)['total'],
                 'por_cobrar' => Inscripcion::porCobrar(),
             ],
         ]);
@@ -128,10 +127,12 @@ class ReporteController extends Controller
         });
 
         // Los talleres, por a quién se le cobró; el mesón, por qué se vendió.
+        // Lo pagado cuenta aunque el taller esté en la papelera: si no, la
+        // suma por institución dejaría de cuadrar con el total del año.
         $desde = Carbon::create($anio, 1, 1)->startOfDay();
         $hasta = Carbon::create($anio, 12, 31)->endOfDay();
 
-        $porInstitucion = CobroTaller::deTalleresVigentes()->with('taller.institucion')
+        $porInstitucion = CobroTaller::with('taller.institucion')
             ->whereNotNull('pagado_en')
             ->whereBetween('pagado_en', [$desde->toDateString(), $hasta->toDateString()])
             ->get()
@@ -157,9 +158,10 @@ class ReporteController extends Controller
             ->take(10)
             ->values();
 
-        // El reparto de los pagos mixtos entre sus dos medios vive en
-        // App\Support\IngresosPorMetodo: lo mismo pregunta la Caja por el mes.
-        $porMetodo = IngresosPorMetodo::en(fn ($q) => $q->whereYear('fecha_pago', $anio));
+        // Membresías y mesón, igual que la Caja: el reparto contaba solo las
+        // membresías y lo cobrado del fiado no salía en ningún medio. Los
+        // pagos mixtos se reparten en App\Support\IngresosPorMetodo.
+        $porMetodo = collect(IngresosDelNegocio::porMetodo($desde, $hasta));
 
         $porMembresia = Pago::ingresos()
             ->selectRaw('membresias.nombre, SUM(pagos.monto_abonado) as total, COUNT(*) as cantidad')

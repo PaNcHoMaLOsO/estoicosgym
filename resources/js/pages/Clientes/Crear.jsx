@@ -1,4 +1,5 @@
 import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
+import { hoyEnChile } from '@/lib/tiempo';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -112,8 +113,6 @@ function CampoFoto({ archivo, nombre, error, alElegir }) {
         </div>
     );
 }
-
-const hoy = new Date().toISOString().slice(0, 10);
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -403,6 +402,10 @@ function YaRegistrado({ socio }) {
 }
 
 export default function Crear({ membresias, convenios, motivos, metodosPago, formToken, preciosDeConvenio = {} }) {
+    // «Hoy» en Chile, calculado al abrir el formulario: la fecha UTC se
+    // adelantaba un día desde las 21:00 y proponía cobros con fecha de mañana.
+    const hoy = hoyEnChile();
+
     /*
      * EL PRECIO QUE PAGA ESTE CONVENIO por este plan.
      *

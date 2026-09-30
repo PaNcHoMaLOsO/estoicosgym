@@ -277,14 +277,15 @@ class ContenidoWebController extends Controller
     /** @return array<string,mixed> */
     private function validar(Request $request, string $tipo, bool $creando): array
     {
-        $largoTitulo = ['servicio' => 60, 'foto' => 150, 'pregunta' => 150, 'testimonio' => 60][$tipo];
-        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 200][$tipo];
+        $largoTitulo = ['servicio' => 60, 'foto' => 150, 'pregunta' => 150, 'testimonio' => 60, 'arriendo' => 150, 'institucion' => 100][$tipo];
+        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 200, 'arriendo' => 300, 'institucion' => 300][$tipo];
+        $conImagen = in_array($tipo, ['foto', 'arriendo', 'institucion'], true);
         // El testimonio sale en letra grande en la portada: con 400 caracteres
         // la diapositiva quedaba altísima y el carrusel saltaba de alto.
 
         $reglas = [
             'titulo' => ['required', 'string', "max:{$largoTitulo}"],
-            'texto' => [$tipo === 'foto' ? 'nullable' : 'required', 'string', "max:{$largoTexto}"],
+            'texto' => [$conImagen ? 'nullable' : 'required', 'string', "max:{$largoTexto}"],
             'activo' => 'boolean',
         ];
 
@@ -292,10 +293,15 @@ class ContenidoWebController extends Controller
             $reglas['icono'] = ['required', Rule::in(array_keys(ContenidoWeb::ICONOS))];
         }
 
-        if ($tipo === 'foto') {
+        if (in_array($tipo, ['foto', 'arriendo'], true)) {
             // Fotos de teléfono: hasta 8 MB, que igual se achican al guardarlas.
             // Sin SVG: puede llevar código que se ejecutaría desde la web.
             $reglas['imagen'] = [$creando ? 'required' : 'nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'];
+        }
+
+        if ($tipo === 'institucion') {
+            // El logo es opcional: sin él sale el nombre escrito.
+            $reglas['imagen'] = ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'];
         }
 
         if ($tipo === 'testimonio') {
@@ -305,7 +311,8 @@ class ContenidoWebController extends Controller
 
         $datos = $request->validate($reglas, [
             'titulo.required' => match ($tipo) {
-                'foto' => 'Describe qué muestra la foto: lo lee Google y quien no puede verla.',
+                'foto', 'arriendo' => 'Describe qué muestra la foto: lo lee Google y quien no puede verla.',
+                'institucion' => 'Escribe el nombre de la institución.',
                 'pregunta' => 'Escribe la pregunta.',
                 'testimonio' => 'Escribe el nombre como quiere que aparezca, por ejemplo «Camila R.».',
                 default => 'Ponle un nombre al servicio.',
@@ -343,11 +350,26 @@ class ContenidoWebController extends Controller
         }
 
         $anterior = $contenido->imagen;
-        $contenido->update(['imagen' => $this->guardarFoto($request->file('imagen'))]);
+        $contenido->update(['imagen' => $contenido->tipo === 'institucion'
+            ? $this->guardarLogo($request->file('imagen'))
+            : $this->guardarFoto($request->file('imagen'))]);
 
         if ($anterior && $anterior !== $contenido->imagen) {
             Storage::disk('public')->delete($anterior);
         }
+    }
+
+    /**
+     * El logo tal cual (un logo achicado a WebP pierde nitidez y a veces el
+     * fondo transparente), sin el margen blanco que traen muchos: si no, la
+     * marca se ve diminuta en la cinta. Como los logos de los convenios.
+     */
+    private function guardarLogo(UploadedFile $archivo): string
+    {
+        $ruta = $archivo->store('web/instituciones', 'public');
+        \App\Support\Imagenes::recortarBordes(Storage::disk('public')->path($ruta));
+
+        return $ruta;
     }
 
     /**

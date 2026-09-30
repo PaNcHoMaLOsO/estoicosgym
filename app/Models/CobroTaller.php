@@ -49,7 +49,14 @@ class CobroTaller extends Model
 
     /**
      * Los cobros de talleres que siguen vigentes. Un taller en la papelera
-     * se lleva sus cobros: no suman en la caja ni en lo que se debe.
+     * se lleva sus cobros SIN PAGAR: no suman en lo que se debe.
+     *
+     * SOLO PARA LO QUE FALTA COBRAR, no para lo pagado. Lo que el colegio ya
+     * pagó entró a la caja ese día, y mandar el taller a la papelera meses
+     * después no lo saca del cajón: aplicado a los ingresos, borrar un taller
+     * le restaba su plata a la caja y al informe del año. Por eso las cuentas
+     * de ingresos (IngresosDelNegocio, el IVA del mes, el informe por
+     * institución) no lo usan.
      */
     public function scopeDeTalleresVigentes($consulta)
     {

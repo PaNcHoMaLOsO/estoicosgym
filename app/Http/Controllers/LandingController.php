@@ -37,7 +37,7 @@ class LandingController extends Controller
         'informacion' => 'Información general',
         'inscripcion' => 'Quiero inscribirme',
         'convenio' => 'Convenio de empresa',
-        'arriendo' => 'Arriendo para instituciones',
+        'arriendo' => 'Arriendo de horas',
         'otro' => 'Otro',
     ];
 
@@ -57,6 +57,7 @@ class LandingController extends Controller
         'landing.gimnasio' => 'El gimnasio',
         'landing.planes' => 'Planes y precios',
         'landing.convenios' => 'Convenios',
+        'landing.arriendo' => 'Arriendo de horas',
         'landing.especialistas' => 'Especialistas',
         'landing.contacto' => 'Contacto',
         'landing.membresia' => 'Mi membresía',
@@ -142,13 +143,47 @@ class LandingController extends Controller
             ->implode(', ');
         $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
 
-        // El arriendo por horas va en la descripcion: es lo que Google muestra
-        // bajo el titulo, y quien lo busca no escribe «convenio».
-        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios y arriendo de gimnasio para universidades e institutos',
+        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios para estudiantes, empresas e instituciones',
             ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
-                . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : '')
-                . ' Arriendo de gimnasio por horas para clases prácticas y talleres de universidades e institutos.',
+                . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : ''),
             [], $comun);
+    }
+
+    /**
+     * Arriendo del gimnasio por horas para universidades e institutos.
+     *
+     * Su propia página, con título y descripción para quien busca «arriendo
+     * de gimnasio» en la ciudad: metido en Convenios no lo encontraba nadie.
+     */
+    public function arriendo()
+    {
+        $comun = $this->comun();
+        $ciudad = $comun['web']['ciudad'];
+        $gimnasio = $comun['gimnasio']['nombre'];
+        $instituciones = $this->contenidos('institucion')
+            ->map(fn (array $c) => ['nombre' => $c['titulo'], 'logo' => $c['imagen']])
+            ->all();
+        $nombres = collect($instituciones)->pluck('nombre')->take(4)->implode(', ');
+
+        return $this->pagina('landing.arriendo', 'landing.arriendo',
+            'Arriendo de gimnasio por horas para tus clases',
+            "Arrienda horas en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ': para universidades, clubes y entrenadores que dan sus clases con sala de máquinas, peso libre y cardio, junto a los socios.'
+                . ($nombres ? " Ya entrenan aquí {$nombres}." : '') . ' Marca las horas y te respondemos.',
+            [
+                'instituciones' => $instituciones,
+                'fotosDelArriendo' => $this->contenidos('arriendo')->filter(fn (array $c) => $c['imagen'])->values()->all(),
+                // La ficha para Google: un servicio del gimnasio, en su ciudad.
+                'json_ld' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Service',
+                    'name' => 'Arriendo de gimnasio por horas',
+                    'serviceType' => 'Arriendo de gimnasio por horas para clases',
+                    'audience' => ['@type' => 'Audience', 'audienceType' => 'Universidades, institutos, clubes deportivos y entrenadores'],
+                    'provider' => ['@type' => 'ExerciseGym', 'name' => $gimnasio, 'url' => route('landing')],
+                    'areaServed' => $ciudad ?: null,
+                    'url' => route('landing.arriendo'),
+                ],
+            ], $comun);
     }
 
     public function especialistas()
@@ -949,6 +984,7 @@ class LandingController extends Controller
             ['landing', '1.0'],
             ['landing.planes', '0.9'],
             $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8'] : null,
+            ['landing.arriendo', '0.8'],
             ['landing.gimnasio', '0.8'],
             Especialista::where('activo', true)->where('tipo', 'especialista')->exists() ? ['landing.especialistas', '0.7'] : null,
             ['landing.contacto', '0.7'],
@@ -1042,9 +1078,9 @@ class LandingController extends Controller
             }
 
             $lineas = collect([
-                'Institución' => $request->institucion,
-                'Carrera o área' => $request->area,
-                'Alumnos por bloque' => $request->alumnos,
+                'Quién' => $request->institucion,
+                'Qué clases' => $request->area,
+                'Personas por clase' => $request->alumnos,
             ])->map(fn ($v) => Str::limit(trim(strip_tags((string) $v)), 150, ''))
                 ->filter()
                 ->map(fn ($v, $k) => "{$k}: {$v}")

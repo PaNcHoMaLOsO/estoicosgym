@@ -53,6 +53,16 @@ class ContenidoWeb extends Model
             'singular' => 'testimonio',
             'descripcion' => 'Opiniones reales de socios, con su permiso. Salen en Inicio.',
         ],
+        'arriendo' => [
+            'titulo' => 'Arriendo: fotos',
+            'singular' => 'foto',
+            'descripcion' => 'El collage de la página Arrienda horas: grupos entrenando y el espacio. La primera sale grande.',
+        ],
+        'institucion' => [
+            'titulo' => 'Arriendo: logos',
+            'singular' => 'institución',
+            'descripcion' => 'Instituciones y clubes que ya hacen sus clases aquí. Salen en la página Arrienda horas: solo el nombre y el logo.',
+        ],
     ];
 
     /** Los íconos que se pueden elegir para un servicio (Font Awesome). */

@@ -14,6 +14,7 @@ use App\Models\Pago;
 use App\Models\Taller;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -211,17 +212,77 @@ class PapeleraController extends Controller
         $config = $this->tipos()[$tipo] ?? abort(404);
 
         $fila = $config['modelo']::onlyTrashed()->findOrFail($id);
-        $fila->restore();
 
-        // Un pago que vuelve cambia el saldo de todos los de su membresía:
-        // sin recalcular, los demás seguían diciendo lo que se debía sin él.
-        if ($fila instanceof \App\Models\Pago) {
-            $fila->inscripcion?->recalcularSusPagos();
+        if ($fila instanceof Pago) {
+            $problema = $this->restaurarPago($fila);
+
+            if ($problema) {
+                return back()->with('error', $problema);
+            }
+        } else {
+            $fila->restore();
         }
 
         $como = ($config['describir'])($fila);
 
         return back()->with('success', "«{$como['que']}» vuelve a estar disponible.");
+    }
+
+    /**
+     * Devuelve un pago anulado, si todavía cabe en su membresía.
+     *
+     * NO SE DEVUELVE A CIEGAS. El caso de verdad: se anula un pago de $25.000
+     * por error, en recepción se vuelve a cobrar la membresía, y alguien
+     * restaura el primero. Quedaban dos pagos de $25.000 sobre una membresía
+     * que vale $25.000, y la caja sumaba $50.000 que nunca entraron. Tampoco
+     * se devuelve si su membresía está en la papelera: el pago volvía a
+     * contar como ingreso colgado de una membresía que para el panel no existe.
+     *
+     * La membresía se traba mientras se mira, igual que al cobrar: si justo
+     * entra un cobro por la otra caja, uno de los dos espera y ve el saldo real.
+     *
+     * @return string|null  por qué no se pudo; null si quedó restaurado
+     */
+    private function restaurarPago(Pago $pago): ?string
+    {
+        return DB::transaction(function () use ($pago) {
+            // Un pago suelto, sin membresía, no tiene tope contra el que mirar.
+            if (! $pago->id_inscripcion) {
+                $pago->restore();
+
+                return null;
+            }
+
+            $inscripcion = Inscripcion::withTrashed()
+                ->whereKey($pago->id_inscripcion)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $inscripcion || $inscripcion->trashed()) {
+                return 'No se puede recuperar este pago: su membresía está borrada. Recupera primero la membresía desde esta misma papelera.';
+            }
+
+            $precio = (int) ($inscripcion->precio_final ?? $inscripcion->precio_base ?? 0);
+            $cobrado = (int) $inscripcion->pagos()->sum('monto_abonado');
+            $esteMonto = (int) $pago->monto_abonado;
+
+            if ($cobrado + $esteMonto > $precio) {
+                return sprintf(
+                    'No se puede recuperar este pago de $%s: la membresía vale $%s y ya tiene $%s cobrados. Si se volvió a cobrar, este pago sobra.',
+                    number_format($esteMonto, 0, ',', '.'),
+                    number_format($precio, 0, ',', '.'),
+                    number_format($cobrado, 0, ',', '.'),
+                );
+            }
+
+            $pago->restore();
+
+            // Un pago que vuelve cambia el saldo de todos los de su membresía:
+            // sin recalcular, los demás seguían diciendo lo que se debía sin él.
+            $inscripcion->recalcularSusPagos();
+
+            return null;
+        });
     }
 
     /**

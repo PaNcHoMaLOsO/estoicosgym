@@ -89,9 +89,13 @@ class InscripcionFichaController extends Controller
              */
             'puede' => [
                 'pausar' => ! $finalizada && $inscripcion->puedePausarse(),
-                'reanudar' => (bool) $inscripcion->pausada,
+                // No basta con la marca de pausa: una pausada que ya se renovó
+                // no se reanuda, o el socio queda con dos vigentes.
+                'reanudar' => $inscripcion->porQueNoSePuedeReanudar() === null,
                 'cobrar' => ! $finalizada && $pago['pendiente'] > 0,
-                'renovar' => ! $finalizada,
+                // Las mismas reglas que al renovar: ni una pausada, ni una ya
+                // renovada, ni una vieja cuando el socio tiene otra vigente.
+                'renovar' => app(InscripcionRenovarController::class)->porQueNoSePuede($inscripcion) === null,
                 'traspasar' => $inscripcion->puedeTraspasarse(true),
                 // Borrar es para la membresia que no deberia existir —la
                 // apuntada dos veces—, no para cancelar una real. Con dinero

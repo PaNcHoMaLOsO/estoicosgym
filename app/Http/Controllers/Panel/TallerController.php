@@ -377,8 +377,14 @@ class TallerController extends Controller
         $datos = $request->validate([
             'folio' => 'nullable|string|max:30',
             'emitido_en' => 'nullable|date',
-            'pagado_en' => 'nullable|date',
+            // Hasta hoy, con la hora de Chile (la zona de la app). El botón
+            // «Marcar pagada» mandaba la fecha de Greenwich y desde las 21:00
+            // anotaba el pago mañana: el ingreso no aparecía en la caja de
+            // hoy, y el último día del mes caía en el mes siguiente.
+            'pagado_en' => 'nullable|date|before_or_equal:today',
             'observaciones' => 'nullable|string|max:500',
+        ], [
+            'pagado_en.before_or_equal' => 'La fecha de pago no puede ser posterior a hoy.',
         ]);
 
         $cobro->update($datos);
@@ -393,9 +399,18 @@ class TallerController extends Controller
      * reabrir, las horas vuelven a quedar sueltas y se puede corregir. El folio
      * se pierde con el cobro a propósito: si ya se emitió la factura, lo que
      * corresponde es una nota de crédito, no cambiar el número por detrás.
+     *
+     * UN MES YA PAGADO NO SE REABRE: el cobro es también el ingreso. Borrarlo
+     * sacaba de la caja y del informe anual la plata que el colegio ya pagó, y
+     * el mes volvía a salir «por cobrar». Si de verdad hay que rehacerlo, se
+     * quita primero la fecha de pago, a sabiendas.
      */
     public function reabrir(CobroTaller $cobro)
     {
+        if ($cobro->pagado_en !== null) {
+            return back()->with('error', 'Este mes ya se pagó: quita primero la fecha de pago para poder reabrirlo.');
+        }
+
         DB::transaction(function () use ($cobro) {
             $cobro->horas()->update(['id_cobro' => null]);
             $cobro->delete();

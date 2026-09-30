@@ -18,6 +18,7 @@ import {
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Panel, pesos } from '@/components/Tablero';
 import { Reservado } from '@/Privado';
+import { hoyEnChile } from '@/lib/tiempo';
 
 /**
  * Un taller, mes a mes.
@@ -288,7 +289,8 @@ function DatosDelCobro({ cobro }) {
                 </label>
                 <label className="block">
                     <span className="rotulo">Pagada el</span>
-                    <input type="date" value={data.pagado_en} onChange={(e) => setData('pagado_en', e.target.value)} className={`${campo} mt-1`} />
+                    {/* Hasta hoy: un pago con fecha de mañana no entra a la caja de hoy. */}
+                    <input type="date" max={hoyEnChile()} value={data.pagado_en} onChange={(e) => setData('pagado_en', e.target.value)} className={`${campo} mt-1`} />
                 </label>
             </div>
 
@@ -691,7 +693,10 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                                         })) {
                                                             router.patch(
                                                                 `/panel/talleres/cobros/${c.uuid}`,
-                                                                { pagado_en: new Date().toISOString().slice(0, 10) },
+                                                                // Hoy EN CHILE: toISOString() da la fecha de
+                                                                // Greenwich, y desde las 21:00 anotaba el pago
+                                                                // mañana, que la caja no cuenta hasta mañana.
+                                                                { pagado_en: hoyEnChile() },
                                                                 { preserveScroll: true },
                                                             );
                                                         }
@@ -731,23 +736,32 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                 <DatosDelCobro cobro={cobro} />
 
                                 {/* Reabrir hace falta: se cierra julio y aparece
-                                    una clase que no estaba anotada. */}
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        if (await confirmar({
-                                            titulo: '¿Reabrir el mes?',
-                                            mensaje: 'Se borra la cuenta cerrada, con su folio y las fechas de la factura, y se vuelven a poder anotar horas.',
-                                            confirmar: 'Reabrir el mes',
-                                            peligrosa: true,
-                                        })) {
-                                            router.delete(`/panel/talleres/cobros/${cobro.uuid}`, { preserveScroll: true });
-                                        }
-                                    }}
-                                    className="apoyo mt-3 text-fog transition-colors hover:text-danger"
-                                >
-                                    Reabrir el mes
-                                </button>
+                                    una clase que no estaba anotada. Pero no si ya
+                                    lo pagaron: reabrir borra el cobro y con él el
+                                    ingreso de la caja. Primero se quita la fecha
+                                    de pago, a sabiendas. */}
+                                {cobro.pagado_en ? (
+                                    <p className="apoyo mt-3 text-fog">
+                                        Ya está pagado. Para reabrir el mes, quita primero la fecha de pago.
+                                    </p>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (await confirmar({
+                                                titulo: '¿Reabrir el mes?',
+                                                mensaje: 'Se borra la cuenta cerrada, con su folio y las fechas de la factura, y se vuelven a poder anotar horas.',
+                                                confirmar: 'Reabrir el mes',
+                                                peligrosa: true,
+                                            })) {
+                                                router.delete(`/panel/talleres/cobros/${cobro.uuid}`, { preserveScroll: true });
+                                            }
+                                        }}
+                                        className="apoyo mt-3 text-fog transition-colors hover:text-danger"
+                                    >
+                                        Reabrir el mes
+                                    </button>
+                                )}
                             </>
                         ) : (
                             <button

@@ -1,5 +1,6 @@
 import PedirCelular from '@/components/PedirCelular';
 import { PREFIJO } from '@/lib/socio';
+import { hoyEnChile } from '@/lib/tiempo';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
@@ -8,8 +9,6 @@ import { ArrowLeftIcon, UserPlusIcon } from 'lucide-react';
 import Cobro, { Botones, detalleDePartes, metodoPorDefecto, partesIniciales } from '@/components/Cobro';
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
-
-const hoy = new Date().toISOString().slice(0, 10);
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -70,6 +69,10 @@ function precioCon(plan, idConvenio, preciosDeConvenio) {
 }
 
 export default function Crear({ preseleccionado, membresias, convenios, motivos, metodosPago, formToken, volverA = '', preciosDeConvenio = {} }) {
+    // «Hoy» en Chile, calculado al abrir el formulario: la fecha UTC se
+    // adelantaba un día desde las 21:00 y proponía cobros con fecha de mañana.
+    const hoy = hoyEnChile();
+
     const [socio, setSocio] = useState(preseleccionado ?? null);
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState(null);

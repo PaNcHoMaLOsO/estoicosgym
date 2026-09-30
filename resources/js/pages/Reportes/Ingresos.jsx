@@ -167,8 +167,10 @@ export default function Ingresos({
                     <Barras filas={porMembresia} formato={(v) => pesos.format(v)} vacio="Ninguna membresía cobrada este año." />
                 </Panel>
 
-                <Panel titulo="Membresías, por medio de pago" descripcion="Un pago repartido cuenta en cada medio.">
-                    <Barras filas={porMetodo} formato={(v) => pesos.format(v)} vacio="Ninguna membresía cobrada este año." />
+                {/* Con el mesón, igual que la Caja: es lo que se cuadra contra
+                    el cajón. Los talleres no, se pagan por transferencia. */}
+                <Panel titulo="Membresías y mesón, por medio de pago" descripcion="Un pago repartido cuenta en cada medio.">
+                    <Barras filas={porMetodo} formato={(v) => pesos.format(v)} vacio="Nada cobrado este año." />
                 </Panel>
 
                 <Panel titulo="Talleres, por colegio o empresa" descripcion="Lo facturado y ya pagado, con IVA incluido.">

@@ -8,6 +8,7 @@
         ['ruta' => 'landing.gimnasio', 'texto' => 'El gimnasio'],
         ['ruta' => 'landing.planes', 'texto' => 'Planes'],
         $navegacion['convenios'] ? ['ruta' => 'landing.convenios', 'texto' => 'Convenios'] : null,
+        ['ruta' => 'landing.arriendo', 'texto' => 'Arrienda horas'],
         $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especialista'] : null,
         ['ruta' => 'landing.contacto', 'texto' => 'Contacto'],
     ]));

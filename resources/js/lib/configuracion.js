@@ -61,6 +61,8 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
+            { href: '/panel/web/arriendo', etiqueta: 'Arriendo: fotos', permiso: 'configuracion.ver' },
+            { href: '/panel/web/institucion', etiqueta: 'Arriendo: logos', permiso: 'configuracion.ver' },
             { href: '/panel/especialistas', etiqueta: 'Especialistas', permiso: 'configuracion.ver' },
             { href: '/panel/embajadores', etiqueta: 'Embajadores', permiso: 'configuracion.ver' },
             // El QR de la sala: «Qué entrenar hoy».

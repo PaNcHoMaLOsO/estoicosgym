@@ -1,12 +1,11 @@
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
+import { hoyEnChile } from '@/lib/tiempo';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { ArrowLeftIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Texto } from '@/components/Campo';
 import Cobro, { metodoPorDefecto, partesIniciales } from '@/components/Cobro';
-
-const hoy = new Date().toISOString().slice(0, 10);
 
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -23,6 +22,10 @@ const pesos = new Intl.NumberFormat('es-CL', {
  * de quien hablamos esos campos no significan nada.
  */
 export default function Crear({ preseleccionada, metodosPago, formToken, volverA = '' }) {
+    // «Hoy» en Chile, calculado al abrir el formulario: la fecha UTC se
+    // adelantaba un día desde las 21:00 y proponía cobros con fecha de mañana.
+    const hoy = hoyEnChile();
+
     // A quién se le cobra. Si se llega desde una ficha, ya viene resuelta.
     const [elegida, setElegida] = useState(preseleccionada ?? null);
     const [busqueda, setBusqueda] = useState('');

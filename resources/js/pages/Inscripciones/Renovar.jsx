@@ -1,5 +1,6 @@
 import PedirCelular from '@/components/PedirCelular';
 import { PREFIJO } from '@/lib/socio';
+import { hoyEnChile } from '@/lib/tiempo';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
@@ -86,7 +87,8 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
         // Marcado en efectivo: es lo que más se usa en el mesón.
         id_metodo_pago: metodoPorDefecto(metodosPago),
         detalle_pagos_mixto: '',
-        fecha_pago: new Date().toISOString().slice(0, 10),
+        // Hoy en Chile, no en UTC: desde las 21:00 proponía la fecha de mañana.
+        fecha_pago: hoyEnChile(),
     });
 
     const plan = useMemo(

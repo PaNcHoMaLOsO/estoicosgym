@@ -439,6 +439,10 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                 datos={{
                     id_cliente: cobrando?.id_cliente ?? null,
                     nombre: cobrando?.nombre ?? null,
+                    // Las líneas que se ven: se salda justo eso, aunque estén
+                    // escritas con otra mayúscula o alguien apunte otra cosa
+                    // mientras se cobra.
+                    lineas: cobrando?.lineas?.map((l) => l.uuid) ?? [],
                 }}
             />
 

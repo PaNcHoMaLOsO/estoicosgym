@@ -1,3 +1,4 @@
+import { hoyEnChile } from '@/lib/tiempo';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { ArrowLeftIcon, SendIcon, UsersIcon } from 'lucide-react';
@@ -13,9 +14,11 @@ import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
  * personas no se puede recoger, y «182 socios» es un numero: los numeros no
  * dejan ver que ahi dentro esta quien se dio de baja ayer.
  */
-const hoy = new Date().toISOString().slice(0, 10);
-
 export default function Masivo({ grupos, membresias, variables, tope, formToken }) {
+    // «Hoy» en Chile y al abrir la pantalla: con la fecha UTC, desde las 21:00
+    // un envío para mañana no contaba como programado.
+    const hoy = hoyEnChile();
+
     const [lista, setLista] = useState(null);
     const [cargandoLista, setCargandoLista] = useState(false);
     const [vista, setVista] = useState(null);

@@ -87,6 +87,27 @@ class Fiado extends Model
     }
 
     /**
+     * Las líneas de una cuenta, con el MISMO criterio que claveDeCuenta().
+     *
+     * La pantalla junta «Juan» y «juan » en una sola cuenta, pero saldar y
+     * reabrir buscaban el nombre exacto: se cobraba la cuenta de $4.000, se
+     * marcaba solo la línea escrita igual que la primera y la otra seguía
+     * debiéndose. Aquí se compara sin mayúsculas ni espacios de los bordes,
+     * igual que al agrupar. Funciona en PostgreSQL y en SQLite; en SQLite
+     * LOWER() no baja las tildes («Ángel» y «ángel» no casan), por eso la
+     * pantalla manda además los uuid de las líneas que muestra.
+     */
+    public function scopeDeLaCuenta(Builder $consulta, ?int $idCliente, ?string $nombre): Builder
+    {
+        if ($idCliente) {
+            return $consulta->where('id_cliente', $idCliente);
+        }
+
+        return $consulta->whereNull('id_cliente')
+            ->whereRaw('LOWER(TRIM(nombre)) = ?', [mb_strtolower(trim((string) $nombre))]);
+    }
+
+    /**
      * Con qué se agrupan las líneas de una misma persona.
      *
      * El socio manda: dos líneas del mismo socio son la misma cuenta aunque una

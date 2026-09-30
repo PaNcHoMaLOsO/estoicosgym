@@ -29,7 +29,36 @@ export default function Editar({ pago, metodosPago, formToken }) {
         id_metodo_pago: pago.id_metodo_pago ? String(pago.id_metodo_pago) : '',
         referencia_pago: pago.referencia_pago ?? '',
         observaciones: pago.observaciones ?? '',
+        // Solo cuentan en un pago repartido entre dos medios. Van siempre,
+        // prellenados con lo guardado, para que corregir el monto obligue a
+        // cuadrar el reparto: si no, la caja sacaba un medio en negativo.
+        como_simple: false,
+        id_metodo_pago2: pago.id_metodo_pago2 ? String(pago.id_metodo_pago2) : '',
+        monto_metodo1: pago.monto_metodo1 ?? '',
+        monto_metodo2: pago.monto_metodo2 ?? '',
     });
+
+    const repartido = pago.repartido && ! data.como_simple;
+    const sumaPartes = Number(data.monto_metodo1 || 0) + Number(data.monto_metodo2 || 0);
+    const cuadra = sumaPartes === Number(data.monto_abonado || 0);
+
+    // Al tocar el monto o la primera parte, la segunda se ajusta sola: es
+    // lo que casi siempre se quiere, y si no, se cambia a mano.
+    function cambiarMonto(v) {
+        setData((d) => ({
+            ...d,
+            monto_abonado: v,
+            monto_metodo2: d.monto_metodo1 === '' ? d.monto_metodo2 : Math.max(0, Number(v || 0) - Number(d.monto_metodo1)),
+        }));
+    }
+
+    function cambiarPrimeraParte(v) {
+        setData((d) => ({
+            ...d,
+            monto_metodo1: v,
+            monto_metodo2: Math.max(0, Number(d.monto_abonado || 0) - Number(v || 0)),
+        }));
+    }
 
     // Sin guardar y con algo escrito: pregunta antes de salir.
     const tocar = useAvisoAlSalir(isDirty && ! processing);
@@ -79,7 +108,7 @@ export default function Editar({ pago, metodosPago, formToken }) {
                             min="1"
                             max={pago.tope}
                             valor={data.monto_abonado}
-                            alCambiar={(v) => setData('monto_abonado', v)}
+                            alCambiar={pago.repartido ? cambiarMonto : (v) => setData('monto_abonado', v)}
                         />
                     </Campo>
 
@@ -98,7 +127,12 @@ export default function Editar({ pago, metodosPago, formToken }) {
                         />
                     </Campo>
 
-                    <Campo etiqueta="Método" nombre="id_metodo_pago" error={errors.id_metodo_pago} requerido>
+                    <Campo
+                        etiqueta={repartido ? 'Primer medio' : 'Método'}
+                        nombre="id_metodo_pago"
+                        error={errors.id_metodo_pago}
+                        requerido
+                    >
                         <Seleccion
                             nombre="id_metodo_pago"
                             valor={data.id_metodo_pago}
@@ -113,6 +147,72 @@ export default function Editar({ pago, metodosPago, formToken }) {
                             vacio={pago.id_metodo_pago ? null : 'Elige cómo pagó…'}
                         />
                     </Campo>
+
+                    {repartido ? (
+                        <>
+                            <Campo
+                                etiqueta="Cuánto por el primer medio"
+                                nombre="monto_metodo1"
+                                error={errors.monto_metodo1}
+                                requerido
+                                ayuda={
+                                    cuadra
+                                        ? 'Las dos partes suman el monto del pago.'
+                                        : `Las dos partes suman ${pesos.format(sumaPartes)} y el pago es de ${pesos.format(Number(data.monto_abonado || 0))}.`
+                                }
+                            >
+                                <Texto
+                                    nombre="monto_metodo1"
+                                    tipo="number"
+                                    min="1"
+                                    valor={data.monto_metodo1}
+                                    alCambiar={cambiarPrimeraParte}
+                                />
+                            </Campo>
+
+                            <Campo etiqueta="Segundo medio" nombre="id_metodo_pago2" error={errors.id_metodo_pago2} requerido>
+                                <Seleccion
+                                    nombre="id_metodo_pago2"
+                                    valor={data.id_metodo_pago2}
+                                    alCambiar={(v) => setData('id_metodo_pago2', v)}
+                                    opciones={metodosPago
+                                        .filter((m) => String(m.id) !== String(data.id_metodo_pago))
+                                        .map((m) => ({ valor: String(m.id), etiqueta: m.nombre }))}
+                                    vacio="Elige el segundo medio…"
+                                />
+                            </Campo>
+
+                            <Campo
+                                etiqueta="Cuánto por el segundo medio"
+                                nombre="monto_metodo2"
+                                error={errors.monto_metodo2}
+                                requerido
+                            >
+                                <Texto
+                                    nombre="monto_metodo2"
+                                    tipo="number"
+                                    min="1"
+                                    valor={data.monto_metodo2}
+                                    alCambiar={(v) => setData('monto_metodo2', v)}
+                                />
+                            </Campo>
+                        </>
+                    ) : null}
+
+                    {pago.repartido ? (
+                        <label className="flex items-start gap-2 text-sm text-chalk">
+                            <input
+                                type="checkbox"
+                                checked={data.como_simple}
+                                onChange={(e) => setData('como_simple', e.target.checked)}
+                                className="mt-0.5 size-4 rounded-[4px] border-line-strong"
+                            />
+                            <span>
+                                Todo entró por un solo medio
+                                <span className="apoyo block text-fog">Deja de repartirse: el monto completo va al método elegido.</span>
+                            </span>
+                        </label>
+                    ) : null}
 
                     <Campo
                         etiqueta="Comprobante"

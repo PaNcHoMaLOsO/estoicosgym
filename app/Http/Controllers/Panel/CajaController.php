@@ -9,7 +9,6 @@ use App\Models\Fiado;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Support\IngresosDelNegocio;
-use App\Support\IngresosPorMetodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +90,9 @@ class CajaController extends Controller
             'talleres' => [
                 'por_cobrar' => (int) CobroTaller::deTalleresVigentes()->whereNull('pagado_en')->sum($this->sinIva ? 'neto' : 'total'),
                 // El IVA de lo que pagaron este mes: lo que se aparta para el SII.
-                'iva_mes' => (int) CobroTaller::deTalleresVigentes()->whereNotNull('pagado_en')
+                // Con los talleres en la papelera incluidos: esa factura se
+                // pagó y su IVA se le debe al SII igual.
+                'iva_mes' => (int) CobroTaller::whereNotNull('pagado_en')
                     ->whereBetween('pagado_en', [$mes[0]->toDateString(), $mes[1]->toDateString()])
                     ->sum('iva'),
                 'facturas' => CobroTaller::deTalleresVigentes()->whereNull('pagado_en')->count(),
@@ -110,38 +111,12 @@ class CajaController extends Controller
     }
 
     /**
-     * Con qué medio entró la plata de las membresías y del mesón.
-     *
-     * Lo fiado cobrado antes de que se anotara el medio va como «Sin anotar»:
-     * no se sabe y no se reparte a ojo.
+     * Con qué medio entró la plata de las membresías y del mesón. La cuenta
+     * vive en IngresosDelNegocio: el informe del año pregunta lo mismo.
      */
     private function porMetodo(array $mes): array
     {
-        $membresias = IngresosPorMetodo::en(fn ($q) => $q->whereBetween('fecha_pago', $mes));
-
-        $meson = Fiado::where('pagado', true)
-            ->whereBetween('pagado_en', [$mes[0], $mes[1]->copy()->endOfDay()])
-            ->with('metodoPago:id,nombre')
-            ->get()
-            ->groupBy(fn (Fiado $f) => $f->metodoPago?->nombre ?? 'Sin anotar')
-            ->map(fn ($filas, $nombre) => [
-                'nombre' => $nombre,
-                'total' => (int) $filas->sum('monto'),
-                // Un cobro del fiado salda varias líneas de una vez.
-                'cantidad' => $filas->unique(fn (Fiado $f) => $f->pagado_en?->toDateTimeString() . $f->claveDeCuenta())->count(),
-            ])
-            ->values();
-
-        return $membresias->concat($meson)
-            ->groupBy('nombre')
-            ->map(fn ($filas, $nombre) => [
-                'nombre' => $nombre,
-                'total' => (int) $filas->sum('total'),
-                'cantidad' => (int) $filas->sum('cantidad'),
-            ])
-            ->sortByDesc('total')
-            ->values()
-            ->all();
+        return IngresosDelNegocio::porMetodo($mes[0], $mes[1]);
     }
 
     /**

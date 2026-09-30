@@ -116,17 +116,29 @@ class FiadoController extends Controller
             // CON QUÉ SE PAGÓ. Sin esto la caja sabía cuánto entró del mesón
             // pero no cuánto había en efectivo en el cajón.
             'id_metodo_pago' => ['required', Rule::exists('metodos_pago', 'id')->where('activo', true)->whereNull('deleted_at')],
+            // Las líneas que se vieron al pulsar «Pagó». Se salda eso y nada
+            // más: lo que se cobra es el total que tenía delante quien cobró.
+            'lineas' => 'nullable|array|max:500',
+            'lineas.*' => 'uuid',
         ], [
             'id_metodo_pago.required' => 'Elige con qué pagó.',
             'id_metodo_pago.exists' => 'Ese medio de pago no está disponible.',
         ]);
 
+        /*
+         * DE QUIÉN SON LAS LÍNEAS, CON EL MISMO CRITERIO DE LA PANTALLA.
+         *
+         * Antes se buscaba el nombre exacto: la pantalla juntaba «Juan» y
+         * «juan» en una cuenta de $4.000, «Pagó» saldaba solo la de «Juan» y
+         * los $2.500 de «juan» seguían debiéndose aunque el cliente ya los
+         * había pagado. Ahora se filtra como agrupa claveDeCuenta() y, si la
+         * pantalla manda las líneas que mostraba, se saldan esas: si entre
+         * abrir la pantalla y pulsar alguien apuntó otra bebida, esa no se da
+         * por pagada sin que se haya cobrado.
+         */
         $pendientes = Fiado::debiendo()
-            ->when(
-                ! empty($datos['id_cliente']),
-                fn ($q) => $q->where('id_cliente', $datos['id_cliente']),
-                fn ($q) => $q->whereNull('id_cliente')->where('nombre', $datos['nombre'] ?? '')
-            )
+            ->deLaCuenta($datos['id_cliente'] ?? null, $datos['nombre'] ?? null)
+            ->when(! empty($datos['lineas']), fn ($q) => $q->whereIn('uuid', $datos['lineas']))
             ->get();
 
         if ($pendientes->isEmpty()) {
@@ -181,11 +193,9 @@ class FiadoController extends Controller
         // y deshacerlo tiene que deshacer el gesto entero.
         $delMismoCobro = Fiado::where('pagado', true)
             ->where('pagado_en', $fiado->pagado_en)
-            ->when(
-                $fiado->id_cliente,
-                fn ($q) => $q->where('id_cliente', $fiado->id_cliente),
-                fn ($q) => $q->whereNull('id_cliente')->where('nombre', $fiado->nombre)
-            )
+            // La misma cuenta que agrupa la pantalla: con el nombre exacto,
+            // deshacer el cobro de «Juan» dejaba pagada la línea de «juan».
+            ->deLaCuenta($fiado->id_cliente, $fiado->nombre)
             ->get();
 
         DB::transaction(function () use ($delMismoCobro) {

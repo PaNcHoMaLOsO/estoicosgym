@@ -27,7 +27,19 @@ class PagoFichaController extends Controller
 
         $cliente = $pago->cliente;
         $inscripcion = $pago->inscripcion;
-        $esMixto = $pago->tipo_pago === 'mixto';
+        /*
+         * Repartido es tener DOS medios guardados, no decir «mixto»: las partes
+         * de un mixto hecho al inscribir son pagos de un solo medio con ese
+         * tipo, y leerlas como repartidas mostraba el medio con $0.
+         *
+         * El reparto se lee igual que en la Caja (IngresosPorMetodo): la
+         * primera parte acotada al monto y la segunda por diferencia. Un mixto
+         * corregido antes del arreglo guardaba el reparto viejo, y aquí salía
+         * «$20.000 + $10.000» en un pago de $3.000.
+         */
+        $esMixto = PagoEditarController::esRepartido($pago);
+        $abonado = (int) $pago->monto_abonado;
+        $primeraParte = $esMixto ? min(max((int) $pago->monto_metodo1, 0), $abonado) : $abonado;
 
         return Inertia::render('Pagos/Ficha', [
             'pago' => [
@@ -57,11 +69,11 @@ class PagoFichaController extends Controller
                 ? array_values(array_filter([
                     $pago->metodoPago ? [
                         'nombre' => $pago->metodoPago->nombre,
-                        'monto' => (int) $pago->monto_metodo1,
+                        'monto' => $primeraParte,
                     ] : null,
                     $pago->metodoPago2 ? [
                         'nombre' => $pago->metodoPago2->nombre,
-                        'monto' => (int) $pago->monto_metodo2,
+                        'monto' => $abonado - $primeraParte,
                     ] : null,
                 ]))
                 : ($pago->metodoPago ? [[

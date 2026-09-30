@@ -114,6 +114,16 @@ class EvolucionDelNegocio
      * mesón— aparecería como perdido y recuperado el mismo mes, y la cuenta de
      * bajas sería tres veces la real. Por lo mismo, el último mes y medio no se
      * puede dar por cerrado: esa gente todavía puede volver.
+     *
+     * LOS 45 DÍAS SE CUENTAN DESDE QUE VENCIÓ SU MEMBRESÍA, no desde el fin del
+     * mes. Se buscaba una compra que empezara después del 31: quien vencía el
+     * 10 de mayo y renovaba desde el 11 —lo normal, sin cortes— tenía la
+     * renovación DENTRO de mayo y salía como ido. Y si renovaba a un plan
+     * trimestral, volvía a salir como ido tres meses después. Ahora se mira
+     * cada membresía que venció en el mes: el socio sigue si alguna otra suya
+     * empieza antes de que pasen 45 días desde el vencimiento y dura más allá
+     * de él (una renovación, aunque se haya comprado antes y ya estuviera
+     * corriendo). Se fue si alguna de las que vencieron ese mes no tuvo eso.
      */
     private function seFueronEn(Carbon $inicio, Carbon $fin): int
     {
@@ -125,17 +135,19 @@ class EvolucionDelNegocio
 
         return $this->membresias
             ->filter(fn ($m) => $m->hasta->between($inicio, $fin))
-            ->pluck('socio')
-            ->unique()
-            ->filter(function (int $socio) use ($fin) {
-                $gracia = $fin->copy()->addDays(self::DIAS_DE_GRACIA);
+            ->filter(function ($vencida) {
+                $gracia = $vencida->hasta->copy()->addDays(self::DIAS_DE_GRACIA);
 
                 // Solo las suyas: antes se recorrían las mil setecientas por
                 // cada socio y cada mes, y el informe tardaba medio segundo.
-                return ! $this->porSocio[$socio]->contains(
-                    fn ($m) => $m->desde->gt($fin) && $m->desde->lte($gracia)
+                return ! $this->porSocio[$vencida->socio]->contains(
+                    fn ($otra) => $otra !== $vencida
+                        && $otra->hasta->gt($vencida->hasta)
+                        && $otra->desde->lte($gracia)
                 );
             })
+            ->pluck('socio')
+            ->unique()
             ->count();
     }
 

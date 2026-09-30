@@ -59,6 +59,36 @@ function camposDe(tipo, iconos) {
                 },
                 activo,
             ];
+        case 'arriendo':
+            return [
+                {
+                    nombre: 'imagen',
+                    etiqueta: 'Foto',
+                    tipo: 'imagen',
+                    actual: 'imagen_url',
+                    ayuda: 'JPG, PNG o WEBP, hasta 8 MB. La primera de la lista sale grande en el collage.',
+                },
+                {
+                    nombre: 'titulo',
+                    etiqueta: 'Qué muestra',
+                    requerido: true,
+                    ejemplo: 'Grupo de Preparador Físico en la sala de máquinas',
+                    ayuda: 'Lo lee Google y quien no puede ver la imagen.',
+                },
+                activo,
+            ];
+        case 'institucion':
+            return [
+                { nombre: 'titulo', etiqueta: 'Institución', requerido: true, ejemplo: 'IP Virginio Gómez' },
+                {
+                    nombre: 'imagen',
+                    etiqueta: 'Logo',
+                    tipo: 'imagen',
+                    actual: 'imagen_url',
+                    ayuda: 'PNG con fondo transparente o blanco, hasta 4 MB. Sin logo sale el nombre escrito.',
+                },
+                activo,
+            ];
         case 'pregunta':
             return [
                 { nombre: 'titulo', etiqueta: 'Pregunta', requerido: true, ejemplo: '¿Necesito llevar candado?' },
@@ -98,7 +128,12 @@ const COLUMNAS = {
     foto: ['Foto', 'Qué muestra', 'Orden', 'En la web', ''],
     pregunta: ['Pregunta', 'Respuesta', 'Orden', 'En la web', ''],
     testimonio: ['Nombre', 'Lo que dijo', 'Orden', 'En la web', ''],
+    arriendo: ['Foto', 'Qué muestra', 'Orden', 'En la web', ''],
+    institucion: ['Logo', 'Institución', 'Orden', 'En la web', ''],
 };
+
+/** Los tipos que llevan una imagen en la primera columna. */
+const CON_IMAGEN = ['foto', 'arriendo', 'institucion'];
 
 function recortar(texto, largo = 90) {
     if (! texto) {
@@ -181,13 +216,13 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
             <Tabla columnas={COLUMNAS[tipo]} vacia={filas.length === 0} mensajeVacio="Todavía no hay nada aquí.">
                 {filas.map((fila, indice) => (
                     <Fila key={fila.uuid}>
-                        {tipo === 'foto' ? (
+                        {CON_IMAGEN.includes(tipo) ? (
                             <Celda>
                                 {fila.imagen_url ? (
                                     <img
                                         src={fila.imagen_url}
                                         alt=""
-                                        className="h-12 w-20 rounded-control border border-line object-cover"
+                                        className={`h-12 w-20 rounded-control border border-line ${tipo === 'institucion' ? 'bg-white object-contain p-1' : 'object-cover'}`}
                                     />
                                 ) : (
                                     '-'
@@ -197,7 +232,7 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                             <Celda className="font-medium text-chalk">{fila.titulo}</Celda>
                         )}
 
-                        <Celda className="max-w-md">{tipo === 'foto' ? fila.titulo : recortar(fila.texto)}</Celda>
+                        <Celda className="max-w-md">{CON_IMAGEN.includes(tipo) ? fila.titulo : recortar(fila.texto)}</Celda>
 
                         {tipo === 'servicio' ? <Celda>{nombreIcono[fila.icono] ?? fila.icono}</Celda> : null}
 
