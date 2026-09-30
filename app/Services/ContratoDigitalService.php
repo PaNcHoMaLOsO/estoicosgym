@@ -52,6 +52,16 @@ class ContratoDigitalService
     /** Una firma dibujada pesa unas decenas de KB. Más que esto no es una firma. */
     private const FIRMA_MAXIMA = 400_000;
 
+    /**
+     * Las medidas máximas del recuadro, en píxeles. El recuadro de la página
+     * mide a lo más unos 770 × 180 y el navegador lo dibuja al doble: más que
+     * esto no sale de ahí. Un PNG de 8000 × 8000 en blanco pesa 270 KB y al
+     * abrir la copia el navegador tiene que desplegar 256 MB.
+     */
+    private const FIRMA_ANCHO_MAXIMO = 2000;
+
+    private const FIRMA_ALTO_MAXIMO = 1000;
+
     /** Membresías que ya no rigen: un contrato no se hace sobre ellas. */
     private const TERMINADAS = [
         EstadosCodigo::INSCRIPCION_CANCELADA,
@@ -111,8 +121,28 @@ class ContratoDigitalService
             if (blank($firmante['email'])) {
                 return 'Es menor de edad y falta el correo de su apoderado, que es quien firma.';
             }
+
+            /*
+             * EL CORREO DEL APODERADO NO PUEDE SER EL DEL MENOR. Si lo es, el
+             * enlace le llega al propio menor, que firma «como apoderado» con
+             * cualquier nombre y queda autorizado solo.
+             */
+            if (filled($cliente->email) && Str::lower(trim($firmante['email'])) === Str::lower(trim((string) $cliente->email))) {
+                return 'El correo del apoderado es el mismo del socio, que es menor. Anota en la ficha el correo del apoderado: el contrato lo firma él.';
+            }
+
+            if (blank($firmante['rut'])) {
+                return 'Es menor de edad y falta el RUT de su apoderado, que es quien firma. Anótalo en la ficha antes de mandarle el contrato.';
+            }
         } elseif (blank($firmante['email'])) {
             return 'No tiene correo. Anótalo en su ficha para mandarle el contrato.';
+        } elseif (blank($firmante['rut'])) {
+            /*
+             * SIN RUT EN LA FICHA NO HAY CON QUÉ COMPARAR. Al firmar se pide el
+             * RUT y se contrasta con este; si falta, cualquiera con el enlace
+             * firmaría con el nombre y el RUT que se le ocurran.
+             */
+            return 'Anota su RUT en la ficha antes de mandarle el contrato: al firmar se le pide, y se compara con ese.';
         }
 
         $plantilla = $this->plantilla(self::PLANTILLA_ENVIO);
@@ -166,7 +196,7 @@ class ContratoDigitalService
             ]);
         });
 
-        $enlace = route('contrato.mostrar', $token);
+        $enlace = self::enlace($token);
         $correo = $this->envio->componerCon($plantilla, $this->envio->variables($cliente, [
             'firmante' => $firmante['nombre'],
             'enlace_contrato' => $enlace,
@@ -231,17 +261,31 @@ class ContratoDigitalService
 
         $gimnasio = TextosLegales::datosDelGimnasio();
         $cliente = $contrato->cliente;
+        $variables = $this->variables($contrato, $fecha, $textos['contrato']->version);
+
+        // Sin su título: van dentro de un desplegable, o de un anexo, que ya
+        // dice qué son.
+        $terminos = TextosLegales::sinTituloPrincipal(TextosLegales::html($textos['terminos']->contenido, $gimnasio));
+        $privacidad = TextosLegales::sinTituloPrincipal(TextosLegales::html($textos['privacidad']->contenido, $gimnasio));
 
         return [
             'textos' => $textos,
-            'contrato_html' => TextosLegales::html(
-                $textos['contrato']->contenido,
-                $this->variables($contrato, $fecha, $textos['contrato']->version)
-            ),
-            // Sin su título: van dentro de un desplegable, o de un anexo, que
-            // ya dice qué son.
-            'terminos_html' => TextosLegales::sinTituloPrincipal(TextosLegales::html($textos['terminos']->contenido, $gimnasio)),
-            'privacidad_html' => TextosLegales::sinTituloPrincipal(TextosLegales::html($textos['privacidad']->contenido, $gimnasio)),
+            'contrato_html' => TextosLegales::html($textos['contrato']->contenido, $variables),
+            'terminos_html' => $terminos,
+            'privacidad_html' => $privacidad,
+            /*
+             * LA HUELLA DE LO QUE SE LEYÓ. El número de versión no basta: una
+             * versión que nadie ha firmado se corrige ahí mismo sin cambiar de
+             * número, y el plan o el precio del socio pueden cambiar mientras
+             * lee. Viaja oculta en el formulario y al firmar se compara con la
+             * de ese momento. La fecha va fija: quien lee a las 23:59 y firma a
+             * las 00:01 leyó lo mismo.
+             */
+            'lectura' => hash('sha256', implode("\n\0\n", [
+                TextosLegales::html($textos['contrato']->contenido, ['fecha' => '-'] + $variables),
+                $terminos,
+                $privacidad,
+            ])),
             'firmante' => $this->firmante($cliente),
             'socio' => $cliente->nombre_completo,
             'gimnasio' => $gimnasio,
@@ -269,7 +313,7 @@ class ContratoDigitalService
     /**
      * Firma.
      *
-     * @param array{nombre:string, rut:string, firma:string, consentimiento_imagen:bool, consentimiento_difusion:bool, version_contrato:int, version_terminos:int, version_privacidad:int} $datos
+     * @param array{nombre:string, rut:string, firma:string, consentimiento_imagen:bool, consentimiento_difusion:bool, version_contrato:int, version_terminos:int, version_privacidad:int, lectura:string} $datos
      *
      * @throws ValidationException si algo no cuadra: el RUT, la firma, o que el
      *     texto cambió mientras se leía
@@ -279,7 +323,16 @@ class ContratoDigitalService
         $cliente = $contrato->cliente;
         $firmante = $this->firmante($cliente);
 
-        if (filled($firmante['rut']) && self::rut($firmante['rut']) !== self::rut($datos['rut'])) {
+        // Sin RUT en la ficha no se firma: no se manda (porQueNoSePuedeEnviar),
+        // pero un enlace de antes, o una ficha a la que le borraron el RUT
+        // después, no pueden quedar como puerta abierta.
+        if (blank($firmante['rut'])) {
+            throw ValidationException::withMessages([
+                'rut' => 'El gimnasio no tiene tu RUT anotado, y sin él no se puede comprobar quién firma. Avísale al gimnasio para que lo anote y te mande el contrato de nuevo.',
+            ]);
+        }
+
+        if (self::rut($firmante['rut']) !== self::rut($datos['rut'])) {
             throw ValidationException::withMessages([
                 'rut' => 'Ese no es el RUT que tiene el gimnasio en la ficha. Revísalo, o avísale al gimnasio si está mal anotado.',
             ]);
@@ -299,6 +352,15 @@ class ContratoDigitalService
             }
         }
 
+        // Y aunque el número sea el mismo, el texto tiene que ser el mismo:
+        // una versión sin firmas se corrige sin cambiar de número, y el plan o
+        // el precio pueden haber cambiado (ver «lectura» en documento()).
+        if (! hash_equals($documento['lectura'], (string) ($datos['lectura'] ?? ''))) {
+            throw ValidationException::withMessages([
+                'version' => 'El gimnasio actualizó el texto mientras lo leías. Revisa la versión nueva y vuelve a firmar.',
+            ]);
+        }
+
         $nombre = Str::squish($datos['nombre']);
         $rut = trim($datos['rut']);
 
@@ -311,7 +373,7 @@ class ContratoDigitalService
             'email' => $contrato->email_destino,
             'consentimiento_imagen' => $datos['consentimiento_imagen'],
             'consentimiento_difusion' => $datos['consentimiento_difusion'],
-            'enlace_privacidad' => route('landing.privacidad'),
+            'enlace_privacidad' => TextosLegales::direccion(route('landing.privacidad', [], false)),
         ])->render();
 
         $firmado = DB::transaction(function () use ($contrato, $cliente, $datos, $documento, $fecha, $nombre, $rut, $ip, $navegador, $contenido) {
@@ -380,11 +442,24 @@ class ContratoDigitalService
     {
         return [
             'firmante' => $this->firmante($socio)['nombre'] ?: $socio->nombre_completo,
-            'enlace_contrato' => route('contrato.mostrar', str_repeat('x', 48)),
+            'enlace_contrato' => self::enlace(str_repeat('x', 48)),
             'vence_enlace' => now()->addDays(max(1, Ajustes::numero('reglas.dias_para_firmar')))->format('d/m/Y'),
             'firmado_en' => now()->format('d/m/Y \a \l\a\s H:i'),
             'gimnasio' => $this->gimnasio(),
         ];
+    }
+
+    /**
+     * El enlace personal de un contrato.
+     *
+     * CON LA DIRECCIÓN DE APP_URL, no con la que trae la petición: la copia se
+     * manda al firmar, desde una petición del público, y quien tenga el enlace
+     * podría pedirla con otra dirección (Host o X-Forwarded-Host) para que el
+     * correo verdadero del gimnasio lleve a una página ajena.
+     */
+    public static function enlace(string $token): string
+    {
+        return TextosLegales::direccion(route('contrato.mostrar', $token, false));
     }
 
     /** «12.345.678-9», «12345678-9» y «123456789» son el mismo RUT. */
@@ -453,19 +528,26 @@ class ContratoDigitalService
      * El enlace NO queda en la constancia: con él, cualquiera que abra el
      * registro de correos podría firmar por el socio. Y no se reintenta solo,
      * porque el reintento lo mandaría sin el enlace; si falla, se manda otro
-     * desde la ficha.
+     * desde la ficha. Tampoco en el asunto, si alguien puso ahí el enlace.
+     *
+     * $anexo va en el correo pero NO en la constancia: es el contrato entero,
+     * con RUT, celular y precio, y ya está guardado en su sitio (el contrato
+     * firmado). Repetirlo en Notificaciones lo dejaría a la vista de quien
+     * revisa los correos.
      *
      * @param array{asunto:string, contenido:string} $correo
      */
-    private function mandar(Contrato $contrato, TipoNotificacion $plantilla, string $para, string $nombre, array $correo, string $enlace, string $que): void
+    private function mandar(Contrato $contrato, TipoNotificacion $plantilla, string $para, string $nombre, array $correo, string $enlace, string $que, string $anexo = ''): void
     {
+        $tapar = fn (string $texto) => str_replace([$enlace, e($enlace)], self::ENLACE_OCULTO, $texto);
+
         $notificacion = Notificacion::create([
             'id_tipo_notificacion' => $plantilla->id,
             'id_cliente' => $contrato->id_cliente,
             'id_inscripcion' => $contrato->id_inscripcion,
             'email_destino' => $para,
-            'asunto' => $correo['asunto'],
-            'contenido' => str_replace($enlace, self::ENLACE_OCULTO, $correo['contenido']),
+            'asunto' => $tapar($correo['asunto']),
+            'contenido' => $tapar($correo['contenido']),
             'id_estado' => Notificacion::ESTADO_PENDIENTE,
             'fecha_programada' => today(),
             'tipo_envio' => 'manual',
@@ -476,7 +558,7 @@ class ContratoDigitalService
         $notificacion->registrarLog('programada', $que . (auth()->user() ? ' por ' . auth()->user()->name : ''));
 
         try {
-            $this->correo->enviar($para, $correo['asunto'], $correo['contenido'], $nombre);
+            $this->correo->enviar($para, $correo['asunto'], $correo['contenido'] . $anexo, $nombre);
         } catch (\Throwable $e) {
             $notificacion->marcarComoFallida($e->getMessage());
 
@@ -502,7 +584,7 @@ class ContratoDigitalService
             return;
         }
 
-        $enlace = route('contrato.mostrar', $token);
+        $enlace = self::enlace($token);
         $correo = $this->envio->componerCon($plantilla, $this->envio->variables($contrato->cliente->fresh(), [
             'firmante' => (string) $contrato->firmante_nombre,
             'enlace_contrato' => $enlace,
@@ -516,10 +598,10 @@ class ContratoDigitalService
             return;
         }
 
-        $correo['contenido'] .= view('contrato.partes.correo', $documento + ['contrato' => $contrato])->render();
+        $copia = view('contrato.partes.correo', $documento + ['contrato' => $contrato])->render();
 
         try {
-            $this->mandar($contrato, $plantilla, $contrato->email_destino, (string) $contrato->firmante_nombre, $correo, $enlace, 'Copia del contrato firmado');
+            $this->mandar($contrato, $plantilla, $contrato->email_destino, (string) $contrato->firmante_nombre, $correo, $enlace, 'Copia del contrato firmado', $copia);
         } catch (\Throwable $e) {
             report($e);
         }
@@ -540,13 +622,65 @@ class ContratoDigitalService
             ? @getimagesizefromstring($png)
             : false;
 
-        if (! $medidas || $medidas[2] !== IMAGETYPE_PNG || $medidas[0] < 100 || $medidas[1] < 40) {
+        if (! $medidas || $medidas[2] !== IMAGETYPE_PNG || $medidas[0] < 100 || $medidas[1] < 40
+            || $medidas[0] > self::FIRMA_ANCHO_MAXIMO || $medidas[1] > self::FIRMA_ALTO_MAXIMO) {
             throw ValidationException::withMessages([
                 'firma' => 'No llegó la firma. Firma dentro del recuadro y vuelve a intentarlo.',
             ]);
         }
 
+        if ($this->estaEnBlanco($png)) {
+            throw ValidationException::withMessages([
+                'firma' => 'El recuadro de la firma llegó vacío. Firma dentro del recuadro y vuelve a intentarlo.',
+            ]);
+        }
+
         return $png;
+    }
+
+    /**
+     * ¿Es un recuadro sin trazo? Todos los píxeles del mismo color.
+     *
+     * El formulario no deja mandarlo vacío, pero eso lo revisa el navegador:
+     * a mano se puede mandar un PNG en blanco y quedaría un contrato «firmado»
+     * sin firma. Se achica antes de mirarlo —el recuadro llega a 2000 × 1000 y
+     * mirar dos millones de píxeles uno por uno tarda— y al achicar un trazo
+     * no desaparece: tiñe, aunque sea un poco, los píxeles donde cae.
+     *
+     * Necesita GD. Sin GD no se puede mirar y se da por buena, como antes.
+     */
+    private function estaEnBlanco(string $png): bool
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return false;
+        }
+
+        $imagen = @imagecreatefromstring($png);
+
+        if ($imagen === false) {
+            return false;
+        }
+
+        $ancho = imagesx($imagen);
+        $alto = imagesy($imagen);
+        $escala = min(1, 400 / $ancho, 200 / $alto);
+        $chica = imagecreatetruecolor(max(1, (int) round($ancho * $escala)), max(1, (int) round($alto * $escala)));
+        // Sin mezclar: la transparencia del lienzo es parte del color a comparar.
+        imagealphablending($chica, false);
+        imagesavealpha($chica, true);
+        imagecopyresampled($chica, $imagen, 0, 0, 0, 0, imagesx($chica), imagesy($chica), $ancho, $alto);
+
+        $primero = imagecolorat($chica, 0, 0);
+
+        for ($y = 0; $y < imagesy($chica); $y++) {
+            for ($x = 0; $x < imagesx($chica); $x++) {
+                if (imagecolorat($chica, $x, $y) !== $primero) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private function plantilla(string $codigo): ?TipoNotificacion

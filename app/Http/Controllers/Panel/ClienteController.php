@@ -314,15 +314,52 @@ class ClienteController extends Controller
             return $cerrada;
         }
 
+        /*
+         * LA VERSIÓN, UNA QUE EXISTA. Era texto libre: se podía anotar la 999,
+         * o cualquier cosa, y la pregunta «¿qué firmó este socio?» quedaba sin
+         * respuesta. Se acepta también la que ya tenía anotada, por si viene
+         * de antes de que hubiera versiones en el sistema.
+         */
+        // vigente() primero: la primera vez es la que crea la versión 1.
+        $vigente = TextosLegales::vigente('contrato')->version;
+        $versiones = \App\Models\TextoLegal::where('tipo', 'contrato')->pluck('version')
+            ->map(fn ($version) => (string) $version)
+            ->push((string) $cliente->contrato_version)
+            ->filter(fn ($version) => $version !== '')
+            ->unique()
+            ->values()
+            ->all();
+
         $datos = $request->validate([
-            'contrato_version' => ['nullable', 'string', 'max:20'],
+            'contrato_version' => ['nullable', 'string', 'max:20', Rule::in($versiones)],
             // Una firma con fecha futura es un dedazo, no un contrato.
             'contrato_firmado_en' => ['nullable', 'date', 'before_or_equal:today'],
             'consentimiento_imagen' => ['boolean'],
             'consentimiento_difusion' => ['boolean'],
         ], [
             'contrato_firmado_en.before_or_equal' => 'La fecha de la firma no puede ser futura.',
+            'contrato_version.in' => "Esa versión del contrato no existe. Hoy se firma la {$vigente}.",
         ]);
+
+        /*
+         * LO FIRMADO POR CORREO NO SE BORRA DESDE AQUÍ. Ese contrato queda
+         * guardado con su firma y su huella; si aquí se vaciara la fecha o la
+         * versión, la ficha diría «no ha firmado» teniendo el documento.
+         */
+        $firmadoPorCorreo = $cliente->contratos()
+            ->whereNotNull('firmado_en')
+            ->whereNull('datos_borrados_en')
+            ->latest('firmado_en')
+            ->first();
+
+        // Basta mirar la fecha: con fecha y sin versión, más abajo se anota la
+        // vigente.
+        if ($firmadoPorCorreo && empty($datos['contrato_firmado_en'])) {
+            throw ValidationException::withMessages([
+                'contrato_firmado_en' => 'Firmó el contrato por correo el ' . $firmadoPorCorreo->firmado_en->format('d/m/Y')
+                    . ': esa firma queda como constancia y no se borra desde aquí. Si firma uno nuevo, anota su fecha y versión.',
+            ]);
+        }
 
         // Si se anota la fecha pero no la version, se toma la que se esta
         // haciendo firmar hoy: es lo que acaba de pasar en el meson.

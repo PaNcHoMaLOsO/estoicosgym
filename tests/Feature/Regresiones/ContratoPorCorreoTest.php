@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Mockery;
 use RuntimeException;
 use Tests\CasoConCatalogos;
+use Tests\FirmaDePrueba;
 
 /**
  * El contrato que se firma por correo.
@@ -27,6 +28,8 @@ use Tests\CasoConCatalogos;
  */
 class ContratoPorCorreoTest extends CasoConCatalogos
 {
+    use FirmaDePrueba;
+
     /** @var list<array{para:string, asunto:string, html:string}> */
     private array $enviados = [];
 
@@ -93,18 +96,10 @@ class ContratoPorCorreoTest extends CasoConCatalogos
         return $enlace[1];
     }
 
-    /** Una firma: un PNG blanco armado a mano, para no depender de la extensión GD. */
+    /** Una firma con trazo (ver FirmaDePrueba). */
     private function firma(int $ancho = 300, int $alto = 100): string
     {
-        $fila = "\0" . str_repeat("\xff\xff\xff", $ancho);
-        $trozo = fn (string $tipo, string $datos) => pack('N', strlen($datos)) . $tipo . $datos . pack('N', crc32($tipo . $datos));
-
-        $png = "\x89PNG\r\n\x1a\n"
-            . $trozo('IHDR', pack('NNCCCCC', $ancho, $alto, 8, 2, 0, 0, 0))
-            . $trozo('IDAT', gzcompress(str_repeat($fila, $alto)))
-            . $trozo('IEND', '');
-
-        return 'data:image/png;base64,' . base64_encode($png);
+        return $this->pngDeFirma($ancho, $alto);
     }
 
     /** @return array<string,mixed> */
@@ -114,13 +109,12 @@ class ContratoPorCorreoTest extends CasoConCatalogos
             'nombre' => 'Camila Rojas Soto',
             'rut' => '12345678-5',
             'firma' => $this->firma(),
-            'acepto_contrato' => '1',
-            'acepto_terminos' => '1',
-            'leido_privacidad' => '1',
+            'acepto' => '1',
             'consentimiento_imagen' => '1',
             'version_contrato' => TextosLegales::vigente('contrato')->version,
             'version_terminos' => TextosLegales::vigente('terminos')->version,
             'version_privacidad' => TextosLegales::vigente('privacidad')->version,
+            'lectura' => $this->lecturaDeHoy(),
         ];
 
         return array_diff_key($datos, array_flip($sin));
@@ -207,8 +201,8 @@ class ContratoPorCorreoTest extends CasoConCatalogos
     {
         $token = $this->mandar($this->socio());
 
-        $this->post("/contrato/{$token}", $this->datosDeFirma([], ['acepto_terminos']))
-            ->assertSessionHasErrors('acepto_terminos');
+        $this->post("/contrato/{$token}", $this->datosDeFirma([], ['acepto']))
+            ->assertSessionHasErrors('acepto');
 
         $this->assertSame('pendiente', Contrato::sole()->estado());
     }
@@ -419,6 +413,9 @@ class ContratoPorCorreoTest extends CasoConCatalogos
             'flujo_cliente' => 'solo_cliente',
             'nombres' => 'Camila',
             'apellido_paterno' => 'Rojas',
+            // Sin RUT no se manda: al firmar no habría con qué compararlo.
+            'tipo_documento' => 'rut',
+            'run_pasaporte' => '12.345.678-5',
             'celular' => '912345678',
             'email' => 'camila.rojas@example.com',
             'enviar_contrato' => true,

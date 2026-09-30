@@ -346,9 +346,13 @@ function ContratoDelSocio({ cliente }) {
                         onChange={(e) => setData('contrato_version', e.target.value)}
                         className="mt-0.5 w-24 rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
                     />
-                    <p className="apoyo mt-0.5 text-fog">
-                        Hoy se firma la {contrato.version_vigente}.
-                    </p>
+                    {errors.contrato_version ? (
+                        <p className="apoyo mt-0.5 text-danger">{errors.contrato_version}</p>
+                    ) : (
+                        <p className="apoyo mt-0.5 text-fog">
+                            Hoy se firma la {contrato.version_vigente}.
+                        </p>
+                    )}
                 </div>
 
                 <label className="flex items-start gap-2 text-sm text-chalk">

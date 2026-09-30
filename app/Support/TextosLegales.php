@@ -203,7 +203,16 @@ class TextosLegales
         $reemplazos = [];
 
         foreach ($variables as $clave => $valor) {
-            $reemplazos['{' . $clave . '}'] = self::literal((string) $valor);
+            /*
+             * LOS DATOS DEL SOCIO NO SE VUELVEN ENLACES. El Markdown convierte
+             * en enlace todo lo que parezca una dirección, y un «nombre» como
+             * «https://pagina-falsa.cl» salía como enlace dentro del contrato y
+             * de la copia que manda el gimnasio. Los del gimnasio sí: el texto
+             * dice «publicada en {sitio}/privacidad» para que se pueda abrir.
+             */
+            $reemplazos['{' . $clave . '}'] = isset(self::VARIABLES_DEL_GIMNASIO[$clave])
+                ? self::literal((string) $valor)
+                : self::sinEnlaces(self::literal((string) $valor));
         }
 
         return Str::markdown(strtr($markdown, $reemplazos), [
@@ -226,8 +235,21 @@ class TextosLegales
             'direccion_gimnasio' => Ajustes::obtener('gimnasio.direccion') ?: self::POR_COMPLETAR,
             'email_gimnasio' => Ajustes::obtener('gimnasio.email') ?: self::POR_COMPLETAR,
             'telefono_gimnasio' => Ajustes::obtener('gimnasio.telefono') ?: self::POR_COMPLETAR,
-            'sitio' => rtrim(url('/'), '/'),
+            'sitio' => self::direccion(''),
         ];
+    }
+
+    /**
+     * Una dirección de la web, armada con APP_URL.
+     *
+     * Y no con la dirección que trae la petición: el contrato se rellena al
+     * firmar, en una petición del público, y lo que diga ahí queda firmado y
+     * va en la copia por correo. Con otra cabecera Host o X-Forwarded-Host se
+     * colaba una página ajena en un documento del gimnasio.
+     */
+    public static function direccion(string $ruta): string
+    {
+        return rtrim((string) config('app.url'), '/') . ($ruta === '' ? '' : '/' . ltrim($ruta, '/'));
     }
 
     /**
@@ -297,6 +319,16 @@ class TextosLegales
     private static function literal(string $valor): string
     {
         return addcslashes((string) preg_replace('/\s+/u', ' ', trim($valor)), '\\`*_[]<>#+!|~');
+    }
+
+    /**
+     * Que un dato ya escapado no se convierta en enlace: con «\:», «\.» y
+     * «\@» el Markdown ya no reconoce «https://», «www.» ni un correo, y al
+     * leerlo se ve igual.
+     */
+    private static function sinEnlaces(string $valor): string
+    {
+        return strtr($valor, [':' => '\\:', '.' => '\\.', '@' => '\\@']);
     }
 
     private static function exigir(string $tipo): void

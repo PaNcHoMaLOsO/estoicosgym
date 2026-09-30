@@ -71,19 +71,19 @@ class ContratoPublicoController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'rut' => ['required', 'string', 'max:20'],
             'firma' => ['required', 'string', 'max:600000'],
-            'acepto_contrato' => ['accepted'],
-            'acepto_terminos' => ['accepted'],
-            'leido_privacidad' => ['accepted'],
+            // Una casilla para los tres: contrato, términos y privacidad.
+            'acepto' => ['accepted'],
             'version_contrato' => ['required', 'integer'],
             'version_terminos' => ['required', 'integer'],
             'version_privacidad' => ['required', 'integer'],
+            // La huella de lo que leyó (ver ContratoDigitalService::documento).
+            'lectura' => ['required', 'string', 'size:64'],
         ], [
             'nombre.required' => 'Escribe tu nombre completo.',
             'rut.required' => 'Escribe tu RUT o pasaporte.',
             'firma.required' => 'Falta tu firma: dibújala en el recuadro.',
-            'acepto_contrato.accepted' => 'Marca que leíste y aceptas el contrato.',
-            'acepto_terminos.accepted' => 'Marca que aceptas los términos y condiciones.',
-            'leido_privacidad.accepted' => 'Marca que leíste la política de privacidad.',
+            'lectura.*' => 'La página cambió mientras la tenías abierta. Revisa el contrato y vuelve a firmar.',
+            'acepto.accepted' =>'Marca que leíste y aceptas el contrato, los términos y la privacidad.',
         ]);
 
         $contratos->firmar($contrato, $token, [
@@ -95,6 +95,7 @@ class ContratoPublicoController extends Controller
             'version_contrato' => (int) $datos['version_contrato'],
             'version_terminos' => (int) $datos['version_terminos'],
             'version_privacidad' => (int) $datos['version_privacidad'],
+            'lectura' => $datos['lectura'],
         ], $request->ip(), $request->userAgent());
 
         return redirect()->route('contrato.mostrar', $token)->with('firmado', true);

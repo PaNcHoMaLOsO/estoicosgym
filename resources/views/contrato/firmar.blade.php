@@ -62,22 +62,19 @@
         <input type="hidden" name="version_contrato" value="{{ $textos['contrato']->version }}">
         <input type="hidden" name="version_terminos" value="{{ $textos['terminos']->version }}">
         <input type="hidden" name="version_privacidad" value="{{ $textos['privacidad']->version }}">
+        {{-- Y la huella del texto tal como se leyó: el número de versión no
+             cambia si se corrige una versión que nadie ha firmado. --}}
+        <input type="hidden" name="lectura" value="{{ $lectura }}">
         <input type="hidden" name="firma" id="campo-firma">
 
-        <fieldset class="space-y-3">
-            <legend class="mb-3 font-display text-xl uppercase">Lo que aceptas</legend>
-            @foreach ([
-                'acepto_contrato' => 'Leí el contrato y lo acepto.',
-                'acepto_terminos' => 'Acepto los términos y condiciones.',
-                'leido_privacidad' => 'Leí la política de privacidad y sé cómo pedir que borren mis datos.',
-            ] as $campo => $texto)
-                <label class="flex items-start gap-3 text-sm leading-relaxed">
-                    <input type="checkbox" name="{{ $campo }}" value="1" @checked(old($campo)) required
-                           class="mt-0.5 size-5 shrink-0 accent-pg-rojo">
-                    <span>{{ $texto }}</span>
-                </label>
-            @endforeach
-        </fieldset>
+        {{-- UNA SOLA CASILLA. Eran tres (contrato, términos, privacidad) y se
+             sentía como un trámite: se aceptan juntos igual, y la constancia
+             guarda la versión de cada uno. --}}
+        <label class="flex items-start gap-3 text-sm leading-relaxed">
+            <input type="checkbox" name="acepto" value="1" @checked(old('acepto')) required
+                   class="mt-0.5 size-5 shrink-0 accent-pg-rojo">
+            <span>He leído y acepto el contrato, los términos y condiciones y la política de privacidad.</span>
+        </label>
 
         <fieldset class="space-y-3">
             <legend class="mb-1 font-display text-xl uppercase">Tu imagen</legend>
@@ -162,7 +159,9 @@
         let ancho = 0;
 
         function preparar() {
-            const escala = window.devicePixelRatio || 1;
+            // Hasta el doble: más nitidez no se nota en una firma, y el
+            // servidor no acepta recuadros de más de 2000 × 1000.
+            const escala = Math.min(window.devicePixelRatio || 1, 2);
             lienzo.width = lienzo.clientWidth * escala;
             lienzo.height = lienzo.clientHeight * escala;
             pincel.setTransform(escala, 0, 0, escala, 0, 0);
