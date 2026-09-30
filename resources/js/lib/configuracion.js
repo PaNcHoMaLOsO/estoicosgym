@@ -61,6 +61,8 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
+            // Judo, lucha…: abiertas a todos y con mensualidad. No son los talleres.
+            { href: '/panel/clases', etiqueta: 'Clases', permiso: 'configuracion.ver' },
             { href: '/panel/web/arriendo', etiqueta: 'Arriendo: fotos', permiso: 'configuracion.ver' },
             { href: '/panel/web/institucion', etiqueta: 'Arriendo: logos', permiso: 'configuracion.ver' },
             { href: '/panel/especialistas', etiqueta: 'Especialistas', permiso: 'configuracion.ver' },
@@ -107,6 +109,7 @@ export const PREFIJOS_CONFIGURACION = [
     '/panel/motivos-descuento',
     '/panel/notificaciones/plantillas',
     '/panel/web',
+    '/panel/clases',
     '/panel/especialistas',
     '/panel/embajadores',
     '/panel/usuarios',

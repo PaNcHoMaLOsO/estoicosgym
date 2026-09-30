@@ -40,7 +40,7 @@
 
     {{-- ===== ACCESOS: una tarjeta por pagina ===== --}}
     <section id="accesos" class="py-1 lg:py-14 bg-pg-negro">
-        @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][min(4, max(2, count($destacados)))])
+        @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5'][min(5, max(2, count($destacados)))])
         {{-- Las clases van escritas enteras: el CSS compilado solo trae las que encuentra tal cual. --}}
         {{-- Sin tarjetas: una línea separa un acceso del siguiente. Tres cajas
              iguales en fila es lo que hace que la página parezca de plantilla. --}}

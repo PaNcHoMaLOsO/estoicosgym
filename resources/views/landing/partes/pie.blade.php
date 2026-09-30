@@ -33,13 +33,16 @@
                     <li><a href="{{ route('landing') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Inicio</a></li>
                     <li><a href="{{ route('landing.gimnasio') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">El gimnasio</a></li>
                     <li><a href="{{ route('landing.planes') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Planes y precios</a></li>
-                    @if($navegacion['convenios'])
-                        <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>
+                    @if($navegacion['clases'])
+                        <li><a href="{{ route('landing.clases') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Clases</a></li>
                     @endif
-                    <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arriendo de horas</a></li>
                     @if($navegacion['especialistas'])
                         <li><a href="{{ route('landing.especialistas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Especialistas</a></li>
                     @endif
+                    @if($navegacion['convenios'])
+                        <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>
+                    @endif
+                    <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arrienda horas</a></li>
                     <li><a href="{{ route('landing.contacto') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
                     <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
                     @if($tienda ?? null)

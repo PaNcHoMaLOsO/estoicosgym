@@ -132,6 +132,9 @@ class Permisos
         'embajadores' => 'configuracion',
         // La pagina web: lo que ven los clientes lo cambia quien configura.
         'web' => 'configuracion',
+        // Las clases que salen en la web, con su precio: tambien las cambia
+        // quien configura, no el meson.
+        'clases' => 'configuracion',
         // Las cuentas del panel: quien entra y con que rol. Modulo PROPIO y no
         // «configuracion»: quien puede cambiar un precio no por eso puede
         // crearse otra cuenta de administrador.

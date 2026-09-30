@@ -31,6 +31,7 @@ Route::middleware('security.headers')->group(function () {
     Route::get('/planes', [LandingController::class, 'planes'])->name('landing.planes');
     Route::get('/convenios', [LandingController::class, 'convenios'])->name('landing.convenios');
     Route::get('/arriendo-por-horas', [LandingController::class, 'arriendo'])->name('landing.arriendo');
+    Route::get('/clases', [LandingController::class, 'clases'])->name('landing.clases');
     Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
     Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->name('landing.especialista');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
@@ -777,6 +778,14 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Ordenar la galería sola: las panorámicas primero y sin dos fotos
         // parecidas seguidas. A flechazos nadie ordena diez fotos.
         Route::post('/web/{tipo}/ordenar', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'ordenar'])->whereIn('tipo', array_keys(\App\Models\ContenidoWeb::TIPOS))->name('web.ordenar');
+        // Las clases del gimnasio (judo, lucha…) para la página «Clases» de la web.
+        // No son los talleres: esos son arriendos a instituciones.
+        Route::get('/clases', [\App\Http\Controllers\Panel\ClaseController::class, 'index'])->name('clases.index');
+        Route::post('/clases', [\App\Http\Controllers\Panel\ClaseController::class, 'store'])->name('clases.store');
+        Route::put('/clases/{clase}', [\App\Http\Controllers\Panel\ClaseController::class, 'update'])->name('clases.update');
+        Route::patch('/clases/{clase}/alternar', [\App\Http\Controllers\Panel\ClaseController::class, 'alternar'])->name('clases.alternar');
+        Route::post('/clases/{clase}/mover', [\App\Http\Controllers\Panel\ClaseController::class, 'mover'])->name('clases.mover');
+        Route::delete('/clases/{clase}', [\App\Http\Controllers\Panel\ClaseController::class, 'destroy'])->name('clases.destroy');
         Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
         Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');

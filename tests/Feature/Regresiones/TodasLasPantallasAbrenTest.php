@@ -129,6 +129,15 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
         // Las rutinas de la sala, con sus ejercicios.
         \App\Support\RutinasDeEjemplo::cargar();
 
+        // Una clase de la web, con su horario.
+        \App\Models\Clase::create([
+            'nombre' => 'Judo',
+            'precio_mensual' => 25000,
+            'color' => 'azul',
+            'horario' => [['dia' => 'lunes', 'desde' => '19:00', 'hasta' => '20:30']],
+            'orden' => 1,
+        ]);
+
         // Algo en la papelera, para que esa pantalla tenga filas.
         $borrable = Cliente::factory()->create(['activo' => true]);
         $borrable->delete();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Clase;
 use App\Models\Cliente;
 use App\Models\Convenio;
 use App\Models\ContenidoWeb;
@@ -58,6 +59,7 @@ class LandingController extends Controller
         'landing.planes' => 'Planes y precios',
         'landing.convenios' => 'Convenios',
         'landing.arriendo' => 'Arriendo de horas',
+        'landing.clases' => 'Clases',
         'landing.especialistas' => 'Especialistas',
         'landing.contacto' => 'Contacto',
         'landing.membresia' => 'Mi membresía',
@@ -184,6 +186,153 @@ class LandingController extends Controller
                     'url' => route('landing.arriendo'),
                 ],
             ], $comun);
+    }
+
+    /**
+     * Las clases del gimnasio (judo, lucha olímpica…): el calendario de la
+     * semana, una tarjeta por clase y el WhatsApp para inscribirse.
+     *
+     * Abiertas a cualquiera, socio o no, con mensualidad. Sin clases activas
+     * la página no existe: un calendario vacío es peor que no tenerlo.
+     */
+    public function clases()
+    {
+        $filas = Clase::where('activo', true)->orderBy('orden')->orderBy('id')->get()
+            ->filter(fn (Clase $c) => $c->horarioOrdenado() !== []);
+
+        abort_if($filas->isEmpty(), 404);
+
+        $comun = $this->comun();
+        $ciudad = $comun['web']['ciudad'];
+        $gimnasio = $comun['gimnasio']['nombre'];
+
+        $clases = $filas->map(fn (Clase $c) => [
+            'nombre' => $c->nombre,
+            'descripcion' => $c->descripcion,
+            'profesor' => $c->profesor,
+            'para_quien' => $c->para_quien,
+            'precio' => $c->precio_mensual,
+            'precio_texto' => $c->precio_mensual ? $this->pesos($c->precio_mensual) : null,
+            'imagen' => $c->urlDeImagen(),
+            'color' => $c->hex(),
+            'horario' => $c->horarioOrdenado(),
+            'horario_texto' => $c->horarioEnUnaLinea(),
+            'whatsapp' => $this->whatsappConMensaje("Hola, quiero inscribirme en la clase de {$c->nombre}"),
+        ])->values();
+
+        // «Judo y Lucha olímpica», o «Judo, Lucha olímpica y más»: el título
+        // tiene que caber en el resultado de Google.
+        $nombres = $clases->pluck('nombre');
+        $enElTitulo = $nombres->count() <= 2
+            ? $nombres->implode(' y ')
+            : $nombres->take(2)->implode(', ') . ' y más';
+        $todas = $nombres->count() > 1
+            ? $nombres->slice(0, -1)->implode(', ') . ' y ' . $nombres->last()
+            : $nombres->first();
+        $precios = $clases->pluck('precio')->filter();
+        $palabra = $nombres->count() === 1 ? 'Clase' : 'Clases';
+
+        return $this->pagina('landing.clases', 'landing.clases',
+            "{$palabra} de {$enElTitulo}",
+            "{$palabra} de {$todas} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . '. Abiertas a todos'
+                . ($precios->isNotEmpty() ? ', mensualidad desde ' . $this->pesos($precios->min()) : '') . '.',
+            [
+                'clases' => $clases->all(),
+                'tituloClases' => "{$palabra} de {$enElTitulo}" . ($ciudad ? " en {$ciudad}" : ''),
+                'calendario' => $this->calendarioDeClases($clases->all()),
+                'json_ld' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ItemList',
+                    'name' => "Clases de {$gimnasio}",
+                    'itemListElement' => $clases->values()->map(fn (array $c, int $i) => [
+                        '@type' => 'ListItem',
+                        'position' => $i + 1,
+                        'item' => array_filter([
+                            '@type' => 'Service',
+                            'name' => $c['nombre'],
+                            'description' => $c['descripcion'] ?: ($c['para_quien'] ?: null),
+                            'provider' => ['@type' => 'ExerciseGym', 'name' => $gimnasio, 'url' => route('landing')],
+                            'areaServed' => $ciudad ?: null,
+                            'offers' => $c['precio'] ? [
+                                '@type' => 'Offer',
+                                'price' => $c['precio'],
+                                'priceCurrency' => 'CLP',
+                                'priceSpecification' => [
+                                    '@type' => 'UnitPriceSpecification',
+                                    'price' => $c['precio'],
+                                    'priceCurrency' => 'CLP',
+                                    'unitText' => 'MONTH',
+                                ],
+                            ] : null,
+                        ]),
+                    ])->all(),
+                ],
+            ], $comun);
+    }
+
+    /**
+     * El calendario de la semana, ya armado para pintarlo.
+     *
+     *  · Lunes a sábado siempre; el domingo solo si alguna clase cae ese día.
+     *  · De la primera hora con clases a la última: un calendario de 7 a 23
+     *    con dos clases en la tarde es casi todo vacío.
+     *  · Cada bloque sabe dónde va (arriba y alto en %) y en qué carril: dos
+     *    clases a la misma hora van lado a lado, no una encima de la otra.
+     *
+     * @param  list<array<string,mixed>>  $clases
+     * @return array{dias: array<string,string>, horas: list<int>, desde: int, hasta: int, bloques: array<string,list<array<string,mixed>>>, carriles: array<string,int>, porDia: array<string,list<array<string,mixed>>>}
+     */
+    private function calendarioDeClases(array $clases): array
+    {
+        $minutos = fn (string $hora) => (int) substr($hora, 0, 2) * 60 + (int) substr($hora, 3, 2);
+
+        $todos = [];
+        foreach ($clases as $c) {
+            foreach ($c['horario'] as $b) {
+                $todos[] = $b + ['nombre' => $c['nombre'], 'color' => $c['color'], 'inicio' => $minutos($b['desde']), 'fin' => $minutos($b['hasta'])];
+            }
+        }
+
+        $hayDomingo = collect($todos)->contains('dia', 'domingo');
+        $dias = collect(Clase::DIAS)->when(! $hayDomingo, fn ($d) => $d->except('domingo'))->all();
+
+        $desde = intdiv(min(array_column($todos, 'inicio')), 60);
+        $hasta = (int) ceil(max(array_column($todos, 'fin')) / 60);
+        $total = max(60, ($hasta - $desde) * 60);
+
+        $bloques = [];
+        $carriles = [];
+        foreach (array_keys($dias) as $dia) {
+            $delDia = collect($todos)->where('dia', $dia)->sortBy('inicio')->values()->all();
+            $finDeCarril = [];
+
+            foreach ($delDia as &$b) {
+                // El primer carril que ya quedó libre a esta hora.
+                $carril = 0;
+                while (isset($finDeCarril[$carril]) && $finDeCarril[$carril] > $b['inicio']) {
+                    $carril++;
+                }
+                $finDeCarril[$carril] = $b['fin'];
+                $b['carril'] = $carril;
+                $b['arriba'] = round(($b['inicio'] - $desde * 60) / $total * 100, 3);
+                $b['alto'] = round(($b['fin'] - $b['inicio']) / $total * 100, 3);
+            }
+            unset($b);
+
+            $bloques[$dia] = $delDia;
+            $carriles[$dia] = max(1, count($finDeCarril));
+        }
+
+        return [
+            'dias' => $dias,
+            'horas' => range($desde, $hasta - 1),
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'bloques' => $bloques,
+            'carriles' => $carriles,
+            // Para el celular: solo los días que tienen algo.
+            'porDia' => array_filter($bloques),
+        ];
     }
 
     public function especialistas()
@@ -329,6 +478,8 @@ class LandingController extends Controller
         $planes = $this->planesALaVenta();
         $convenios = $this->conveniosEnLaWeb();
         $especialistas = $this->especialistasEnLaWeb($gimnasio['nombre']);
+        // Solo si hay alguna: sin clases no hay enlace en el menú ni en el pie.
+        $hayClases = Clase::where('activo', true)->exists();
         $web = $this->datosParaGoogle($gimnasio, $planes);
 
         return [
@@ -345,7 +496,7 @@ class LandingController extends Controller
                 $web['youtube'] ? ['nombre' => 'YouTube', 'url' => $web['youtube'], 'icono' => 'fab fa-youtube'] : null,
             ])),
             // El menú solo enlaza lo que tiene algo que mostrar.
-            'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== []],
+            'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== [], 'clases' => $hayClases],
             'tienda' => $this->tiendaDeSuplementos(),
             'aviso' => $this->avisoVigente(),
             'horario' => $this->horario(),
@@ -538,15 +689,14 @@ class LandingController extends Controller
             'accion' => 'Ver planes',
         ]];
 
-        if ($comun['navegacion']['convenios']) {
+        if ($comun['navegacion']['clases']) {
+            $nombres = \App\Models\Clase::where('activo', true)->orderBy('orden')->limit(3)->pluck('nombre')->all();
             $destacados[] = [
-                'href' => route('landing.convenios'),
-                'icono' => 'graduation-cap',
-                'titulo' => 'Convenios',
-                'texto' => $conPrecio
-                    ? "Plan {$conPrecio['nombre']} a " . $this->pesos($conPrecio['precio_convenio']) . ' para estudiantes e instituciones con convenio.'
-                    : 'Precios especiales para estudiantes, empresas e instituciones.',
-                'accion' => 'Ver convenios',
+                'href' => route('landing.clases'),
+                'icono' => 'fist-raised',
+                'titulo' => 'Clases',
+                'texto' => implode(', ', $nombres) . '. Abiertas a todos.',
+                'accion' => 'Ver horarios',
             ];
         }
 
@@ -557,6 +707,18 @@ class LandingController extends Controller
                 'titulo' => 'Especialistas',
                 'texto' => collect($comun['especialistas'])->pluck('especialidad')->unique()->take(3)->implode(', ') . '.',
                 'accion' => 'Conócelos',
+            ];
+        }
+
+        if ($comun['navegacion']['convenios']) {
+            $destacados[] = [
+                'href' => route('landing.convenios'),
+                'icono' => 'graduation-cap',
+                'titulo' => 'Convenios',
+                'texto' => $conPrecio
+                    ? "Plan {$conPrecio['nombre']} a " . $this->pesos($conPrecio['precio_convenio']) . ' para estudiantes e instituciones con convenio.'
+                    : 'Precios especiales para estudiantes, empresas e instituciones.',
+                'accion' => 'Ver convenios',
             ];
         }
 
@@ -658,6 +820,15 @@ class LandingController extends Controller
     /** El enlace del WhatsApp flotante, con un saludo ya escrito. */
     private function whatsappDelGimnasio(string $gimnasio): ?string
     {
+        return $this->whatsappConMensaje("Hola, quiero información sobre {$gimnasio}.");
+    }
+
+    /**
+     * El mismo WhatsApp del gimnasio, con otro saludo ya escrito: el de
+     * inscribirse en una clase llega diciendo cuál.
+     */
+    private function whatsappConMensaje(string $mensaje): ?string
+    {
         $numero = preg_replace('/[^0-9]/', '', (string) Ajustes::obtener('web.whatsapp'));
 
         if (strlen($numero) === 9) {
@@ -665,7 +836,7 @@ class LandingController extends Controller
         }
 
         return preg_match('/^569[0-9]{8}$/', $numero)
-            ? 'https://wa.me/' . $numero . '?text=' . rawurlencode("Hola, quiero información sobre {$gimnasio}.")
+            ? 'https://wa.me/' . $numero . '?text=' . rawurlencode($mensaje)
             : null;
     }
 
@@ -985,6 +1156,7 @@ class LandingController extends Controller
             ['landing.planes', '0.9'],
             $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8'] : null,
             ['landing.arriendo', '0.8'],
+            Clase::where('activo', true)->exists() ? ['landing.clases', '0.8'] : null,
             ['landing.gimnasio', '0.8'],
             Especialista::where('activo', true)->where('tipo', 'especialista')->exists() ? ['landing.especialistas', '0.7'] : null,
             ['landing.contacto', '0.7'],

@@ -1,15 +1,20 @@
 {{--
     El menu de todas las paginas. Solo enlaza lo que tiene algo que mostrar:
     sin convenios publicados no hay «Convenios», sin especialistas no hay
-    «Especialistas». El boton rojo es lo que mas busca un socio: su membresia.
+    «Especialistas», sin clases no hay «Clases». El boton rojo es lo que
+    mas busca un socio: su membresia.
 --}}
 @php
+    // Primero lo de quien viene a entrenar (el lugar, los planes, las clases y
+    // los especialistas), después lo de grupos e instituciones, y al final
+    // cómo contactar.
     $enlaces = array_values(array_filter([
         ['ruta' => 'landing.gimnasio', 'texto' => 'El gimnasio'],
         ['ruta' => 'landing.planes', 'texto' => 'Planes'],
+        $navegacion['clases'] ? ['ruta' => 'landing.clases', 'texto' => 'Clases'] : null,
+        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especialista'] : null,
         $navegacion['convenios'] ? ['ruta' => 'landing.convenios', 'texto' => 'Convenios'] : null,
         ['ruta' => 'landing.arriendo', 'texto' => 'Arrienda horas'],
-        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especialista'] : null,
         ['ruta' => 'landing.contacto', 'texto' => 'Contacto'],
     ]));
 @endphp
@@ -29,12 +34,14 @@
                 </picture>
             </a>
 
-            <div class="hidden lg:flex items-center gap-7">
+            {{-- Con siete enlaces no caben con el aire de siempre a 1024 px: más juntos
+                 hasta la pantalla ancha, y sin partirse en dos líneas. --}}
+            <div class="hidden lg:flex items-center gap-4 xl:gap-7">
                 @foreach($enlaces as $e)
                     <a href="{{ route($e['ruta']) }}" @if(request()->routeIs($e['ruta'], $e['tambien'] ?? $e['ruta'])) aria-current="page" @endif
-                       class="relative font-modern text-sm transition-colors py-2 {{ request()->routeIs($e['ruta'], $e['tambien'] ?? $e['ruta']) ? 'text-pg-tiza after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:bg-pg-rojo after:rounded-full' : 'text-pg-tiza/70 hover:text-pg-rojo-claro' }}">{{ $e['texto'] }}</a>
+                       class="relative whitespace-nowrap font-modern text-sm transition-colors py-2 {{ request()->routeIs($e['ruta'], $e['tambien'] ?? $e['ruta']) ? 'text-pg-tiza after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:bg-pg-rojo after:rounded-full' : 'text-pg-tiza/70 hover:text-pg-rojo-claro' }}">{{ $e['texto'] }}</a>
                 @endforeach
-                <a href="{{ route('landing.membresia') }}" class="bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-semibold px-5 py-2.5 rounded-lg transition-colors font-modern text-sm">
+                <a href="{{ route('landing.membresia') }}" class="whitespace-nowrap bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-semibold px-4 xl:px-5 py-2.5 rounded-lg transition-colors font-modern text-sm">
                     <i class="fas fa-id-card mr-2" aria-hidden="true"></i>Mi membresía
                 </a>
             </div>
