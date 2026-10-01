@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
+use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Pago;
 use Illuminate\Http\Request;
@@ -98,7 +99,31 @@ class PagoEditarController extends Controller
             return back()->with('error', 'Ese cambio ya se guardó.');
         }
 
-        DB::transaction(function () use ($pago, $datos) {
+        DB::transaction(function () use ($request, $pago, $datos) {
+            /*
+             * EL TOPE, OTRA VEZ Y CON LA MEMBRESÍA TRABADA. Se miró arriba,
+             * fuera de la transacción: si justo entraba un cobro por la otra
+             * caja (que traba la misma fila, RegistroPagoService), subir este
+             * pago hasta el tope viejo dejaba entre los dos más plata que lo
+             * que vale la membresía. Así uno espera al otro y ve el saldo real.
+             */
+            if ($pago->id_inscripcion) {
+                Inscripcion::whereKey($pago->id_inscripcion)->lockForUpdate()->first();
+
+                $tope = $this->loQueCabe($pago);
+
+                if ((int) $datos['monto_abonado'] > $tope) {
+                    $this->releaseFormToken($request, 'pago_editar_' . $pago->id);
+
+                    throw ValidationException::withMessages([
+                        'monto_abonado' => sprintf(
+                            'Mientras se corregía entró otro cobro: ahora caben como mucho $%s.',
+                            number_format($tope, 0, ',', '.')
+                        ),
+                    ]);
+                }
+            }
+
             $pago->update($datos);
 
             $pago->inscripcion?->recalcularSusPagos();

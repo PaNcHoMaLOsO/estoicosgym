@@ -37,9 +37,42 @@ class Ejercicio extends Model
         'cardio' => 'Equipo de cardio',
     ];
 
-    protected $fillable = ['nombre', 'zona', 'equipo', 'indicacion', 'activo', 'orden'];
+    /**
+     * Los grupos del mapa muscular (columna `musculos`: el principal y los
+     * secundarios). Mientras el ejercicio no tenga foto, la rutina muestra la
+     * silueta con estos grupos marcados. Ver <x-mapa-muscular>.
+     */
+    public const MUSCULOS = [
+        'pecho' => 'Pecho',
+        'espalda' => 'Espalda',
+        'hombros' => 'Hombros',
+        'biceps' => 'Bíceps',
+        'triceps' => 'Tríceps',
+        'abdomen' => 'Abdomen',
+        'lumbar' => 'Lumbar',
+        'gluteos' => 'Glúteos',
+        'cuadriceps' => 'Cuádriceps',
+        'isquios' => 'Isquiotibiales',
+        'pantorrillas' => 'Pantorrillas',
+    ];
 
-    protected $casts = ['activo' => 'boolean', 'orden' => 'integer'];
+    protected $fillable = ['nombre', 'zona', 'musculos', 'imagen', 'equipo', 'indicacion', 'activo', 'orden'];
+
+    protected $casts = ['activo' => 'boolean', 'orden' => 'integer', 'musculos' => 'array'];
+
+    /** La foto o el GIF que subió el gimnasio, o null. */
+    public function urlDeImagen(): ?string
+    {
+        return $this->imagen ? asset('storage/' . $this->imagen) : null;
+    }
+
+    /** @return array{principal: ?string, secundarios: list<string>} */
+    public function grupos(): array
+    {
+        $m = $this->musculos ?? [];
+
+        return ['principal' => $m['principal'] ?? null, 'secundarios' => array_values($m['secundarios'] ?? [])];
+    }
 
     protected static function booted(): void
     {

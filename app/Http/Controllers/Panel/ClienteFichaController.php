@@ -125,7 +125,7 @@ class ClienteFichaController extends Controller
                     'inicio' => $i->fecha_inicio?->format('d/m/Y'),
                     'vence' => $i->fecha_vencimiento?->format('d/m/Y'),
                     'dias' => $i->fecha_vencimiento
-                        ? (int) $hoy->diffInDays($i->fecha_vencimiento, false)
+                        ? \App\Models\Inscripcion::diasEntre($hoy, $i->fecha_vencimiento)
                         : null,
                     'total' => $total,
                     'abonado' => $abonado,

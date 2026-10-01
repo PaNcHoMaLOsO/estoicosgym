@@ -18,6 +18,8 @@ class Clase extends Model
     protected $fillable = [
         'uuid',
         'nombre',
+        'slug',
+        'slugs_anteriores',
         'descripcion',
         'profesor',
         'para_quien',
@@ -34,6 +36,7 @@ class Clase extends Model
         'activo' => 'boolean',
         'orden' => 'integer',
         'precio_mensual' => 'integer',
+        'slugs_anteriores' => 'array',
     ];
 
     /** Los días, en el orden de la semana: la clave y cómo se lee. */
@@ -73,6 +76,36 @@ class Clase extends Model
                 $clase->uuid = (string) Str::uuid();
             }
         });
+
+        // Su página, /clases/judo, sale del nombre. Si se corrige el nombre se
+        // rehace, y la vieja queda guardada para redirigir: ya puede estar
+        // compartida.
+        static::saving(function (Clase $clase) {
+            if (! $clase->slug || $clase->isDirty('nombre')) {
+                $anterior = $clase->getOriginal('slug');
+                $clase->slug = $clase->slugLibre();
+
+                if ($anterior && $anterior !== $clase->slug) {
+                    $clase->slugs_anteriores = array_values(array_unique([
+                        ...($clase->slugs_anteriores ?? []),
+                        $anterior,
+                    ]));
+                }
+            }
+        });
+    }
+
+    /** «Lucha olímpica» → «lucha-olimpica»; si ya existe, «lucha-olimpica-2». */
+    private function slugLibre(): string
+    {
+        $base = Str::slug($this->nombre) ?: 'clase';
+        $slug = $base;
+
+        for ($n = 2; static::where('slug', $slug)->when($this->exists, fn ($q) => $q->whereKeyNot($this->getKey()))->exists(); $n++) {
+            $slug = "{$base}-{$n}";
+        }
+
+        return $slug;
     }
 
     public function getRouteKeyName()

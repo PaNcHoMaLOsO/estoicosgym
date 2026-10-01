@@ -23,6 +23,17 @@ class AppServiceProvider extends ServiceProvider
         // lo que usa el servidor: ver App\Support\Parecido.
         \App\Support\Parecido::registrar();
 
+        /*
+         * UNA SOLA DIRECCIÓN EN INTERNET. Detrás de Cloudflare la petición
+         * puede llegar como http o con otro nombre; los enlaces, el canonical
+         * y el mapa del sitio tienen que salir siempre con la de APP_URL y con
+         * https. Lo que llega por otra dirección lo manda ahí DireccionUnica.
+         */
+        if ($this->app->environment('production') && config('app.url')) {
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Todo lo que se registre como error va también al registro de fallas
         // del panel (Configuración → Panel → Registro de fallas).
         // Los posibles duplicados se guardan diez minutos: si cambia un

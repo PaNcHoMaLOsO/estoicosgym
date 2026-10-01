@@ -58,6 +58,9 @@ class TipoNotificacion extends Model
         $asunto = $this->asunto_email;
         $contenido = $this->plantilla_email;
 
+        // La misma en todos los correos, venga de donde venga el envío.
+        $datos += ['enlace_resena' => (string) \App\Support\Ajustes::obtener('web.resenas')];
+
         foreach ($datos as $key => $value) {
             $asunto = str_replace('{' . $key . '}', $value, $asunto);
             $contenido = str_replace('{' . $key . '}', $value, $contenido);
@@ -79,6 +82,7 @@ class TipoNotificacion extends Model
             'nombre_cliente' => 'Nombre completo del cliente (útil para apoderados)',
             'membresia' => 'Nombre de la membresía',
             'es_menor_edad' => 'Indica si el cliente es menor de edad (true/false)',
+            'enlace_resena' => 'Enlace para dejar una reseña en Google',
         ];
 
         $variablesEspecificas = match($codigo) {

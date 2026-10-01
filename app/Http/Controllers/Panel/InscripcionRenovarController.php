@@ -110,6 +110,12 @@ class InscripcionRenovarController extends Controller
 
         try {
             $nueva = $registro->registrar($resultado);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Ya la renovó otra pestaña: se dice eso, no «inténtalo
+            // nuevamente», que invitaría a renovarla otra vez.
+            $this->releaseFormToken($request, 'inscripcion_renovar');
+
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Error al renovar desde el panel: ' . $e->getMessage());
             $this->releaseFormToken($request, 'inscripcion_renovar');

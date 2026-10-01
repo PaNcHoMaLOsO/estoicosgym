@@ -132,7 +132,7 @@ class ClienteController extends Controller
                     // Negativo = ya venció. Se calcula aquí para que la fila no
                     // dependa del reloj del equipo.
                     'dias' => $inscripcion?->fecha_vencimiento
-                        ? (int) Carbon::today()->diffInDays($inscripcion->fecha_vencimiento, false)
+                        ? \App\Models\Inscripcion::diasEntre(Carbon::today(), $inscripcion->fecha_vencimiento)
                         : null,
                 ];
             });

@@ -76,12 +76,41 @@ class SecurityHeaders
             );
         }
 
-        // 8. Cache-Control para contenido dinámico
-        if (!$response->headers->has('Cache-Control')) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-        }
+        // 8. Cache-Control: lo decide la web pública, no el panel.
+        $response->headers->set('Cache-Control', $this->cacheSegun($request));
+        // NoCacheMiddleware (del grupo web) lo respeta y no lo pisa.
+        $request->attributes->set(self::CACHE_DECIDIDO, true);
 
         return $response;
+    }
+
+    public const CACHE_DECIDIDO = 'cache-control-decidido';
+
+    /**
+     * CUÁNTO SE PUEDE GUARDAR CADA COSA.
+     *
+     * Antes todo salía con no-store, como el panel: el navegador no guardaba
+     * ni la portada y al volver atrás la pedía entera otra vez. Ahora:
+     *
+     *  · robots.txt y el mapa del sitio: iguales para todos, una hora en
+     *    cualquier caché (también en la de Cloudflare).
+     *  · Lo que es de una persona (su membresía, su contrato) y lo que se
+     *    envía (formularios): no se guarda en ninguna parte.
+     *  · Las demás páginas: solo en el navegador de quien las mira, y
+     *    preguntando antes de usarlas. Llevan el formulario con su llave de
+     *    sesión, así que no pueden ir a una caché compartida.
+     */
+    private function cacheSegun(Request $request): string
+    {
+        if ($request->routeIs('landing.robots', 'landing.sitemap')) {
+            return 'public, max-age=3600';
+        }
+
+        if (! $request->isMethodCacheable() || $request->routeIs('landing.membresia', 'contrato.*')) {
+            return 'no-store, no-cache, must-revalidate, max-age=0';
+        }
+
+        return 'private, no-cache';
     }
 
     /** La dirección del servidor de Vite si está corriendo (`npm run dev`), o null. */

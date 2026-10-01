@@ -14,7 +14,8 @@
                     <div class="animate-on-scroll overflow-hidden rounded-2xl border border-pg-tiza/10">
                         {{-- Con su proporción, sin recortar: el recuadro fijo a 4:3
                              le comía un trozo arriba y abajo. --}}
-                        <img src="{{ $tienda['imagen'] }}" alt="{{ $tienda['titulo'] }}" loading="lazy"
+                        <img src="{{ $tienda['imagen'] }}" alt="{{ $tienda['titulo'] }}" loading="lazy" decoding="async"
+                             @if($tienda['medidas'] ?? null) width="{{ $tienda['medidas'][0] }}" height="{{ $tienda['medidas'][1] }}" @endif
                              class="w-full h-auto">
                     </div>
                 @endif
@@ -31,7 +32,7 @@
                        data-evento="tienda_suplementos"
                        class="mt-5 lg:mt-8 inline-flex items-center gap-3 bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-3 rounded-lg text-base transition-colors font-modern">
                         Ver la tienda
-                        <i class="fas fa-arrow-up-right-from-square text-sm" aria-hidden="true"></i>
+                        <x-icono nombre="arrow-up-right-from-square" class="text-sm" />
                     </a>
                 </div>
             </div>

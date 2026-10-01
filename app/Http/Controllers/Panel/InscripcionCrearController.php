@@ -106,6 +106,13 @@ class InscripcionCrearController extends Controller
 
         try {
             $inscripcion = $registro->registrar($resultado);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Otra pestaña le registró una membresía a este socio mientras se
+            // llenaba esta: se dice eso, no «inténtalo nuevamente», que
+            // invitaría a repetir el alta.
+            $this->releaseFormToken($request, 'inscripcion_create');
+
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Error al inscribir desde el panel: ' . $e->getMessage());
             $this->releaseFormToken($request, 'inscripcion_create');

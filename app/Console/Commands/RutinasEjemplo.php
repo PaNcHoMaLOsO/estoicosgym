@@ -9,8 +9,8 @@ use Illuminate\Console\Command;
  * Carga (o quita) las rutinas de la sala: el catálogo de ejercicios y las
  * variantes por objetivo, nivel y días. Ver App\Support\RutinasDeEjemplo.
  *
- * Se puede correr las veces que haga falta: los ejercicios se buscan por
- * nombre y cada rutina se rehace entera.
+ * Se puede correr las veces que haga falta: los ejercicios y las rutinas se
+ * buscan por nombre y lo que ya está no se toca.
  */
 class RutinasEjemplo extends Command
 {
@@ -26,9 +26,10 @@ class RutinasEjemplo extends Command
             return self::SUCCESS;
         }
 
-        [$ejercicios, $rutinas] = RutinasDeEjemplo::cargar();
+        [$ejercicios, $rutinas, $nuevas] = RutinasDeEjemplo::cargar();
 
-        $this->info("{$ejercicios} ejercicios y {$rutinas} rutinas cargadas.");
+        $this->info("{$ejercicios} ejercicios y {$rutinas} rutinas en el catálogo; {$nuevas} rutinas nuevas.");
+        $this->line('Las que ya estaban (por nombre) quedaron como estaban.');
         $this->line('Se ven en /rutina. Conviene que las revise el entrenador de la sala.');
 
         return self::SUCCESS;

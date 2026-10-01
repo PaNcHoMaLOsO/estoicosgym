@@ -88,7 +88,7 @@
                 @if($whatsapp)
                     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
                        class="inline-flex items-center justify-center gap-2 border-2 border-pg-tiza/30 hover:border-pg-rojo text-pg-tiza hover:text-pg-rojo-claro px-8 py-3 rounded-lg text-base transition-colors font-modern">
-                        <i class="fab fa-whatsapp text-xl" aria-hidden="true"></i> Preguntar por WhatsApp
+                        <x-icono nombre="whatsapp" class="text-xl" /> Preguntar por WhatsApp
                     </a>
                 @endif
             </div>
@@ -105,7 +105,7 @@
                         class="flex items-start lg:items-center gap-3 lg:gap-4 px-1 lg:px-8 py-4 lg:py-7 {{ ($dato['href'] ?? null) ? 'transition-colors hover:bg-pg-negro/40' : '' }}">
                         {{-- El icono solo, sin el cuadrado de color detrás: igual
                              que en el resto de la web. --}}
-                        <i class="fas fa-{{ $dato['icono'] }} text-pg-rojo-claro text-base w-5 shrink-0 text-center" aria-hidden="true"></i>
+                        <x-icono :nombre="$dato['icono']" class="text-pg-rojo-claro text-base w-5 shrink-0 text-center" />
                         <span class="min-w-0">
                             <span class="block text-pg-tiza/50 font-modern text-[0.65rem] lg:text-xs uppercase tracking-wider lg:tracking-widest">{{ $dato['rotulo'] }}</span>
                             <span class="block text-pg-tiza font-modern text-sm lg:text-base">{{ $dato['valor'] }}</span>
@@ -165,7 +165,10 @@
                                  relleno tapando justo la parte de abajo de la foto.
                                  El texto sigue en `alt`, que no se ve pero es lo que
                                  lee Google y quien navega con lector de pantalla. --}}
-                            <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" loading="lazy"
+                            <img src="{{ $foto['imagen'] }}"
+                                 alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
+                                 @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
+                                 loading="lazy" decoding="async"
                                  class="w-full h-auto transition-transform duration-700 group-hover:scale-105">
                         </figure>
                     @endforeach
@@ -173,6 +176,13 @@
             </div>
         </section>
     @endif
+
+    {{-- Para quien llega sin saber qué hacer en la sala. --}}
+    <p class="bg-pg-carbon pb-8 text-center font-modern text-sm lg:pb-12">
+        <a href="{{ route('landing.rutina') }}" class="inline-flex items-center gap-2 font-semibold text-pg-rojo-claro hover:underline">
+            ¿No sabes por dónde empezar? Mira las rutinas <x-icono nombre="arrow-right" class="text-xs" />
+        </a>
+    </p>
 
     @include('landing.partes.horario')
     @include('landing.partes.llamado')

@@ -159,6 +159,8 @@ class RegistroInscripcionService
     public function registrar(array $resultado): Inscripcion
     {
         $inscripcion = DB::transaction(function () use ($resultado) {
+            $this->exigirQueSigaLibre($resultado);
+
             $inscripcion = Inscripcion::create($resultado['inscripcion']);
 
             // Quien vuelve y paga está activo otra vez: lo reactiva la venta,
@@ -182,6 +184,57 @@ class RegistroInscripcionService
         $this->avisarAlSocio($inscripcion);
 
         return $inscripcion;
+    }
+
+    /**
+     * Lo que validar() comprobó, otra vez y con el socio TRABADO.
+     *
+     * validar() mira que el socio no tenga ya una membresía vigente (alta) o
+     * que la que se renueva no esté ya renovada, pero lo mira FUERA de la
+     * transacción. Dos pestañas abiertas sobre el mismo socio —o dos cajas—
+     * mandan cada una su token, así que el turno del formulario no las frena:
+     * las dos pasaban la comprobación antes de que ninguna escribiera, y el
+     * socio quedaba con DOS membresías activas y dos cobros por el mismo mes.
+     *
+     * Trabando la fila del socio, la segunda espera a la primera y, al seguir,
+     * ya ve la membresía que esa creó.
+     *
+     * @param array<string,mixed> $resultado
+     *
+     * @throws ValidationException
+     */
+    private function exigirQueSigaLibre(array $resultado): void
+    {
+        $idSocio = (int) $resultado['inscripcion']['id_cliente'];
+
+        Cliente::withTrashed()->whereKey($idSocio)->lockForUpdate()->first();
+
+        $vigentes = Inscripcion::where('id_cliente', $idSocio)
+            ->whereIn('id_estado', [EstadosCodigo::INSCRIPCION_ACTIVA, EstadosCodigo::INSCRIPCION_PAUSADA]);
+
+        if (! isset($resultado['anterior'])) {
+            if ($vigentes->exists()) {
+                throw ValidationException::withMessages([
+                    'id_cliente' => 'Mientras se llenaba este formulario se le registró otra membresía a este socio. Revisa su ficha antes de repetirla.',
+                ]);
+            }
+
+            return;
+        }
+
+        // Renovación: la anterior, tal como está AHORA, no como se leyó.
+        $anterior = Inscripcion::whereKey($resultado['anterior']->getKey())->first();
+
+        $yaRenovada = Inscripcion::where('id_inscripcion_anterior', $resultado['anterior']->getKey())->exists();
+        $cerrada = ! $anterior
+            || in_array((int) $anterior->id_estado, EstadosCodigo::INSCRIPCION_FINALIZADOS, true);
+        $otraVigente = $vigentes->whereKeyNot($resultado['anterior']->getKey())->exists();
+
+        if ($yaRenovada || $cerrada || $otraVigente) {
+            throw ValidationException::withMessages([
+                'id_cliente' => 'Mientras se llenaba este formulario esta membresía ya se renovó. Revisa la ficha del socio antes de repetirlo.',
+            ]);
+        }
     }
 
     /**

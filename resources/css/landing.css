@@ -15,6 +15,9 @@
 /* El contrato por firmar y su copia: páginas sueltas con la misma marca. */
 @source '../views/layouts/documento.blade.php';
 @source '../views/contrato';
+/* La página de «no existe» y los íconos en línea. */
+@source '../views/errors';
+@source '../views/components/icono.blade.php';
 
 @theme {
     /* Paleta PRO GYM: los mismos valores que el panel en tema oscuro. */
@@ -41,6 +44,16 @@
     button:not(:disabled),
     [role='button']:not(:disabled) {
         cursor: pointer;
+    }
+
+    /* Los íconos en línea (App/Support/Iconos) se paran como la letra que
+       los rodea, igual que los de Font Awesome. En la capa base para que
+       `block`, `hidden` o `w-5` los puedan cambiar. */
+    .icono {
+        display: inline-block;
+        vertical-align: -0.125em;
+        overflow: visible;
+        flex-shrink: 0;
     }
 }
 
@@ -120,3 +133,60 @@
     color: #ef4a51;
 }
 
+
+/*
+ * Qué entrenar hoy: cada pregunta entra desde el costado y cada ejercicio
+ * del resultado sube al aparecer. Quien pidió menos movimiento las ve quietas.
+ */
+@keyframes pg-paso-entra {
+    from {
+        opacity: 0;
+        transform: translateX(28px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes pg-paso-vuelve {
+    from {
+        opacity: 0;
+        transform: translateX(-28px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes pg-sube {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.pg-paso-entra {
+    animation: pg-paso-entra 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.pg-paso-vuelve {
+    animation: pg-paso-vuelve 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.pg-sube {
+    animation: pg-sube 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pg-paso-entra,
+    .pg-paso-vuelve,
+    .pg-sube {
+        animation: none;
+    }
+}

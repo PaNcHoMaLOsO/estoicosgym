@@ -19,7 +19,7 @@ Route::model('membresia', Membresia::class);
 Route::model('convenio', Convenio::class);
 
 // ===== LANDING PAGE PÚBLICA (con headers de seguridad) =====
-Route::middleware('security.headers')->group(function () {
+Route::middleware(['direccion.unica', 'security.headers'])->group(function () {
     Route::get('/', [LandingController::class, 'index'])->name('landing');
 
     /*
@@ -32,8 +32,10 @@ Route::middleware('security.headers')->group(function () {
     Route::get('/convenios', [LandingController::class, 'convenios'])->name('landing.convenios');
     Route::get('/arriendo-por-horas', [LandingController::class, 'arriendo'])->name('landing.arriendo');
     Route::get('/clases', [LandingController::class, 'clases'])->name('landing.clases');
+    Route::get('/clases/{slug}', [LandingController::class, 'clase'])->where('slug', '[a-z0-9-]+')->name('landing.clase');
     Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
     Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->name('landing.especialista');
+    Route::get('/especialidades/{slug}', [LandingController::class, 'especialidad'])->where('slug', '[a-z0-9-]+')->name('landing.especialidad');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
     Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
     /*
@@ -41,11 +43,18 @@ Route::middleware('security.headers')->group(function () {
      * pedir datos; las respuestas van en la dirección.
      */
     Route::get('/rutina', [LandingController::class, 'rutina'])->name('landing.rutina');
+    Route::get('/rutinas', [LandingController::class, 'rutinas'])->name('landing.rutinas');
+    Route::get('/rutinas/{slug}', [LandingController::class, 'rutinaVer'])->where('slug', '[a-z0-9-]+')->name('landing.rutina.ver');
+    Route::get('/ejercicios', [LandingController::class, 'ejercicios'])->name('landing.ejercicios');
     Route::get('/privacidad', [LandingController::class, 'privacidad'])->name('landing.privacidad');
     Route::get('/terminos', [LandingController::class, 'terminos'])->name('landing.terminos');
     // Para Google: que hay y donde esta el mapa del sitio.
-    Route::get('/robots.txt', [LandingController::class, 'robots'])->name('landing.robots');
-    Route::get('/sitemap.xml', [LandingController::class, 'sitemap'])->name('landing.sitemap');
+    // Sin sesión ni cookies: una respuesta con cookie no la guarda Cloudflare,
+    // y estos dos se piden mucho y son iguales para todos.
+    Route::get('/robots.txt', [LandingController::class, 'robots'])->name('landing.robots')
+        ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+    Route::get('/sitemap.xml', [LandingController::class, 'sitemap'])->name('landing.sitemap')
+        ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
     /*
      * Un tope general encima de los que ya lleva cada metodo. Aquellos cuentan

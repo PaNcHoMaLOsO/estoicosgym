@@ -39,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias para middlewares personalizados
         $middleware->alias([
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
+            // La web pública con una sola dirección: sin www ni /index.php.
+            'direccion.unica' => \App\Http\Middleware\DireccionUnica::class,
             'verify.session' => \App\Http\Middleware\VerifyActiveSession::class,
             'puede' => \App\Http\Middleware\VerificaPermiso::class,
             // Las pantallas que no son mas que dinero, cuando el dueno pidio

@@ -10,6 +10,9 @@ use App\Models\Especialista;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Support\Ajustes;
+use App\Support\EntrenamientoDeHoy;
+use App\Support\Especialidades;
+use App\Support\MedidasDeImagen;
 use App\Support\RutinaSugerida;
 use App\Support\WebPublica;
 use App\Services\CorreoService;
@@ -66,6 +69,8 @@ class LandingController extends Controller
         'landing.privacidad' => 'Privacidad',
         'landing.terminos' => 'Términos y condiciones',
         'landing.rutina' => 'Qué entrenar hoy',
+        'landing.rutinas' => 'Rutinas',
+        'landing.ejercicios' => 'Ejercicios',
     ];
 
     /**
@@ -113,7 +118,11 @@ class LandingController extends Controller
             "Cómo es {$comun['gimnasio']['nombre']} por dentro: servicios, fotos y horario" . ($ciudad ? " de nuestro gimnasio en {$ciudad}." : '.'),
             [
                 'servicios' => $this->contenidos('servicio')->all(),
-                'fotos' => $this->contenidos('foto')->all(),
+                // Con su ancho y su alto: el navegador guarda el hueco de cada
+                // foto y la galería no salta mientras cargan.
+                'fotos' => $this->contenidos('foto')
+                    ->map(fn (array $f) => $f + ['medidas' => MedidasDeImagen::de($f['imagen'])])
+                    ->all(),
                 // La misma portada que gira en el inicio: fotos apaisadas y vídeos.
                 'fondoPortada' => $this->fondoDePortada(),
             ], $comun);
@@ -133,7 +142,25 @@ class LandingController extends Controller
             "Planes de {$comun['gimnasio']['nombre']}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
                 . ($nombres ? ": {$nombres}." : '.')
                 . ($precios ? ' Desde ' . $this->pesos(min($precios)) . '.' : ''),
-            [], $comun);
+            [
+                // La misma ficha del gimnasio (el mismo @id), con lo que vende:
+                // Google junta las dos y sabe que estos precios son de él.
+                'json_ld' => array_filter([
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ExerciseGym',
+                    '@id' => $comun['web']['id_gimnasio'],
+                    'name' => $comun['gimnasio']['nombre'],
+                    'url' => url('/'),
+                    'makesOffer' => array_values(array_map(fn (array $plan) => array_filter([
+                        '@type' => 'Offer',
+                        'name' => 'Plan ' . $plan['nombre'],
+                        'description' => $plan['duracion'] ?: null,
+                        'price' => $plan['precio'],
+                        'priceCurrency' => 'CLP',
+                        'url' => route('landing.planes'),
+                    ]), array_filter($comun['planes'], fn (array $plan) => $plan['precio'] > 0))),
+                ]),
+            ], $comun);
     }
 
     public function convenios()
@@ -181,7 +208,7 @@ class LandingController extends Controller
                     'name' => 'Arriendo de gimnasio por horas',
                     'serviceType' => 'Arriendo de gimnasio por horas para clases',
                     'audience' => ['@type' => 'Audience', 'audienceType' => 'Universidades, institutos, clubes deportivos y entrenadores'],
-                    'provider' => ['@type' => 'ExerciseGym', 'name' => $gimnasio, 'url' => route('landing')],
+                    'provider' => ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $gimnasio, 'url' => route('landing')],
                     'areaServed' => $ciudad ?: null,
                     'url' => route('landing.arriendo'),
                 ],
@@ -206,19 +233,7 @@ class LandingController extends Controller
         $ciudad = $comun['web']['ciudad'];
         $gimnasio = $comun['gimnasio']['nombre'];
 
-        $clases = $filas->map(fn (Clase $c) => [
-            'nombre' => $c->nombre,
-            'descripcion' => $c->descripcion,
-            'profesor' => $c->profesor,
-            'para_quien' => $c->para_quien,
-            'precio' => $c->precio_mensual,
-            'precio_texto' => $c->precio_mensual ? $this->pesos($c->precio_mensual) : null,
-            'imagen' => $c->urlDeImagen(),
-            'color' => $c->hex(),
-            'horario' => $c->horarioOrdenado(),
-            'horario_texto' => $c->horarioEnUnaLinea(),
-            'whatsapp' => $this->whatsappConMensaje("Hola, quiero inscribirme en la clase de {$c->nombre}"),
-        ])->values();
+        $clases = $filas->map(fn (Clase $c) => $this->fichaDeClase($c))->values();
 
         // «Judo y Lucha olímpica», o «Judo, Lucha olímpica y más»: el título
         // tiene que caber en el resultado de Google.
@@ -238,6 +253,9 @@ class LandingController extends Controller
                 . ($precios->isNotEmpty() ? ', mensualidad desde ' . $this->pesos($precios->min()) : '') . '.',
             [
                 'clases' => $clases->all(),
+                // Al compartir la página sale la foto de una clase, no la del gimnasio.
+                'imagen_al_compartir' => $clases->pluck('imagen')->filter()->first(),
+                'imagen_alt' => "{$palabra} de {$todas} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : ''),
                 'tituloClases' => "{$palabra} de {$enElTitulo}" . ($ciudad ? " en {$ciudad}" : ''),
                 'calendario' => $this->calendarioDeClases($clases->all()),
                 'json_ld' => [
@@ -251,7 +269,7 @@ class LandingController extends Controller
                             '@type' => 'Service',
                             'name' => $c['nombre'],
                             'description' => $c['descripcion'] ?: ($c['para_quien'] ?: null),
-                            'provider' => ['@type' => 'ExerciseGym', 'name' => $gimnasio, 'url' => route('landing')],
+                            'provider' => ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $gimnasio, 'url' => route('landing')],
                             'areaServed' => $ciudad ?: null,
                             'offers' => $c['precio'] ? [
                                 '@type' => 'Offer',
@@ -268,6 +286,113 @@ class LandingController extends Controller
                     ])->all(),
                 ],
             ], $comun);
+    }
+
+    /**
+     * La página de una clase: /clases/judo.
+     *
+     * Para quien busca «clases de judo en Los Ángeles»: en la página de todas
+     * las clases, judo es una tarjeta entre cuatro; aquí es el título. Lleva
+     * su foto, su horario, el precio, el WhatsApp para inscribirse y, abajo,
+     * las otras clases.
+     */
+    public function clase(string $slug)
+    {
+        $activas = Clase::where('activo', true)->orderBy('orden')->orderBy('id')->get()
+            ->filter(fn (Clase $c) => $c->horarioOrdenado() !== [])
+            ->values();
+        $clase = $activas->firstWhere('slug', $slug);
+
+        if (! $clase) {
+            // Una dirección vieja, de antes de corregirle el nombre: a la nueva.
+            $actual = $activas->first(fn (Clase $c) => in_array($slug, $c->slugs_anteriores ?? [], true));
+
+            abort_if(! $actual, 404);
+
+            return redirect()->route('landing.clase', $actual->slug, 301);
+        }
+
+        $comun = $this->comun();
+        $ciudad = $comun['web']['ciudad'];
+        $gimnasio = $comun['gimnasio']['nombre'];
+        $c = $this->fichaDeClase($clase);
+        $titulo = "Clases de {$c['nombre']}" . ($ciudad ? " en {$ciudad}" : '');
+
+        return $this->pagina('landing.clase', 'landing.clase', $titulo,
+            // «Clases de Judo en PRO GYM, Los Ángeles: Lun y Mié · 19:00 a
+            // 20:30. Niños desde 8 años. $25.000 al mes.»
+            implode(' ', array_filter([
+                "Clases de {$c['nombre']} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ": {$c['horario_texto']}.",
+                $c['para_quien'] ? rtrim($c['para_quien'], '. ') . '.' : null,
+                $c['precio_texto'] ? "{$c['precio_texto']} al mes." : null,
+            ])),
+            [
+                'clase' => $c,
+                'tituloClase' => $titulo,
+                'otras' => $activas->where('id', '!=', $clase->id)
+                    ->map(fn (Clase $o) => $this->fichaDeClase($o))
+                    ->values()
+                    ->all(),
+                'imagen_al_compartir' => $c['imagen'],
+                'imagen_alt' => "Clase de {$c['nombre']} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : ''),
+                'json_ld' => array_filter([
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Service',
+                    'name' => "Clases de {$c['nombre']}",
+                    'serviceType' => $c['nombre'],
+                    'description' => $c['descripcion'] ?: ($c['para_quien'] ?: null),
+                    'image' => $c['imagen'] ? url($c['imagen']) : null,
+                    'url' => $c['url'],
+                    'provider' => ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $gimnasio, 'url' => route('landing')],
+                    'areaServed' => $ciudad ?: null,
+                    'offers' => $c['precio'] ? [
+                        '@type' => 'Offer',
+                        'price' => $c['precio'],
+                        'priceCurrency' => 'CLP',
+                        'url' => $c['url'],
+                        'priceSpecification' => [
+                            '@type' => 'UnitPriceSpecification',
+                            'price' => $c['precio'],
+                            'priceCurrency' => 'CLP',
+                            'unitText' => 'MONTH',
+                        ],
+                    ] : null,
+                ]),
+                'migas' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => $gimnasio, 'item' => route('landing')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Clases', 'item' => route('landing.clases')],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $c['nombre'], 'item' => $c['url']],
+                    ],
+                ],
+            ],
+            $comun, ['slug' => $clase->slug]);
+    }
+
+    /**
+     * Lo que se muestra de una clase, en la lista y en su página.
+     *
+     * @return array<string,mixed>
+     */
+    private function fichaDeClase(Clase $c): array
+    {
+        return [
+            'nombre' => $c->nombre,
+            'slug' => $c->slug,
+            'url' => $c->slug ? route('landing.clase', $c->slug) : route('landing.clases'),
+            'descripcion' => $c->descripcion,
+            'profesor' => $c->profesor,
+            'para_quien' => $c->para_quien,
+            'precio' => $c->precio_mensual,
+            'precio_texto' => $c->precio_mensual ? $this->pesos($c->precio_mensual) : null,
+            'imagen' => $c->urlDeImagen(),
+            'color' => $c->hex(),
+            'horario' => $c->horarioOrdenado(),
+            'horario_texto' => $c->horarioEnUnaLinea(),
+            'whatsapp' => $this->whatsappConMensaje("Hola, quiero inscribirme en la clase de {$c->nombre}"),
+        ];
     }
 
     /**
@@ -289,7 +414,7 @@ class LandingController extends Controller
         $todos = [];
         foreach ($clases as $c) {
             foreach ($c['horario'] as $b) {
-                $todos[] = $b + ['nombre' => $c['nombre'], 'color' => $c['color'], 'inicio' => $minutos($b['desde']), 'fin' => $minutos($b['hasta'])];
+                $todos[] = $b + ['nombre' => $c['nombre'], 'color' => $c['color'], 'url' => $c['url'] ?? null, 'inicio' => $minutos($b['desde']), 'fin' => $minutos($b['hasta'])];
             }
         }
 
@@ -338,6 +463,11 @@ class LandingController extends Controller
     public function especialistas()
     {
         $comun = $this->comun();
+
+        // Sin especialistas la página no existe: una lista vacía no le sirve a
+        // nadie, y Google la tomaría por una página pobre del sitio.
+        abort_if($comun['especialistas'] === [], 404);
+
         $especialidades = collect($comun['especialistas'])->pluck('especialidad')->unique()->implode(', ');
 
         return $this->pagina('landing.especialistas', 'landing.especialistas', 'Especialistas',
@@ -345,7 +475,55 @@ class LandingController extends Controller
                 ? "{$especialidades} que trabajan con {$comun['gimnasio']['nombre']}."
                 : "Los profesionales que trabajan con {$comun['gimnasio']['nombre']}.")
                 . ' Escríbeles directo por WhatsApp o Instagram.',
-            [], $comun);
+            ['especialidades' => array_values(array_map(
+                fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
+                Especialidades::agrupar($comun['especialistas'])
+            ))], $comun);
+    }
+
+    /**
+     * Una página por especialidad: /especialidades/kinesiologo.
+     *
+     * Para quien busca «kinesiólogo en Los Ángeles»: junta a todos los que
+     * hacen eso, aunque lo hayan escrito distinto (ver Especialidades). Sin
+     * nadie, no existe.
+     */
+    public function especialidad(string $slug)
+    {
+        $comun = $this->comun();
+        $grupos = Especialidades::agrupar($comun['especialistas']);
+        $grupo = $grupos[$slug] ?? null;
+
+        abort_if(! $grupo, 404);
+
+        $ciudad = $comun['web']['ciudad'];
+        $gimnasio = $comun['gimnasio']['nombre'];
+        $titulo = $grupo['nombre'] . ($ciudad ? " en {$ciudad}" : '');
+        $nombres = collect($grupo['especialistas'])->pluck('nombre');
+        $url = route('landing.especialidad', $slug);
+
+        return $this->pagina('landing.especialidad', 'landing.especialidad', $titulo,
+            "{$grupo['nombre']} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ': '
+                . ($nombres->count() > 1 ? $nombres->slice(0, -1)->implode(', ') . ' y ' . $nombres->last() : $nombres->first())
+                . '. ' . ($nombres->count() > 1 ? 'Escríbeles' : 'Escríbele') . ' directo por WhatsApp.',
+            [
+                'grupo' => $grupo,
+                'tituloEspecialidad' => $titulo,
+                'otrasEspecialidades' => array_values(array_map(
+                    fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
+                    array_filter($grupos, fn (array $g) => $g['slug'] !== $slug)
+                )),
+                'migas' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => $gimnasio, 'item' => route('landing')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Especialistas', 'item' => route('landing.especialistas')],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $grupo['nombre'], 'item' => $url],
+                    ],
+                ],
+            ],
+            $comun, ['slug' => $slug]);
     }
 
     /**
@@ -372,22 +550,51 @@ class LandingController extends Controller
 
         $otros = collect($comun['especialistas'])->where('slug', '!=', $slug)->take(3)->values()->all();
         $nombreGimnasio = $comun['gimnasio']['nombre'];
+        $ciudad = $comun['web']['ciudad'];
+        $perfil = route('landing.especialista', $slug);
+
+        // «Camila Rojas, nutricionista en Los Ángeles»: lo que alguien escribe
+        // en Google. pagina() ve la ciudad en el título y no la repite.
+        $titulo = "{$especialista['nombre']}, {$especialista['especialidad']}" . ($ciudad ? " en {$ciudad}" : '');
 
         return $this->pagina('landing.especialista', 'landing.especialista',
-            "{$especialista['nombre']}, {$especialista['especialidad']}",
+            $titulo,
             $especialista['descripcion']
                 ? Str::limit(preg_replace('/\s+/', ' ', $especialista['descripcion']), 155)
-                : "{$especialista['nombre']}, {$especialista['especialidad']} en {$nombreGimnasio}. Escríbele directo.",
+                : "{$especialista['nombre']}, {$especialista['especialidad']} en {$nombreGimnasio}" . ($ciudad ? ", {$ciudad}" : '') . '.'
+                    . ($especialista['whatsapp'] ? ' Agenda por WhatsApp.' : ' Escríbele directo.'),
             [
                 'especialista' => $especialista,
                 'otros' => $otros,
+                // «Más Nutricionista en PRO GYM»: solo si hay alguien más ahí.
+                'susEspecialidades' => array_values(array_map(
+                    fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
+                    array_filter(
+                        Especialidades::agrupar($comun['especialistas']),
+                        fn (array $g) => isset(Especialidades::de($especialista['especialidad'])[$g['slug']]) && count($g['especialistas']) > 1
+                    )
+                )),
+                // Al compartir su perfil sale su foto, no la del gimnasio.
+                'imagen_al_compartir' => $especialista['foto'],
+                'imagen_alt' => "{$especialista['nombre']}, {$especialista['especialidad']}",
+                // Quién es, para Google: una persona que trabaja en el gimnasio.
+                'json_ld' => array_filter([
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Person',
+                    'name' => $especialista['nombre'],
+                    'jobTitle' => $especialista['especialidad'] ?: null,
+                    'image' => $especialista['foto'] ? url($especialista['foto']) : null,
+                    'url' => $perfil,
+                    'sameAs' => $especialista['instagram'] ? [$especialista['instagram']] : null,
+                    'worksFor' => ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
+                ]),
                 'migas' => [
                     '@context' => 'https://schema.org',
                     '@type' => 'BreadcrumbList',
                     'itemListElement' => [
                         ['@type' => 'ListItem', 'position' => 1, 'name' => $nombreGimnasio, 'item' => route('landing')],
                         ['@type' => 'ListItem', 'position' => 2, 'name' => 'Especialistas', 'item' => route('landing.especialistas')],
-                        ['@type' => 'ListItem', 'position' => 3, 'name' => $especialista['nombre'], 'item' => route('landing.especialista', $slug)],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $especialista['nombre'], 'item' => $perfil],
                     ],
                 ],
             ],
@@ -403,14 +610,18 @@ class LandingController extends Controller
         // acepta preguntas que no estan a la vista.
         return $this->pagina('landing.contacto', 'landing.contacto', 'Contacto y horario',
             "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar y el horario. Escríbenos.",
-            [], $comun);
+            // La ficha del gimnasio también aquí: es la página de la dirección,
+            // el teléfono y el horario, justo lo que esa ficha le dice a Google.
+            ['json_ld' => $comun['web']['json_ld']], $comun);
     }
 
     public function miMembresia()
     {
         return $this->pagina('landing.mi-membresia', 'landing.membresia', 'Consulta tu membresía',
             'Revisa cuándo vence tu membresía y si tienes algo pendiente, con tu RUT y los últimos 4 dígitos de tu celular.',
-            [], $this->comun());
+            // Es una consulta para socios, no algo que alguien busque en
+            // Google: fuera del índice y fuera del mapa del sitio.
+            ['robots' => 'noindex, follow'], $this->comun());
     }
 
     public function privacidad()
@@ -425,32 +636,168 @@ class LandingController extends Controller
      * son los mismos que acepta cada socio al firmar su contrato.
      */
     /**
-     * La rutina de la sala: lo que se abre al leer el QR.
+     * Qué entrenar hoy: cuatro preguntas (cuántos días, cómo va, qué entrenó
+     * estos últimos días y qué quiere hoy) y el día armado para eso. Las respuestas van en
+     * la dirección, así se puede volver al resultado. Sin JavaScript es un
+     * formulario común con las cuatro preguntas seguidas.
      *
-     * NO PIDE NI GUARDA NADA de quien la mira: ni nombre, ni RUT, ni cuánto
-     * levantó. Las tres respuestas viajan en la dirección y el día en que va lo
-     * recuerda su propio teléfono. Es un cartel de la sala, no una ficha.
+     * LOS QR IMPRESOS llevan otras respuestas (?objetivo=…&nivel=…&dias=…):
+     * con ellas se busca la rutina de siempre y se abre su página, para no
+     * romperlos. Con solo ?objetivo=, la lista de ese objetivo.
+     * No pide ni guarda nada de quien la mira.
      */
     public function rutina(Request $request)
     {
         $objetivo = (string) $request->query('objetivo', '');
         $nivel = (string) $request->query('nivel', '');
         $dias = (int) $request->query('dias', 0);
-        $respondido = RutinaSugerida::respondido($objetivo, $nivel, $dias);
-        $rutina = $respondido ? RutinaSugerida::buscar($objetivo, $nivel, $dias) : null;
+        // Lo de estos días: ?hice[]=… (varios) o el ?ayer=… de los enlaces viejos.
+        $hechos = EntrenamientoDeHoy::hechos($request->query('hice'), $request->query('ayer'));
+
+        if ($objetivo !== '') {
+            if (RutinaSugerida::respondido($objetivo, $nivel, $dias) && ($rutina = RutinaSugerida::buscar($objetivo, $nivel, $dias))) {
+                return redirect()->route('landing.rutina.ver', $rutina->slug);
+            }
+
+            return redirect()->route('landing.rutinas', isset(\App\Models\Rutina::OBJETIVOS[$objetivo]) ? ['objetivo' => $objetivo] : []);
+        }
+
+        if ($request->boolean('todas')) {
+            return redirect()->route('landing.rutinas');
+        }
+
+        $comun = $this->comun();
+
+        // ?cambiar=1: volver a la última pregunta con las otras ya marcadas.
+        if (EntrenamientoDeHoy::respondido($dias, $nivel, $hechos) && ! $request->boolean('cambiar')) {
+            $hoy = (string) $request->query('hoy', '');
+            $hoy = isset(EntrenamientoDeHoy::GRUPOS[$hoy]) ? $hoy : EntrenamientoDeHoy::sugerencia($hechos, $dias);
+            $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'hice' => $hechos, 'hoy' => $hoy];
+
+            return $this->pagina('landing.rutina-hoy', 'landing.rutina', 'Tu entrenamiento de hoy',
+                'Un día de entrenamiento armado para lo que quieres entrenar hoy, con los ejercicios de la sala.',
+                [
+                    'entrenamiento' => EntrenamientoDeHoy::armar($dias, $nivel, $hechos, $hoy),
+                    'respuestas' => $respuestas,
+                    'nivelNombre' => EntrenamientoDeHoy::NIVELES[$nivel],
+                    'robots' => 'noindex, follow',
+                ],
+                $comun);
+        }
+
+        // Lo que ya contestó (si volvió atrás o le faltó algo) queda marcado.
+        $respuestas = [
+            'dias' => in_array($dias, EntrenamientoDeHoy::DIAS, true) ? $dias : null,
+            'nivel' => isset(EntrenamientoDeHoy::NIVELES[$nivel]) ? $nivel : null,
+            'hice' => $hechos,
+            'hoy' => isset(EntrenamientoDeHoy::GRUPOS[(string) $request->query('hoy')]) ? (string) $request->query('hoy') : null,
+        ];
 
         return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',
-            'Rutinas del gimnasio para empezar, bajar de peso o ganar fuerza, con las máquinas que hay en la sala.',
+            'Contesta cuatro preguntas y te armamos el entrenamiento de hoy con los ejercicios de la sala: series, repeticiones y descanso.',
+            [
+                'respuestas' => $respuestas,
+                'reglas' => EntrenamientoDeHoy::reglas(),
+                'robots' => $request->query() !== [] ? 'noindex, follow' : null,
+            ],
+            $comun);
+    }
+
+    /**
+     * Todas las rutinas de la sala, por objetivo, cada una hacia su página.
+     * Con ?objetivo=, solo las de ese objetivo.
+     */
+    public function rutinas(Request $request)
+    {
+        $objetivo = (string) $request->query('objetivo', '');
+        $filtro = isset(\App\Models\Rutina::OBJETIVOS[$objetivo]) ? $objetivo : null;
+
+        return $this->pagina('landing.rutinas', 'landing.rutinas', 'Rutinas de gimnasio',
+            'Rutinas para empezar, bajar de peso, ganar fuerza o mantenerse, de 2 a 6 días, con los ejercicios, series y repeticiones de cada día.',
             [
                 'objetivos' => \App\Models\Rutina::OBJETIVOS,
-                'niveles' => \App\Models\Rutina::NIVELES,
-                'diasPosibles' => RutinaSugerida::diasPosibles(),
-                'elegido' => ['objetivo' => $objetivo, 'nivel' => $nivel, 'dias' => $dias],
-                'rutina' => $rutina,
-                'variantes' => $rutina ? RutinaSugerida::variantes($rutina) : [],
-                'respondido' => $respondido,
+                'filtro' => $filtro,
+                'grupos' => RutinaSugerida::porObjetivo($filtro),
+                // Filtrada es la misma lista: para Google cuenta la entera.
+                'robots' => $request->query() !== [] ? 'noindex, follow' : null,
             ],
             $this->comun());
+    }
+
+    /**
+     * Una rutina en su página: para quién es, cómo avanzar y cada día con sus
+     * ejercicios en orden, cada uno con su foto o su mapa muscular.
+     */
+    public function rutinaVer(string $slug)
+    {
+        $rutina = \App\Models\Rutina::where('activa', true)->where('slug', $slug)
+            ->with(['dias.ejercicios.ejercicio', 'dias.ejercicios.alternativa'])->first();
+
+        if (! $rutina) {
+            // Una dirección vieja, de antes de corregirle el nombre: a la nueva.
+            $actual = \App\Models\Rutina::where('activa', true)->get()
+                ->first(fn ($r) => in_array($slug, $r->slugs_anteriores ?? [], true));
+
+            abort_if(! $actual, 404);
+
+            return redirect()->route('landing.rutina.ver', $actual->slug, 301);
+        }
+
+        $comun = $this->comun();
+        $objetivo = \App\Models\Rutina::OBJETIVOS[$rutina->objetivo] ?? $rutina->objetivo;
+        $nivel = \App\Models\Rutina::NIVELES[$rutina->nivel] ?? $rutina->nivel;
+        // «Primeros pasos · 2 días» → «Primeros pasos»: los días van aparte.
+        $nombre = trim(preg_replace('/\s*·\s*\d+\s*d[ií]as?\s*$/u', '', $rutina->nombre)) ?: $rutina->nombre;
+
+        return $this->pagina('landing.rutina-ver', 'landing.rutina.ver',
+            "Rutina {$nombre}: {$rutina->dias_por_semana} días",
+            \Illuminate\Support\Str::limit("Rutina de {$rutina->dias_por_semana} días para {$objetivo}. {$nivel}. " . ($rutina->descripcion ?? ''), 155),
+            [
+                'rutina' => $rutina,
+                'nombre' => $nombre,
+                'objetivo' => $objetivo,
+                'nivel' => $nivel,
+                'dias' => RutinaSugerida::dias($rutina),
+                'progresar' => RutinaSugerida::comoProgresar($rutina),
+                'variantes' => RutinaSugerida::variantes($rutina),
+                'migas' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => $comun['gimnasio']['nombre'], 'item' => route('landing')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Rutinas', 'item' => route('landing.rutinas')],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $rutina->nombre, 'item' => route('landing.rutina.ver', $rutina->slug)],
+                    ],
+                ],
+            ],
+            $comun, ['slug' => $rutina->slug]);
+    }
+
+    /**
+     * Los ejercicios de la sala, por grupo muscular, cada uno con su foto o
+     * su mapa muscular: para ver qué se puede hacer en el gimnasio.
+     */
+    public function ejercicios()
+    {
+        $comun = $this->comun();
+        $ciudad = $comun['web']['ciudad'] ?? null;
+
+        return $this->pagina('landing.ejercicios', 'landing.ejercicios',
+            $ciudad ? "Ejercicios del gimnasio en {$ciudad}" : 'Ejercicios del gimnasio',
+            "Las máquinas y ejercicios de {$comun['gimnasio']['nombre']}" . ($ciudad ? " en {$ciudad}" : '')
+                . ': pecho, espalda, piernas, hombros, brazos, abdomen y cardio, con cómo se hace cada uno.',
+            [
+                'grupos' => RutinaSugerida::ejerciciosPorGrupo(),
+                'migas' => [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => $comun['gimnasio']['nombre'], 'item' => route('landing')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Ejercicios', 'item' => route('landing.ejercicios')],
+                    ],
+                ],
+            ],
+            $comun);
     }
 
     public function terminos()
@@ -490,10 +837,10 @@ class LandingController extends Controller
             'web' => $web,
             // Las redes que tienen enlace, para el pie y para Contacto.
             'redes' => array_values(array_filter([
-                $web['instagram'] ? ['nombre' => 'Instagram', 'url' => $web['instagram'], 'icono' => 'fab fa-instagram'] : null,
-                $web['facebook'] ? ['nombre' => 'Facebook', 'url' => $web['facebook'], 'icono' => 'fab fa-facebook-f'] : null,
-                $web['tiktok'] ? ['nombre' => 'TikTok', 'url' => $web['tiktok'], 'icono' => 'fab fa-tiktok'] : null,
-                $web['youtube'] ? ['nombre' => 'YouTube', 'url' => $web['youtube'], 'icono' => 'fab fa-youtube'] : null,
+                $web['instagram'] ? ['nombre' => 'Instagram', 'url' => $web['instagram'], 'icono' => 'instagram'] : null,
+                $web['facebook'] ? ['nombre' => 'Facebook', 'url' => $web['facebook'], 'icono' => 'facebook-f'] : null,
+                $web['tiktok'] ? ['nombre' => 'TikTok', 'url' => $web['tiktok'], 'icono' => 'tiktok'] : null,
+                $web['youtube'] ? ['nombre' => 'YouTube', 'url' => $web['youtube'], 'icono' => 'youtube'] : null,
             ])),
             // El menú solo enlaza lo que tiene algo que mostrar.
             'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== [], 'clases' => $hayClases],
@@ -515,7 +862,9 @@ class LandingController extends Controller
         $web = $comun['web'];
 
         if ($titulo !== null) {
-            $web['titulo'] = "{$titulo} | {$comun['gimnasio']['nombre']}" . ($web['ciudad'] ? " {$web['ciudad']}" : '');
+            // La ciudad una sola vez: si el título ya la dice, no se repite.
+            $conCiudad = $web['ciudad'] && ! str_contains($titulo, $web['ciudad']);
+            $web['titulo'] = "{$titulo} | {$comun['gimnasio']['nombre']}" . ($conCiudad ? " {$web['ciudad']}" : '');
         }
 
         if ($descripcion !== null) {
@@ -524,8 +873,18 @@ class LandingController extends Controller
 
         $web['canonical'] = route($ruta, $parametros);
         $web['json_ld'] = $datos['json_ld'] ?? null;
+        $web['robots'] = $datos['robots'] ?? null;
         $migas = $datos['migas'] ?? null;
-        unset($datos['json_ld'], $datos['migas']);
+
+        // La imagen al compartir: la de la página si tiene una propia (la
+        // foto del especialista, la de una clase), si no la del gimnasio.
+        if (! empty($datos['imagen_al_compartir'])) {
+            $web['imagen'] = url($datos['imagen_al_compartir']);
+            $web['imagen_alt'] = $datos['imagen_alt'] ?? null;
+        }
+        $web['imagen_medidas'] = MedidasDeImagen::de($web['imagen']);
+
+        unset($datos['json_ld'], $datos['migas'], $datos['robots'], $datos['imagen_al_compartir'], $datos['imagen_alt']);
 
         // Las migas: Google las muestra en vez de la dirección —«PRO GYM ›
         // Planes y precios»— y dicen de qué parte del sitio es cada página.
@@ -587,6 +946,7 @@ class LandingController extends Controller
             'titulo' => trim((string) Ajustes::obtener('tienda.titulo')) ?: 'Suplementos',
             'texto' => trim((string) Ajustes::obtener('tienda.texto')),
             'imagen' => $foto ? asset('storage/web/' . basename($foto)) : null,
+            'medidas' => $foto ? MedidasDeImagen::de(asset('storage/web/' . basename($foto))) : null,
             // La marca sola —la columna y el laurel— y el logotipo entero. El
             // botón flotante usa el logotipo donde cabe, y la marca en el móvil.
             'icono' => $icono ? asset('storage/web/' . basename($icono)) : null,
@@ -939,6 +1299,7 @@ class LandingController extends Controller
     {
         $ciudad = trim((string) Ajustes::obtener('web.ciudad'));
         $region = trim((string) Ajustes::obtener('web.region'));
+        $codigoPostal = trim((string) Ajustes::obtener('web.codigo_postal'));
         $maps = Ajustes::obtener('web.google_maps') ?: null;
         $instagram = Ajustes::obtener('web.instagram') ?: null;
         $facebook = Ajustes::obtener('web.facebook') ?: null;
@@ -952,6 +1313,9 @@ class LandingController extends Controller
         $desdeMensual = array_column($this->mensualidades($planes), 'precio');
         $inicio = url('/');
         $logo = asset('images/progym-logo.png');
+        // El nombre fijo de la ficha: las demás páginas (planes, clases, el
+        // perfil de un especialista) apuntan a él en vez de repetirla.
+        $idGimnasio = $inicio . '#gimnasio';
 
         // La ciudad y las comunas vecinas: quien vive en Nacimiento también
         // busca un gimnasio, y el de Los Ángeles le queda a veinte minutos.
@@ -981,6 +1345,7 @@ class LandingController extends Controller
         $ficha = array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'ExerciseGym',
+            '@id' => $idGimnasio,
             'name' => $gimnasio['nombre'],
             'slogan' => 'Profesionales del deporte',
             'url' => $inicio,
@@ -993,6 +1358,7 @@ class LandingController extends Controller
                 'streetAddress' => $gimnasio['direccion'] ?: null,
                 'addressLocality' => $ciudad ?: null,
                 'addressRegion' => $region ?: null,
+                'postalCode' => $codigoPostal ?: null,
                 'addressCountry' => 'CL',
             ], $vacio),
             'geo' => $geo,
@@ -1017,6 +1383,9 @@ class LandingController extends Controller
             'descripcion' => WebPublica::descripcion($desdeMensual ? min($desdeMensual) : null),
             'canonical' => $inicio,
             'json_ld' => $ficha,
+            'id_gimnasio' => $idGimnasio,
+            // Las comunas vecinas, sin la ciudad: «Cerca de: Nacimiento, Mulchén».
+            'comunas' => array_values(array_filter($comunas, fn (string $c) => $c !== $ciudad)),
             'imagen' => $fotos[0] ?? $logo,
             'google_analytics' => Ajustes::obtener('web.google_analytics') ?: null,
             'search_console' => Ajustes::obtener('web.search_console') ?: null,
@@ -1142,47 +1511,96 @@ class LandingController extends Controller
     }
 
     /**
-     * El mapa del sitio. Hoy es una pagina, pero Search Console lo pide.
+     * El mapa del sitio, con la fecha del último cambio DE CADA PÁGINA.
      *
-     * La fecha es la del ultimo cambio de precios: es lo que cambia la pagina.
+     * Antes todas llevaban la del último cambio de precios, y Google aprende
+     * a no creerle a un mapa cuyas fechas no dicen nada. Ahora cada página
+     * lleva la de lo que muestra: los planes, la de los precios; las clases,
+     * la de las clases; el contacto, la de los datos del gimnasio. Si no hay
+     * fecha, no se inventa: la línea va sin ella.
+     *
+     * La consulta de membresía no va: es para socios y no se indexa.
      */
     public function sitemap()
     {
-        $cambio = \App\Models\PrecioMembresia::max('updated_at');
-        $fecha = $cambio ? Carbon::parse($cambio)->toDateString() : now()->toDateString();
+        $ajustes = fn (string ...$prefijos) => \Illuminate\Support\Facades\DB::table('ajustes')
+            ->where(function ($q) use ($prefijos) {
+                foreach ($prefijos as $prefijo) {
+                    $q->orWhere('clave', 'like', $prefijo . '%');
+                }
+            })
+            ->max('updated_at');
+        $contenidos = fn (string ...$tipos) => ContenidoWeb::whereIn('tipo', $tipos)->max('updated_at');
+        $precios = fn () => $this->laMasNueva(\App\Models\PrecioMembresia::max('updated_at'), Membresia::max('updated_at'));
+        $especialistas = Especialista::where('activo', true)->where('tipo', 'especialista');
 
         $paginas = array_filter([
-            ['landing', '1.0'],
-            ['landing.planes', '0.9'],
-            $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8'] : null,
-            ['landing.arriendo', '0.8'],
-            Clase::where('activo', true)->exists() ? ['landing.clases', '0.8'] : null,
-            ['landing.gimnasio', '0.8'],
-            Especialista::where('activo', true)->where('tipo', 'especialista')->exists() ? ['landing.especialistas', '0.7'] : null,
-            ['landing.contacto', '0.7'],
-            ['landing.membresia', '0.5'],
-            ['landing.privacidad', '0.2'],
-            ['landing.terminos', '0.2'],
+            ['landing', '1.0', $this->laMasNueva($ajustes('portada.'), $contenidos('foto', 'servicio', 'testimonio'), $precios())],
+            ['landing.planes', '0.9', $precios()],
+            $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8', $this->laMasNueva(Convenio::max('updated_at'), $precios())] : null,
+            ['landing.arriendo', '0.8', $contenidos('institucion', 'arriendo')],
+            Clase::where('activo', true)->exists() ? ['landing.clases', '0.8', Clase::max('updated_at')] : null,
+            ['landing.gimnasio', '0.8', $contenidos('foto', 'servicio')],
+            (clone $especialistas)->exists() ? ['landing.especialistas', '0.7', (clone $especialistas)->max('updated_at')] : null,
+            ['landing.contacto', '0.7', $ajustes('gimnasio.', 'horario.', 'web.')],
+            // Qué entrenar hoy: solo la de sin respuestas (las demás son noindex).
+            ['landing.rutina', '0.6', \App\Models\Rutina::max('updated_at')],
+            ['landing.rutinas', '0.5', \App\Models\Rutina::max('updated_at')],
+            ['landing.ejercicios', '0.5', \App\Models\Ejercicio::max('updated_at')],
+            ['landing.privacidad', '0.2', \App\Models\TextoLegal::where('tipo', 'privacidad')->max('updated_at')],
+            ['landing.terminos', '0.2', \App\Models\TextoLegal::where('tipo', 'terminos')->max('updated_at')],
         ]);
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
             . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
-        foreach ($paginas as [$ruta, $prioridad]) {
-            $xml .= '  <url><loc>' . e(route($ruta)) . '</loc><lastmod>' . $fecha . '</lastmod>'
-                . '<changefreq>weekly</changefreq><priority>' . $prioridad . '</priority></url>' . "\n";
+        $linea = fn (string $direccion, $fecha, string $frecuencia, string $prioridad) => '  <url><loc>' . e($direccion) . '</loc>'
+            . ($fecha ? '<lastmod>' . Carbon::parse($fecha)->toDateString() . '</lastmod>' : '')
+            . '<changefreq>' . $frecuencia . '</changefreq><priority>' . $prioridad . '</priority></url>' . "\n";
+
+        foreach ($paginas as [$ruta, $prioridad, $fecha]) {
+            $xml .= $linea(route($ruta), $fecha, 'weekly', $prioridad);
         }
 
-        // El perfil de cada especialista, con la fecha de su último cambio.
-        Especialista::where('activo', true)->where('tipo', 'especialista')->whereNotNull('slug')->get()
-            ->each(function (Especialista $e) use (&$xml) {
-                $xml .= '  <url><loc>' . e(route('landing.especialista', $e->slug)) . '</loc><lastmod>' . $e->updated_at->toDateString() . '</lastmod>'
-                    . '<changefreq>monthly</changefreq><priority>0.6</priority></url>' . "\n";
+        // Cada clase en su página, con la fecha de su último cambio.
+        Clase::where('activo', true)->whereNotNull('slug')->orderBy('orden')->orderBy('id')->get()
+            ->filter(fn (Clase $c) => $c->horarioOrdenado() !== [])
+            ->each(function (Clase $c) use (&$xml, $linea) {
+                $xml .= $linea(route('landing.clase', $c->slug), $c->updated_at, 'monthly', '0.7');
             });
+
+        // Cada rutina en su página.
+        \App\Models\Rutina::where('activa', true)->whereNotNull('slug')->orderBy('orden')->get()
+            ->each(function (\App\Models\Rutina $r) use (&$xml, $linea) {
+                $xml .= $linea(route('landing.rutina.ver', $r->slug), $r->updated_at, 'monthly', '0.5');
+            });
+
+        // El perfil de cada especialista, con la fecha de su último cambio.
+        $perfiles = (clone $especialistas)->whereNotNull('slug')->orderBy('orden')->get();
+        $perfiles->each(function (Especialista $e) use (&$xml, $linea) {
+            $xml .= $linea(route('landing.especialista', $e->slug), $e->updated_at, 'monthly', '0.6');
+        });
+
+        // Cada especialidad, con la fecha del último cambio de quienes la hacen.
+        $porEspecialidad = Especialidades::agrupar($perfiles->map(fn (Especialista $e) => [
+            'especialidad' => $e->especialidad,
+            'cambio' => $e->updated_at,
+        ])->all());
+        foreach ($porEspecialidad as $g) {
+            $xml .= $linea(route('landing.especialidad', $g['slug']), $this->laMasNueva(...array_column($g['especialistas'], 'cambio')), 'monthly', '0.6');
+        }
 
         $xml .= '</urlset>' . "\n";
 
         return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+    }
+
+    /** La fecha más reciente de las que haya, o null si no hay ninguna. */
+    private function laMasNueva(...$fechas): ?string
+    {
+        $fechas = array_filter($fechas);
+
+        return $fechas ? (string) max(array_map(fn ($f) => Carbon::parse($f)->toDateTimeString(), $fechas)) : null;
     }
 
     /**
@@ -1598,9 +2016,13 @@ class LandingController extends Controller
      */
     private function loQueSeMuestra(Cliente $cliente): array
     {
+        // La activa, y si no hay, la pausada. Solo se miraba la activa: el
+        // socio en pausa leía «Sin membresía activa» —y «Estás al día» aunque
+        // debiera— como si se hubiera ido del gimnasio.
         $activa = $cliente->inscripciones()
             ->with('membresia')
-            ->where('id_estado', 100)
+            ->whereIn('id_estado', [100, 101])
+            ->orderByRaw('id_estado = 100 desc')
             ->orderByDesc('fecha_vencimiento')
             ->first();
 
@@ -1618,8 +2040,27 @@ class LandingController extends Controller
             return $datos;
         }
 
+        // En pausa: los días guardados, el día en que vuelve y hasta cuándo le
+        // alcanzará. La fecha de vencimiento de una pausada es la vieja y ya
+        // no dice nada.
+        if ($activa->estaEnPausa()) {
+            return [
+                ...$datos,
+                'membresia' => $activa->membresia?->nombre ?? 'Membresía',
+                'estado' => $activa->fecha_pausa_fin
+                    ? 'Pausada hasta el ' . $activa->fecha_pausa_fin->format('d/m/Y')
+                    : 'Pausada',
+                'fecha_inicio' => $activa->fecha_inicio?->format('d/m/Y'),
+                'fecha_fin' => $activa->vencimientoAlReanudar()?->format('d/m/Y'),
+                'dias_restantes' => $activa->dias_restantes,
+                'saldo' => (int) $activa->obtenerEstadoPago()['pendiente'],
+            ];
+        }
+
+        // Por fechas de calendario: contando horas, el domingo del cambio de
+        // hora quedaba un día menos.
         $dias = $activa->fecha_vencimiento
-            ? (int) now()->startOfDay()->diffInDays($activa->fecha_vencimiento->copy()->startOfDay(), false)
+            ? Inscripcion::diasEntre(today(), $activa->fecha_vencimiento)
             : null;
 
         return [

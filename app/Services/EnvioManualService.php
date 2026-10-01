@@ -348,6 +348,8 @@ class EnvioManualService
             // La de tutor legal la usa. Si el socio no es menor no hay
             // apoderado, y entonces esa plantilla no es para el.
             'nombre_apoderado' => $cliente->apoderado_nombre ?: '',
+            // El de Configuración → Página web; vacío si no hay.
+            'enlace_resena' => (string) \App\Support\Ajustes::obtener('web.resenas'),
         ];
 
         if (! $inscripcion) {

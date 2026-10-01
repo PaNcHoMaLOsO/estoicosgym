@@ -44,7 +44,12 @@ function Dato({ etiqueta, children }) {
 }
 
 /** Los días que quedan, con color solo cuando exigen actuar. */
-function Vigencia({ dias }) {
+function Vigencia({ dias, pausada }) {
+    // En pausa no corren: son los días guardados, y ni «vence» ni «venció».
+    if (pausada) {
+        return <span className="text-fog">En pausa · le quedan {dias ?? 0} {dias === 1 ? 'día' : 'días'}</span>;
+    }
+
     if (dias === null || dias === undefined) {
         return <span className="text-fog">Sin fecha de vencimiento</span>;
     }
@@ -194,7 +199,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                 'Socio eliminado'
                             )}
                             {' · '}
-                            <Vigencia dias={inscripcion.dias} />
+                            <Vigencia dias={inscripcion.dias} pausada={pausa.pausada && inscripcion.id_estado === 101} />
                         </p>
                     </div>
 
@@ -302,6 +307,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                         {pausa.pausada ? (
                             <Nota titulo={`Pausada desde el ${pausa.desde}`} className="mt-3">
                                 {pausa.hasta ? <p>Se reanuda el {pausa.hasta}</p> : null}
+                                {pausa.vence_al_reanudar ? <p>Al volver le alcanza hasta el {pausa.vence_al_reanudar}</p> : null}
                                 {pausa.razon ? <p className="mt-1">{pausa.razon}</p> : null}
                             </Nota>
                         ) : null}

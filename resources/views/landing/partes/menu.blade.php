@@ -11,8 +11,8 @@
     $enlaces = array_values(array_filter([
         ['ruta' => 'landing.gimnasio', 'texto' => 'El gimnasio'],
         ['ruta' => 'landing.planes', 'texto' => 'Planes'],
-        $navegacion['clases'] ? ['ruta' => 'landing.clases', 'texto' => 'Clases'] : null,
-        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especialista'] : null,
+        $navegacion['clases'] ? ['ruta' => 'landing.clases', 'texto' => 'Clases', 'tambien' => 'landing.clase'] : null,
+        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especiali*'] : null,
         $navegacion['convenios'] ? ['ruta' => 'landing.convenios', 'texto' => 'Convenios'] : null,
         ['ruta' => 'landing.arriendo', 'texto' => 'Arrienda horas'],
         ['ruta' => 'landing.contacto', 'texto' => 'Contacto'],
@@ -21,7 +21,7 @@
 <header id="navbar" class="fixed top-0 inset-x-0 z-50 bg-pg-negro/90 backdrop-blur-md border-b border-pg-tiza/5">
     @if($aviso)
         <div class="bg-pg-rojo text-white text-center text-sm font-modern px-4 py-2">
-            <i class="fas fa-bullhorn mr-2" aria-hidden="true"></i>{{ $aviso }}
+            <x-icono nombre="bullhorn" class="mr-2" />{{ $aviso }}
         </div>
     @endif
 
@@ -42,12 +42,13 @@
                        class="relative whitespace-nowrap font-modern text-sm transition-colors py-2 {{ request()->routeIs($e['ruta'], $e['tambien'] ?? $e['ruta']) ? 'text-pg-tiza after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:bg-pg-rojo after:rounded-full' : 'text-pg-tiza/70 hover:text-pg-rojo-claro' }}">{{ $e['texto'] }}</a>
                 @endforeach
                 <a href="{{ route('landing.membresia') }}" class="whitespace-nowrap bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-semibold px-4 xl:px-5 py-2.5 rounded-lg transition-colors font-modern text-sm">
-                    <i class="fas fa-id-card mr-2" aria-hidden="true"></i>Mi membresía
+                    <x-icono nombre="id-card" class="mr-2" />Mi membresía
                 </a>
             </div>
 
             <button id="mobile-menu-btn" type="button" class="lg:hidden text-pg-tiza p-2" aria-label="Abrir el menú" aria-controls="mobile-menu">
-                <i class="fas fa-bars text-xl" aria-hidden="true"></i>
+                <x-icono nombre="bars" class="text-xl" />
+                <x-icono nombre="xmark" class="text-xl hidden" />
             </button>
         </div>
 

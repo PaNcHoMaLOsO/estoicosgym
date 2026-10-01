@@ -61,6 +61,9 @@ class PaginasPublicasTest extends CasoConCatalogos
     /** Cada página responde con su título, su dirección y un solo h1: no hay dos iguales. */
     public function test_cada_pagina_tiene_su_titulo_y_su_direccion(): void
     {
+        // Con alguien en Especialistas: sin ninguno, esa página no existe.
+        \App\Models\Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => true]);
+
         $titulos = [];
 
         foreach (self::PAGINAS as $url => $ruta) {

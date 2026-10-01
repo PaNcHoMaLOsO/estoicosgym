@@ -38,11 +38,11 @@
                 <div class="mt-10 hidden items-center gap-6" data-testimonios-controles>
                     <button type="button" data-anterior aria-label="Opinión anterior"
                             class="flex h-11 w-11 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
-                        <i class="fas fa-arrow-left text-sm" aria-hidden="true"></i>
+                        <x-icono nombre="arrow-left" class="text-sm" />
                     </button>
                     <button type="button" data-siguiente aria-label="Opinión siguiente"
                             class="flex h-11 w-11 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
-                        <i class="fas fa-arrow-right text-sm" aria-hidden="true"></i>
+                        <x-icono nombre="arrow-right" class="text-sm" />
                     </button>
                     <span class="font-display text-lg tracking-wider text-pg-tiza/50" aria-live="polite">
                         <span data-actual class="text-pg-tiza">01</span> / {{ str_pad(count($testimonios), 2, '0', STR_PAD_LEFT) }}

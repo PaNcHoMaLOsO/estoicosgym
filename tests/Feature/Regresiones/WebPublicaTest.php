@@ -95,6 +95,9 @@ class WebPublicaTest extends CasoConCatalogos
      */
     public function test_la_web_no_enlaza_al_panel(): void
     {
+        // Con alguien en Especialistas: sin ninguno, esa página no existe.
+        \App\Models\Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => true]);
+
         // Ninguna de las páginas: el menú y el pie son los mismos en todas.
         foreach (['/', '/el-gimnasio', '/planes', '/convenios', '/especialistas', '/contacto', '/mi-membresia', '/privacidad'] as $pagina) {
             $this->get($pagina)

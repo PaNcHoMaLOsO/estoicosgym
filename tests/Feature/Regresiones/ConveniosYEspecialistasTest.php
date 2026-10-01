@@ -285,8 +285,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
     {
         Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => false]);
 
+        // Sin ninguno a la vista, la página de especialistas no existe.
         $this->get('/especialistas')
-            ->assertOk()
+            ->assertNotFound()
             ->assertDontSee('Diego Soto');
 
         $this->get('/')
@@ -383,8 +384,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertSee('https://www.instagram.com/vale.lifts/', false)
             ->assertDontSee('href="' . route('landing.especialistas') . '"', false);
 
+        // Los embajadores no cuentan como especialistas: sin ninguno, no hay página.
         $this->get('/especialistas')
-            ->assertOk()
+            ->assertNotFound()
             ->assertDontSee('Valentina Pérez');
     }
 

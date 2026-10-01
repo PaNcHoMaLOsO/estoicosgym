@@ -7,6 +7,7 @@ use App\Models\HistorialCambio;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -274,13 +275,51 @@ class Inscripcion extends Model
      */
     public function getDiasRestantesAttribute()
     {
+        // En pausa, lo que le queda es lo que se guardó al pausar. La fecha de
+        // vencimiento se queda quieta durante la pausa —se rehace al
+        // reanudar— y restar contra ella daba «venció hace 10 días» de una
+        // membresía congelada con 20 por delante: no se podía traspasar y la
+        // ficha la pintaba en rojo.
+        if ($this->estaEnPausa()) {
+            return max(0, (int) $this->dias_restantes_al_pausar);
+        }
+
         if (!$this->fecha_vencimiento) {
             return 0;
         }
         // De día a día. Con now() y la hora del momento, una membresía que
         // vence mañana daba 0 —el (int) corta los 0,4 días— y ya no se podía
         // traspasar: a cualquier hora que no fuera medianoche se restaba uno.
-        return (int) today()->diffInDays($this->fecha_vencimiento->copy()->startOfDay(), false);
+        return self::diasEntre(today(), $this->fecha_vencimiento);
+    }
+
+    /**
+     * Días de calendario entre dos fechas (negativo si $hasta va antes).
+     *
+     * POR LA FECHA, NO POR LAS HORAS. Chile cambia la hora: el domingo en que
+     * se adelanta, ese día empieza a la 01:00 y dura 23 horas, y en abril uno
+     * dura 25. diffInDays() cuenta horas: de ese domingo al lunes da 0,96, y el
+     * (int) lo deja en 0. El socio que pausaba ese domingo perdía un día, y
+     * quien vencía el domingo seguía «venciendo hoy» el lunes. Se comparan las
+     * dos fechas como fechas en UTC, donde todos los días duran 24 horas.
+     */
+    public static function diasEntre($desde, $hasta): int
+    {
+        $enUtc = fn ($fecha) => Carbon::createFromFormat('Y-m-d', Carbon::parse($fecha)->format('Y-m-d'), 'UTC')->startOfDay();
+
+        return (int) $enUtc($desde)->diffInDays($enUtc($hasta), false);
+    }
+
+    /**
+     * En pausa de verdad: el estado 101 Y la marca.
+     *
+     * Las dos: una renovada mientras estaba pausada quedó con la marca y estado
+     * Vencida (antes de que cerrarLaAnterior la limpiara), y esa ya no está
+     * congelada.
+     */
+    public function estaEnPausa(): bool
+    {
+        return (bool) $this->pausada && (int) $this->id_estado === EstadosCodigo::INSCRIPCION_PAUSADA;
     }
 
     /**
@@ -313,9 +352,13 @@ class Inscripcion extends Model
      */
     public function puedeRealizarPausa()
     {
-        return $this->pausas_realizadas < $this->max_pausas_permitidas 
-            && !$this->pausada 
-            && $this->id_estado == 100;
+        return $this->pausas_realizadas < $this->max_pausas_permitidas
+            && !$this->pausada
+            && $this->id_estado == 100
+            // Ya vencida por fecha, aunque la revisión del día todavía no la
+            // haya marcado: no queda nada que congelar. Se pausaba con 0 días
+            // guardados y al reanudar seguía vencida, con una pausa gastada.
+            && $this->dias_restantes >= 0;
     }
 
     /**
@@ -336,42 +379,89 @@ class Inscripcion extends Model
      */
     public function pausar($dias = null, $razon = '', $indefinida = false)
     {
-        if (!$this->puedeRealizarPausa()) {
-            return false;
-        }
+        /*
+         * SE DECIDE CON LA FILA TRABADA Y RECIÉN LEÍDA, no con lo que trajo la
+         * pantalla. Doble clic o dos pestañas: las dos peticiones cargaban la
+         * membresía activa, las dos pasaban el control y las dos pausaban —dos
+         * filas en el historial, dos avisos al socio y los días guardados
+         * escritos dos veces—. Con la fila trabada la segunda espera, la lee ya
+         * pausada y se va sin tocar nada.
+         */
+        return DB::transaction(function () use ($dias, $razon, $indefinida) {
+            if (! $this->releerTrabada()?->puedeRealizarPausa()) {
+                return false;
+            }
 
-        // Calcular los días restantes REALES de la membresía al momento de pausar
-        // Esto es lo único que importa: cuántos días le quedaban
-        $diasRestantes = 0;
-        if ($this->fecha_vencimiento) {
-            $diasRestantes = max(0, (int) now()->startOfDay()->diffInDays($this->fecha_vencimiento->startOfDay(), false));
-        }
-        
-        $this->pausada = true;
-        $this->dias_pausa = $indefinida ? null : $dias; // Solo informativo: cuántos días pidió pausar
-        $this->dias_restantes_al_pausar = $diasRestantes; // CRÍTICO: los días que le quedaban
-        $this->fecha_pausa_inicio = now()->startOfDay();
-        $this->fecha_pausa_fin = $indefinida ? null : now()->addDays($dias)->startOfDay();
-        $this->razon_pausa = $razon;
-        $this->pausa_indefinida = $indefinida;
-        $this->pausas_realizadas = $this->pausas_realizadas + 1;
-        // Estado 101 = Pausada
-        $this->id_estado = 101;
+            // Los días que le quedaban, contando HOY: pausar el último día le
+            // guarda 0 y al reanudar vence ese mismo día (ver reanudar()).
+            $diasRestantes = $this->fecha_vencimiento
+                ? max(0, self::diasEntre(today(), $this->fecha_vencimiento))
+                : 0;
 
-        $resultado = $this->save();
+            $this->pausada = true;
+            $this->dias_pausa = $indefinida ? null : $dias; // Solo informativo: cuántos días pidió pausar
+            $this->dias_restantes_al_pausar = $diasRestantes; // CRÍTICO: los días que le quedaban
+            $this->fecha_pausa_inicio = today();
+            // El día en que VUELVE: la revisión de ese día la reanuda.
+            $this->fecha_pausa_fin = $indefinida ? null : today()->addDays($dias);
+            $this->razon_pausa = $razon;
+            $this->pausa_indefinida = $indefinida;
+            $this->pausas_realizadas = $this->pausas_realizadas + 1;
+            $this->id_estado = EstadosCodigo::INSCRIPCION_PAUSADA;
 
-        // Registrar en historial
-        if ($resultado) {
+            if (! $this->save()) {
+                return false;
+            }
+
+            // Con los nombres que lee registrarPausa(): se mandaban como
+            // 'dias_solicitados' y 'fecha_fin_pausa', y el historial guardaba
+            // siempre los días y el fin de la pausa vacíos.
             HistorialCambio::registrarPausa($this, [
-                'dias_solicitados' => $dias,
-                'dias_restantes_guardados' => $diasRestantes,
+                'dias' => $indefinida ? null : $dias,
                 'razon' => $razon,
                 'indefinida' => $indefinida,
-                'fecha_fin_pausa' => $this->fecha_pausa_fin?->format('Y-m-d'),
+                'fecha_fin' => $this->fecha_pausa_fin?->format('Y-m-d'),
             ]);
+
+            $this->cancelarAvisosDeVencimiento();
+
+            return true;
+        });
+    }
+
+    /**
+     * Vuelve a leer la fila, trabada hasta que acabe la transacción, y deja
+     * este modelo con lo que dice la base. Null si ya no existe.
+     */
+    private function releerTrabada(): ?self
+    {
+        $actual = static::whereKey($this->getKey())->lockForUpdate()->first();
+
+        if ($actual) {
+            $this->setRawAttributes($actual->getAttributes(), true);
         }
 
-        return $resultado;
+        return $actual ? $this : null;
+    }
+
+    /**
+     * Los avisos de «por vencer» y «vencida» que todavía no salieron.
+     *
+     * Uno que quedó pendiente, o que falló y se reintenta cada noche, salía
+     * igual con la membresía ya congelada: «tu membresía vence en 7 días» a
+     * quien acaba de pausar. Se cancelan; al reanudar, la fecha nueva tendrá
+     * su propio aviso.
+     */
+    private function cancelarAvisosDeVencimiento(): void
+    {
+        Notificacion::where('id_inscripcion', $this->id)
+            ->whereIn('id_estado', [Notificacion::ESTADO_PENDIENTE, Notificacion::ESTADO_FALLIDO])
+            ->whereHas('tipoNotificacion', fn ($q) => $q->whereIn('codigo', [
+                TipoNotificacion::MEMBRESIA_POR_VENCER,
+                TipoNotificacion::MEMBRESIA_VENCIDA,
+            ]))
+            ->get()
+            ->each(fn (Notificacion $aviso) => $aviso->cancelar('Membresía pausada'));
     }
 
     /**
@@ -397,6 +487,20 @@ class Inscripcion extends Model
             return 'Esta membresía ya se renovó: la vigente es la nueva.';
         }
 
+        // Otra mensualidad vigente del mismo socio que no salió de esta: la
+        // pausada estuvo en la papelera y entretanto se le vendió otra.
+        // Reanudarla —a mano o la revisión del día— lo dejaba con dos. Los
+        // pases diarios no cuentan: quien está en pausa puede venir un día.
+        $otraVigente = static::where('id_cliente', $this->id_cliente)
+            ->whereKeyNot($this->getKey())
+            ->whereIn('id_estado', [EstadosCodigo::INSCRIPCION_ACTIVA, EstadosCodigo::INSCRIPCION_PAUSADA])
+            ->sinPases()
+            ->exists();
+
+        if ($otraVigente) {
+            return 'El socio ya tiene otra membresía vigente: cancela una de las dos antes de reanudar.';
+        }
+
         return null;
     }
 
@@ -412,9 +516,53 @@ class Inscripcion extends Model
      */
     public function reanudar()
     {
-        if ($this->porQueNoSePuedeReanudar() !== null) {
-            return false;
+        // Con la fila trabada y releída, como al pausar: el doble clic o la
+        // segunda pestaña reanudaban otra vez la misma pausa y dejaban dos
+        // reanudaciones en el historial.
+        return DB::transaction(function () {
+            if (! $this->releerTrabada() || $this->porQueNoSePuedeReanudar() !== null) {
+                return false;
+            }
+
+            return $this->reanudarYa();
+        });
+    }
+
+    /**
+     * El día desde el que se cuentan los días guardados al reanudar HOY: el
+     * fin de la pausa si ya pasó, y si no, hoy. Lo usa también el aviso del
+     * botón, para decir lo mismo que se hace.
+     */
+    public function desdeCuandoSeReanuda(): Carbon
+    {
+        $hoy = Carbon::today();
+
+        return ($this->fecha_pausa_fin && self::diasEntre($this->fecha_pausa_fin, $hoy) > 0)
+            ? Carbon::parse($this->fecha_pausa_fin->format('Y-m-d'))
+            : $hoy;
+    }
+
+    /**
+     * Hasta cuándo le alcanzará una vez reanudada, si la pausa tiene fin.
+     *
+     * Mientras dura la pausa, fecha_vencimiento es la vieja y no vale: la
+     * ficha la mostraba como si fuera la de verdad. Null en una indefinida,
+     * que no se sabe cuándo vuelve.
+     */
+    public function vencimientoAlReanudar(): ?Carbon
+    {
+        if (! $this->estaEnPausa() || ! $this->fecha_pausa_fin) {
+            return null;
         }
+
+        // Desde el fin de la pausa aunque ya haya pasado: es lo que hace
+        // reanudar() con una pausa que nadie reanudó a tiempo.
+        return Carbon::parse($this->fecha_pausa_fin->format('Y-m-d'))
+            ->addDays(max(0, (int) $this->dias_restantes_al_pausar));
+    }
+
+    private function reanudarYa(): bool
+    {
 
         /*
          * DESDE CUANDO SE REANUDA: el dia en que acababa la pausa, si ya paso.
@@ -428,24 +576,26 @@ class Inscripcion extends Model
          * Reanudar ANTES de tiempo sigue contando desde hoy: ahi la pausa se
          * corta, que es justo lo que se pidio al pulsar el boton.
          */
-        $desde = ($this->fecha_pausa_fin && $this->fecha_pausa_fin->copy()->startOfDay()->lt(now()->startOfDay()))
-            ? $this->fecha_pausa_fin->copy()->startOfDay()
-            : now()->startOfDay();
+        $desde = $this->desdeCuandoSeReanuda();
 
         // Calcular días que estuvo pausado (solo para información/historial)
         $diasEnPausa = 0;
         if ($this->fecha_pausa_inicio) {
             // Hasta $desde y no hasta hoy: el historial diria «estuvo pausada
             // 21 dias» de una pausa de 7 que se reanudo tarde.
-            $diasEnPausa = (int) $this->fecha_pausa_inicio->copy()->startOfDay()->diffInDays($desde);
+            $diasEnPausa = max(0, self::diasEntre($this->fecha_pausa_inicio, $desde));
         }
 
         // Los días que tenía guardados al momento de pausar
         $diasRestantesGuardados = $this->dias_restantes_al_pausar ?? 0;
-        
-        // NUEVA FECHA DE VENCIMIENTO = HOY + días que le quedaban
-        // Esto es todo lo que importa. No sumamos días de pausa ni nada extra.
-        if ($diasRestantesGuardados > 0) {
+
+        // NUEVA FECHA DE VENCIMIENTO = desde + días que le quedaban.
+        //
+        // También con 0: quien pausó el último día tenía ese día por delante,
+        // y vence el día que vuelve. Con «solo si es mayor que 0» la fecha se
+        // quedaba en la vieja, ya pasada, y la membresía recién reanudada
+        // amanecía vencida. Solo se deja quieta si no hay nada guardado.
+        if ($this->dias_restantes_al_pausar !== null) {
             $this->fecha_vencimiento = $desde->copy()->addDays($diasRestantesGuardados);
         }
 
@@ -508,9 +658,9 @@ class Inscripcion extends Model
         }
 
         // Si la fecha de fin ya pasó, reanudar automáticamente
-        if ($this->fecha_pausa_fin->startOfDay()->lte(now()->startOfDay())) {
-            $this->reanudar();
-            return true;
+        // El día en que termina la pausa ya es día de vuelta.
+        if (self::diasEntre($this->fecha_pausa_fin, today()) >= 0) {
+            return (bool) $this->reanudar();
         }
 
         return false;
@@ -541,13 +691,13 @@ class Inscripcion extends Model
             ];
         }
 
-        $diasEnPausa = $this->fecha_pausa_inicio 
-            ? (int) $this->fecha_pausa_inicio->startOfDay()->diffInDays(now()->startOfDay())
+        $diasEnPausa = $this->fecha_pausa_inicio
+            ? max(0, self::diasEntre($this->fecha_pausa_inicio, today()))
             : 0;
 
         $diasRestantesPausa = null;
         if ($this->fecha_pausa_fin && !$this->pausa_indefinida) {
-            $diasRestantesPausa = max(0, (int) now()->startOfDay()->diffInDays($this->fecha_pausa_fin->startOfDay(), false));
+            $diasRestantesPausa = max(0, self::diasEntre(today(), $this->fecha_pausa_fin));
         }
 
         return [
@@ -677,7 +827,7 @@ class Inscripcion extends Model
     public function getDiasConsumidosAttribute()
     {
         if (!$this->fecha_inicio) return 0;
-        return max(0, (int) $this->fecha_inicio->copy()->startOfDay()->diffInDays(today(), false));
+        return max(0, self::diasEntre($this->fecha_inicio, today()));
     }
 
     /**
@@ -775,8 +925,24 @@ class Inscripcion extends Model
     public static function clientePuedeRecibirTraspaso($clienteId)
     {
         return !self::where('id_cliente', $clienteId)
-            ->whereIn('id_estado', [100, 101]) // Activa o Pausada
-            ->where('fecha_vencimiento', '>=', now())
+            ->conMembresiaVigente()
             ->exists();
+    }
+
+    /**
+     * Las que cuentan como «ya tiene membresía»: una activa que no venció, o
+     * una pausada, SIN MIRAR LA FECHA.
+     *
+     * La fecha de una pausada es la que tenía al pausar y queda atrás mientras
+     * dura la pausa. Con «fecha >= hoy» para las dos, quien tenía una en pausa
+     * figuraba libre y podía recibir otra por traspaso: dos membresías.
+     */
+    public function scopeConMembresiaVigente($consulta)
+    {
+        return $consulta->where(fn ($q) => $q
+            ->where(fn ($q) => $q
+                ->where('id_estado', EstadosCodigo::INSCRIPCION_ACTIVA)
+                ->whereDate('fecha_vencimiento', '>=', today()))
+            ->orWhere('id_estado', EstadosCodigo::INSCRIPCION_PAUSADA));
     }
 }

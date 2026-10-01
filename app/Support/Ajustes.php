@@ -512,6 +512,18 @@ class Ajustes
                 'max' => 40,
                 'defecto' => 'Biobío',
             ],
+            'web.codigo_postal' => [
+                'grupo' => 'web',
+                'seccion' => 'Dónde está',
+                'etiqueta' => 'Código postal',
+                'ayuda' => 'Va en la ficha que lee Google, junto a la dirección. Vacío = no se pone.',
+                'ejemplo' => '4440000',
+                'tipo' => 'texto',
+                'max' => 10,
+                'patron' => '/^\d{7}$/',
+                'mensaje' => 'Son 7 números, sin espacios: 4440000.',
+                'defecto' => '',
+            ],
             'web.comunas' => [
                 'grupo' => 'web',
                 'seccion' => 'Dónde está',

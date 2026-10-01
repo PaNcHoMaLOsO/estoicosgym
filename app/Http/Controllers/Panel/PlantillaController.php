@@ -52,6 +52,7 @@ class PlantillaController extends Controller
         'fecha_pausa' => 'Desde cuándo está pausada',
         'fecha_reactivacion' => 'Cuándo vuelve',
         'fecha_activacion' => 'Lo mismo, con otro nombre',
+        'enlace_resena' => 'El enlace para dejar una reseña en Google (Configuración → Página web)',
     ];
 
     public function index()

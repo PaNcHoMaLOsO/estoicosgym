@@ -77,7 +77,16 @@ class InscripcionController extends Controller
             }
 
             $dias = $indefinida ? null : (int) $validated['dias'];
-            $inscripcion->pausar($dias, $validated['razon'] ?? '', $indefinida);
+
+            // pausar() vuelve a mirar con la fila trabada: si entre medio la
+            // pausó otra pestaña, dice que no. Antes se ignoraba la respuesta
+            // y la pantalla decía «pausada» y se mandaba otro aviso al socio.
+            if (! $inscripcion->pausar($dias, $validated['razon'] ?? '', $indefinida)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta membresía ya está pausada o no puede pausarse. Recarga la ficha.',
+                ], 422);
+            }
 
             // 📧 ENVIAR NOTIFICACIÓN DE PAUSA
             try {
@@ -149,19 +158,26 @@ class InscripcionController extends Controller
             // decimal no era tiempo pausado sino la hora del reloj.
             // Hasta el fin de la pausa si ya paso, igual que el modelo: una
             // pausa de 7 dias reanudada tarde no «estuvo pausada 30 dias».
-            $hastaCuando = ($inscripcion->fecha_pausa_fin && $inscripcion->fecha_pausa_fin->copy()->startOfDay()->lt(now()->startOfDay()))
-                ? $inscripcion->fecha_pausa_fin->copy()->startOfDay()
-                : now()->startOfDay();
-            $terminoAntes = $hastaCuando->lt(now()->startOfDay());
+            $hastaCuando = $inscripcion->desdeCuandoSeReanuda();
+            $terminoAntes = $hastaCuando->lt(today());
 
+            // Por fechas de calendario (Inscripcion::diasEntre): contando horas,
+            // una pausa que cruza el cambio de hora de septiembre perdía un día.
             $diasEnPausa = $inscripcion->fecha_pausa_inicio
-                ? (int) $inscripcion->fecha_pausa_inicio->copy()->startOfDay()->diffInDays($hastaCuando)
+                ? max(0, Inscripcion::diasEntre($inscripcion->fecha_pausa_inicio, $hastaCuando))
                 : 0;
-                
+
             // Obtener días restantes guardados antes de reanudar
             $diasGuardados = $inscripcion->dias_restantes_al_pausar ?? 0;
 
-            $inscripcion->reanudar();
+            // reanudar() vuelve a mirar con la fila trabada: el segundo clic la
+            // encuentra ya reanudada y no repite historial ni aviso.
+            if (! $inscripcion->reanudar()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $inscripcion->porQueNoSePuedeReanudar() ?? 'No se pudo reanudar. Recarga la ficha.',
+                ], 422);
+            }
 
             // 📧 ENVIAR NOTIFICACIÓN DE ACTIVACIÓN
             try {
@@ -384,6 +400,29 @@ class InscripcionController extends Controller
             DB::beginTransaction();
 
             try {
+                /*
+                 * 0. LA MEMBRESIA, TRABADA Y MIRADA OTRA VEZ.
+                 *
+                 * Todo lo de arriba se comprobo sobre la fila que se leyo al
+                 * llegar la peticion. Un doble clic en «Cambiar plan» —esta
+                 * pantalla no lleva token— o dos pestañas mandan dos peticiones
+                 * que pasan las dos esa comprobacion antes de que ninguna
+                 * escriba: salian DOS membresias nuevas encadenadas a la misma
+                 * vieja y DOS cobros de la diferencia. Con la fila trabada, la
+                 * segunda espera a la primera y la encuentra ya cambiada.
+                 */
+                $actual = Inscripcion::whereKey($inscripcion->getKey())->lockForUpdate()->first();
+
+                if (! $actual || ! $actual->puedeCambiarPlan()
+                    || Inscripcion::where('id_inscripcion_anterior', $inscripcion->id)->exists()) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta membresía ya se cambió de plan. Revisa la ficha del socio antes de repetirlo.',
+                    ], 422);
+                }
+
                 // 1. Marcar inscripción anterior como "Cambiada" (estado 105)
                 // FIX: Ajustar fecha_vencimiento al cambiar de plan
                 $inscripcion->update([
@@ -534,8 +573,9 @@ class InscripcionController extends Controller
             }
 
             // Buscar clientes que NO tienen membresía activa y NO son el cliente actual
-            $clientesConMembresiaActiva = Inscripcion::whereIn('id_estado', [100, 101])
-                ->where('fecha_vencimiento', '>=', now())
+            // La misma regla que valida el traspaso: una pausada cuenta aunque
+            // su fecha vieja haya pasado (ver Inscripcion::scopeConMembresiaVigente).
+            $clientesConMembresiaActiva = Inscripcion::conMembresiaVigente()
                 ->pluck('id_cliente')
                 ->toArray();
 
@@ -676,6 +716,30 @@ class InscripcionController extends Controller
             DB::beginTransaction();
 
             try {
+                /*
+                 * LA MEMBRESIA Y QUIEN LA RECIBE, TRABADAS Y MIRADAS OTRA VEZ.
+                 *
+                 * Lo de arriba se comprobo con lo leido al llegar. Dos envios a
+                 * la vez —un doble clic, dos pestañas— pasaban los dos: quedaban
+                 * dos traspasos en el historial por uno solo, o la misma
+                 * membresia se iba a dos personas y gana la ultima en escribir.
+                 * Y dos membresias distintas traspasadas a la vez a la misma
+                 * persona la dejaban con dos vigentes. Con las filas trabadas,
+                 * el segundo envio espera y ve lo que hizo el primero.
+                 */
+                $actual = Inscripcion::whereKey($inscripcion->getKey())->lockForUpdate()->first();
+                Cliente::whereKey($clienteDestino->id)->lockForUpdate()->first();
+
+                if (! $actual || (int) $actual->id_cliente !== (int) $clienteOrigenId
+                    || ! Inscripcion::clientePuedeRecibirTraspaso($clienteDestino->id)) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta membresía ya se traspasó, o quien la recibe ya tiene una vigente. Revisa la ficha antes de repetirlo.',
+                    ], 422);
+                }
+
                 // ================================================================
                 // NUEVA LÓGICA: TRANSFERIR en lugar de COPIAR
                 // - La inscripción cambia de dueño (id_cliente)

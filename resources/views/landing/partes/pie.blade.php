@@ -12,17 +12,29 @@
                 @if($gimnasio['direccion'])
                     <p class="text-pg-tiza/55 font-modern text-sm mt-1">{{ $gimnasio['direccion'] }}</p>
                 @endif
+                {{-- El nombre, la dirección y el teléfono en todas las páginas, iguales
+                     a los de Google Maps: es lo que Google compara. --}}
+                @if($gimnasio['telefono'] || $web['google_maps'])
+                    <p class="flex flex-wrap gap-x-4 gap-y-1 font-modern text-sm mt-1">
+                        @if($gimnasio['telefono'])
+                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $gimnasio['telefono']) }}" data-evento="contacto_directo" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">{{ $gimnasio['telefono'] }}</a>
+                        @endif
+                        @if($web['google_maps'])
+                            <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Cómo llegar</a>
+                        @endif
+                    </p>
+                @endif
                 @if($redes)
                     <div class="flex gap-2 mt-4">
                         @foreach($redes as $red)
-                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-9 h-9 rounded-lg bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><i class="{{ $red['icono'] }} text-sm" aria-hidden="true"></i></a>
+                            <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}" class="w-9 h-9 rounded-lg bg-pg-negro border border-pg-tiza/10 hover:border-pg-rojo/40 flex items-center justify-center text-pg-tiza hover:text-pg-rojo-claro transition-colors"><x-icono :nombre="$red['icono']" class="text-sm" /></a>
                         @endforeach
                     </div>
                 @endif
                 @if($web['resenas'])
                     {{-- Las reseñas son lo que más pesa para salir primero en el mapa. --}}
                     <a href="{{ $web['resenas'] }}" target="_blank" rel="noopener" data-evento="resena_google" class="inline-flex items-center gap-2 mt-5 text-sm font-modern text-pg-tiza/70 hover:text-pg-tiza transition-colors">
-                        <i class="fas fa-star text-yellow-400" aria-hidden="true"></i> Déjanos tu reseña en Google
+                        <x-icono nombre="star" class="text-yellow-400" /> Déjanos tu reseña en Google
                     </a>
                 @endif
             </div>
@@ -44,6 +56,8 @@
                     @endif
                     <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arrienda horas</a></li>
                     <li><a href="{{ route('landing.contacto') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
+                    <li><a href="{{ route('landing.rutina') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Rutinas</a></li>
+                    <li><a href="{{ route('landing.ejercicios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Ejercicios</a></li>
                     <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
                     @if($tienda ?? null)
                         {{-- La tienda es otra web: se marca con el icono para que
@@ -52,7 +66,7 @@
                             <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
                                class="inline-flex items-center gap-2 text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">
                                 {{ $tienda['titulo'] }}
-                                <i class="fas fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+                                <x-icono nombre="arrow-up-right-from-square" class="text-[10px]" />
                             </a>
                         </li>
                     @endif

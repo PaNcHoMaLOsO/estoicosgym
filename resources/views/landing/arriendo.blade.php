@@ -46,7 +46,7 @@
                     @foreach($fotosDelArriendo as $i => $foto)
                         {{-- La primera, grande: el collage tiene un centro. --}}
                         <figure class="animate-on-scroll relative overflow-hidden rounded-xl bg-pg-carbon {{ $i === 0 ? 'col-span-2 row-span-2' : '' }}">
-                            <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" loading="{{ $i === 0 ? 'eager' : 'lazy' }}" decoding="async" class="absolute inset-0 h-full w-full object-cover">
+                            <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" @if($i === 0) loading="eager" fetchpriority="high" @else loading="lazy" @endif decoding="async" class="absolute inset-0 h-full w-full object-cover">
                         </figure>
                     @endforeach
                 </div>
@@ -69,11 +69,11 @@
                      institución cotiza por escrito, y así llega todo lo que hace
                      falta para responderle de una vez. --}}
                 <div class="animate-on-scroll">
-                    <h3 class="sr-only">Pide tus horarios</h3>
+                    <h2 class="sr-only">Pide tus horarios</h2>
 
                     @if(session('success'))
                         <div class="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 font-modern text-sm text-emerald-300" role="status">
-                            <i class="fas fa-check-circle mr-2" aria-hidden="true"></i>Solicitud enviada. Te responderemos pronto.
+                            <x-icono nombre="check-circle" class="mr-2" />Solicitud enviada. Te responderemos pronto.
                         </div>
                     @endif
                     @if(session('error'))
@@ -153,17 +153,17 @@
                             <div class="grid grid-cols-6 gap-2">
                             <div class="col-span-6 sm:col-span-3 relative">
                                 <label for="arr-institucion" class="sr-only">Institución, club o tu nombre</label>
-                                <i class="fas fa-building-columns pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="building-columns" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-institucion" name="institucion" type="text" required maxlength="150" value="{{ old('institucion') }}" placeholder="Institución, club o tu nombre *" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             <div class="col-span-4 sm:col-span-2 relative">
                                 <label for="arr-area" class="sr-only">Qué clases harían</label>
-                                <i class="fas fa-graduation-cap pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="graduation-cap" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-area" name="area" type="text" maxlength="150" value="{{ old('area') }}" placeholder="Qué clases harían" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             <div class="col-span-2 sm:col-span-1 relative">
                                 <label for="arr-alumnos" class="sr-only">Personas por clase</label>
-                                <i class="fas fa-user-group pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="user-group" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-alumnos" name="alumnos" type="number" min="1" max="500" inputmode="numeric" value="{{ old('alumnos') }}" placeholder="Personas" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             </div>
@@ -178,17 +178,17 @@
                             <div class="grid grid-cols-6 gap-2">
                             <div class="col-span-3 sm:col-span-2 relative">
                                 <label for="arr-nombre" class="sr-only">Tu nombre</label>
-                                <i class="fas fa-user pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="user" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-nombre" name="nombre" type="text" required maxlength="100" autocomplete="name" value="{{ old('nombre') }}" placeholder="Tu nombre *" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             <div class="col-span-3 sm:col-span-2 relative">
                                 <label for="arr-telefono" class="sr-only">Teléfono</label>
-                                <i class="fas fa-phone pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="phone" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-telefono" name="telefono" type="tel" maxlength="20" autocomplete="tel" value="{{ old('telefono') }}" placeholder="Teléfono" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             <div class="col-span-6 sm:col-span-2 relative">
                                 <label for="arr-email" class="sr-only">Correo institucional</label>
-                                <i class="fas fa-envelope pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" aria-hidden="true"></i>
+                                <x-icono nombre="envelope" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[0.7rem] text-pg-tiza/35" />
                                 <input id="arr-email" name="email" type="email" required maxlength="255" autocomplete="email" value="{{ old('email') }}" placeholder="Correo *" class="w-full bg-pg-negro border border-pg-tiza/15 hover:border-pg-tiza/30 focus:border-pg-rojo rounded-lg py-2 text-pg-tiza placeholder-pg-tiza/40 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-sm pl-8 pr-3">
                             </div>
                             </div>
@@ -196,7 +196,7 @@
 
                         <button type="submit" data-evento="arriendo_instituciones" class="group flex w-full items-center justify-center gap-2 bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-4 py-2.5 rounded-lg text-sm transition-colors font-modern">
                             Enviar solicitud
-                            <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
+                            <x-icono nombre="arrow-right" class="text-xs transition-transform group-hover:translate-x-1" />
                         </button>
                     </form>
 

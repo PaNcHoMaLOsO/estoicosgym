@@ -94,19 +94,21 @@ class RutinasEnElPanelTest extends CasoConCatalogos
         $this->actingAs($this->administrador())->patch("/panel/rutinas/{$rutina->uuid}/alternar");
         $this->assertFalse($rutina->fresh()->activa);
 
-        $this->get('/rutina?objetivo=fuerza&nivel=algo&dias=4')->assertOk()->assertDontSee('Torso y pierna · 4 días');
+        $this->followingRedirects()->get('/rutina?objetivo=fuerza&nivel=algo&dias=4')->assertOk()->assertDontSee('Torso y pierna · 4 días');
+        $this->get('/rutina')->assertOk()->assertDontSee('Torso y pierna · 4 días');
+        $this->get("/rutinas/{$rutina->slug}")->assertNotFound();
     }
 
     public function test_el_catalogo_de_ejercicios_se_edita(): void
     {
         $this->actingAs($this->administrador())->post('/panel/ejercicios', [
-            'nombre' => 'Remo en máquina', 'zona' => 'espalda', 'equipo' => 'maquina', 'indicacion' => 'Pecho al cojín.', 'activo' => true,
+            'nombre' => 'Remo T en máquina', 'zona' => 'espalda', 'equipo' => 'maquina', 'indicacion' => 'Pecho al cojín.', 'activo' => true,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('ejercicios', ['nombre' => 'Remo en máquina', 'zona' => 'espalda']);
+        $this->assertDatabaseHas('ejercicios', ['nombre' => 'Remo T en máquina', 'zona' => 'espalda']);
 
         $this->actingAs($this->administrador())->post('/panel/ejercicios', [
-            'nombre' => 'Remo en máquina', 'zona' => 'espalda', 'equipo' => 'maquina',
+            'nombre' => 'Remo T en máquina', 'zona' => 'espalda', 'equipo' => 'maquina',
         ])->assertSessionHasErrors('nombre');
     }
 

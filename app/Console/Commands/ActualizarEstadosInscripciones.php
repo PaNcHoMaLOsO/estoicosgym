@@ -28,7 +28,55 @@ class ActualizarEstadosInscripciones extends Command
             $this->warn('⚠ MODO DRY-RUN: No se realizarán cambios');
         }
 
-        // 1. Inscripciones ACTIVAS con fecha_vencimiento pasada → VENCIDA
+        // 1. Pausas que terminan HOY o antes: se reanudan.
+        //
+        // PRIMERO las pausas y DESPUÉS las vencidas. Al revés, una pausa olvidada
+        // que al reanudarse desde su fin ya quedaba vencida pasaba un día entero
+        // «Activa» con la fecha en el pasado: las vencidas ya se habían marcado.
+        //
+        // Y las que terminan HOY también: fecha_pausa_fin es el día en que el
+        // socio vuelve («Se reanuda el ...», dice la ficha). Con «antes de hoy»
+        // pasaba ese primer día todavía en pausa.
+        $this->line('');
+        $this->comment('🔍 Buscando pausas que deberían terminar...');
+        
+        $pausasTerminadas = Inscripcion::where('id_estado', 101) // Pausada
+            ->where('pausada', true)
+            ->where('pausa_indefinida', false)
+            ->whereNotNull('fecha_pausa_fin')
+            ->whereDate('fecha_pausa_fin', '<=', $hoy->format('Y-m-d'))
+            ->with(['cliente', 'membresia'])
+            ->get();
+
+        if ($pausasTerminadas->count() > 0) {
+            $this->warn("   → Encontradas {$pausasTerminadas->count()} pausas que deberían terminar");
+            
+            $reanudadas = 0;
+
+            foreach ($pausasTerminadas as $insc) {
+                $diasPasados = max(0, Inscripcion::diasEntre($insc->fecha_pausa_fin, $hoy));
+                $this->line("     - ID #{$insc->id}: {$this->quien($insc)}");
+                $this->line("       Pausa terminó hace {$diasPasados} días (fecha_pausa_fin: {$insc->fecha_pausa_fin->format('d/m/Y')})");
+                
+                if (!$dryRun) {
+                    // Reanudar automáticamente (el modelo ya ajusta la fecha de vencimiento).
+                    // Puede negarse —el socio ya tiene otra vigente—: se dice y se sigue.
+                    if ($insc->reanudar()) {
+                        $reanudadas++;
+                    } else {
+                        $this->warn("       No se reanudó: {$insc->porQueNoSePuedeReanudar()}");
+                    }
+                }
+            }
+            
+            if (!$dryRun) {
+                $this->info("   ✅ Reanudadas {$reanudadas} inscripciones automáticamente");
+            }
+        } else {
+            $this->info('   ✓ No hay pausas pendientes de terminar');
+        }
+
+        // 2. Inscripciones ACTIVAS con fecha_vencimiento pasada → VENCIDA
         $this->line('');
         $this->comment('🔍 Buscando inscripciones activas vencidas...');
         
@@ -62,39 +110,6 @@ class ActualizarEstadosInscripciones extends Command
             }
         } else {
             $this->info('   ✓ No hay inscripciones activas vencidas');
-        }
-
-        // 2. Verificar pausas que deberían terminar
-        $this->line('');
-        $this->comment('🔍 Buscando pausas que deberían terminar...');
-        
-        $pausasTerminadas = Inscripcion::where('id_estado', 101) // Pausada
-            ->where('pausada', true)
-            ->where('pausa_indefinida', false)
-            ->whereNotNull('fecha_pausa_fin')
-            ->where('fecha_pausa_fin', '<', $hoy->format('Y-m-d'))
-            ->with(['cliente', 'membresia'])
-            ->get();
-
-        if ($pausasTerminadas->count() > 0) {
-            $this->warn("   → Encontradas {$pausasTerminadas->count()} pausas que deberían terminar");
-            
-            foreach ($pausasTerminadas as $insc) {
-                $diasPasados = (int) $insc->fecha_pausa_fin->startOfDay()->diffInDays($hoy->copy()->startOfDay());
-                $this->line("     - ID #{$insc->id}: {$this->quien($insc)}");
-                $this->line("       Pausa terminó hace {$diasPasados} días (fecha_pausa_fin: {$insc->fecha_pausa_fin->format('d/m/Y')})");
-                
-                if (!$dryRun) {
-                    // Reanudar automáticamente (el modelo ya ajusta la fecha de vencimiento)
-                    $insc->reanudar();
-                }
-            }
-            
-            if (!$dryRun) {
-                $this->info("   ✅ Reanudadas {$pausasTerminadas->count()} inscripciones automáticamente");
-            }
-        } else {
-            $this->info('   ✓ No hay pausas pendientes de terminar');
         }
 
         // 3. Resumen

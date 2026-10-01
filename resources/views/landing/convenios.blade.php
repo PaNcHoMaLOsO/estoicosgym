@@ -92,7 +92,7 @@
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             <a href="{{ route('landing.arriendo') }}" class="animate-on-scroll mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-2xl border border-pg-tiza/10 bg-pg-negro px-6 py-4 text-center font-modern transition-colors hover:border-pg-rojo/50">
                 <span class="text-pg-tiza/75 text-sm lg:text-base">¿Das clases? Arrienda horas del gimnasio para tu institución, club o alumnos.</span>
-                <span class="text-pg-rojo-claro text-sm font-semibold">Ver más <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i></span>
+                <span class="text-pg-rojo-claro text-sm font-semibold">Ver más <x-icono nombre="arrow-right" class="ml-1" /></span>
             </a>
         </div>
     </section>

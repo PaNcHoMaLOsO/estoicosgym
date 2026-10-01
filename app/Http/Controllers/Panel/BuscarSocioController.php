@@ -91,7 +91,7 @@ class BuscarSocioController extends Controller
                     'plan' => $vigente?->membresia?->nombre,
                     'vence' => $vigente?->fecha_vencimiento?->format('d/m/Y'),
                     'dias' => $vigente?->fecha_vencimiento
-                        ? (int) now()->startOfDay()->diffInDays($vigente->fecha_vencimiento, false)
+                        ? \App\Models\Inscripcion::diasEntre(today(), $vigente->fecha_vencimiento)
                         : null,
                     // En cero cuando se pidió esconder quién debe: el
                     // buscador sale en todas las pantallas, y es el sitio por

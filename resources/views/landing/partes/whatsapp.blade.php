@@ -15,7 +15,7 @@
     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio" aria-label="Escríbenos por WhatsApp"
        style="animation-delay: -1.6s"
        class="pulso fixed bottom-[4.125rem] right-4 sm:bottom-[5.25rem] sm:right-5 z-40 w-11 h-11 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform">
-        <i class="fab fa-whatsapp text-xl" aria-hidden="true"></i>
+        <x-icono nombre="whatsapp" class="text-xl" />
     </a>
 @endif
 
@@ -24,6 +24,6 @@
     <a href="{{ $instagram['url'] }}" target="_blank" rel="noopener" data-evento="instagram_gimnasio" aria-label="Síguenos en Instagram"
        class="fixed {{ $whatsapp ? 'bottom-[7.375rem] sm:bottom-[8.625rem]' : 'bottom-[4.125rem] sm:bottom-[5.25rem]' }} right-4 sm:right-5 z-40 w-11 h-11 rounded-full text-white flex items-center justify-center hover:scale-110 transition-transform pulso"
        style="--color-pulso: #d6249f; animation-delay: -0.8s; background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)">
-        <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+        <x-icono nombre="instagram" class="text-xl" />
     </a>
 @endif

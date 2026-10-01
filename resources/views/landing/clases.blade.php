@@ -28,7 +28,7 @@
         EL CALENDARIO DE LA SEMANA, COMO TABLA DE HORARIOS. Antes era una agenda
         a escala: con una clase a las 11 y el resto en la noche quedaban ocho
         horas vacías entre medio. Ahora cada fila es una hora en que EMPIEZA
-        alguna clase, y nada más. Hoy va marcado, y cada clase lleva a su ficha.
+        alguna clase, y nada más. Hoy va marcado, y cada clase lleva a su página.
     --}}
     @php
         $claves = array_keys(\App\Models\Clase::DIAS);
@@ -51,7 +51,7 @@
                         <ul class="mt-1.5 space-y-1">
                             @foreach($bloques as $b)
                                 <li>
-                                    <a href="#{{ $ancla($b['nombre']) }}" class="flex items-center gap-2.5 font-modern text-sm">
+                                    <a href="{{ $b['url'] }}" class="flex items-center gap-2.5 font-modern text-sm">
                                         <span class="size-2 shrink-0 rounded-full" style="background: {{ $b['color'] }}" aria-hidden="true"></span>
                                         <span class="w-24 shrink-0 tabular-nums text-pg-tiza/55">{{ $b['desde'] }} a {{ $b['hasta'] }}</span>
                                         <span class="font-semibold text-pg-tiza">{{ $b['nombre'] }}</span>
@@ -83,7 +83,7 @@
                                 @foreach($calendario['dias'] as $clave => $nombre)
                                     <td class="px-1.5 py-2 align-top {{ $clave === $hoy ? 'bg-pg-tiza/[0.03]' : '' }}">
                                         @foreach(collect($calendario['porDia'][$clave] ?? [])->where('desde', $desde) as $b)
-                                            <a href="#{{ $ancla($b['nombre']) }}" class="mb-1 block rounded-md px-2.5 py-2 transition-transform hover:-translate-y-0.5" style="background: {{ $b['color'] }}">
+                                            <a href="{{ $b['url'] }}" class="mb-1 block rounded-md px-2.5 py-2 transition-transform hover:-translate-y-0.5" style="background: {{ $b['color'] }}">
                                                 <span class="block font-semibold leading-tight text-white">{{ $b['nombre'] }}</span>
                                                 <span class="block text-xs tabular-nums text-white/80">hasta {{ $b['hasta'] }}</span>
                                             </a>
@@ -111,13 +111,15 @@
                 @foreach($clases as $index => $c)
                     <article id="{{ $ancla($c['nombre']) }}" class="animate-on-scroll flex scroll-mt-28 flex-col" style="animation-delay: {{ ($index % 3) * 0.08 }}s">
                         @if($c['imagen'])
-                            <img src="{{ $c['imagen'] }}" alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-md object-cover">
+                            <a href="{{ $c['url'] }}" tabindex="-1" aria-hidden="true">
+                            <img src="{{ $c['imagen'] }}" alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-md object-cover">
+                            </a>
                         @endif
 
                         {{-- El punto es el color de la clase en el calendario de arriba. --}}
                         <h3 class="mt-4 flex items-center gap-2.5 font-display text-2xl uppercase leading-none text-pg-tiza">
                             <span class="size-2.5 shrink-0 rounded-full" style="background: {{ $c['color'] }}" aria-hidden="true"></span>
-                            {{ $c['nombre'] }}
+                            <a href="{{ $c['url'] }}" class="transition-colors hover:text-pg-rojo-claro">{{ $c['nombre'] }}</a>
                         </h3>
 
                         <p class="mt-2 font-modern text-sm text-pg-tiza/55 tabular-nums">
@@ -141,7 +143,7 @@
                             @if($c['whatsapp'])
                                 <a href="{{ $c['whatsapp'] }}" target="_blank" rel="noopener" data-evento="inscripcion_clase" data-detalle="{{ $c['nombre'] }}"
                                    class="inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
-                                    <i class="fab fa-whatsapp text-base" aria-hidden="true"></i> Inscribirme
+                                    <x-icono nombre="whatsapp" class="text-base" /> Inscribirme
                                 </a>
                             @else
                                 <a href="{{ route('landing.contacto') }}" class="inline-flex shrink-0 items-center px-4 py-2.5 rounded-lg bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-modern text-sm font-semibold transition-colors">Inscribirme</a>

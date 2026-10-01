@@ -148,6 +148,29 @@ madrugada y el panel ya no tiene nada que hacer.
 Configuración → Avisos automáticos dice si el programador está corriendo de
 verdad: cada vuelta deja un latido.
 
+### Llevar la configuración de un equipo a otro
+
+Lo que se armó en Configuración en el PC (planes y precios, convenios con sus
+logos, plantillas de correo, la página web con sus fotos, especialistas,
+clases, rutinas, textos legales y ajustes) se lleva al servidor en un zip.
+No viajan socios, usuarios del panel, la cuenta de correo con su contraseña
+ni el contacto personal de los convenios: la cuenta de correo se pone a mano
+en el servidor, en Configuración → Cuenta de correo.
+
+1. En el PC: `C:/php84/php.exe artisan configuracion:exportar`. Deja el zip en
+   `storage/app/private/configuracion/` y dice cuántas filas y fotos lleva.
+2. Copiar ese zip al servidor, a cualquier carpeta.
+3. En el servidor, primero solo mirar:
+   `php artisan configuracion:importar /ruta/configuracion-AAAAMMDD-HHMM.zip`.
+   Dice qué filas son nuevas, cuáles se actualizan y cuáles ya están iguales,
+   sin tocar nada. Si está bien, lo mismo con `--confirmar`: hace un respaldo
+   de la base y después importa todo de una vez.
+
+Importar nunca borra: lo que el servidor tenga y el zip no, se queda. Se puede
+repetir sin duplicar nada. Los precios no se pisan (se cierra el vigente y se
+abre el nuevo) y un texto legal que ya firmó alguien en el servidor tampoco:
+el del zip entra como versión nueva.
+
 ---
 
 ## Pruebas contra PostgreSQL

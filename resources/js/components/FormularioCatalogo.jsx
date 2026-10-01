@@ -258,7 +258,7 @@ function CampoImagen({ campo, data, setData }) {
                 <input
                     id={campo.nombre}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept={campo.acepta ?? 'image/jpeg,image/png,image/webp'}
                     onChange={(e) => {
                         setData(campo.nombre, e.target.files?.[0] ?? null);
                         if (campo.quitar) {
@@ -295,6 +295,7 @@ const miles = (valor) => (valor === '' || valor === null || valor === undefined 
  *  · area: texto largo; con `max`, un contador.
  *  · si-no: casilla.  · imagen: CampoImagen.
  *  · opciones: desplegable; con `botones: true`, botones (para pocas opciones).
+ *  · varias: casillas; se guarda la lista de las marcadas.
  *  · dinero: con $ y puntos de miles mientras se escribe; se guarda el número.
  *  · celular: con el +56 9 puesto; el prefijo solo se manda vacío.
  *  · lo demás: texto, número, correo…
@@ -321,6 +322,26 @@ function Control({ campo, data, setData }) {
                 <input type="checkbox" checked={Boolean(valor)} onChange={(e) => setData(campo.nombre, e.target.checked)} className="size-4 accent-[var(--color-volt)]" />
                 {campo.textoCasilla}
             </label>
+        );
+    }
+
+    if (campo.tipo === 'varias') {
+        const marcadas = Array.isArray(valor) ? valor : [];
+
+        return (
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {campo.opciones.map((o) => (
+                    <label key={o.valor} className="flex items-center gap-2 text-sm text-chalk">
+                        <input
+                            type="checkbox"
+                            checked={marcadas.includes(o.valor)}
+                            onChange={(e) => setData(campo.nombre, e.target.checked ? [...marcadas, o.valor] : marcadas.filter((v) => v !== o.valor))}
+                            className="size-4 accent-[var(--color-volt)]"
+                        />
+                        {o.etiqueta}
+                    </label>
+                ))}
+            </div>
         );
     }
 

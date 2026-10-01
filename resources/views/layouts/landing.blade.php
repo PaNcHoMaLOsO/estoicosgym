@@ -11,26 +11,33 @@
     <meta name="description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '. Revisa los planes y consulta tu membresía en línea.')">
     <meta name="keywords" content="gimnasio, fitness, musculación, cardio, entrenamiento">
     <meta name="author" content="{{ $nombreGimnasio }}">
-    <meta name="robots" content="index, follow, max-image-preview:large">
+    {{-- Cada página puede pedir otra cosa: la consulta de membresía no se indexa. --}}
+    <meta name="robots" content="{{ $web['robots'] ?? 'index, follow, max-image-preview:large' }}">
     <meta name="theme-color" content="#0a0a0b">
 
+    {{-- Al compartir: la dirección es la canónica, sin parámetros, y la imagen
+         la de la página (la foto del especialista, la de la clase) o, si no
+         tiene, la primera foto del gimnasio; sin fotos, el logo. --}}
+    @php($imagenAlCompartir = $web['imagen'] ?? asset('images/progym-logo.png'))
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="{{ $web['canonical'] ?? url()->current() }}">
     <meta property="og:title" content="@yield('title', $nombreGimnasio)">
     <meta property="og:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
-    {{-- Al compartir la página sale la primera foto del gimnasio; sin fotos, el logo. --}}
-    <meta property="og:image" content="{{ $web['imagen'] ?? asset('images/progym-logo.png') }}">
-    <meta property="og:image:alt" content="{{ $nombreGimnasio }}{{ !empty($web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}">
+    <meta property="og:image" content="{{ $imagenAlCompartir }}">
+    @if(!empty($web['imagen_medidas']))
+        <meta property="og:image:width" content="{{ $web['imagen_medidas'][0] }}">
+        <meta property="og:image:height" content="{{ $web['imagen_medidas'][1] }}">
+    @endif
+    <meta property="og:image:alt" content="{{ $web['imagen_alt'] ?? $nombreGimnasio . (!empty($web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '') }}">
     <meta property="og:site_name" content="{{ $nombreGimnasio }}">
     <meta property="og:locale" content="es_CL">
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ url()->current() }}">
-    <meta property="twitter:title" content="@yield('title', $nombreGimnasio)">
-    <meta property="twitter:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
-    <meta property="twitter:image" content="{{ $web['imagen'] ?? asset('images/progym-logo.png') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', $nombreGimnasio)">
+    <meta name="twitter:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
+    <meta name="twitter:image" content="{{ $imagenAlCompartir }}">
 
     <!-- Favicon: el isotipo del logotipo -->
     <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
@@ -83,13 +90,17 @@
     <!-- Preconnect para performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Fuentes: las mismas de las pantallas de acceso -->
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    
+
+    {{-- Las fuentes NO frenan el primer dibujo: la hoja se pide como si fuera
+         para imprimir (el navegador no la espera) y al llegar pasa a la
+         pantalla. Mientras, se lee con la letra del sistema (display=swap).
+         Los íconos ya no vienen de Font Awesome por CDN: van en línea (ver
+         App\Support\Iconos). --}}
+    @php($fuentes = 'https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap')
+    <link rel="preload" as="style" href="{{ $fuentes }}">
+    <link rel="stylesheet" href="{{ $fuentes }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ $fuentes }}"></noscript>
+
     <!-- Los estilos de la web, compilados: ver resources/css/landing.css -->
     @vite('resources/css/landing.css')
     
@@ -287,9 +298,9 @@
 
         /* El titular de dos lineas no sube entero: cada linea se destapa de
            abajo arriba. El recorte lleva margen de sobra para no cortar tildes. */
-        .entrada > h1:has(> span) { opacity: 1; animation: none; }
-        .entrada > h1 > span { animation: destapar 1s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.2s; }
-        .entrada > h1 > span + span { animation-delay: 0.34s; }
+        .entrada > :is(h1, p):has(> span) { opacity: 1; animation: none; }
+        .entrada > :is(h1, p) > span { animation: destapar 1s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.2s; }
+        .entrada > :is(h1, p) > span + span { animation-delay: 0.34s; }
         @keyframes destapar {
             from { opacity: 0; transform: translateY(0.55em); clip-path: inset(-15% 0 100% 0); }
             to { opacity: 1; transform: translateY(0); clip-path: inset(-15% 0 -15% 0); }
@@ -315,8 +326,8 @@
         }
 
         /* Una raya roja se dibuja delante del rotulo de la portada. */
-        .entrada > p:first-child { display: flex; align-items: center; gap: 0.85rem; }
-        .entrada > p:first-child::before {
+        .entrada > :is(p, h1):first-child { display: flex; align-items: center; gap: 0.85rem; }
+        .entrada > :is(p, h1):first-child::before {
             content: ''; width: 2.5rem; height: 2px; background: #dd2a32; flex: none;
             transform: scaleX(0); transform-origin: 0 50%;
             animation: trazar 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
@@ -324,12 +335,9 @@
         @keyframes trazar { to { transform: scaleX(1); } }
 
         /* Los iconos de accesos y servicios dan un paso al pasar por encima. */
-        .animate-on-scroll h2 > i, .animate-on-scroll h3 > i { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .animate-on-scroll:hover h2 > i, .animate-on-scroll:hover h3 > i { transform: translateY(-3px) scale(1.15); }
+        .animate-on-scroll h2 > svg, .animate-on-scroll h3 > svg { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-on-scroll:hover h2 > svg, .animate-on-scroll:hover h3 > svg { transform: translateY(-3px) scale(1.15); }
 
-        /* Las comillas de los testimonios se asientan al entrar. */
-        figure.animate-on-scroll > .fa-quote-left { display: inline-block; transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s; }
-        figure.animate-on-scroll:not(.animate-visible) > .fa-quote-left { transform: translateY(-10px) rotate(-12deg); }
 
         /* Los enlaces del pie se corren un poco a la derecha. */
         footer li > a { display: inline-block; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease; }
@@ -353,9 +361,9 @@
             transition: border-color 0.25s ease, background-color 0.25s ease;
         }
         @media (min-width: 1024px) { #mobile-menu-btn { display: none; } }
-        #mobile-menu-btn i { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        #mobile-menu-btn svg { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
         #navbar.abierto #mobile-menu-btn { border-color: rgba(221, 42, 50, 0.6); background: rgba(221, 42, 50, 0.12); }
-        #navbar.abierto #mobile-menu-btn i { transform: rotate(90deg); }
+        #navbar.abierto #mobile-menu-btn svg { transform: rotate(90deg); }
         #navbar.abierto { background-color: #0a0a0b; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.65); }
         #mobile-menu:not(.hidden) { animation: bajar 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         #mobile-menu > div { gap: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; }
@@ -366,8 +374,11 @@
             font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.06em; font-size: 1.05rem;
         }
         #mobile-menu a:not(.bg-pg-rojo)::after {
-            content: '\f061'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 0.7rem;
-            color: #dd2a32; opacity: 0.7;
+            /* La flecha, dibujada con una máscara: ya no hay fuente de íconos. */
+            content: ''; width: 0.7rem; height: 0.7rem; flex: none;
+            background: #dd2a32; opacity: 0.7;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z'/%3E%3C/svg%3E") center / contain no-repeat;
         }
         #mobile-menu a[aria-current] { color: #fff; box-shadow: inset 3px 0 0 #dd2a32; padding-left: 0.85rem; }
         #mobile-menu a.bg-pg-rojo { margin-top: 1.1rem; }
@@ -414,11 +425,10 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .entrada > *, .entrada > h1 > span { animation: none !important; opacity: 1 !important; }
+            .entrada > *, .entrada > :is(h1, p) > span { animation: none !important; opacity: 1 !important; }
             .avance { display: none; }
             #mobile-menu, #mobile-menu a { animation: none !important; opacity: 1 !important; }
-            .entrada > p:first-child::before { animation: none; transform: none; }
-            figure.animate-on-scroll > .fa-quote-left { transform: none !important; }
+            .entrada > :is(p, h1):first-child::before { animation: none; transform: none; }
             #navbar.recogido { transform: none; }
             a.bg-pg-rojo::after, button.bg-pg-rojo::after { display: none; }
             .cinta-pista, .portada-foto, .flotar, .pulso, .animate-bounce, .fade-in { animation: none !important; }
@@ -614,15 +624,15 @@
             if (mobileMenuBtn && mobileMenu) {
                 // Abierto, el menu es un panel macizo: con el fondo traslucido de
                 // la barra se leia la pagina de atras por entre los enlaces.
-                const icono = mobileMenuBtn.querySelector('i');
+                const [iconoAbrir, iconoCerrar] = mobileMenuBtn.querySelectorAll('svg');
                 const poner = (abrir) => {
                     mobileMenu.classList.toggle('hidden', !abrir);
                     navbar && navbar.classList.toggle('abierto', abrir);
                     mobileMenuBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
                     mobileMenuBtn.setAttribute('aria-label', abrir ? 'Cerrar el menú' : 'Abrir el menú');
-                    if (icono) {
-                        icono.classList.toggle('fa-bars', !abrir);
-                        icono.classList.toggle('fa-xmark', abrir);
+                    if (iconoAbrir && iconoCerrar) {
+                        iconoAbrir.classList.toggle('hidden', abrir);
+                        iconoCerrar.classList.toggle('hidden', !abrir);
                     }
                 };
                 mobileMenuBtn.addEventListener('click', (e) => {

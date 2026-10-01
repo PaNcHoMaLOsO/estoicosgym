@@ -89,7 +89,7 @@ class InscripcionController extends Controller
                     // Negativo = ya vencio. Se calcula aqui y no en el navegador
                     // para que la fila no dependa del reloj del equipo.
                     'dias_restantes' => $inscripcion->fecha_vencimiento
-                        ? (int) Carbon::today()->diffInDays($inscripcion->fecha_vencimiento, false)
+                        ? Inscripcion::diasEntre(Carbon::today(), $inscripcion->fecha_vencimiento)
                         : null,
                     'precio_final' => (int) $inscripcion->precio_final,
                     'es_pase' => (bool) $inscripcion->membresia?->esPase(),

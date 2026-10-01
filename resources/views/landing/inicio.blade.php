@@ -19,13 +19,17 @@
         @include('landing.partes.portada-fondo')
 
         <div class="relative z-10 w-full max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 pt-24 lg:pt-32 pb-7 lg:pb-14 entrada">
-            <p class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">
-                {{ $web['ciudad'] ? 'Gimnasio en ' . $web['ciudad'] : 'Profesionales del deporte' }}
-            </p>
-            <h1 class="font-display text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-pg-tiza mt-4 uppercase leading-[0.95]">
+            {{-- EL H1 ES EL RÓTULO PEQUEÑO, no el eslogan: «Gimnasio en Los
+                 Ángeles» es lo que busca la gente y lo que Google lee primero.
+                 El eslogan sigue siendo lo grande, pero como párrafo. Se ven
+                 igual que antes: los estilos de la portada miran a los dos. --}}
+            <h1 class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">
+                {{ $web['ciudad'] ? 'Gimnasio en ' . $web['ciudad'] : 'Gimnasio ' . $gimnasio['nombre'] }}
+            </h1>
+            <p class="font-display text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-pg-tiza mt-4 uppercase leading-[0.95]">
                 <span class="block">{{ $portada['titulo_1'] }}</span>
                 <span class="block">{{ $portada['titulo_2'] }}</span>
-            </h1>
+            </p>
             <p class="text-base text-pg-tiza/75 max-w-xl mt-4 lg:mt-6 font-modern">{{ $portada['subtitulo'] }}</p>
             <div class="mt-6 lg:mt-9 flex flex-row gap-3 lg:gap-4">
                 <a href="{{ route('landing.planes') }}" class="inline-flex items-center justify-center flex-1 sm:flex-none bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-4 sm:px-8 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
@@ -51,16 +55,31 @@
                      y le quitaba sitio a lo que hay que leer. --}}
                 <a href="{{ $d['href'] }}" class="animate-on-scroll group flex h-full flex-col py-4 lg:py-7 lg:px-8 transition-colors hover:bg-pg-carbon/50" style="animation-delay: {{ $i * 0.1 }}s">
                     <h2 class="flex items-center gap-3 font-display text-xl uppercase text-pg-tiza">
-                        <i class="fas fa-{{ $d['icono'] }} text-pg-rojo-claro text-base" aria-hidden="true"></i>
+                        <x-icono :nombre="$d['icono']" class="text-pg-rojo-claro text-base" />
                         <span>{{ $d['titulo'] }}</span>
-                        <i class="fas fa-chevron-right ml-auto text-xs text-pg-tiza/35 lg:hidden" aria-hidden="true"></i>
+                        <x-icono nombre="chevron-right" class="ml-auto text-xs text-pg-tiza/35 lg:hidden" />
                     </h2>
                     <p class="text-pg-tiza/60 font-modern text-sm mt-1.5 lg:mt-3 leading-relaxed">{{ $d['texto'] }}</p>
                     <span class="hidden lg:inline-flex items-center gap-2 mt-auto pt-6 text-pg-rojo-claro font-modern text-sm font-semibold">
-                        {{ $d['accion'] }} <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
+                        {{ $d['accion'] }} <x-icono nombre="arrow-right" class="text-xs transition-transform group-hover:translate-x-1" />
                     </span>
                 </a>
             @endforeach
+        </div>
+    </section>
+
+    {{-- ===== RUTINAS: su propia franja, la fila de accesos ya va llena ===== --}}
+    <section class="bg-pg-negro">
+        <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+            <div class="animate-on-scroll flex flex-col gap-4 border-t border-pg-tiza/10 py-6 sm:flex-row sm:items-center sm:justify-between lg:py-8">
+                <div>
+                    <h2 class="font-display text-xl uppercase text-pg-tiza">Rutinas para entrenar</h2>
+                    <p class="mt-1 font-modern text-sm text-pg-tiza/60">Ejercicios, series y repeticiones según tu objetivo.</p>
+                </div>
+                <a href="{{ route('landing.rutina') }}" class="inline-flex shrink-0 items-center justify-center gap-2 bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-6 py-3 rounded-lg text-sm transition-colors font-modern">
+                    Ver rutinas <x-icono nombre="arrow-right" class="text-xs" />
+                </a>
+            </div>
         </div>
     </section>
 
@@ -73,7 +92,7 @@
             <p class="text-center text-gray-400 font-modern text-sm uppercase tracking-widest mb-4 lg:mb-8">Convenios con</p>
             @include('landing.partes.cinta', ['logos' => $logosConvenios])
             <p class="text-center mt-4 lg:mt-8">
-                <a href="{{ route('landing.convenios') }}" class="inline-flex items-center gap-2 text-pg-rojo hover:underline font-modern text-sm font-semibold">Ver los convenios y sus precios <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i></a>
+                <a href="{{ route('landing.convenios') }}" class="inline-flex items-center gap-2 text-pg-rojo hover:underline font-modern text-sm font-semibold">Ver los convenios y sus precios <x-icono nombre="arrow-right" class="text-xs" /></a>
             </p>
         </section>
     @endif
@@ -89,7 +108,7 @@
                 @include('landing.partes.servicios')
                 <p class="text-center mt-4 lg:mt-8">
                     <a href="{{ route('landing.gimnasio') }}" class="inline-flex items-center gap-2 text-pg-rojo-claro hover:underline font-modern font-semibold">
-                        Conoce el gimnasio completo <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                        Conoce el gimnasio completo <x-icono nombre="arrow-right" class="text-xs" />
                     </a>
                 </p>
             </div>

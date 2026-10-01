@@ -9,7 +9,7 @@
             <a href="{{ route('landing.contacto') }}" class="inline-block bg-pg-negro hover:bg-pg-carbon text-pg-tiza flex-1 sm:flex-none text-center font-bold px-4 sm:px-9 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">Escríbenos</a>
             @if($whatsapp)
                 <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio" class="inline-flex items-center justify-center gap-2 bg-white hover:bg-pg-tiza text-pg-negro flex-1 sm:flex-none text-center font-bold px-4 sm:px-9 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
-                    <i class="fab fa-whatsapp text-xl" aria-hidden="true"></i> WhatsApp
+                    <x-icono nombre="whatsapp" class="text-xl" /> WhatsApp
                 </a>
             @endif
         </div>

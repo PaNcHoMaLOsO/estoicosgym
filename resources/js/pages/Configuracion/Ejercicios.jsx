@@ -11,7 +11,7 @@ import FormularioCatalogo from '@/components/FormularioCatalogo';
  * con la indicación corta que se lee frente a la máquina. Corregir una
  * indicación aquí la corrige en todas las rutinas que lo usan.
  */
-export default function Ejercicios({ ejercicios, zonas, equipos }) {
+export default function Ejercicios({ ejercicios, zonas, musculos = {}, equipos }) {
     // null = cerrado; {} = nuevo; un ejercicio = editándolo.
     const [editando, setEditando] = useState(null);
 
@@ -20,6 +20,22 @@ export default function Ejercicios({ ejercicios, zonas, equipos }) {
         { nombre: 'zona', etiqueta: 'Qué trabaja', tipo: 'opciones', opciones: Object.entries(zonas).map(([valor, etiqueta]) => ({ valor, etiqueta })), requerido: true },
         { nombre: 'equipo', etiqueta: 'Con qué', tipo: 'opciones', opciones: Object.entries(equipos).map(([valor, etiqueta]) => ({ valor, etiqueta })), requerido: true },
         { nombre: 'indicacion', etiqueta: 'Cómo se hace', tipo: 'area', ayuda: 'Dos líneas: lo lee alguien parado frente a la máquina.' },
+        {
+            nombre: 'imagen',
+            etiqueta: 'Foto o GIF',
+            tipo: 'imagen',
+            actual: 'imagen_url',
+            quitar: 'quitar_imagen',
+            acepta: 'image/jpeg,image/png,image/webp,image/gif',
+            ayuda: 'JPG, PNG, WEBP o GIF corto, hasta 4 MB. Sin foto, se ve el mapa muscular.',
+        },
+        {
+            nombre: 'musculo_principal',
+            etiqueta: 'Músculo principal',
+            tipo: 'opciones',
+            opciones: [{ valor: '', etiqueta: 'Sin marcar' }, ...Object.entries(musculos).map(([valor, etiqueta]) => ({ valor, etiqueta }))],
+        },
+        { nombre: 'musculos_secundarios', etiqueta: 'También trabaja', tipo: 'varias', opciones: Object.entries(musculos).map(([valor, etiqueta]) => ({ valor, etiqueta })) },
         { nombre: 'activo', etiqueta: 'Rutinas', tipo: 'si-no', textoCasilla: 'Se puede elegir al armar rutinas' },
     ];
 
@@ -27,6 +43,11 @@ export default function Ejercicios({ ejercicios, zonas, equipos }) {
         nombre: editando?.nombre ?? '',
         zona: editando?.zona ?? 'pecho',
         equipo: editando?.equipo ?? 'maquina',
+        imagen: null,
+        imagen_url: editando?.imagen_url ?? null,
+        quitar_imagen: false,
+        musculo_principal: editando?.musculo_principal ?? '',
+        musculos_secundarios: editando?.musculos_secundarios ?? [],
         indicacion: editando?.indicacion ?? '',
         activo: editando?.uuid ? Boolean(editando.activo) : true,
     };
@@ -83,6 +104,8 @@ export default function Ejercicios({ ejercicios, zonas, equipos }) {
                                             <p className={`text-sm font-medium ${e.activo ? 'text-chalk' : 'text-fog'}`}>
                                                 {e.nombre}
                                                 <span className="apoyo ml-2 font-normal text-fog">{equipos[e.equipo]}</span>
+                                                {e.musculo_principal ? <span className="apoyo ml-2 font-normal text-fog">· {musculos[e.musculo_principal]}</span> : null}
+                                                {e.imagen_url ? <span className="apoyo ml-2 font-normal text-fog">· con foto</span> : null}
                                             </p>
                                             {e.indicacion ? <p className="apoyo mt-0.5 text-fog">{e.indicacion}</p> : null}
                                             <p className="apoyo mt-0.5 text-fog">

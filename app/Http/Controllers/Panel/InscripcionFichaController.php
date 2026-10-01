@@ -33,7 +33,6 @@ class InscripcionFichaController extends Controller
         ]);
 
         $pago = $inscripcion->obtenerEstadoPago();
-        $hoy = Carbon::today();
         $cliente = $inscripcion->cliente;
 
         $finalizada = in_array((int) $inscripcion->id_estado, self::FINALIZADAS, true);
@@ -45,8 +44,12 @@ class InscripcionFichaController extends Controller
                 'membresia' => $inscripcion->membresia?->nombre,
                 'inicio' => $inscripcion->fecha_inicio?->format('d/m/Y'),
                 'vence' => $inscripcion->fecha_vencimiento?->format('d/m/Y'),
-                'dias' => $inscripcion->fecha_vencimiento
-                    ? (int) $hoy->diffInDays($inscripcion->fecha_vencimiento, false)
+                // Del modelo: en pausa son los días guardados, no la resta
+                // contra la fecha vieja, que decía «Venció hace 10 días» de
+                // una membresía congelada. Y por fechas, no por horas, para
+                // que el cambio de hora no se coma un día.
+                'dias' => $inscripcion->fecha_vencimiento || $inscripcion->estaEnPausa()
+                    ? $inscripcion->dias_restantes
                     : null,
                 'convenio' => $inscripcion->convenio?->nombre,
                 'motivo_descuento' => $inscripcion->motivoDescuento?->nombre,
@@ -78,6 +81,9 @@ class InscripcionFichaController extends Controller
                 'desde' => $inscripcion->fecha_pausa_inicio?->format('d/m/Y'),
                 'hasta' => $inscripcion->fecha_pausa_fin?->format('d/m/Y'),
                 'razon' => $inscripcion->razon_pausa,
+                // Hasta cuándo le alcanza al volver: «Vence» muestra la fecha
+                // vieja, que durante la pausa no vale.
+                'vence_al_reanudar' => $inscripcion->vencimientoAlReanudar()?->format('d/m/Y'),
             ],
 
             /*

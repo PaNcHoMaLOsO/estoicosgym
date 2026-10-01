@@ -287,20 +287,33 @@ class TallerController extends Controller
         $mes = $this->mes($request->input('periodo'));
         $this->abortSiEstaCerrado($taller, $mes);
 
-        $yaEstan = $taller->horas()
-            ->whereBetween('fecha', [$mes->copy()->startOfMonth(), $mes->copy()->endOfMonth()])
-            ->get();
+        /*
+         * «Pulsarlo dos veces no duplica nada» era cierto de uno en uno, no a
+         * la vez: dos pulsaciones seguidas leían las dos «faltan las catorce»
+         * antes de que ninguna escribiera, y el mes quedaba con veintiocho
+         * clases y la factura al doble. Con el taller trabado, la segunda
+         * espera y encuentra ya anotadas las de la primera.
+         */
+        $nuevas = DB::transaction(function () use ($taller, $mes, $request) {
+            Taller::whereKey($taller->getKey())->lockForUpdate()->first();
 
-        $nuevas = $this->propuestas($taller, $mes, $yaEstan);
+            $yaEstan = $taller->horas()
+                ->whereBetween('fecha', [$mes->copy()->startOfMonth(), $mes->copy()->endOfMonth()])
+                ->get();
 
-        foreach ($nuevas as $clase) {
-            $taller->horas()->create([
-                'fecha' => $clase['fecha'],
-                'horas' => $clase['horas'],
-                'detalle' => $clase['detalle'],
-                'id_usuario' => $request->user()->id,
-            ]);
-        }
+            $nuevas = $this->propuestas($taller, $mes, $yaEstan);
+
+            foreach ($nuevas as $clase) {
+                $taller->horas()->create([
+                    'fecha' => $clase['fecha'],
+                    'horas' => $clase['horas'],
+                    'detalle' => $clase['detalle'],
+                    'id_usuario' => $request->user()->id,
+                ]);
+            }
+
+            return $nuevas;
+        });
 
         if ($nuevas === []) {
             return back()->with('info', 'Ya estaban anotadas todas las clases del horario.');
@@ -352,6 +365,24 @@ class TallerController extends Controller
         $total = (int) round($horas->sum('horas') * $taller->precio_hora);
         $desglose = CobroTaller::desglosar($total);
 
+        /*
+         * DOS CIERRES A LA VEZ: el índice único (taller, mes) deja entrar uno.
+         * El segundo —doble clic, otra pestaña— ya pasó la comprobación de
+         * arriba y se estrellaba contra el índice con un error 500, aunque no
+         * se hubiera duplicado nada. Se dice lo que pasó: el mes ya está cerrado.
+         */
+        try {
+            $this->escribirCobro($taller, $periodo, $horas, $total, $desglose, $request);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            return back()->with('error', 'Ese mes ya estaba cerrado.');
+        }
+
+        return back()->with('success', 'Mes cerrado. Ya tienes la cuenta para la factura.');
+    }
+
+    /** El cobro del mes y sus horas enganchadas, juntos o nada. */
+    private function escribirCobro(Taller $taller, string $periodo, $horas, int $total, array $desglose, Request $request): void
+    {
         DB::transaction(function () use ($taller, $periodo, $horas, $total, $desglose, $request) {
             $cobro = $taller->cobros()->create([
                 'periodo' => $periodo,
@@ -367,8 +398,6 @@ class TallerController extends Controller
 
             HoraTaller::whereIn('id', $horas->pluck('id'))->update(['id_cobro' => $cobro->id]);
         });
-
-        return back()->with('success', 'Mes cerrado. Ya tienes la cuenta para la factura.');
     }
 
     /** El folio de la factura, cuándo se emitió y cuándo la pagaron. */

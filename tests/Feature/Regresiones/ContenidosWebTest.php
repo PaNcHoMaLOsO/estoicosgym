@@ -107,7 +107,8 @@ class ContenidosWebTest extends CasoConCatalogos
         $foto = ContenidoWeb::where('tipo', 'foto')->firstOrFail();
 
         $this->assertSame([1600, 1200], array_slice(getimagesize(Storage::disk('public')->path($foto->imagen)), 0, 2));
-        $this->get('/el-gimnasio')->assertOk()->assertSee('alt="Sala de máquinas"', false);
+        // Con la ciudad en el texto alternativo cuando el título no la dice.
+        $this->get('/el-gimnasio')->assertOk()->assertSee('alt="Sala de máquinas, gimnasio en Los Ángeles"', false);
     }
 
     public function test_una_foto_sin_archivo_no_se_crea(): void

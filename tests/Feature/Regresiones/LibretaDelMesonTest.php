@@ -652,6 +652,9 @@ class LibretaDelMesonTest extends CasoConCatalogos
     /** La pantalla dice lo cobrado HOY, que es lo que se cuadra al cerrar. */
     public function test_la_pantalla_cuenta_lo_cobrado_hoy(): void
     {
+        // A mitad de mes: el 1 de octubre, «hace tres días» caía en septiembre.
+        $this->travelTo(now()->setDay(15)->setTime(12, 0));
+
         $this->fiar(['nombre' => 'De hoy', 'monto' => 2000]);
         $this->fiar(['nombre' => 'De antes', 'monto' => 5000]);
 

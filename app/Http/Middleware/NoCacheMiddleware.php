@@ -17,6 +17,12 @@ class NoCacheMiddleware
     {
         $response = $next($request);
 
+        // La web pública ya decidió lo suyo (ver SecurityHeaders::cacheSegun):
+        // no todo es el panel. El panel, el login y lo demás siguen sin caché.
+        if ($request->attributes->get(SecurityHeaders::CACHE_DECIDIDO)) {
+            return $response;
+        }
+
         // Agregar headers para prevenir caché
         $response->headers->set('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
         $response->headers->set('Pragma', 'no-cache');

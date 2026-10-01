@@ -149,7 +149,9 @@ class NotificacionService
         $cliente = $inscripcion->cliente;
         $membresia = $inscripcion->membresia;
 
-        $diasRestantes = Carbon::today()->diffInDays($inscripcion->fecha_vencimiento, false);
+        // Por fechas y entero: diffInDays() cuenta horas y devuelve decimales,
+        // y el domingo del cambio de hora el correo decía «4.958333 días».
+        $diasRestantes = Inscripcion::diasEntre(Carbon::today(), $inscripcion->fecha_vencimiento);
 
         // Determinar el email destino y nombre del destinatario
         $emailDestino = $cliente->email;

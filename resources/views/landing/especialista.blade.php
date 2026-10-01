@@ -19,14 +19,15 @@
     <section class="bg-pg-negro pt-24 pb-12 lg:pt-32 lg:pb-20">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             <a href="{{ route('landing.especialistas') }}" class="inline-flex items-center gap-2 font-modern text-sm text-pg-tiza/60 transition-colors hover:text-pg-tiza">
-                <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i> Especialistas
+                <x-icono nombre="arrow-left" class="text-xs" /> Especialistas
             </a>
 
             <div class="mt-6 grid gap-8 lg:mt-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
                 {{-- La foto, a color: en la lista va en gris hasta pasar por encima. --}}
                 <div class="relative aspect-[5/4] overflow-hidden bg-pg-carbon sm:aspect-[4/3] lg:aspect-[4/5] lg:sticky lg:top-28 lg:self-start">
                     @if($e['foto'])
-                        <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}"
+                        <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
+                             loading="eager" fetchpriority="high"
                              class="absolute inset-0 h-full w-full object-cover object-top">
                     @else
                         <span class="absolute -right-8 -top-12 select-none font-display text-[26rem] leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(221,42,50,0.35)]" aria-hidden="true">
@@ -42,7 +43,7 @@
 
                     @if($e['modalidad'])
                         <p class="mt-5 inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5 font-modern text-sm text-pg-tiza/80">
-                            <i class="fas fa-location-dot text-pg-rojo-claro text-xs" aria-hidden="true"></i>
+                            <x-icono nombre="location-dot" class="text-pg-rojo-claro text-xs" />
                             {{ $e['modalidad'] }}
                         </p>
                     @endif
@@ -54,19 +55,19 @@
                             @if($e['whatsapp'])
                                 <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                    class="inline-flex items-center justify-center gap-2.5 bg-[#25D366] px-6 py-3.5 font-modern text-sm font-semibold text-pg-negro transition-opacity hover:opacity-90">
-                                    <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Agendar por WhatsApp
+                                    <x-icono nombre="whatsapp" class="text-lg" /> Agendar por WhatsApp
                                 </a>
                             @endif
                             @if($e['instagram'])
                                 <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                    class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
-                                    <i class="fab fa-instagram text-lg" aria-hidden="true"></i> {{ '@' . $e['usuario'] }}
+                                    <x-icono nombre="instagram" class="text-lg" /> {{ '@' . $e['usuario'] }}
                                 </a>
                             @endif
                             @if($e['email'])
                                 <a href="mailto:{{ $e['email'] }}" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                    class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
-                                    <i class="fas fa-envelope text-base" aria-hidden="true"></i> Enviar correo
+                                    <x-icono nombre="envelope" class="text-base" /> Enviar correo
                                 </a>
                             @endif
                         </div>
@@ -95,6 +96,16 @@
                     @endif
                 </div>
             </div>
+
+            @if($susEspecialidades)
+                <p class="mt-10 font-modern text-sm">
+                    @foreach($susEspecialidades as $esp)
+                        <a href="{{ $esp['url'] }}" class="mr-5 inline-flex items-center gap-2 text-pg-rojo-claro transition-colors hover:text-pg-tiza">
+                            Más {{ $esp['nombre'] }} en {{ $gimnasio['nombre'] }} <x-icono nombre="arrow-right" class="text-xs" />
+                        </a>
+                    @endforeach
+                </p>
+            @endif
 
             @if($otros)
                 <div class="mt-16 border-t border-pg-tiza/10 pt-8 lg:mt-24">

@@ -145,8 +145,6 @@ class FiadoController extends Controller
             return back()->with('error', 'Esa cuenta ya estaba saldada.');
         }
 
-        $total = $pendientes->sum('monto');
-
         // UNA SOLA MARCA DE TIEMPO PARA TODO EL COBRO. `pagado_en` es lo que
         // agrupa las líneas de un mismo gesto, y es por ahí por donde reabrir()
         // lo deshace entero. Pidiendo la hora dentro del bucle, un cobro que
@@ -155,8 +153,22 @@ class FiadoController extends Controller
         // la deuda se quedaba dada por pagada sin que nadie la volviera a ver.
         $momento = now();
 
-        DB::transaction(function () use ($pendientes, $request, $momento, $datos) {
-            foreach ($pendientes as $fiado) {
+        /*
+         * LAS LÍNEAS SE TRABAN Y SE VUELVEN A MIRAR. Dos «Pagó» a la vez —un
+         * doble clic, la ficha del socio y la pantalla de Fiado abiertas—
+         * leían las mismas líneas como debidas y las dos las marcaban: el
+         * segundo pisaba la hora y el medio del primero, y si se cruzaban a
+         * mitad de camino el cobro quedaba partido en dos marcas de tiempo,
+         * que es justo lo que reabrir() no sabe deshacer entero. Ahora el
+         * segundo espera y solo toca lo que siga debiéndose, o nada.
+         */
+        $saldadas = DB::transaction(function () use ($pendientes, $request, $momento, $datos) {
+            $siguenDebiendo = Fiado::whereKey($pendientes->modelKeys())
+                ->where('pagado', false)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($siguenDebiendo as $fiado) {
                 $fiado->update([
                     'pagado' => true,
                     'pagado_en' => $momento,
@@ -164,9 +176,16 @@ class FiadoController extends Controller
                     'id_metodo_pago' => $datos['id_metodo_pago'],
                 ]);
             }
+
+            return $siguenDebiendo;
         });
 
-        $quien = $pendientes->first()->aNombreDe();
+        if ($saldadas->isEmpty()) {
+            return back()->with('error', 'Esa cuenta ya estaba saldada.');
+        }
+
+        $total = $saldadas->sum('monto');
+        $quien = $saldadas->first()->aNombreDe();
 
         return back()->with(
             'success',

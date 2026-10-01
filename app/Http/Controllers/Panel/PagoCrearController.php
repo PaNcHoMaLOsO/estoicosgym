@@ -95,9 +95,10 @@ class PagoCrearController extends Controller
         try {
             $pago = $registro->registrar($resultado);
         } catch (ValidationException $e) {
-            // El saldo cambió entre validar y escribir. Eso tiene explicación y
-            // se arregla corrigiendo el monto, así que el aviso va al campo: como
-            // un «no se pudo, inténtalo otra vez» se reintentaría igual de mal.
+            // El saldo cambió entre validar y escribir, o entró por otra caja el
+            // mismo cobro. Eso tiene explicación y se arregla mirando el monto,
+            // así que el aviso va al campo: como un «no se pudo, inténtalo otra
+            // vez» se reintentaría igual de mal.
             $this->releaseFormToken($request, 'pago_create');
 
             throw $e;

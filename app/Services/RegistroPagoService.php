@@ -147,6 +147,17 @@ class RegistroPagoService
                 ]);
             }
 
+            /*
+             * Y EL COBRO IDENTICO, TAMBIEN AQUI DENTRO. validar() ya lo mira,
+             * pero fuera de la traba: dos pestañas que cobran el mismo abono
+             * a la vez —cada una con su token, asi que el turno no las frena—
+             * pasaban las dos esa comprobacion antes de que ninguna escribiera.
+             * Como el abono cabia dos veces en el saldo, el tope tampoco las
+             * paraba y quedaban dos abonos de $20.000 por uno solo cobrado. Con
+             * la inscripcion trabada, la segunda ve el pago de la primera.
+             */
+            $this->exigirQueNoSeaUnDuplicadoReciente($inscripcion, $abonado, (string) $datos['fecha_pago']);
+
             // El saldo y el estado se escriben con lo que hay AHORA, no con lo
             // que se leyo al validar.
             $saldo = $pendiente - $abonado;

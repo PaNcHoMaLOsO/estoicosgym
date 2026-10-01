@@ -51,7 +51,7 @@
                             @if($e['instagram'])
                                 <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="instagram_embajador"
                                    class="mt-2 inline-flex items-center gap-1.5 font-modern text-sm text-pg-tiza/70 hover:text-pg-rojo-claro">
-                                    <i class="fab fa-instagram" aria-hidden="true"></i>{{ '@' . $e['usuario'] }}
+                                    <x-icono nombre="instagram" />{{ '@' . $e['usuario'] }}
                                 </a>
                             @endif
                         </figcaption>

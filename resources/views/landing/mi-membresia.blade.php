@@ -27,10 +27,10 @@
                         <!-- Tabs de consulta -->
                         <div class="flex mb-6 bg-pg-carbon/50 rounded-lg p-1">
                             <button type="button" id="tab-rut" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all bg-pg-rojo text-white">
-                                <i class="fas fa-id-card mr-1"></i> Con RUT
+                                <x-icono nombre="id-card" class="mr-1" /> Con RUT
                             </button>
                             <button type="button" id="tab-celular" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all text-pg-tiza/60 hover:text-pg-tiza">
-                                <i class="fas fa-mobile-alt mr-1"></i> Con Celular
+                                <x-icono nombre="mobile-alt" class="mr-1" /> Con Celular
                             </button>
                         </div>
                         
@@ -44,7 +44,7 @@
                             <div id="form-rut" class="space-y-4">
                                 <div>
                                     <label for="rut-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <i class="fas fa-id-card mr-2 text-pg-rojo-claro"></i>RUT
+                                        <x-icono nombre="id-card" class="mr-2 text-pg-rojo-claro" />RUT
                                     </label>
                                     <input 
                                         type="text" 
@@ -56,7 +56,7 @@
                                 </div>
                                 <div>
                                     <label for="digitos-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <i class="fas fa-mobile-alt mr-2 text-pg-rojo-claro"></i>Últimos 4 dígitos de tu celular
+                                        <x-icono nombre="mobile-alt" class="mr-2 text-pg-rojo-claro" />Últimos 4 dígitos de tu celular
                                     </label>
                                     <input
                                         type="text"
@@ -74,7 +74,7 @@
                             <div id="form-celular" class="space-y-4 hidden">
                                 <div>
                                     <label for="celular-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <i class="fas fa-mobile-alt mr-2 text-pg-rojo-claro"></i>Celular
+                                        <x-icono nombre="mobile-alt" class="mr-2 text-pg-rojo-claro" />Celular
                                     </label>
                                     <input 
                                         type="tel" 
@@ -86,7 +86,7 @@
                                 </div>
                                 <div>
                                     <label for="nombre-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <i class="fas fa-user mr-2 text-pg-rojo-claro"></i>Primer Nombre
+                                        <x-icono nombre="user" class="mr-2 text-pg-rojo-claro" />Primer Nombre
                                     </label>
                                     <input 
                                         type="text" 
@@ -103,7 +103,7 @@
                                 id="btn-consultar"
                                 class="w-full bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center font-modern"
                             >
-                                <i class="fas fa-search mr-2"></i>
+                                <x-icono nombre="search" class="mr-2" />
                                 Consultar
                             </button>
                         </div>
@@ -117,8 +117,8 @@
                         <div class="text-center mb-6 pb-6 border-b border-pg-tiza/10">
                             {{-- El icono suelto, sin el círculo con degradado: mismo
                                  criterio que en el resto de la web. --}}
-                            <i class="fas fa-user text-pg-rojo-claro text-xl block mb-3" aria-hidden="true"></i>
-                            <h3 id="resultado-nombre" class="font-display text-xl text-pg-tiza">-</h3>
+                            <x-icono nombre="user" class="text-pg-rojo-claro text-xl block mb-3" />
+                            <h2 id="resultado-nombre" class="font-display text-xl text-pg-tiza">-</h2>
                         </div>
                         
                         <!-- Estado de membresía -->
@@ -151,11 +151,22 @@
                         
                         <!-- Estado de pago: si queda algo por pagar. El historial se ve en el meson. -->
                         <div class="border-t border-pg-tiza/10 pt-6">
-                            <h4 class="text-pg-tiza font-semibold mb-2 font-modern">
-                                <i class="fas fa-receipt mr-2 text-pg-rojo-claro"></i>Estado de pago
-                            </h4>
+                            <h3 class="text-pg-tiza font-semibold mb-2 font-modern">
+                                <x-icono nombre="receipt" class="mr-2 text-pg-rojo-claro" />Estado de pago
+                            </h3>
                             <p id="resultado-saldo" class="font-modern text-sm text-pg-tiza/70">-</p>
                         </div>
+
+                        {{-- Quien acaba de ver que su plan está al día es el mejor
+                             momento para pedirle la reseña: solo sale con la consulta. --}}
+                        @if($web['resenas'])
+                            <p class="mt-6 text-center font-modern text-sm text-pg-tiza/70">
+                                ¿Te gusta entrenar aquí?
+                                <a href="{{ $web['resenas'] }}" target="_blank" rel="noopener" data-evento="resena_google" class="inline-flex items-center gap-1.5 font-semibold text-pg-tiza underline decoration-yellow-400/60 underline-offset-4 hover:decoration-yellow-400">
+                                    <x-icono nombre="star" class="text-yellow-400" /> Déjanos tu reseña en Google
+                                </a>
+                            </p>
+                        @endif
 
                         <!-- Botón cerrar -->
                         <button 
@@ -163,7 +174,7 @@
                             id="btn-cerrar-resultado"
                             class="w-full mt-6 border border-pg-tiza/20 hover:border-pg-rojo text-pg-tiza/60 hover:text-pg-tiza py-3 rounded-lg transition-all font-modern text-sm"
                         >
-                            <i class="fas fa-times mr-2"></i>Cerrar consulta
+                            <x-icono nombre="times" class="mr-2" />Cerrar consulta
                         </button>
                     </div>
                 </div>
@@ -171,7 +182,7 @@
                 <!-- Error message -->
                 <div id="error-consulta" class="hidden mt-6 max-w-md mx-auto">
                     <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
-                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
+                        <x-icono nombre="exclamation-circle" class="text-red-400 mr-2" />
                         <span id="error-mensaje" class="text-red-400 font-modern"></span>
                     </div>
                 </div>
@@ -188,7 +199,7 @@
                             @php($hoy = collect($horario['dias'])->firstWhere('clave', $horario['hoy']))
                             @if($hoy)
                                 <div class="mt-6 flex items-center gap-3 rounded-xl border border-pg-tiza/10 bg-pg-carbon/60 px-4 py-3">
-                                    <i class="fas fa-clock text-pg-rojo-claro" aria-hidden="true"></i>
+                                    <x-icono nombre="clock" class="text-pg-rojo-claro" />
                                     <p class="font-modern text-sm text-pg-tiza/80">
                                         Hoy {{ mb_strtolower($hoy['nombre']) }}:
                                         <span class="text-pg-tiza tabular-nums">{{ $hoy['tramos'] ? implode(' · ', array_map(fn ($t) => $t[0] . ' a ' . $t[1], $hoy['tramos'])) : 'cerrado' }}</span>
@@ -201,18 +212,18 @@
                             @if($whatsapp)
                                 <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
                                    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] hover:brightness-110 text-white font-modern text-sm font-semibold transition-all">
-                                    <i class="fab fa-whatsapp text-base" aria-hidden="true"></i> Escríbenos por WhatsApp
+                                    <x-icono nombre="whatsapp" class="text-base" /> Escríbenos por WhatsApp
                                 </a>
                             @endif
                             <a href="{{ route('landing.contacto') }}"
                                class="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-pg-tiza/20 hover:border-pg-rojo/50 text-pg-tiza font-modern text-sm font-semibold transition-colors">
-                                <i class="fas fa-envelope" aria-hidden="true"></i> Contacto
+                                <x-icono nombre="envelope" /> Contacto
                             </a>
                             {{-- Las redes, igual que en Contacto: salen de Configuración. --}}
                             @foreach($redes ?? [] as $red)
                                 <a href="{{ $red['url'] }}" target="_blank" rel="noopener" aria-label="{{ $red['nombre'] }}"
                                    class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-pg-tiza/20 hover:border-pg-rojo/50 text-pg-tiza hover:text-pg-rojo-claro transition-colors">
-                                    <i class="{{ $red['icono'] }} text-lg" aria-hidden="true"></i>
+                                    <x-icono :nombre="$red['icono']" class="text-lg" />
                                 </a>
                             @endforeach
                         </div>
@@ -362,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mostrar loading
         btnConsultar.disabled = true;
-        btnConsultar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Consultando...';
+        btnConsultar.innerHTML = '<x-icono nombre="spinner" class="animate-spin mr-2" />Consultando...';
         ocultarError();
         resultadoDiv.classList.add('hidden');
         
@@ -398,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
         } finally {
             btnConsultar.disabled = false;
-            btnConsultar.innerHTML = '<i class="fas fa-search mr-2"></i>Consultar';
+            btnConsultar.innerHTML = '<x-icono nombre="search" class="mr-2" />Consultar';
         }
     }
     
@@ -437,6 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getColorEstado(estado) {
         if (!estado) return 'text-pg-tiza';
         const lower = estado.toLowerCase();
+        if (lower.includes('pausada')) return 'text-yellow-400';
         if (lower.includes('activa')) return 'text-green-400';
         if (lower.includes('vence hoy')) return 'text-yellow-400';
         if (lower.includes('vencida')) return 'text-red-400';
@@ -454,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
             errorMensaje.className = 'text-orange-400 font-modern';
             // Deshabilitar botón temporalmente
             btnConsultar.disabled = true;
-            btnConsultar.innerHTML = '<i class="fas fa-ban mr-2"></i>Bloqueado temporalmente';
+            btnConsultar.innerHTML = '<x-icono nombre="ban" class="mr-2" />Bloqueado temporalmente';
             btnConsultar.classList.add('opacity-50', 'cursor-not-allowed');
         } else {
             errorContainer.className = 'bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center';
