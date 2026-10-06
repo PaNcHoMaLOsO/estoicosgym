@@ -179,11 +179,18 @@ class ContratoDigitalService
         $token = Str::random(48);
         $dias = max(1, Ajustes::numero('reglas.dias_para_firmar'));
 
+        /*
+         * El enlace anterior se anula DESPUÉS de mandar el nuevo, no antes: si
+         * el correo fallaba, el socio se quedaba sin ninguno de los dos y el
+         * que tenía en su bandeja dejaba de abrir.
+         *
+         * EL SOCIO SE TRABA AL CREARLO: dos «Enviar contrato» a la vez creaban
+         * dos y cada uno anulaba solo lo que había ANTES de los dos, así que
+         * quedaban dos enlaces válidos. Con la traba se crean en orden, y al
+         * final cada uno anula todo lo pendiente anterior a él.
+         */
         $contrato = DB::transaction(function () use ($cliente, $firmante, $token, $dias) {
-            Contrato::where('id_cliente', $cliente->id)
-                ->whereNull('firmado_en')
-                ->whereNull('anulado_en')
-                ->update(['anulado_en' => now()]);
+            Cliente::whereKey($cliente->getKey())->lockForUpdate()->first();
 
             return Contrato::create([
                 'id_cliente' => $cliente->id,
@@ -228,6 +235,22 @@ class ContratoDigitalService
         }
 
         $contrato->update(['enviado_en' => now()]);
+
+        /*
+         * Todo lo pendiente de este socio ANTERIOR a este, no solo lo que había
+         * al empezar: si otro envío se coló entretanto, el más nuevo es el que
+         * queda. Por id y no «todos menos este»: si el más viejo terminara de
+         * mandarse después, anularía al nuevo y no quedaría ninguno.
+         */
+        DB::transaction(function () use ($cliente, $contrato) {
+            Cliente::whereKey($cliente->getKey())->lockForUpdate()->first();
+
+            Contrato::where('id_cliente', $cliente->id)
+                ->where('id', '<', $contrato->id)
+                ->whereNull('firmado_en')
+                ->whereNull('anulado_en')
+                ->update(['anulado_en' => now()]);
+        });
 
         return $contrato;
     }

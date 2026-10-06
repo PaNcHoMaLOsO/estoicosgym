@@ -10,6 +10,7 @@ import Cobro, { Botones, detalleDePartes, metodoPorDefecto, partesIniciales } fr
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -82,7 +83,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
     // crece y el backend las espera como un solo campo JSON.
     const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
 
-    const { data, setData, post, processing, errors, isDirty } = useForm({
+    const { data, setData, post, transform, processing, errors, isDirty } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
@@ -90,7 +91,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         // Solo se manda si el socio elegido no tiene: ver PedirCelular.
         celular_socio: PREFIJO,
         id_membresia: '',
-        id_convenio: '',
+        id_convenio: preseleccionado?.id_convenio ? String(preseleccionado.id_convenio) : '',
         id_motivo_descuento: '',
         descuento_aplicado: '',
         fecha_inicio: hoy,
@@ -118,22 +119,31 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
 
         setBuscando(true);
 
+        // Una búsqueda que sigue en camino se corta al escribir otra letra:
+        // si la vieja llegaba después, pisaba la lista con gente que no era.
+        const corte = new AbortController();
+
         const temporizador = setTimeout(async () => {
             try {
                 const r = await fetch(
                     `/panel/inscripciones/buscar-socio?q=${encodeURIComponent(busqueda)}`,
-                    { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
+                    { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: corte.signal },
                 );
                 const j = await r.json();
                 setResultados(j.clientes ?? []);
-            } catch (e) {
-                setResultados([]);
-            } finally {
                 setBuscando(false);
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    setResultados([]);
+                    setBuscando(false);
+                }
             }
         }, 300);
 
-        return () => clearTimeout(temporizador);
+        return () => {
+            clearTimeout(temporizador);
+            corte.abort();
+        };
     }, [busqueda]);
 
     const plan = useMemo(
@@ -166,7 +176,12 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
 
     function elegirSocio(cliente) {
         setSocio(cliente);
-        setData('id_cliente', cliente.id);
+        setData((d) => ({
+            ...d,
+            id_cliente: cliente.id,
+            // Su convenio de siempre, si no se eligió otro a mano.
+            id_convenio: d.id_convenio || (cliente.id_convenio ? String(cliente.id_convenio) : ''),
+        }));
         setBusqueda('');
         setResultados(null);
     }
@@ -189,10 +204,10 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
         // se pago de verdad.
         const detalle = detalleDePartes(partes, metodosPago);
 
-        post('/panel/inscripciones', {
-            preserveScroll: true,
-            data: { ...data, detalle_pagos_mixto: JSON.stringify(detalle) },
-        });
+        // Por transform y no con la opción «data»: Inertia la ignora al
+        // enviar el formulario, y el detalle de los dos medios no llegaba.
+        transform((d) => ({ ...d, detalle_pagos_mixto: JSON.stringify(detalle) }));
+        post('/panel/inscripciones', { preserveScroll: true });
     }
 
 
@@ -248,6 +263,9 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                     Estaba dado de baja: al guardar la membresía queda activo otra vez.
                                 </p>
                             ) : null}
+                            {/* Con el socio ya elegido el buscador no está: aquí se lee
+                                «ya tiene una membresía activa» y lo que diga el servidor. */}
+                            {errors.id_cliente ? <p className="apoyo mt-2 text-danger" role="alert">{errors.id_cliente}</p> : null}
                         </div>
                     ) : (
                         <Campo
@@ -494,6 +512,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                     partes={partes}
                                     setPartes={setPartes}
                                     errores={errors}
+                                    maxPartes={2}
                                 />
 
                                 {data.tipo_pago === 'pendiente' ? (
@@ -541,7 +560,7 @@ export default function Crear({ preseleccionado, membresias, convenios, motivos,
                                 disabled={processing || !plan}
                                 className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
-                                {processing ? 'Guardando…' : 'Inscribir'}
+                                <TextoQueCambia ocupado={processing} mientras="Guardando…">Inscribir</TextoQueCambia>
                             </button>
 
                             <Link href="/panel/inscripciones" className="apoyo text-fog hover:text-chalk">

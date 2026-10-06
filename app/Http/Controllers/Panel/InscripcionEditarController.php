@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Enums\EstadosCodigo;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\HistorialCambio;
 use App\Models\Inscripcion;
 use App\Models\MotivoDescuento;
+use App\Models\Notificacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -70,13 +72,22 @@ class InscripcionEditarController extends Controller
 
     public function update(Request $request, Inscripcion $inscripcion)
     {
+        /*
+         * LAS OBSERVACIONES TAMBIÉN LAS ESCRIBE EL SISTEMA: cada pausa vencida,
+         * cambio de plan o traspaso agrega su línea (la columna es text). Con
+         * un tope de 500, una membresía con historia ya no se podía editar en
+         * NADA —ni una fecha— porque el texto que viene de vuelta lo superaba.
+         * El tope es holgado y nunca menor que lo que ya tiene guardado.
+         */
+        $topeObservaciones = max(5000, mb_strlen((string) $inscripcion->observaciones));
+
         $datos = $request->validate([
             'fecha_inicio' => 'required|date',
             'fecha_vencimiento' => 'required|date|after:fecha_inicio',
             'precio_base' => 'required|integer|min:0|max:99999999',
             'descuento_aplicado' => 'nullable|integer|min:0|max:99999999',
             'id_motivo_descuento' => 'nullable|exists:motivos_descuento,id',
-            'observaciones' => 'nullable|string|max:500',
+            'observaciones' => "nullable|string|max:{$topeObservaciones}",
         ], [
             'fecha_vencimiento.after' => 'Una membresía tiene que vencer después de empezar.',
             'precio_base.required' => 'Indica cuánto vale.',
@@ -186,6 +197,80 @@ class InscripcionEditarController extends Controller
     }
 
     /**
+     * Cancela una membresía vigente o pausada: el socio la tuvo y deja de tenerla.
+     *
+     * La baja del socio y el borrado de sus datos decían «cancélala primero»,
+     * pero nada escribía el estado Cancelada y no había botón: la única salida
+     * era esperar a que venciera, o borrarla, que es para la que no debió
+     * existir. Esto es lo que faltaba.
+     *
+     * SUS PAGOS NO SE TOCAN. Son lo que de verdad se cobró y siguen en la caja
+     * y en los informes. Lo que se dejó de deber, se deja de deber: una
+     * cancelada no está en Inscripcion::ESTADOS_CON_DEUDA y su pago pendiente
+     * ya no cuenta como cobro por hacer (Pago::scopePendientesDeCobro).
+     *
+     * El motivo es obligatorio: es lo único que explicará, meses después, por
+     * qué un socio que pagó se quedó sin plan.
+     */
+    public function cancelar(Request $request, Inscripcion $inscripcion)
+    {
+        $datos = $request->validate([
+            'motivo' => 'required|string|min:3|max:500',
+        ], [
+            'motivo.required' => 'Escribe por qué se cancela: queda en el historial.',
+            'motivo.min' => 'Escribe por qué se cancela: queda en el historial.',
+        ]);
+
+        $abiertas = [EstadosCodigo::INSCRIPCION_ACTIVA, EstadosCodigo::INSCRIPCION_PAUSADA];
+
+        $cancelada = DB::transaction(function () use ($inscripcion, $datos, $abiertas) {
+            // Trabada y mirada otra vez: un doble clic no la cancela dos veces
+            // ni deja dos líneas en el historial.
+            $actual = Inscripcion::whereKey($inscripcion->getKey())->lockForUpdate()->first();
+
+            if (! $actual || ! in_array((int) $actual->id_estado, $abiertas, true)) {
+                return false;
+            }
+
+            $antes = (int) $actual->id_estado;
+            $motivo = trim($datos['motivo']);
+
+            $actual->update([
+                'id_estado' => EstadosCodigo::INSCRIPCION_CANCELADA,
+                // Una cancelada no está en pausa: si quedara la marca, las
+                // listas de pausados la seguirían contando.
+                'pausada' => false,
+                'observaciones' => ($actual->observaciones ? $actual->observaciones . "\n" : '')
+                    . '[' . now()->format('d/m/Y H:i') . "] Cancelada. Motivo: {$motivo}",
+            ]);
+
+            HistorialCambio::registrarCambioEstadoInscripcion(
+                $actual,
+                $antes,
+                EstadosCodigo::INSCRIPCION_CANCELADA,
+                $motivo,
+            );
+
+            // Los avisos que quedaban por salir hablan de una membresía que ya
+            // no tiene: «tu plan vence el viernes» a quien lo canceló ayer.
+            Notificacion::where('id_inscripcion', $actual->id)
+                ->where('id_estado', Notificacion::ESTADO_PENDIENTE)
+                ->get()
+                ->each(fn (Notificacion $aviso) => $aviso->cancelar('Membresía cancelada'));
+
+            return true;
+        });
+
+        if (! $cancelada) {
+            return back()->with('error', 'Solo se cancela una membresía vigente o pausada. Esta ya no lo está.');
+        }
+
+        return redirect()
+            ->route('panel.inscripciones.show', $inscripcion->uuid)
+            ->with('success', 'Membresía cancelada. Sus pagos siguen registrados.');
+    }
+
+    /**
      * Manda una membresía vendida a la papelera.
      *
      * Es para la que no debería existir: la que se apuntó dos veces, o la del
@@ -212,10 +297,27 @@ class InscripcionEditarController extends Controller
 
         $socio = $inscripcion->cliente;
 
-        $inscripcion->delete();
+        /*
+         * SUS PAGOS EN CERO SE VAN CON ELLA.
+         *
+         * Una membresía vendida «sin pagar» lleva un pago pendiente de $0. Se
+         * quedaba fuera de la papelera, sin membresía que listar, y seguía
+         * contando como pendiente: el socio ya no podía darse de baja ni
+         * borrar sus datos por una deuda que nadie podía ver ni cobrar.
+         * Llevan la misma hora de borrado que la membresía: así la papelera
+         * sabe cuáles devolver si se recupera (PapeleraController).
+         */
+        DB::transaction(function () use ($inscripcion) {
+            $inscripcion->delete();
 
-        return redirect()
-            ->route('panel.clientes.show', $socio?->uuid)
+            $inscripcion->pagos()->update([
+                'deleted_at' => $inscripcion->deleted_at,
+                'updated_at' => now(),
+            ]);
+        });
+
+        // Con el socio en la papelera no hay ficha a la que volver: a la lista.
+        return ($socio ? redirect()->route('panel.clientes.show', $socio->uuid) : redirect()->route('panel.inscripciones.index'))
             ->with('success', 'Membresía borrada. Está en la papelera por si hay que recuperarla.');
     }
 }

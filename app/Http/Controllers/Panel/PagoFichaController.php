@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Inscripcion;
 use App\Models\Pago;
 use Inertia\Inertia;
 
@@ -19,7 +20,7 @@ class PagoFichaController extends Controller
     {
         $pago->load([
             'cliente:id,uuid,nombres,apellido_paterno,apellido_materno,run_pasaporte,email,celular',
-            'inscripcion:id,uuid,id_membresia,fecha_inicio,fecha_vencimiento,id_estado',
+            'inscripcion:id,uuid,id_membresia,fecha_inicio,fecha_vencimiento,id_estado,precio_final',
             'inscripcion.membresia:id,nombre',
             'metodoPago:id,nombre,requiere_comprobante',
             'metodoPago2:id,nombre',
@@ -29,8 +30,9 @@ class PagoFichaController extends Controller
         $inscripcion = $pago->inscripcion;
         /*
          * Repartido es tener DOS medios guardados, no decir «mixto»: las partes
-         * de un mixto hecho al inscribir son pagos de un solo medio con ese
-         * tipo, y leerlas como repartidas mostraba el medio con $0.
+         * de un mixto hecho al inscribir antes de PagoMixto son pagos de un
+         * solo medio con ese tipo, y leerlas como repartidas mostraba el medio
+         * con $0.
          *
          * El reparto se lee igual que en la Caja (IngresosPorMetodo): la
          * primera parte acotada al monto y la segunda por diferencia. Un mixto
@@ -44,6 +46,7 @@ class PagoFichaController extends Controller
         return Inertia::render('Pagos/Ficha', [
             'pago' => [
                 'uuid' => $pago->uuid,
+                'codigo' => \App\Support\CodigoCorto::de($pago->uuid),
                 'fecha' => $pago->fecha_pago?->format('d/m/Y'),
                 'registrado' => $pago->created_at?->format('d/m/Y H:i'),
                 'id_estado' => $pago->id_estado,
@@ -83,6 +86,16 @@ class PagoFichaController extends Controller
 
             'requiere_comprobante' => (bool) $pago->metodoPago?->requiere_comprobante,
 
+            /*
+             * Lo decide el servidor y no la pantalla: con «Corregir sus cobros
+             * de hoy» el botón depende de QUIÉN registró el pago y de su
+             * fecha, y eso la lista de permisos no lo sabe. Mirar solo el
+             * permiso pintaba el botón en pagos que después daban 403.
+             */
+            'puede' => [
+                'corregir' => PagoEditarController::puedeCorregir(request()->user(), $pago),
+            ],
+
             'socio' => $cliente ? [
                 'uuid' => $cliente->uuid,
                 'nombre' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
@@ -97,6 +110,16 @@ class PagoFichaController extends Controller
                 'id_estado' => $inscripcion->id_estado,
                 'inicio' => $inscripcion->fecha_inicio?->format('d/m/Y'),
                 'vence' => $inscripcion->fecha_vencimiento?->format('d/m/Y'),
+                /*
+                 * Lo que debe HOY. `pendiente` del pago es lo que quedaba
+                 * DESPUES de ese cobro: abrir un abono viejo de una membresia
+                 * ya saldada decia «Quedó debiendo» y ofrecia cobrar un saldo
+                 * de $0. Se calcula igual que en el listado de membresias: las
+                 * canceladas no se salen a cobrar.
+                 */
+                'debe' => in_array((int) $inscripcion->id_estado, Inscripcion::ESTADOS_CON_DEUDA, true)
+                    ? $inscripcion->deuda
+                    : 0,
             ] : null,
 
             // Los demás cobros de la misma membresía: es lo que se necesita para

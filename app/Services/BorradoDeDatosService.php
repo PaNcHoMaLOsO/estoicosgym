@@ -66,8 +66,9 @@ class BorradoDeDatosService
             ->get()
             ->sum(fn (Inscripcion $inscripcion) => $inscripcion->deuda);
 
+        // Los de una membresía ya cerrada no cuentan (Pago::scopePendientesDeCobro).
         $pagoPendiente = $cliente->pagos()
-            ->whereIn('id_estado', EstadosCodigo::PAGO_PENDIENTES_COBRO)
+            ->pendientesDeCobro()
             ->exists();
 
         if ($deuda > 0 || $pagoPendiente) {
@@ -99,6 +100,9 @@ class BorradoDeDatosService
 
         DB::transaction(function () use ($cliente, $idUsuario, $motivo) {
             $id = $cliente->id;
+            // Como lo escribe el traspaso en las notas («Traspaso de: Juan
+            // Pérez → …»): se busca tal cual para sacarlo de ahí abajo.
+            $nombreAntes = trim("{$cliente->nombres} {$cliente->apellido_paterno}");
 
             $cliente->forceFill([
                 // El número va en el nombre para que dos fichas borradas no se
@@ -144,10 +148,46 @@ class BorradoDeDatosService
                 'motivo_traspaso' => null,
             ]);
             Pago::withTrashed()->where('id_cliente', $id)->update(['observaciones' => null]);
+
+            /*
+             * LO QUE TRASPASÓ A OTRA PERSONA ya no es suyo: la membresía y sus
+             * pagos pasaron al nuevo titular, y por eso lo de arriba no los
+             * toca. Pero las notas del traspaso llevan su nombre y el motivo
+             * que dio. Se cambia su nombre por «Socio Borrado #N» y se quita el
+             * motivo; lo demás es del nuevo titular y se queda.
+             */
+            $traspasadas = Inscripcion::withTrashed()->where('id_cliente_original', $id)->where('id_cliente', '!=', $id);
+            $anonimo = "Socio Borrado #{$id}";
+
+            foreach ((clone $traspasadas)->get(['id', 'observaciones', 'motivo_traspaso']) as $traspasada) {
+                $notas = (string) $traspasada->observaciones;
+
+                // El motivo también quedó copiado en la nota («. Motivo: …»).
+                if ($traspasada->motivo_traspaso) {
+                    $notas = str_replace('. Motivo: ' . $traspasada->motivo_traspaso, '', $notas);
+                }
+
+                Inscripcion::withTrashed()->whereKey($traspasada->id)->update([
+                    'motivo_traspaso' => null,
+                    'observaciones' => $nombreAntes !== '' ? str_replace($nombreAntes, $anonimo, $notas) : $notas,
+                ]);
+            }
+
+            if ($nombreAntes !== '') {
+                Pago::withTrashed()
+                    ->whereIn('id_inscripcion', (clone $traspasadas)->select('id'))
+                    ->where('observaciones', 'like', '%' . $nombreAntes . '%')
+                    ->get(['id', 'observaciones'])
+                    ->each(fn (Pago $p) => Pago::withTrashed()->whereKey($p->id)
+                        ->update(['observaciones' => str_replace($nombreAntes, $anonimo, $p->observaciones)]));
+            }
             HistorialCambio::where('cliente_id', $id)->update(['motivo' => null]);
             HistorialTraspaso::where(fn ($q) => $q->where('cliente_origen_id', $id)->orWhere('cliente_destino_id', $id))
                 ->update(['motivo' => 'Datos borrados']);
             Fiado::where('id_cliente', $id)->update(['nombre' => null]);
+            // El registro del mesón (lo quitado, lo deshecho, lo pasado a una
+            // ficha) puede llevar su nombre escrito en el detalle.
+            \App\Models\FiadoRegistro::where('id_cliente', $id)->update(['nombre' => null, 'detalle' => 'Datos borrados']);
 
             // Los correos que se le mandaron llevan su nombre, su correo y lo
             // que se le dijo. No son cuentas: se van enteros.

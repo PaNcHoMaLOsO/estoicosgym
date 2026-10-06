@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Convenio;
 use App\Models\EntradaCanje;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ use Inertia\Inertia;
  */
 class CanjeController extends Controller
 {
+    use ValidatesFormToken;
+
     /** Cuántas entradas se listan: las del día y las anteriores más recientes. */
     private const EN_LISTA = 50;
 
@@ -68,6 +71,12 @@ class CanjeController extends Controller
             'id_convenio.exists' => 'Ese convenio no es de canje.',
             'nombre.required' => 'Anota su nombre.',
         ]);
+
+        // El mismo formulario enviado dos veces anota una entrada, no dos. Sin
+        // token no se compara nada: dos huéspedes pueden llamarse igual.
+        if (! $this->reservarTokenDelFormulario($request, 'canje_anotar')) {
+            return back();
+        }
 
         $entrada = EntradaCanje::create([
             'id_convenio' => $datos['id_convenio'],

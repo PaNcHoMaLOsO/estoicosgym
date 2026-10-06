@@ -1,14 +1,16 @@
 import { confirmar } from '@/components/Confirmar';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import { Campo, Texto } from '@/components/Campo';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
+import { puede } from '@/lib/permisos';
 import { formatearRut } from '@/lib/socio';
 import { Cifra, pesos } from '@/components/Tablero';
 import { Reservado } from '@/Privado';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Talleres y arriendos.
  *
@@ -55,7 +57,7 @@ function NuevoTaller({ instituciones, alCerrar }) {
         >
             <h2 className="text-sm font-semibold text-chalk">Nuevo taller o arriendo</h2>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* Se elige una institución que ya esté o se escribe una nueva:
                     «crear institución» y después «crear taller» eran dos
                     pantallas para una sola cosa. */}
@@ -101,7 +103,7 @@ function NuevoTaller({ instituciones, alCerrar }) {
                 ) : null}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_11rem]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_11rem]">
                 <Campo etiqueta="Qué es" nombre="nombre" error={errors.nombre} requerido>
                     <Texto nombre="nombre" valor={data.nombre} alCambiar={(v) => setData('nombre', v)} error={errors.nombre} placeholder="Clases grupales del colegio" />
                 </Campo>
@@ -141,7 +143,7 @@ function NuevoTaller({ instituciones, alCerrar }) {
                     disabled={processing}
                     className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                    {processing ? 'Creando…' : 'Crear'}
+                    <TextoQueCambia ocupado={processing} mientras="Creando…">Crear</TextoQueCambia>
                 </button>
                 <button type="button" onClick={alCerrar} className="text-sm text-fog transition-colors hover:text-chalk">
                     Cancelar
@@ -153,6 +155,11 @@ function NuevoTaller({ instituciones, alCerrar }) {
 
 export default function Index({ periodo, mesLegible, talleres, instituciones, porCobrar }) {
     const [creando, setCreando] = useState(false);
+    // Crear un taller es fijarle el precio de la hora, y tirarlo se lleva sus
+    // horas: ninguna de las dos es de quien solo anota las clases.
+    const { auth } = usePage().props;
+    const puedeCrear = puede(auth, 'pagos.editar');
+    const puedeBorrar = puede(auth, 'pagos.eliminar');
 
     const delMes = talleres.reduce((suma, t) => suma + t.total, 0);
     const horas = talleres.reduce((suma, t) => suma + t.horas, 0);
@@ -169,17 +176,19 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setCreando((c) => ! c)}
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <PlusIcon className="size-4" aria-hidden="true" />
-                    Nuevo
-                </button>
+                {puedeCrear ? (
+                    <button
+                        type="button"
+                        onClick={() => setCreando((c) => ! c)}
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <PlusIcon className="size-4" aria-hidden="true" />
+                        Nuevo
+                    </button>
+                ) : null}
             </header>
 
-            {creando ? <NuevoTaller instituciones={instituciones} alCerrar={() => setCreando(false)} /> : null}
+            {puedeCrear && creando ? <NuevoTaller instituciones={instituciones} alCerrar={() => setCreando(false)} /> : null}
 
             {/* El mes que se está mirando: las horas son de un mes, y el mes
                 pasado se revisa tanto como el que corre. */}
@@ -229,7 +238,11 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                     { titulo: '', className: 'text-right' },
                 ]}
                 vacia={talleres.length === 0}
-                mensajeVacio="Todavía no hay ningún taller ni arriendo. Créalo con el botón de arriba."
+                mensajeVacio={
+                    puedeCrear
+                        ? 'Todavía no hay ningún taller ni arriendo. Créalo con el botón de arriba.'
+                        : 'Todavía no hay ningún taller ni arriendo.'
+                }
             >
                 {talleres.map((t) => (
                     <Fila key={t.uuid} href={`/panel/talleres/${t.uuid}?periodo=${periodo}`}>
@@ -267,25 +280,27 @@ export default function Index({ periodo, mesLegible, talleres, instituciones, po
                                 >
                                     <PencilIcon className="size-3.5" aria-hidden="true" />
                                 </Link>
-                                <button
-                                    type="button"
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
+                                {puedeBorrar ? (
+                                    <button
+                                        type="button"
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
 
-                                        if (await confirmar({
-                                            titulo: `¿Mandar «${t.nombre}» a la papelera?`,
-                                            mensaje: 'Sus horas y cobros se van con él y se recuperan desde ahí.',
-                                            confirmar: 'Mandar a la papelera',
-                                            peligrosa: true,
-                                        })) {
-                                            router.delete(`/panel/talleres/${t.uuid}`, { preserveScroll: true });
-                                        }
-                                    }}
-                                    aria-label={`Eliminar ${t.nombre}`}
-                                    className="rounded-control p-1 text-fog transition-colors hover:text-danger"
-                                >
-                                    <TrashIcon className="size-3.5" aria-hidden="true" />
-                                </button>
+                                            if (await confirmar({
+                                                titulo: `¿Mandar «${t.nombre}» a la papelera?`,
+                                                mensaje: 'Sus horas y cobros se van con él y se recuperan desde ahí.',
+                                                confirmar: 'Mandar a la papelera',
+                                                peligrosa: true,
+                                            })) {
+                                                router.delete(`/panel/talleres/${t.uuid}`, { preserveScroll: true });
+                                            }
+                                        }}
+                                        aria-label={`Eliminar ${t.nombre}`}
+                                        className="rounded-control p-1 text-fog transition-colors hover:text-danger"
+                                    >
+                                        <TrashIcon className="size-3.5" aria-hidden="true" />
+                                    </button>
+                                ) : null}
                             </span>
                         </Celda>
                     </Fila>

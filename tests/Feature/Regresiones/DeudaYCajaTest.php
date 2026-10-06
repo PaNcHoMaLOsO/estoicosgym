@@ -160,6 +160,11 @@ class DeudaYCajaTest extends CasoConCatalogos
      */
     public function test_a_las_diez_y_media_de_la_noche_todavia_es_hoy(): void
     {
+        // El seeder pone los precios en vigor desde el día en que corre la
+        // prueba, y aquí se viaja a una fecha anterior. El alta ahora pide un
+        // precio ya en vigor, como inscribir: se adelanta su inicio.
+        \App\Models\PrecioMembresia::where('id_membresia', 4)->update(['fecha_vigencia_desde' => '2026-01-01']);
+
         $this->travelTo(Carbon::parse('2026-09-11 22:30', 'America/Santiago'));
 
         $this->assertSame('2026-09-11', today()->toDateString());

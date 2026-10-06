@@ -11,3 +11,6 @@
 !web/**
 !convenios/
 !convenios/**
+# Salvo las copias de prueba y de la base de demostración («prueba-…»): son
+# fotos repetidas, para mirar cómo queda la web, no para publicarlas.
+**/prueba-*

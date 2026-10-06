@@ -10,6 +10,7 @@ import Cobro, { Botones, detalleDePartes, metodoPorDefecto, partesIniciales } fr
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -68,7 +69,7 @@ function precioCon(plan, idConvenio, preciosDeConvenio) {
 export default function Renovar({ inscripcion, membresias, convenios, motivos, metodosPago, formToken, volverA = '', preciosDeConvenio = {} }) {
     const [partes, setPartes] = useState(() => partesIniciales(metodosPago));
 
-    const { data, setData, post, processing, errors, isDirty } = useForm({
+    const { data, setData, post, transform, processing, errors, isDirty } = useForm({
         // De dónde se vino: si fue de la ficha de un socio, se vuelve allí.
         volver: volverA,
         form_submit_token: formToken,
@@ -127,10 +128,10 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
 
         const detalle = detalleDePartes(partes, metodosPago);
 
-        post(`/panel/inscripciones/${inscripcion.uuid}/renovar`, {
-            preserveScroll: true,
-            data: { ...data, detalle_pagos_mixto: JSON.stringify(detalle) },
-        });
+        // Por transform y no con la opción «data»: Inertia la ignora al
+        // enviar el formulario, y el detalle de los dos medios no llegaba.
+        transform((d) => ({ ...d, detalle_pagos_mixto: JSON.stringify(detalle) }));
+        post(`/panel/inscripciones/${inscripcion.uuid}/renovar`, { preserveScroll: true });
     }
 
 
@@ -149,6 +150,8 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                 </Link>
                 <h1 className="mt-1 text-lg font-semibold text-chalk">Renovar</h1>
                 <p className="apoyo text-fog">{inscripcion.socio}</p>
+                {/* «Esta membresía ya se renovó» y similares llegan aquí. */}
+                {errors.id_cliente ? <p className="apoyo mt-2 text-danger" role="alert">{errors.id_cliente}</p> : null}
             </header>
 
             <form onSubmit={enviar} {...tocar} className="max-w-3xl space-y-5">
@@ -350,6 +353,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                             partes={partes}
                             setPartes={setPartes}
                             errores={errors}
+                            maxPartes={2}
                         />
 
                         {data.tipo_pago === 'pendiente' ? (
@@ -397,7 +401,7 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                         disabled={processing || !plan}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        {processing ? 'Guardando…' : 'Renovar'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Renovar</TextoQueCambia>
                     </button>
 
                     <Link

@@ -13,9 +13,11 @@ import { pesos } from '@/components/Tablero';
  *
  *  · «Todo» no pregunta cuánto: es el total, y lo pone el servidor.
  *  · El medio sale marcado en efectivo, que es lo que más se usa.
- *  · «Varios medios» trae dos líneas, y al escribir la primera la segunda se
+ *  · «Dos medios» trae dos líneas, y al escribir la primera la segunda se
  *    rellena con lo que falta: casi siempre es «esto en efectivo y el resto
  *    con tarjeta», y así no hay que restar de cabeza.
+ *  · Un pago guarda a lo más DOS medios y distintos (App\Support\PagoMixto):
+ *    elegir en una línea el medio de la otra las intercambia.
  */
 
 /** Botones grandes para elegir de una lista corta: un toque, sin desplegar. */
@@ -97,9 +99,9 @@ export default function Cobro({
     setPartes,
     errores = {},
     // Registrar un pago no tiene «Nada todavía» (sería no registrar nada), y
-    // un pago guarda a lo más dos medios.
+    // un pago guarda a lo más dos medios: en todas partes, no solo al cobrar.
     sinPendiente = false,
-    maxPartes = null,
+    maxPartes = 2,
 }) {
     const opcionesMetodo = metodosPago.map((m) => ({ valor: m.id, etiqueta: m.nombre }));
     const suma = partes.reduce((t, p) => t + (Number(p.monto) || 0), 0);
@@ -108,6 +110,16 @@ export default function Cobro({
     function cambiarParte(indice, cambios) {
         setPartes((antes) => {
             const nuevas = antes.map((p, j) => (j === indice ? { ...p, ...cambios } : p));
+
+            // El mismo medio en las dos líneas no es un reparto: el servidor lo
+            // rechaza. Se intercambian, que es casi siempre lo que se quería.
+            if ('id_metodo_pago' in cambios) {
+                nuevas.forEach((p, j) => {
+                    if (j !== indice && String(p.id_metodo_pago) === String(cambios.id_metodo_pago)) {
+                        nuevas[j] = { ...p, id_metodo_pago: antes[indice].id_metodo_pago };
+                    }
+                });
+            }
 
             // Al escribir el monto de la primera, la segunda se rellena con lo
             // que falta, pero solo mientras esté vacía o siga siendo ese resto:
@@ -153,6 +165,10 @@ export default function Cobro({
                 >
                     <Texto nombre="monto_abonado" tipo="number" min="1" inputMode="numeric" valor={monto} alCambiar={alCambiarMonto} />
                 </Campo>
+            ) : errores.monto_abonado ? (
+                // Sin el campo del abono a la vista, el aviso igual se lee: es
+                // donde llega «ese cobro ya se registró hace un momento».
+                <p className="apoyo text-danger" role="alert">{errores.monto_abonado}</p>
             ) : null}
 
             {forma === 'completo' || forma === abono ? (

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { Area, Campo, Texto } from '@/components/Campo';
 import { Botones } from '@/components/Cobro';
 import { PREFIJO, soloPrefijo } from '@/lib/socio';
+import TextoQueCambia from '@/components/TextoQueCambia';
 import {
     Dialog,
     DialogContent,
@@ -545,7 +546,7 @@ export default function FormularioCatalogo({
                             disabled={processing}
                             className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
-                            {processing ? 'Guardando…' : 'Guardar'}
+                            <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                         </button>
                     </div>
                 </form>

@@ -6,6 +6,7 @@ import Activo from '@/components/Activo';
 import FormularioCatalogo, { CAMPOS_CONVENIO, valoresDeConvenio } from '@/components/FormularioCatalogo';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 function Bloque({ titulo, children }) {
     return (
         <section className="rounded-panel border border-line bg-surface p-4">
@@ -60,7 +61,7 @@ function PreciosDelConvenio({ convenio, planes }) {
         >
             <ul className="space-y-3">
                 {planes.map((plan, i) => (
-                    <li key={plan.id} className="grid gap-2 border-b border-line pb-3 last:border-0 last:pb-0 sm:grid-cols-[1fr_auto]">
+                    <li key={plan.id} className="grid grid-cols-1 gap-2 border-b border-line pb-3 last:border-0 last:pb-0 sm:grid-cols-[1fr_auto]">
                         <div className="min-w-0">
                             <p className="text-sm text-chalk">{plan.nombre}</p>
                             <p className="apoyo tabular-nums text-fog">
@@ -106,7 +107,7 @@ function PreciosDelConvenio({ convenio, planes }) {
                     disabled={processing || ! isDirty}
                     className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                    {processing ? 'Guardando…' : 'Guardar precios'}
+                    <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar precios</TextoQueCambia>
                 </button>
                 <p className="apoyo text-fog">Vacío = paga el precio con convenio del plan.</p>
             </div>
@@ -167,7 +168,7 @@ export default function FichaConvenio({ convenio, cifras, socios, planes = [] })
                 </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Contacto en la empresa">
                         <dl className="space-y-3">

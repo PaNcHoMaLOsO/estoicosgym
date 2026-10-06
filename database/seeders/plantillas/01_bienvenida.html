@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{gimnasio} - Bienvenida</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; font-family: Arial, sans-serif; }
+        .container { max-width: 650px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #0a0a0b; color: white; padding: 50px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; font-family: Arial Black, Arial, sans-serif;">
+            <span style="color: #d81f26;">PRO</span><span style="color: #FFFFFF;">GYM</span>
+        </h1>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #C7C7C7; letter-spacing: 2px; text-transform: uppercase;">{ciudad}</p>
+    </div>
+    
+    <!-- BIENVENIDA -->
+    <div style="padding: 25px 20px; background: #FFFFFF;">
+        <h2 style="color: #0a0a0b; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">¡Bienvenido/a {nombre}! 🎉</h2>
+        <p style="color: #505050; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+            Tu inscripción ha sido confirmada. ¡Comienza tu transformación hoy!
+        </p>
+        
+        <!-- CONFIRMACIÓN INSCRIPCIÓN -->
+        <div style="background: #f8fff8; border: 2px solid #2EB872; padding: 18px; margin: 20px 0; border-radius: 8px;">
+            <h3 style="margin: 0 0 12px 0; color: #2EB872; font-size: 18px; font-weight: bold;">✅ Inscripción Confirmada</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px; width: 45%;"><strong style="color: #0a0a0b;">Membresía:</strong></td>
+                    <td style="padding: 5px 0; color: #0a0a0b; font-size: 14px; font-weight: 600;">{membresia}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Valor membresía:</strong></td>
+                    <td style="padding: 5px 0; color: #0a0a0b; font-size: 15px; font-weight: 600;">${precio}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Fecha inicio:</strong></td>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px;">{fecha_inicio}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Válida hasta:</strong></td>
+                    <td style="padding: 5px 0; color: #505050; font-size: 14px;">{fecha_vencimiento}</td>
+                </tr>
+            </table>
+            
+            <!-- DETALLES DE PAGO -->
+            <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #c7e6c7;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 5px 0; color: #505050; font-size: 14px; width: 45%;"><strong style="color: #0a0a0b;">Tipo de pago:</strong></td>
+                        <td style="padding: 5px 0; color: #505050; font-size: 14px;">{tipo_pago}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Monto pagado:</strong></td>
+                        <td style="padding: 5px 0; color: #2EB872; font-size: 16px; font-weight: bold;">${monto_pagado}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Saldo pendiente:</strong></td>
+                        <td style="padding: 5px 0; color: #FFC107; font-size: 15px; font-weight: 600;">${saldo_pendiente}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- HORARIOS -->
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2EB872;">
+            <p style="margin: 0 0 8px 0; color: #0a0a0b; font-size: 15px; font-weight: bold;">⏰ Horarios de atención:</p>
+            <p style="margin: 3px 0 0 0; color: #505050; font-size: 14px; line-height: 1.6;">📅 {horario}</p>
+        </div>
+        
+        <!-- CTA BUTTON -->
+        <div style="text-align: center; margin: 20px 0 15px 0;">
+            <a href="tel:{telefono_enlace}" style="display: inline-block; background: #d81f26; color: #FFFFFF; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">📞 Llámanos: {telefono_gimnasio}</a>
+        </div>
+        
+        <p style="color: #505050; font-size: 13px; line-height: 1.5; margin: 15px 0 0 0; text-align: center;">
+            ¿Dudas? Visítanos en recepción o escríbenos a <strong style="color: #0a0a0b;">{email_gimnasio}</strong>
+        </p>
+    </div>
+    
+    <!-- FOOTER -->
+    <div style="background: #0a0a0b; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">{gimnasio} - {ciudad}</p>
+        <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
+            📍 <a href="{enlace_mapa}" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 {email_gimnasio} | 📞 {telefono_gimnasio}
+        </p>
+        <p style="margin: 0; font-size: 13px;">
+            <a href="{instagram}" style="color: #d81f26; text-decoration: none; font-weight: bold;">📸 Síguenos en Instagram</a>
+        </p>
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
+            Este es un correo automático, por favor no responder directamente.
+        </p>
+    </div>
+</div>
+
+    </div>
+</body>
+</html>

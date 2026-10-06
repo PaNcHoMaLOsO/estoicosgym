@@ -1,5 +1,5 @@
 import { confirmar } from '@/components/Confirmar';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     ArrowLeftIcon,
@@ -18,7 +18,9 @@ import {
 import { Celda, Fila, Tabla } from '@/components/Tabla';
 import { Panel, pesos } from '@/components/Tablero';
 import { Reservado } from '@/Privado';
+import { puede } from '@/lib/permisos';
 import { hoyEnChile } from '@/lib/tiempo';
+import { useTokenDeEnvio } from '@/lib/tokenDeEnvio';
 
 /**
  * Un taller, mes a mes.
@@ -31,11 +33,106 @@ import { hoyEnChile } from '@/lib/tiempo';
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
+const CAMPOS_INSTITUCION = [
+    ['nombre', 'Nombre'],
+    ['rut', 'RUT'],
+    ['giro', 'Giro'],
+    ['direccion', 'Dirección'],
+    ['comuna', 'Comuna y región'],
+    ['contacto_nombre', 'Contacto'],
+    ['contacto_email', 'Correo del contacto'],
+    ['contacto_telefono', 'Teléfono del contacto'],
+];
+
 function otroMes(periodo, cuantos) {
     const [anio, mes] = periodo.split('-').map(Number);
     const fecha = new Date(anio, mes - 1 + cuantos, 1);
 
     return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Un dato suelto, para quien mira sin poder cambiarlo. */
+function Dato({ etiqueta, children }) {
+    return (
+        <div>
+            <dt className="rotulo">{etiqueta}</dt>
+            <dd className="mt-0.5 text-sm text-chalk">{children || <span className="text-fog">—</span>}</dd>
+        </div>
+    );
+}
+
+/**
+ * El taller y su horario, solo para mirar.
+ *
+ * Quien anota las clases necesita saber qué días tocan, pero el precio de la
+ * hora y el horario los cambia quien factura: se enseñan como texto y no como
+ * un formulario que el servidor rechazaría al guardar.
+ */
+function HorarioLeido({ taller }) {
+    const dias = DIAS.filter((dia) => (taller.horario?.[dia] ?? []).length > 0);
+
+    return (
+        <div className="space-y-3">
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Dato etiqueta="Nombre">{taller.nombre}</Dato>
+                <Dato etiqueta="Cómo va en la factura">{taller.descripcion_factura}</Dato>
+                <Dato etiqueta="La hora (con IVA)">
+                    <Reservado ancho="w-16">{pesos.format(taller.precio_hora)}</Reservado>
+                </Dato>
+            </dl>
+
+            <div>
+                <p className="rotulo mb-1">Horario semanal</p>
+                {dias.length === 0 ? (
+                    <p className="apoyo text-fog">Sin horario fijo.</p>
+                ) : (
+                    <ul className="space-y-0.5">
+                        {dias.map((dia) => (
+                            <li key={dia} className="flex flex-wrap gap-2 text-sm">
+                                <span className="w-20 shrink-0 capitalize text-fog">{dia}</span>
+                                <span className="tabular-nums text-chalk">
+                                    {taller.horario[dia].map((t) => `${t[0]} a ${t[1]}`).join(' · ')}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            <p className="apoyo border-t border-line pt-3 text-fog">
+                {taller.activo ? 'Sigue abierto: se le siguen anotando horas.' : 'Cerrado: queda solo para consultar.'}
+            </p>
+        </div>
+    );
+}
+
+/** El folio y las fechas de una factura ya emitida, solo para mirar. */
+function DatosDelCobroLeidos({ cobro }) {
+    return (
+        <dl className="mt-3 grid grid-cols-1 gap-2 border-t border-line pt-3 sm:grid-cols-3">
+            <Dato etiqueta="Folio de la factura">{cobro.folio}</Dato>
+            <Dato etiqueta="Emitida el">{cobro.emitido_en?.split('-').reverse().join('/')}</Dato>
+            <Dato etiqueta="Pagada el">{cobro.pagado_en?.split('-').reverse().join('/')}</Dato>
+            {cobro.observaciones ? (
+                <div className="sm:col-span-3">
+                    <Dato etiqueta="Observaciones">{cobro.observaciones}</Dato>
+                </div>
+            ) : null}
+        </dl>
+    );
+}
+
+/** Los datos de facturación de la institución, solo para mirar. */
+function InstitucionLeida({ institucion }) {
+    return (
+        <dl className="space-y-2">
+            {CAMPOS_INSTITUCION.map(([clave, etiqueta]) => (
+                <Dato key={clave} etiqueta={etiqueta}>
+                    {institucion[clave]}
+                </Dato>
+            ))}
+        </dl>
+    );
 }
 
 /** El horario semanal: de aquí salen propuestas las clases de cada mes. */
@@ -71,7 +168,7 @@ function Horario({ taller }) {
             }}
             className="space-y-3"
         >
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="block">
                     <span className="rotulo">Nombre</span>
                     <input
@@ -278,7 +375,7 @@ function DatosDelCobro({ cobro }) {
             }}
             className="mt-3 space-y-2 border-t border-line pt-3"
         >
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <label className="block">
                     <span className="rotulo">Folio de la factura</span>
                     <input type="text" value={data.folio} onChange={(e) => setData('folio', e.target.value)} className={`${campo} mt-1`} />
@@ -340,17 +437,6 @@ function DatosDeLaInstitucion({ institucion }) {
     const campo =
         'w-full rounded-control border border-line bg-surface-2 px-2 py-1 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none';
 
-    const campos = [
-        ['nombre', 'Nombre'],
-        ['rut', 'RUT'],
-        ['giro', 'Giro'],
-        ['direccion', 'Dirección'],
-        ['comuna', 'Comuna y región'],
-        ['contacto_nombre', 'Contacto'],
-        ['contacto_email', 'Correo del contacto'],
-        ['contacto_telefono', 'Teléfono del contacto'],
-    ];
-
     return (
         <form
             onSubmit={(e) => {
@@ -359,7 +445,7 @@ function DatosDeLaInstitucion({ institucion }) {
             }}
             className="space-y-2"
         >
-            {campos.map(([clave, etiqueta]) => (
+            {CAMPOS_INSTITUCION.map(([clave, etiqueta]) => (
                 <label key={clave} className="block">
                     <span className="rotulo">{etiqueta}</span>
                     <input
@@ -392,20 +478,33 @@ function DatosDeLaInstitucion({ institucion }) {
  * anterior y cambiándole a mano el número, las fechas y la cifra. Desde aquí se
  * cotiza el mes que se está mirando, con las clases del horario ya puestas.
  */
-function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
+function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones, puedeCotizar, puedeBorrar }) {
+    // El doble clic creaba dos cotizaciones del mismo mes: mientras va el
+    // pedido, el botón no hace nada.
+    const [cotizando, setCotizando] = useState(false);
+
     return (
         <Panel
             titulo="Cotizaciones"
             descripcion="Lo que se le manda al colegio antes del mes. Se corrige cuando se suspende una semana."
             enlace={
-                <button
-                    type="button"
-                    onClick={() => router.post(`/panel/talleres/${uuid}/cotizaciones`, { periodo })}
-                    className="apoyo inline-flex shrink-0 items-center gap-1 text-fog transition-colors hover:text-chalk"
-                >
-                    <FileTextIcon className="size-3.5" aria-hidden="true" />
-                    Cotizar {mesLegible}
-                </button>
+                puedeCotizar ? (
+                    <button
+                        type="button"
+                        disabled={cotizando}
+                        onClick={() =>
+                            router.post(
+                                `/panel/talleres/${uuid}/cotizaciones`,
+                                { periodo },
+                                { onStart: () => setCotizando(true), onFinish: () => setCotizando(false) },
+                            )
+                        }
+                        className="apoyo inline-flex shrink-0 items-center gap-1 text-fog transition-colors hover:text-chalk disabled:opacity-50"
+                    >
+                        <FileTextIcon className="size-3.5" aria-hidden="true" />
+                        Cotizar {mesLegible}
+                    </button>
+                ) : null
             }
         >
             <Tabla
@@ -418,7 +517,11 @@ function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
                     { titulo: '', className: 'text-right' },
                 ]}
                 vacia={cotizaciones.length === 0}
-                mensajeVacio="Ninguna cotización todavía. «Cotizar» trae las clases del horario y hace la cuenta."
+                mensajeVacio={
+                    puedeCotizar
+                        ? 'Ninguna cotización todavía. «Cotizar» trae las clases del horario y hace la cuenta.'
+                        : 'Ninguna cotización todavía.'
+                }
             >
                 {cotizaciones.map((c) => (
                     <Fila key={c.uuid} href={`/panel/talleres/cotizaciones/${c.uuid}`}>
@@ -452,25 +555,27 @@ function Cotizaciones({ uuid, periodo, mesLegible, cotizaciones }) {
                                 </a>
                                 {/* A la papelera desde la lista: para tirar un
                                     borrador no hace falta entrar en él. */}
-                                <button
-                                    type="button"
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
+                                {puedeBorrar ? (
+                                    <button
+                                        type="button"
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
 
-                                        if (await confirmar({
-                                            titulo: `¿Mandar la cotización N° ${c.numero} a la papelera?`,
-                                            mensaje: 'Se recupera desde Configuración → Papelera.',
-                                            confirmar: 'Mandar a la papelera',
-                                            peligrosa: true,
-                                        })) {
-                                            router.delete(`/panel/talleres/cotizaciones/${c.uuid}`, { preserveScroll: true });
-                                        }
-                                    }}
-                                    aria-label={`Eliminar la cotización N° ${c.numero}`}
-                                    className="rounded-control p-1 text-fog transition-colors hover:text-danger"
-                                >
-                                    <TrashIcon className="size-3.5" aria-hidden="true" />
-                                </button>
+                                            if (await confirmar({
+                                                titulo: `¿Mandar la cotización N° ${c.numero} a la papelera?`,
+                                                mensaje: 'Se recupera desde Configuración → Papelera.',
+                                                confirmar: 'Mandar a la papelera',
+                                                peligrosa: true,
+                                            })) {
+                                                router.delete(`/panel/talleres/cotizaciones/${c.uuid}`, { preserveScroll: true });
+                                            }
+                                        }}
+                                        aria-label={`Eliminar la cotización N° ${c.numero}`}
+                                        className="rounded-control p-1 text-fog transition-colors hover:text-danger"
+                                    >
+                                        <TrashIcon className="size-3.5" aria-hidden="true" />
+                                    </button>
+                                ) : null}
                             </span>
                         </Celda>
                     </Fila>
@@ -485,8 +590,22 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
     const [anotando, setAnotando] = useState(false);
 
     const nueva = useForm({ fecha: '', horas: '1', detalle: '' });
+    // Uno por cada vez que se abre «Una suelta»: el doble clic anotaba la
+    // misma clase dos veces y la factura salía con una hora de más.
+    const token = useTokenDeEnvio();
 
     const irA = (p) => `/panel/talleres/${uuid}?periodo=${p}`;
+
+    /*
+     * Tres permisos, como en el servidor: anotar clases y cotizar es del
+     * mesón (crear); el horario, el precio, cerrar el mes y la factura son de
+     * quien cobra (editar); quitar una clase, reabrir y tirar, de quien puede
+     * borrar. A quien no puede no se le pinta el botón: chocaba con un 403.
+     */
+    const { auth } = usePage().props;
+    const puedeAnotar = puede(auth, 'pagos.crear');
+    const puedeEditar = puede(auth, 'pagos.editar');
+    const puedeBorrar = puede(auth, 'pagos.eliminar');
 
     return (
         <>
@@ -522,13 +641,19 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                 ) : null}
             </div>
 
-            <div className="grid items-start gap-4 xl:grid-cols-[1fr_22rem]">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_22rem]">
                 <div className="min-w-0 space-y-3">
                     <Panel
                         titulo="Clases del mes"
-                        descripcion={cobro ? 'El mes está cerrado: para corregir algo hay que reabrirlo.' : 'Quita las que no se hicieron: lo que no se hizo no se cobra.'}
+                        descripcion={
+                            cobro
+                                ? 'El mes está cerrado: para corregir algo hay que reabrirlo.'
+                                : puedeBorrar
+                                  ? 'Quita las que no se hicieron: lo que no se hizo no se cobra.'
+                                  : 'Anota solo las que se hicieron: lo que no se hizo no se cobra.'
+                        }
                         enlace={
-                            cobro ? null : (
+                            cobro || ! puedeAnotar ? null : (
                                 <span className="flex shrink-0 items-center gap-3">
                                     {propuestas.length > 0 ? (
                                         <button
@@ -544,7 +669,12 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                     ) : null}
                                     <button
                                         type="button"
-                                        onClick={() => setAnotando((a) => ! a)}
+                                        onClick={() => {
+                                            if (! anotando) {
+                                                token.renovar();
+                                            }
+                                            setAnotando((a) => ! a);
+                                        }}
                                         className="apoyo text-fog transition-colors hover:text-chalk"
                                     >
                                         {anotando ? 'Cerrar' : '+ Una suelta'}
@@ -553,13 +683,17 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                             )
                         }
                     >
-                        {anotando ? (
+                        {puedeAnotar && anotando ? (
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
+                                    nueva.transform((d) => ({ ...d, form_submit_token: token.actual() }));
                                     nueva.post(`/panel/talleres/${uuid}/horas`, {
                                         preserveScroll: true,
-                                        onSuccess: () => nueva.reset(),
+                                        onSuccess: () => {
+                                            nueva.reset();
+                                            token.renovar();
+                                        },
                                     });
                                 }}
                                 className="mb-3 flex flex-wrap items-end gap-2 rounded-panel border border-line bg-surface-2 p-3"
@@ -601,6 +735,12 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                 >
                                     <PlusIcon className="size-4" aria-hidden="true" />
                                 </button>
+
+                                {/* Sin esto el «+» no hacía nada y no decía por qué:
+                                    sin día, menos de un cuarto de hora, mes cerrado. */}
+                                <div className="w-full">
+                                    <Errores errores={nueva.errors} />
+                                </div>
                             </form>
                         ) : null}
 
@@ -613,7 +753,7 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                             ]}
                             vacia={horas.length === 0}
                             mensajeVacio={
-                                propuestas.length > 0
+                                propuestas.length > 0 && puedeAnotar
                                     ? 'Ninguna clase anotada. Usa «Anotar las del horario» para ponerlas todas de una vez.'
                                     : 'Ninguna clase anotada este mes, y el horario no propone ninguna.'
                             }
@@ -629,7 +769,7 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                     <Celda className="text-right">
                                         {h.cobrada ? (
                                             <LockIcon className="inline size-3.5 text-fog" aria-label="Ya cobrada" />
-                                        ) : (
+                                        ) : ! puedeBorrar ? null : (
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -647,13 +787,20 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                         </Tabla>
                     </Panel>
 
-                    <Cotizaciones uuid={uuid} periodo={periodo} mesLegible={mesLegible} cotizaciones={cotizaciones} />
+                    <Cotizaciones
+                        uuid={uuid}
+                        periodo={periodo}
+                        mesLegible={mesLegible}
+                        cotizaciones={cotizaciones}
+                        puedeCotizar={puedeAnotar}
+                        puedeBorrar={puedeBorrar}
+                    />
 
                     <Panel
                         titulo="El taller y su horario"
                         descripcion="Del horario salen propuestas las clases de cada mes. Cambiarlo no toca lo ya anotado."
                     >
-                        <Horario taller={{ ...taller, uuidRuta: uuid }} />
+                        {puedeEditar ? <Horario taller={{ ...taller, uuidRuta: uuid }} /> : <HorarioLeido taller={taller} />}
                     </Panel>
 
                     {historial.length > 0 ? (
@@ -679,6 +826,8 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                         <Celda>
                                             {c.pagado_en ? (
                                                 <span className="apoyo tabular-nums text-ok">{c.pagado_en}</span>
+                                            ) : ! puedeEditar ? (
+                                                <span className="apoyo text-warn">Sin pagar</span>
                                             ) : (
                                                 /* Un clic para anotar que la pagaron: es lo
                                                    único que se hace con un cobro viejo, y
@@ -733,14 +882,22 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
 
                         {cobro ? (
                             <>
-                                <DatosDelCobro cobro={cobro} />
+                                {/* La clave lleva la fecha de pago: «Marcar pagada»
+                                    en el historial cambia el cobro por fuera, y el
+                                    formulario se quedaba con la fecha vacía de antes;
+                                    al guardar el folio borraba el pago. */}
+                                {puedeEditar ? (
+                                    <DatosDelCobro key={`${cobro.uuid}-${cobro.pagado_en ?? ''}`} cobro={cobro} />
+                                ) : (
+                                    <DatosDelCobroLeidos cobro={cobro} />
+                                )}
 
                                 {/* Reabrir hace falta: se cierra julio y aparece
                                     una clase que no estaba anotada. Pero no si ya
                                     lo pagaron: reabrir borra el cobro y con él el
                                     ingreso de la caja. Primero se quita la fecha
                                     de pago, a sabiendas. */}
-                                {cobro.pagado_en ? (
+                                {! puedeBorrar ? null : cobro.pagado_en ? (
                                     <p className="apoyo mt-3 text-fog">
                                         Ya está pagado. Para reabrir el mes, quita primero la fecha de pago.
                                     </p>
@@ -763,6 +920,8 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                                     </button>
                                 )}
                             </>
+                        ) : ! puedeEditar ? (
+                            <p className="apoyo mt-3 text-fog">El mes lo cierra quien emite la factura.</p>
                         ) : (
                             <button
                                 type="button"
@@ -783,29 +942,35 @@ export default function Ficha({ taller, periodo, mesLegible, horas, propuestas, 
                         )}
                     </Panel>
 
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            if (await confirmar({
-                                titulo: `¿Mandar «${taller.nombre}» a la papelera?`,
-                                mensaje: 'Sus horas y cobros se van con él. Se recupera desde Configuración → Papelera.',
-                                confirmar: 'Mandar a la papelera',
-                                peligrosa: true,
-                            })) {
-                                router.delete(`/panel/talleres/${uuid}`);
-                            }
-                        }}
-                        className="apoyo text-fog transition-colors hover:text-danger"
-                    >
-                        Eliminar este taller
-                    </button>
+                    {puedeBorrar ? (
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (await confirmar({
+                                    titulo: `¿Mandar «${taller.nombre}» a la papelera?`,
+                                    mensaje: 'Sus horas y cobros se van con él. Se recupera desde Configuración → Papelera.',
+                                    confirmar: 'Mandar a la papelera',
+                                    peligrosa: true,
+                                })) {
+                                    router.delete(`/panel/talleres/${uuid}`);
+                                }
+                            }}
+                            className="apoyo text-fog transition-colors hover:text-danger"
+                        >
+                            Eliminar este taller
+                        </button>
+                    ) : null}
 
                     {taller.institucion ? (
                         <Panel
                             titulo="A quién se le factura"
                             descripcion="Lo que sale en la cotización y en la factura."
                         >
-                            <DatosDeLaInstitucion institucion={taller.institucion} />
+                            {puedeEditar ? (
+                                <DatosDeLaInstitucion institucion={taller.institucion} />
+                            ) : (
+                                <InstitucionLeida institucion={taller.institucion} />
+                            )}
                         </Panel>
                     ) : null}
                 </div>

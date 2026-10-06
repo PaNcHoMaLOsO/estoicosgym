@@ -89,6 +89,23 @@ class Membresia extends Model
     }
 
     /**
+     * El precio con el que se cobra hoy este plan, o null si no tiene.
+     *
+     * Activo y ya en vigor, el más reciente. Inscribir y el alta de socio nuevo
+     * lo buscaban cada uno a su manera —el alta miraba solo la fecha de fin y
+     * podía tomar un precio desactivado o uno que aún no empezaba—, y el mismo
+     * plan salía a dos precios según la pantalla. La regla vive aquí.
+     */
+    public function precioVigente(): ?PrecioMembresia
+    {
+        return $this->precios()
+            ->where('activo', true)
+            ->where('fecha_vigencia_desde', '<=', now())
+            ->orderByDesc('fecha_vigencia_desde')
+            ->first();
+    }
+
+    /**
      * Los planes que son un PASE y no una mensualidad: sin meses y de un día.
      *
      * Quien compra un pase está de paso, como el huésped que entra por canje.

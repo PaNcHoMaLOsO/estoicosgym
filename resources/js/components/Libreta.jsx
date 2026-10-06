@@ -1,7 +1,9 @@
 import { confirmar } from '@/components/Confirmar';
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { CheckIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { puede } from '@/lib/permisos';
+import { useTokenDeEnvio } from '@/lib/tokenDeEnvio';
 
 /**
  * El bloc de notas del meson.
@@ -11,7 +13,13 @@ import { CheckIcon, PlusIcon, TrashIcon } from 'lucide-react';
  * cosa —no para vigilar, sino para poder preguntarle si algo quedo a medias—.
  */
 export function Notas({ notas }) {
-    const { data, setData, post, processing, errors, reset } = useForm({ texto: '' });
+    const { data, setData, post, transform, processing, errors, reset } = useForm({ texto: '' });
+    // El doble Enter apuntaba la nota dos veces.
+    const token = useTokenDeEnvio();
+    // Borrar una nota pide `clientes.eliminar` en el servidor: a recepción el
+    // botón le daba un 403. Se esconde a quien no lo tiene.
+    const { auth } = usePage().props;
+    const puedeQuitar = puede(auth, 'clientes.eliminar');
 
     const pendientes = notas.filter((n) => !n.hecha);
     const hechas = notas.filter((n) => n.hecha);
@@ -19,9 +27,13 @@ export function Notas({ notas }) {
     function anotar(e) {
         e.preventDefault();
 
+        transform((d) => ({ ...d, form_submit_token: token.actual() }));
         post('/panel/notas', {
             preserveScroll: true,
-            onSuccess: () => reset('texto'),
+            onSuccess: () => {
+                reset('texto');
+                token.renovar();
+            },
         });
     }
 
@@ -132,14 +144,16 @@ export function Notas({ notas }) {
                             {/* Quitar solo aparece al pasar por encima: es lo
                                 unico que no se deshace y no tiene por que estar
                                 pidiendo que lo pulsen. */}
-                            <button
-                                type="button"
-                                onClick={() => quitar(nota)}
-                                aria-label="Quitar del bloc"
-                                className="shrink-0 rounded-control p-0.5 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
-                            >
-                                <TrashIcon className="size-3.5" aria-hidden="true" />
-                            </button>
+                            {puedeQuitar ? (
+                                <button
+                                    type="button"
+                                    onClick={() => quitar(nota)}
+                                    aria-label="Quitar del bloc"
+                                    className="shrink-0 rounded-control p-0.5 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
+                                >
+                                    <TrashIcon className="size-3.5" aria-hidden="true" />
+                                </button>
+                            ) : null}
                         </li>
                     ))}
                 </ul>
@@ -165,16 +179,22 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
     // fian dos cosas seguidas mas veces que una sola.
     const [apuntado, setApuntado] = useState(null);
     const [frecuentes, setFrecuentes] = useState([]);
+    // Mientras llegan, su lugar queda guardado: aparecían un momento después y
+    // empujaban hacia abajo los campos y el botón «Anotar».
+    const [cargandoFrecuentes, setCargandoFrecuentes] = useState(true);
     // Desde la ficha de un socio se llega con él ya puesto: ahí no hay a quién
     // buscar, es la persona cuya ficha se está mirando.
     const [socio, setSocio] = useState(socioFijo);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, transform, processing, errors, reset } = useForm({
         id_cliente: socioFijo?.id ?? '',
         nombre: '',
+        // Para quien no es socio: sin celular no hay cómo recordarle la cuenta.
+        celular: '',
         concepto: '',
         monto: '',
     });
+    const token = useTokenDeEnvio();
 
     /*
      * LO QUE MAS SE FIA, para no teclearlo.
@@ -192,7 +212,8 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
             .then((r) => r.json())
             .then((j) => vivo && setFrecuentes(j.frecuentes ?? []))
             // Sin esto no se pierde nada: se teclea, como hasta ahora.
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => vivo && setCargandoFrecuentes(false));
 
         return () => {
             vivo = false;
@@ -228,15 +249,19 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
         setResultados(null);
     }
 
-    function enviar(e) {
-        e.preventDefault();
+    function enviar(e, pasarTope = false) {
+        e?.preventDefault();
 
         // Se guarda lo que se va a decir ANTES de vaciar el formulario.
         const apunte = `${data.concepto} · $${Number(data.monto).toLocaleString('es-CL')}`;
 
+        // «Anotar igual» después del aviso del tope: lo mismo, confirmado.
+        // El token: el doble clic en «Anotar» apuntaba la misma cosa dos veces.
+        transform((d) => ({ ...d, pasar_tope: pasarTope, form_submit_token: token.actual() }));
         post('/panel/fiados', {
             preserveScroll: true,
             onSuccess: () => {
+                token.renovar();
                 reset();
                 setSocio(socioFijo);
                 setData('id_cliente', socioFijo?.id ?? '');
@@ -310,11 +335,28 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
                 </div>
             )}
 
+            {! socio && data.nombre.trim() !== '' ? (
+                <input
+                    type="tel"
+                    value={data.celular}
+                    onChange={(e) => setData('celular', e.target.value)}
+                    maxLength={20}
+                    placeholder="Celular (opcional, para recordarle)"
+                    aria-label="Celular de quien no es socio"
+                    className={`${campo} w-full`}
+                />
+            ) : null}
+
             {errors.nombre ? <p className="apoyo text-danger">{errors.nombre}</p> : null}
+            {/* Si el servidor rechaza al socio elegido, «Anotar» no hacía
+                nada y no decía por qué. */}
+            {errors.id_cliente ? <p className="apoyo text-danger">{errors.id_cliente}</p> : null}
 
             {/* UN TOQUE EN VEZ DE DOS CAMPOS. Deja puestos el nombre y el
                 precio de la ultima vez, y se corrigen si hoy cuesta otra cosa. */}
-            {frecuentes.length > 0 ? (
+            {cargandoFrecuentes ? (
+                <div className="h-[22px]" aria-hidden="true" />
+            ) : frecuentes.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                     {frecuentes.map((f) => (
                         <button
@@ -325,7 +367,7 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
                                 setData('monto', String(f.monto));
                                 setApuntado(null);
                             }}
-                            title={`Se ha fiado ${f.veces} veces`}
+                            title={f.veces ? `Se ha fiado ${f.veces} veces` : 'De la lista de precios del mesón'}
                             className="rounded-pill border border-line bg-surface px-2 py-0.5 text-xs text-fog transition-colors hover:border-line-strong hover:text-chalk"
                         >
                             {f.concepto}
@@ -362,6 +404,20 @@ export function ApuntarFiado({ alTerminar, socio: socioFijo = null }) {
 
             {errors.concepto ? <p className="apoyo text-danger">{errors.concepto}</p> : null}
             {errors.monto ? <p className="apoyo text-danger">{errors.monto}</p> : null}
+            {/* EL TOPE: no se prohíbe, se avisa con la cifra y se confirma. */}
+            {errors.tope ? (
+                <div className="rounded-control border border-warn/40 bg-warn/5 px-2.5 py-2">
+                    <p className="apoyo text-warn" role="alert">{errors.tope}</p>
+                    <button
+                        type="button"
+                        disabled={processing}
+                        onClick={() => enviar(null, true)}
+                        className="apoyo mt-1.5 rounded-control border border-warn/40 px-2 py-0.5 text-warn transition-colors hover:bg-warn/10 disabled:opacity-50"
+                    >
+                        Anotar igual
+                    </button>
+                </div>
+            ) : null}
 
             <div className="flex items-center gap-2">
                 <button

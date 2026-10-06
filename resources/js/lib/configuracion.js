@@ -57,6 +57,8 @@ export const SECCIONES_CONFIGURACION = [
         titulo: 'Página web',
         icono: 'web',
         secciones: [
+            // Qué páginas se ven: se encienden cuando están listas.
+            { href: '/panel/configuracion/paginas', etiqueta: 'Páginas que se ven', permiso: 'configuracion.ver' },
             { href: '/panel/configuracion/portada', etiqueta: 'Portada y aviso', permiso: 'configuracion.ver' },
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
@@ -92,7 +94,10 @@ export const SECCIONES_CONFIGURACION = [
             // gimnasio»: no es como trabaja el gimnasio, es que decide este
             // panel enseñar.
             { href: '/panel/configuracion/privacidad', etiqueta: 'Lo que se ve en pantalla', permiso: 'configuracion.ver' },
-            { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver' },
+            // Exacta: si no, «Qué puede cada perfil», que cuelga de
+            // /panel/usuarios/, encendería las dos a la vez.
+            { href: '/panel/usuarios', etiqueta: 'Usuarios del panel', permiso: 'usuarios.ver', exacta: true },
+            { href: '/panel/usuarios/perfiles', etiqueta: 'Qué puede cada perfil', permiso: 'usuarios.editar' },
             { href: '/panel/papelera', etiqueta: 'Papelera', permiso: 'configuracion.ver' },
             // Lo que salió mal, en el servidor o en el navegador.
             { href: '/panel/fallas', etiqueta: 'Registro de fallas', permiso: 'configuracion.ver' },

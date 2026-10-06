@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Nota from '@/components/Nota';
 import { ArrowLeftIcon, BookmarkIcon, DownloadIcon, XIcon } from 'lucide-react';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -221,7 +222,7 @@ export default function Constructor({ catalogo, limites, tope, guardados = [] })
                 </p>
             </header>
 
-            <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_1fr]">
                 <div className="space-y-4">
                     <section className="rounded-panel border border-line bg-surface p-3">
                         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fog">
@@ -438,7 +439,7 @@ export default function Constructor({ catalogo, limites, tope, guardados = [] })
                             disabled={cargando}
                             className="flex-1 rounded-control bg-volt px-3 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
-                            {cargando ? 'Generando…' : 'Ver informe'}
+                            <TextoQueCambia ocupado={cargando} mientras="Generando…">Ver informe</TextoQueCambia>
                         </button>
 
                         {/* Es un enlace y no un boton: la descarga la sirve el

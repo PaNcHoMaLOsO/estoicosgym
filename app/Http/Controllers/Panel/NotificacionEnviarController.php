@@ -11,6 +11,7 @@ use App\Models\TipoNotificacion;
 use App\Services\EnvioManualService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -30,13 +31,20 @@ class NotificacionEnviarController extends Controller
              * NO va la lista de socios: se busca. Y solo aparece quien tiene
              * correo, porque a los demas no se les puede escribir por aqui.
              */
-            'preseleccionado' => $this->preseleccionado($request->query('cliente'), $envio),
+            'preseleccionado' => $this->preseleccionado($request->texto('cliente') ?: null, $envio),
             'plantillas' => TipoNotificacion::where('activo', true)
                 // Las del contrato llevan un enlace que solo se crea al mandarlo
                 // desde la ficha: elegidas aquí saldrían sin dónde firmar.
                 ->whereNotIn('codigo', \App\Services\ContratoDigitalService::PLANTILLAS)
                 ->orderBy('nombre')
-                ->get(['id', 'nombre', 'descripcion'])
+                ->get(['id', 'nombre', 'descripcion', 'asunto_email', 'plantilla_email'])
+                // Las que traen texto de ejemplo sin cambiar —«[XX%]» en la de
+                // promoción— no se ofrecen hasta que alguien las edite: elegidas
+                // aquí, el envío las rechazaría al final.
+                ->reject(fn (TipoNotificacion $t) => EnvioManualService::marcadoresSinEditar(
+                    $t->asunto_email . ' ' . $t->plantilla_email
+                ) !== [])
+                ->values()
                 ->map(fn (TipoNotificacion $t) => [
                     'id' => $t->id,
                     'nombre' => $t->nombre,
@@ -48,7 +56,7 @@ class NotificacionEnviarController extends Controller
 
     public function buscar(Request $request, EnvioManualService $envio)
     {
-        $texto = trim((string) $request->query('q', ''));
+        $texto = trim($request->texto('q', ''));
 
         // Con una letra saldria medio padron y no serviria para elegir.
         if (mb_strlen($texto) < 2) {
@@ -101,11 +109,21 @@ class NotificacionEnviarController extends Controller
             return back()->with('error', 'Este correo ya se envió. Búscalo en el historial antes de repetirlo.');
         }
 
-        $notificacion = $envio->enviar(
-            $cliente,
-            TipoNotificacion::findOrFail($datos['plantilla_id']),
-            $datos['nota'] ?? null
-        );
+        // Si el servicio lo rechaza (plantilla a medio rellenar, socio sin
+        // correo, el servidor de correo no contesta) el socio no recibio nada:
+        // el turno se suelta para que, arreglado, se pueda reenviar. Si no, en
+        // los proximos dos minutos diria «ya se envió» de algo que no salio.
+        try {
+            $notificacion = $envio->enviar(
+                $cliente,
+                TipoNotificacion::findOrFail($datos['plantilla_id']),
+                $datos['nota'] ?? null
+            );
+        } catch (ValidationException $e) {
+            $this->releaseFormToken($request, 'notificacion_manual');
+
+            throw $e;
+        }
 
         return redirect()
             ->route('panel.notificaciones.show', $notificacion->uuid)
@@ -123,6 +141,13 @@ class NotificacionEnviarController extends Controller
     {
         if ((int) $notificacion->id_estado === EstadosCodigo::NOTIFICACION_ENVIADA) {
             return back()->with('error', 'Ese correo ya se envió.');
+        }
+
+        // Solo lo que falló: uno cancelado se paró a propósito, y uno
+        // pendiente ya sale con la tanda. El servicio lo vuelve a mirar con la
+        // fila trabada.
+        if ((int) $notificacion->id_estado !== EstadosCodigo::NOTIFICACION_FALLIDA) {
+            return back()->with('error', 'Solo se puede reenviar un correo que no salió.');
         }
 
         $envio->reenviar($notificacion);
@@ -159,10 +184,12 @@ class NotificacionEnviarController extends Controller
 
         // Sin correo no se puede: mejor abrir vacio y que se busque a otro,
         // que abrir con alguien a quien el formulario va a rechazar al final.
-        if (! $cliente || empty($cliente->email)) {
+        if (! $cliente || $cliente->correoParaAvisos() === null) {
             return null;
         }
 
-        return $envio->buscar($cliente->email, 1)->first();
+        // Por su RUT si no tiene correo propio: el menor que solo tiene el del
+        // apoderado también se puede elegir.
+        return $envio->buscar($cliente->email ?: (string) $cliente->run_pasaporte, 1)->first();
     }
 }

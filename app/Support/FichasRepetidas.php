@@ -228,7 +228,7 @@ class FichasRepetidas
             ->get()->keyBy('id_cliente');
         $pagos = DB::table('pagos')->whereIn('id_cliente', $ids)->groupBy('id_cliente')
             ->selectRaw('id_cliente, count(*) as cuantos')->pluck('cuantos', 'id_cliente');
-        $fiado = DB::table('fiados')->whereIn('id_cliente', $ids)->groupBy('id_cliente')
+        $fiado = DB::table('fiados')->whereNull('deleted_at')->whereIn('id_cliente', $ids)->groupBy('id_cliente')
             ->selectRaw('id_cliente, count(*) as cuantos')->pluck('cuantos', 'id_cliente');
 
         return array_values(array_filter(array_map(function (array $g) use ($socios, $membresias, $pagos, $fiado) {

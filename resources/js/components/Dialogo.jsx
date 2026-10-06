@@ -1,9 +1,10 @@
 import { router } from '@inertiajs/react';
 import { CircleHelpIcon, Trash2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Nota from '@/components/Nota';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 import {
     Dialog,
     DialogContent,
@@ -52,15 +53,31 @@ export default function Dialogo({
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState(null);
 
+    // Lo que rechazo el servidor por la via de Inertia (los errores de
+    // validacion del controlador). Antes el dialogo se cerraba igual y esto se
+    // perdia: «Mandarlo» o «Juntar» no hacian nada y no se sabia por que.
+    const [erroresInertia, setErroresInertia] = useState([]);
+
+    // Al cerrar se olvida el error: si no, al abrirlo para otra fila saldria
+    // el motivo de la anterior.
+    useEffect(() => {
+        if (! abierto) {
+            setErroresInertia([]);
+            setError(null);
+        }
+    }, [abierto]);
+
     function confirmarPorInertia() {
         setEnviando(true);
+        setErroresInertia([]);
 
         router[metodo](accion, datos, {
             preserveScroll: true,
-            onFinish: () => {
-                setEnviando(false);
-                alCerrar();
-            },
+            // Solo se cierra si salio. Con error se queda abierto y lo dice,
+            // igual que la via JSON.
+            onSuccess: () => alCerrar(),
+            onError: (errores) => setErroresInertia(Object.values(errores ?? {}).flat()),
+            onFinish: () => setEnviando(false),
         });
     }
 
@@ -141,6 +158,10 @@ export default function Dialogo({
 
                 {error ? <Nota tono="peligro" compacta>{error}</Nota> : null}
 
+                {erroresInertia.map((mensaje, i) => (
+                    <p key={i} className="apoyo text-danger" role="alert">{mensaje}</p>
+                ))}
+
                 <DialogFooter>
                     <button
                         type="button"
@@ -158,7 +179,7 @@ export default function Dialogo({
                             peligrosa ? 'bg-danger text-white' : 'bg-volt text-on-volt'
                         }`}
                     >
-                        {enviando ? 'Un momento…' : etiquetaConfirmar}
+                        <TextoQueCambia ocupado={enviando} mientras="Un momento…">{etiquetaConfirmar}</TextoQueCambia>
                     </button>
                 </DialogFooter>
             </DialogContent>

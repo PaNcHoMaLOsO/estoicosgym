@@ -115,9 +115,10 @@ class LlevarLaConfiguracion
                 'imagenes' => ['foto'],
             ],
             'clases' => [
-                'columnas' => ['uuid', 'nombre', 'descripcion', 'profesor', 'para_quien', 'precio_mensual', 'imagen', 'horario', 'color', 'activo', 'orden'],
+                'columnas' => ['uuid', 'nombre', 'descripcion', 'profesor', 'para_quien', 'precio_mensual', 'imagen', 'fotos', 'horario', 'color', 'activo', 'orden'],
                 'identidad' => [['uuid'], ['nombre']],
                 'imagenes' => ['imagen'],
+                'galerias' => ['fotos'],
             ],
             'ejercicios' => [
                 'columnas' => ['uuid', 'nombre', 'zona', 'equipo', 'indicacion', 'activo', 'orden'],
@@ -291,6 +292,20 @@ class LlevarLaConfiguracion
                 }
 
                 $salida[$columna] = $referencia;
+            }
+
+            // Las galerías: una lista de rutas en JSON. Viajan las que se
+            // pueden llevar; las de prueba y las raras se quedan.
+            foreach ($definicion['galerias'] ?? [] as $columna) {
+                $rutas = json_decode((string) ($salida[$columna] ?? ''), true);
+                $rutas = array_values(array_filter(is_array($rutas) ? $rutas : [], fn ($r) => is_string($r)
+                    && ! str_starts_with(basename($r), 'prueba-') && self::rutaSegura($r)));
+
+                foreach ($rutas as $r) {
+                    $imagenes[$r] = true;
+                }
+
+                $salida[$columna] = $rutas ? json_encode($rutas) : null;
             }
 
             foreach ($definicion['imagenes'] ?? [] as $columna) {

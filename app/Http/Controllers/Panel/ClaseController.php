@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -32,6 +33,8 @@ class ClaseController extends Controller
                 'para_quien' => $c->para_quien,
                 'precio_mensual' => $c->precio_mensual,
                 'imagen_url' => $c->urlDeImagen(),
+                // La galería: la ruta es lo que se manda de vuelta para quitar una.
+                'fotos' => array_map(fn (string $ruta) => ['ruta' => $ruta, 'url' => asset('storage/' . $ruta)], $c->rutasDeFotos()),
                 'horario' => $c->horarioOrdenado(),
                 'horario_texto' => $c->horarioEnUnaLinea(),
                 'color' => $c->color,
@@ -40,6 +43,7 @@ class ClaseController extends Controller
             'dias' => collect(Clase::DIAS)->map(fn (string $nombre, string $valor) => ['valor' => $valor, 'etiqueta' => $nombre])->values(),
             'colores' => collect(Clase::COLORES)->map(fn (array $c, string $valor) => ['valor' => $valor] + $c)->values(),
             'ver' => route('landing.clases'),
+            'maxFotos' => Clase::MAX_FOTOS,
         ]);
     }
 
@@ -47,18 +51,20 @@ class ClaseController extends Controller
     {
         // Lo nueva va al final, como en los contenidos de la web: el orden se
         // cambia con las flechas, no escribiendo números.
-        $clase = Clase::create($this->validar($request, true) + [
+        $clase = Clase::create($this->validar($request, null) + [
             'orden' => (int) Clase::max('orden') + 1,
         ]);
         $this->ponerImagen($clase, $request);
+        $this->ponerFotos($clase, $request);
 
         return back()->with('success', $clase->activo ? 'Clase guardada. Ya sale en la web.' : 'Clase guardada, oculta.');
     }
 
     public function update(Request $request, Clase $clase)
     {
-        $clase->update($this->validar($request, false));
+        $clase->update($this->validar($request, $clase));
         $this->ponerImagen($clase, $request);
+        $this->ponerFotos($clase, $request);
 
         return back()->with('success', 'Cambios guardados.');
     }
@@ -94,12 +100,10 @@ class ClaseController extends Controller
         return back();
     }
 
-    /** Borrarla del todo, con su foto: una foto sin clase no la mira nadie. */
+    /** Borrarla del todo, con sus fotos: una foto sin clase no la mira nadie. */
     public function destroy(Clase $clase)
     {
-        if ($clase->imagen) {
-            Storage::disk('public')->delete($clase->imagen);
-        }
+        Storage::disk('public')->delete(array_filter([$clase->imagen, ...$clase->rutasDeFotos()]));
 
         $clase->delete();
         $this->renumerar();
@@ -118,7 +122,7 @@ class ClaseController extends Controller
     }
 
     /** @return array<string,mixed> */
-    private function validar(Request $request, bool $creando): array
+    private function validar(Request $request, ?Clase $clase): array
     {
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
@@ -131,6 +135,11 @@ class ClaseController extends Controller
             // Con foto de teléfono: hasta 8 MB, que igual se achica. Sin SVG,
             // que puede llevar código.
             'imagen' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'],
+            // La galería: las que se suben y las que se quitan (por su ruta).
+            'fotos_nuevas' => ['nullable', 'array', 'max:' . Clase::MAX_FOTOS],
+            'fotos_nuevas.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:8192'],
+            'fotos_quitar' => ['nullable', 'array'],
+            'fotos_quitar.*' => ['string'],
             'horario' => ['required', 'array', 'min:1', 'max:21'],
             'horario.*.dia' => ['required', Rule::in(array_keys(Clase::DIAS))],
             'horario.*.desde' => ['required', 'date_format:H:i'],
@@ -144,6 +153,10 @@ class ClaseController extends Controller
             'imagen.image' => 'Ese archivo no es una imagen.',
             'imagen.mimes' => 'La foto tiene que ser JPG, PNG o WEBP.',
             'imagen.max' => 'La foto no puede pesar más de 8 MB.',
+            'fotos_nuevas.max' => 'Hasta ' . Clase::MAX_FOTOS . ' fotos en la galería.',
+            'fotos_nuevas.*.image' => 'Uno de los archivos no es una imagen.',
+            'fotos_nuevas.*.mimes' => 'Las fotos tienen que ser JPG, PNG o WEBP.',
+            'fotos_nuevas.*.max' => 'Cada foto puede pesar hasta 8 MB.',
             'horario.required' => 'Agrega al menos un día con su horario.',
             'horario.min' => 'Agrega al menos un día con su horario.',
             'horario.*.dia.required' => 'Elige el día.',
@@ -154,6 +167,15 @@ class ClaseController extends Controller
             'horario.*.hasta.date_format' => 'La hora va como 20:30.',
             'horario.*.hasta.after' => 'La hora de término tiene que ser después de la de inicio.',
         ]);
+
+        // Las que quedan más las nuevas no pueden pasar del tope: se avisa
+        // antes de guardar nada.
+        $quedan = array_diff($clase?->rutasDeFotos() ?? [], $datos['fotos_quitar'] ?? []);
+        if (count($quedan) + count($datos['fotos_nuevas'] ?? []) > Clase::MAX_FOTOS) {
+            throw ValidationException::withMessages([
+                'fotos_nuevas' => 'La galería admite hasta ' . Clase::MAX_FOTOS . ' fotos: quita alguna antes de subir más.',
+            ]);
+        }
 
         $limpio = fn (?string $texto) => ($texto = trim((string) $texto)) === '' ? null : $texto;
 
@@ -189,6 +211,24 @@ class ClaseController extends Controller
         if ($anterior && $anterior !== $clase->imagen) {
             Storage::disk('public')->delete($anterior);
         }
+    }
+
+    /**
+     * La galería: se quitan las marcadas (solo si son de esta clase: la ruta
+     * llega del navegador) y se suman las nuevas al final.
+     */
+    private function ponerFotos(Clase $clase, Request $request): void
+    {
+        $actuales = $clase->rutasDeFotos();
+        $quitar = array_values(array_intersect($actuales, (array) $request->input('fotos_quitar', [])));
+        $nuevas = array_map(fn (UploadedFile $f) => $this->guardarFoto($f), (array) $request->file('fotos_nuevas', []));
+
+        if ($quitar === [] && $nuevas === []) {
+            return;
+        }
+
+        $clase->update(['fotos' => array_values([...array_diff($actuales, $quitar), ...$nuevas]) ?: null]);
+        Storage::disk('public')->delete($quitar);
     }
 
     /**

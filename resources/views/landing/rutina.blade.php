@@ -16,13 +16,13 @@
     use App\Support\EntrenamientoDeHoy as Hoy;
 
     $tarjeta = 'flex rounded-xl bg-pg-grafito text-pg-tiza transition duration-200 hover:bg-pg-gris/70 peer-checked:bg-pg-rojo/15 peer-checked:ring-2 peer-checked:ring-pg-rojo peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pg-rojo-claro active:scale-[0.97]';
-    $pregunta = 'mt-1 block font-display text-[1.7rem] uppercase leading-tight text-pg-tiza sm:text-4xl';
-    $paso = 'block font-modern text-xs uppercase tracking-widest text-pg-tiza/45';
-    $seccion = 'col-span-4 mt-1 font-modern text-[10px] uppercase tracking-widest text-pg-tiza/45 first:mt-0';
+    $pregunta = 'mt-1 block font-display text-[1.7rem] uppercase leading-tight text-pg-tiza sm:text-5xl';
+    $paso = 'block font-modern text-xs sm:text-sm uppercase tracking-widest text-pg-tiza/45';
+    $seccion = 'col-span-4 mt-1 font-modern text-[10px] sm:mt-3 sm:text-xs uppercase tracking-widest text-pg-tiza/45 first:mt-0';
     // Las opciones de grupos, bajas y de a cuatro (una fila por sección):
     // cada pregunta cabe entera en la pantalla del celular.
-    $baja = 'h-full flex-col items-center gap-1 px-1 py-2 text-center';
-    $nombreBajo = 'font-modern text-[11px] font-semibold leading-tight';
+    $baja = 'h-full flex-col items-center gap-1 px-1 py-2 text-center sm:gap-2 sm:px-2 sm:py-4';
+    $nombreBajo = 'font-modern text-[11px] font-semibold leading-tight sm:text-sm';
     $atras = 'mb-3 inline-flex items-center gap-2 font-modern text-sm text-pg-tiza/60 transition-colors hover:text-pg-tiza';
     $iconos = ['nunca' => 'seedling', 'algo' => 'dumbbell', 'hace_tiempo' => 'medal'];
     $bajadas = ['nunca' => 'Primeras semanas', 'algo' => 'Algunos meses', 'hace_tiempo' => 'Varios años'];
@@ -43,7 +43,7 @@
 
 @section('content')
     <section class="bg-pg-negro pb-16 pt-20 lg:pt-32">
-        <div class="mx-auto max-w-xl px-4 sm:px-8">
+        <div class="mx-auto max-w-3xl px-4 sm:px-8">
             <p class="text-center font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Qué entrenar hoy</p>
 
             {{-- La barra de los cuatro pasos: solo cuando van de a uno. --}}
@@ -65,9 +65,9 @@
                         @foreach(Hoy::DIAS as $n)
                             <label data-opcion class="block cursor-pointer">
                                 <input type="radio" name="dias" value="{{ $n }}" class="peer sr-only" @checked($respuestas['dias'] === $n) @if($loop->first) required @endif>
-                                <span class="{{ $tarjeta }} h-24 flex-col items-center justify-center">
-                                    <span class="font-display text-4xl leading-none">{{ $n }}</span>
-                                    <span class="mt-1 font-modern text-xs text-pg-tiza/55">días</span>
+                                <span class="{{ $tarjeta }} h-24 flex-col items-center justify-center sm:h-36">
+                                    <span class="font-display text-4xl leading-none sm:text-6xl">{{ $n }}</span>
+                                    <span class="mt-1 font-modern text-xs text-pg-tiza/55 sm:text-sm">días</span>
                                 </span>
                             </label>
                         @endforeach
@@ -81,16 +81,16 @@
                         <span class="{{ $paso }}">2 de 4</span>
                         <span class="{{ $pregunta }}">¿Cómo vas?</span>
                     </legend>
-                    <div class="mt-5 grid gap-3">
+                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
                         @foreach(Hoy::NIVELES as $clave => $nombre)
                             <label data-opcion class="block cursor-pointer">
                                 <input type="radio" name="nivel" value="{{ $clave }}" class="peer sr-only" @checked($respuestas['nivel'] === $clave) @if($loop->first) required @endif>
-                                <span class="{{ $tarjeta }} items-center gap-4 px-4 py-4">
-                                    <span class="grid size-12 shrink-0 place-items-center rounded-full bg-pg-negro/60 text-xl text-pg-rojo-claro">
+                                <span class="{{ $tarjeta }} h-full items-center gap-4 px-4 py-4 sm:flex-col sm:justify-center sm:gap-3 sm:py-8 sm:text-center">
+                                    <span class="grid size-12 shrink-0 place-items-center rounded-full bg-pg-negro/60 text-xl text-pg-rojo-claro sm:size-16 sm:text-2xl">
                                         <x-icono :nombre="$iconos[$clave]" />
                                     </span>
                                     <span class="font-modern">
-                                        <span class="block font-semibold">{{ $nombre }}</span>
+                                        <span class="block font-semibold sm:text-lg">{{ $nombre }}</span>
                                         <span class="block text-sm text-pg-tiza/55">{{ $bajadas[$clave] }}</span>
                                     </span>
                                 </span>
@@ -107,7 +107,7 @@
                         <span class="{{ $pregunta }}">¿Qué entrenaste estos últimos días?</span>
                         <span class="mt-1 block font-modern text-sm text-pg-tiza/60">Marca todo lo de los últimos 2 o 3 días.</span>
                     </legend>
-                    <div class="mt-4 grid grid-cols-4 gap-1.5">
+                    <div class="mt-4 grid grid-cols-4 gap-1.5 sm:gap-3">
                         @foreach(Hoy::SECCIONES as $titulo => $claves)
                             @php $claves = array_values(array_filter($claves, fn ($c) => isset(Hoy::HICE[$c]))); @endphp
                             <p class="{{ $seccion }}">{{ $titulo }}</p>
@@ -126,7 +126,7 @@
                             <input type="checkbox" name="hice[]" value="nada" class="peer sr-only" @checked($hechos === [])>
                             <span class="{{ $tarjeta }} h-full items-center justify-center gap-2 px-3 py-2">
                                 <x-icono nombre="bed" class="text-lg text-pg-tiza/60" />
-                                <span class="font-modern text-sm font-semibold">{{ Hoy::HICE['nada'] }}</span>
+                                <span class="font-modern text-sm font-semibold sm:text-base">{{ Hoy::HICE['nada'] }}</span>
                             </span>
                         </label>
                     </div>
@@ -143,7 +143,7 @@
                         <span class="{{ $paso }}">4 de 4</span>
                         <span class="{{ $pregunta }}">¿Qué te gustaría entrenar hoy?</span>
                     </legend>
-                    <div class="mt-4 grid grid-cols-4 gap-1.5">
+                    <div class="mt-4 grid grid-cols-4 gap-1.5 sm:gap-3">
                         @foreach(Hoy::SECCIONES as $titulo => $claves)
                             <p class="{{ $seccion }}">{{ $titulo }}</p>
                             @foreach($claves as $clave)
@@ -154,8 +154,8 @@
                                         @include('landing.partes.icono-grupo', ['grupo' => $clave])
                                         <span class="min-w-0">
                                             <span class="block {{ $nombreBajo }}">{{ Hoy::GRUPOS[$clave] }}</span>
-                                            <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[10px] text-pg-tiza/60">Descansa</span>
-                                            <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[10px] font-semibold text-pg-rojo-claro">Sugerido</span>
+                                            <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[10px] text-pg-tiza/60 sm:text-xs">Descansa</span>
+                                            <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[10px] font-semibold text-pg-rojo-claro sm:text-xs">Sugerido</span>
                                         </span>
                                     </span>
                                 </label>

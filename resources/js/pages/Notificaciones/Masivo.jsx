@@ -6,6 +6,7 @@ import { ArrowLeftIcon, SendIcon, UsersIcon } from 'lucide-react';
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Un mismo aviso a un grupo de socios.
  *
@@ -174,7 +175,7 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                                 className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2 disabled:opacity-50"
                             >
                                 <UsersIcon className="size-4" aria-hidden="true" />
-                                {cargandoLista ? 'Contando…' : 'Ver quiénes son'}
+                                <TextoQueCambia ocupado={cargandoLista} mientras="Contando…">Ver quiénes son</TextoQueCambia>
                             </button>
 
                             {lista?.error ? (
@@ -328,15 +329,13 @@ export default function Masivo({ grupos, membresias, variables, tope, formToken 
                             className="inline-flex items-center gap-1.5 rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
                             <SendIcon className="size-4" aria-hidden="true" />
-                            {processing
-                                ? programado
-                                    ? 'Programando…'
-                                    : 'Enviando…'
-                                : programado
-                                  ? `Programar${cuantos ? ` ${cuantos}` : ''} para el ${data.cuando.split('-').reverse().join('/')}`
-                                  : cuantos
-                                    ? `Enviar a ${cuantos} ${cuantos === 1 ? 'socio' : 'socios'}`
-                                    : 'Enviar'}
+                            <TextoQueCambia ocupado={processing} mientras={programado ? 'Programando…' : 'Enviando…'}>
+                                {programado
+                                    ? `Programar${cuantos ? ` ${cuantos}` : ''} para el ${data.cuando.split('-').reverse().join('/')}`
+                                    : cuantos
+                                      ? `Enviar a ${cuantos} ${cuantos === 1 ? 'socio' : 'socios'}`
+                                      : 'Enviar'}
+                            </TextoQueCambia>
                         </button>
 
                         <Link href="/panel/notificaciones" className="apoyo text-fog hover:text-chalk">

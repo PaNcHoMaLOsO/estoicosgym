@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Nota;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,8 @@ use Illuminate\Http\Request;
  */
 class NotaController extends Controller
 {
+    use ValidatesFormToken;
+
     public function store(Request $request)
     {
         $datos = $request->validate([
@@ -23,6 +26,11 @@ class NotaController extends Controller
             'texto.required' => 'Escribe algo.',
             'texto.max' => 'Una nota son 280 caracteres. Para más, usa las observaciones de la ficha.',
         ]);
+
+        // El mismo formulario enviado dos veces (doble Enter) se apunta una.
+        if (! $this->reservarTokenDelFormulario($request, 'nota_anotar')) {
+            return back();
+        }
 
         Nota::create([
             'texto' => trim($datos['texto']),

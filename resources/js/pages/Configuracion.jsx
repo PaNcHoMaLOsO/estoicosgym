@@ -5,6 +5,7 @@ import { AlertTriangleIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import Dialogo from '@/components/Dialogo';
 import { haceCuanto } from '@/lib/tiempo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Un tema de ajustes: sus campos y un solo «Guardar».
  *
@@ -111,7 +112,7 @@ export default function Configuracion({ grupo, extra }) {
                     disabled={processing || !sinGuardar}
                     className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                    {processing ? 'Guardando…' : 'Guardar'}
+                    <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                 </button>
 
                 {sinGuardar ? (
@@ -196,7 +197,7 @@ function Ajuste({ ajuste, valor, error, alCambiar }) {
     };
 
     return (
-        <div className="grid gap-1 sm:grid-cols-[14rem_1fr] sm:items-start sm:gap-4">
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-[14rem_1fr] sm:items-start sm:gap-4">
             <label htmlFor={ajuste.clave} className="flex items-center gap-1.5 pt-1.5 text-sm text-chalk">
                 {ajuste.etiqueta}
                 {/* Un punto en lo que se cambió y todavía no se guarda. */}
@@ -446,7 +447,7 @@ function CorreoDeSalida({ correo }) {
         <section className="mb-4 space-y-3 rounded-panel border border-line bg-surface p-4">
             <h2 className="rotulo">Correo de salida</h2>
 
-            <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[14rem_1fr]">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-[14rem_1fr]">
                 <dt className="text-fog">Sale por</dt>
                 <dd className="text-chalk">
                     {VIAS[correo.via] ?? correo.via}
@@ -516,7 +517,7 @@ function CorreoDeSalida({ correo }) {
                     disabled={processing || ! data.para}
                     className="mt-[1.15rem] shrink-0 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2 disabled:opacity-50"
                 >
-                    {processing ? 'Mandando…' : 'Mandar prueba'}
+                    <TextoQueCambia ocupado={processing} mientras="Mandando…">Mandar prueba</TextoQueCambia>
                 </button>
             </form>
         </section>

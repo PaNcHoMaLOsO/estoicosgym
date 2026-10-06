@@ -18,6 +18,7 @@ import {
     UserPlusIcon,
 } from 'lucide-react';
 
+import { confirmar } from '@/components/Confirmar';
 import Dialogo from '@/components/Dialogo';
 import CamaraFoto from '@/components/CamaraFoto';
 import { ApuntarFiado } from '@/components/Libreta';
@@ -30,6 +31,7 @@ import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 import { celularLegible } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -400,7 +402,7 @@ function ContratoDelSocio({ cliente }) {
                         disabled={processing}
                         className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                     >
-                        {processing ? 'Guardando…' : 'Guardar'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                     </button>
                     <button
                         type="button"
@@ -644,7 +646,10 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
     // Lo que se cobra es lo que se DEBE, este o no vigente el plan: a quien se
     // le vencio debiendo plata el boton le abria el cobro en blanco, que es
     // justo el caso en que mas falta hace.
-    const conSaldo = (vigente?.pendiente > 0 ? vigente : null) ?? inscripciones.find((i) => i.pendiente > 0);
+    // Solo de las que siguen vivas (activa, pausada o vencida): una anulada
+    // o traspasada no se cobra, y el servidor abría el cobro en blanco.
+    const conSaldo = (vigente?.pendiente > 0 ? vigente : null)
+        ?? inscripciones.find((i) => i.pendiente > 0 && [100, 101, 102].includes(Number(i.id_estado)));
 
     return (
         <>
@@ -746,8 +751,19 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                                 Reanudar
                             </button>
                         ) : null}
-                        {/* Una pausada se reanuda antes de renovarla. */}
-                        {cliente.activo && vigente && ! pausada ? (
+                        {/* Una pausada se reanuda antes de renovarla. Si todavía no
+                            toca, el botón queda apagado y dice por qué. */}
+                        {puedeGestionar && cliente.activo && vigente && ! pausada && vigente.renovar_no ? (
+                            <span
+                                title={vigente.renovar_no}
+                                aria-disabled="true"
+                                className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-fog opacity-60"
+                            >
+                                <RefreshCwIcon className="size-4" aria-hidden="true" />
+                                Renovar
+                            </span>
+                        ) : null}
+                        {puedeGestionar && cliente.activo && vigente && ! pausada && ! vigente.renovar_no ? (
                             <a
                                 href={`/panel/inscripciones/${vigente.uuid}/renovar?volver=${cliente.uuid}`}
                                 onClick={abrirEnVentana({
@@ -760,7 +776,9 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                                 Renovar
                             </a>
                         ) : null}
-                        {cliente.activo && ! vigente && ! pausada ? (
+                        {/* También al dado de baja: venderle un plan lo reactiva
+                            (RegistroInscripcionService). Es el caso de cada día. */}
+                        {puede(auth, 'inscripciones.crear') && ! cliente.datos_borrados && ! vigente && ! pausada ? (
                             <a
                                 href={`/panel/inscripciones/crear?cliente=${cliente.uuid}&volver=${cliente.uuid}`}
                                 onClick={abrirEnVentana({
@@ -773,7 +791,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                                 Inscribir
                             </a>
                         ) : null}
-                        {conSaldo ? (
+                        {conSaldo && puede(auth, 'pagos.crear') ? (
                             <a
                                 href={`/panel/pagos/cobrar?inscripcion=${conSaldo.uuid}&volver=${cliente.uuid}`}
                                 onClick={abrirEnVentana({
@@ -896,15 +914,23 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                 detalle={fiado?.lineas}
                 consecuencia="Su cuenta queda saldada y entra a la caja del mesón."
                 conMedio
+                conAbono
                 etiquetaConfirmar="Pagó"
                 accion="/panel/fiados/saldar"
                 metodo="post"
-                datos={{ id_cliente: cliente.id, nombre: null }}
+                datos={{
+                    id_cliente: cliente.id,
+                    nombre: null,
+                    lineas: fiado?.lineas?.map((l) => l.uuid) ?? [],
+                    // Lo que debía en pantalla: un abono repetido se rechaza
+                    // si la cuenta ya no es esa.
+                    debe_visto: fiado?.total ?? 0,
+                }}
             />
 
             {/* APUNTAR OTRA COSA, sin salir de su ficha: se fía con la persona
                 delante, y un salto a otra pantalla es más trabajo que el fiado. */}
-            {cliente.activo && ! cliente.datos_borrados ? (
+            {! cliente.datos_borrados ? (
                 <div className="mb-4">
                     {anotandoFiado ? (
                         <div className="rounded-panel border border-line bg-surface p-4">
@@ -972,7 +998,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
              * del mismo bloque), y la derecha lo que tiene: membresías, pagos y
              * contrato. Borrar sus datos va al final, a lo ancho y aparte.
              */}
-            <div className="grid items-start gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3 lg:col-span-1">
                     <Bloque titulo="Contacto">
                         <dl className="space-y-3">
@@ -1075,11 +1101,12 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                         </Tabla>
                     </Bloque>
 
+                    {/* Sin columna «Pendiente»: era lo que faltaba DESPUÉS de ese
+                        pago, y seguía diciendo «$30.000» con la membresía ya
+                        pagada. Lo que debe hoy está en la tabla de membresías. */}
                     <Bloque titulo="Últimos pagos">
                         <Tabla
-                            columnas={sinDeudas
-                                ? ['Fecha', 'Método', 'Estado', 'Abonado']
-                                : ['Fecha', 'Método', 'Estado', 'Abonado', 'Pendiente']}
+                            columnas={['Fecha', 'Método', 'Estado', 'Abonado']}
                             vacia={pagos.length === 0}
                             mensajeVacio="Todavía no ha pagado nada."
                         >
@@ -1097,15 +1124,6 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                                     <Cifra className="text-chalk">
                                         <Reservado ancho="w-16">{pesos.format(p.abonado)}</Reservado>
                                     </Cifra>
-                                    {sinDeudas ? null : (
-                                        <Cifra className={p.pendiente > 0 ? 'text-warn' : ''}>
-                                            {p.pendiente > 0 ? (
-                                                <Reservado ancho="w-16">{pesos.format(p.pendiente)}</Reservado>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </Cifra>
-                                    )}
                                 </Fila>
                             ))}
                         </Tabla>

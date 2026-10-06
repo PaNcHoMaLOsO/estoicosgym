@@ -57,7 +57,7 @@ class InscripcionRenovarController extends Controller
         return Inertia::render('Inscripciones/Renovar', [
             // Se renueva desde la ficha del socio, en una ventana: al guardar
             // se vuelve a esa ficha.
-            'volverA' => (string) $request->query('volver', ''),
+            'volverA' => $request->texto('volver', ''),
             'inscripcion' => [
                 'uuid' => $inscripcion->uuid,
                 'socio' => trim("{$socio->nombres} {$socio->apellido_paterno} {$socio->apellido_materno}"),
@@ -143,6 +143,15 @@ class InscripcionRenovarController extends Controller
             return 'Esta membresía ya está cerrada. Crea una inscripción nueva.';
         }
 
+        // El socio en la papelera: su membresía vencida pasaba todas las reglas,
+        // la ficha ofrecía «Renovar» y la pantalla reventaba buscando el nombre
+        // de un socio que la relación ya no devuelve.
+        $socio = $inscripcion->cliente;
+
+        if (! $socio || $socio->trashed()) {
+            return 'El socio está en la papelera. Restáuralo antes de renovar.';
+        }
+
         // Ya renovada: si no se comprobara, un segundo envio del formulario
         // crearia una tercera membresia encadenada a una que ya no esta vigente.
         if (Inscripcion::where('id_inscripcion_anterior', $inscripcion->id)->exists()) {
@@ -193,9 +202,11 @@ class InscripcionRenovarController extends Controller
             return 0;
         }
 
-        // En dias enteros y desde el principio del dia: comparar con la hora
-        // actual haria que una membresia que vence hoy dijera «-1 dias».
-        return (int) now()->startOfDay()->diffInDays($inscripcion->fecha_vencimiento->startOfDay(), false);
+        // En dias de calendario, como el resto del sistema (Inscripcion::diasEntre).
+        // diffInDays cuenta horas: con el cambio de hora de por medio un dia
+        // dura 23 y salia uno menos. Ademas, startOfDay() sobre la fecha del
+        // modelo la cambiaba en el propio modelo.
+        return Inscripcion::diasEntre(today(), $inscripcion->fecha_vencimiento);
     }
 
     /** El día en que arranca la nueva. */

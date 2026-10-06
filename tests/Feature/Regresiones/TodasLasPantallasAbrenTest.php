@@ -213,6 +213,49 @@ class TodasLasPantallasAbrenTest extends CasoConCatalogos
     }
 
     /**
+     * Con la dirección manipulada: ?buscar[]=x en vez de ?buscar=x.
+     *
+     * Cualquiera puede escribirla, y los robots lo hacen. Una pantalla que lo
+     * convierte a texto a ciegas revienta con un 500; tiene que hacer como si
+     * no hubiera llegado nada. Un 403 o un 404 son respuestas válidas. Se
+     * prueba con administrador, con recepción y sin sesión (la web pública).
+     */
+    public function test_ninguna_pantalla_revienta_con_la_direccion_manipulada(): void
+    {
+        $valores = $this->sembrar();
+        $basura = '?' . http_build_query(collect([
+            'buscar', 'q', 'filtro', 'orden', 'tipo', 'volver', 'socio', 'celular', 'page', 'direccion',
+            'estado', 'desde', 'hasta', 'mes', 'dias', 'nivel', 'hoy', 'hice', 'objetivo', 'por', 'rut',
+            // Los que leen las pantallas del panel (grep de $request->query/input).
+            'cliente', 'inscripcion', 'anio', 'periodo', 'plan', 'medio', 'meses', 'limite', 'origen',
+            'todas', 'cambiar', 'ayer', 'activo', 'bajas', 'cuantos', 'columnas', 'filtros', 'nombres', 'apellido',
+        ])->mapWithKeys(fn ($k) => [$k => ['x']])->all());
+
+        $caidas = [];
+
+        foreach ([$this->administrador(), $this->recepcionista(), null] as $usuario) {
+            foreach (Route::getRoutes() as $ruta) {
+                $nombre = (string) $ruta->getName();
+
+                if (! in_array('GET', $ruta->methods(), true)
+                    || ! (str_starts_with($nombre, 'panel.') || str_starts_with($nombre, 'landing'))
+                    || ! ($url = $this->rellenar($ruta->uri(), $valores + ['slug' => 'judo']))) {
+                    continue;
+                }
+
+                $usuario ? $this->actingAs($usuario) : auth()->logout();
+                $codigo = $this->get($url . $basura)->baseResponse->getStatusCode();
+
+                if ($codigo >= 500) {
+                    $caidas[] = ($usuario?->email ?? 'público') . " · {$nombre} devolvió {$codigo}";
+                }
+            }
+        }
+
+        $this->assertSame([], $caidas, "Pantallas que revientan:\n" . implode("\n", $caidas));
+    }
+
+    /**
      * Cambia los {parametros} de la ruta por valores de verdad.
      *
      * @param array<string,string> $valores

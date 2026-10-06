@@ -97,7 +97,7 @@ export default function FichaMembresia({ membresia, cifras, precios, inscripcion
                 </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     {membresia.descripcion ? (
                         <Bloque titulo="Descripción">

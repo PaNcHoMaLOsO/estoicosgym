@@ -70,7 +70,8 @@ class CorreoService
             Log::warning('Falló el envío por {via}; se reintenta por el respaldo.', [
                 'via' => $this->principal()->descripcion(),
                 'error' => $e->getMessage(),
-                'destinatario' => $para,
+                // Sin la dirección: el registro lo lee cualquiera con acceso
+                // al servidor, y el correo es un dato personal del socio.
             ]);
 
             $id = $respaldo->enviar($para, $asunto, $html, $nombreDestino);
@@ -113,7 +114,7 @@ class CorreoService
         }
 
         if ($enviados >= $tope) {
-            throw new RuntimeException(
+            throw new \App\Services\Correo\TopeDelDiaAlcanzado(
                 "Hoy ya salieron {$tope} correos, el tope del día: Gmail bloquea la cuenta si se pasa de 500. "
                 . 'Los que faltan salen mañana.'
             );
@@ -279,23 +280,30 @@ class CorreoService
      */
     private function esDireccionReservada(string $direccion): bool
     {
-        $dominio = strtolower(substr(strrchr($direccion, '@') ?: '', 1));
+        // El punto final de un dominio absoluto («example.com.») no lo cambia.
+        $dominio = rtrim(strtolower(trim(substr(strrchr($direccion, '@') ?: '', 1))), '.');
 
         if ($dominio === '') {
             return false;
         }
 
-        if (in_array($dominio, ['example.com', 'example.net', 'example.org'], true)) {
+        /*
+         * Las extensiones reservadas (RFC 2606 y 6761), solas o con lo que sea
+         * delante: «demo.test», «x.localhost», o un «@localhost» a secas.
+         */
+        $extension = substr(strrchr('.' . $dominio, '.'), 1);
+        if (in_array($extension, ['test', 'example', 'invalid', 'localhost'], true)) {
             return true;
         }
 
-        foreach (['.test', '.example', '.invalid', '.localhost'] as $extension) {
-            if (str_ends_with($dominio, $extension)) {
-                return true;
-            }
-        }
-
-        return false;
+        /*
+         * «example» con cualquier extensión y cualquier subdominio.
+         *
+         * Solo se miraban example.com/.net/.org exactos, y los datos de prueba
+         * de un gimnasio chileno se escriben con @example.cl o @correo.example.com:
+         * pasaban como reales y rebotaban desde la cuenta del gimnasio.
+         */
+        return (bool) preg_match('/(^|\.)example\.[a-z]{2,}$/', $dominio);
     }
 
     private function principal(): Transporte

@@ -12,6 +12,7 @@ import Plazo from '@/components/Plazo';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
 import Convenio from '@/components/Convenio';
 import { pesos } from '@/components/Tablero';
+import { puede } from '@/lib/permisos';
 
 /*
  * Una fila, una membresía: de quién es, qué plan, cuándo corre, en qué está y
@@ -105,7 +106,7 @@ const ORDENES = [
 ];
 
 export default function Index({ inscripciones, filtros, resumen, planes = [], ultimo = null }) {
-    const { privado } = usePage().props;
+    const { privado, auth } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
 
     // Lo que no se pierde al tocar otro filtro: elegir «Anual» no puede
@@ -140,13 +141,15 @@ export default function Index({ inscripciones, filtros, resumen, planes = [], ul
                     <p className="apoyo text-fog">Cada membresía vendida, con su plazo y su pago</p>
                 </div>
 
-                <Link
-                    href="/panel/inscripciones/crear"
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <PlusIcon className="size-4" aria-hidden="true" />
-                    Nueva inscripción
-                </Link>
+                {puede(auth, 'inscripciones.crear') ? (
+                    <Link
+                        href="/panel/inscripciones/crear"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <PlusIcon className="size-4" aria-hidden="true" />
+                        Nueva inscripción
+                    </Link>
+                ) : null}
             </header>
 
             <UltimoIngresado titulo="Última membresía ingresada" ultimo={ultimo} />
@@ -155,7 +158,7 @@ export default function Index({ inscripciones, filtros, resumen, planes = [], ul
                 <Buscador
                     ruta="/panel/inscripciones"
                     valor={filtros.buscar}
-                    etiqueta="Buscar por socio o RUT"
+                    etiqueta="Buscar por socio, RUT o código (#E5E42D49)"
                     // Buscar no puede tirar abajo el plan ni el orden elegidos.
                     extra={conservar}
                 />
@@ -255,9 +258,13 @@ export default function Index({ inscripciones, filtros, resumen, planes = [], ul
                                 ) : null}
                             </div>
                         </Celda>
-                        <Celda className="text-right">
-                            <Pago debe={inscripcion.debe} precio={inscripcion.precio_final} />
-                        </Celda>
+                        {/* Sin la columna en la cabecera tampoco va la celda:
+                            si no, el «Debe» seguia saliendo en cada fila. */}
+                        {sinDeudas ? null : (
+                            <Celda className="text-right">
+                                <Pago debe={inscripcion.debe} precio={inscripcion.precio_final} />
+                            </Celda>
+                        )}
                     </Fila>
                 ))}
             </Tabla>

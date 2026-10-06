@@ -115,7 +115,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->assertSame('cardio', EntrenamientoDeHoy::sugerencia('cuerpo_completo', 3));
         $this->get('/rutina?dias=3&nivel=nunca&ayer=cuerpo_completo')
             ->assertOk()
-            ->assertSee('<h1 class="mt-1 font-display text-3xl uppercase leading-none text-pg-tiza">Cardio', false);
+            ->assertSee('<h1 class="mt-1 font-display text-4xl uppercase leading-none text-pg-tiza sm:text-5xl lg:text-6xl">Cardio', false);
     }
 
     /** Pide piernas y su rutina es de cuerpo completo: el día se arma con el catálogo. */
@@ -353,7 +353,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         // Con 5 días, pecho y espalda estos días: hoy piernas.
         $this->get('/rutina?dias=5&nivel=algo&hice[]=pecho&hice[]=espalda')
             ->assertOk()
-            ->assertSee('<h1 class="mt-1 font-display text-3xl uppercase leading-none text-pg-tiza">Piernas', false);
+            ->assertSee('<h1 class="mt-1 font-display text-4xl uppercase leading-none text-pg-tiza sm:text-5xl lg:text-6xl">Piernas', false);
 
         // Todo lo marcado (y lo que choca) sale como «mejor no»; «nada» junto a otra cosa no cuenta.
         $respuesta = $this->get('/rutina?dias=5&nivel=algo&hice[]=pecho&hice[]=piernas&hice[]=nada&cambiar=1')
@@ -447,24 +447,24 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertDontSee('Descanso ');
     }
 
-    /** Compacto para el celular: filas, mapa chico y el detalle en <details> cerrados (sin JavaScript). */
+    /** Una fila por ejercicio, grande y legible, con el detalle en <details> cerrados (sin JavaScript). */
     public function test_el_resultado_y_las_preguntas_son_compactos(): void
     {
         $e = EntrenamientoDeHoy::armar(5, 'algo', 'nada', 'pecho');
         $html = $this->get('/rutina?dias=5&nivel=algo&hice[]=nada&hoy=pecho')
             ->assertOk()
-            ->assertSee('class="h-[4.5rem] w-20 shrink-0"', false)
-            ->assertSeeInOrder(['Calentamiento', '· 5 min cardio + 4 con banda', 'Entrenamiento', 'Para terminar, estira', '· ' . count($e['estiramientos']) . ' de 30 s'], false)
+            ->assertSee('class="h-24 w-28 shrink-0 sm:h-32 sm:w-36 lg:h-40 lg:w-44"', false)
+            ->assertSeeInOrder(['Calentamiento', '5 min cardio + 4 con banda', 'Entrenamiento', 'Para terminar, estira', count($e['estiramientos']) . ' de 30 s'], false)
             ->assertSee('Cómo y otras opciones')
             ->getContent();
 
         // Una fila por ejercicio, cerradas; el calentamiento y los estiramientos también.
-        $this->assertSame(count($e['lineas']), substr_count($html, '<details class="group">'));
+        $this->assertSame(count($e['lineas']), substr_count($html, '<details class="group rounded-xl'));
         $this->assertStringNotContainsString(' open>', $html);
-        $this->assertSame(2, substr_count($html, '<details class="group mt-5"'));
+        $this->assertSame(2, substr_count($html, '<details class="group mt-5 lg:'));
 
         // Las opciones de grupos, de a cuatro (una fila por sección) y bajas.
-        $this->get('/rutina')->assertOk()->assertSee('mt-4 grid grid-cols-4 gap-1.5', false)->assertDontSee('h-16 w-20', false);
+        $this->get('/rutina')->assertOk()->assertSee('mt-4 grid grid-cols-4 gap-1.5 sm:gap-3', false)->assertDontSee('h-16 w-20', false);
     }
 
     /** Sin JavaScript: el formulario manda hice[] tal cual y «nada» viene marcado. */

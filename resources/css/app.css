@@ -54,6 +54,11 @@
 
 @layer base {
   html {
+    /* El lugar de la barra de desplazamiento, siempre guardado. Sin esto,
+       cuando la página pasaba a ser más alta que la pantalla (al filtrar,
+       abrir un detalle o escribir en un buscador) aparecía la barra y todo
+       se corría unos 15 px: los botones de la derecha «saltaban». */
+    scrollbar-gutter: stable;
     background-color: var(--app-page);
     color: var(--app-chalk);
     font-family: var(--font-sans);

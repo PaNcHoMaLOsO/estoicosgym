@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\CobroTaller;
 use App\Models\CotizacionTaller;
 use App\Models\HoraTaller;
@@ -34,9 +35,11 @@ use Inertia\Inertia;
  */
 class TallerController extends Controller
 {
+    use ValidatesFormToken;
+
     public function index(Request $request)
     {
-        $mes = $this->mes($request->query('periodo'));
+        $mes = $this->mes(($request->texto('periodo') ?: null));
 
         $talleres = Taller::with('institucion')
             ->withSum(['horas as horas_del_mes' => fn ($q) => $q
@@ -71,7 +74,7 @@ class TallerController extends Controller
     /** La ficha del taller: el mes, sus clases y lo que se le cobrará. */
     public function show(Request $request, Taller $taller)
     {
-        $mes = $this->mes($request->query('periodo'));
+        $mes = $this->mes(($request->texto('periodo') ?: null));
         $periodo = $mes->format('Y-m');
 
         $horas = $taller->horas()
@@ -265,6 +268,12 @@ class TallerController extends Controller
 
         $this->abortSiEstaCerrado($taller, Carbon::parse($datos['fecha']));
 
+        // El mismo formulario dos veces anota una clase. Sin token no se mira
+        // la huella: dos clases el mismo día pueden ser de verdad.
+        if (! $this->reservarTokenDelFormulario($request, 'taller_hora_' . $taller->getKey())) {
+            return back();
+        }
+
         $taller->horas()->create([
             'fecha' => $datos['fecha'],
             'horas' => $datos['horas'],
@@ -284,7 +293,7 @@ class TallerController extends Controller
      */
     public function anotarMes(Request $request, Taller $taller)
     {
-        $mes = $this->mes($request->input('periodo'));
+        $mes = $this->mes(($request->texto('periodo') ?: null));
         $this->abortSiEstaCerrado($taller, $mes);
 
         /*
@@ -345,7 +354,7 @@ class TallerController extends Controller
      */
     public function cerrar(Request $request, Taller $taller)
     {
-        $mes = $this->mes($request->input('periodo'));
+        $mes = $this->mes(($request->texto('periodo') ?: null));
         $periodo = $mes->format('Y-m');
 
         if ($taller->cobros()->where('periodo', $periodo)->exists()) {

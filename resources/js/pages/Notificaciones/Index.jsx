@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { FileTextIcon, SendIcon, UsersIcon } from 'lucide-react';
 
@@ -7,7 +7,9 @@ import Dialogo from '@/components/Dialogo';
 import Estado from '@/components/Estado';
 import Paginacion from '@/components/Paginacion';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
+import { puede } from '@/lib/permisos';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const COLUMNAS = ['Destinatario', 'Asunto', 'Tipo', 'Envío', 'Estado', 'Programada', 'Enviada', ''];
 
 function Cabecera({ etiqueta, valor, destacada = false }) {
@@ -43,6 +45,13 @@ export default function Index({ notificaciones, filtros, resumen }) {
      */
     const [reenviando, setReenviando] = useState(null);
 
+    // Escribirle a un socio y avisar a un grupo piden permisos propios, más
+    // que reintentar uno que no salió: se ofrecen solo a quien los tiene.
+    const { auth } = usePage().props;
+    const puedeEscribir = puede(auth, 'notificaciones.crear');
+    const puedeAvisarGrupo = puede(auth, 'notificaciones.editar');
+    const puedeReintentar = puede(auth, 'notificaciones.enviar');
+
     function actuar(uuid, accion) {
         setEnCurso(uuid);
 
@@ -68,21 +77,25 @@ export default function Index({ notificaciones, filtros, resumen }) {
                     Plantillas
                 </Link>
 
-                <Link
-                    href="/panel/notificaciones/masivo"
-                    className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
-                >
-                    <UsersIcon className="size-4" aria-hidden="true" />
-                    Aviso a un grupo
-                </Link>
+                {puedeAvisarGrupo ? (
+                    <Link
+                        href="/panel/notificaciones/masivo"
+                        className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                    >
+                        <UsersIcon className="size-4" aria-hidden="true" />
+                        Aviso a un grupo
+                    </Link>
+                ) : null}
 
-                <Link
-                    href="/panel/notificaciones/enviar"
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <SendIcon className="size-4" aria-hidden="true" />
-                    Escribir a un socio
-                </Link>
+                {puedeEscribir ? (
+                    <Link
+                        href="/panel/notificaciones/enviar"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <SendIcon className="size-4" aria-hidden="true" />
+                        Escribir a un socio
+                    </Link>
+                ) : null}
                 </div>
             </header>
 
@@ -145,16 +158,16 @@ export default function Index({ notificaciones, filtros, resumen }) {
                             {/* Reintentar una que no salio, o parar una que
                                 todavia no ha salido. Sobre una ya enviada no
                                 hay nada que hacer: un correo no se recoge. */}
-                            {n.puede_reenviar ? (
+                            {puedeReintentar && n.puede_reenviar ? (
                                 <button
                                     type="button"
                                     onClick={() => setReenviando(n)}
                                     disabled={enCurso === n.uuid}
                                     className="apoyo text-fog transition-colors hover:text-chalk disabled:opacity-50"
                                 >
-                                    {enCurso === n.uuid ? 'Enviando…' : 'Reintentar'}
+                                    <TextoQueCambia ocupado={enCurso === n.uuid} mientras="Enviando…">Reintentar</TextoQueCambia>
                                 </button>
-                            ) : n.puede_cancelar ? (
+                            ) : puedeReintentar && n.puede_cancelar ? (
                                 <button
                                     type="button"
                                     onClick={() => actuar(n.uuid, 'cancelar')}

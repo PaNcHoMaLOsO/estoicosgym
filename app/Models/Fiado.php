@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -16,11 +17,16 @@ use Illuminate\Support\Str;
  */
 class Fiado extends Model
 {
+    // «Quitar» la esconde y deja quién lo hizo (ver FiadoRegistro): borrada
+    // de verdad no quedaba rastro de una deuda que a lo mejor sí existía.
+    use SoftDeletes;
+
     protected $table = 'fiados';
 
     protected $fillable = [
         'id_cliente',
         'nombre',
+        'celular',
         'concepto',
         'monto',
         'pagado',
@@ -28,6 +34,7 @@ class Fiado extends Model
         'id_usuario',
         'id_usuario_cobro',
         'id_metodo_pago',
+        'id_usuario_quito',
     ];
 
     protected $casts = [
@@ -48,9 +55,15 @@ class Fiado extends Model
         return 'uuid';
     }
 
+    /**
+     * El socio, AUNQUE ESTÉ EN LA PAPELERA. La deuda no se va con la ficha:
+     * sin esto, la cuenta de un socio eliminado salía como «Sin nombre» y dos
+     * de ellos se confundían en la misma fila. Quien enlaza a la ficha tiene
+     * que mirar trashed(), porque la ficha de un eliminado no abre.
+     */
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'id_cliente');
+        return $this->belongsTo(Cliente::class, 'id_cliente')->withTrashed();
     }
 
     /** Con qué se pagó. En blanco en lo cobrado antes de que se anotara. */
@@ -62,6 +75,12 @@ class Fiado extends Model
     public function autor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'id_usuario');
+    }
+
+    /** Quién lo cobró. */
+    public function cobrador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'id_usuario_cobro');
     }
 
     public function scopeDebiendo(Builder $consulta): Builder

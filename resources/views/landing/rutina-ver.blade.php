@@ -12,13 +12,13 @@
     ])
 
     <section class="bg-pg-negro pb-14">
-        <div class="mx-auto max-w-3xl px-4 sm:px-8">
+        <div class="mx-auto max-w-6xl px-4 sm:px-8">
 
             @if($rutina->descripcion)
-                <p class="font-modern text-pg-tiza/75">{{ $rutina->descripcion }}</p>
+                <p class="max-w-3xl font-modern text-pg-tiza/75 sm:text-lg">{{ $rutina->descripcion }}</p>
             @endif
 
-            <p class="mt-3 font-modern text-sm text-pg-tiza/75">
+            <p class="mt-3 max-w-3xl font-modern text-sm text-pg-tiza/75 sm:text-base">
                 <span class="text-pg-rojo-claro">Para avanzar:</span> {{ $progresar }}
             </p>
 
@@ -28,7 +28,7 @@
                 <article class="mt-12">
                     <header class="flex items-center justify-between gap-4 border-b border-pg-tiza/10 pb-3">
                         <div>
-                            <h2 class="font-display text-xl uppercase text-pg-tiza">Día {{ $dia['numero'] }} · {{ $dia['titulo'] }}</h2>
+                            <h2 class="font-display text-2xl uppercase text-pg-tiza sm:text-3xl">Día {{ $dia['numero'] }} · {{ $dia['titulo'] }}</h2>
                             @if($dia['foco'])
                                 <p class="font-modern text-sm text-pg-tiza/55">{{ $dia['foco'] }}</p>
                             @endif
@@ -37,14 +37,14 @@
                         <x-mapa-muscular :principal="$dia['principales']" :secundarios="$dia['secundarios']" class="h-20 w-24 shrink-0 sm:h-24 sm:w-28" />
                     </header>
 
-                    <ol class="divide-y divide-pg-tiza/10">
+                    <ol class="grid gap-x-8 md:grid-cols-2">
                         @foreach($dia['lineas'] as $linea)
-                            <li class="flex gap-4 py-4">
+                            <li class="flex gap-4 border-b border-pg-tiza/10 py-4">
                                 @include('landing.partes.imagen-ejercicio', ['e' => $linea, 'tamano' => 'size-28 sm:size-32'])
 
                                 <div class="min-w-0 font-modern">
-                                    <h3 class="font-semibold text-pg-tiza">{{ $linea['nombre'] }}</h3>
-                                    <p class="mt-0.5 text-sm tabular-nums text-pg-tiza/80">{{ $linea['dosis'] }}</p>
+                                    <h3 class="font-semibold text-pg-tiza sm:text-lg">{{ $linea['nombre'] }}</h3>
+                                    <p class="mt-1 font-display text-xl leading-none tabular-nums text-pg-rojo-claro">{{ $linea['dosis'] }}</p>
                                     @if($linea['descanso'])
                                         <p class="text-sm tabular-nums text-pg-tiza/55">Descanso {{ $linea['descanso'] }} s</p>
                                     @endif
@@ -70,7 +70,7 @@
             @if($variantes)
                 <div class="mt-12">
                     <h2 class="font-display text-lg uppercase text-pg-tiza">Otras variantes</h2>
-                    <ul class="mt-2 divide-y divide-pg-tiza/10">
+                    <ul class="mt-2 grid gap-x-8 divide-pg-tiza/10 sm:grid-cols-2">
                         @foreach($variantes as $v)
                             <li>
                                 <a href="{{ $v['url'] }}" class="flex items-center justify-between gap-4 py-3 font-modern text-pg-tiza/80 transition-colors hover:text-pg-tiza">

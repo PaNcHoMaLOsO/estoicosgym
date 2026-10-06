@@ -1,6 +1,6 @@
 import Selector from '@/components/Selector';
 import UltimoIngresado from '@/components/UltimoIngresado';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { CopyIcon, MailIcon, MessageCircleIcon, UserPlusIcon } from 'lucide-react';
 
 import Buscador from '@/components/Buscador';
@@ -12,6 +12,7 @@ import Retrato from '@/components/Retrato';
 import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
 import Convenio from '@/components/Convenio';
 import { celularLegible, whatsapp } from '@/lib/contacto';
+import { puede } from '@/lib/permisos';
 
 /*
  * Cuatro columnas y no seis: cada una responde una pregunta. ¿Quién es? ¿Cómo
@@ -59,6 +60,7 @@ function Contacto({ celular, email }) {
 }
 
 export default function Index({ clientes, filtros, resumen, duplicados = 0, orden = '', ultimo = null }) {
+    const { auth } = usePage().props;
     /*
      * Los de siempre, en su lugar, y aparte los que no están activos: los que
      * se fueron este mes (a quién llamar) y todos los dados de baja.
@@ -102,13 +104,15 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0, orde
                             {duplicados === 1 ? '1 posible duplicado' : `${duplicados} posibles duplicados`}
                         </Link>
                     ) : null}
-                    <Link
-                        href="/panel/clientes/crear"
-                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                    >
-                        <UserPlusIcon className="size-4" aria-hidden="true" />
-                        Nuevo socio
-                    </Link>
+                    {puede(auth, 'clientes.crear') ? (
+                        <Link
+                            href="/panel/clientes/crear"
+                            className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                        >
+                            <UserPlusIcon className="size-4" aria-hidden="true" />
+                            Nuevo socio
+                        </Link>
+                    ) : null}
                 </div>
             </header>
 
@@ -121,8 +125,12 @@ export default function Index({ clientes, filtros, resumen, duplicados = 0, orde
                     etiqueta="Buscar por nombre, RUT, correo o celular"
                     /* Se mantiene mientras se busca: si no, escribir un nombre
                        devolveria al listado de activos y el socio dado de baja
-                       que se estaba buscando desapareceria. */
-                    extra={filtros.filtro ? { filtro: filtros.filtro } : {}}
+                       que se estaba buscando desapareceria. Y el orden igual:
+                       sin el, escribir volvia a «ultimos ingresados». */
+                    extra={{
+                        ...(filtros.filtro ? { filtro: filtros.filtro } : {}),
+                        ...(orden ? { orden } : {}),
+                    }}
                 />
 
                 <div className="flex flex-wrap items-center justify-between gap-3">

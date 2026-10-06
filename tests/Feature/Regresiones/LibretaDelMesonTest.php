@@ -353,7 +353,7 @@ class LibretaDelMesonTest extends CasoConCatalogos
         $this->assertSame('Debe esto', $props['cuentas'][0]['lineas'][0]['concepto']);
 
         $this->assertCount(1, $props['cobrado']);
-        $this->assertSame('Ya pago esto', $props['cobrado'][0]['concepto']);
+        $this->assertSame('Ya pago esto', $props['cobrado'][0]['lineas'][0]['concepto']);
     }
 
     public function test_la_pantalla_cuenta_lo_que_se_debe_y_lo_cobrado_este_mes(): void
@@ -587,14 +587,15 @@ class LibretaDelMesonTest extends CasoConCatalogos
     }
 
     /**
-     * Recepción NO entra a la caja. No es que se le tape la cifra: la página no
-     * se le abre, porque la plata es el permiso `reportes.ver`.
+     * Recepción NO entra a la caja completa. No es que se le tape la cifra: la
+     * página no se le arma, porque el mes y las deudas son `reportes.ver`. Va a
+     * la caja del día (`caja.hoy`), que trae solo lo de hoy.
      */
     public function test_recepcion_no_entra_a_la_caja(): void
     {
         $this->actingAs($this->recepcionista())
             ->get('/panel/caja')
-            ->assertForbidden();
+            ->assertRedirect('/panel/caja/hoy');
     }
 
     public function test_quien_puede_ver_los_informes_ve_la_caja(): void

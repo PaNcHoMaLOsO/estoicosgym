@@ -42,8 +42,16 @@ class ReporteController extends Controller
 
         return Inertia::render('Reportes/Index', [
             'cifras' => [
-                'socios' => Cliente::where('activo', true)->count(),
-                'activas' => Inscripcion::where('id_estado', self::ACTIVA)->count(),
+                // Igual que «Todos» en Socios: sin quien solo vino por el día
+                // ni las fichas con datos borrados. Contándolos, aquí decía 94
+                // y la lista 92 para el mismo gimnasio.
+                'socios' => Cliente::where('activo', true)
+                    ->whereNull('datos_borrados_en')
+                    ->whereNot(fn ($q) => $q->whereHas('inscripciones', fn ($i) => $i->soloPases())
+                        ->whereDoesntHave('inscripciones', fn ($i) => $i->sinPases()))
+                    ->count(),
+                // Las mensualidades al día: un pase diario no es una membresía.
+                'activas' => Inscripcion::sinPases()->where('id_estado', self::ACTIVA)->count(),
                 // Membresías, talleres y mesón: la misma cuenta que la Caja.
                 // Contaba solo las membresías, y «Ingresos del mes» decía
                 // menos que «entró este mes» de la Caja para el mismo mes.
@@ -148,9 +156,10 @@ class ReporteController extends Controller
         $porConcepto = Fiado::where('pagado', true)
             ->whereBetween('pagado_en', [$desde, $hasta])
             ->get(['concepto', 'monto'])
-            ->groupBy(fn (Fiado $f) => mb_strtolower(trim((string) $f->concepto)) ?: 'sin detalle')
+            // «Barra (abono)» es un trozo de «Barra»: van juntas, como en frecuentes().
+            ->groupBy(fn (Fiado $f) => mb_strtolower(trim(preg_replace('/ \(abono\)$/u', '', (string) $f->concepto))) ?: 'sin detalle')
             ->map(fn ($lineas) => [
-                'nombre' => ucfirst((string) $lineas->first()->concepto ?: 'Sin detalle'),
+                'nombre' => ucfirst(preg_replace('/ \(abono\)$/u', '', (string) $lineas->first()->concepto) ?: 'Sin detalle'),
                 'total' => (int) $lineas->sum('monto'),
                 'cantidad' => $lineas->count(),
             ])

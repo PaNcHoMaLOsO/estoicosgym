@@ -58,10 +58,19 @@ class RolesSeeder extends Seeder
 
         'pagos.ver',
         'pagos.crear',
+        // El monto o el medio mal puesto, solo en lo que cobró esa persona
+        // hoy. Anular no: eso saca plata de la caja y queda para el dueño.
+        'pagos.corregir_hoy',
+
+        // Lo que entró hoy y con qué medio, para cuadrar el cajón al cerrar
+        // el turno. El mes, las deudas y los informes siguen siendo del dueño.
+        'caja.hoy',
 
         'historial.ver',
 
         'notificaciones.ver',
+        // Escribirle a un socio: es atención de mesón, como llamarlo.
+        'notificaciones.crear',
         'notificaciones.enviar',
     ];
 }

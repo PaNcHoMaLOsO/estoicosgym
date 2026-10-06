@@ -369,6 +369,40 @@ class Cliente extends Model
         return $this->hasMany(Contrato::class, 'id_cliente');
     }
 
+    /**
+     * A qué dirección se le escriben los avisos a este socio.
+     *
+     * UNA SOLA REGLA PARA TODOS LOS CORREOS. Cada camino decidía por su cuenta:
+     * el envío manual mandaba siempre al correo del socio, aunque fuera un
+     * menor con apoderado, y los automáticos exigían el correo del menor antes
+     * de desviarlo al apoderado, así que un menor que solo tenía el del
+     * apoderado no recibía ningún aviso.
+     *
+     * Menor con correo de apoderado → el apoderado. Si no, el suyo. Sin
+     * ninguno, null: no hay a quién escribirle.
+     */
+    public function correoParaAvisos(): ?string
+    {
+        if ($this->es_menor_edad && trim((string) $this->apoderado_email) !== '') {
+            return trim((string) $this->apoderado_email);
+        }
+
+        $propio = trim((string) $this->email);
+
+        return $propio !== '' ? $propio : null;
+    }
+
+    /** Los que tienen a dónde escribirles, con la misma regla de correoParaAvisos(). */
+    public function scopeConCorreoParaAvisos($query)
+    {
+        return $query->where(fn ($q) => $q
+            ->where(fn ($propio) => $propio->whereNotNull('email')->where('email', '!=', ''))
+            ->orWhere(fn ($menor) => $menor
+                ->where('es_menor_edad', true)
+                ->whereNotNull('apoderado_email')
+                ->where('apoderado_email', '!=', '')));
+    }
+
     /** Solo los que conservan sus datos: a una ficha borrada ya no se la atiende. */
     public function scopeConDatos($query)
     {

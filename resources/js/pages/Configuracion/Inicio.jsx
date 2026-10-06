@@ -77,7 +77,7 @@ export default function Inicio({ puntos }) {
                 </div>
             </section>
 
-            <div className="grid items-start gap-5 xl:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
                 {grupos.map((grupo) => {
                     const pendientes = grupo.puntos.filter((p) => p.estado !== 'ok');
                     const hechos = grupo.puntos.filter((p) => p.estado === 'ok');

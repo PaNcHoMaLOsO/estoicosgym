@@ -152,8 +152,8 @@ class ConstructorController extends Controller
         return [
             'columnas' => (array) $request->input('columnas', []),
             'filtros' => (array) $request->input('filtros', []),
-            'orden' => $request->input('orden'),
-            'direccion' => (string) $request->input('direccion', 'desc'),
+            'orden' => $request->texto('orden') ?: null,
+            'direccion' => $request->texto('direccion', 'desc'),
             'limite' => $request->input('limite'),
         ];
     }

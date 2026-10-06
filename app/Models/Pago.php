@@ -85,6 +85,7 @@ class Pago extends Model
         'id_estado',
         'tipo_pago',
         'observaciones',
+        'id_usuario',
     ];
 
     protected $casts = [
@@ -108,6 +109,18 @@ class Pago extends Model
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = Str::uuid();
+            }
+
+            /*
+             * QUIÉN LO COBRÓ, desde el pago mismo y no desde cada servicio:
+             * se cobra al inscribir, en el alta rápida, al renovar, en el
+             * cobro suelto y al traspasar, y el camino que se sumara mañana
+             * sin anotarlo dejaría pagos sin autor que nadie podría corregir
+             * con «sus cobros de hoy». Desde la consola o una tarea no hay
+             * sesión y queda vacío, que es la verdad.
+             */
+            if (empty($model->id_usuario)) {
+                $model->id_usuario = auth()->id();
             }
         });
     }
@@ -146,6 +159,23 @@ class Pago extends Model
         return $query->whereIn('pagos.id_estado', self::ESTADOS_CON_INGRESO);
     }
 
+    /**
+     * Los pagos que todavía se le pueden cobrar al socio.
+     *
+     * No basta con el estado del pago: el de una membresía cancelada, cambiada
+     * de plan o traspasada se queda «pendiente» para siempre —el pago no se
+     * toca, es la historia de lo que se cobró—, pero esa membresía ya no tiene
+     * deuda (Inscripcion::ESTADOS_CON_DEUDA). Contarlo bloqueaba la baja y el
+     * borrado de datos de quien no debía nada, y no habia forma de salir.
+     * Un pago suelto, sin membresía, sí se sigue cobrando.
+     */
+    public function scopePendientesDeCobro($query)
+    {
+        return $query->whereIn('pagos.id_estado', \App\Enums\EstadosCodigo::PAGO_PENDIENTES_COBRO)
+            ->where(fn ($q) => $q->whereNull('pagos.id_inscripcion')
+                ->orWhereHas('inscripcion', fn ($i) => $i->whereIn('id_estado', Inscripcion::ESTADOS_CON_DEUDA)));
+    }
+
     public function inscripcion()
     {
         return $this->belongsTo(Inscripcion::class, 'id_inscripcion');
@@ -156,14 +186,24 @@ class Pago extends Model
         return $this->belongsTo(Cliente::class, 'id_cliente');
     }
 
+    /** Quién lo registró. Vacío en los pagos de antes de anotarlo. */
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_usuario');
+    }
+
     public function metodoPago()
     {
-        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago');
+        // Con los de la papelera: un método que se retira no le borra el
+        // nombre a los pagos que ya se hicieron con él.
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago')->withTrashed();
     }
 
     public function metodoPago2()
     {
-        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago2');
+        // Con los de la papelera: un método que se retira no le borra el
+        // nombre a los pagos que ya se hicieron con él.
+        return $this->belongsTo(MetodoPago::class, 'id_metodo_pago2')->withTrashed();
     }
 
     public function estado()

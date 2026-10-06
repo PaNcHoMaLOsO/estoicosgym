@@ -157,7 +157,9 @@ class Inscripcion extends Model
 
     public function membresia()
     {
-        return $this->belongsTo(Membresia::class, 'id_membresia');
+        // Con los de la papelera: un plan que se deja de vender no deja en
+        // blanco el nombre de las membresías que ya se vendieron con él.
+        return $this->belongsTo(Membresia::class, 'id_membresia')->withTrashed();
     }
 
     public function precioAcordado()
@@ -524,8 +526,30 @@ class Inscripcion extends Model
                 return false;
             }
 
-            return $this->reanudarYa();
+            $reanudada = $this->reanudarYa();
+
+            if ($reanudada) {
+                $this->cancelarAvisoDePausaEnCola();
+            }
+
+            return $reanudada;
         });
+    }
+
+    /**
+     * El «tu membresía quedó en pausa» que todavía no salió ya no es verdad.
+     *
+     * Si el correo de la pausa se atrasó (tope del día, servidor caído) y la
+     * membresía se reactiva antes de que salga, el socio recibía «en pausa»
+     * DESPUÉS de «reactivada». Vale para el botón y para la tarea nocturna.
+     */
+    private function cancelarAvisoDePausaEnCola(): void
+    {
+        Notificacion::where('id_inscripcion', $this->id)
+            ->whereIn('id_estado', [Notificacion::ESTADO_PENDIENTE, Notificacion::ESTADO_FALLIDO])
+            ->whereHas('tipoNotificacion', fn ($q) => $q->where('codigo', TipoNotificacion::PAUSA_INSCRIPCION))
+            ->get()
+            ->each->cancelar('No se envió: la membresía se reactivó antes de que saliera el aviso de pausa.');
     }
 
     /**
@@ -799,17 +823,54 @@ class Inscripcion extends Model
      */
     public static function conDeuda(): \Illuminate\Database\Eloquent\Collection
     {
-        return static::whereIn('id_estado', self::ESTADOS_CON_DEUDA)
+        // El filtro va en la consulta: antes se traían a PHP TODAS las
+        // membresías 100/101/102 —la 102 es casi todo el historial— en cada
+        // carga de Pagos, Caja y Reportes. El filtro de PHP queda detrás porque
+        // `deuda` trunca a entero cada lado y así el resultado es idéntico al
+        // de siempre; la consulta ya solo devuelve las que deben.
+        return static::queDeben()
             ->withSum('pagos as abonado', 'monto_abonado')
             ->get()
             ->filter(fn (self $inscripcion) => $inscripcion->deuda > 0)
             ->values();
     }
 
+    /**
+     * Lo abonado a cada membresía, como subconsulta de SQL.
+     *
+     * Sale de Pago::query() para que el SoftDeletes ponga solo el «deleted_at
+     * IS NULL»: un pago anulado no cuenta, igual que en withSum().
+     *
+     * @return array{0: string, 1: array}
+     */
+    private static function abonadoEnSql(): array
+    {
+        $sub = Pago::query()
+            ->selectRaw('COALESCE(SUM(pagos.monto_abonado), 0)')
+            ->whereColumn('pagos.id_inscripcion', 'inscripciones.id');
+
+        return ['('.$sub->toSql().')', $sub->getBindings()];
+    }
+
+    /** Las membresías que se cobran y cuyo precio supera lo abonado. */
+    public function scopeQueDeben($consulta)
+    {
+        [$abonado, $valores] = self::abonadoEnSql();
+
+        return $consulta
+            ->whereIn('inscripciones.id_estado', self::ESTADOS_CON_DEUDA)
+            ->whereRaw("COALESCE(inscripciones.precio_final, 0) - {$abonado} > 0", $valores);
+    }
+
     /** El total que se debe, para las cifras de arriba de cada pantalla. */
     public static function porCobrar(): int
     {
-        return (int) static::conDeuda()->sum(fn (self $inscripcion) => $inscripcion->deuda);
+        // Sumado en la base: con miles de membresías no hay que traer ninguna.
+        [$abonado, $valores] = self::abonadoEnSql();
+
+        return (int) static::queDeben()
+            ->selectRaw("COALESCE(SUM(COALESCE(inscripciones.precio_final, 0) - {$abonado}), 0) AS total", $valores)
+            ->value('total');
     }
 
     /**

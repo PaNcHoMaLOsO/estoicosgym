@@ -1,11 +1,13 @@
+import { puede } from '@/lib/permisos';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeftIcon, Trash2Icon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 import Dialogo from '@/components/Dialogo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -60,6 +62,11 @@ export default function Editar({ pago, metodosPago, formToken }) {
         }));
     }
 
+    // Corregir y anular piden permisos distintos: quien corrige un monto no
+    // por eso puede sacar el pago de la caja.
+    const { auth } = usePage().props;
+    const puedeAnular = puede(auth, 'pagos.eliminar');
+
     // Sin guardar y con algo escrito: pregunta antes de salir.
     const tocar = useAvisoAlSalir(isDirty && ! processing);
 
@@ -106,7 +113,9 @@ export default function Editar({ pago, metodosPago, formToken }) {
                             nombre="monto_abonado"
                             tipo="number"
                             min="1"
-                            max={pago.tope}
+                            // El monto de hoy siempre cabe: con el tope en 0 el
+                            // navegador no dejaba guardar ni la fecha.
+                            max={Math.max(pago.tope, Number(pago.monto_abonado) || 0)}
                             valor={data.monto_abonado}
                             alCambiar={pago.repartido ? cambiarMonto : (v) => setData('monto_abonado', v)}
                         />
@@ -117,13 +126,20 @@ export default function Editar({ pago, metodosPago, formToken }) {
                         nombre="fecha_pago"
                         error={errors.fecha_pago}
                         requerido
-                        ayuda="La del día en que entró el dinero, no la de hoy."
+                        ayuda={
+                            pago.solo_hoy
+                                ? 'Se queda en hoy: es un cobro de este turno.'
+                                : 'La del día en que entró el dinero, no la de hoy.'
+                        }
                     >
+                        {/* Quien solo corrige sus cobros de hoy no mueve la
+                            fecha: pasarlo a ayer lo sacaría de la caja del turno. */}
                         <Texto
                             nombre="fecha_pago"
                             tipo="date"
                             valor={data.fecha_pago}
                             alCambiar={(v) => setData('fecha_pago', v)}
+                            readOnly={Boolean(pago.solo_hoy)}
                         />
                     </Campo>
 
@@ -253,7 +269,7 @@ export default function Editar({ pago, metodosPago, formToken }) {
                         disabled={processing}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        {processing ? 'Guardando…' : 'Guardar'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                     </button>
 
                     <Link href={`/panel/pagos/${pago.uuid}`} className="apoyo text-fog hover:text-chalk">
@@ -262,19 +278,21 @@ export default function Editar({ pago, metodosPago, formToken }) {
 
                     {/* Anular va a la derecha del todo y en rojo: no es lo que se
                         viene a hacer aqui, y pulsarlo por error se nota en caja. */}
-                    <button
-                        type="button"
-                        onClick={() => setAnulando(true)}
-                        className="ml-auto inline-flex items-center gap-1.5 text-sm text-fog transition-colors hover:text-danger"
-                    >
-                        <Trash2Icon className="size-4" aria-hidden="true" />
-                        Anular este pago
-                    </button>
+                    {puedeAnular ? (
+                        <button
+                            type="button"
+                            onClick={() => setAnulando(true)}
+                            className="ml-auto inline-flex items-center gap-1.5 text-sm text-fog transition-colors hover:text-danger"
+                        >
+                            <Trash2Icon className="size-4" aria-hidden="true" />
+                            Anular este pago
+                        </button>
+                    ) : null}
                 </div>
             </form>
 
             <Dialogo
-                abierto={anulando}
+                abierto={puedeAnular && anulando}
                 alCerrar={() => setAnulando(false)}
                 titulo="Anular el pago"
                 descripcion={`Se quitará de la caja y el saldo de ${pago.socio} volverá a subir ${pesos.format(pago.monto_abonado)}. Queda en la papelera por si hay que recuperarlo.`}

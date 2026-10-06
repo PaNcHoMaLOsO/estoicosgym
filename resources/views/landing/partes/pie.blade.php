@@ -43,8 +43,12 @@
                 <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Páginas</h2>
                 <ul class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-1.5 font-modern text-sm">
                     <li><a href="{{ route('landing') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Inicio</a></li>
-                    <li><a href="{{ route('landing.gimnasio') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">El gimnasio</a></li>
-                    <li><a href="{{ route('landing.planes') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Planes y precios</a></li>
+                    @if($navegacion['gimnasio'])
+                        <li><a href="{{ route('landing.gimnasio') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">El gimnasio</a></li>
+                    @endif
+                    @if($navegacion['planes'])
+                        <li><a href="{{ route('landing.planes') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Planes y precios</a></li>
+                    @endif
                     @if($navegacion['clases'])
                         <li><a href="{{ route('landing.clases') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Clases</a></li>
                     @endif
@@ -54,11 +58,17 @@
                     @if($navegacion['convenios'])
                         <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>
                     @endif
-                    <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arrienda horas</a></li>
+                    @if($navegacion['arriendo'])
+                        <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arrienda horas</a></li>
+                    @endif
                     <li><a href="{{ route('landing.contacto') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
-                    <li><a href="{{ route('landing.rutina') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Rutinas</a></li>
-                    <li><a href="{{ route('landing.ejercicios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Ejercicios</a></li>
-                    <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
+                    @if($navegacion['rutinas'])
+                        <li><a href="{{ route('landing.rutina') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Rutinas</a></li>
+                        <li><a href="{{ route('landing.ejercicios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Ejercicios</a></li>
+                    @endif
+                    @if($navegacion['membresia'])
+                        <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
+                    @endif
                     @if($tienda ?? null)
                         {{-- La tienda es otra web: se marca con el icono para que
                              nadie pulse esperando quedarse en la del gimnasio. --}}

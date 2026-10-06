@@ -1,11 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import { AlertTriangleIcon, MessageCircleIcon, SearchIcon, TrashIcon, UndoIcon } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangleIcon, MessageCircleIcon, SearchIcon, TrashIcon, UndoIcon, UserCheckIcon } from 'lucide-react';
 
 import ConfirmarDinero from '@/components/ConfirmarDinero';
 import { ApuntarFiado } from '@/components/Libreta';
 import Retrato from '@/components/Retrato';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { whatsapp } from '@/lib/contacto';
+import { puede } from '@/lib/permisos';
 import { Reservado } from '@/Privado';
 
 const pesos = new Intl.NumberFormat('es-CL', {
@@ -61,6 +63,99 @@ function Recordar({ cuenta }) {
 }
 
 /**
+ * Pasar la cuenta de un nombre suelto a un socio: «Pedro» se anotó de visita
+ * y después se inscribió. Lo que debía (y lo que pagó) pasa a su ficha.
+ */
+function PasarASocio({ cuenta, alCerrar }) {
+    const [texto, setTexto] = useState('');
+    const [resultados, setResultados] = useState(null);
+    const [enviando, setEnviando] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        setTexto('');
+        setResultados(null);
+        setError(null);
+    }, [cuenta?.clave]);
+
+    useEffect(() => {
+        if (texto.trim().length < 2) {
+            setResultados(null);
+
+            return undefined;
+        }
+
+        const corte = new AbortController();
+        const temporizador = setTimeout(() => {
+            fetch(`/panel/fiados/buscar-socio?q=${encodeURIComponent(texto)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: corte.signal,
+            })
+                .then((r) => r.json())
+                .then((j) => setResultados(j.clientes ?? []))
+                .catch((e) => (e.name === 'AbortError' ? null : setResultados([])));
+        }, 250);
+
+        return () => {
+            clearTimeout(temporizador);
+            corte.abort();
+        };
+    }, [texto]);
+
+    function elegir(socio) {
+        setEnviando(true);
+        router.post('/panel/fiados/asignar', { nombre: cuenta.nombre, id_cliente: socio.id }, {
+            preserveScroll: true,
+            onSuccess: () => alCerrar(),
+            onError: (e) => setError(Object.values(e ?? {}).join(' ')),
+            onFinish: () => setEnviando(false),
+        });
+    }
+
+    return (
+        <Dialog open={cuenta !== null} onOpenChange={(v) => (! v && ! enviando ? alCerrar() : null)}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Pasar a un socio</DialogTitle>
+                    <DialogDescription>
+                        Lo anotado a «{cuenta?.quien}» pasa a la ficha del socio que elijas, con lo que debe y lo que ya pagó.
+                    </DialogDescription>
+                </DialogHeader>
+                <input
+                    type="search"
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    placeholder="Busca al socio por nombre o RUT"
+                    aria-label="Buscar al socio"
+                    autoFocus
+                    className="w-full rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+                />
+                {resultados && resultados.length === 0 ? <p className="apoyo text-fog">Nadie coincide.</p> : null}
+                {resultados && resultados.length > 0 ? (
+                    <ul className="max-h-56 divide-y divide-line overflow-y-auto rounded-control border border-line">
+                        {resultados.map((c) => (
+                            <li key={c.id}>
+                                <button
+                                    type="button"
+                                    disabled={enviando}
+                                    onClick={() => elegir(c)}
+                                    className="block w-full px-2.5 py-2 text-left text-sm text-chalk transition-colors hover:bg-surface-2 disabled:opacity-50"
+                                >
+                                    {c.nombre}
+                                    {! c.activo ? <span className="ml-1 text-warn">· de baja</span> : null}
+                                    <span className="apoyo block text-fog">{c.rut ?? 'sin RUT'}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : null}
+                {error ? <p className="apoyo text-danger" role="alert">{error}</p> : null}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
  * La libreta de lo fiado, entera.
  *
  * En el resumen esta el vistazo —quien debe y cuanto—. Aqui esta lo demas: lo
@@ -73,7 +168,7 @@ function Recordar({ cuenta }) {
  */
 // `diasParaInsistir`: a partir de cuántos días una cuenta se marca. Sale de
 // Configuración → Mesón.
-export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14 }) {
+export default function Fiados({ cuentas, cobrado, cifras, mes, meses = [], registro = null, diasParaInsistir = 14 }) {
     const [pestana, setPestana] = useState('deben');
     const [abierta, setAbierta] = useState(null);
     const [busqueda, setBusqueda] = useState('');
@@ -92,7 +187,7 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                 : cobrado.filter(
                       (c) =>
                           c.quien.toLowerCase().includes(filtro)
-                          || c.concepto.toLowerCase().includes(filtro),
+                          || c.lineas.some((l) => l.concepto.toLowerCase().includes(filtro)),
                   ),
         [cobrado, filtro],
     );
@@ -108,6 +203,11 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
     const [cobrando, setCobrando] = useState(null);
     const [quitando, setQuitando] = useState(null);
     const [reabriendo, setReabriendo] = useState(null);
+    const [pasando, setPasando] = useState(null);
+    // Quitar una línea pide `clientes.eliminar` en el servidor: a recepción el
+    // botón le daba un 403. Se esconde a quien no lo tiene.
+    const { auth } = usePage().props;
+    const puedeQuitar = puede(auth, 'clientes.eliminar');
 
     return (
         <>
@@ -131,7 +231,7 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
              * que se viene a hacer aqui es apuntar algo o cobrarlo. Media
              * pantalla en negro mientras el formulario se escondia.
              */}
-            <div className="grid items-start gap-4 xl:grid-cols-[1fr_21rem]">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_21rem]">
                 <div className="min-w-0">
                 <div className="mb-3 grid gap-2 sm:grid-cols-4">
                     <Cifra
@@ -168,6 +268,9 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                         {[
                             ['deben', `Quién debe (${cuentas.length})`],
                             ['cobrado', 'Ya pagado'],
+                            // Lo quitado y los cobros deshechos: el control del
+                            // mesón, solo para quien administra.
+                            ...(registro ? [['registro', 'Registro']] : []),
                         ].map(([valor, etiqueta]) => (
                             <button
                                 key={valor}
@@ -202,6 +305,19 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                             className="w-full rounded-control border border-line bg-surface py-1.5 pr-2.5 pl-8 text-sm text-chalk focus:border-line-strong focus:outline-none"
                         />
                     </div>
+
+                    {pestana === 'cobrado' && meses.length > 0 ? (
+                        <select
+                            value={mes}
+                            onChange={(e) => router.get('/panel/fiados', { mes: e.target.value }, { preserveState: true, preserveScroll: true, only: ['cobrado', 'mes'] })}
+                            aria-label="Mes"
+                            className="rounded-control border border-line bg-surface px-2 py-1.5 text-sm text-chalk focus:border-line-strong focus:outline-none"
+                        >
+                            {meses.map((m) => (
+                                <option key={m.valor} value={m.valor}>{m.etiqueta}</option>
+                            ))}
+                        </select>
+                    ) : null}
                 </div>
 
                 {pestana === 'deben' ? (
@@ -273,6 +389,18 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                                                 </Link>
                                             ) : null}
 
+                                            {! cuenta.id_cliente ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPasando(cuenta)}
+                                                    title="Pasar esta cuenta a la ficha de un socio"
+                                                    className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
+                                                >
+                                                    <UserCheckIcon className="size-3.5" aria-hidden="true" />
+                                                    A un socio
+                                                </button>
+                                            ) : null}
+
                                             {/* Se salda la cuenta ENTERA: quien paga
                                                 en el meson paga lo que debe, no la
                                                 bebida del martes. */}
@@ -310,17 +438,19 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                                                         {/* Quitar una linea suelta es
                                                             para el error de tecleo, no
                                                             para cobrar a medias. */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setQuitando({ ...l, quien: cuenta.quien })}
-                                                            aria-label={`Quitar ${l.concepto}`}
-                                                            className="rounded-control p-0.5 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
-                                                        >
-                                                            <TrashIcon
-                                                                className="size-3.5"
-                                                                aria-hidden="true"
-                                                            />
-                                                        </button>
+                                                        {puedeQuitar ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setQuitando({ ...l, quien: cuenta.quien })}
+                                                                aria-label={`Quitar ${l.concepto}`}
+                                                                className="rounded-control p-0.5 text-fog opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
+                                                            >
+                                                                <TrashIcon
+                                                                    className="size-3.5"
+                                                                    aria-hidden="true"
+                                                                />
+                                                            </button>
+                                                        ) : null}
                                                     </span>
                                                 </li>
                                             ))}
@@ -330,29 +460,25 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                             ))}
                         </ul>
                     )
+                ) : pestana === 'registro' ? (
+                    <Registro filas={registro ?? []} />
                 ) : cobradoVisible.length === 0 ? (
                     <div className="rounded-panel border border-dashed border-line px-4 py-12 text-center">
                         <p className="text-sm text-fog">
-                            {filtro !== '' ? 'Nada cobrado que coincida.' : 'Todavía no se ha cobrado nada.'}
+                            {filtro !== '' ? 'Nada cobrado que coincida.' : 'Nada cobrado ese mes.'}
                         </p>
                     </div>
                 ) : (
+                    /* UN RENGLÓN POR COBRO, con todo lo que pagó: antes una fila
+                       por cosa, y un cobro de cinco ocupaba cinco filas. */
                     <div className="overflow-x-auto rounded-panel border border-line">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-line bg-surface-2">
-                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">
-                                        Quién
-                                    </th>
-                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">
-                                        Qué
-                                    </th>
-                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">
-                                        Pagó
-                                    </th>
-                                    <th scope="col" className="px-3 py-2 text-right font-medium text-fog">
-                                        Monto
-                                    </th>
+                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">Quién</th>
+                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">Qué</th>
+                                    <th scope="col" className="px-3 py-2 text-left font-medium text-fog">Pagó</th>
+                                    <th scope="col" className="px-3 py-2 text-right font-medium text-fog">Total</th>
                                     <th scope="col" className="px-3 py-2 text-right font-medium text-fog">
                                         <span className="sr-only">Deshacer</span>
                                     </th>
@@ -361,52 +487,49 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
 
                             <tbody className="divide-y divide-line bg-surface">
                                 {cobradoVisible.map((c) => (
-                                    <tr key={c.uuid} className="transition-colors hover:bg-surface-2">
+                                    <tr key={c.uuid} className="align-top transition-colors hover:bg-surface-2">
                                         <td className="px-3 py-2 text-chalk">
                                             {c.socio_uuid ? (
-                                                <Link
-                                                    href={`/panel/clientes/${c.socio_uuid}`}
-                                                    className="hover:underline"
-                                                >
+                                                <Link href={`/panel/clientes/${c.socio_uuid}`} className="hover:underline">
                                                     {c.quien}
                                                 </Link>
                                             ) : (
                                                 c.quien
                                             )}
                                         </td>
-                                        <td className="px-3 py-2 text-fog">{c.concepto}</td>
+                                        <td className="px-3 py-2 text-fog">
+                                            {c.lineas.map((l) => l.concepto).join(', ')}
+                                        </td>
                                         <td className="px-3 py-2 tabular-nums text-fog">
                                             {c.cuando ?? '-'}
-                                            {c.medio ? <span className="apoyo block">{c.medio}</span> : null}
+                                            <span className="apoyo block">
+                                                {[c.medio, c.cobro ? `cobró ${c.cobro}` : null].filter(Boolean).join(' · ')}
+                                            </span>
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums text-chalk">
-                                            <Reservado ancho="w-14">{pesos.format(c.monto)}</Reservado>
+                                            <Reservado ancho="w-14">{pesos.format(c.total)}</Reservado>
                                         </td>
                                         <td className="px-3 py-2 text-right">
-                                            {/* Deshacer un «Pago» mal dado. Sin esto la
-                                                deuda desaparece y hay que volver a
-                                                apuntarla a mano, inventando conceptos y
-                                                montos que ya nadie recuerda. */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setReabriendo(c)}
-                                                aria-label={`Deshacer el cobro a ${c.quien}`}
-                                                className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
-                                            >
-                                                <UndoIcon className="size-3.5" aria-hidden="true" />
-                                                Deshacer
-                                            </button>
+                                            {/* Lo de hoy lo deshace el mesón, que es donde
+                                                ocurre el error de fila. Un cobro de otro
+                                                día ya está en la caja de ese día: solo
+                                                quien administra. */}
+                                            {c.de_hoy || puedeQuitar ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReabriendo(c)}
+                                                    aria-label={`Deshacer el cobro a ${c.quien}`}
+                                                    className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
+                                                >
+                                                    <UndoIcon className="size-3.5" aria-hidden="true" />
+                                                    Deshacer
+                                                </button>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-
-                        {cobrado.length >= 100 ? (
-                            <p className="apoyo border-t border-line bg-surface px-3 py-2 text-fog">
-                                Se muestran los 100 cobros más recientes.
-                            </p>
-                        ) : null}
                     </div>
                 )}
 
@@ -433,6 +556,7 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                 detalle={cobrando?.lineas}
                 consecuencia="Su cuenta queda saldada y entra a la caja del mesón."
                 conMedio
+                conAbono
                 etiquetaConfirmar="Pagó"
                 accion="/panel/fiados/saldar"
                 metodo="post"
@@ -443,6 +567,9 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                     // escritas con otra mayúscula o alguien apunte otra cosa
                     // mientras se cobra.
                     lineas: cobrando?.lineas?.map((l) => l.uuid) ?? [],
+                    // Lo que debía en pantalla: un abono repetido (doble clic,
+                    // la ficha abierta a la vez) se rechaza si ya no es eso.
+                    debe_visto: cobrando?.total ?? 0,
                 }}
             />
 
@@ -453,24 +580,75 @@ export default function Fiados({ cuentas, cobrado, cifras, diasParaInsistir = 14
                 quien={quitando?.quien ?? ''}
                 monto={quitando?.monto ?? 0}
                 detalle={quitando ? [{ concepto: quitando.concepto, monto: quitando.monto }] : []}
-                consecuencia="Esto es para lo que se apuntó por error: deja de deberlo y no queda rastro. Si lo pagó, usa «Pagó»."
+                consecuencia="Es para lo que se anotó por error: deja de deberlo y queda en el registro. Si lo pagó, usa «Pagó»."
                 etiquetaConfirmar="Quitar"
                 peligrosa
                 accion={quitando ? `/panel/fiados/${quitando.uuid}` : ''}
                 metodo="delete"
             />
 
+            {/* La cifra es lo que vuelve a deberse entero: se reabre todo el
+                cobro, no solo la línea pulsada. */}
             <ConfirmarDinero
                 abierto={reabriendo !== null}
                 alCerrar={() => setReabriendo(null)}
                 titulo="Deshacer el cobro"
                 quien={reabriendo?.quien ?? ''}
-                monto={reabriendo?.monto ?? 0}
-                consecuencia="Vuelve a deberlo. Se reabre todo lo que se cobró en ese mismo momento, no solo esta línea."
+                monto={reabriendo?.total ?? 0}
+                detalle={reabriendo?.lineas}
+                consecuencia={reabriendo?.de_hoy
+                    ? 'Vuelve a deberlo todo lo de ese cobro.'
+                    : 'Vuelve a deberlo todo lo de ese cobro. Es de otro día: cambia la caja de ese día y queda en el registro.'}
                 etiquetaConfirmar="Vuelve a deber"
                 accion={reabriendo ? `/panel/fiados/${reabriendo.uuid}/reabrir` : ''}
                 metodo="patch"
             />
+
+            <PasarASocio cuenta={pasando} alCerrar={() => setPasando(null)} />
         </>
+    );
+}
+
+/** Lo que cambió una cuenta sin cobrarla: lo quitado, los cobros deshechos y las cuentas pasadas a un socio. */
+function Registro({ filas }) {
+    if (filas.length === 0) {
+        return (
+            <div className="rounded-panel border border-dashed border-line px-4 py-12 text-center">
+                <p className="text-sm text-fog">Nada que registrar todavía.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="overflow-x-auto rounded-panel border border-line">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="border-b border-line bg-surface-2">
+                        <th scope="col" className="px-3 py-2 text-left font-medium text-fog">Cuándo</th>
+                        <th scope="col" className="px-3 py-2 text-left font-medium text-fog">Qué</th>
+                        <th scope="col" className="px-3 py-2 text-left font-medium text-fog">De quién</th>
+                        <th scope="col" className="px-3 py-2 text-right font-medium text-fog">Monto</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-line bg-surface">
+                    {filas.map((f) => (
+                        <tr key={f.id} className="align-top">
+                            <td className="px-3 py-2 tabular-nums text-fog">
+                                {f.cuando}
+                                {f.usuario ? <span className="apoyo block">{f.usuario}</span> : null}
+                            </td>
+                            <td className="px-3 py-2 text-chalk">
+                                {f.que}
+                                <span className="apoyo block text-fog">{f.detalle}</span>
+                            </td>
+                            <td className="px-3 py-2 text-fog">{f.quien}</td>
+                            <td className="px-3 py-2 text-right tabular-nums text-chalk">
+                                {f.monto ? <Reservado ancho="w-14">{pesos.format(f.monto)}</Reservado> : '-'}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 }

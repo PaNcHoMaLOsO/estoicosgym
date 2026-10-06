@@ -91,7 +91,7 @@ class TextoLegalController extends Controller
     /** Cómo se ve, con datos de muestra, antes de guardarlo. */
     public function vistaPrevia(Request $request, string $texto)
     {
-        $contenido = (string) $request->input('contenido', '');
+        $contenido = $request->texto('contenido', '');
         $variables = $texto === 'contrato'
             ? TextosLegales::datosDelGimnasio() + TextosLegales::ejemploDelContrato()
             : TextosLegales::datosDelGimnasio();

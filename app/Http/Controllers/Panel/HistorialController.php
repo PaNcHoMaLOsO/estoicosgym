@@ -49,8 +49,8 @@ class HistorialController extends Controller
      */
     public function index(Request $request)
     {
-        $buscar = trim((string) $request->query('buscar', ''));
-        $tipo = (string) $request->query('tipo', '');
+        $buscar = trim($request->texto('buscar', ''));
+        $tipo = $request->texto('tipo', '');
         $tipo = $tipo === 'traspaso' || isset(self::COMO_SE_LLAMA[$tipo]) ? $tipo : '';
         // Cuántos se ven: 100, y «Ver más» los va doblando hasta 1.600.
         $cuantos = min(1600, max(100, (int) $request->query('cuantos', 100)));
@@ -92,12 +92,15 @@ class HistorialController extends Controller
                 ->whereHas('clienteOrigen', $delSocio)
                 ->orWhereHas('clienteDestino', $delSocio)))
             ->when($tipo !== '' && $tipo !== 'traspaso', fn ($q) => $q->whereRaw('1 = 0'))
+            // fecha_traspaso es DATE: dos del mismo dia empatan y el id
+            // desempata por orden de llegada.
             ->orderByDesc('fecha_traspaso')
+            ->orderByDesc('id')
             ->limit($cuantos + 1)
             ->get()
             ->map(fn (HistorialTraspaso $t) => [
                 'id' => "traspaso-{$t->id}",
-                'cuando' => $t->fecha_traspaso ?? $t->created_at,
+                ...$this->cuandoDelTraspaso($t),
                 'clase' => 'traspaso',
                 'titulo' => 'Traspaso de membresía',
                 'socio' => null,
@@ -124,7 +127,7 @@ class HistorialController extends Controller
             ->take($cuantos)
             ->map(fn (array $m) => [
                 ...$m,
-                'cuando' => $m['cuando']?->format('d/m/Y H:i'),
+                'cuando' => $m['cuando']?->format(($m['solo_dia'] ?? false) ? 'd/m/Y' : 'd/m/Y H:i'),
             ])
             ->values();
 
@@ -143,12 +146,43 @@ class HistorialController extends Controller
     }
 
     /**
+     * Cuando fue un traspaso, con su hora si se sabe.
+     *
+     * fecha_traspaso es una columna DATE: leida tal cual salia «dd/mm/aaaa
+     * 00:00» —una hora que nadie apunto— y al ordenar quedaba por debajo de
+     * todo lo de ese mismo dia aunque hubiera pasado despues. La hora de verdad
+     * esta en created_at, que se escribe en el mismo momento. Si las dos no
+     * caen el mismo dia (un traspaso cargado a mano con otra fecha) manda la
+     * fecha del traspaso y se muestra sin hora, porque no la hay.
+     *
+     * @return array{cuando:?\Carbon\CarbonInterface,solo_dia:bool}
+     */
+    private function cuandoDelTraspaso(HistorialTraspaso $t): array
+    {
+        if ($t->fecha_traspaso === null) {
+            return ['cuando' => $t->created_at, 'solo_dia' => false];
+        }
+
+        if ($t->created_at && $t->created_at->isSameDay($t->fecha_traspaso)) {
+            return ['cuando' => $t->created_at, 'solo_dia' => false];
+        }
+
+        return ['cuando' => $t->fecha_traspaso, 'solo_dia' => true];
+    }
+
+    /**
      * `detalles` viene casteado a array, y mandarlo tal cual a React reventaba
      * la pantalla entera («Objects are not valid as a React child»). Se resume
      * a una linea legible y se dejan fuera las claves sin valor, que son la
      * mayoria: de {"dias_pausa":null,"dias_compensados":351} solo importa la
      * segunda.
      */
+    private const ETIQUETAS = [
+        'dias_en_pausa' => 'Días en pausa',
+        'dias_compensados' => 'Días que le quedaban (se le devuelven)',
+        'nueva_fecha_vencimiento' => 'Ahora vence',
+    ];
+
     private function resumirDetalles(mixed $detalles): ?string
     {
         if (! is_array($detalles)) {
@@ -162,7 +196,15 @@ class HistorialController extends Controller
                 continue;
             }
 
-            $etiqueta = ucfirst(str_replace('_', ' ', (string) $clave));
+            // Las que se leen mal tal cual: «días compensados» son los días
+            // que le quedaban al pausar y se le devuelven, no los de la pausa
+            // (decía «en pausa: 13 · compensados: 15» y parecía un regalo).
+            $etiqueta = self::ETIQUETAS[$clave] ?? ucfirst(str_replace('_', ' ', (string) $clave));
+
+            if (is_string($valor) && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $valor, $f)) {
+                $valor = "{$f[3]}/{$f[2]}/{$f[1]}";
+            }
+
             $partes[] = $etiqueta . ': ' . (is_bool($valor) ? 'sí' : $valor);
         }
 

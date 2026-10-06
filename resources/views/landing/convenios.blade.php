@@ -88,6 +88,7 @@
     </section>
 
     {{-- El arriendo por horas tiene su propia página: aquí solo se enlaza. --}}
+    @if($navegacion['arriendo'])
     <section class="py-8 bg-pg-carbon border-t border-pg-tiza/10">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             <a href="{{ route('landing.arriendo') }}" class="animate-on-scroll mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-2xl border border-pg-tiza/10 bg-pg-negro px-6 py-4 text-center font-modern transition-colors hover:border-pg-rojo/50">
@@ -96,6 +97,7 @@
             </a>
         </div>
     </section>
+    @endif
 
     @include('landing.partes.llamado')
 @endsection

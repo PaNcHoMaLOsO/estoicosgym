@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -251,7 +252,7 @@ export default function Editar({ inscripcion, motivos, formToken, puedeCambiarPr
                         disabled={processing || porDebajoDeLoCobrado}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        {processing ? 'Guardando…' : 'Guardar'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                     </button>
 
                     <Link

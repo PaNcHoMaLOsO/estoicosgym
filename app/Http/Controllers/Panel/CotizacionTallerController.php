@@ -8,6 +8,7 @@ use App\Models\Taller;
 use App\Support\Ajustes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -36,21 +37,30 @@ class CotizacionTallerController extends Controller
         $mes = $this->mes($datos['periodo'] ?? null);
         $hoy = Carbon::today();
 
-        $cotizacion = new CotizacionTaller([
-            'id_taller' => $taller->id,
-            'numero' => CotizacionTaller::siguienteNumero(),
-            'periodo' => $mes->format('Y-m'),
-            'fecha' => $hoy,
-            // Un mes de validez: es lo que han dicho siempre las del gimnasio.
-            'valido_hasta' => $hoy->copy()->addMonth(),
-            'descripcion' => $taller->descripcion_factura ?: $taller->nombre,
-            'precio_hora' => $taller->precio_hora,
-            'estado' => 'borrador',
-            'id_usuario' => $request->user()->id,
-        ]);
+        // EL NÚMERO SE TOMA Y SE GUARDA BAJO UN CANDADO: «el mayor más uno»
+        // leído por dos pedidos a la vez —doble clic, dos pestañas— daba el
+        // mismo número a dos cotizaciones, y la tabla no lo impide (el número
+        // se puede corregir a mano). Con el candado el segundo espera a que el
+        // primero haya guardado y se lleva el siguiente.
+        $cotizacion = Cache::lock('cotizaciones-taller:numero', 10)->block(5, function () use ($request, $taller, $mes, $hoy) {
+            $cotizacion = new CotizacionTaller([
+                'id_taller' => $taller->id,
+                'numero' => CotizacionTaller::siguienteNumero(),
+                'periodo' => $mes->format('Y-m'),
+                'fecha' => $hoy,
+                // Un mes de validez: es lo que han dicho siempre las del gimnasio.
+                'valido_hasta' => $hoy->copy()->addMonth(),
+                'descripcion' => $taller->descripcion_factura ?: $taller->nombre,
+                'precio_hora' => $taller->precio_hora,
+                'estado' => 'borrador',
+                'id_usuario' => $request->user()->id,
+            ]);
 
-        $cotizacion->rehacerLaCuenta(CotizacionTaller::clasesParaCotizar($taller, $mes));
-        $cotizacion->save();
+            $cotizacion->rehacerLaCuenta(CotizacionTaller::clasesParaCotizar($taller, $mes));
+            $cotizacion->save();
+
+            return $cotizacion;
+        });
 
         return redirect()
             ->route('panel.talleres.cotizaciones.show', $cotizacion->uuid)

@@ -67,7 +67,7 @@ function Falla({ falla }) {
 
             {abierta ? (
                 <div className="space-y-4 border-t border-line bg-surface-2/40 px-5 py-4 pl-12">
-                    <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+                    <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
                         <dt className="text-fog">Mensaje</dt>
                         <dd className="break-words text-chalk">{falla.mensaje}</dd>
                         {falla.tipo_completo ? (

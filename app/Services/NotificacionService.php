@@ -7,11 +7,34 @@ use App\Models\Inscripcion;
 use App\Models\Notificacion;
 use App\Models\TipoNotificacion;
 use App\Models\LogNotificacion;
+use App\Services\Correo\TopeDelDiaAlcanzado;
+use App\Support\Ajustes;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class NotificacionService
 {
+    /**
+     * Cuántos días puede esperar un aviso automático antes de darse por viejo.
+     *
+     * Si el computador del mesón pasa apagado una semana, al prenderlo salían
+     * de golpe todos los «tu membresía vence en 3 días» de membresías que ya
+     * vencieron. Dos días dan margen a un fin de semana o a un día de tope.
+     */
+    public const DIAS_QUE_ESPERA_UN_AVISO = 2;
+
+    /**
+     * Cuánto tiene que pasar desde el último intento para volver a probar.
+     *
+     * `--todo` manda las pendientes y en seguida reintenta las fallidas: sin
+     * esta espera, lo que acababa de fallar se reintentaba en el mismo minuto
+     * —contra el mismo servidor caído— y gastaba sus intentos en una sola
+     * corrida. Con media hora, la tanda de la mañana reintenta lo de ayer y lo
+     * de esta mañana espera a la próxima.
+     */
+    public const MINUTOS_ENTRE_REINTENTOS = 30;
+
     private CorreoService $correo;
 
     public function __construct(?CorreoService $correo = null)
@@ -39,11 +62,9 @@ class NotificacionService
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
             ->where('id_estado', 100) // Activa
             ->whereDate('fecha_vencimiento', $fechaObjetivo)
-            ->whereHas('cliente', function ($q) {
-                $q->where('activo', true)
-                  ->whereNotNull('email')
-                  ->where('email', '!=', '');
-            })
+            // Con la misma regla que crearNotificacion(): el menor que solo
+            // tiene el correo del apoderado también recibe el aviso.
+            ->whereHas('cliente', fn ($q) => $q->where('activo', true)->conCorreoParaAvisos())
             ->get();
 
         $programadas = 0;
@@ -86,11 +107,9 @@ class NotificacionService
         $inscripciones = Inscripcion::with(['cliente', 'membresia'])
             ->where('id_estado', 100) // Aún activa (se marcará como vencida después)
             ->whereDate('fecha_vencimiento', Carbon::today())
-            ->whereHas('cliente', function ($q) {
-                $q->where('activo', true)
-                  ->whereNotNull('email')
-                  ->where('email', '!=', '');
-            })
+            // Con la misma regla que crearNotificacion(): el menor que solo
+            // tiene el correo del apoderado también recibe el aviso.
+            ->whereHas('cliente', fn ($q) => $q->where('activo', true)->conCorreoParaAvisos())
             ->get();
 
         $programadas = 0;
@@ -115,262 +134,234 @@ class NotificacionService
         ];
     }
 
-    /**
-     * Carga y procesa plantilla HTML con datos dinámicos
+    /*
+     * ============ UN SOLO MOTOR PARA TODOS LOS AVISOS ============
+     *
+     * Antes cada aviso automático leía un HTML de storage/app/test_emails —una
+     * carpeta que no va en el repositorio, así que en el servidor no existía y
+     * los correos fallaban con «Plantilla no encontrada»— y le cambiaba a mano
+     * el TEXTO DE MUESTRA: «Juan Pérez» por el nombre, «Trimestral» por el plan,
+     * «$$25.000» por el saldo. Lo que se corregía en Configuración → Plantillas
+     * de correo no llegaba nunca a esos avisos, y una muestra que no coincidía
+     * con la búsqueda se colaba tal cual en el correo del socio.
+     *
+     * Ahora todos salen de la plantilla guardada en la base, rellenada con las
+     * MISMAS variables que el envío manual (EnvioManualService). Lo que se ve
+     * en la vista previa de la pantalla es lo que le llega al socio.
      */
-    private function cargarPlantillaHTML(string $nombreArchivo, array $datos): string
+
+    private ?EnvioManualService $envio = null;
+
+    private function envio(): EnvioManualService
     {
-        $rutaPlantilla = storage_path("app/test_emails/preview/{$nombreArchivo}");
-        
-        if (!file_exists($rutaPlantilla)) {
-            throw new \Exception("Plantilla no encontrada: {$nombreArchivo}");
+        return $this->envio ??= new EnvioManualService($this->correo);
+    }
+
+    /**
+     * Compone un aviso con su plantilla y los datos de esa inscripción.
+     *
+     * @param array<string,string> $extra lo que solo se sabe en el momento del aviso
+     * @return array{asunto:string, contenido:string, pendientes:list<string>}
+     */
+    public function componer(TipoNotificacion $tipo, Inscripcion $inscripcion, array $extra = []): array
+    {
+        return $this->envio()->componerCon(
+            $tipo,
+            $this->envio()->variablesDeInscripcion($inscripcion, $extra + $this->extrasDelMomento($tipo))
+        );
+    }
+
+    /**
+     * Lo que no está guardado en ningún lado y depende de cuándo sale el aviso.
+     *
+     * La reactivación borra las fechas de la pausa antes de avisar, así que la
+     * fecha de vuelta es hoy: es el día en que se reactivó.
+     *
+     * @return array<string,string>
+     */
+    private function extrasDelMomento(TipoNotificacion $tipo): array
+    {
+        return match ($tipo->codigo) {
+            TipoNotificacion::ACTIVACION_INSCRIPCION => ['fecha_activacion' => Carbon::today()->format('d/m/Y')],
+            default => [],
+        };
+    }
+
+    /**
+     * Anota el aviso. Si la plantilla quedó a medio rellenar, NO sale.
+     *
+     * Igual que el envío manual: un correo que le llega al socio diciendo
+     * «tu plan {membresia} vence» es peor que uno que no sale. Pero aquí no hay
+     * nadie delante a quien avisar, así que la fila se guarda FALLIDA, con el
+     * motivo escrito y sin reintentos —reintentarla mandaría lo mismo—, y se ve
+     * en la lista de notificaciones con qué plantilla hay que arreglar.
+     *
+     * @param array{asunto:string, contenido:string, pendientes:list<string>} $correo
+     */
+    private function anotar(
+        TipoNotificacion $tipo,
+        Inscripcion $inscripcion,
+        string $destino,
+        array $correo,
+        Carbon $fecha,
+        string $detalle
+    ): Notificacion {
+        $notificacion = Notificacion::create([
+            'id_tipo_notificacion' => $tipo->id,
+            'id_cliente' => $inscripcion->id_cliente,
+            'id_inscripcion' => $inscripcion->id,
+            'email_destino' => $destino,
+            'asunto' => $correo['asunto'],
+            'contenido' => $correo['contenido'],
+            'id_estado' => Notificacion::ESTADO_PENDIENTE,
+            'fecha_programada' => $fecha,
+        ]);
+
+        $muestras = $correo['muestras'] ?? [];
+
+        if ($correo['pendientes'] === [] && $muestras === []) {
+            $notificacion->registrarLog('programada', $detalle);
+
+            return $notificacion;
         }
 
-        $contenido = file_get_contents($rutaPlantilla);
-        
-        // Extraer solo el body
-        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
-            $contenido = $matches[1];
+        /*
+         * El texto de muestra de las plantillas viejas —«Juan Pérez»,
+         * «$$25.000»— se trata igual que una variable sin rellenar: el motor
+         * de antes lo cambiaba a mano por los datos del socio, el de ahora no,
+         * y saldría tal cual con el nombre y el monto inventados.
+         */
+        $motivo = $correo['pendientes'] !== []
+            ? sprintf(
+                'No se envió: la plantilla «%s» usa %s y no hay con qué rellenarlo. Corrígela en Configuración → Plantillas de correo.',
+                $tipo->nombre,
+                '{' . implode('}, {', $correo['pendientes']) . '}'
+            )
+            : sprintf(
+                'No se envió: la plantilla «%s» todavía tiene el texto de ejemplo «%s». Edítala en Configuración → Plantillas de correo.',
+                $tipo->nombre,
+                implode('», «', array_slice($muestras, 0, 3))
+            );
+
+        $notificacion->update([
+            'id_estado' => Notificacion::ESTADO_FALLIDO,
+            'error_mensaje' => $motivo,
+            'intentos' => DB::raw('max_intentos'),
+        ]);
+        $notificacion->registrarLog('fallida', $motivo);
+
+        Log::warning('Aviso automático sin enviar por una plantilla incompleta', [
+            'tipo' => $tipo->codigo,
+            'inscripcion' => $inscripcion->id,
+            'variables' => $correo['pendientes'],
+            'muestras' => $muestras,
+        ]);
+
+        return $notificacion->refresh();
+    }
+
+    /**
+     * Manda en el momento un aviso recién anotado (bienvenida, tutor legal,
+     * renovación). Si el correo no sale, la fila queda fallida con el motivo y
+     * la tanda de reintentos la vuelve a probar.
+     *
+     * @return array{enviada:bool, mensaje:string, notificacion_id:int}
+     */
+    private function mandarYa(Notificacion $notificacion, string $queEs): array
+    {
+        if ((int) $notificacion->id_estado === Notificacion::ESTADO_FALLIDO) {
+            return [
+                'enviada' => false,
+                'mensaje' => $notificacion->error_mensaje,
+                'notificacion_id' => $notificacion->id,
+            ];
         }
 
-        // Reemplazar cada variable
-        foreach ($datos as $clave => $valor) {
-            $contenido = str_replace($clave, $valor, $contenido);
+        try {
+            $this->correo->enviar($notificacion->email_destino, $notificacion->asunto, $notificacion->contenido);
+        } catch (TopeDelDiaAlcanzado $e) {
+            // No falló: hoy ya no caben más. Sale mañana con la tanda diaria.
+            $notificacion->aplazarParaManana($e->getMessage());
+
+            return [
+                'enviada' => false,
+                'mensaje' => $e->getMessage(),
+                'notificacion_id' => $notificacion->id,
+            ];
+        } catch (\Throwable $e) {
+            $notificacion->marcarComoFallida($e->getMessage());
+
+            return [
+                'enviada' => false,
+                'mensaje' => 'Error al enviar: ' . $e->getMessage(),
+                'notificacion_id' => $notificacion->id,
+            ];
         }
 
-        return $contenido;
+        $notificacion->marcarComoEnviada();
+
+        return [
+            'enviada' => true,
+            'mensaje' => "{$queEs} enviada",
+            'notificacion_id' => $notificacion->id,
+        ];
     }
 
     /**
      * Crea una notificación para una inscripción
      */
-    public function crearNotificacion(TipoNotificacion $tipo, Inscripcion $inscripcion): Notificacion
+    public function crearNotificacion(TipoNotificacion $tipo, Inscripcion $inscripcion): ?Notificacion
     {
+        // Con el interruptor apagado no se anota nada: una fila pendiente la
+        // mandaría la tanda del día en cuanto alguien lo volviera a prender.
+        if (! self::automaticosEncendidos()) {
+            return null;
+        }
+
         $cliente = $inscripcion->cliente;
-        $membresia = $inscripcion->membresia;
 
-        // Por fechas y entero: diffInDays() cuenta horas y devuelve decimales,
-        // y el domingo del cambio de hora el correo decía «4.958333 días».
-        $diasRestantes = Inscripcion::diasEntre(Carbon::today(), $inscripcion->fecha_vencimiento);
+        // Si es menor de edad y tiene correo de apoderado, el aviso es para él.
+        $destino = $cliente?->correoParaAvisos();
 
-        // Determinar el email destino y nombre del destinatario
-        $emailDestino = $cliente->email;
-        $nombreCompleto = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
-        
-        // Si es menor de edad y tiene email de apoderado, enviar al apoderado
-        if ($cliente->es_menor_edad && !empty($cliente->apoderado_email)) {
-            $emailDestino = $cliente->apoderado_email;
+        if ($destino === null) {
+            return null;
         }
 
-        // Preparar contenido según tipo de notificación
-        $contenido = '';
-        $asunto = '';
-
-        try {
-            switch ($tipo->codigo) {
-                case TipoNotificacion::MEMBRESIA_POR_VENCER:
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        '5 días' => $diasRestantes . ' días',
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('03_membresia_por_vencer.html', $datos);
-                    $asunto = '⏰ Tu membresía ' . $membresia->nombre . ' vence pronto';
-                    break;
-
-                case TipoNotificacion::MEMBRESIA_VENCIDA:
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('04_membresia_vencida.html', $datos);
-                    $asunto = '❌ Tu membresía ' . $membresia->nombre . ' ha vencido';
-                    break;
-
-                case TipoNotificacion::PAGO_COMPLETADO:
-                    $ultimoPago = $inscripcion->pagos()->orderBy('id', 'desc')->first();
-                    $metodoPago = $ultimoPago ? $ultimoPago->metodoPago->nombre ?? 'No especificado' : 'No especificado';
-                    $fechaPago = $ultimoPago ? Carbon::parse($ultimoPago->fecha_pago)->format('d/m/Y') : Carbon::now()->format('d/m/Y');
-                    $montoPago = $ultimoPago ? '$' . number_format($ultimoPago->monto_abonado, 0, ',', '.') : '$0';
-                    
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        'Trimestral' => $membresia->nombre,
-                        '$65.000' => $montoPago,
-                        'Transferencia' => $metodoPago,
-                        '06/12/2025' => $fechaPago,
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('02_pago_completado.html', $datos);
-                    $asunto = '✅ Pago completado - PROGYM';
-                    break;
-
-                case TipoNotificacion::RENOVACION:
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        'Trimestral' => $membresia->nombre,
-                        '06/12/2025' => Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'),
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('08_renovacion.html', $datos);
-                    $asunto = '🎊 Renovación exitosa - PROGYM';
-                    break;
-
-                case TipoNotificacion::PAUSA_INSCRIPCION:
-                    $fechaPausa = $inscripcion->fecha_pausa_inicio ? Carbon::parse($inscripcion->fecha_pausa_inicio)->format('d/m/Y') : Carbon::now()->format('d/m/Y');
-                    $fechaReactivacion = $inscripcion->fecha_pausa_fin ? Carbon::parse($inscripcion->fecha_pausa_fin)->format('d/m/Y') : 'A definir';
-                    $motivo = $inscripcion->razon_pausa ?? 'Motivo personal';
-                    
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        '06/12/2025' => $fechaPausa,
-                        'Viaje por trabajo' => $motivo,
-                        '15/01/2026' => $fechaReactivacion,
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('05_pausa_inscripcion.html', $datos);
-                    $asunto = '⏸️ Membresía pausada - PROGYM';
-                    break;
-
-                case TipoNotificacion::ACTIVACION_INSCRIPCION:
-                    $fechaActivacion = Carbon::now()->format('d/m/Y');
-                    
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        '06/12/2025' => $fechaActivacion,
-                        'Trimestral' => $membresia->nombre,
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('06_activacion_inscripcion.html', $datos);
-                    $asunto = '▶️ ¡Bienvenido/a de vuelta! - PROGYM';
-                    break;
-
-                case 'confirmacion_tutor_legal':
-                    // Esta notificación se envía al tutor legal cuando se registra un menor
-                    $clienteMenor = $cliente;
-                    $nombreMenor = trim($clienteMenor->nombres . ' ' . $clienteMenor->apellido_paterno);
-                    $runMenor = $clienteMenor->run_pasaporte ?? 'No especificado';
-                    $fechaNacimientoMenor = $clienteMenor->fecha_nacimiento ? Carbon::parse($clienteMenor->fecha_nacimiento)->format('d/m/Y') : 'No especificada';
-                    
-                    // Datos del tutor (ya está en $emailDestino si es menor de edad)
-                    $nombreTutor = $clienteMenor->apoderado_nombre ?? 'Tutor Legal';
-                    $runTutor = $clienteMenor->apoderado_run ?? 'No especificado';
-                    
-                    $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
-                    
-                    $datos = [
-                        'María González' => $nombreTutor,
-                        'Juanito Pérez' => $nombreMenor,
-                        '25.555.666-7' => $runMenor,
-                        '15/03/2010' => $fechaNacimientoMenor,
-                        '11.222.333-4' => $runTutor,
-                        'Trimestral' => $membresia->nombre,
-                        '06/12/2025' => Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'),
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                        '$$65.000' => $precioTotal,
-                    ];
-                    $contenido = $this->cargarPlantillaHTML('09_confirmacion_tutor_legal.html', $datos);
-                    $asunto = '📋 Confirmación de Tutor Legal - PROGYM';
-                    break;
-
-                case TipoNotificacion::PAGO_PENDIENTE:
-                    $totalPagado = $inscripcion->pagos()->sum('monto_abonado');
-                    $saldoPendiente = $inscripcion->precio_final - $totalPagado;
-                    $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
-                    $saldoFormateado = '$' . number_format($saldoPendiente, 0, ',', '.');
-                    
-                    // Reemplazar el formato especial $$25.000 con un placeholder temporal
-                    $rutaPlantilla = storage_path('app/test_emails/preview/07_pago_pendiente.html');
-                    $contenidoOriginal = file_get_contents($rutaPlantilla);
-                    
-                    // Extraer solo el body
-                    if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenidoOriginal, $matches)) {
-                        $contenidoOriginal = $matches[1];
-                    }
-                    
-                    // Primero reemplazar $$25.000 y $$65.000 para evitar confusión
-                    $contenidoOriginal = str_replace('$$25.000', '___SALDO___', $contenidoOriginal);
-                    $contenidoOriginal = str_replace('$$65.000', '___TOTAL___', $contenidoOriginal);
-                    
-                    $datos = [
-                        'Juan Pérez' => $nombreCompleto,
-                        'Trimestral' => $membresia->nombre,
-                        '___SALDO___' => $saldoFormateado,
-                        '___TOTAL___' => $precioTotal,
-                        '06/03/2026' => Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'),
-                        '$65.000' => $precioTotal,
-                    ];
-                    
-                    $contenido = $contenidoOriginal;
-                    foreach ($datos as $clave => $valor) {
-                        $contenido = str_replace($clave, $valor, $contenido);
-                    }
-                    
-                    $asunto = '💰 Recordatorio de saldo pendiente - PROGYM';
-                    break;
-
-                default:
-                    // Fallback al método antiguo si no está implementado
-                    $datos = [
-                        'nombre' => $nombreCompleto,
-                        'nombre_cliente' => $nombreCompleto,
-                        'es_menor_edad' => $cliente->es_menor_edad,
-                        'membresia' => $membresia->nombre,
-                        'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-                        'dias_restantes' => max(0, $diasRestantes),
-                        'fecha_inicio' => $inscripcion->fecha_inicio->format('d/m/Y'),
-                    ];
-                    $renderizado = $tipo->renderizar($datos);
-                    $contenido = $renderizado['contenido'];
-                    $asunto = $renderizado['asunto'];
-                    break;
-            }
-        } catch (\Exception $e) {
-            // Si falla, usar método antiguo
-            Log::warning("Error al cargar plantilla HTML: " . $e->getMessage());
-            $datos = [
-                'nombre' => $nombreCompleto,
-                'membresia' => $membresia->nombre,
-                'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-                'dias_restantes' => max(0, $diasRestantes),
-            ];
-            $renderizado = $tipo->renderizar($datos);
-            $contenido = $renderizado['contenido'];
-            $asunto = $renderizado['asunto'];
-        }
-
-        $notificacion = Notificacion::create([
-            'id_tipo_notificacion' => $tipo->id,
-            'id_cliente' => $cliente->id,
-            'id_inscripcion' => $inscripcion->id,
-            'email_destino' => $emailDestino,
-            'asunto' => $asunto,
-            'contenido' => $contenido,
-            'id_estado' => Notificacion::ESTADO_PENDIENTE,
-            'fecha_programada' => Carbon::today(),
-        ]);
-
-        $logMensaje = $cliente->es_menor_edad && !empty($cliente->apoderado_email) 
-            ? "Notificación programada para apoderado: {$emailDestino}" 
+        $detalle = $destino !== $cliente->email
+            ? "Notificación programada para apoderado: {$destino}"
             : 'Notificación programada automáticamente';
-            
-        $notificacion->registrarLog('programada', $logMensaje);
 
-        return $notificacion;
+        return $this->anotar($tipo, $inscripcion, (string) $destino, $this->componer($tipo, $inscripcion), Carbon::today(), $detalle);
     }
 
     /**
      * Envía las notificaciones pendientes
+     *
+     * Con `$soloManuales`, solo las que alguien escribió y programó a mano
+     * (tipo_envio = manual): es lo que sigue saliendo con los correos
+     * automáticos apagados.
      */
-    public function enviarPendientes(): array
+    public function enviarPendientes(bool $soloManuales = false): array
     {
+        $canceladas = $this->cancelarAvisosViejos();
+
         $notificaciones = Notificacion::paraEnviarHoy()
-            ->with(['cliente', 'tipoNotificacion'])
+            ->when($soloManuales, fn ($q) => $q->manuales())
+            ->with(['cliente' => fn ($q) => $q->withTrashed(), 'tipoNotificacion'])
             ->get();
 
         $enviadas = 0;
         $fallidas = 0;
+        $aplazadas = 0;
 
         foreach ($notificaciones as $notificacion) {
+            if ($motivo = $this->porQueNoSeLeEscribe($notificacion)) {
+                $notificacion->cancelar($motivo);
+                $canceladas++;
+
+                continue;
+            }
+
             try {
                 $notificacion->registrarLog('enviando', 'Iniciando envío de correo');
 
@@ -391,12 +382,18 @@ class NotificacionService
                 $notificacion->marcarComoEnviada();
                 $enviadas++;
 
+                // Solo identificadores: el registro lo lee cualquiera con
+                // acceso al servidor, y el correo es un dato personal.
                 Log::info("Notificación enviada", [
                     'id' => $notificacion->id,
-                    'email' => $notificacion->email_destino,
+                    'cliente' => $notificacion->id_cliente,
                     'tipo' => $notificacion->tipoNotificacion->codigo ?? 'N/A',
                 ]);
 
+            } catch (TopeDelDiaAlcanzado $e) {
+                // El tope no es un fallo: sale mañana sin gastar un intento.
+                $notificacion->aplazarParaManana($e->getMessage());
+                $aplazadas++;
             } catch (\Exception $e) {
                 // Registrar error en log_notificaciones
                 LogNotificacion::create([
@@ -423,25 +420,40 @@ class NotificacionService
         return [
             'enviadas' => $enviadas,
             'fallidas' => $fallidas,
+            'aplazadas' => $aplazadas,
+            'canceladas' => $canceladas,
             'total' => $notificaciones->count(),
             'mensaje' => "Enviadas: {$enviadas}, Fallidas: {$fallidas}"
         ];
     }
 
     /**
-     * Reintenta enviar notificaciones fallidas
+     * Reintenta enviar notificaciones fallidas (ver `$soloManuales` arriba)
+     *
+     * Solo las que fallaron hace más de MINUTOS_ENTRE_REINTENTOS: lo que
+     * falló en esta misma corrida no se vuelve a probar en el acto.
      */
-    public function reintentarFallidas(): array
+    public function reintentarFallidas(bool $soloManuales = false): array
     {
+        $this->cancelarAvisosViejos();
+
         $notificaciones = Notificacion::fallidas()
+            ->when($soloManuales, fn ($q) => $q->manuales())
             ->where('intentos', '<', \DB::raw('max_intentos'))
-            ->with(['cliente', 'tipoNotificacion'])
+            ->where('updated_at', '<', now()->subMinutes(self::MINUTOS_ENTRE_REINTENTOS))
+            ->with(['cliente' => fn ($q) => $q->withTrashed(), 'tipoNotificacion'])
             ->get();
 
         $reenviadas = 0;
         $fallidasNuevamente = 0;
 
         foreach ($notificaciones as $notificacion) {
+            if ($motivo = $this->porQueNoSeLeEscribe($notificacion)) {
+                $notificacion->cancelar($motivo);
+
+                continue;
+            }
+
             try {
                 $notificacion->registrarLog('reintentando', "Reintento #{$notificacion->intentos}");
                 $notificacion->update(['id_estado' => Notificacion::ESTADO_PENDIENTE]);
@@ -455,6 +467,8 @@ class NotificacionService
                 $notificacion->marcarComoEnviada();
                 $reenviadas++;
 
+            } catch (TopeDelDiaAlcanzado $e) {
+                $notificacion->aplazarParaManana($e->getMessage());
             } catch (\Exception $e) {
                 $notificacion->marcarComoFallida($e->getMessage());
                 $fallidasNuevamente++;
@@ -473,6 +487,94 @@ class NotificacionService
     }
 
     /**
+     * ¿Está prendido el interruptor de Configuración → Avisos automáticos?
+     *
+     * Lo miran TODOS los avisos que salen solos, no solo la tanda diaria: la
+     * bienvenida, la del tutor legal y la de renovación salían en el momento
+     * aunque estuviera apagado, y el interruptor promete que «el sistema no
+     * manda ningún aviso solo». Lo escrito a mano no pasa por aquí.
+     */
+    public static function automaticosEncendidos(): bool
+    {
+        return Ajustes::activo('tareas.correos_automaticos');
+    }
+
+    /**
+     * Cancela los avisos automáticos que ya llegan tarde.
+     *
+     * Un «vence en 3 días» que sale una semana después dice algo falso. Se
+     * cancelan con el motivo escrito, en vez de borrarlos, para que en el
+     * listado se vea que existieron y por qué no salieron. Los manuales no se
+     * tocan: alguien los escribió y eligió el día.
+     */
+    private function cancelarAvisosViejos(): int
+    {
+        // Como texto y sin hora: la columna es DATE, y así la comparación da
+        // lo mismo en MySQL, PostgreSQL y SQLite (ver scopeParaEnviarHoy).
+        $limite = today()->subDays(self::DIAS_QUE_ESPERA_UN_AVISO)->toDateString();
+
+        $viejas = Notificacion::automaticas()
+            ->whereIn('id_estado', [Notificacion::ESTADO_PENDIENTE, Notificacion::ESTADO_FALLIDO])
+            ->where('intentos', '<', DB::raw('max_intentos'))
+            ->where('fecha_programada', '<', $limite)
+            ->get();
+
+        foreach ($viejas as $vieja) {
+            $vieja->cancelar(sprintf(
+                'No se envió: era para el %s y pasaron más de %d días. Atrasado, el aviso diría algo que ya no es cierto.',
+                $vieja->fecha_programada?->format('d/m/Y'),
+                self::DIAS_QUE_ESPERA_UN_AVISO
+            ));
+        }
+
+        return $viejas->count();
+    }
+
+    /**
+     * Por qué ya no se le manda a este socio lo que tenía en cola, o null.
+     *
+     * La fila guarda la dirección del día en que se anotó, y entre medio el
+     * socio pudo irse a la papelera, quedar sin datos o darse de baja.
+     *
+     * - Papelera o datos borrados: nunca. Se lo sacó del sistema a propósito.
+     * - Dado de baja: los automáticos no, SALVO el de «tu membresía venció».
+     *   La tarea nocturna da de baja justo a quien se le venció el plan, y si
+     *   ese aviso se atrasa un día (tope, equipo apagado) el socio ya amanece
+     *   inactivo: es el único aviso que tiene sentido para alguien de baja,
+     *   porque lo invita a volver.
+     * - Los manuales a alguien de baja sí salen: escribirle a un socio
+     *   inactivo desde su ficha es algo que se hace a sabiendas.
+     */
+    private function porQueNoSeLeEscribe(Notificacion $notificacion): ?string
+    {
+        if (! $notificacion->id_cliente) {
+            return null;
+        }
+
+        $cliente = $notificacion->cliente;
+
+        if (! $cliente) {
+            return 'No se envió: el socio ya no existe.';
+        }
+
+        if ($cliente->trashed()) {
+            return 'No se envió: el socio está en la papelera.';
+        }
+
+        if ($cliente->datos_borrados_en) {
+            return 'No se envió: se borraron los datos del socio.';
+        }
+
+        if (! $cliente->activo
+            && $notificacion->esAutomatica()
+            && $notificacion->tipoNotificacion?->codigo !== TipoNotificacion::MEMBRESIA_VENCIDA) {
+            return 'No se envió: el socio está dado de baja.';
+        }
+
+        return null;
+    }
+
+    /**
      * Envía notificación de bienvenida a un cliente nuevo
      */
     public function enviarBienvenida(Inscripcion $inscripcion): ?Notificacion
@@ -481,10 +583,11 @@ class NotificacionService
             ->where('activo', true)
             ->first();
 
-        if (!$tipoNotificacion || !$inscripcion->cliente->email) {
+        if (!$tipoNotificacion) {
             return null;
         }
 
+        // crearNotificacion() ya mira el interruptor y a quién se le escribe.
         return $this->crearNotificacion($tipoNotificacion, $inscripcion);
     }
 
@@ -509,9 +612,8 @@ class NotificacionService
 
     /**
      * Envía notificación de renovación exitosa
-     * 
+     *
      * @param Inscripcion $inscripcion La nueva inscripción (renovada)
-     * @return Notificacion|null
      */
     public function enviarNotificacionRenovacion(Inscripcion $inscripcion): ?Notificacion
     {
@@ -519,55 +621,30 @@ class NotificacionService
             ->where('activo', true)
             ->first();
 
-        if (!$tipoNotificacion || !$inscripcion->cliente->email) {
+        $destino = $inscripcion->cliente?->correoParaAvisos();
+
+        if (!$tipoNotificacion || $destino === null || ! self::automaticosEncendidos()) {
             return null;
         }
 
-        $cliente = $inscripcion->cliente;
-        $membresia = $inscripcion->membresia;
+        $notificacion = $this->anotar(
+            $tipoNotificacion,
+            $inscripcion,
+            $destino,
+            $this->componer($tipoNotificacion, $inscripcion),
+            Carbon::today(),
+            'Notificación de renovación programada'
+        );
 
-        $datos = [
-            'nombre' => $cliente->nombre_completo,
-            'membresia' => $membresia->nombre,
-            'fecha_inicio' => $inscripcion->fecha_inicio->format('d/m/Y'),
-            'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-            'dias_vigencia' => $inscripcion->fecha_inicio->diffInDays($inscripcion->fecha_vencimiento),
-            'precio' => number_format($inscripcion->precio_final, 0, ',', '.'),
-        ];
+        // Si no sale ahora queda fallida y la tanda de reintentos la recoge.
+        $this->mandarYa($notificacion, 'Notificación de renovación');
 
-        $renderizado = $tipoNotificacion->renderizar($datos);
-
-        $notificacion = Notificacion::create([
-            'id_tipo_notificacion' => $tipoNotificacion->id,
-            'id_cliente' => $cliente->id,
-            'id_inscripcion' => $inscripcion->id,
-            'email_destino' => $cliente->email,
-            'asunto' => $renderizado['asunto'],
-            'contenido' => $renderizado['contenido'],
-            'id_estado' => Notificacion::ESTADO_PENDIENTE,
-            'fecha_programada' => Carbon::today(),
-        ]);
-
-        $notificacion->registrarLog('programada', 'Notificación de renovación programada');
-
-        // Intentar enviar inmediatamente
-        try {
-            $this->correo->enviar(
-                $notificacion->email_destino,
-                $notificacion->asunto,
-                $notificacion->contenido
-            );
-            $notificacion->marcarComoEnviada();
-        } catch (\Exception $e) {
-            Log::warning('Notificación de renovación quedó pendiente: ' . $e->getMessage());
-        }
-
-        return $notificacion;
+        return $notificacion->refresh();
     }
 
     /**
      * Programa notificaciones de pago pendiente
-     * 
+     *
      * @param int $diasVencimiento Días desde que venció el pago
      * @return array
      */
@@ -584,16 +661,11 @@ class NotificacionService
         // Buscar inscripciones activas con pagos pendientes hace X días
         $inscripciones = Inscripcion::with(['cliente', 'membresia', 'pagos'])
             ->where('id_estado', 100) // Activa
-            ->whereHas('cliente', function ($q) {
-                $q->where('activo', true)
-                  ->whereNotNull('email')
-                  ->where('email', '!=', '');
-            })
+            // Con la misma regla que crearNotificacion(): el menor que solo
+            // tiene el correo del apoderado también recibe el aviso.
+            ->whereHas('cliente', fn ($q) => $q->where('activo', true)->conCorreoParaAvisos())
             ->get()
-            ->filter(function ($inscripcion) {
-                $estadoPago = $inscripcion->obtenerEstadoPago();
-                return $estadoPago['estado'] !== 'Pagado' && $estadoPago['pendiente'] > 0;
-            });
+            ->filter(fn ($inscripcion) => $inscripcion->obtenerEstadoPago()['pendiente'] > 0);
 
         $programadas = 0;
 
@@ -608,30 +680,7 @@ class NotificacionService
                 continue;
             }
 
-            $cliente = $inscripcion->cliente;
-            $estadoPago = $inscripcion->obtenerEstadoPago();
-
-            $datos = [
-                'nombre' => $cliente->nombre_completo,
-                'membresia' => $inscripcion->membresia->nombre,
-                'monto_pendiente' => number_format($estadoPago['pendiente'], 0, ',', '.'),
-                'monto_total' => number_format($inscripcion->precio_final, 0, ',', '.'),
-                'fecha_vencimiento' => $inscripcion->fecha_vencimiento->format('d/m/Y'),
-            ];
-
-            $renderizado = $tipoNotificacion->renderizar($datos);
-
-            Notificacion::create([
-                'id_tipo_notificacion' => $tipoNotificacion->id,
-                'id_cliente' => $cliente->id,
-                'id_inscripcion' => $inscripcion->id,
-                'email_destino' => $cliente->email,
-                'asunto' => $renderizado['asunto'],
-                'contenido' => $renderizado['contenido'],
-                'id_estado' => Notificacion::ESTADO_PENDIENTE,
-                'fecha_programada' => Carbon::today(),
-            ]);
-
+            $this->crearNotificacion($tipoNotificacion, $inscripcion);
             $programadas++;
         }
 
@@ -642,14 +691,14 @@ class NotificacionService
     }
 
     /**
-     * Enviar notificación de bienvenida automáticamente al crear inscripción
-     */
-    /**
      * Envía notificación de confirmación al tutor legal cuando se registra un menor
      */
     public function enviarNotificacionTutorLegal(Inscripcion $inscripcion): array
     {
-        // Cargar relaciones necesarias
+        if (! self::automaticosEncendidos()) {
+            return ['enviada' => false, 'mensaje' => 'Los correos automáticos están apagados en Configuración'];
+        }
+
         $inscripcion->load(['cliente', 'membresia']);
         $cliente = $inscripcion->cliente;
 
@@ -661,104 +710,29 @@ class NotificacionService
             ];
         }
 
-        // Cargar plantilla
-        $rutaPlantilla = storage_path('app/test_emails/preview/09_confirmacion_tutor_legal.html');
-        if (!file_exists($rutaPlantilla)) {
-            return [
-                'enviada' => false,
-                'mensaje' => 'Plantilla de confirmación de tutor no encontrada'
-            ];
-        }
+        $tipoTutor = TipoNotificacion::where('codigo', 'confirmacion_tutor_legal')
+            ->where('activo', true)
+            ->first();
 
-        $contenido = file_get_contents($rutaPlantilla);
-
-        // Extraer solo el body
-        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
-            $contenido = $matches[1];
-        }
-
-        // Preparar datos dinámicos
-        $nombreMenor = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
-        $runMenor = $cliente->run_pasaporte ?? 'No especificado';
-        $fechaNacimientoMenor = $cliente->fecha_nacimiento ? Carbon::parse($cliente->fecha_nacimiento)->format('d/m/Y') : 'No especificada';
-        $nombreTutor = $cliente->apoderado_nombre ?? 'Tutor Legal';
-        $runTutor = $cliente->apoderado_run ?? 'No especificado';
-        $precioTotal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
-
-        // Reemplazar variables
-        $contenido = str_replace('María González', $nombreTutor, $contenido);
-        $contenido = str_replace('Juanito Pérez', $nombreMenor, $contenido);
-        $contenido = str_replace('25.555.666-7', $runMenor, $contenido);
-        $contenido = str_replace('15/03/2010', $fechaNacimientoMenor, $contenido);
-        $contenido = str_replace('11.222.333-4', $runTutor, $contenido);
-        $contenido = str_replace('Trimestral', $inscripcion->membresia->nombre, $contenido);
-        $contenido = str_replace('06/12/2025', Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
-        $contenido = str_replace('06/03/2026', Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
-        $contenido = str_replace('$$65.000', $precioTotal, $contenido);
-
-        // Crear registro de notificación (buscar tipo o crear temporal)
-        $tipoTutor = TipoNotificacion::where('codigo', 'confirmacion_tutor_legal')->first();
-        
+        // Sin su plantilla no hay qué mandar: antes se caía a la de
+        // «notificación manual» con el texto de muestra adentro.
         if (!$tipoTutor) {
-            // Si no existe el tipo, usar notificacion_manual como fallback
-            $tipoTutor = TipoNotificacion::where('codigo', TipoNotificacion::NOTIFICACION_MANUAL)->first();
-        }
-
-        $notificacion = Notificacion::create([
-            'id_tipo_notificacion' => $tipoTutor->id,
-            'id_cliente' => $cliente->id,
-            'id_inscripcion' => $inscripcion->id,
-            'email_destino' => $cliente->apoderado_email,
-            'asunto' => '📋 Confirmación de Tutor Legal - PROGYM',
-            'contenido' => $contenido,
-            'id_estado' => Notificacion::ESTADO_PENDIENTE,
-            'fecha_programada' => Carbon::now(),
-        ]);
-
-        // Intentar enviar inmediatamente
-        try {
-            $messageId = $this->correo->enviar(
-                $cliente->apoderado_email,
-                $notificacion->asunto,
-                $contenido
-            );
-
-            $notificacion->update([
-                'id_estado' => Notificacion::ESTADO_ENVIADO,
-                'fecha_envio' => Carbon::now(),
-                'id_email_proveedor' => $messageId,
-            ]);
-
-            LogNotificacion::create([
-                'id_notificacion' => $notificacion->id,
-                'accion' => LogNotificacion::ACCION_ENVIADA,
-                'detalle' => json_encode(['message_id' => $messageId, 'tipo' => 'tutor_legal']),
-            ]);
-
-            return [
-                'enviada' => true,
-                'mensaje' => 'Notificación enviada al tutor legal',
-                'notificacion_id' => $notificacion->id
-            ];
-
-        } catch (\Exception $e) {
-            $notificacion->update([
-                'id_estado' => Notificacion::ESTADO_FALLIDO,
-                'intentos_envio' => 1,
-            ]);
-
-            LogNotificacion::create([
-                'id_notificacion' => $notificacion->id,
-                'accion' => 'fallida',
-                'detalle' => json_encode(['error' => $e->getMessage()]),
-            ]);
-
             return [
                 'enviada' => false,
-                'mensaje' => 'Error al enviar: ' . $e->getMessage(),
-                'notificacion_id' => $notificacion->id
+                'mensaje' => 'La plantilla de confirmación de tutor legal no existe o está desactivada'
             ];
         }
+
+        $notificacion = $this->anotar(
+            $tipoTutor,
+            $inscripcion,
+            $cliente->apoderado_email,
+            $this->componer($tipoTutor, $inscripcion),
+            Carbon::now(),
+            "Confirmación para el tutor legal: {$cliente->apoderado_email}"
+        );
+
+        return $this->mandarYa($notificacion, 'Notificación al tutor legal');
     }
 
     /**
@@ -778,12 +752,17 @@ class NotificacionService
             ];
         }
 
+        if (! self::automaticosEncendidos()) {
+            return ['enviada' => false, 'mensaje' => 'Los correos automáticos están apagados en Configuración'];
+        }
+
         // Cargar relaciones necesarias
         $inscripcion->load(['cliente', 'membresia']);
         $cliente = $inscripcion->cliente;
+        $destino = $cliente?->correoParaAvisos();
 
-        // Validar que el cliente tenga email
-        if (!$cliente || !$cliente->email) {
+        // Validar que haya a quién escribirle (el apoderado, si es menor)
+        if ($destino === null) {
             return [
                 'enviada' => false,
                 'mensaje' => 'Cliente sin email registrado'
@@ -802,110 +781,15 @@ class NotificacionService
             ];
         }
 
-        // Cargar plantilla de bienvenida
-        $rutaPlantilla = storage_path('app/test_emails/preview/01_bienvenida.html');
-        if (!file_exists($rutaPlantilla)) {
-            return [
-                'enviada' => false,
-                'mensaje' => 'Plantilla de bienvenida no encontrada'
-            ];
-        }
+        $notificacion = $this->anotar(
+            $tipoBienvenida,
+            $inscripcion,
+            $destino,
+            $this->componer($tipoBienvenida, $inscripcion),
+            Carbon::now(),
+            'Bienvenida programada al inscribirse'
+        );
 
-        $contenido = file_get_contents($rutaPlantilla);
-
-        // Extraer solo el body
-        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $contenido, $matches)) {
-            $contenido = $matches[1];
-        }
-
-        // Obtener información del pago más reciente
-        $pago = $inscripcion->pagos()->orderBy('id', 'desc')->first();
-        
-        // Calcular montos
-        $totalPagado = $inscripcion->pagos()->sum('monto_abonado');
-        $saldoPendienteNum = $inscripcion->precio_final - $totalPagado;
-        
-        // Formatear valores
-        $nombreCompleto = trim($cliente->nombres . ' ' . $cliente->apellido_paterno);
-        $precioFinal = '$' . number_format($inscripcion->precio_final, 0, ',', '.');
-        $montoPagado = '$' . number_format($totalPagado, 0, ',', '.');
-        $saldoPendiente = '$' . number_format($saldoPendienteNum, 0, ',', '.');
-        $tipoPago = $saldoPendienteNum > 0 ? 'Parcial' : 'Completo';
-        
-        // Reemplazar variables en la plantilla
-        $contenido = str_replace('Juan Pérez', $nombreCompleto, $contenido);
-        $contenido = str_replace('Trimestral', $inscripcion->membresia->nombre, $contenido);
-        $contenido = str_replace('$65.000', $precioFinal, $contenido);
-        $contenido = str_replace('06/12/2025', \Carbon\Carbon::parse($inscripcion->fecha_inicio)->format('d/m/Y'), $contenido);
-        $contenido = str_replace('06/03/2026', \Carbon\Carbon::parse($inscripcion->fecha_vencimiento)->format('d/m/Y'), $contenido);
-        $contenido = str_replace('Parcial', $tipoPago, $contenido);
-        $contenido = str_replace('$40.000', $montoPagado, $contenido);
-        $contenido = str_replace('$25.000', $saldoPendiente, $contenido);
-
-        // Crear registro de notificación
-        $notificacion = Notificacion::create([
-            'id_tipo_notificacion' => $tipoBienvenida->id,
-            'id_cliente' => $cliente->id,
-            'id_inscripcion' => $inscripcion->id,
-            'email_destino' => $cliente->email,
-            'asunto' => '🎉 ¡Bienvenido a PROGYM Los Ángeles!',
-            'contenido' => $contenido,
-            'id_estado' => Notificacion::ESTADO_PENDIENTE,
-            'fecha_programada' => Carbon::now(),
-        ]);
-
-        // Intentar enviar inmediatamente
-        try {
-            $messageId = $this->correo->enviar(
-                $cliente->email,
-                $notificacion->asunto,
-                $contenido
-            );
-
-            \Log::info("📧 Email bienvenida enviado", [
-                'email_destino' => $cliente->email,
-                'inscripcion_id' => $inscripcion->id,
-            ]);
-
-            // Actualizar estado a enviado
-            $notificacion->update([
-                'id_estado' => Notificacion::ESTADO_ENVIADO,
-                'fecha_envio' => Carbon::now(),
-                'id_email_proveedor' => $messageId,
-            ]);
-
-            // Log de éxito
-            LogNotificacion::create([
-                'id_notificacion' => $notificacion->id,
-                'accion' => 'enviada',
-                'detalle' => json_encode(['message_id' => $messageId]),
-            ]);
-
-            return [
-                'enviada' => true,
-                'mensaje' => 'Notificación de bienvenida enviada exitosamente',
-                'notificacion_id' => $notificacion->id
-            ];
-
-        } catch (\Exception $e) {
-            // Marcar como fallida
-            $notificacion->update([
-                'id_estado' => Notificacion::ESTADO_FALLIDO,
-                'intentos_envio' => 1,
-            ]);
-
-            // Log de error
-            LogNotificacion::create([
-                'id_notificacion' => $notificacion->id,
-                'accion' => 'fallida',
-                'detalle' => json_encode(['error' => $e->getMessage()]),
-            ]);
-
-            return [
-                'enviada' => false,
-                'mensaje' => 'Error al enviar notificación: ' . $e->getMessage(),
-                'notificacion_id' => $notificacion->id
-            ];
-        }
+        return $this->mandarYa($notificacion, 'Notificación de bienvenida');
     }
 }

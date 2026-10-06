@@ -44,6 +44,12 @@ class CajaController extends Controller
 
     public function __invoke(Request $request)
     {
+        // Con solo «Ver la caja del día» la ruta deja pasar (Permisos::tambien)
+        // pero aquí no se arma nada del mes: se va a la de hoy.
+        if (! $request->user()?->puede('reportes.ver')) {
+            return redirect()->route('panel.caja.hoy');
+        }
+
         $this->sinIva = $request->query('iva') === 'sin';
         $hoy = Carbon::today();
         $mes = [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()];

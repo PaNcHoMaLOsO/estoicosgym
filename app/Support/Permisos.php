@@ -176,6 +176,32 @@ class Permisos
     ];
 
     /**
+     * Permisos MÁS ESTRECHOS que también dejan llegar a una ruta.
+     *
+     * El middleware los acepta en lugar del de siempre, pero solo abren la
+     * puerta: el controlador vuelve a mirar y decide sobre QUÉ se puede
+     * actuar. Corregir un pago pide `pagos.editar`, y `pagos.corregir_hoy`
+     * deja entrar a la misma pantalla solo con los pagos de hoy que registró
+     * esa persona (PagoEditarController::puedeCorregir).
+     *
+     * @var array<string,list<string>>
+     */
+    private const TAMBIEN = [
+        'panel.pagos.edit' => ['pagos.corregir_hoy'],
+        'panel.pagos.update' => ['pagos.corregir_hoy'],
+        // Quien solo ve la caja del día y llega a /panel/caja —un enlace
+        // guardado, el de otra pantalla— no se topa con un 403: CajaController
+        // lo manda a la de hoy.
+        'panel.caja' => ['caja.hoy'],
+    ];
+
+    /** @return list<string> */
+    public static function tambien(?string $nombreDeRuta): array
+    {
+        return self::TAMBIEN[$nombreDeRuta] ?? [];
+    }
+
+    /**
      * Permiso que exige una ruta, o null si la ruta no es de un modulo
      * protegido (el panel de inicio, el cierre de sesion, la web publica).
      */
@@ -208,6 +234,17 @@ class Permisos
             return null;
         }
 
+        /*
+         * LA CAJA DEL DÍA tiene permiso propio y no cuelga de los informes: es
+         * lo que necesita quien cierra el turno para cuadrar el cajón —lo que
+         * entró HOY y con qué medio— sin ver cuánto factura el gimnasio en el
+         * mes ni quién debe. Va antes de la regla de abajo, que mandaría
+         * todo lo de la caja a `reportes.ver`.
+         */
+        if ($modulo === 'caja' && $accion === 'hoy') {
+            return 'caja.hoy';
+        }
+
         // El historial y los informes solo se consultan.
         if (in_array($permisoBase, ['historial', 'reportes'], true)) {
             return "{$permisoBase}.ver";
@@ -215,6 +252,16 @@ class Permisos
 
         if ($modulo === 'inscripciones' && in_array($accion, self::GESTION_INSCRIPCION, true)) {
             return 'inscripciones.gestionar';
+        }
+
+        /*
+         * Cancelar una membresía NO es gestión de mesón como pausar: deja al
+         * socio sin el plan que pagó y no se deshace. Pide lo mismo que
+         * borrarla, que recepción no tiene. Va con nombre propio porque
+         * «cancelar» en el envío de correos es otra cosa (ENVIO_NOTIFICACION).
+         */
+        if ($modulo === 'inscripciones' && $accion === 'cancelar') {
+            return 'inscripciones.eliminar';
         }
 
         /*
@@ -235,6 +282,15 @@ class Permisos
 
         if ($modulo === 'notificaciones' && in_array($accion, self::ENVIO_NOTIFICACION, true)) {
             return 'notificaciones.enviar';
+        }
+
+        /*
+         * Lo que puede hacer cada perfil se cambia con el mismo permiso que
+         * cambia las cuentas: quien reparte permisos ya podía darse otra
+         * cuenta de administrador, así que pedir algo menos sería mentir.
+         */
+        if ($modulo === 'usuarios' && in_array($accion, ['perfiles', 'perfiles.update'], true)) {
+            return 'usuarios.editar';
         }
 
         // Crear un taller es fijarle el precio por hora: lo mismo que

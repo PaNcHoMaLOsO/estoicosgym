@@ -25,7 +25,7 @@ class DuplicadosController extends Controller
         return Inertia::render('Clientes/Duplicados', [
             'grupos' => FichasRepetidas::grupos(),
             // Desde la ficha de un socio se llega con su grupo marcado.
-            'enfocar' => Str::isUuid((string) $request->query('socio')) ? $request->query('socio') : null,
+            'enfocar' => Str::isUuid($request->texto('socio')) ? $request->query('socio') : null,
             'puedeJuntar' => $request->user()->puede('clientes.eliminar'),
         ]);
     }

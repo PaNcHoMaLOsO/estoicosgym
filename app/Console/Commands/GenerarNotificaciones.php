@@ -136,7 +136,7 @@ class GenerarNotificaciones extends Command
                 continue;
             }
 
-            $email = $cliente->es_menor_edad ? $cliente->apoderado_email : $cliente->email;
+            $email = $cliente->correoParaAvisos();
 
             if (!$email) {
                 $this->warn("⚠️  Cliente {$cliente->nombre_completo} sin email válido");
@@ -199,7 +199,7 @@ class GenerarNotificaciones extends Command
                 continue;
             }
 
-            $email = $cliente->es_menor_edad ? $cliente->apoderado_email : $cliente->email;
+            $email = $cliente->correoParaAvisos();
 
             if (!$email) {
                 continue;
@@ -262,7 +262,7 @@ class GenerarNotificaciones extends Command
                 continue;
             }
 
-            $email = $cliente->es_menor_edad ? $cliente->apoderado_email : $cliente->email;
+            $email = $cliente->correoParaAvisos();
 
             if (!$email) {
                 continue;

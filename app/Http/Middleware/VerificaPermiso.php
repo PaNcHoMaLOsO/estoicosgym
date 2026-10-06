@@ -44,6 +44,16 @@ class VerificaPermiso
             return $next($request);
         }
 
+        // Un permiso más estrecho abre la misma puerta, y el controlador
+        // decide después sobre qué deja actuar (ver Permisos::tambien).
+        if ($usuario && $nombre) {
+            foreach (Permisos::tambien($nombre) as $alternativo) {
+                if ($usuario->puede($alternativo)) {
+                    return $next($request);
+                }
+            }
+        }
+
         // A quien pide JSON se le responde JSON: si no, el fetch del panel
         // recibe una pagina de error entera y la pinta como si fuera el dato
         // que esperaba.

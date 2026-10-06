@@ -26,15 +26,15 @@ class InscripcionController extends Controller
 
     public function index(Request $request)
     {
-        $busqueda = trim((string) $request->query('buscar', ''));
+        $busqueda = trim($request->texto('buscar', ''));
         $estado = $request->query('estado');
 
-        $filtro = (string) $request->query('filtro', '');
+        $filtro = $request->texto('filtro', '');
         // Por qué plan, y en qué orden. Los grupos de arriba responden «¿en qué
         // estado está?»; esto responde «¿cuál plan?» y «¿cuánto?», que son
         // otras dos preguntas y no caben como más pastillas en la misma fila.
         $plan = $request->query('plan');
-        $orden = (string) $request->query('orden', '');
+        $orden = $request->texto('orden', '');
 
         $inscripciones = Inscripcion::query()
             // El convenio VA EN LA MEMBRESÍA y no solo en el socio: es el que
@@ -44,10 +44,8 @@ class InscripcionController extends Controller
             // Lo abonado, sumado en la misma consulta: la columna «Pago» dice
             // cuánto debe cada membresía sin una consulta por fila.
             ->withSum('pagos as abonado', 'monto_abonado')
-            ->when($busqueda !== '', fn ($q) => $q->whereHas(
-                'cliente',
-                fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda),
-            ))
+            // Por el socio, o por el código corto de la ficha (#E5E42D49).
+            ->when($busqueda !== '', fn ($q) => \App\Support\CodigoCorto::oPorSocio($q, $busqueda))
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
             ->when(is_numeric($plan), fn ($q) => $q->where('id_membresia', (int) $plan))
             // Sin filtro también se filtra: los pases diarios van en su propio

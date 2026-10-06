@@ -113,7 +113,7 @@ export default function Ingresos({
                 ))}
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div className="lg:col-span-2">
                     <Panel titulo="Mes a mes" descripcion="Cada mes partido por de dónde vino la plata, y su total.">
                         <div className="overflow-x-auto">

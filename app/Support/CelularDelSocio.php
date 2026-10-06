@@ -20,7 +20,7 @@ class CelularDelSocio
     /** Valida el celular que vino con el formulario; null si no vino. */
     public static function validar(Request $request): ?string
     {
-        $celular = trim((string) $request->input('celular_socio', ''));
+        $celular = trim($request->texto('celular_socio', ''));
 
         // Vacío o solo el prefijo («+56 9 »): no lo dio, y se sigue igual.
         if ($celular === '' || preg_replace('/\D/', '', $celular) === '569') {

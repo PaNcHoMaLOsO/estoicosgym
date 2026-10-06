@@ -10,6 +10,7 @@ use App\Models\Pago;
 use App\Models\PrecioMembresia;
 use App\Rules\RutValido;
 use App\Support\Ajustes;
+use App\Support\PagoMixto;
 use App\Support\PrecioAcordado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -343,7 +344,7 @@ class RegistroClienteService
                 'completo' => 'Pagado completamente',
                 'parcial' => 'Abono registrado',
                 'pendiente' => 'Pago pendiente',
-                'mixto' => $datos['monto_abonado'] > 0 ? 'Abono registrado' : 'Pago pendiente',
+                'mixto' => $datos['estado_pago'] === self::PAGO_PAGADO ? 'Pagado completamente' : 'Abono registrado',
             };
 
             return [
@@ -441,7 +442,7 @@ class RegistroClienteService
         // y el aviso de repetido compara lo mismo.
         foreach (['email', 'apoderado_email'] as $campo) {
             if (filled($request->input($campo))) {
-                $request->merge([$campo => mb_strtolower(trim((string) $request->input($campo)))]);
+                $request->merge([$campo => mb_strtolower(trim($request->texto($campo)))]);
             }
         }
 
@@ -523,13 +524,16 @@ class RegistroClienteService
 
         $membresia = Membresia::findOrFail($datos['id_membresia']);
 
-        $precio = PrecioMembresia::where('id_membresia', $membresia->id)
-            ->where(function ($q) {
-                $q->whereNull('fecha_vigencia_hasta')
-                    ->orWhere('fecha_vigencia_hasta', '>=', now());
-            })
-            ->orderBy('fecha_vigencia_hasta', 'desc')
-            ->firstOrFail();
+        // La misma regla que inscribir (Membresia::precioVigente): el alta
+        // tomaba cualquier precio sin fecha de fin, aunque estuviera desactivado
+        // o empezara el mes que viene, y el mismo plan salía a otro precio.
+        $precio = $membresia->precioVigente();
+
+        if (! $precio) {
+            throw ValidationException::withMessages([
+                'id_membresia' => "El plan «{$membresia->nombre}» no tiene un precio vigente cargado. Config. → Membresías.",
+            ]);
+        }
 
         $precioBase = (int) $precio->precio_normal;
         $descuentoManual = (int) ($datos['descuento_manual'] ?? 0);
@@ -611,25 +615,21 @@ class RegistroClienteService
             // EL REPARTO DE VERDAD. La pantalla ofrecia «mixto» pero mandaba un
             // solo monto y un solo metodo: 20.000 en efectivo y 20.000 con
             // tarjeta se guardaban como 40.000 en efectivo, y la caja del dia no
-            // cuadraba. Ahora llegan las partes, con el mismo formato que usa el
-            // alta de inscripcion, y cada una se guarda como su propio pago.
-            $partes = $this->partesDelMixto($request, $precioFinal);
-            $abonado = array_sum(array_column($partes, 'monto'));
+            // cuadraba. Ahora llegan las dos partes y se guardan en UNA fila con
+            // los dos medios, como en Cobrar: las reglas son las de PagoMixto.
+            $reparto = PagoMixto::desdeDetalle($request->texto('detalle_pagos_mixto', '[]'), $precioFinal);
+            $abonado = $reparto['monto'];
 
             // Un mixto que cubre el TOTAL queda Pagado, no Parcial. «Mixto»
             // dice que el dinero entro por dos vias, no que falte plata: pagar
             // la mitad en efectivo y la mitad con tarjeta se marcaba como
             // Parcial, y el gimnasio creia que le debian lo que ya cobro.
-            $estado = match (true) {
-                $abonado <= 0 => self::PAGO_PENDIENTE,
-                $abonado >= $precioFinal => self::PAGO_PAGADO,
-                default => self::PAGO_PARCIAL,
-            };
+            $estado = PagoMixto::estado($abonado, $precioFinal);
         }
 
         return [
             'pago' => $datos,
-            'partes' => $partes ?? [],
+            'reparto' => $reparto ?? null,
             'tipo_pago' => $tipo,
             'monto_abonado' => $abonado,
             'estado_pago' => $estado,
@@ -662,85 +662,22 @@ class RegistroClienteService
             'descuento_aplicado' => $datos['descuento_total'],
             'precio_final' => $datos['precio_final'],
             'id_estado' => self::INSCRIPCION_ACTIVA,
+            // Las pausas del plan, como al inscribir: sin esto quedaba el 2 por
+            // defecto de la tabla para todos, y un plan sin pausas las tenía.
+            'max_pausas_permitidas' => $datos['membresia']->max_pausas ?? 2,
         ]);
     }
 
     /**
-     * Las partes de un pago repartido entre varios metodos.
-     *
-     * @return list<array{monto:int,id_metodo_pago:int,nombre:string}>
-     *
-     * @throws ValidationException
-     */
-    private function partesDelMixto(Request $request, int $precioFinal): array
-    {
-        $detalle = json_decode((string) $request->input('detalle_pagos_mixto', '[]'), true);
-
-        if (! is_array($detalle) || count($detalle) < 2) {
-            throw ValidationException::withMessages([
-                'detalle_pagos_mixto' => 'Indica con qué dos medios se reparte el pago.',
-            ]);
-        }
-
-        $metodos = \App\Models\MetodoPago::where('activo', true)->pluck('nombre', 'id');
-        $partes = [];
-
-        foreach ($detalle as $parte) {
-            $monto = (int) round((float) ($parte['monto'] ?? 0));
-            $metodo = (int) ($parte['id_metodo_pago'] ?? 0);
-
-            if ($monto <= 0 || ! $metodos->has($metodo)) {
-                throw ValidationException::withMessages([
-                    'detalle_pagos_mixto' => 'Cada parte del pago necesita un monto mayor que cero y un medio de pago.',
-                ]);
-            }
-
-            $partes[] = ['monto' => $monto, 'id_metodo_pago' => $metodo, 'nombre' => $metodos[$metodo]];
-        }
-
-        $suma = array_sum(array_column($partes, 'monto'));
-
-        if ($suma > $precioFinal) {
-            throw ValidationException::withMessages([
-                'detalle_pagos_mixto' => 'Las partes suman $' . number_format($suma, 0, ',', '.')
-                    . ' y el plan vale $' . number_format($precioFinal, 0, ',', '.') . '.',
-            ]);
-        }
-
-        return $partes;
-    }
-
-    /**
-     * Un pago por cada parte del mixto; uno solo en los demas casos.
+     * El pago del alta. Un mixto es UNA fila con sus dos medios, igual que al
+     * cobrar: antes eran tantas filas como partes, y la Caja y la corrección
+     * las leían como pagos sueltos.
      */
     private function crearPago(Cliente $cliente, Inscripcion $inscripcion, array $datos): Pago
     {
-        if ($datos['tipo_pago'] === 'mixto' && $datos['partes']) {
-            $restante = $datos['precio_final'];
-            $ultimo = null;
-
-            foreach ($datos['partes'] as $parte) {
-                $restante -= $parte['monto'];
-                $ultimo = Pago::create([
-                    'uuid' => Str::uuid(),
-                    'id_inscripcion' => $inscripcion->id,
-                    'id_cliente' => $cliente->id,
-                    'monto_total' => $datos['precio_final'],
-                    'monto_abonado' => $parte['monto'],
-                    'monto_pendiente' => max(0, $restante),
-                    'fecha_pago' => Carbon::parse($datos['pago']['fecha_pago']),
-                    'id_metodo_pago' => $parte['id_metodo_pago'],
-                    'id_estado' => $datos['estado_pago'],
-                    'tipo_pago' => 'mixto',
-                    'referencia_pago' => $datos['referencia_pago'],
-                    'observaciones' => 'Pago mixto - ' . $parte['nombre'],
-                ]);
-            }
-
-            return $ultimo;
-        }
-
-        return Pago::create([
+        // El reparto va al final y PISA: si en la pantalla quedó marcado un
+        // medio de antes de elegir «Dos medios», ese no es el que vale.
+        return Pago::create(array_merge([
             'uuid' => Str::uuid(),
             'id_inscripcion' => $inscripcion->id,
             'id_cliente' => $cliente->id,
@@ -753,6 +690,6 @@ class RegistroClienteService
             'tipo_pago' => $datos['tipo_pago'],
             'referencia_pago' => $datos['referencia_pago'],
             'observaciones' => $datos['observaciones_pago'],
-        ]);
+        ], $datos['reparto'] ? PagoMixto::columnas($datos['reparto']) : []));
     }
 }

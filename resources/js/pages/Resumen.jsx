@@ -24,6 +24,7 @@ import ModalDePagina from '@/components/ModalDePagina';
 import Convenio from '@/components/Convenio';
 import { Reservado } from '@/Privado';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Portada del panel: lo que hay que HACER hoy.
  *
@@ -193,7 +194,7 @@ function AnotarCelular({ uuid, nombre }) {
                             disabled={guardando}
                             className="shrink-0 rounded-control bg-[#25D366] px-2.5 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
-                            {guardando ? '…' : 'Escribir'}
+                            <TextoQueCambia ocupado={guardando} mientras="…">Escribir</TextoQueCambia>
                         </button>
                     </div>
                     {error ? <p className="apoyo mt-1 text-danger">{error}</p> : <p className="apoyo mt-1 text-fog">Queda guardado en su ficha.</p>}
@@ -297,7 +298,7 @@ function Fiado({ fiado }) {
             {anotando ? <ApuntarFiado alTerminar={() => setAnotando(false)} /> : null}
             <ul className="space-y-2">
                 {fiado.cuentas.map((c) => (
-                    <li key={`${c.socio_uuid ?? c.quien}`} className="flex items-center justify-between gap-3">
+                    <li key={c.clave} className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
                             <Retrato nombre={c.quien} foto={c.foto} tamano="sm" />
                             <div className="min-w-0">
@@ -308,9 +309,10 @@ function Fiado({ fiado }) {
                                 ) : (
                                     <span className="truncate text-sm text-chalk">{c.quien}</span>
                                 )}
-                                {/* Los días que lleva: una cuenta de tres semanas
-                                    no se cobra sola, y conviene que se note. */}
-                                <p className={`apoyo ${c.dias >= 14 ? 'text-warn' : 'text-fog'}`}>
+                                {/* Los días que lleva: una cuenta vieja no se
+                                    cobra sola, y conviene que se note. A partir
+                                    de cuántos días, lo dice Configuración → Mesón. */}
+                                <p className={`apoyo ${c.dias >= (fiado.dias_para_insistir ?? 14) ? 'text-warn' : 'text-fog'}`}>
                                     {c.dias === 0 ? 'de hoy' : c.dias === 1 ? 'de ayer' : `hace ${c.dias} días`}
                                     {c.cuantas > 1 ? ` · ${c.cuantas} cosas` : ''}
                                 </p>
@@ -549,8 +551,8 @@ export default function Resumen({
             {/* TODO A LA VISTA. Las tres listas van lado a lado en cuanto hay
                 ancho, con cinco personas cada una: el resumen cabe en una
                 pantalla y lo demás se despliega desde cada lista. */}
-            <div className="grid items-start gap-4 lg:grid-cols-[1fr_19rem] xl:grid-cols-[1fr_21rem]">
-                <div className="grid gap-3 2xl:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_19rem] xl:grid-cols-[1fr_21rem]">
+                <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
                     <Panel
                         titulo={<ConCuenta texto="Vencen esta semana" cuenta={cifras.vencen_semana} tono="text-warn" />}
                         enlace={

@@ -7,6 +7,7 @@ import { valoresDeEspecialista } from '@/components/FormularioCatalogo';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import achicarFoto from '@/lib/achicarFoto';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * El formulario de un especialista o un embajador, con la web al lado.
  *
@@ -495,7 +496,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                     <DialogDescription>Su foto y su contacto quedan a la vista de cualquiera: súbelos con su permiso.</DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={enviar} className="grid gap-5 md:grid-cols-[1fr_20rem]">
+                <form onSubmit={enviar} className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_20rem]">
                     <div className="space-y-3">
                         <Campo etiqueta="Nombre" nombre="nombre" error={errors.nombre} requerido>
                             <Texto
@@ -701,7 +702,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                             disabled={processing || preparando}
                             className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
-                            {processing ? 'Guardando…' : 'Guardar'}
+                            <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                         </button>
                     </div>
                 </form>

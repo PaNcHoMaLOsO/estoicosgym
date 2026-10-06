@@ -111,6 +111,23 @@ class CatalogosTest extends CasoConCatalogos
         $this->assertEquals(30000, $plan->precios()->where('activo', true)->firstOrFail()->precio_normal);
     }
 
+    /** Y queda en el historial del plan: de cuánto a cuánto y quién lo cambió. */
+    public function test_el_cambio_de_precio_queda_en_el_historial(): void
+    {
+        $this->comoAdmin()->post('/panel/membresias', $this->plan());
+        $plan = Membresia::where('nombre', 'Quincenal')->firstOrFail();
+
+        $this->comoAdmin()->put("/panel/membresias/{$plan->uuid}", $this->plan(['precio' => 30000]));
+        // Guardar sin cambiar el precio no deja otra fila.
+        $this->comoAdmin()->put("/panel/membresias/{$plan->uuid}", $this->plan(['precio' => 30000]));
+
+        $historial = \App\Models\HistorialPrecio::all();
+        $this->assertCount(1, $historial);
+        $this->assertEquals(22000, $historial[0]->precio_anterior);
+        $this->assertEquals(30000, $historial[0]->precio_nuevo);
+        $this->assertNotNull($historial[0]->usuario_cambio);
+    }
+
     /**
      * El tramo cerrado no puede terminar ANTES de empezar: si el precio se
      * corrige el mismo día en que se creó y se cerrara «ayer», quedaría del

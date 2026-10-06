@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import achicarFoto from '@/lib/achicarFoto';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Las clases del gimnasio: judo, lucha olímpica, boxeo… Abiertas a cualquiera
  * y con mensualidad. Salen en la página «Clases» de la web, con su calendario.
@@ -39,7 +40,74 @@ function valoresDe(clase) {
         horario: clase?.horario?.length ? clase.horario.map((b) => ({ ...b })) : [bloqueNuevo()],
         activo: clase?.uuid ? Boolean(clase.activo) : true,
         imagen: null,
+        fotos_nuevas: [],
+        fotos_quitar: [],
     };
+}
+
+/**
+ * La galería: las que ya están (con una X para quitarlas al guardar) y las
+ * elegidas ahora, achicadas en el navegador antes de subirlas.
+ */
+function CampoGaleria({ actuales, quitar, nuevas, max, alQuitar, alAgregar, alSacarNueva }) {
+    const [vistas, setVistas] = useState([]);
+
+    useEffect(() => {
+        const urls = nuevas.map((f) => URL.createObjectURL(f));
+        setVistas(urls);
+
+        return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    }, [nuevas]);
+
+    const quedan = actuales.filter((f) => ! quitar.includes(f.ruta)).length + nuevas.length;
+    const caben = Math.max(0, max - quedan);
+    const miniatura = 'relative size-20 shrink-0 overflow-hidden rounded-control border border-line bg-surface-2';
+    const botonX = 'absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/70 text-white transition-colors hover:bg-danger';
+
+    return (
+        <div className="flex flex-col gap-2">
+            {(actuales.length > 0 || nuevas.length > 0) && (
+                <div className="flex flex-wrap gap-2">
+                    {actuales.map((f) => {
+                        const fuera = quitar.includes(f.ruta);
+
+                        return (
+                            <div key={f.ruta} className={`${miniatura} ${fuera ? 'opacity-30' : ''}`}>
+                                <img src={f.url} alt="" className="h-full w-full object-cover" />
+                                <button type="button" onClick={() => alQuitar(f.ruta)} className={botonX} aria-label={fuera ? 'Dejar la foto' : 'Quitar la foto'} title={fuera ? 'Dejarla' : 'Quitarla'}>
+                                    {fuera ? <PlusIcon className="size-3.5" /> : <XIcon className="size-3.5" />}
+                                </button>
+                            </div>
+                        );
+                    })}
+                    {vistas.map((url, i) => (
+                        <div key={url} className={`${miniatura} ring-2 ring-volt`}>
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                            <button type="button" onClick={() => alSacarNueva(i)} className={botonX} aria-label="No subir esta foto">
+                                <XIcon className="size-3.5" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {caben > 0 ? (
+                <input
+                    id="fotos_nuevas"
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={async (e) => {
+                        const elegidas = Array.from(e.target.files ?? []).slice(0, caben);
+                        e.target.value = '';
+                        alAgregar(await Promise.all(elegidas.map((f) => achicarFoto(f))));
+                    }}
+                    className="apoyo min-w-0 max-w-full text-fog file:mr-2 file:rounded-control file:border file:border-line file:bg-surface-2 file:px-2 file:py-1 file:text-chalk"
+                />
+            ) : (
+                <p className="apoyo text-fog">La galería está llena ({max} fotos). Quita alguna para subir otra.</p>
+            )}
+        </div>
+    );
 }
 
 /** La foto: la que hay o la elegida, achicada en el navegador antes de subirla. */
@@ -81,7 +149,7 @@ function CampoFoto({ archivo, actual, alElegir }) {
     );
 }
 
-function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
+function FormularioClase({ clase, abierto, alCerrar, dias, colores, maxFotos }) {
     const editando = Boolean(clase?.uuid);
     const { data, setData, post, put, processing, errors, clearErrors, transform, isDirty, reset, setDefaults } = useForm(valoresDe(clase));
 
@@ -130,7 +198,7 @@ function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
 
         // Con foto viaja como multipart, que PHP no lee en un PUT: se manda
         // como POST diciendo que es un PUT.
-        if (editando && data.imagen instanceof File) {
+        if (editando && (data.imagen instanceof File || data.fotos_nuevas.length > 0)) {
             transform((d) => ({ ...d, _method: 'put' }));
             post(`/panel/clases/${clase.uuid}`, opciones);
 
@@ -153,7 +221,7 @@ function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
                     <DialogDescription>Sale en la página Clases, con su horario y su precio.</DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={enviar} {...tocar} className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                <form onSubmit={enviar} {...tocar} className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                         <Campo etiqueta="Nombre" nombre="nombre" error={errors.nombre} requerido>
                             <Texto nombre="nombre" valor={data.nombre} alCambiar={(v) => setData('nombre', v)} error={errors.nombre} maxLength={100} placeholder="Judo, Lucha olímpica…" />
@@ -289,6 +357,25 @@ function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
                         </Campo>
                     </div>
 
+                    <div className="sm:col-span-2">
+                        <Campo
+                            etiqueta="Más fotos"
+                            nombre="fotos_nuevas"
+                            error={errors.fotos_nuevas ?? Object.entries(errors).find(([k]) => k.startsWith('fotos_nuevas.'))?.[1]}
+                            ayuda={`Opcional, hasta ${maxFotos}. Salen en la página de la clase, debajo de la principal. Puedes elegir varias a la vez.`}
+                        >
+                            <CampoGaleria
+                                actuales={clase?.fotos ?? []}
+                                quitar={data.fotos_quitar}
+                                nuevas={data.fotos_nuevas}
+                                max={maxFotos}
+                                alQuitar={(ruta) => setData('fotos_quitar', data.fotos_quitar.includes(ruta) ? data.fotos_quitar.filter((r) => r !== ruta) : [...data.fotos_quitar, ruta])}
+                                alAgregar={(fotos) => setData('fotos_nuevas', [...data.fotos_nuevas, ...fotos])}
+                                alSacarNueva={(i) => setData('fotos_nuevas', data.fotos_nuevas.filter((_, j) => j !== i))}
+                            />
+                        </Campo>
+                    </div>
+
                     <label className="flex items-center gap-2 text-sm text-chalk sm:col-span-2">
                         <input type="checkbox" checked={data.activo} onChange={(e) => setData('activo', e.target.checked)} className="size-4 accent-[var(--color-volt)]" />
                         Sale en la web
@@ -309,7 +396,7 @@ function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
                             disabled={processing}
                             className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
-                            {processing ? 'Guardando…' : 'Guardar'}
+                            <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                         </button>
                     </div>
                 </form>
@@ -318,7 +405,7 @@ function FormularioClase({ clase, abierto, alCerrar, dias, colores }) {
     );
 }
 
-export default function Clases({ clases, dias, colores, ver }) {
+export default function Clases({ clases, dias, colores, ver, maxFotos = 8 }) {
     // null = cerrado; {} = nueva; una clase = editando esa.
     const [editando, setEditando] = useState(null);
     const hexDe = Object.fromEntries(colores.map((c) => [c.valor, c.hex]));
@@ -437,7 +524,7 @@ export default function Clases({ clases, dias, colores, ver }) {
                 ))}
             </Tabla>
 
-            <FormularioClase clase={editando} abierto={editando !== null} alCerrar={() => setEditando(null)} dias={dias} colores={colores} />
+            <FormularioClase clase={editando} abierto={editando !== null} alCerrar={() => setEditando(null)} dias={dias} colores={colores} maxFotos={maxFotos} />
         </>
     );
 }

@@ -74,6 +74,24 @@
                 </div>
             </div>
 
+            {{-- La galería: cada foto con su proporción, en columnas, como la
+                 del gimnasio. Tocarla la abre entera. --}}
+            @if($c['fotos'])
+                <div class="mt-14 lg:mt-20">
+                    <h2 class="font-display text-2xl uppercase text-pg-tiza">Fotos</h2>
+                    <div class="mt-4 columns-2 gap-3 lg:columns-3 lg:gap-4">
+                        @foreach($c['fotos'] as $i => $f)
+                            <a href="{{ $f['url'] }}" target="_blank" rel="noopener" class="group mb-3 block break-inside-avoid overflow-hidden rounded-md bg-pg-carbon lg:mb-4">
+                                <img src="{{ $f['url'] }}" alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}, foto {{ $i + 1 }}"
+                                     @if($f['medidas']) width="{{ $f['medidas'][0] }}" height="{{ $f['medidas'][1] }}" @endif
+                                     loading="lazy" decoding="async"
+                                     class="h-auto w-full transition-transform duration-700 group-hover:scale-105">
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             @if($otras)
                 <div class="mt-14 lg:mt-20">
                     <h2 class="font-display text-2xl uppercase text-pg-tiza">Otras clases</h2>

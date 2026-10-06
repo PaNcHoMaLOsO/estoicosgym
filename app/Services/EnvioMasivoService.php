@@ -87,16 +87,17 @@ class EnvioMasivoService
      */
     public function destinatarios(string $grupo, ?int $idMembresia = null): Collection
     {
+        // A quién se escribe lo decide Cliente::correoParaAvisos(), igual que
+        // en el resto: el menor con apoderado recibe por el apoderado.
         $consulta = Cliente::query()
             ->where('activo', true)
-            ->whereNotNull('email')
-            ->where('email', '!=', '');
+            ->conCorreoParaAvisos();
 
         $this->acotar($consulta, $grupo, $idMembresia);
 
         return $consulta
             ->orderBy('apellido_paterno')
-            ->get(['id', 'uuid', 'nombres', 'apellido_paterno', 'apellido_materno', 'email']);
+            ->get(['id', 'uuid', 'nombres', 'apellido_paterno', 'apellido_materno', 'email', 'es_menor_edad', 'apoderado_email']);
     }
 
     /**
@@ -157,9 +158,18 @@ class EnvioMasivoService
             ]);
         }
 
+        /*
+         * NADA A MEDIO ESCRIBIR. Una {variable} que aquí no se rellena —se
+         * conocen cinco— o un «[XX%]» copiado de una plantilla salían tal cual
+         * a todo el grupo. Se mira con el primero ANTES de anotar o mandar
+         * nada: el texto es el mismo para todos.
+         */
+        EnvioManualService::exigirCompleto($this->personalizar($socios->first(), $asunto, $mensaje), 'mensaje', 'El mensaje');
+
         $plantilla = $this->plantillaDeAvisosSueltos();
 
         $enviados = 0;
+        $aplazados = 0;
         $fallidos = 0;
         $programados = 0;
         $motivos = [];
@@ -171,7 +181,7 @@ class EnvioMasivoService
                 'id_tipo_notificacion' => $plantilla->id,
                 'id_cliente' => $socio->id,
                 'id_inscripcion' => $this->ultimaInscripcion($socio)?->id,
-                'email_destino' => $socio->email,
+                'email_destino' => $socio->correoParaAvisos(),
                 'asunto' => $correo['asunto'],
                 'contenido' => $correo['mensaje'],
                 'id_estado' => Notificacion::ESTADO_PENDIENTE,
@@ -189,9 +199,14 @@ class EnvioMasivoService
             }
 
             try {
-                $this->correo->enviar($socio->email, $correo['asunto'], $correo['mensaje']);
+                $this->correo->enviar($socio->correoParaAvisos(), $correo['asunto'], $correo['mensaje']);
                 $notificacion->marcarComoEnviada();
                 $enviados++;
+            } catch (\App\Services\Correo\TopeDelDiaAlcanzado $e) {
+                // Se llegó al tope del día: los que faltan salen mañana con la
+                // tanda diaria, sin contar como fallo ni gastar un intento.
+                $notificacion->aplazarParaManana($e->getMessage());
+                $aplazados++;
             } catch (\Throwable $e) {
                 /*
                  * Un fallo NO para el envío.
@@ -213,6 +228,7 @@ class EnvioMasivoService
             'enviados' => $enviados,
             'fallidos' => $fallidos,
             'programados' => $programados,
+            'aplazados' => $aplazados,
             'para' => $ahora ? null : $dia->format('d/m/Y'),
             // Los primeros cinco: la lista entera no cabe en un aviso, y los
             // demás están en el listado de notificaciones con su motivo.
@@ -223,7 +239,10 @@ class EnvioMasivoService
     /**
      * El correo con el nombre de cada socio puesto.
      *
-     * @return array{asunto:string,mensaje:string}
+     * Trae también lo que quedó sin rellenar, para que la vista previa y el
+     * envío lo rechacen con la misma regla que el envío a uno solo.
+     *
+     * @return array{asunto:string,mensaje:string,pendientes:list<string>,marcadores:list<string>}
      */
     public function personalizar(Cliente $socio, string $asunto, string $mensaje): array
     {
@@ -239,9 +258,14 @@ class EnvioMasivoService
             '{fecha_vencimiento}' => $inscripcion?->fecha_vencimiento?->format('d/m/Y') ?? '',
         ];
 
+        $asunto = str_replace(array_keys($datos), array_values($datos), $asunto);
+        $mensaje = str_replace(array_keys($datos), array_values($datos), $mensaje);
+
         return [
-            'asunto' => str_replace(array_keys($datos), array_values($datos), $asunto),
-            'mensaje' => str_replace(array_keys($datos), array_values($datos), $mensaje),
+            'asunto' => $asunto,
+            'mensaje' => $mensaje,
+            'pendientes' => EnvioManualService::variablesSinRellenar($asunto . ' ' . $mensaje),
+            'marcadores' => EnvioManualService::marcadoresSinEditar($asunto . ' ' . $mensaje),
         ];
     }
 
@@ -273,8 +297,9 @@ class EnvioMasivoService
             'vencidas' => $conInscripcion(fn ($q) => $q
                 ->where('id_estado', EstadosCodigo::INSCRIPCION_VENCIDA)),
 
-            'deben' => $consulta->whereHas('pagos', fn ($q) => $q
-                ->whereIn('id_estado', EstadosCodigo::PAGO_PENDIENTES_COBRO)),
+            // A quien solo tiene «pendiente» un pago de una membresía cancelada
+            // no se le escribe que debe: ya no se le cobra.
+            'deben' => $consulta->whereHas('pagos', fn ($q) => $q->pendientesDeCobro()),
 
             'activas' => $conInscripcion(fn ($q) => $q
                 ->where('id_estado', EstadosCodigo::INSCRIPCION_ACTIVA)),

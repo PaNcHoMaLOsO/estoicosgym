@@ -21,11 +21,11 @@ class PagoController extends Controller
 
     public function index(Request $request)
     {
-        $busqueda = trim((string) $request->query('buscar', ''));
+        $busqueda = trim($request->texto('buscar', ''));
         $estado = $request->query('estado');
 
-        $filtro = (string) $request->query('filtro', '');
-        $orden = (string) $request->query('orden', '');
+        $filtro = $request->texto('filtro', '');
+        $orden = $request->texto('orden', '');
         // Por medio de pago: para cuadrar el efectivo del cajón o las
         // transferencias contra la cuenta. Un pago repartido cuenta en los dos.
         $medio = (int) $request->query('medio', 0);
@@ -49,10 +49,8 @@ class PagoController extends Controller
                     // que hubo otro antes. La fila tiene que poder decirlo.
                     ->withCount('pagos'),
             ])
-            ->when($busqueda !== '', fn ($q) => $q->whereHas(
-                'cliente',
-                fn ($q) => BusquedaDeSocio::aplicar($q, $busqueda),
-            ))
+            // Por el socio, o por el código corto de la ficha (#E5E42D49).
+            ->when($busqueda !== '', fn ($q) => \App\Support\CodigoCorto::oPorSocio($q, $busqueda))
             ->when(is_numeric($estado), fn ($q) => $q->where('id_estado', (int) $estado))
             ->when($medio > 0, fn ($q) => $q->where(fn ($q) => $q->where('id_metodo_pago', $medio)->orWhere('id_metodo_pago2', $medio)))
             // Los pases diarios, en su grupo; al buscar se encuentran igual.

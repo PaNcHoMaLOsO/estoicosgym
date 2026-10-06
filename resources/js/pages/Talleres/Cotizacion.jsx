@@ -1,10 +1,11 @@
 import { confirmar } from '@/components/Confirmar';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeftIcon, CalendarPlusIcon, PlusIcon, PrinterIcon, TrashIcon } from 'lucide-react';
 
 import { Panel, pesos } from '@/components/Tablero';
 import { Reservado } from '@/Privado';
+import { puede } from '@/lib/permisos';
 
 /**
  * Una cotización de taller.
@@ -90,8 +91,21 @@ function porSemanas(lineas) {
 }
 
 /** Una clase: el día, el horario y si va o no. */
-function Clase({ linea, alCambiar, alQuitar }) {
+function Clase({ linea, alCambiar, alQuitar, soloLectura = false }) {
     const fecha = comoFecha(linea.fecha);
+
+    // Quien no puede corregir la cotización la lee: tachada la que no va.
+    if (soloLectura) {
+        return (
+            <li className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-1.5 first:border-t-0">
+                <span className={`w-28 shrink-0 text-sm tabular-nums ${linea.incluida ? 'text-chalk' : 'text-fog line-through'}`}>
+                    {fecha ? `${DIAS[fecha.getDay()]} ${fecha.getDate()}/${fecha.getMonth() + 1}` : 'Sin fecha'}
+                </span>
+                <span className={`flex-1 text-sm text-fog ${linea.incluida ? '' : 'line-through'}`}>{linea.detalle || 'Sin horario'}</span>
+                <span className={`text-sm tabular-nums ${linea.incluida ? 'text-chalk' : 'text-fog line-through'}`}>{linea.horas} h</span>
+            </li>
+        );
+    }
 
     return (
         <li className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-1.5 first:border-t-0">
@@ -139,6 +153,15 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
     // El detalle de las horas son dos hojas más: hay veces —el colegio ya
     // conoce el horario— en que sobra y basta la hoja de siempre.
     const [conDetalle, setConDetalle] = useState(true);
+
+    /*
+     * Cotizar un mes es del mesón; corregirla —quitar semanas, traer las del
+     * horario, cambiar el papel— y tirarla, no: piden editar y borrar en
+     * pagos. Sin esos permisos la cotización se lee y se imprime, nada más.
+     */
+    const { auth } = usePage().props;
+    const puedeEditar = puede(auth, 'pagos.editar');
+    const puedeBorrar = puede(auth, 'pagos.eliminar');
     const { data, setData, patch, processing, errors } = useForm({
         numero: cotizacion.numero,
         fecha: cotizacion.fecha,
@@ -200,52 +223,70 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
             {/* Qué hay que hacer aquí, en una línea: la cotización llega hecha
                 y lo único que se hace es quitar lo que no va a haber. */}
             <p className="mb-3 rounded-panel border border-line bg-surface-2/40 px-3 py-2 text-sm text-fog">
-                Ya está hecha con las clases del horario. Quita las semanas o los días que no va a haber, guarda y
-                mándala.
+                {puedeEditar
+                    ? 'Ya está hecha con las clases del horario. Quita las semanas o los días que no va a haber, guarda y mándala.'
+                    : 'Ya está hecha con las clases del horario. Quitar semanas o días lo hace quien emite la factura.'}
             </p>
 
-            <div className="grid items-start gap-4 xl:grid-cols-[1fr_22rem]">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_22rem]">
                 <div className="min-w-0 space-y-3">
                     <Panel
                         titulo={cotizacion.mes ? `Clases de ${cotizacion.mes}` : 'Clases'}
-                        descripcion="Lo que no se hace no se cobra: quita la semana entera o solo el día."
+                        descripcion={
+                            puedeEditar
+                                ? 'Lo que no se hace no se cobra: quita la semana entera o solo el día.'
+                                : 'Lo que no se hace no se cobra: las quitadas salen tachadas.'
+                        }
                         enlace={
-                            <span className="flex shrink-0 items-center gap-3">
-                                {cotizacion.periodo ? (
+                            ! puedeEditar ? null : (
+                                <span className="flex shrink-0 items-center gap-3">
+                                    {cotizacion.periodo ? (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(
+                                                    `/panel/talleres/cotizaciones/${cotizacion.uuid}/refrescar`,
+                                                    {},
+                                                    {
+                                                        preserveScroll: true,
+                                                        // El formulario guarda su copia del detalle y
+                                                        // no mira las props nuevas: sin esto las clases
+                                                        // añadidas no aparecían y «Guardar» escribía
+                                                        // encima la lista vieja, borrándolas.
+                                                        onSuccess: (pagina) =>
+                                                            setData(
+                                                                'detalle',
+                                                                pagina.props.cotizacion.detalle.map((l) => ({ ...l })),
+                                                            ),
+                                                    },
+                                                )
+                                            }
+                                            className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
+                                        >
+                                            <CalendarPlusIcon className="size-3.5" aria-hidden="true" />
+                                            Traer las del horario
+                                        </button>
+                                    ) : null}
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            router.post(
-                                                `/panel/talleres/cotizaciones/${cotizacion.uuid}/refrescar`,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
+                                            setData('detalle', [
+                                                ...data.detalle,
+                                                { fecha: null, dia: null, detalle: '', horas: 1, incluida: true },
+                                            ])
                                         }
                                         className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
                                     >
-                                        <CalendarPlusIcon className="size-3.5" aria-hidden="true" />
-                                        Traer las del horario
+                                        <PlusIcon className="size-3.5" aria-hidden="true" />
+                                        Una clase
                                     </button>
-                                ) : null}
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setData('detalle', [
-                                            ...data.detalle,
-                                            { fecha: null, dia: null, detalle: '', horas: 1, incluida: true },
-                                        ])
-                                    }
-                                    className="apoyo inline-flex items-center gap-1 text-fog transition-colors hover:text-chalk"
-                                >
-                                    <PlusIcon className="size-3.5" aria-hidden="true" />
-                                    Una clase
-                                </button>
-                            </span>
+                                </span>
+                            )
                         }
                     >
                         {data.detalle.length === 0 ? (
                             <p className="apoyo py-6 text-center text-fog">
-                                Ninguna clase. Usa «Traer las del horario» o añade una a mano.
+                                {puedeEditar ? 'Ninguna clase. Usa «Traer las del horario» o añade una a mano.' : 'Ninguna clase.'}
                             </p>
                         ) : (
                             <div className="space-y-3">
@@ -266,13 +307,15 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
 
                                                 {/* El botón de la semana entera: es como las
                                                     suspende el colegio, no día por día. */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => cambiarSemana(semana.indices, ! algunaVa)}
-                                                    className="apoyo rounded-control border border-line px-2 py-0.5 text-fog transition-colors hover:text-chalk"
-                                                >
-                                                    {algunaVa ? 'Quitar la semana' : 'Devolverla'}
-                                                </button>
+                                                {puedeEditar ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => cambiarSemana(semana.indices, ! algunaVa)}
+                                                        className="apoyo rounded-control border border-line px-2 py-0.5 text-fog transition-colors hover:text-chalk"
+                                                    >
+                                                        {algunaVa ? 'Quitar la semana' : 'Devolverla'}
+                                                    </button>
+                                                ) : null}
                                             </div>
 
                                             <ul>
@@ -282,6 +325,7 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
                                                         linea={data.detalle[i]}
                                                         alCambiar={(cambios) => cambiarLinea(i, cambios)}
                                                         alQuitar={() => setData('detalle', data.detalle.filter((_, j) => j !== i))}
+                                                        soloLectura={! puedeEditar}
                                                     />
                                                 ))}
                                             </ul>
@@ -301,123 +345,150 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
 
                     {/* Los datos del papel vienen puestos y casi nunca se tocan:
                         delante solo estorbarían a lo que sí se hace. */}
-                    <details className="overflow-hidden rounded-panel border border-line bg-surface">
-                        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-chalk">
-                            Cambiar los datos del papel
-                            <span className="apoyo ml-2 font-normal text-fog">
-                                N° {data.numero} · {data.descripcion} · {pesos.format(Number(data.precio_hora) || 0)} la hora
-                            </span>
-                        </summary>
+                    {! puedeEditar ? (
+                        <Panel titulo="Los datos del papel">
+                            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                {[
+                                    ['Número', `N° ${cotizacion.numero}`],
+                                    ['Fecha', cotizacion.fecha?.split('-').reverse().join('/')],
+                                    ['Válida hasta', cotizacion.valido_hasta?.split('-').reverse().join('/')],
+                                    ['Descripción', cotizacion.descripcion],
+                                    ['La hora (con IVA)', <Reservado key="precio" ancho="w-16">{pesos.format(Number(cotizacion.precio_hora) || 0)}</Reservado>],
+                                    ['En qué va', estados[cotizacion.estado] ?? cotizacion.estado],
+                                ].map(([etiqueta, valor]) => (
+                                    <div key={etiqueta}>
+                                        <dt className="rotulo">{etiqueta}</dt>
+                                        <dd className="mt-0.5 text-sm text-chalk">{valor || <span className="text-fog">—</span>}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                            {cotizacion.notas ? (
+                                <p className="apoyo mt-3 border-t border-line pt-2 text-fog">
+                                    Nota para el colegio: <span className="text-chalk">{cotizacion.notas}</span>
+                                </p>
+                            ) : null}
+                        </Panel>
+                    ) : (
+                        <details className="overflow-hidden rounded-panel border border-line bg-surface">
+                            <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-chalk">
+                                Cambiar los datos del papel
+                                <span className="apoyo ml-2 font-normal text-fog">
+                                    N° {data.numero} · {data.descripcion} · {pesos.format(Number(data.precio_hora) || 0)} la hora
+                                </span>
+                            </summary>
 
-                        <form onSubmit={guardar} className="space-y-3 border-t border-line p-4">
-                            <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
+                            <form onSubmit={guardar} className="space-y-3 border-t border-line p-4">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_10rem]">
+                                    <label className="block">
+                                        <span className="rotulo">Descripción</span>
+                                        <input
+                                            type="text"
+                                            value={data.descripcion}
+                                            onChange={(e) => setData('descripcion', e.target.value)}
+                                            className={`${campo} mt-1`}
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="rotulo">La hora (con IVA)</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={data.precio_hora}
+                                            onChange={(e) => setData('precio_hora', e.target.value)}
+                                            className={`${campo} mt-1 tabular-nums`}
+                                        />
+                                    </label>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <label className="block">
+                                        <span className="rotulo">Número</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={data.numero}
+                                            onChange={(e) => setData('numero', e.target.value)}
+                                            className={`${campo} mt-1 tabular-nums`}
+                                        />
+                                        {errors.numero ? <span className="apoyo text-danger">{errors.numero}</span> : null}
+                                    </label>
+                                    <label className="block">
+                                        <span className="rotulo">Fecha</span>
+                                        <input
+                                            type="date"
+                                            value={data.fecha}
+                                            onChange={(e) => setData('fecha', e.target.value)}
+                                            className={`${campo} mt-1 tabular-nums`}
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="rotulo">Válida hasta</span>
+                                        <input
+                                            type="date"
+                                            value={data.valido_hasta}
+                                            onChange={(e) => setData('valido_hasta', e.target.value)}
+                                            className={`${campo} mt-1 tabular-nums`}
+                                        />
+                                        {errors.valido_hasta ? (
+                                            <span className="apoyo text-danger">{errors.valido_hasta}</span>
+                                        ) : null}
+                                    </label>
+                                </div>
+
                                 <label className="block">
-                                    <span className="rotulo">Descripción</span>
-                                    <input
-                                        type="text"
-                                        value={data.descripcion}
-                                        onChange={(e) => setData('descripcion', e.target.value)}
+                                    <span className="rotulo">Nota para el colegio</span>
+                                    <textarea
+                                        rows="2"
+                                        value={data.notas}
+                                        onChange={(e) => setData('notas', e.target.value)}
+                                        placeholder="Las clases del 1 al 5 de mayo quedan suspendidas por vacaciones."
                                         className={`${campo} mt-1`}
                                     />
                                 </label>
-                                <label className="block">
-                                    <span className="rotulo">La hora (con IVA)</span>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={data.precio_hora}
-                                        onChange={(e) => setData('precio_hora', e.target.value)}
-                                        className={`${campo} mt-1 tabular-nums`}
-                                    />
-                                </label>
-                            </div>
 
-                            <div className="grid gap-3 sm:grid-cols-3">
                                 <label className="block">
-                                    <span className="rotulo">Número</span>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={data.numero}
-                                        onChange={(e) => setData('numero', e.target.value)}
-                                        className={`${campo} mt-1 tabular-nums`}
-                                    />
-                                    {errors.numero ? <span className="apoyo text-danger">{errors.numero}</span> : null}
+                                    <span className="rotulo">En qué va</span>
+                                    <select
+                                        value={data.estado}
+                                        onChange={(e) => setData('estado', e.target.value)}
+                                        className={`${campo} mt-1`}
+                                    >
+                                        {Object.entries(estados).map(([valor, texto]) => (
+                                            <option key={valor} value={valor}>
+                                                {texto}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </label>
-                                <label className="block">
-                                    <span className="rotulo">Fecha</span>
-                                    <input
-                                        type="date"
-                                        value={data.fecha}
-                                        onChange={(e) => setData('fecha', e.target.value)}
-                                        className={`${campo} mt-1 tabular-nums`}
-                                    />
-                                </label>
-                                <label className="block">
-                                    <span className="rotulo">Válida hasta</span>
-                                    <input
-                                        type="date"
-                                        value={data.valido_hasta}
-                                        onChange={(e) => setData('valido_hasta', e.target.value)}
-                                        className={`${campo} mt-1 tabular-nums`}
-                                    />
-                                    {errors.valido_hasta ? (
-                                        <span className="apoyo text-danger">{errors.valido_hasta}</span>
-                                    ) : null}
-                                </label>
-                            </div>
 
-                            <label className="block">
-                                <span className="rotulo">Nota para el colegio</span>
-                                <textarea
-                                    rows="2"
-                                    value={data.notas}
-                                    onChange={(e) => setData('notas', e.target.value)}
-                                    placeholder="Las clases del 1 al 5 de mayo quedan suspendidas por vacaciones."
-                                    className={`${campo} mt-1`}
-                                />
-                            </label>
-
-                            <label className="block">
-                                <span className="rotulo">En qué va</span>
-                                <select
-                                    value={data.estado}
-                                    onChange={(e) => setData('estado', e.target.value)}
-                                    className={`${campo} mt-1`}
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                                 >
-                                    {Object.entries(estados).map(([valor, texto]) => (
-                                        <option key={valor} value={valor}>
-                                            {texto}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                    Guardar
+                                </button>
+                            </form>
+                        </details>
+                    )}
 
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
-                            >
-                                Guardar
-                            </button>
-                        </form>
-                    </details>
-
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            if (await confirmar({ titulo: '¿Tirar esta cotización?', mensaje: 'Queda en la papelera.', confirmar: 'Tirar', peligrosa: true })) {
-                                router.delete(`/panel/talleres/cotizaciones/${cotizacion.uuid}`);
-                            }
-                        }}
-                        className="apoyo text-fog transition-colors hover:text-danger"
-                    >
-                        Eliminar la cotización
-                    </button>
+                    {puedeBorrar ? (
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (await confirmar({ titulo: '¿Tirar esta cotización?', mensaje: 'Queda en la papelera.', confirmar: 'Tirar', peligrosa: true })) {
+                                    router.delete(`/panel/talleres/cotizaciones/${cotizacion.uuid}`);
+                                }
+                            }}
+                            className="apoyo text-fog transition-colors hover:text-danger"
+                        >
+                            Eliminar la cotización
+                        </button>
+                    ) : null}
                 </div>
 
                 <div className="space-y-3 xl:sticky xl:top-4">
-                    <Panel titulo="Lo que se le cobra" descripcion="Cambia mientras quitas clases.">
+                    <Panel titulo="Lo que se le cobra" descripcion={puedeEditar ? 'Cambia mientras quitas clases.' : 'Lo que dice el papel.'}>
                         <p className="text-2xl font-semibold tabular-nums text-chalk">
                             <Reservado ancho="w-28">{pesos.format(cuenta.total)}</Reservado>
                         </p>
@@ -442,20 +513,34 @@ export default function Cotizacion({ cotizacion, taller, estados }) {
 
                         {/* El papel sale de lo guardado, no de lo que hay en
                             pantalla: si no se avisa, se manda el total viejo. */}
-                        {sinGuardar ? (
+                        {puedeEditar && sinGuardar ? (
                             <p className="apoyo mt-3 text-warn">
                                 Sin guardar: el papel todavía dice {pesos.format(guardada.total)}.
                             </p>
                         ) : null}
 
-                        <button
-                            type="button"
-                            onClick={guardar}
-                            disabled={processing}
-                            className="mt-3 w-full rounded-control bg-volt px-3 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
-                        >
-                            {sinGuardar ? 'Guardar los cambios' : 'Guardado'}
-                        </button>
+                        {puedeEditar ? (
+                            <button
+                                type="button"
+                                onClick={guardar}
+                                disabled={processing}
+                                className="mt-3 w-full rounded-control bg-volt px-3 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
+                            >
+                                {sinGuardar ? 'Guardar los cambios' : 'Guardado'}
+                            </button>
+                        ) : null}
+
+                        {/* Todo lo que el servidor rechazó, junto al botón: las
+                            horas de una clase o el precio fallaban sin decir
+                            nada, y lo del papel quedaba escondido en el
+                            desplegable cerrado. */}
+                        {Object.keys(errors).length > 0 ? (
+                            <ul className="apoyo mt-2 space-y-0.5 text-danger" role="alert">
+                                {Object.entries(errors).map(([campo, mensaje]) => (
+                                    <li key={campo}>{mensaje}</li>
+                                ))}
+                            </ul>
+                        ) : null}
 
                         <a
                             href={`/panel/talleres/cotizaciones/${cotizacion.uuid}/imprimir${conDetalle ? '' : '?detalle=no'}`}

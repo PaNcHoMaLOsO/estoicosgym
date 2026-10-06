@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{gimnasio} - Pago Completado</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; font-family: Arial, sans-serif; }
+        .container { max-width: 650px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <!-- HEADER -->
+    <div style="background: #0a0a0b; color: white; padding: 50px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; font-family: Arial Black, Arial, sans-serif;">
+            <span style="color: #d81f26;">PRO</span><span style="color: #FFFFFF;">GYM</span>
+        </h1>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #C7C7C7; letter-spacing: 2px; text-transform: uppercase;">{ciudad}</p>
+    </div>
+    
+    <!-- CONFIRMACIÓN PAGO -->
+    <div style="padding: 25px 20px; background: #FFFFFF;">
+        <h2 style="color: #2EB872; margin: 0 0 15px 0; font-size: 22px; font-weight: bold;">✅ Pago Completado</h2>
+        <p style="color: #505050; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+            Hola <strong style="color: #0a0a0b;">{nombre}</strong>, hemos recibido tu pago correctamente. ¡Gracias por confiar en {gimnasio}!
+        </p>
+        
+        <!-- DETALLES DEL PAGO -->
+        <div style="background: #f8fff8; border: 2px solid #2EB872; padding: 18px; margin: 20px 0; border-radius: 8px;">
+            <h3 style="margin: 0 0 12px 0; color: #2EB872; font-size: 18px; font-weight: bold;">💳 Detalles del Pago</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px; width: 45%;"><strong style="color: #0a0a0b;">Membresía:</strong></td>
+                    <td style="padding: 8px 0; color: #0a0a0b; font-size: 14px; font-weight: 600;">{membresia}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Monto pagado:</strong></td>
+                    <td style="padding: 8px 0; color: #2EB872; font-size: 18px; font-weight: bold;">${monto_ultimo_pago}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Método de pago:</strong></td>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;">{metodo_pago}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Fecha de pago:</strong></td>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;">{fecha_pago}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #505050; font-size: 14px;"><strong style="color: #0a0a0b;">Válida hasta:</strong></td>
+                    <td style="padding: 8px 0; color: #2EB872; font-size: 15px; font-weight: 600;">{fecha_vencimiento}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- MENSAJE MOTIVACIONAL -->
+        <div style="background: #f5f5f5; padding: 18px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2EB872;">
+            <p style="margin: 0; color: #0a0a0b; font-size: 15px; line-height: 1.6; font-weight: 500;">
+                💪 ¡Estás listo/a para alcanzar tus objetivos! Recuerda que la constancia es la clave del éxito.
+            </p>
+        </div>
+        
+        <!-- HORARIOS -->
+        <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid #e0e0e0;">
+            <p style="margin: 0 0 8px 0; color: #0a0a0b; font-size: 15px; font-weight: bold;">⏰ Horarios de atención:</p>
+            <p style="margin: 3px 0 0 0; color: #505050; font-size: 14px; line-height: 1.6;">📅 {horario}</p>
+        </div>
+        
+        <!-- CTA BUTTON -->
+        <div style="text-align: center; margin: 20px 0 15px 0;">
+            <a href="tel:{telefono_enlace}" style="display: inline-block; background: #d81f26; color: #FFFFFF; padding: 14px 35px; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; box-shadow: 0 4px 8px rgba(224, 0, 26, 0.3);">📞 Contáctanos: {telefono_gimnasio}</a>
+        </div>
+        
+        <p style="color: #505050; font-size: 13px; line-height: 1.5; margin: 15px 0 0 0; text-align: center;">
+            ¿Dudas sobre tu pago? Escríbenos a <strong style="color: #0a0a0b;">{email_gimnasio}</strong>
+        </p>
+    </div>
+    
+    <!-- FOOTER -->
+    <div style="background: #0a0a0b; color: #C7C7C7; padding: 30px 20px; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #FFFFFF;">{gimnasio} - {ciudad}</p>
+        <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6;">
+            📍 <a href="{enlace_mapa}" style="color: #C7C7C7; text-decoration: none;">Ver ubicación en Google Maps</a><br>
+            📧 {email_gimnasio} | 📞 {telefono_gimnasio}
+        </p>
+        <p style="margin: 0; font-size: 13px;">
+            <a href="{instagram}" style="color: #d81f26; text-decoration: none; font-weight: bold;">📸 Síguenos en Instagram</a>
+        </p>
+        <p style="margin: 15px 0 0 0; font-size: 11px; color: #808080;">
+            Este es un correo automático, por favor no responder directamente.
+        </p>
+    </div>
+</div>
+
+    </div>
+</body>
+</html>

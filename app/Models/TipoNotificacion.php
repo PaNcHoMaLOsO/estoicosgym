@@ -60,6 +60,9 @@ class TipoNotificacion extends Model
 
         // La misma en todos los correos, venga de donde venga el envío.
         $datos += ['enlace_resena' => (string) \App\Support\Ajustes::obtener('web.resenas')];
+        // Y los del gimnasio —teléfono, correo, horario—, que las plantillas
+        // de fábrica ya no traen escritos.
+        $datos += \App\Services\EnvioManualService::datosDelGimnasio();
 
         foreach ($datos as $key => $value) {
             $asunto = str_replace('{' . $key . '}', $value, $asunto);

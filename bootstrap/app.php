@@ -46,6 +46,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Las pantallas que no son mas que dinero, cuando el dueno pidio
             // no tenerlo delante. Se enciende y se apaga en Configuracion.
             'sin-dinero' => \App\Http\Middleware\EscondeElDinero::class,
+            // Las páginas de la web que se apagan en Configuración.
+            'pagina-web' => \App\Http\Middleware\PaginaEncendida::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

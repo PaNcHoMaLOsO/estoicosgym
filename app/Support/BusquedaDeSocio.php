@@ -59,36 +59,41 @@ class BusquedaDeSocio
             }
 
             // Cada palabra tiene que estar en alguna parte del nombre: así
-            // «hernandez juan» encuentra lo mismo que «juan hernandez».
-            foreach (preg_split('/\s+/', $texto) as $palabra) {
-                if ($palabra === '') {
-                    continue;
-                }
-
-                // Solo si tiene números: sin esto, buscar «juan» acababa
-                // comparando el celular contra «%%», que es todo el mundo.
-                $numeros = preg_replace('/\D/', '', $palabra);
-
-                $q->orWhere(function (Builder $q) use ($palabra, $numeros) {
-                    // «Parecido» y no «like»: en PostgreSQL LIKE distingue
-                    // mayúsculas y tildes, y «hernandez» no encontraba a
-                    // «Hernández». Ver App\Support\Parecido.
-                    $q->whereParecido('nombres', "%{$palabra}%")
-                        ->orWhereParecido('apellido_paterno', "%{$palabra}%")
-                        ->orWhereParecido('apellido_materno', "%{$palabra}%")
-                        ->orWhereParecido('run_pasaporte', "%{$palabra}%")
-                        ->orWhereParecido('email', "%{$palabra}%");
-
-                    // El celular, igual que el RUT: guardado con espacios o con
-                    // +56, y tecleado a secas.
-                    if (strlen($numeros) >= 4) {
-                        $q->orWhereRaw(
-                            "REPLACE(REPLACE(REPLACE(celular, ' ', ''), '+', ''), '-', '') LIKE ?",
-                            ["%{$numeros}%"]
-                        );
+            // «hernandez juan» encuentra lo mismo que «juan hernandez». TODAS
+            // las palabras (AND): con orWhere, «juan perez» traía a todos los
+            // Juan y a todos los Pérez. El RUT entero de arriba queda como
+            // alternativa aparte.
+            $q->orWhere(function (Builder $q) use ($texto) {
+                foreach (preg_split('/\s+/', $texto) as $palabra) {
+                    if ($palabra === '') {
+                        continue;
                     }
-                });
-            }
+
+                    // Solo si tiene números: sin esto, buscar «juan» acababa
+                    // comparando el celular contra «%%», que es todo el mundo.
+                    $numeros = preg_replace('/\D/', '', $palabra);
+
+                    $q->where(function (Builder $q) use ($palabra, $numeros) {
+                        // «Parecido» y no «like»: en PostgreSQL LIKE distingue
+                        // mayúsculas y tildes, y «hernandez» no encontraba a
+                        // «Hernández». Ver App\Support\Parecido.
+                        $q->whereParecido('nombres', "%{$palabra}%")
+                            ->orWhereParecido('apellido_paterno', "%{$palabra}%")
+                            ->orWhereParecido('apellido_materno', "%{$palabra}%")
+                            ->orWhereParecido('run_pasaporte', "%{$palabra}%")
+                            ->orWhereParecido('email', "%{$palabra}%");
+
+                        // El celular, igual que el RUT: guardado con espacios o con
+                        // +56, y tecleado a secas.
+                        if (strlen($numeros) >= 4) {
+                            $q->orWhereRaw(
+                                "REPLACE(REPLACE(REPLACE(celular, ' ', ''), '+', ''), '-', '') LIKE ?",
+                                ["%{$numeros}%"]
+                            );
+                        }
+                    });
+                }
+            });
         });
     }
 }

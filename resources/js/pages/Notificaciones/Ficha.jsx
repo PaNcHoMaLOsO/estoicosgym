@@ -66,7 +66,7 @@ export default function Ficha({ notificacion, socio, logs }) {
                 </Nota>
             ) : null}
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Detalle">
                         <dl className="space-y-3">

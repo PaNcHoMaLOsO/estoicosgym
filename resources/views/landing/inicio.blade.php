@@ -32,12 +32,16 @@
             </p>
             <p class="text-base text-pg-tiza/75 max-w-xl mt-4 lg:mt-6 font-modern">{{ $portada['subtitulo'] }}</p>
             <div class="mt-6 lg:mt-9 flex flex-row gap-3 lg:gap-4">
-                <a href="{{ route('landing.planes') }}" class="inline-flex items-center justify-center flex-1 sm:flex-none bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-4 sm:px-8 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
-                    Ver planes
-                </a>
-                <a href="{{ route('landing.gimnasio') }}" class="inline-flex items-center justify-center border-2 border-pg-tiza/30 hover:border-pg-rojo flex-1 sm:flex-none whitespace-nowrap text-pg-tiza hover:text-pg-rojo-claro px-4 sm:px-8 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
-                    Conoce el gimnasio
-                </a>
+                @if($navegacion['planes'])
+                    <a href="{{ route('landing.planes') }}" class="inline-flex items-center justify-center flex-1 sm:flex-none bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-4 sm:px-8 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
+                        Ver planes
+                    </a>
+                @endif
+                @if($navegacion['gimnasio'])
+                    <a href="{{ route('landing.gimnasio') }}" class="inline-flex items-center justify-center border-2 border-pg-tiza/30 hover:border-pg-rojo flex-1 sm:flex-none whitespace-nowrap text-pg-tiza hover:text-pg-rojo-claro px-4 sm:px-8 py-3 rounded-lg text-sm sm:text-base transition-colors font-modern">
+                        Conoce el gimnasio
+                    </a>
+                @endif
             </div>
         </div>
     </section>
@@ -69,6 +73,7 @@
     </section>
 
     {{-- ===== RUTINAS: su propia franja, la fila de accesos ya va llena ===== --}}
+    @if($navegacion['rutinas'])
     <section class="bg-pg-negro">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             <div class="animate-on-scroll flex flex-col gap-4 border-t border-pg-tiza/10 py-6 sm:flex-row sm:items-center sm:justify-between lg:py-8">
@@ -82,6 +87,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- ===== CINTA DE CONVENIOS ===== --}}
     @if(count($logosConvenios))
@@ -106,11 +112,13 @@
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">NUESTROS SERVICIOS</h2>
                 </div>
                 @include('landing.partes.servicios')
-                <p class="text-center mt-4 lg:mt-8">
-                    <a href="{{ route('landing.gimnasio') }}" class="inline-flex items-center gap-2 text-pg-rojo-claro hover:underline font-modern font-semibold">
-                        Conoce el gimnasio completo <x-icono nombre="arrow-right" class="text-xs" />
-                    </a>
-                </p>
+                @if($navegacion['gimnasio'])
+                    <p class="text-center mt-4 lg:mt-8">
+                        <a href="{{ route('landing.gimnasio') }}" class="inline-flex items-center gap-2 text-pg-rojo-claro hover:underline font-modern font-semibold">
+                            Conoce el gimnasio completo <x-icono nombre="arrow-right" class="text-xs" />
+                        </a>
+                    </p>
+                @endif
             </div>
         </section>
     @endif

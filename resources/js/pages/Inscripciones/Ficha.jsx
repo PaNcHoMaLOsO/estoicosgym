@@ -4,6 +4,7 @@ import {
     ArrowLeftIcon,
     ArrowRightLeftIcon,
     BanknoteIcon,
+    BanIcon,
     PauseIcon,
     PencilIcon,
     PlayIcon,
@@ -13,6 +14,7 @@ import {
 
 import { Reservado } from '@/Privado';
 import Dialogo from '@/components/Dialogo';
+import CodigoCorto from '@/components/CodigoCorto';
 import Estado from '@/components/Estado';
 import { Campo, Seleccion, Texto } from '@/components/Campo';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
@@ -83,6 +85,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
     const [candidatos, setCandidatos] = useState(null);
     const [busqueda, setBusqueda] = useState('');
     const [nombreDestino, setNombreDestino] = useState('');
+    const [motivoCancelar, setMotivoCancelar] = useState('');
 
     const cerrar = () => setDialogo(null);
 
@@ -158,6 +161,14 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
             etiqueta: 'Traspasar',
             Icono: ArrowRightLeftIcon,
         },
+        puede.cancelar && {
+            // La membresía real que se deja de usar: el socio la tuvo, sus
+            // pagos quedan. Es lo que piden la baja y el borrado de datos.
+            alPulsar: () => setDialogo('cancelar'),
+            etiqueta: 'Cancelar',
+            Icono: BanIcon,
+            peligrosa: true,
+        },
         puede.borrar && {
             // Solo aparece si no se cobró nada. Es para la membresía apuntada
             // dos veces, no para cancelar una real: eso es un estado.
@@ -186,6 +197,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                         <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-chalk">
                             {inscripcion.membresia ?? 'Membresía'}
                             <Estado codigo={inscripcion.id_estado} />
+                            <CodigoCorto codigo={inscripcion.codigo} />
                         </h1>
                         <p className="apoyo text-fog">
                             {socio ? (
@@ -280,7 +292,7 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
              * a la derecha quedaba un hueco. Ahora las fechas y las pausas van en
              * un solo bloque, el socio en otro, y las observaciones a la derecha.
              */}
-            <div className="grid items-start gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Membresía">
                         <dl className="grid grid-cols-2 gap-3">
@@ -464,6 +476,32 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                 peligrosa
             />
 
+            {/* Como el de borrar, dice QUÉ se cancela. El motivo es obligatorio:
+                queda en el historial y es lo que explica después por qué un
+                socio que pagó se quedó sin plan. */}
+            <Dialogo
+                abierto={dialogo === 'cancelar'}
+                alCerrar={cerrar}
+                titulo="¿Cancelar esta membresía?"
+                descripcion={`${inscripcion.membresia ?? 'La membresía'} de ${socio?.nombre ?? 'este socio'}. Deja de estar vigente desde ya. Sus pagos quedan registrados y lo que faltaba por pagar ya no se cobra.`}
+                accion={`/panel/inscripciones/${inscripcion.uuid}/cancelar`}
+                via="inertia"
+                metodo="post"
+                datos={{ motivo: motivoCancelar }}
+                etiquetaConfirmar="Cancelar membresía"
+                puedeConfirmar={motivoCancelar.trim().length >= 3}
+                peligrosa
+            >
+                <Campo etiqueta="Motivo" nombre="motivo_cancelar" requerido ayuda="Queda registrado en el historial.">
+                    <Texto
+                        nombre="motivo_cancelar"
+                        valor={motivoCancelar}
+                        alCambiar={setMotivoCancelar}
+                        placeholder="Se cambió de ciudad, lesión…"
+                    />
+                </Campo>
+            </Dialogo>
+
             <Dialogo
                 abierto={dialogo === 'reanudar'}
                 alCerrar={cerrar}
@@ -544,8 +582,8 @@ export default function Ficha({ inscripcion, socio, pago, pausa, puede, pagos, m
                                             className="w-full px-3 py-2 text-left text-sm text-chalk transition-colors hover:bg-surface-2"
                                         >
                                             {c.nombre_completo ?? c.nombre ?? `Socio ${c.id}`}
-                                            {c.run_pasaporte ? (
-                                                <span className="apoyo block text-fog">{c.run_pasaporte}</span>
+                                            {c.rut ? (
+                                                <span className="apoyo block text-fog">{c.rut}</span>
                                             ) : null}
                                         </button>
                                     </li>

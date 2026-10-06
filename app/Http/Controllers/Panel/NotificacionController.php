@@ -21,7 +21,7 @@ class NotificacionController extends Controller
 
     public function index(Request $request)
     {
-        $busqueda = trim((string) $request->query('buscar', ''));
+        $busqueda = trim($request->texto('buscar', ''));
         // «Solo las que no salieron»: es a lo que se llega desde el aviso del
         // Resumen, y lo único de esta pantalla que pide hacer algo.
         $soloFallidas = $request->query('estado') === 'fallidas';

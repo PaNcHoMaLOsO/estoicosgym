@@ -5,6 +5,7 @@ import { ArrowLeftIcon, MailIcon } from 'lucide-react';
 import Nota from '@/components/Nota';
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Escribirle a un socio a mano.
  *
@@ -318,7 +319,7 @@ export default function Enviar({ preseleccionado, plantillas, formToken }) {
                                 className="inline-flex items-center gap-1.5 rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
                                 <MailIcon className="size-4" aria-hidden="true" />
-                                {processing ? 'Enviando…' : 'Enviar'}
+                                <TextoQueCambia ocupado={processing} mientras="Enviando…">Enviar</TextoQueCambia>
                             </button>
 
                             <Link href="/panel/notificaciones" className="apoyo text-fog hover:text-chalk">

@@ -33,7 +33,7 @@ class ClienteFichaController extends Controller
         ]);
 
         $inscripciones = $cliente->inscripciones()
-            ->with('membresia:id,nombre')
+            ->with(['membresia:id,nombre', 'convenio:id,nombre'])
             // El saldo de cada inscripcion en UNA consulta: pedirlo dentro del
             // bucle serian tantas consultas como membresias tenga el socio.
             ->withSum('pagos as abonado', 'monto_abonado')
@@ -98,7 +98,10 @@ class ClienteFichaController extends Controller
                 'contacto_emergencia' => $cliente->contacto_emergencia,
                 'telefono_emergencia' => $cliente->telefono_emergencia,
                 'observaciones' => $cliente->observaciones,
-                'convenio' => $cliente->convenio?->nombre,
+                // El de su ficha, o el de su última membresía con convenio: el
+                // alta y la inscripción lo guardan en la membresía, no en él.
+                'convenio' => $cliente->convenio?->nombre
+                    ?? $inscripciones->first(fn ($i) => $i->convenio)?->convenio?->nombre,
                 'activo' => (bool) $cliente->activo,
                 'desde' => $cliente->created_at?->format('d/m/Y'),
                 // El apoderado solo aparece si el socio es menor: en un adulto
@@ -131,6 +134,12 @@ class ClienteFichaController extends Controller
                     'abonado' => $abonado,
                     'pendiente' => max(0, $total - $abonado),
                     'vigente' => (int) $i->id_estado === self::ACTIVA,
+                    // Por qué no se puede renovar todavía (null: se puede). Lo
+                    // decide la misma regla que el servidor al abrir Renovar:
+                    // sin esto el botón abría la ventana y no decía nada.
+                    'renovar_no' => (int) $i->id_estado === self::ACTIVA
+                        ? app(InscripcionRenovarController::class)->porQueNoSePuede($i)
+                        : null,
                     // Para decir en la cabecera hasta cuándo está pausada.
                     'pausada_hasta' => $i->fecha_pausa_fin?->format('d/m/Y'),
                 ];
@@ -231,6 +240,9 @@ class ClienteFichaController extends Controller
             'cuantas' => $lineas->count(),
             'desde' => $lineas->min('created_at')?->format('d/m/Y'),
             'lineas' => $lineas->map(fn (Fiado $f) => [
+                // Para cobrar justo estas: lo anotado después de abrir la
+                // ficha no entra en un cobro que no lo mostraba.
+                'uuid' => $f->uuid,
                 'concepto' => $f->concepto,
                 'monto' => $f->monto,
             ])->values()->all(),

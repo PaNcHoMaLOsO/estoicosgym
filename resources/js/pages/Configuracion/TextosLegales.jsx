@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import Nota from '@/components/Nota';
 import { AlertTriangleIcon, ExternalLinkIcon, EyeIcon } from 'lucide-react';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * El contrato, los términos y condiciones y la política de privacidad.
  *
@@ -135,7 +136,7 @@ export default function TextosLegales({ tipo, tipos, titulo, descripcion, texto,
                 ) : null}
             </p>
 
-            <form onSubmit={guardar} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <form onSubmit={guardar} className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
                 <div className="min-w-0">
                     <label htmlFor="contenido" className="sr-only">
                         {titulo}
@@ -172,7 +173,7 @@ export default function TextosLegales({ tipo, tipos, titulo, descripcion, texto,
                             disabled={processing}
                             className="rounded-control bg-volt px-3.5 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                         >
-                            {processing ? 'Guardando…' : 'Guardar'}
+                            <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                         </button>
                         <button
                             type="button"

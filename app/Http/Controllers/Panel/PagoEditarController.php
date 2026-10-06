@@ -7,7 +7,9 @@ use App\Http\Controllers\Traits\ValidatesFormToken;
 use App\Models\Inscripcion;
 use App\Models\MetodoPago;
 use App\Models\Pago;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -30,8 +32,10 @@ class PagoEditarController extends Controller
 {
     use ValidatesFormToken;
 
-    public function edit(Pago $pago)
+    public function edit(Request $request, Pago $pago)
     {
+        abort_unless(self::puedeCorregir($request->user(), $pago), 403, self::NO_ES_SUYO);
+
         $pago->load(['inscripcion.cliente', 'inscripcion.membresia', 'metodoPago']);
 
         $inscripcion = $pago->inscripcion;
@@ -60,6 +64,9 @@ class PagoEditarController extends Controller
                 // Cuanto se puede poner como maximo: el precio menos lo que se
                 // cobro en los OTROS pagos de esta membresia.
                 'tope' => $this->loQueCabe($pago),
+                // Quien solo corrige sus cobros de hoy no le cambia la fecha:
+                // moverlo a ayer lo sacaría de la caja de este turno.
+                'solo_hoy' => ! $request->user()->puede('pagos.editar'),
             ],
             'metodosPago' => MetodoPago::where('activo', true)
                 ->orderBy('nombre')
@@ -70,6 +77,14 @@ class PagoEditarController extends Controller
 
     public function update(Request $request, Pago $pago)
     {
+        abort_unless(self::puedeCorregir($request->user(), $pago), 403, self::NO_ES_SUYO);
+
+        if (! $request->user()->puede('pagos.editar') && $request->input('fecha_pago') !== Carbon::today()->toDateString()) {
+            throw ValidationException::withMessages([
+                'fecha_pago' => 'La fecha se queda en hoy. Para moverla a otro día, pídeselo a quien administra.',
+            ]);
+        }
+
         $datos = $request->validate([
             'monto_abonado' => 'required|integer|min:1|max:999999999',
             'fecha_pago' => 'required|date|before_or_equal:today',
@@ -84,7 +99,9 @@ class PagoEditarController extends Controller
 
         $tope = $this->loQueCabe($pago);
 
-        if ($datos['monto_abonado'] > $tope) {
+        // Dejar el monto como estaba siempre vale: si otro pago ya cubrió el
+        // precio, el tope es 0 y no se podía ni corregir la fecha o el medio.
+        if ($datos['monto_abonado'] > $tope && (int) $datos['monto_abonado'] !== (int) $pago->monto_abonado) {
             throw ValidationException::withMessages([
                 'monto_abonado' => sprintf(
                     'Como mucho $%s: es lo que queda del precio descontando los otros pagos de esta membresía.',
@@ -112,7 +129,9 @@ class PagoEditarController extends Controller
 
                 $tope = $this->loQueCabe($pago);
 
-                if ((int) $datos['monto_abonado'] > $tope) {
+                // Igual que la revisión de arriba: dejar el monto como estaba
+                // siempre vale, o no se podía corregir ni la fecha.
+                if ((int) $datos['monto_abonado'] > $tope && (int) $datos['monto_abonado'] !== (int) $pago->monto_abonado) {
                     $this->releaseFormToken($request, 'pago_editar_' . $pago->id);
 
                     throw ValidationException::withMessages([
@@ -155,11 +174,42 @@ class PagoEditarController extends Controller
             ->with('success', 'Pago anulado. Está en la papelera por si hay que recuperarlo.');
     }
 
+    private const NO_ES_SUYO = 'Solo puedes corregir los pagos que registraste tú, y solo el mismo día.';
+
+    /**
+     * ¿Puede esta persona corregir ESTE pago?
+     *
+     * Con «Corregir cualquier pago» (`pagos.editar`), cualquiera. Con «Corregir
+     * sus cobros de hoy» (`pagos.corregir_hoy`), solo el que registró ella
+     * misma y con fecha de hoy: es el error de tecleo que se nota al cuadrar
+     * el cajón, y nada más. Lo de otro turno o de otro día lo ve el dueño, que
+     * es quien sabe si ese pago ya se cuadró. Un pago sin autor —los de antes
+     * de anotarlo— no es de nadie, así que tampoco entra.
+     *
+     * La usan la ruta, la ficha del pago (para pintar o no «Corregir») y las
+     * pruebas: una sola regla.
+     */
+    public static function puedeCorregir(?User $usuario, Pago $pago): bool
+    {
+        if (! $usuario) {
+            return false;
+        }
+
+        if ($usuario->puede('pagos.editar')) {
+            return true;
+        }
+
+        return $usuario->puede('pagos.corregir_hoy')
+            && $pago->id_usuario !== null
+            && (int) $pago->id_usuario === (int) $usuario->id
+            && (bool) $pago->fecha_pago?->isToday();
+    }
+
     /**
      * Un pago mixto de verdad: el dinero entró por dos medios y se guardó
-     * cuánto por cada uno. Las partes de un mixto hecho al inscribir se
-     * guardan como pagos sueltos de un solo medio —dicen «mixto» pero no
-     * tienen segundo medio— y se corrigen como cualquier otro.
+     * cuánto por cada uno. Hoy todos los caminos lo guardan así (PagoMixto);
+     * antes, inscribir y el alta dejaban una fila por parte, de un solo medio
+     * —decían «mixto» sin segundo medio—, y esas se corrigen como cualquier otro.
      */
     public static function esRepartido(Pago $pago): bool
     {

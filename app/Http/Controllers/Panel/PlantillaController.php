@@ -37,6 +37,9 @@ class PlantillaController extends Controller
         'celular' => 'Su celular',
         'es_menor_edad' => '«sí» o «no»',
         'nombre_apoderado' => 'El apoderado, si es menor',
+        'rut_apoderado' => 'El RUT del apoderado',
+        'rut' => 'El RUT o pasaporte del socio',
+        'fecha_nacimiento' => 'Su fecha de nacimiento',
         'membresia' => 'El plan que tiene contratado',
         'precio' => 'Lo que cuesta su plan',
         'fecha_inicio' => 'Desde cuándo corre',
@@ -47,11 +50,26 @@ class PlantillaController extends Controller
         'total_pagado' => 'Lo mismo, con otro nombre',
         'monto_pendiente' => 'Lo que debe',
         'saldo_pendiente' => 'Lo mismo, con otro nombre',
+        'tipo_pago' => '«Completo», «Parcial» o «Pendiente»',
+        'metodo_pago' => 'Con qué pagó la última vez',
+        'fecha_registro' => 'Cuándo se anotó la inscripción, con la hora',
         'fecha_pago' => 'Cuándo pagó por última vez',
         'monto_ultimo_pago' => 'Cuánto pagó esa vez',
         'fecha_pausa' => 'Desde cuándo está pausada',
         'fecha_reactivacion' => 'Cuándo vuelve',
-        'fecha_activacion' => 'Lo mismo, con otro nombre',
+        'fecha_activacion' => 'Cuándo vuelve a estar activa',
+        'motivo_pausa' => 'Por qué se pausó',
+        // Los del gimnasio, de Configuración → Datos del gimnasio, Horario y
+        // Google y redes. Antes iban escritos a mano dentro de cada plantilla.
+        'gimnasio' => 'El nombre del gimnasio',
+        'ciudad' => 'La ciudad del gimnasio',
+        'telefono_gimnasio' => 'El teléfono del gimnasio (o el WhatsApp)',
+        'telefono_enlace' => 'El mismo, sin espacios, para un enlace tel:',
+        'email_gimnasio' => 'El correo de contacto',
+        'direccion_gimnasio' => 'La dirección y la comuna',
+        'instagram' => 'El enlace al Instagram',
+        'enlace_mapa' => 'El enlace de Google Maps',
+        'horario' => 'El horario de la semana, en una línea',
         'enlace_resena' => 'El enlace para dejar una reseña en Google (Configuración → Página web)',
     ];
 
@@ -132,7 +150,42 @@ class PlantillaController extends Controller
      */
     public function vistaPrevia(Request $request, TipoNotificacion $tipoNotificacion, EnvioManualService $envio)
     {
-        $socio = Cliente::whereNotNull('email')->where('email', '!=', '')->first();
+        /*
+         * LO QUE ESTA EN EL EDITOR, NO LO GUARDADO. Antes se componia la
+         * plantilla tal como estaba en la base: se cambiaba el texto, se pulsaba
+         * «Ver con datos reales» y salia el de antes, que es justo lo que no se
+         * queria mirar. Ahora el editor manda su asunto y su texto, se validan
+         * con las mismas reglas que al guardar y se componen sobre una copia en
+         * memoria: aqui NO se guarda nada. Sin ellos (GET), lo guardado.
+         */
+        if ($request->isMethod('post')) {
+            $borrador = $request->validate([
+                'asunto_email' => 'required|string|max:255',
+                'plantilla_email' => 'required|string',
+            ], [
+                'plantilla_email.required' => 'El correo no puede quedar vacío.',
+            ]);
+
+            $tipoNotificacion = (clone $tipoNotificacion)->forceFill($borrador);
+        }
+
+        /*
+         * Con datos de un socio de verdad solo si quien mira puede ver socios:
+         * si no, una plantilla con {rut} {fecha_nacimiento} {celular} serviría
+         * para leer los datos de alguien sin tener permiso para su ficha. Sin
+         * ese permiso se usa un socio de ejemplo, que no existe.
+         */
+        $socio = $request->user()?->puede('clientes.ver')
+            ? Cliente::whereNotNull('email')->where('email', '!=', '')->first()
+            : new Cliente([
+                'nombres' => 'Camila',
+                'apellido_paterno' => 'Rojas',
+                'apellido_materno' => 'Soto',
+                'email' => 'camila.rojas@example.com',
+                'celular' => '+56 9 1234 5678',
+                'run_pasaporte' => '12.345.678-5',
+                'fecha_nacimiento' => '1995-04-12',
+            ]);
 
         if (! $socio) {
             return response()->json([

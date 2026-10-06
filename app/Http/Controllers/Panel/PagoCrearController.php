@@ -43,10 +43,10 @@ class PagoCrearController extends Controller
              * sirve para encontrar a nadie. Ahora se busca, y solo viaja lo que
              * se escribe.
              */
-            'preseleccionada' => $this->preseleccionada($request->query('inscripcion')),
+            'preseleccionada' => $this->preseleccionada(($request->texto('inscripcion') ?: null)),
             // Se cobra desde la ficha del socio, en una ventana: al guardar se
             // vuelve a esa ficha y no a la pantalla del pago.
-            'volverA' => (string) $request->query('volver', ''),
+            'volverA' => $request->texto('volver', ''),
             'metodosPago' => MetodoPago::where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'requiere_comprobante']),
@@ -62,7 +62,7 @@ class PagoCrearController extends Controller
      */
     public function buscar(Request $request)
     {
-        $texto = trim((string) $request->query('q', ''));
+        $texto = trim($request->texto('q', ''));
 
         // Con una letra saldría medio padrón y no serviría para elegir.
         if (mb_strlen($texto) < 2) {

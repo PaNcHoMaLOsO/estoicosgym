@@ -6,6 +6,7 @@ use App\Enums\EstadosCodigo;
 use App\Models\Inscripcion;
 use App\Models\Pago;
 use App\Models\TipoNotificacion;
+use App\Support\PagoMixto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -42,7 +43,7 @@ class RegistroPagoService
      */
     public function validar(Request $request): array
     {
-        $tipo = (string) $request->input('tipo_pago', 'abono');
+        $tipo = $request->texto('tipo_pago', 'abono');
 
         $validado = $request->validate($this->reglas($tipo), $this->mensajes());
 
@@ -92,10 +93,13 @@ class RegistroPagoService
         ];
 
         if ($tipo === 'mixto') {
-            $datos['id_metodo_pago'] = $validado['id_metodo_pago1'];
-            $datos['id_metodo_pago2'] = $validado['id_metodo_pago2'];
-            $datos['monto_metodo1'] = (int) $request->input('monto_metodo1');
-            $datos['monto_metodo2'] = (int) $request->input('monto_metodo2');
+            // Las mismas columnas que dejan inscribir, renovar y el alta.
+            $datos = PagoMixto::columnas([
+                'id_metodo_pago' => (int) $validado['id_metodo_pago1'],
+                'id_metodo_pago2' => (int) $validado['id_metodo_pago2'],
+                'monto_metodo1' => (int) $request->input('monto_metodo1'),
+                'monto_metodo2' => (int) $request->input('monto_metodo2'),
+            ]) + $datos;
         } else {
             $datos['id_metodo_pago'] = $validado['id_metodo_pago'];
         }
@@ -274,16 +278,22 @@ class RegistroPagoService
             return $abonado;
         }
 
-        // Mixto: los dos montos tienen que sumar EXACTAMENTE el saldo. Si
-        // sumaran de menos seria un abono, y de mas habria que devolver vuelto.
+        // Mixto: las reglas comunes (dos medios distintos y en uso, montos
+        // mayores que cero, sin pasarse) son las de PagoMixto, las mismas del
+        // alta y la inscripción. Lo propio de cobrar es que tienen que sumar
+        // EXACTAMENTE el saldo: de menos seria un abono, y de mas habria que
+        // devolver vuelto.
         $uno = (int) $request->input('monto_metodo1', 0);
         $dos = (int) $request->input('monto_metodo2', 0);
 
-        if ($uno <= 0 || $dos <= 0) {
-            throw ValidationException::withMessages([
-                'monto_metodo1' => 'Los dos montos deben ser mayores que cero.',
-            ]);
-        }
+        PagoMixto::repartir(
+            (int) $request->input('id_metodo_pago1'),
+            (int) $request->input('id_metodo_pago2'),
+            $uno,
+            $dos,
+            $pendiente,
+            'monto_metodo1',
+        );
 
         if ($uno + $dos !== $pendiente) {
             throw ValidationException::withMessages([
@@ -335,7 +345,7 @@ class RegistroPagoService
                 ->where('activo', true)
                 ->first();
 
-            if (! $tipo || ! $inscripcion->cliente?->email) {
+            if (! $tipo || ! $inscripcion->cliente?->correoParaAvisos()) {
                 return;
             }
 

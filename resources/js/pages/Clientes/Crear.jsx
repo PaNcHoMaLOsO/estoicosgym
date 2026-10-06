@@ -1,7 +1,8 @@
 import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
+import { puede } from '@/lib/permisos';
 import { hoyEnChile } from '@/lib/tiempo';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, CameraIcon, ChevronDownIcon, ImageIcon } from 'lucide-react';
 
@@ -10,6 +11,7 @@ import CamaraFoto from '@/components/CamaraFoto';
 import Nota from '@/components/Nota';
 import Retrato from '@/components/Retrato';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * La foto del socio al darlo de alta.
  *
@@ -252,7 +254,7 @@ function Isla({ titulo, accion, children, className = '' }) {
                 <h2 className="text-sm font-semibold text-chalk">{titulo}</h2>
                 {accion}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
         </section>
     );
 }
@@ -336,12 +338,18 @@ function Casilla({ marcada, alCambiar, etiqueta, ayuda }) {
  * de baja se reactiva solo al venderle; el de la papelera se restaura antes.
  */
 function AccionDelRegistrado({ socio, principal = false }) {
+    const { auth } = usePage().props;
     const boton = principal
         ? 'inline-flex items-center rounded-control bg-volt px-2.5 py-1 text-xs font-medium text-on-volt hover:opacity-90'
         : 'apoyo text-chalk underline underline-offset-4';
 
     if (socio.estado === 'datos_borrados') {
         return <span className="apoyo text-fog">Se le borraron los datos</span>;
+    }
+
+    // Sacar algo de la papelera es de quien configura: el mesón no lo ve.
+    if (socio.estado === 'papelera' && ! puede(auth, 'configuracion.editar')) {
+        return <span className="apoyo text-fog">Su ficha está en la papelera: la restaura el administrador.</span>;
     }
 
     if (socio.estado === 'papelera') {
@@ -673,7 +681,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                 <h1 className="text-lg font-semibold text-chalk">Nuevo socio</h1>
             </header>
 
-            <form onSubmit={enviar} {...tocar} className="grid items-start gap-4 lg:grid-cols-3">
+            <form onSubmit={enviar} {...tocar} className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-4 lg:col-span-2">
                     <Isla titulo="Datos del socio">
                         <Campo etiqueta={esRut ? 'RUT' : 'Pasaporte'} nombre="run_pasaporte" error={errors.run_pasaporte}>
@@ -882,7 +890,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     cada uno, no como dos casillas más de una lista. */}
                                 <div className="sm:col-span-2">
                                     <Campo etiqueta="Autoriza su imagen" nombre="consentimiento_imagen">
-                                        <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                             <Permiso
                                                 encendido={data.consentimiento_imagen}
                                                 alCambiar={(v) => setData('consentimiento_imagen', v)}
@@ -976,7 +984,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                         </div>
 
                         {conMembresia ? (
-                            <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {/* UN TOQUE Y NO TRES. Son cuatro o cinco planes: en
                                     un desplegable hay que abrirlo, buscar y elegir, y
                                     además el precio queda escondido hasta abrirlo. */}
@@ -1068,7 +1076,15 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                                     nombre={`parte_metodo_${i}`}
                                                     valor={parte.id_metodo_pago}
                                                     vacio={null}
-                                                    alCambiar={(v) => setPartes((ps) => ps.map((p, j) => (j === i ? { ...p, id_metodo_pago: v } : p)))}
+                                                    alCambiar={(v) => setPartes((ps) => ps.map((p, j) => {
+                                                        if (j === i) {
+                                                            return { ...p, id_metodo_pago: v };
+                                                        }
+                                                        // El mismo medio dos veces no es un reparto: se intercambian.
+                                                        return String(p.id_metodo_pago) === String(v)
+                                                            ? { ...p, id_metodo_pago: ps[i].id_metodo_pago }
+                                                            : p;
+                                                    }))}
                                                     opciones={metodosPago.map((m) => ({ valor: m.id, etiqueta: m.nombre }))}
                                                 />
                                                 <Texto
@@ -1264,7 +1280,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                         disabled={processing}
                         className="rounded-control bg-volt px-4 py-2.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        {processing ? 'Guardando…' : 'Registrar socio'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Registrar socio</TextoQueCambia>
                     </button>
 
                     <Link

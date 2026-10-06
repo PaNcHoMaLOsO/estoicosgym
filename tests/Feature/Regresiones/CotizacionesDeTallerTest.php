@@ -5,6 +5,7 @@ namespace Tests\Feature\Regresiones;
 use App\Models\CotizacionTaller;
 use App\Models\Institucion;
 use App\Models\Taller;
+use Illuminate\Support\Facades\Cache;
 use Tests\CasoConCatalogos;
 
 /**
@@ -281,5 +282,73 @@ class CotizacionesDeTallerTest extends CasoConCatalogos
 
         $this->assertNotSoftDeleted('cotizaciones_taller', ['id' => $cotizacion->id]);
         $this->assertSame(300000, $caja());
+    }
+
+    /**
+     * EL NÚMERO SE TOMA BAJO UN CANDADO, y el candado se suelta.
+     *
+     * Dos «Cotizar» a la vez —doble clic, dos pestañas— leían el mismo «mayor
+     * más uno» y salían dos cotizaciones con el mismo número. Si el candado se
+     * quedara tomado, la siguiente cotización esperaría y reventaría.
+     */
+    public function test_cotizar_toma_el_numero_bajo_un_candado_y_lo_suelta(): void
+    {
+        $taller = $this->taller();
+
+        foreach (['2026-07', '2026-07', '2026-08'] as $periodo) {
+            $this->actingAs($this->administrador())
+                ->post("/panel/talleres/{$taller->uuid}/cotizaciones", ['periodo' => $periodo])
+                ->assertRedirect();
+        }
+
+        $numeros = CotizacionTaller::pluck('numero')->all();
+        $this->assertCount(3, array_unique($numeros));
+
+        $candado = Cache::lock('cotizaciones-taller:numero', 10);
+        $this->assertTrue($candado->get(), 'El candado del número quedó tomado.');
+        $candado->release();
+    }
+
+    /**
+     * DESPUÉS DE REFRESCAR, LA PANTALLA RECIBE LAS CLASES NUEVAS.
+     *
+     * La página las vuelve a leer de las props para rehacer su formulario: si
+     * no vinieran, «Guardar» escribiría encima la lista vieja y se perderían.
+     */
+    public function test_refrescar_devuelve_las_clases_nuevas_a_la_pantalla(): void
+    {
+        $taller = $this->taller();
+
+        $this->actingAs($this->administrador())
+            ->post("/panel/talleres/{$taller->uuid}/cotizaciones", ['periodo' => '2026-07']);
+
+        $cotizacion = CotizacionTaller::firstOrFail();
+        $taller->update(['horario' => [...$taller->horario, 'miercoles' => [['15:00', '16:00']]]]);
+
+        $this->actingAs($this->administrador())
+            ->from("/panel/talleres/cotizaciones/{$cotizacion->uuid}")
+            ->post("/panel/talleres/cotizaciones/{$cotizacion->uuid}/refrescar")
+            ->assertRedirect("/panel/talleres/cotizaciones/{$cotizacion->uuid}");
+
+        $detalle = $this->actingAs($this->administrador())
+            ->get("/panel/talleres/cotizaciones/{$cotizacion->uuid}")
+            ->viewData('page')['props']['cotizacion']['detalle'];
+
+        $this->assertCount(19, $detalle);
+
+        // Y guardar esa lista —la que ahora tiene la pantalla— las conserva.
+        $this->actingAs($this->administrador())
+            ->patch("/panel/talleres/cotizaciones/{$cotizacion->uuid}", [
+                'numero' => $cotizacion->numero,
+                'fecha' => '2026-07-01',
+                'valido_hasta' => '2026-08-01',
+                'descripcion' => 'Uso instalaciones',
+                'precio_hora' => 30000,
+                'estado' => 'borrador',
+                'detalle' => $detalle,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertCount(19, $cotizacion->fresh()->detalle);
     }
 }

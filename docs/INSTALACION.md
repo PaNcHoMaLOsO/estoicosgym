@@ -99,7 +99,12 @@ cp .env.example .env
 php artisan key:generate
 php artisan storage:link
 php artisan migrate --seed --force
+php artisan plantillas:actualizar --confirmar
 ```
+
+El último crea las 13 plantillas de correo. Si después se trae la
+configuración del PC con `configuracion:importar`, conviene correrlo otra vez:
+pone al día las que vengan en su versión vieja y deja las editadas.
 
 En el `.env` del servidor:
 
@@ -126,8 +131,20 @@ composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
 php artisan web:aligerar-fotos --confirmar
+php artisan plantillas:actualizar --confirmar
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
+
+`plantillas:actualizar` pone las plantillas de correo de fábrica al día: las
+de ahora llevan `{variables}` (nombre, plan, fechas, montos y los datos del
+gimnasio de Configuración) en vez del texto de muestra de antes («Juan
+Pérez», «Trimestral», el teléfono escrito a mano). Cambia **solo** las que
+siguen idénticas a como vinieron; las que alguien corrigió en Configuración →
+Plantillas de correo se dejan y se listan, con un aviso si aún llevan texto de
+muestra. Sin `--confirmar` solo dice qué haría. Repetirlo no cambia nada más.
+Los correos usan los datos de Configuración → Datos del gimnasio, Horario y
+Google y redes (teléfono, correo, Instagram, enlace de Maps): conviene
+llenarlos antes del primer envío.
 
 `web:aligerar-fotos` pasa a WebP las fotos que ya estaban subidas. Deja las
 originales a propósito: si se borraran en el repositorio, al hacer `git pull`

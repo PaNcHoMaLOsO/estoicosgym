@@ -26,6 +26,7 @@ class PermisosPorRolTest extends CasoConCatalogos
             '/panel/motivos-descuento',
             '/panel/configuracion',
             '/panel/usuarios',
+            '/panel/usuarios/perfiles',
         ];
 
         foreach ($vetadas as $ruta) {
@@ -40,6 +41,11 @@ class PermisosPorRolTest extends CasoConCatalogos
         $this->actingAs($this->recepcionista())
             ->get('/panel/reportes/ingresos')
             ->assertForbidden();
+
+        // La caja completa tampoco: se la lleva a la del día.
+        $this->actingAs($this->recepcionista())
+            ->get('/panel/caja')
+            ->assertRedirect('/panel/caja/hoy');
     }
 
     public function test_recepcion_si_hace_su_trabajo_de_meson(): void
@@ -52,6 +58,9 @@ class PermisosPorRolTest extends CasoConCatalogos
             '/panel/pagos',
             '/panel/historial',
             '/panel/notificaciones',
+            // Escribirle a un socio y cuadrar la caja del turno.
+            '/panel/notificaciones/enviar',
+            '/panel/caja/hoy',
         ];
 
         foreach ($suyas as $ruta) {

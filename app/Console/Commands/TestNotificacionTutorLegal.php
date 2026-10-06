@@ -48,7 +48,7 @@ class TestNotificacionTutorLegal extends Command
                 'activo' => true,
                 'es_menor_edad' => true,
                 'apoderado_nombre' => 'María González Test',
-                'apoderado_run' => $runTutor,
+                'apoderado_rut' => $runTutor,
                 'apoderado_email' => $emailTutor,
                 'apoderado_telefono' => '+56987654321',
             ]);

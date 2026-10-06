@@ -8,6 +8,7 @@ use App\Models\HistorialCambio;
 use App\Models\Inscripcion;
 use App\Models\Membresia;
 use App\Models\Pago;
+use App\Support\PagoMixto;
 use App\Support\PrecioAcordado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class RegistroInscripcionService
      */
     public function validar(Request $request, bool $exigirQuePuedaInscribirse = true): array
     {
-        $forma = (string) $request->input('tipo_pago', 'completo');
+        $forma = $request->texto('tipo_pago', 'completo');
 
         $datos = $request->validate($this->reglas($forma), $this->mensajes());
 
@@ -181,7 +182,7 @@ class RegistroInscripcionService
             return $inscripcion;
         });
 
-        $this->avisarAlSocio($inscripcion);
+        $this->avisarAlSocio($inscripcion, esRenovacion: isset($resultado['anterior']));
 
         return $inscripcion;
     }
@@ -335,7 +336,7 @@ class RegistroInscripcionService
                 'id_metodo_pago' => $abono['id_metodo_pago'],
                 'fecha_pago' => $resultado['fecha_pago'],
                 'observaciones' => $abono['observaciones'] ?? null,
-            ];
+            ] + (isset($abono['reparto']) ? PagoMixto::columnas($abono['reparto']) : []);
         }
 
         return $filas;
@@ -346,7 +347,7 @@ class RegistroInscripcionService
      *
      * Lista vacía = no paga nada ahora.
      *
-     * @return list<array{monto:int,id_metodo_pago:int|null,observaciones?:string}>
+     * @return list<array{monto:int,id_metodo_pago:int|null,reparto?:array<string,int>}>
      *
      * @throws ValidationException
      */
@@ -397,54 +398,27 @@ class RegistroInscripcionService
     }
 
     /**
-     * Reparto entre dos o más métodos.
+     * Reparto entre dos medios: UN abono con los dos guardados en su fila.
      *
-     * @return list<array{monto:int,id_metodo_pago:int|null,observaciones?:string}>
+     * Antes salía una fila por parte, con cualquier número de partes y hasta
+     * el mismo medio dos veces; Cobrar, la Caja y la corrección esperan una
+     * fila con los dos medios. Las reglas viven en PagoMixto, que comparten los
+     * tres caminos. Un reparto que no llega al precio sigue valiendo: es un
+     * abono que entró por dos vías, y el resto queda por cobrar.
+     *
+     * @return list<array{monto:int,id_metodo_pago:int|null,reparto?:array<string,int>}>
      *
      * @throws ValidationException
      */
     private function abonosMixtos(Request $request, int $final): array
     {
-        $detalle = json_decode((string) $request->input('detalle_pagos_mixto', '[]'), true);
+        $reparto = PagoMixto::desdeDetalle($request->texto('detalle_pagos_mixto', '[]'), $final);
 
-        if (! is_array($detalle) || $detalle === []) {
-            throw ValidationException::withMessages([
-                'detalle_pagos_mixto' => 'Indica con qué métodos se reparte el pago.',
-            ]);
-        }
-
-        $abonos = [];
-        $suma = 0;
-
-        foreach ($detalle as $i => $parte) {
-            $monto = (int) round((float) ($parte['monto'] ?? 0));
-            $metodo = (int) ($parte['id_metodo_pago'] ?? 0);
-
-            if ($monto <= 0 || $metodo <= 0) {
-                throw ValidationException::withMessages([
-                    'detalle_pagos_mixto' => 'Cada parte del pago necesita un monto mayor que cero y un método.',
-                ]);
-            }
-
-            $suma += $monto;
-            $abonos[] = [
-                'monto' => $monto,
-                'id_metodo_pago' => $metodo,
-                'observaciones' => 'Pago mixto - ' . ($parte['metodo_nombre'] ?? 'parte ' . ($i + 1)),
-            ];
-        }
-
-        if ($suma > $final) {
-            throw ValidationException::withMessages([
-                'detalle_pagos_mixto' => sprintf(
-                    'Las partes suman %s y la inscripción vale %s.',
-                    $this->pesos($suma),
-                    $this->pesos($final)
-                ),
-            ]);
-        }
-
-        return $abonos;
+        return [[
+            'monto' => $reparto['monto'],
+            'id_metodo_pago' => $reparto['id_metodo_pago'],
+            'reparto' => $reparto,
+        ]];
     }
 
     /**
@@ -454,11 +428,7 @@ class RegistroInscripcionService
      */
     private function precioVigente(Membresia $membresia)
     {
-        $precio = $membresia->precios()
-            ->where('activo', true)
-            ->where('fecha_vigencia_desde', '<=', now())
-            ->orderByDesc('fecha_vigencia_desde')
-            ->first();
+        $precio = $membresia->precioVigente();
 
         // Antes esto era `$precio->precio_normal ?? 0`: un plan al que se le
         // olvidó cargar el precio inscribía a la gente GRATIS y sin avisar.
@@ -583,15 +553,27 @@ class RegistroInscripcionService
     }
 
     /**
-     * Bienvenida al socio y, si es menor, aviso al apoderado.
+     * Bienvenida al socio y, si es menor, aviso al apoderado. Si renueva, el
+     * correo de renovación y nada más.
+     *
+     * Renovar pasa por aquí igual que un alta, y le llegaba «Bienvenido a
+     * PRO GYM» a quien lleva años, más otra constancia al apoderado que ya la
+     * firmó la primera vez. El de renovación existía y no lo llamaba nadie.
      *
      * Fuera de la transacción y a prueba de fallos: que el correo no salga no
      * puede tumbar una inscripción que ya está pagada y guardada.
      */
-    private function avisarAlSocio(Inscripcion $inscripcion): void
+    private function avisarAlSocio(Inscripcion $inscripcion, bool $esRenovacion = false): void
     {
         try {
             $notificaciones = app(NotificacionService::class);
+
+            if ($esRenovacion) {
+                $notificaciones->enviarNotificacionRenovacion($inscripcion);
+
+                return;
+            }
+
             $notificaciones->enviarNotificacionBienvenida($inscripcion);
 
             $cliente = $inscripcion->cliente;

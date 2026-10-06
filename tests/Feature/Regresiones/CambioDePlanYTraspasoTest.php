@@ -262,6 +262,49 @@ class CambioDePlanYTraspasoTest extends CasoConCatalogos
     }
 
     /**
+     * Traspasa su mensualidad y DESPUÉS pide borrar sus datos.
+     *
+     * La membresía y los pagos ya son del nuevo titular y se quedan con él,
+     * con sus montos. Pero las notas del traspaso llevaban el nombre de quien
+     * la regaló y su motivo: eso también se va.
+     */
+    public function test_quien_traspaso_y_borra_sus_datos_no_queda_en_las_notas_del_otro(): void
+    {
+        [$plan, $precio] = $this->planesConPrecio()[0];
+
+        $origen = Cliente::factory()->create(['activo' => true, 'nombres' => 'Rosario', 'apellido_paterno' => 'Quintana']);
+        $destino = Cliente::factory()->create(['activo' => true]);
+        $inscripcion = $this->membresiaPagada($origen, $plan, $precio, $precio);
+
+        $this->actingAs($this->administrador())
+            ->postJson("/panel/inscripciones/{$inscripcion->uuid}/traspasar", [
+                'id_cliente_destino' => $destino->id,
+                'motivo_traspaso' => 'Se va a vivir con su pareja a Temuco',
+            ])
+            ->assertOk();
+
+        $this->assertStringContainsString('Rosario Quintana', $inscripcion->refresh()->observaciones);
+
+        $this->actingAs($this->administrador())
+            ->post("/panel/clientes/{$origen->uuid}/borrar-datos", ['motivo' => 'solicitud', 'confirmacion' => 'BORRAR'])
+            ->assertSessionHasNoErrors();
+
+        $inscripcion->refresh();
+        $pago = Pago::where('id_inscripcion', $inscripcion->id)->firstOrFail();
+
+        // Sigue siendo del nuevo titular, con su plata.
+        $this->assertSame($destino->id, $inscripcion->id_cliente);
+        $this->assertSame($precio, (int) $pago->monto_abonado);
+
+        // Y ya no dice quién se la dio ni por qué.
+        $this->assertStringNotContainsString('Rosario Quintana', $inscripcion->observaciones);
+        $this->assertStringContainsString("Socio Borrado #{$origen->id}", $inscripcion->observaciones);
+        $this->assertNull($inscripcion->motivo_traspaso);
+        $this->assertStringNotContainsString('Temuco', $inscripcion->observaciones);
+        $this->assertStringNotContainsString('Rosario Quintana', (string) $pago->observaciones);
+    }
+
+    /**
      * Con deuda y sin marcar la casilla, NO se traspasa.
      *
      * Quien recibe una membresía tiene que saber que viene con deuda antes de

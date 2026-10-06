@@ -41,6 +41,11 @@
 
 /* Tailwind 4 deja los botones con la flecha; en la web siempre tuvieron la mano. */
 @layer base {
+  /* Igual que en el panel: que la barra de desplazamiento no corra la página. */
+  html {
+    scrollbar-gutter: stable;
+  }
+
     button:not(:disabled),
     [role='button']:not(:disabled) {
         cursor: pointer;

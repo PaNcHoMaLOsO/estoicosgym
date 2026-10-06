@@ -191,6 +191,26 @@ class Notificacion extends Model
         $this->registrarLog('fallida', $error);
     }
 
+    /**
+     * Se llegó al tope de correos del día: sale mañana.
+     *
+     * NO cuenta como intento ni la deja fallida. El tope no es un fallo del
+     * correo: es el sistema frenándose a propósito, y la fila tiene que salir
+     * mañana tal cual, que es lo que dice el aviso del tope.
+     */
+    public function aplazarParaManana(string $motivo): void
+    {
+        $this->update([
+            'id_estado' => self::ESTADO_PENDIENTE,
+            'fecha_programada' => today()->addDay(),
+            'error_mensaje' => $motivo,
+        ]);
+
+        // «programada» y no una acción nueva: la columna es un enum cerrado, y
+        // lo que pasó es justo eso, que quedó programada para mañana.
+        $this->registrarLog('programada', $motivo);
+    }
+
     public function cancelar(string $motivo = null)
     {
         $this->update([

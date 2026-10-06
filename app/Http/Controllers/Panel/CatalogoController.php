@@ -217,6 +217,12 @@ class CatalogoController extends Controller
      */
     private function ponerPrecio(Membresia $membresia, array $datos): void
     {
+        // EL PLAN SE TRABA ANTES DE LEER EL PRECIO VIGENTE: dos «Guardar» a
+        // la vez leían el mismo vigente, lo cerraban los dos y dejaban dos
+        // precios activos. Se llama siempre dentro de la transacción de quien
+        // guarda, así que la traba dura hasta que el precio nuevo está escrito.
+        Membresia::whereKey($membresia->getKey())->lockForUpdate()->first();
+
         $vigente = $membresia->precios()
             ->where('activo', true)
             ->orderByDesc('fecha_vigencia_desde')
@@ -243,13 +249,25 @@ class CatalogoController extends Controller
             ]);
         }
 
-        PrecioMembresia::create([
+        $nuevo = PrecioMembresia::create([
             'id_membresia' => $membresia->id,
             'precio_normal' => $nuevoNormal,
             'precio_convenio' => $nuevoConvenio,
             'fecha_vigencia_desde' => now()->format('Y-m-d'),
             'activo' => true,
         ]);
+
+        // El historial que muestra la ficha del plan: sin esto quedaba vacío
+        // para siempre y no había cómo saber cuándo subió el precio ni quién.
+        if ($vigente) {
+            \App\Models\HistorialPrecio::create([
+                'id_precio_membresia' => $nuevo->id,
+                'precio_anterior' => (float) $vigente->precio_normal,
+                'precio_nuevo' => $nuevoNormal,
+                'razon_cambio' => 'Cambio de precio desde Configuración',
+                'usuario_cambio' => auth()->user()?->name,
+            ]);
+        }
     }
 
     /** @return array<string,mixed> */

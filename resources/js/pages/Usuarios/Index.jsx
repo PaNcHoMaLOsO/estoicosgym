@@ -1,9 +1,10 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { MailIcon, PencilIcon, UserPlusIcon } from 'lucide-react';
+import { MailIcon, PencilIcon, ShieldCheckIcon, UserPlusIcon } from 'lucide-react';
 
 import Dialogo from '@/components/Dialogo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
+import { puede } from '@/lib/permisos';
 import { haceCuanto } from '@/lib/tiempo';
 
 /**
@@ -91,6 +92,7 @@ function valoresDe(usuario, roles) {
 }
 
 export default function Index({ usuarios, roles }) {
+    const { auth } = usePage().props;
     const [editando, setEditando] = useState(null);
     // El aviso gris del navegador no dice de qué sistema viene ni se puede
     // leer con calma: el correo que se va a mandar tiene que verse entero.
@@ -109,14 +111,28 @@ export default function Index({ usuarios, roles }) {
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setEditando({})}
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <UserPlusIcon className="size-4" aria-hidden="true" />
-                    Nueva cuenta
-                </button>
+                <div className="flex flex-wrap gap-2">
+                    {/* Lo que puede cada rol se cambia aparte: es una decisión
+                        sobre el perfil, no sobre una cuenta. */}
+                    {puede(auth, 'usuarios.editar') ? (
+                        <Link
+                            href="/panel/usuarios/perfiles"
+                            className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                        >
+                            <ShieldCheckIcon className="size-4" aria-hidden="true" />
+                            Qué puede cada perfil
+                        </Link>
+                    ) : null}
+
+                    <button
+                        type="button"
+                        onClick={() => setEditando({})}
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <UserPlusIcon className="size-4" aria-hidden="true" />
+                        Nueva cuenta
+                    </button>
+                </div>
             </header>
 
             <ul className="max-w-3xl divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">

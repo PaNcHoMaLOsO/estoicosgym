@@ -319,8 +319,13 @@ class AltaDeInscripcionTest extends CasoConCatalogos
             ->assertSessionHasErrors('monto_abonado');
     }
 
-    /** Un reparto entre dos métodos son dos filas, una por método. */
-    public function test_el_pago_mixto_deja_una_fila_por_metodo(): void
+    /**
+     * Un reparto entre dos medios es UNA fila con los dos, como al cobrar.
+     *
+     * Antes eran dos filas, una por medio: la Caja, la corrección y el filtro
+     * por medio del listado esperan una sola con su segundo medio.
+     */
+    public function test_el_pago_mixto_deja_una_fila_con_los_dos_medios(): void
     {
         $metodos = MetodoPago::orderBy('id')->take(2)->get();
         $socio = $this->socio();
@@ -333,16 +338,21 @@ class AltaDeInscripcionTest extends CasoConCatalogos
                 ['id_metodo_pago' => $metodos[0]->id, 'monto' => 30000, 'metodo_nombre' => $metodos[0]->nombre],
                 ['id_metodo_pago' => $metodos[1]->id, 'monto' => 10000, 'metodo_nombre' => $metodos[1]->nombre],
             ]),
-        ]));
+        ]))->assertSessionHasNoErrors();
 
         $inscripcion = Inscripcion::where('id_cliente', $socio->id)->firstOrFail();
         $pagos = Pago::where('id_inscripcion', $inscripcion->id)->orderBy('id')->get();
 
-        $this->assertCount(2, $pagos);
+        $this->assertCount(1, $pagos);
         $this->assertSame('mixto', $pagos[0]->tipo_pago);
-        $this->assertEquals(40000, $pagos->sum('monto_abonado'));
+        $this->assertSame($metodos[0]->id, (int) $pagos[0]->id_metodo_pago);
+        $this->assertSame($metodos[1]->id, (int) $pagos[0]->id_metodo_pago2);
+        $this->assertEquals(30000, $pagos[0]->monto_metodo1);
+        $this->assertEquals(10000, $pagos[0]->monto_metodo2);
+        $this->assertEquals(40000, $pagos[0]->monto_abonado);
+        $this->assertEquals(0, $pagos[0]->monto_pendiente);
 
-        // Las dos filas suman el precio, así que la membresía queda pagada.
+        // Entre los dos medios suman el precio, así que la membresía queda pagada.
         $this->assertSame(self::ESTADO_PAGO_PAGADO, (int) $pagos[0]->id_estado);
     }
 

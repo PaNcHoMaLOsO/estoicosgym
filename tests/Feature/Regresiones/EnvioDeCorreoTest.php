@@ -30,6 +30,15 @@ class EnvioDeCorreoTest extends TestCase
             'algo@servidor.test',
             'algo@servidor.invalid',
             'algo@maquina.localhost',
+            // La familia entera: example con otra extensión, subdominios y
+            // las extensiones reservadas a secas. Los datos de demostración
+            // usan varias de estas.
+            'socio@example.cl',
+            'socio@correo.example.com',
+            'socio@EXAMPLE.ORG.',
+            'socio@demo.test',
+            'algo@localhost',
+            'algo@cosa.example',
         ];
 
         foreach ($reservadas as $direccion) {

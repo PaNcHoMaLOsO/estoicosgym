@@ -6,6 +6,7 @@ import { Botones } from '@/components/Cobro';
 import { confirmar } from '@/components/Confirmar';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Una rutina de la sala, entera en una pantalla: de qué es, sus días y los
  * ejercicios de cada día con series, repeticiones, descanso y la variante
@@ -129,7 +130,7 @@ export default function RutinaEditar({ rutina, objetivos, niveles, zonas, ejerci
 
             <form onSubmit={enviar} {...tocar} className="max-w-5xl space-y-5">
                 <section className="rounded-panel border border-line bg-surface p-4">
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                         <div className="space-y-3">
                             <Campo etiqueta="Nombre" nombre="nombre" error={errors.nombre} requerido>
                                 <Texto nombre="nombre" valor={data.nombre} alCambiar={(v) => setData('nombre', v)} error={errors.nombre} maxLength={80} placeholder="Torso y pierna · 4 días" />
@@ -235,7 +236,7 @@ export default function RutinaEditar({ rutina, objetivos, niveles, zonas, ejerci
                         <ul className="divide-y divide-line">
                             {dia.ejercicios.map((l, j) => (
                                 <li key={j} className="px-4 py-3">
-                                    <div className="grid gap-2 lg:grid-cols-[minmax(0,2.2fr)_4rem_minmax(0,1.1fr)_5.5rem_minmax(0,2fr)_4.5rem] lg:items-center">
+                                    <div className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,2.2fr)_4rem_minmax(0,1.1fr)_5.5rem_minmax(0,2fr)_4.5rem] lg:items-center">
                                         <ElegirEjercicio
                                             valor={l.id_ejercicio}
                                             alCambiar={(v) => cambiarDias((d) => ((d[i].ejercicios[j].id_ejercicio = v), d))}
@@ -333,7 +334,7 @@ export default function RutinaEditar({ rutina, objetivos, niveles, zonas, ejerci
                         disabled={processing || (! nueva && ! isDirty)}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                     >
-                        {processing ? 'Guardando…' : nueva ? 'Crear rutina' : 'Guardar'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">{nueva ? 'Crear rutina' : 'Guardar'}</TextoQueCambia>
                     </button>
                     <Link href="/panel/rutinas" className="text-sm text-fog hover:text-chalk">
                         Cancelar

@@ -13,6 +13,7 @@ use App\Support\Ajustes;
 use App\Support\EntrenamientoDeHoy;
 use App\Support\Especialidades;
 use App\Support\MedidasDeImagen;
+use App\Support\PaginasWeb;
 use App\Support\RutinaSugerida;
 use App\Support\WebPublica;
 use App\Services\CorreoService;
@@ -99,7 +100,10 @@ class LandingController extends Controller
             'fotoPortada' => $this->contenidos('foto')->first(),
             'fondoPortada' => $this->fondoDePortada(),
             'destacados' => $this->destacados($comun),
-            'logosConvenios' => collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all(),
+            // Con Convenios apagada, tampoco la cinta de logos.
+            'logosConvenios' => $comun['navegacion']['convenios']
+                ? collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all()
+                : [],
             'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
             'testimonios' => $this->contenidos('testimonio')->all(),
             // Solo en la portada: es el único sitio donde salen, y así no se
@@ -388,6 +392,8 @@ class LandingController extends Controller
             'precio' => $c->precio_mensual,
             'precio_texto' => $c->precio_mensual ? $this->pesos($c->precio_mensual) : null,
             'imagen' => $c->urlDeImagen(),
+            // La galería de su página, con las medidas para que no salte al cargar.
+            'fotos' => array_map(fn (string $url) => ['url' => $url, 'medidas' => MedidasDeImagen::de($url)], $c->urlsDeFotos()),
             'color' => $c->hex(),
             'horario' => $c->horarioOrdenado(),
             'horario_texto' => $c->horarioEnUnaLinea(),
@@ -648,8 +654,8 @@ class LandingController extends Controller
      */
     public function rutina(Request $request)
     {
-        $objetivo = (string) $request->query('objetivo', '');
-        $nivel = (string) $request->query('nivel', '');
+        $objetivo = $request->texto('objetivo', '');
+        $nivel = $request->texto('nivel', '');
         $dias = (int) $request->query('dias', 0);
         // Lo de estos días: ?hice[]=… (varios) o el ?ayer=… de los enlaces viejos.
         $hechos = EntrenamientoDeHoy::hechos($request->query('hice'), $request->query('ayer'));
@@ -670,7 +676,7 @@ class LandingController extends Controller
 
         // ?cambiar=1: volver a la última pregunta con las otras ya marcadas.
         if (EntrenamientoDeHoy::respondido($dias, $nivel, $hechos) && ! $request->boolean('cambiar')) {
-            $hoy = (string) $request->query('hoy', '');
+            $hoy = $request->texto('hoy', '');
             $hoy = isset(EntrenamientoDeHoy::GRUPOS[$hoy]) ? $hoy : EntrenamientoDeHoy::sugerencia($hechos, $dias);
             $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'hice' => $hechos, 'hoy' => $hoy];
 
@@ -690,7 +696,7 @@ class LandingController extends Controller
             'dias' => in_array($dias, EntrenamientoDeHoy::DIAS, true) ? $dias : null,
             'nivel' => isset(EntrenamientoDeHoy::NIVELES[$nivel]) ? $nivel : null,
             'hice' => $hechos,
-            'hoy' => isset(EntrenamientoDeHoy::GRUPOS[(string) $request->query('hoy')]) ? (string) $request->query('hoy') : null,
+            'hoy' => isset(EntrenamientoDeHoy::GRUPOS[$request->texto('hoy')]) ? $request->texto('hoy') : null,
         ];
 
         return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',
@@ -709,7 +715,7 @@ class LandingController extends Controller
      */
     public function rutinas(Request $request)
     {
-        $objetivo = (string) $request->query('objetivo', '');
+        $objetivo = $request->texto('objetivo', '');
         $filtro = isset(\App\Models\Rutina::OBJETIVOS[$objetivo]) ? $objetivo : null;
 
         return $this->pagina('landing.rutinas', 'landing.rutinas', 'Rutinas de gimnasio',
@@ -842,8 +848,13 @@ class LandingController extends Controller
                 $web['tiktok'] ? ['nombre' => 'TikTok', 'url' => $web['tiktok'], 'icono' => 'tiktok'] : null,
                 $web['youtube'] ? ['nombre' => 'YouTube', 'url' => $web['youtube'], 'icono' => 'youtube'] : null,
             ])),
-            // El menú solo enlaza lo que tiene algo que mostrar.
-            'navegacion' => ['convenios' => $convenios !== [], 'especialistas' => $especialistas !== [], 'clases' => $hayClases],
+            // El menú solo enlaza lo que está encendido en Configuración y,
+            // de eso, lo que tiene algo que mostrar.
+            'navegacion' => array_merge($paginas = PaginasWeb::estado(), [
+                'convenios' => $paginas['convenios'] && $convenios !== [],
+                'especialistas' => $paginas['especialistas'] && $especialistas !== [],
+                'clases' => $paginas['clases'] && $hayClases,
+            ]),
             'tienda' => $this->tiendaDeSuplementos(),
             'aviso' => $this->avisoVigente(),
             'horario' => $this->horario(),
@@ -1039,15 +1050,19 @@ class LandingController extends Controller
         $precios = array_column($mensualidades, 'precio');
         $conPrecio = collect($mensualidades)->first(fn (array $p) => $p['precio_convenio']);
 
-        $destacados = [[
-            'href' => route('landing.planes'),
-            'icono' => 'tags',
-            'titulo' => 'Planes',
-            'texto' => $precios
-                ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($mensualidades, 'nombre'))) . '.'
-                : 'Pregunta por los planes en el mesón.',
-            'accion' => 'Ver planes',
-        ]];
+        $destacados = [];
+
+        if ($comun['navegacion']['planes']) {
+            $destacados[] = [
+                'href' => route('landing.planes'),
+                'icono' => 'tags',
+                'titulo' => 'Planes',
+                'texto' => $precios
+                    ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($mensualidades, 'nombre'))) . '.'
+                    : 'Pregunta por los planes en el mesón.',
+                'accion' => 'Ver planes',
+            ];
+        }
 
         if ($comun['navegacion']['clases']) {
             $nombres = \App\Models\Clase::where('activo', true)->orderBy('orden')->limit(3)->pluck('nombre')->all();
@@ -1082,13 +1097,15 @@ class LandingController extends Controller
             ];
         }
 
-        $destacados[] = [
-            'href' => route('landing.membresia'),
-            'icono' => 'id-card',
-            'titulo' => 'Mi membresía',
-            'texto' => 'Revisa cuándo vence y si tienes algo pendiente.',
-            'accion' => 'Consultar',
-        ];
+        if ($comun['navegacion']['membresia']) {
+            $destacados[] = [
+                'href' => route('landing.membresia'),
+                'icono' => 'id-card',
+                'titulo' => 'Mi membresía',
+                'texto' => 'Revisa cuándo vence y si tienes algo pendiente.',
+                'accion' => 'Consultar',
+            ];
+        }
 
         return $destacados;
     }
@@ -1551,6 +1568,9 @@ class LandingController extends Controller
             ['landing.terminos', '0.2', \App\Models\TextoLegal::where('tipo', 'terminos')->max('updated_at')],
         ]);
 
+        // Las apagadas en Configuración no se le ofrecen a Google.
+        $paginas = array_filter($paginas, fn (array $p) => PaginasWeb::rutaVisible($p[0]));
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
             . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
@@ -1563,20 +1583,26 @@ class LandingController extends Controller
         }
 
         // Cada clase en su página, con la fecha de su último cambio.
-        Clase::where('activo', true)->whereNotNull('slug')->orderBy('orden')->orderBy('id')->get()
-            ->filter(fn (Clase $c) => $c->horarioOrdenado() !== [])
-            ->each(function (Clase $c) use (&$xml, $linea) {
-                $xml .= $linea(route('landing.clase', $c->slug), $c->updated_at, 'monthly', '0.7');
-            });
+        if (PaginasWeb::encendida('clases')) {
+            Clase::where('activo', true)->whereNotNull('slug')->orderBy('orden')->orderBy('id')->get()
+                ->filter(fn (Clase $c) => $c->horarioOrdenado() !== [])
+                ->each(function (Clase $c) use (&$xml, $linea) {
+                    $xml .= $linea(route('landing.clase', $c->slug), $c->updated_at, 'monthly', '0.7');
+                });
+        }
 
         // Cada rutina en su página.
-        \App\Models\Rutina::where('activa', true)->whereNotNull('slug')->orderBy('orden')->get()
-            ->each(function (\App\Models\Rutina $r) use (&$xml, $linea) {
-                $xml .= $linea(route('landing.rutina.ver', $r->slug), $r->updated_at, 'monthly', '0.5');
-            });
+        if (PaginasWeb::encendida('rutinas')) {
+            \App\Models\Rutina::where('activa', true)->whereNotNull('slug')->orderBy('orden')->get()
+                ->each(function (\App\Models\Rutina $r) use (&$xml, $linea) {
+                    $xml .= $linea(route('landing.rutina.ver', $r->slug), $r->updated_at, 'monthly', '0.5');
+                });
+        }
 
         // El perfil de cada especialista, con la fecha de su último cambio.
-        $perfiles = (clone $especialistas)->whereNotNull('slug')->orderBy('orden')->get();
+        $perfiles = PaginasWeb::encendida('especialistas')
+            ? (clone $especialistas)->whereNotNull('slug')->orderBy('orden')->get()
+            : collect();
         $perfiles->each(function (Especialista $e) use (&$xml, $linea) {
             $xml .= $linea(route('landing.especialista', $e->slug), $e->updated_at, 'monthly', '0.6');
         });
@@ -1873,8 +1899,8 @@ class LandingController extends Controller
      */
     private function buscarPorRut(Request $request, string $ip): array
     {
-        $rutInput = preg_replace('/[^0-9kK.-]/', '', strip_tags(trim((string) $request->input('rut', ''))));
-        $digitos = preg_replace('/[^0-9]/', '', (string) $request->input('digitos', ''));
+        $rutInput = preg_replace('/[^0-9kK.-]/', '', strip_tags(trim($request->texto('rut', ''))));
+        $digitos = preg_replace('/[^0-9]/', '', $request->texto('digitos', ''));
 
         if (strlen($rutInput) < 7 || strlen($rutInput) > 12) {
             return [null, null, $this->invalido('Formato de RUT inválido.')];
@@ -1922,8 +1948,8 @@ class LandingController extends Controller
      */
     private function buscarPorCelular(Request $request, string $ip): array
     {
-        $celularInput = preg_replace('/[^0-9]/', '', (string) $request->input('celular', ''));
-        $nombreInput = trim(strip_tags((string) $request->input('nombre', '')));
+        $celularInput = preg_replace('/[^0-9]/', '', $request->texto('celular', ''));
+        $nombreInput = trim(strip_tags($request->texto('nombre', '')));
 
         if (strlen($celularInput) < 8 || strlen($celularInput) > 12) {
             return [null, null, $this->invalido('Formato de celular inválido.')];

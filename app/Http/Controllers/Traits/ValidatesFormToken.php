@@ -25,8 +25,19 @@ use Illuminate\Support\Facades\Cache;
  */
 trait ValidatesFormToken
 {
-    /** Ventana de la reserva. Cubre de sobra un doble clic y un reintento. */
-    private const VENTANA_ENVIO = 120;
+    /**
+     * Ventana de la reserva CON token: un día. El token es un UUID nuevo por
+     * cada vez que se abre el formulario, así que tenerlo reservado no estorba
+     * a nadie; con dos minutos, un reintento tardío —la red que vuelve, la
+     * pestaña que se reenvía— pasaba como un envío nuevo y duplicaba.
+     */
+    private const VENTANA_ENVIO = 86400;
+
+    /**
+     * Ventana SIN token (la huella de lo enviado): corta, porque dos envíos
+     * iguales pueden ser legítimos si no son un doble clic.
+     */
+    private const VENTANA_HUELLA = 120;
 
     /**
      * Reserva el turno de este envio.
@@ -35,7 +46,26 @@ trait ValidatesFormToken
      */
     protected function validateFormToken(Request $request, string $action): bool
     {
-        return Cache::add($this->claveDeEnvio($request, $action), true, self::VENTANA_ENVIO);
+        $ventana = $request->texto('form_submit_token') !== '' ? self::VENTANA_ENVIO : self::VENTANA_HUELLA;
+
+        return Cache::add($this->claveDeEnvio($request, $action), true, $ventana);
+    }
+
+    /**
+     * Igual, pero SOLO si el formulario mandó su token; sin él, deja pasar.
+     *
+     * Para lo que se apunta a mano (un fiado, una nota, una hora de taller): dos
+     * «agua $1.000» iguales seguidos pueden ser dos aguas de verdad, así que la
+     * huella de lo enviado no sirve para decidir. Solo el token dice que es el
+     * mismo formulario enviado dos veces.
+     */
+    protected function reservarTokenDelFormulario(Request $request, string $action): bool
+    {
+        if ($request->texto('form_submit_token') === '') {
+            return true;
+        }
+
+        return $this->validateFormToken($request, $action);
     }
 
     /**
@@ -73,7 +103,7 @@ trait ValidatesFormToken
     private function claveDeEnvio(Request $request, string $action): string
     {
         $usuario = auth('web')->id() ?? session()->getId();
-        $token = (string) $request->input('form_submit_token');
+        $token = $request->texto('form_submit_token');
 
         $huella = $token !== ''
             ? substr($token, 0, 40)

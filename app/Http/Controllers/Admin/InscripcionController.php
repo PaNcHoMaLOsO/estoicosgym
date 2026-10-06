@@ -97,7 +97,7 @@ class InscripcionController extends Controller
                     ->where('activo', true)
                     ->first();
                     
-                if ($tipoPausa && $inscripcion->cliente->email) {
+                if ($tipoPausa && $inscripcion->cliente->correoParaAvisos()) {
                     $notificacionService->crearNotificacion($tipoPausa, $inscripcion);
                     Log::info("Notificación de pausa programada para inscripción #{$inscripcion->id}");
                 }
@@ -188,7 +188,7 @@ class InscripcionController extends Controller
                     ->where('activo', true)
                     ->first();
                     
-                if ($tipoActivacion && $inscripcion->cliente->email) {
+                if ($tipoActivacion && $inscripcion->cliente->correoParaAvisos()) {
                     $notificacionService->crearNotificacion($tipoActivacion, $inscripcion);
                     Log::info("Notificación de activación programada para inscripción #{$inscripcion->id}");
                 }
@@ -493,12 +493,26 @@ class InscripcionController extends Controller
                         'monto_abonado' => $montoAbonado,
                         'monto_pendiente' => max(0, $diferencia - $montoAbonado),
                         'id_estado' => $estadoPago,
+                        // Sin esto la columna caia en su valor por defecto,
+                        // «completo», y un abono a la diferencia se leia como
+                        // pago entero en la ficha y en el listado de pagos.
+                        'tipo_pago' => $montoAbonado >= $diferencia ? 'completo' : 'parcial',
                         'id_metodo_pago' => $validated['id_metodo_pago'],
                         'fecha_pago' => now()->format('Y-m-d'),
                         'periodo_inicio' => $fechaInicio->format('Y-m-d'),
                         'periodo_fin' => $fechaVencimiento->format('Y-m-d'),
                     ]);
                 }
+
+                // El filtro «Cambio de plan» del historial lee esta tabla, y
+                // nadie la escribia: salia vacio aunque hubiera cambios.
+                \App\Models\HistorialCambio::registrarCambioPlan(
+                    $inscripcion,
+                    $nuevaInscripcion,
+                    $tipoCambio,
+                    $diferencia,
+                    $validated['motivo_cambio'] ?? null,
+                );
 
                 // Nota sobre el crédito aplicado
                 $mensajeCredito = '';
@@ -563,7 +577,7 @@ class InscripcionController extends Controller
     public function buscarClientesTraspaso(Request $request, Inscripcion $inscripcion)
     {
         try {
-            $query = $request->get('q', '');
+            $query = $request->texto('q');
             
             if (strlen($query) < 2) {
                 return response()->json([
@@ -579,19 +593,17 @@ class InscripcionController extends Controller
                 ->pluck('id_cliente')
                 ->toArray();
 
-            // Incluir todos los clientes (activos e inactivos) que no tienen membresía activa
+            // Solo los que traspasar() acepta: activos y fuera de la papelera
+            // (de los borrados ya se encarga el SoftDeletes). Ofrecer inactivos
+            // era ofrecer destinos que después se rechazaban con un 422.
             $clientes = Cliente::where('id', '!=', $inscripcion->id_cliente)
+                ->where('activo', true)
                 // Una ficha con los datos borrados ya no es nadie a quien traspasar.
                 ->whereNull('datos_borrados_en')
                 ->whereNotIn('id', $clientesConMembresiaActiva)
-                ->where(function($q) use ($query) {
-                    $q->where('nombres', 'LIKE', "%{$query}%")
-                      ->orWhere('apellido_paterno', 'LIKE', "%{$query}%")
-                      ->orWhere('apellido_materno', 'LIKE', "%{$query}%")
-                      ->orWhere('run_pasaporte', 'LIKE', "%{$query}%")
-                      ->orWhere('email', 'LIKE', "%{$query}%")
-                      ->orWhere('celular', 'LIKE', "%{$query}%");
-                })
+                // La búsqueda de siempre: LIKE a secas distingue mayúsculas y
+                // tildes en PostgreSQL, y «perez» no encontraba a «Pérez».
+                ->tap(fn ($q) => \App\Support\BusquedaDeSocio::aplicar($q, $query))
                 ->limit(10)
                 ->get()
                 ->map(function($cliente) {
@@ -610,7 +622,7 @@ class InscripcionController extends Controller
                     
                     return [
                         'id' => $cliente->id,
-                        'nombre_completo' => $cliente->nombres . ' ' . $cliente->apellido_paterno,
+                        'nombre_completo' => trim("{$cliente->nombres} {$cliente->apellido_paterno} {$cliente->apellido_materno}"),
                         'rut' => $cliente->run_pasaporte,
                         'email' => $cliente->email,
                         'telefono' => $cliente->celular,

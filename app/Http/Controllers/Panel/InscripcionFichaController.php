@@ -40,6 +40,7 @@ class InscripcionFichaController extends Controller
         return Inertia::render('Inscripciones/Ficha', [
             'inscripcion' => [
                 'uuid' => $inscripcion->uuid,
+                'codigo' => \App\Support\CodigoCorto::de($inscripcion->uuid),
                 'id_estado' => $inscripcion->id_estado,
                 'membresia' => $inscripcion->membresia?->nombre,
                 'inicio' => $inscripcion->fecha_inicio?->format('d/m/Y'),
@@ -107,7 +108,18 @@ class InscripcionFichaController extends Controller
                 // apuntada dos veces—, no para cancelar una real. Con dinero
                 // cobrado no se ofrece: el pago se quedaria suelto, apuntando a
                 // una membresia que ya no se lista. Primero se anula el pago.
-                'borrar' => (int) $pago['total_abonado'] === 0,
+                // Y solo a quien tiene el permiso: recepción veía el botón y el
+                // servidor le contestaba 403.
+                'borrar' => (int) $pago['total_abonado'] === 0
+                    && (bool) auth()->user()?->puede(\App\Support\Permisos::para('panel.inscripciones.destroy')),
+                // Cancelar es para la membresía real que se deja de usar: solo
+                // vigente o pausada, y solo a quien tiene el permiso (recepción
+                // no: deja al socio sin el plan que pagó).
+                'cancelar' => in_array((int) $inscripcion->id_estado, [
+                    \App\Enums\EstadosCodigo::INSCRIPCION_ACTIVA,
+                    \App\Enums\EstadosCodigo::INSCRIPCION_PAUSADA,
+                ], true)
+                    && (bool) auth()->user()?->puede(\App\Support\Permisos::para('panel.inscripciones.cancelar')),
             ],
 
             'pagos' => $inscripcion->pagos()
@@ -134,6 +146,8 @@ class InscripcionFichaController extends Controller
                     'que' => match ($c->tipo_cambio) {
                         null, '' => 'Cambio',
                         'correccion' => 'Corrección',
+                        'cancelacion_inscripcion' => 'Cancelación',
+                        'cambio_plan' => 'Cambio de plan',
                         default => ucfirst(str_replace('_', ' ', $c->tipo_cambio)),
                     },
                     'cuando' => ($c->fecha_cambio ?? $c->created_at)?->format('d/m/Y H:i'),

@@ -9,6 +9,9 @@ function estado(socio) {
     if (! socio.activo) {
         return { texto: 'De baja', clase: 'text-fog' };
     }
+    if (socio.pausada) {
+        return { texto: 'En pausa', clase: 'text-fog' };
+    }
     if (! socio.plan) {
         return { texto: 'Sin plan', clase: 'text-warn' };
     }

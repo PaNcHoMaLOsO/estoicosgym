@@ -9,6 +9,7 @@ use App\Services\EnvioMasivoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -62,7 +63,7 @@ class NotificacionMasivaController extends Controller
             'cuantos' => $socios->count(),
             'socios' => $socios->map(fn ($c) => [
                 'nombre' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
-                'email' => $c->email,
+                'email' => $c->correoParaAvisos(),
             ])->values(),
         ]);
     }
@@ -83,9 +84,18 @@ class NotificacionMasivaController extends Controller
             return response()->json(['error' => 'Ese grupo no tiene a nadie ahora mismo.'], 422);
         }
 
+        $correo = $masivo->personalizar($uno, $datos['asunto'], $datos['mensaje']);
+
+        // Lo que el envío rechazaría se dice ya en la vista previa, no al
+        // pulsar «Enviar».
+        try {
+            \App\Services\EnvioManualService::exigirCompleto($correo, 'mensaje', 'El mensaje');
+        } catch (ValidationException $e) {
+            return response()->json(['error' => collect($e->errors())->flatten()->first()], 422);
+        }
+
         return response()->json(
-            $masivo->personalizar($uno, $datos['asunto'], $datos['mensaje'])
-            + ['socio' => trim("{$uno->nombres} {$uno->apellido_paterno}")]
+            $correo + ['socio' => trim("{$uno->nombres} {$uno->apellido_paterno}")]
         );
     }
 
@@ -113,13 +123,23 @@ class NotificacionMasivaController extends Controller
             return back()->with('error', 'Ese aviso ya se mandó. Míralo en el historial antes de repetirlo.');
         }
 
-        $resultado = $masivo->enviar(
-            $datos['grupo'],
-            $datos['asunto'],
-            $datos['mensaje'],
-            $datos['id_membresia'] ?? null,
-            ! empty($datos['cuando']) ? Carbon::parse($datos['cuando']) : null
-        );
+        // El servicio rechaza ANTES de mandar nada (grupo vacio, pasado del
+        // tope, grupo que no existe). Sin soltar el turno, quien elige un grupo
+        // mas pequeño y reenvia se encontraria con «ya se mandó» sin que haya
+        // salido un solo correo.
+        try {
+            $resultado = $masivo->enviar(
+                $datos['grupo'],
+                $datos['asunto'],
+                $datos['mensaje'],
+                $datos['id_membresia'] ?? null,
+                ! empty($datos['cuando']) ? Carbon::parse($datos['cuando']) : null
+            );
+        } catch (ValidationException $e) {
+            $this->releaseFormToken($request, 'notificacion_masiva');
+
+            throw $e;
+        }
 
         return redirect()
             ->route('panel.notificaciones.index')
@@ -145,6 +165,11 @@ class NotificacionMasivaController extends Controller
         $aviso = $resultado['enviados'] === 1
             ? 'Se mandó 1 correo.'
             : "Se mandaron {$resultado['enviados']} correos.";
+
+        // Los que pararon en el tope del día no fallaron: salen mañana.
+        if (($resultado['aplazados'] ?? 0) > 0) {
+            $aviso .= " Se llegó al tope del día: {$resultado['aplazados']} salen mañana.";
+        }
 
         if ($resultado['fallidos'] === 0) {
             return $aviso;

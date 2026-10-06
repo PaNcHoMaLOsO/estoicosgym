@@ -23,29 +23,34 @@ Route::middleware(['direccion.unica', 'security.headers'])->group(function () {
     Route::get('/', [LandingController::class, 'index'])->name('landing');
 
     /*
+     * Las que llevan «pagina-web:...» se encienden y se apagan en
+     * Configuración → Páginas que se ven (ver PaginaEncendida).
+     */
+
+    /*
      * Una pagina por tema, no todo en una. Cada una con su titulo para Google:
      * «convenios estudiantes gimnasio Los Angeles» puede caer directo en la de
      * convenios en vez de en una portada donde hay que buscarlo.
      */
-    Route::get('/el-gimnasio', [LandingController::class, 'gimnasio'])->name('landing.gimnasio');
-    Route::get('/planes', [LandingController::class, 'planes'])->name('landing.planes');
-    Route::get('/convenios', [LandingController::class, 'convenios'])->name('landing.convenios');
-    Route::get('/arriendo-por-horas', [LandingController::class, 'arriendo'])->name('landing.arriendo');
-    Route::get('/clases', [LandingController::class, 'clases'])->name('landing.clases');
-    Route::get('/clases/{slug}', [LandingController::class, 'clase'])->where('slug', '[a-z0-9-]+')->name('landing.clase');
-    Route::get('/especialistas', [LandingController::class, 'especialistas'])->name('landing.especialistas');
-    Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->name('landing.especialista');
-    Route::get('/especialidades/{slug}', [LandingController::class, 'especialidad'])->where('slug', '[a-z0-9-]+')->name('landing.especialidad');
+    Route::get('/el-gimnasio', [LandingController::class, 'gimnasio'])->middleware('pagina-web:gimnasio')->name('landing.gimnasio');
+    Route::get('/planes', [LandingController::class, 'planes'])->middleware('pagina-web:planes')->name('landing.planes');
+    Route::get('/convenios', [LandingController::class, 'convenios'])->middleware('pagina-web:convenios')->name('landing.convenios');
+    Route::get('/arriendo-por-horas', [LandingController::class, 'arriendo'])->middleware('pagina-web:arriendo')->name('landing.arriendo');
+    Route::get('/clases', [LandingController::class, 'clases'])->middleware('pagina-web:clases')->name('landing.clases');
+    Route::get('/clases/{slug}', [LandingController::class, 'clase'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:clases')->name('landing.clase');
+    Route::get('/especialistas', [LandingController::class, 'especialistas'])->middleware('pagina-web:especialistas')->name('landing.especialistas');
+    Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:especialistas')->name('landing.especialista');
+    Route::get('/especialidades/{slug}', [LandingController::class, 'especialidad'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:especialistas')->name('landing.especialidad');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
-    Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->name('landing.membresia');
+    Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->middleware('pagina-web:membresia')->name('landing.membresia');
     /*
      * Lo que se abre con el QR de la sala: qué entrenar hoy. Sin cuenta y sin
      * pedir datos; las respuestas van en la dirección.
      */
-    Route::get('/rutina', [LandingController::class, 'rutina'])->name('landing.rutina');
-    Route::get('/rutinas', [LandingController::class, 'rutinas'])->name('landing.rutinas');
-    Route::get('/rutinas/{slug}', [LandingController::class, 'rutinaVer'])->where('slug', '[a-z0-9-]+')->name('landing.rutina.ver');
-    Route::get('/ejercicios', [LandingController::class, 'ejercicios'])->name('landing.ejercicios');
+    Route::get('/rutina', [LandingController::class, 'rutina'])->middleware('pagina-web:rutinas')->name('landing.rutina');
+    Route::get('/rutinas', [LandingController::class, 'rutinas'])->middleware('pagina-web:rutinas')->name('landing.rutinas');
+    Route::get('/rutinas/{slug}', [LandingController::class, 'rutinaVer'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:rutinas')->name('landing.rutina.ver');
+    Route::get('/ejercicios', [LandingController::class, 'ejercicios'])->middleware('pagina-web:rutinas')->name('landing.ejercicios');
     Route::get('/privacidad', [LandingController::class, 'privacidad'])->name('landing.privacidad');
     Route::get('/terminos', [LandingController::class, 'terminos'])->name('landing.terminos');
     // Para Google: que hay y donde esta el mapa del sitio.
@@ -63,7 +68,7 @@ Route::middleware(['direccion.unica', 'security.headers'])->group(function () {
      * minuto.
      */
     Route::post('/contacto', [LandingController::class, 'contacto'])->middleware('throttle:publico')->name('landing.contacto.enviar');
-    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware('throttle:publico')->name('landing.consultar-membresia');
+    Route::post('/consultar-membresia', [LandingController::class, 'consultarMembresia'])->middleware(['throttle:publico', 'pagina-web:membresia'])->name('landing.consultar-membresia');
 
     /*
      * El contrato por firmar. El socio llega desde el correo, sin cuenta: la
@@ -483,6 +488,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // La plata, aparte del resumen: la caja del día y del mes, lo que se
         // debe y cómo va el gimnasio. Solo para quien ve los informes.
         Route::get('/caja', \App\Http\Controllers\Panel\CajaController::class)->name('caja')->middleware('sin-dinero:caja');
+        // Solo lo de hoy, para cuadrar el turno: quien tiene `caja.hoy` y no
+        // la caja completa. Se cierra con el mismo ajuste que la Caja.
+        Route::get('/caja/hoy', \App\Http\Controllers\Panel\CajaDelDiaController::class)->name('caja.hoy')->middleware('sin-dinero:caja');
 
         /*
          * El bloc de notas del meson, en la portada.
@@ -509,6 +517,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // volver a apuntarla a mano inventando conceptos y montos.
         Route::patch('/fiados/{fiado}/reabrir', [\App\Http\Controllers\Panel\FiadoController::class, 'reabrir'])->name('fiados.reabrir');
         Route::delete('/fiados/{fiado}', [\App\Http\Controllers\Panel\FiadoController::class, 'destroy'])->name('fiados.destroy');
+        // La cuenta de un nombre suelto pasa a la ficha de un socio.
+        Route::post('/fiados/asignar', [\App\Http\Controllers\Panel\FiadoController::class, 'asignar'])->name('fiados.asignar');
 
         /*
          * Talleres y arriendos: la sala que se le presta a un colegio y se le
@@ -603,6 +613,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::put('/inscripciones/{inscripcion}', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'update'])->name('inscripciones.update');
         // A la papelera, que ya la listaba sin que nada pudiera llegar ahi.
         Route::delete('/inscripciones/{inscripcion}', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'eliminar'])->name('inscripciones.destroy');
+        // Cancelar una membresía real (estado Cancelada). Pide el permiso de
+        // borrar por App\Support\Permisos: deja al socio sin el plan que pagó.
+        Route::post('/inscripciones/{inscripcion}/cancelar', [\App\Http\Controllers\Panel\InscripcionEditarController::class, 'cancelar'])->name('inscripciones.cancelar');
 
         /*
          * Acciones sobre una membresia ya vendida.
@@ -695,7 +708,8 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::post('/notificaciones/masivo', [\App\Http\Controllers\Panel\NotificacionMasivaController::class, 'store'])->name('notificaciones.enviar-masivo');
         Route::get('/notificaciones/plantillas', [\App\Http\Controllers\Panel\PlantillaController::class, 'index'])->name('notificaciones.plantillas');
         Route::put('/notificaciones/plantillas/{tipoNotificacion}', [\App\Http\Controllers\Panel\PlantillaController::class, 'update'])->name('notificaciones.plantillas.actualizar');
-        Route::get('/notificaciones/plantillas/{tipoNotificacion}/vista-previa', [\App\Http\Controllers\Panel\PlantillaController::class, 'vistaPrevia'])->name('notificaciones.plantillas.preview');
+        // POST: el editor manda lo que tiene escrito sin guardar. GET: lo guardado.
+        Route::match(['get', 'post'], '/notificaciones/plantillas/{tipoNotificacion}/vista-previa', [\App\Http\Controllers\Panel\PlantillaController::class, 'vistaPrevia'])->name('notificaciones.plantillas.preview');
         Route::get('/notificaciones/{notificacion}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'notificacion'])->name('notificaciones.show');
 
         // Catalogos de configuracion.
@@ -717,6 +731,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
 
         // Las cuentas del panel. Permiso propio, usuarios.*: ver App\Support\Permisos.
         Route::get('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'index'])->name('usuarios.index');
+        // Qué puede hacer cada perfil, con el mismo permiso que cambia las cuentas.
+        Route::get('/usuarios/perfiles', [\App\Http\Controllers\Panel\PerfilController::class, 'index'])->name('usuarios.perfiles');
+        Route::put('/usuarios/perfiles/{rol}', [\App\Http\Controllers\Panel\PerfilController::class, 'update'])->whereNumber('rol')->name('usuarios.perfiles.update');
         Route::post('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'store'])->name('usuarios.store');
         Route::put('/usuarios/{usuario}', [\App\Http\Controllers\Panel\UsuarioController::class, 'update'])->whereNumber('usuario')->name('usuarios.update');
         Route::post('/usuarios/{usuario}/enlace', [\App\Http\Controllers\Panel\UsuarioController::class, 'enlace'])->whereNumber('usuario')->name('usuarios.enlace');

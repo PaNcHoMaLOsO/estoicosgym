@@ -24,6 +24,18 @@ class AppServiceProvider extends ServiceProvider
         \App\Support\Parecido::registrar();
 
         /*
+         * Un texto de la petición, siempre texto. Convertir con (string) lo que llega
+         * revienta con un 500 cuando en la dirección viene una lista
+         * (?buscar[]=x): cualquiera puede escribirla, y los robots lo hacen.
+         * Una lista o un vacío se leen como el valor por defecto.
+         */
+        \Illuminate\Http\Request::macro('texto', function (string $clave, string $defecto = ''): string {
+            $valor = $this->input($clave);
+
+            return is_scalar($valor) ? (string) $valor : $defecto;
+        });
+
+        /*
          * UNA SOLA DIRECCIÓN EN INTERNET. Detrás de Cloudflare la petición
          * puede llegar como http o con otro nombre; los enlaces, el canonical
          * y el mapa del sitio tienen que salir siempre con la de APP_URL y con

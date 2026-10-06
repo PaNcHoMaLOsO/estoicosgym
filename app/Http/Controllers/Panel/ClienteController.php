@@ -39,7 +39,7 @@ class ClienteController extends Controller
      */
     public function index(Request $request)
     {
-        $busqueda = trim((string) $request->query('buscar', ''));
+        $busqueda = trim($request->texto('buscar', ''));
 
         /*
          * Los dados de baja se ven aparte, no mezclados.
@@ -49,7 +49,7 @@ class ClienteController extends Controller
          * alguien lo haria desaparecer del panel entero y no habria manera de
          * reactivarlo salvo sabiendose la URL de su ficha.
          */
-        $filtro = (string) $request->query('filtro', '');
+        $filtro = $request->texto('filtro', '');
 
         // «De baja» y «Se fueron este mes» son filtros como los demás: antes
         // los dados de baja estaban detrás de un enlace aparte y la lista
@@ -443,15 +443,15 @@ class ClienteController extends Controller
      */
     public function verificar(Request $request)
     {
-        $porRut = SocioRepetido::porRut($request->query('rut'));
+        $porRut = SocioRepetido::porRut($request->texto('rut'));
 
         $parecidos = SocioRepetido::parecidos(
-            $request->query('celular'),
-            $request->query('nombres'),
-            $request->query('apellido'),
+            $request->texto('celular'),
+            $request->texto('nombres'),
+            $request->texto('apellido'),
             $porRut?->id,
         )->map(function (Cliente $c) use ($request) {
-            $numero = substr(preg_replace('/\D/', '', (string) $request->query('celular')), -8);
+            $numero = substr(preg_replace('/\D/', '', $request->texto('celular')), -8);
             $mismoCelular = strlen($numero) === 8
                 && str_ends_with(preg_replace('/\D/', '', (string) $c->celular), $numero);
 
@@ -554,7 +554,7 @@ class ClienteController extends Controller
      */
     public function borrarDatos(Request $request, Cliente $cliente, BorradoDeDatosService $borrado)
     {
-        $request->merge(['confirmacion' => mb_strtoupper(trim((string) $request->input('confirmacion')))]);
+        $request->merge(['confirmacion' => mb_strtoupper(trim($request->texto('confirmacion')))]);
 
         $datos = $request->validate([
             'motivo' => ['required', Rule::in(array_keys(BorradoDeDatosService::MOTIVOS))],
@@ -607,8 +607,10 @@ class ClienteController extends Controller
             return 'Tiene una membresía vigente o pausada. Espera a que venza, o cancélala primero.';
         }
 
+        // Los de una membresía ya cerrada (cancelada, cambiada, traspasada) no
+        // se cobran: ver Pago::scopePendientesDeCobro.
         $debe = $cliente->pagos()
-            ->whereIn('id_estado', EstadosCodigo::PAGO_PENDIENTES_COBRO)
+            ->pendientesDeCobro()
             ->exists();
 
         if ($debe) {

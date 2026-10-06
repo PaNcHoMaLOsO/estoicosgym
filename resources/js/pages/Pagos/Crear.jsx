@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { Area, Campo, Grupo, Texto } from '@/components/Campo';
 import Cobro, { metodoPorDefecto, partesIniciales } from '@/components/Cobro';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 const pesos = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -67,28 +68,45 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
     useEffect(() => {
         if (busqueda.trim().length < 2) {
             setResultados(null);
+            // La que estaba en marcha se cancelo al cambiar: nadie mas lo apaga.
+            setBuscando(false);
 
             return undefined;
         }
 
         setBuscando(true);
 
+        // Cada busqueda cancela la anterior. Limpiar solo el temporizador no
+        // basta: si la consulta ya habia salido, una respuesta lenta de «ju»
+        // podia llegar despues que la de «juan» y pisarla.
+        const control = new AbortController();
+
         const temporizador = setTimeout(async () => {
             try {
                 const r = await fetch(
                     `/panel/pagos/buscar?q=${encodeURIComponent(busqueda)}`,
-                    { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
+                    { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: control.signal },
                 );
                 const j = await r.json();
                 setResultados(j.inscripciones ?? []);
             } catch (e) {
+                if (control.signal.aborted) {
+                    return;
+                }
+
                 setResultados([]);
             } finally {
-                setBuscando(false);
+                // La cancelada no apaga el «buscando»: la nueva sigue en marcha.
+                if (! control.signal.aborted) {
+                    setBuscando(false);
+                }
             }
         }, 300);
 
-        return () => clearTimeout(temporizador);
+        return () => {
+            clearTimeout(temporizador);
+            control.abort();
+        };
     }, [busqueda]);
 
     function elegir(inscripcion) {
@@ -273,7 +291,7 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
                         </section>
 
                         <Grupo titulo="Datos del cobro">
-                            <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <Campo etiqueta="Fecha" nombre="fecha_pago" error={errors.fecha_pago} requerido>
                                     <Texto
                                         nombre="fecha_pago"
@@ -317,7 +335,7 @@ export default function Crear({ preseleccionada, metodosPago, formToken, volverA
                         disabled={processing || ! elegida || mixtoDescuadra}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {processing ? 'Registrando…' : 'Registrar pago'}
+                        <TextoQueCambia ocupado={processing} mientras="Registrando…">Registrar pago</TextoQueCambia>
                     </button>
                     <Link href="/panel/pagos" className="text-sm text-fog transition-colors hover:text-chalk">
                         Cancelar

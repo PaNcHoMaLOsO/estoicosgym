@@ -35,18 +35,17 @@ class EnviarNotificaciones extends Command
         /*
          * EL INTERRUPTOR DE CONFIGURACIÓN MANDA.
          *
-         * Apagado, esta orden no programa ni envía nada, aunque Windows la
-         * llame a su hora. Es lo que permite estrenar el sistema con socios de
-         * verdad sin que les llegue un correo de prueba, y cortar en seco un
-         * domingo si algo sale mal. Lo que se manda A MANO desde el panel no
-         * pasa por aquí y sigue funcionando.
+         * Apagado, esta orden no programa ni envía ningún aviso automático,
+         * aunque Windows la llame a su hora. Es lo que permite estrenar el
+         * sistema con socios de verdad sin que les llegue un correo de prueba,
+         * y cortar en seco un domingo si algo sale mal.
+         *
+         * PERO LO QUE SE ESCRIBIÓ A MANO SIGUE SALIENDO. Un correo a un grupo
+         * programado para otro día queda pendiente y solo esta orden lo manda;
+         * cortarla entera lo dejaba atascado, contra lo que promete la ayuda
+         * del interruptor («a un grupo a mano sigue funcionando»).
          */
-        if (! Ajustes::activo('tareas.correos_automaticos')) {
-            $this->warn('Los correos automáticos están apagados en Configuración, en Avisos automáticos.');
-            $this->line('No se programó ni se envió nada.');
-
-            return self::SUCCESS;
-        }
+        $soloManuales = ! Ajustes::activo('tareas.correos_automaticos');
 
         $todo = $this->option('todo');
         $programar = $this->option('programar') || $todo;
@@ -57,6 +56,12 @@ class EnviarNotificaciones extends Command
         if (!$programar && !$enviar && !$reintentar) {
             $todo = true;
             $programar = $enviar = $reintentar = true;
+        }
+
+        if ($soloManuales) {
+            $this->warn('Los correos automáticos están apagados en Configuración, en Avisos automáticos.');
+            $this->line('No se programa ningún aviso; solo salen los correos escritos a mano.');
+            $programar = false;
         }
 
         // 1. Programar notificaciones
@@ -80,7 +85,7 @@ class EnviarNotificaciones extends Command
             $this->info('📧 Enviando notificaciones pendientes...');
             $this->newLine();
 
-            $resultado = $this->notificacionService->enviarPendientes();
+            $resultado = $this->notificacionService->enviarPendientes($soloManuales);
             
             if ($resultado['total'] > 0) {
                 $this->line("   • Total procesadas: {$resultado['total']}");
@@ -100,7 +105,7 @@ class EnviarNotificaciones extends Command
             $this->info('🔄 Reintentando notificaciones fallidas...');
             $this->newLine();
 
-            $resultado = $this->notificacionService->reintentarFallidas();
+            $resultado = $this->notificacionService->reintentarFallidas($soloManuales);
             
             if ($resultado['reenviadas'] > 0 || $resultado['fallidas'] > 0) {
                 $this->line("   • Reenviadas: <fg=green>{$resultado['reenviadas']}</>");

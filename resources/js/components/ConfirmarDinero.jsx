@@ -3,6 +3,7 @@ import { BanknoteIcon, Trash2Icon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Botones, metodoPorDefecto } from '@/components/Cobro';
+import TextoQueCambia from '@/components/TextoQueCambia';
 
 import {
     Dialog,
@@ -45,13 +46,25 @@ export default function ConfirmarDinero({
     datos = {},
     // Pedir con qué se pagó: el cobro del fiado. Viaja como `id_metodo_pago`.
     conMedio = false,
+    // Dejar que pague menos que el total (un abono). Viaja como `monto`, y
+    // solo si es menos que todo.
+    conAbono = false,
 }) {
     const [enviando, setEnviando] = useState(false);
     const medios = usePage().props.medios_de_pago ?? [];
     const [medio, setMedio] = useState('');
+    const [errores, setErrores] = useState([]);
+    const [trae, setTrae] = useState('');
+    const abona = conAbono && trae !== '' && Number(trae) > 0 && Number(trae) < monto;
+    const pasaDelTotal = conAbono && Number(trae) > monto;
 
     // Cada vez que se abre parte en efectivo, lo más común en el mesón.
     useEffect(() => {
+        if (abierto) {
+            setErrores([]);
+            setTrae('');
+        }
+
         if (abierto && conMedio) {
             setMedio(metodoPorDefecto(medios));
         }
@@ -61,12 +74,16 @@ export default function ConfirmarDinero({
     function confirmar() {
         setEnviando(true);
 
-        router[metodo](accion, conMedio ? { ...datos, id_metodo_pago: medio } : datos, {
+        const enviar = { ...datos, ...(conMedio ? { id_metodo_pago: medio } : {}), ...(abona ? { monto: Number(trae) } : {}) };
+
+        router[metodo](accion, enviar, {
             preserveScroll: true,
-            onFinish: () => {
-                setEnviando(false);
-                alCerrar();
-            },
+            // SE CIERRA SOLO SI SALIÓ. Cerrándose siempre, un medio de pago que
+            // ya no existe o una línea que no vale se tragaban el error: el
+            // diálogo desaparecía y la cuenta seguía igual sin decir por qué.
+            onSuccess: () => alCerrar(),
+            onError: (e) => setErrores(Object.values(e ?? {})),
+            onFinish: () => setEnviando(false),
         });
     }
 
@@ -110,6 +127,34 @@ export default function ConfirmarDinero({
                     ) : null}
                 </div>
 
+                {/* Si trae menos de lo que debe, se le recibe: se pagan las
+                    cosas más viejas primero y lo demás sigue debiéndose. */}
+                {conAbono ? (
+                    <div>
+                        <label htmlFor="cuanto-paga" className="mb-1.5 block text-sm font-medium text-chalk">
+                            Cuánto paga
+                        </label>
+                        <input
+                            id="cuanto-paga"
+                            type="number"
+                            min="1"
+                            max={monto}
+                            inputMode="numeric"
+                            value={trae}
+                            onChange={(e) => setTrae(e.target.value)}
+                            placeholder={`Todo: ${pesos.format(monto)}`}
+                            className="w-full rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-sm tabular-nums text-chalk focus:border-line-strong focus:outline-none"
+                        />
+                        <p className={`apoyo mt-1 ${pasaDelTotal ? 'text-danger' : 'text-fog'}`}>
+                            {pasaDelTotal
+                                ? `Debe ${pesos.format(monto)}: no puede pagar más que eso.`
+                                : abona
+                                    ? `Abona ${pesos.format(Number(trae))} y le quedan ${pesos.format(monto - Number(trae))}.`
+                                    : 'Vacío si paga todo.'}
+                        </p>
+                    </div>
+                ) : null}
+
                 {conMedio ? (
                     <div>
                         <p className="mb-1.5 text-sm font-medium text-chalk">Con qué pagó</p>
@@ -124,6 +169,14 @@ export default function ConfirmarDinero({
                     </div>
                 ) : null}
 
+                {errores.length > 0
+                    ? errores.map((mensaje, i) => (
+                          <p key={i} className="apoyo text-danger" role="alert">
+                              {mensaje}
+                          </p>
+                      ))
+                    : null}
+
                 <DialogFooter>
                     <button
                         type="button"
@@ -137,12 +190,15 @@ export default function ConfirmarDinero({
                     <button
                         type="button"
                         onClick={confirmar}
-                        disabled={enviando || (conMedio && ! medio)}
+                        disabled={enviando || (conMedio && ! medio) || pasaDelTotal}
                         className={`rounded-control px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
                             peligrosa ? 'bg-danger text-white' : 'bg-volt text-on-volt'
                         }`}
                     >
-                        {enviando ? 'Un momento…' : etiquetaConfirmar}
+                        {/* Siempre el mismo texto y el mismo ancho: con la cifra
+                            del abono dentro, el botón crecía con cada número que
+                            se escribía. Lo que abona ya está dicho arriba. */}
+                        <TextoQueCambia ocupado={enviando} mientras="Un momento…">{etiquetaConfirmar}</TextoQueCambia>
                     </button>
                 </DialogFooter>
             </DialogContent>

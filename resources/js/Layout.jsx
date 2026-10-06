@@ -87,13 +87,24 @@ const GRUPOS = [
         ],
     },
     {
-        // Cómo va el negocio. Recepción no ve ninguna de las dos.
+        // Cómo va el negocio. Recepción ve solo la caja de hoy, para cuadrar
+        // el turno; el mes y los informes son del dueño.
         titulo: 'Dinero',
         secciones: [
             // `caja`: desaparece cuando se pidio cerrar Caja. La pantalla
             // entera son numeros del negocio; tapados, seria una pantalla de
             // puntitos.
             { href: '/panel/caja', etiqueta: 'Caja', Icono: WalletIcon, permiso: 'reportes.ver', caja: true },
+            // La misma entrada para quien solo ve lo de hoy (`caja.hoy`). Con
+            // la caja completa sobra: `salvo` la quita, o saldrían dos «Caja».
+            {
+                href: '/panel/caja/hoy',
+                etiqueta: 'Caja',
+                Icono: WalletIcon,
+                permiso: 'caja.hoy',
+                salvo: 'reportes.ver',
+                caja: true,
+            },
             {
                 href: '/panel/reportes',
                 etiqueta: 'Reportes',
@@ -235,7 +246,9 @@ function Enlace({ seccion, url, onIr }) {
  */
 function Arbol({ url, auth, onIr, sinCaja = false }) {
     const visibles = (secciones) =>
-        secciones.filter((s) => (! s.permiso || puede(auth, s.permiso)) && ! (s.caja && sinCaja));
+        secciones.filter(
+            (s) => (! s.permiso || puede(auth, s.permiso)) && ! (s.salvo && puede(auth, s.salvo)) && ! (s.caja && sinCaja),
+        );
 
     // Un grupo entero puede quedarse sin secciones —recepcion no ve nada de
     // Configuracion—, y en ese caso tampoco se pinta su rotulo: un titulo

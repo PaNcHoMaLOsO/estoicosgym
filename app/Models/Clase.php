@@ -25,6 +25,7 @@ class Clase extends Model
         'para_quien',
         'precio_mensual',
         'imagen',
+        'fotos',
         'horario',
         'color',
         'activo',
@@ -33,11 +34,15 @@ class Clase extends Model
 
     protected $casts = [
         'horario' => 'array',
+        'fotos' => 'array',
         'activo' => 'boolean',
         'orden' => 'integer',
         'precio_mensual' => 'integer',
         'slugs_anteriores' => 'array',
     ];
+
+    /** Las fotos de la galería, además de la principal. */
+    public const MAX_FOTOS = 8;
 
     /** Los días, en el orden de la semana: la clave y cómo se lee. */
     public const DIAS = [
@@ -116,6 +121,22 @@ class Clase extends Model
     public function urlDeImagen(): ?string
     {
         return $this->imagen ? asset('storage/' . $this->imagen) : null;
+    }
+
+    /**
+     * La galería: las rutas guardadas, sin vacíos.
+     *
+     * @return list<string>
+     */
+    public function rutasDeFotos(): array
+    {
+        return array_values(array_filter((array) ($this->fotos ?? []), fn ($r) => is_string($r) && $r !== ''));
+    }
+
+    /** @return list<string> */
+    public function urlsDeFotos(): array
+    {
+        return array_map(fn (string $r) => asset('storage/' . $r), $this->rutasDeFotos());
     }
 
     /** El valor del color para pintarlo en línea. */

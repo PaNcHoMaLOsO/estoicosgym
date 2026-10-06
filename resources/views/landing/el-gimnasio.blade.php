@@ -41,7 +41,7 @@
                 // no puede competir con el precio del plan, pero quien viene un
                 // día quiere saber cuánto le cuesta sin tener que preguntar.
                 'extra' => $pase ? $pase['nombre'] . ' $' . number_format($pase['precio'], 0, ',', '.') : null,
-                'href' => route('landing.planes'),
+                'href' => $navegacion['planes'] ? route('landing.planes') : null,
             ] : null,
             $navegacion['convenios'] ? [
                 'icono' => 'graduation-cap',
@@ -81,10 +81,12 @@
             </p>
 
             <div class="mt-9 flex flex-col sm:flex-row gap-4">
-                <a href="{{ route('landing.planes') }}"
-                   class="inline-flex items-center justify-center bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-3 rounded-lg text-base transition-colors font-modern">
-                    Ver planes
-                </a>
+                @if($navegacion['planes'])
+                    <a href="{{ route('landing.planes') }}"
+                       class="inline-flex items-center justify-center bg-pg-rojo hover:bg-pg-rojo-oscuro text-white font-bold px-8 py-3 rounded-lg text-base transition-colors font-modern">
+                        Ver planes
+                    </a>
+                @endif
                 @if($whatsapp)
                     <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
                        class="inline-flex items-center justify-center gap-2 border-2 border-pg-tiza/30 hover:border-pg-rojo text-pg-tiza hover:text-pg-rojo-claro px-8 py-3 rounded-lg text-base transition-colors font-modern">
@@ -178,11 +180,13 @@
     @endif
 
     {{-- Para quien llega sin saber qué hacer en la sala. --}}
+    @if($navegacion['rutinas'])
     <p class="bg-pg-carbon pb-8 text-center font-modern text-sm lg:pb-12">
         <a href="{{ route('landing.rutina') }}" class="inline-flex items-center gap-2 font-semibold text-pg-rojo-claro hover:underline">
             ¿No sabes por dónde empezar? Mira las rutinas <x-icono nombre="arrow-right" class="text-xs" />
         </a>
     </p>
+    @endif
 
     @include('landing.partes.horario')
     @include('landing.partes.llamado')

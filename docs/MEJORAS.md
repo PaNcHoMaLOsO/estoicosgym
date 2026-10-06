@@ -124,7 +124,7 @@ grupos están en tres lugares (`configuracion.js`, `Ajustes::grupos()` y
 ## Limpieza técnica
 
 - **Comandos del sistema viejo** que probablemente ya no sirven: `test:email`,
-  `test:email-visual`, `test:enviar-plantillas`, `test:notificacion-bienvenida`,
+  `test:notificacion-bienvenida`,
   `test:notificacion-tutor`, `test:plantillas-automaticas`,
   `simular:notificaciones`, `verificar:notificaciones`, `limpiar:clientes-test`.
   Revisarlos y borrar los que no se usen.

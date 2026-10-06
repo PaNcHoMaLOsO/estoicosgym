@@ -106,7 +106,10 @@ class SecurityHeaders
             return 'public, max-age=3600';
         }
 
-        if (! $request->isMethodCacheable() || $request->routeIs('landing.membresia', 'contrato.*')) {
+        // Una página de la web apagada, que solo ve quien entró al panel: que
+        // no quede guardada en ningún lado (ver PaginaEncendida).
+        if (! $request->isMethodCacheable() || $request->routeIs('landing.membresia', 'contrato.*')
+            || $request->attributes->has('paginaApagada')) {
             return 'no-store, no-cache, must-revalidate, max-age=0';
         }
 

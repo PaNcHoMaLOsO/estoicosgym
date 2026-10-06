@@ -175,6 +175,24 @@ class Ajustes
                 'defecto' => 14,
                 'unidad' => 'días',
             ],
+            'meson.tope_fiado' => [
+                'grupo' => 'meson',
+                'etiqueta' => 'Tope de lo fiado por persona',
+                'ayuda' => 'Si con lo que se anota alguien pasaría a deber más que esto, se avisa antes y hay que confirmarlo. 0 = sin tope.',
+                'tipo' => 'numero',
+                'min' => 0,
+                'max' => 1000000,
+                'defecto' => 0,
+                'unidad' => 'pesos',
+            ],
+            'meson.precios' => [
+                'grupo' => 'meson',
+                'etiqueta' => 'Precios del mesón',
+                'ayuda' => 'Una cosa por línea con su precio, por ejemplo «Barra de proteína = 2500». Salen como botones al anotar algo fiado, primero que lo más fiado.',
+                'tipo' => 'area',
+                'largo' => 2000,
+                'defecto' => '',
+            ],
 
             /*
              * ============ EL DINERO EN PANTALLA ============
@@ -437,6 +455,72 @@ class Ajustes
                 'max' => 500,
                 'defecto' => 150,
                 'unidad' => 'socios',
+            ],
+
+            // ---- Las páginas de la web que se ven ----
+            'paginas.gimnasio' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'El gimnasio',
+                'ayuda' => 'Las fotos y los servicios de la sala.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.planes' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Planes',
+                'ayuda' => 'Los planes con sus precios.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.clases' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Clases',
+                'ayuda' => 'El horario de judo, lucha y las demás clases, y la página de cada una. Sale solo si hay alguna clase activa.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.especialistas' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Especialistas',
+                'ayuda' => 'Los especialistas, su perfil y las páginas por especialidad. Sale solo si hay alguno publicado.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.convenios' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Convenios',
+                'ayuda' => 'Los convenios con sus logos y precios. Sale solo si hay alguno publicado.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.arriendo' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Arrienda horas',
+                'ayuda' => 'Para instituciones, clubes y entrenadores que quieren dar clases aquí.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.rutinas' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Rutinas y ejercicios',
+                'ayuda' => '«Qué entrenar hoy», las rutinas de la semana y los ejercicios de la sala. Apagada, el QR de la sala tampoco abre.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
+            'paginas.membresia' => [
+                'grupo' => 'paginas',
+                'seccion' => 'Páginas',
+                'etiqueta' => 'Mi membresía',
+                'ayuda' => 'Donde el socio consulta con su RUT cuándo vence y si debe algo. Apagada, también sale el botón rojo del menú.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
             ],
 
             // ---- La portada de la web ----
@@ -715,6 +799,10 @@ class Ajustes
             'tareas' => [
                 'titulo' => 'Avisos automáticos',
                 'descripcion' => 'Qué hace el sistema solo: a qué hora revisa los vencimientos, cuándo manda los avisos y cuántos salen de una vez.',
+            ],
+            'paginas' => [
+                'titulo' => 'Páginas de la web',
+                'descripcion' => 'Qué páginas se ven en la web. Apagada, una página sale del menú, del pie, de la portada y de Google, y su dirección deja de abrir. Tú la sigues viendo con la sesión iniciada, para revisarla antes de encenderla. Inicio y Contacto siempre se ven.',
             ],
             'portada' => [
                 'titulo' => 'Portada y aviso',

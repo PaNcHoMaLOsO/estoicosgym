@@ -62,13 +62,14 @@ class AltaRapidaTest extends CasoConCatalogos
     }
 
     /**
-     * El alta con pago mixto guarda las DOS partes, cada una con su medio.
+     * El alta con pago mixto guarda las DOS partes, cada una con su medio, en
+     * una sola fila.
      *
      * La pantalla ofrecía «mixto» pero mandaba un solo monto y un solo medio:
      * mitad en efectivo y mitad con tarjeta quedaba entera en efectivo, y la
      * caja del día no cuadraba con lo que había en el cajón.
      */
-    public function test_el_alta_con_pago_mixto_guarda_cada_parte_con_su_medio(): void
+    public function test_el_alta_con_pago_mixto_guarda_los_dos_medios_en_una_fila(): void
     {
         $plan = \App\Models\Membresia::where('activo', true)->whereHas('precios', fn ($q) => $q->where('activo', true))->firstOrFail();
         $precio = (int) $plan->precios()->where('activo', true)->latest('fecha_vigencia_desde')->value('precio_normal');
@@ -90,12 +91,16 @@ class AltaRapidaTest extends CasoConCatalogos
 
         $pagos = Cliente::where('run_pasaporte', '11.111.111-1')->firstOrFail()->pagos()->orderBy('id')->get();
 
-        $this->assertCount(2, $pagos);
-        $this->assertSame([$uno->id, $dos->id], $pagos->pluck('id_metodo_pago')->all());
-        $this->assertSame($precio, (int) $pagos->sum('monto_abonado'));
-        $this->assertSame(0, (int) $pagos->last()->monto_pendiente);
+        // UNA fila con los dos medios, como al cobrar (App\Support\PagoMixto).
+        $this->assertCount(1, $pagos);
+        $pago = $pagos->first();
+        $this->assertSame('mixto', $pago->tipo_pago);
+        $this->assertSame([$uno->id, $dos->id], [(int) $pago->id_metodo_pago, (int) $pago->id_metodo_pago2]);
+        $this->assertSame([$mitad, $precio - $mitad], [(int) $pago->monto_metodo1, (int) $pago->monto_metodo2]);
+        $this->assertSame($precio, (int) $pago->monto_abonado);
+        $this->assertSame(0, (int) $pago->monto_pendiente);
         // Entró todo: queda Pagado, no Parcial.
-        $this->assertSame([201, 201], $pagos->pluck('id_estado')->map(fn ($e) => (int) $e)->all());
+        $this->assertSame(201, (int) $pago->id_estado);
     }
 
     /** Y un mixto sin sus partes se rechaza en vez de guardarse a medias. */

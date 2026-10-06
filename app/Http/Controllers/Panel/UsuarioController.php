@@ -64,8 +64,24 @@ class UsuarioController extends Controller
         ]);
     }
 
+    /**
+     * El correo en minúsculas ANTES de validar.
+     *
+     * Se guarda en minúsculas, pero el «unique» miraba lo tecleado: «Ana@x.cl»
+     * pasaba la validación aunque ya existiera «ana@x.cl» y el choque llegaba
+     * al INSERT como un error 500 en vez del aviso de «ya está en uso».
+     */
+    private function normalizarCorreo(Request $request): void
+    {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+    }
+
     public function store(Request $request)
     {
+        $this->normalizarCorreo($request);
+
         $datos = $request->validate([
             'nombre' => 'required|string|max:100',
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
@@ -88,6 +104,8 @@ class UsuarioController extends Controller
 
     public function update(Request $request, User $usuario)
     {
+        $this->normalizarCorreo($request);
+
         $datos = $request->validate([
             'nombre' => 'required|string|max:100',
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($usuario->id)],

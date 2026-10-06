@@ -52,6 +52,11 @@ class TestPlantillasAutomaticas extends Command
 
             if ($tipoPorVencer) {
                 $notificacion = $notificacionService->crearNotificacion($tipoPorVencer, $inscripcion);
+
+                // Null con los automáticos apagados o sin a quién escribirle.
+                if (! $notificacion) {
+                    throw new \RuntimeException('No se anotó: los correos automáticos están apagados o el socio no tiene correo.');
+                }
                 
                 // Cambiar email de destino para el test
                 $notificacion->update(['email_destino' => $email]);
@@ -84,6 +89,10 @@ class TestPlantillasAutomaticas extends Command
 
             if ($tipoVencida) {
                 $notificacion = $notificacionService->crearNotificacion($tipoVencida, $inscripcion);
+
+                if (! $notificacion) {
+                    throw new \RuntimeException('No se anotó: los correos automáticos están apagados o el socio no tiene correo.');
+                }
                 
                 // Cambiar email de destino
                 $notificacion->update(['email_destino' => $email]);

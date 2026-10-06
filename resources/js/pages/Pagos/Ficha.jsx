@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeftIcon, BanknoteIcon, PencilIcon, ReceiptTextIcon } from 'lucide-react';
 
+import CodigoCorto from '@/components/CodigoCorto';
 import Estado from '@/components/Estado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 import { Reservado } from '@/Privado';
@@ -37,9 +38,23 @@ export default function Ficha({
     socio,
     inscripcion,
     otrosPagos,
+    puede: permite = {},
 }) {
+    const { privado } = usePage().props;
     // Lo que quedó debiendo, escondido desde Configuración.
-    const sinDeudas = Boolean(usePage().props.privado?.sin_pendientes);
+    const sinDeudas = Boolean(privado?.sin_pendientes);
+    // Corregir lo decide el servidor: con «sus cobros de hoy» depende de
+    // quién registró el pago y de su fecha, no solo del permiso.
+    const puedeCorregir = Boolean(permite.corregir);
+
+    /*
+     * `pago.pendiente` es lo que quedaba DESPUES de este cobro, no lo que se
+     * debe hoy. Un abono viejo de una membresia ya saldada decia «Quedó
+     * debiendo» y ofrecia cobrar un saldo de $0. El boton y el aviso miran la
+     * deuda de ahora; sin membresia no hay otra cifra que la del pago.
+     */
+    const debeAhora = inscripcion ? inscripcion.debe : pago.pendiente;
+    const quedoDebiendo = pago.pendiente > 0 && debeAhora > 0;
 
     return (
         <>
@@ -59,6 +74,7 @@ export default function Ficha({
                         <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-chalk">
                             {pago.tipo}
                             <Estado codigo={pago.id_estado} />
+                            <CodigoCorto codigo={pago.codigo} />
                         </h1>
                         <p className="apoyo text-fog">
                             {socio ? (
@@ -78,15 +94,17 @@ export default function Ficha({
                     <div className="flex gap-2">
                         {/* Corregir el error de tecleo: 40.000 donde iba 4.000,
                             la tarjeta donde iba el efectivo. */}
-                        <Link
-                            href={`/panel/pagos/${pago.uuid}/editar`}
-                            className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
-                        >
-                            <PencilIcon className="size-4" aria-hidden="true" />
-                            Corregir
-                        </Link>
+                        {puedeCorregir ? (
+                            <Link
+                                href={`/panel/pagos/${pago.uuid}/editar`}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:bg-surface-2"
+                            >
+                                <PencilIcon className="size-4" aria-hidden="true" />
+                                Corregir
+                            </Link>
+                        ) : null}
 
-                        {pago.pendiente > 0 && inscripcion ? (
+                        {debeAhora > 0 && inscripcion ? (
                             <Link
                                 href={`/panel/pagos/cobrar?inscripcion=${inscripcion.uuid}`}
                                 className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
@@ -119,16 +137,16 @@ export default function Ficha({
                 {sinDeudas ? null : (
                 <div
                     className={`rounded-panel border p-3 ${
-                        pago.pendiente > 0 ? 'border-warn/40 bg-warn/5' : 'border-ok/40 bg-ok/5'
+                        quedoDebiendo ? 'border-warn/40 bg-warn/5' : 'border-ok/40 bg-ok/5'
                     }`}
                 >
-                    <p className="rotulo">{pago.pendiente > 0 ? 'Quedó debiendo' : 'Saldo'}</p>
+                    <p className="rotulo">{quedoDebiendo ? 'Quedó debiendo' : 'Saldo'}</p>
                     <p
                         className={`mt-0.5 text-xl font-semibold tabular-nums ${
-                            pago.pendiente > 0 ? 'text-warn' : 'text-ok'
+                            quedoDebiendo ? 'text-warn' : 'text-ok'
                         }`}
                     >
-                        {pago.pendiente > 0 ? (
+                        {quedoDebiendo ? (
                             <Reservado ancho="w-24">{pesos.format(pago.pendiente)}</Reservado>
                         ) : (
                             'Pagado'
@@ -136,8 +154,15 @@ export default function Ficha({
                     </p>
                     {/* Un cobro de 5.000 de una membresía de 25.000 que sale
                         «Pagado» parece un error. No lo es: hubo más cobros. */}
-                    {pago.pendiente <= 0 && otrosPagos.length > 0 ? (
+                    {! quedoDebiendo && otrosPagos.length > 0 ? (
                         <p className="apoyo mt-0.5 text-fog">entre {otrosPagos.length + 1} cobros</p>
+                    ) : null}
+                    {/* Lo que quedo tras este cobro y lo de hoy difieren si
+                        hubo abonos despues: se dicen las dos. */}
+                    {quedoDebiendo && debeAhora !== pago.pendiente ? (
+                        <p className="apoyo mt-0.5 text-fog">
+                            hoy debe <Reservado ancho="w-16">{pesos.format(debeAhora)}</Reservado>
+                        </p>
                     ) : null}
                 </div>
                 )}
@@ -150,7 +175,7 @@ export default function Ficha({
              * un solo bloque, y a la derecha a qué membresía corresponde, sus
              * otros cobros y de quién es.
              */}
-            <div className="grid items-start gap-3 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
                 <div className="space-y-3">
                     <Bloque titulo="Cómo se pagó">
                         {metodos.length === 0 ? (
@@ -246,7 +271,7 @@ export default function Ficha({
 
                     {socio ? (
                         <Bloque titulo="Socio">
-                            <dl className="grid gap-3 sm:grid-cols-3">
+                            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                 <Dato etiqueta="RUT">{socio.rut}</Dato>
                                 <Dato etiqueta="Celular">
                                     {socio.celular ? (

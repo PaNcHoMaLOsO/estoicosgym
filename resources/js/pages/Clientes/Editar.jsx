@@ -6,6 +6,7 @@ import { Botones } from '@/components/Cobro';
 import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Corrección de la ficha de un socio.
  *
@@ -110,7 +111,7 @@ export default function Editar({ cliente }) {
             </header>
 
             <form onSubmit={enviar} {...tocar} className="max-w-4xl">
-                <div className="grid items-start gap-4 lg:grid-cols-2">
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
                     <Grupo titulo="Quién es">
                         <Campo etiqueta="Nombres" nombre="nombres" error={errors.nombres} requerido>
                             <Texto {...texto('nombres', { autoComplete: 'off' })} />
@@ -270,7 +271,7 @@ export default function Editar({ cliente }) {
                         disabled={processing || ! isDirty}
                         className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-40"
                     >
-                        {processing ? 'Guardando…' : 'Guardar cambios'}
+                        <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar cambios</TextoQueCambia>
                     </button>
 
                     <Link href={`/panel/clientes/${cliente.uuid}`} className="text-sm text-fog hover:text-chalk">

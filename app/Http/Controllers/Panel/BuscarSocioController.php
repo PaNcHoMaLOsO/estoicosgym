@@ -25,10 +25,11 @@ class BuscarSocioController extends Controller
     private const RESULTADOS = 8;
 
     private const ACTIVA = 100;
+    private const PAUSADA = 101;
 
     public function __invoke(Request $request): JsonResponse
     {
-        $texto = trim((string) $request->query('q', ''));
+        $texto = trim($request->texto('q', ''));
 
         // Con una letra saldría medio padrón y no serviría para elegir.
         if (mb_strlen($texto) < 2) {
@@ -79,16 +80,21 @@ class BuscarSocioController extends Controller
             ->get()
             ->map(function (Cliente $c) {
                 $vigente = $c->inscripciones->first(fn ($i) => (int) $i->id_estado === self::ACTIVA);
-                $debe = (int) $c->inscripciones->sum(
-                    fn ($i) => max(0, (int) ($i->precio_final ?? $i->precio_base) - (int) ($i->abonado ?? 0))
-                );
+                $pausada = $vigente ? null : $c->inscripciones->first(fn ($i) => (int) $i->id_estado === self::PAUSADA);
+                // Lo mismo que «Debe» en su ficha: sin las anuladas, cambiadas
+                // ni traspasadas, que ya no se cobran.
+                $debe = (int) $c->inscripciones
+                    ->reject(fn ($i) => in_array((int) $i->id_estado, \App\Enums\EstadosCodigo::INSCRIPCION_FINALIZADOS, true))
+                    ->sum(fn ($i) => max(0, (int) ($i->precio_final ?? $i->precio_base) - (int) ($i->abonado ?? 0)));
 
                 return [
                     'uuid' => $c->uuid,
                     'nombre' => trim("{$c->nombres} {$c->apellido_paterno} {$c->apellido_materno}"),
                     'rut' => $c->run_pasaporte,
                     'activo' => (bool) $c->activo,
-                    'plan' => $vigente?->membresia?->nombre,
+                    'plan' => ($vigente ?? $pausada)?->membresia?->nombre,
+                    // En pausa no es «Sin plan»: lo tiene, congelado.
+                    'pausada' => (bool) $pausada,
                     'vence' => $vigente?->fecha_vencimiento?->format('d/m/Y'),
                     'dias' => $vigente?->fecha_vencimiento
                         ? \App\Models\Inscripcion::diasEntre(today(), $vigente->fecha_vencimiento)

@@ -228,7 +228,9 @@ class ResumenController extends Controller
     private function fiado(): array
     {
         $pendientes = Fiado::debiendo()
-            ->with('cliente:id,uuid,nombres,apellido_paterno,celular,foto_perfil')
+            // Con `deleted_at`: el socio se carga aunque esté en la papelera, y
+            // sin la columna no se sabría si su ficha se puede abrir.
+            ->with('cliente:id,uuid,nombres,apellido_paterno,celular,foto_perfil,deleted_at')
             ->get();
 
         $cuentas = $pendientes
@@ -238,10 +240,15 @@ class ResumenController extends Controller
                 $desde = $lineas->min('created_at');
 
                 return [
+                    // La llave de la fila: la misma que agrupa. El uuid del
+                    // socio no sirve, porque las cuentas a mano no lo tienen y
+                    // dos con el mismo nombre chocaban en la lista.
+                    'clave' => $primera->claveDeCuenta(),
                     'quien' => $primera->cliente
                         ? $this->comoSeLlama($primera->cliente)
                         : $primera->aNombreDe(),
-                    'socio_uuid' => $primera->cliente?->uuid,
+                    // Sin enlace si el socio está en la papelera: su ficha no abre.
+                    'socio_uuid' => $primera->cliente?->trashed() ? null : $primera->cliente?->uuid,
                     'foto' => $primera->cliente?->urlDeFoto(),
                     'celular' => $primera->cliente?->celular,
                     'total' => (int) $lineas->sum('monto'),
@@ -258,6 +265,9 @@ class ResumenController extends Controller
             'total' => (int) $pendientes->sum('monto'),
             'personas' => $cuentas->count(),
             'cuentas' => $cuentas->take(self::EN_LISTA)->all(),
+            // Desde Configuración → Mesón, igual que en la pantalla de Fiado:
+            // aquí estaba escrito «14» y el ajuste no movía nada.
+            'dias_para_insistir' => Ajustes::numero('meson.dias_fiado_viejo'),
         ];
     }
 

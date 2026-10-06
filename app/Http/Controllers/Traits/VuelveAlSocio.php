@@ -28,7 +28,7 @@ trait VuelveAlSocio
      */
     protected function volverA(Request $request, string $otro, mixed ...$parametros): string
     {
-        $uuid = (string) $request->input('volver', '');
+        $uuid = $request->texto('volver', '');
 
         // Solo si tiene forma de identificador: en PostgreSQL, comparar una
         // columna uuid con cualquier otro texto revienta en vez de no encontrar.

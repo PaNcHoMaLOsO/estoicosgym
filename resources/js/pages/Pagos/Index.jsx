@@ -11,6 +11,7 @@ import { Celda, DosLineas, Fila, Tabla } from '@/components/Tabla';
 import { Cifra as Tarjeta, pesos } from '@/components/Tablero';
 import Convenio from '@/components/Convenio';
 import { Reservado } from '@/Privado';
+import { puede } from '@/lib/permisos';
 
 /*
  * Cada fila es plata que ENTRÓ: cuándo, de quién, cuánto y por dónde. La
@@ -61,7 +62,7 @@ const ORDENES = [
 ];
 
 export default function Index({ pagos, filtros, resumen, cantidades, medios = [], ultimo = null }) {
-    const { privado } = usePage().props;
+    const { privado, auth } = usePage().props;
     const sinDeudas = Boolean(privado?.sin_pendientes);
 
     // Lo que no se pierde al tocar otro filtro.
@@ -93,13 +94,15 @@ export default function Index({ pagos, filtros, resumen, cantidades, medios = []
                     <p className="apoyo text-fog">Lo que entró, del más reciente al más antiguo</p>
                 </div>
 
-                <Link
-                    href="/panel/pagos/cobrar"
-                    className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
-                >
-                    <PlusIcon className="size-4" aria-hidden="true" />
-                    Registrar pago
-                </Link>
+                {puede(auth, 'pagos.crear') ? (
+                    <Link
+                        href="/panel/pagos/cobrar"
+                        className="inline-flex items-center gap-1.5 rounded-control bg-volt px-3 py-1.5 text-sm font-medium text-on-volt transition-opacity hover:opacity-90"
+                    >
+                        <PlusIcon className="size-4" aria-hidden="true" />
+                        Registrar pago
+                    </Link>
+                ) : null}
             </header>
 
             {/* Lo que entró solo llega a quien ve la caja. */}
@@ -137,7 +140,7 @@ export default function Index({ pagos, filtros, resumen, cantidades, medios = []
                 <Buscador
                     ruta="/panel/pagos"
                     valor={filtros.buscar}
-                    etiqueta="Buscar por socio o RUT"
+                    etiqueta="Buscar por socio, RUT o código (#E5E42D49)"
                     extra={conservar}
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3">

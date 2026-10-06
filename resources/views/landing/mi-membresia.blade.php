@@ -228,10 +228,12 @@
                             @endforeach
                         </div>
 
-                        <p class="mt-6 border-t border-pg-tiza/10 pt-5 font-modern text-sm text-pg-tiza/60">
-                            ¿Todavía no eres socio?
-                            <a href="{{ route('landing.planes') }}" class="text-pg-rojo-claro hover:underline">Mira los planes</a>.
-                        </p>
+                        @if($navegacion['planes'])
+                            <p class="mt-6 border-t border-pg-tiza/10 pt-5 font-modern text-sm text-pg-tiza/60">
+                                ¿Todavía no eres socio?
+                                <a href="{{ route('landing.planes') }}" class="text-pg-rojo-claro hover:underline">Mira los planes</a>.
+                            </p>
+                        @endif
                     </aside>
                 </div>
             </div>

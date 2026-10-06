@@ -219,6 +219,10 @@ class PapeleraController extends Controller
             if ($problema) {
                 return back()->with('error', $problema);
             }
+        } elseif ($fila instanceof Inscripcion) {
+            if ($problema = $this->restaurarMembresia($fila)) {
+                return back()->with('error', $problema);
+            }
         } else {
             $fila->restore();
         }
@@ -226,6 +230,80 @@ class PapeleraController extends Controller
         $como = ($config['describir'])($fila);
 
         return back()->with('success', "«{$como['que']}» vuelve a estar disponible.");
+    }
+
+    /**
+     * Devuelve la membresía con los pagos en cero que se fueron con ella.
+     *
+     * Al borrarla, sus pagos pendientes de $0 se mandan a la papelera con la
+     * misma hora (InscripcionEditarController::eliminar). Sin devolverlos, la
+     * membresía volvía sin su pago y la ficha ya no ofrecía cobrarla como
+     * antes. Solo los de esa hora: uno anulado antes, a mano, sigue anulado.
+     *
+     * EL SOCIO SE TRABA Y SE MIRA DENTRO: dos «Recuperar» a la vez de dos
+     * membresías suyas veían los dos «no tiene otra vigente» y lo dejaban con
+     * dos. Con la traba, la segunda espera y ve la que ya volvió.
+     *
+     * @return string|null  por qué no se pudo; null si quedó restaurada
+     */
+    private function restaurarMembresia(Inscripcion $inscripcion): ?string
+    {
+        return DB::transaction(function () use ($inscripcion) {
+            Cliente::withTrashed()->whereKey($inscripcion->id_cliente)->lockForUpdate()->first();
+
+            // Otra pestaña pudo recuperarla mientras se esperaba la traba.
+            $inscripcion = Inscripcion::onlyTrashed()->whereKey($inscripcion->getKey())->first();
+
+            if (! $inscripcion) {
+                return null;
+            }
+
+            if ($problema = $this->porQueNoVuelveLaMembresia($inscripcion)) {
+                return $problema;
+            }
+
+            $borradaEn = $inscripcion->deleted_at;
+
+            $inscripcion->restore();
+
+            Pago::onlyTrashed()
+                ->where('id_inscripcion', $inscripcion->id)
+                ->where('deleted_at', $borradaEn)
+                ->where('monto_abonado', 0)
+                ->get()
+                ->each->restore();
+
+            return null;
+        });
+    }
+
+    /**
+     * Una membresía activa o pausada no vuelve si el socio ya tiene otra vigente.
+     *
+     * Se borra la de marzo por error, se le hace una nueva, y alguien restaura
+     * la primera: el socio quedaba con dos membresías vigentes y las cuentas,
+     * los avisos y la renovación miraban la que no era. Se rechaza en vez de
+     * restaurarla cambiada: quien la restaura decide cuál sobra.
+     */
+    private function porQueNoVuelveLaMembresia(Inscripcion $inscripcion): ?string
+    {
+        $abierta = in_array((int) $inscripcion->id_estado, [
+            \App\Enums\EstadosCodigo::INSCRIPCION_ACTIVA,
+            \App\Enums\EstadosCodigo::INSCRIPCION_PAUSADA,
+        ], true);
+
+        if (! $abierta) {
+            return null;
+        }
+
+        $otra = Inscripcion::where('id_cliente', $inscripcion->id_cliente)
+            ->whereKeyNot($inscripcion->getKey())
+            ->conMembresiaVigente()
+            ->exists();
+
+        return $otra
+            ? 'No se puede recuperar esta membresía: el socio ya tiene otra vigente y quedaría con dos. Si sobra la otra, bórrala primero.'
+            : null;
     }
 
     /**
@@ -302,7 +380,7 @@ class PapeleraController extends Controller
         // socios, no de cualquiera que entre a la papelera.
         abort_unless($request->user()?->puede('clientes.eliminar'), 403);
 
-        $request->merge(['confirmacion' => mb_strtoupper(trim((string) $request->input('confirmacion')))]);
+        $request->merge(['confirmacion' => mb_strtoupper(trim($request->texto('confirmacion')))]);
 
         $datos = $request->validate([
             'motivo' => ['required', \Illuminate\Validation\Rule::in(array_keys(\App\Services\BorradoDeDatosService::MOTIVOS))],

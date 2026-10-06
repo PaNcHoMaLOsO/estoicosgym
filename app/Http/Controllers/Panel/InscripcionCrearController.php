@@ -40,7 +40,7 @@ class InscripcionCrearController extends Controller
         return Inertia::render('Inscripciones/Crear', [
             // Se inscribe desde la ficha del socio, en una ventana: al guardar
             // se vuelve a esa ficha.
-            'volverA' => (string) $request->query('volver', ''),
+            'volverA' => $request->texto('volver', ''),
             /*
              * NO va la lista de socios.
              *
@@ -49,7 +49,7 @@ class InscripcionCrearController extends Controller
              * navegador. Con el gimnasio en marcha eso son miles de filas para
              * elegir una. Aquí se busca y solo viaja lo que se escribe.
              */
-            'preseleccionado' => $this->preseleccionado($request->query('cliente')),
+            'preseleccionado' => $this->preseleccionado(($request->texto('cliente') ?: null)),
             'membresias' => $this->planesCobrables(),
             'convenios' => Convenio::where('activo', true)
                 ->orderBy('tipo')
@@ -76,7 +76,7 @@ class InscripcionCrearController extends Controller
      */
     public function buscar(Request $request)
     {
-        $texto = trim((string) $request->query('q', ''));
+        $texto = trim($request->texto('q', ''));
 
         // Con una letra saldría medio padrón y no serviría para elegir.
         if (mb_strlen($texto) < 2) {
@@ -189,7 +189,20 @@ class InscripcionCrearController extends Controller
             'menor' => (bool) $cliente->es_menor_edad,
             // Para decirlo al elegirlo: «de baja, se reactiva al venderle».
             'de_baja' => ! $cliente->activo,
+            // El convenio con que venía, ya puesto (si sigue vigente): quien
+            // renueva con su credencial no tiene que volver a elegirlo.
+            'id_convenio' => $this->convenioDe($cliente),
         ];
+    }
+
+    private function convenioDe(Cliente $cliente): ?int
+    {
+        $id = \App\Models\Inscripcion::where('id_cliente', $cliente->id)
+            ->whereNotNull('id_convenio')
+            ->orderByDesc('fecha_inicio')
+            ->value('id_convenio') ?? $cliente->id_convenio;
+
+        return $id && Convenio::whereKey($id)->where('activo', true)->exists() ? (int) $id : null;
     }
 
     /**

@@ -1,11 +1,13 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeftIcon, EyeIcon } from 'lucide-react';
 
 import { Area, Campo, Texto } from '@/components/Campo';
 import Nota from '@/components/Nota';
 import { useEnConfiguracion } from '@/components/MarcoConfiguracion';
+import { puede } from '@/lib/permisos';
 
+import TextoQueCambia from '@/components/TextoQueCambia';
 /**
  * Los textos de los correos que manda el gimnasio.
  *
@@ -19,6 +21,10 @@ export default function Plantillas({ plantillas, variables }) {
     const [abierta, setAbierta] = useState(null);
     // Dentro de Configuración el menú de la izquierda ya dice dónde se está.
     const enConfiguracion = useEnConfiguracion();
+    // Recepción las lee desde Notificaciones, pero cambiarlas cambia lo que
+    // reciben TODOS los socios: eso, y su vista previa, es de configuración.
+    const { auth } = usePage().props;
+    const puedeEditar = puede(auth, 'configuracion.editar');
 
     const rotas = plantillas.filter((p) => p.rotas.length > 0);
 
@@ -50,7 +56,7 @@ export default function Plantillas({ plantillas, variables }) {
                 </Nota>
             ) : null}
 
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {plantillas.map((plantilla) => (
                     <article
                         key={plantilla.id}
@@ -66,13 +72,15 @@ export default function Plantillas({ plantillas, variables }) {
                                 ) : null}
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => setAbierta(plantilla)}
-                                className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
-                            >
-                                Editar
-                            </button>
+                            {puedeEditar ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setAbierta(plantilla)}
+                                    className="apoyo shrink-0 text-fog transition-colors hover:text-chalk"
+                                >
+                                    Editar
+                                </button>
+                            ) : null}
                         </div>
 
                         <p className="apoyo mt-2 truncate text-fog">
@@ -113,7 +121,7 @@ export default function Plantillas({ plantillas, variables }) {
                 ))}
             </div>
 
-            {abierta ? (
+            {puedeEditar && abierta ? (
                 <Editor
                     plantilla={abierta}
                     variables={{ ...variables, ...(abierta.extras ?? {}) }}
@@ -148,11 +156,32 @@ function Editor({ plantilla, variables, alCerrar }) {
         setComponiendo(true);
 
         try {
+            // Se manda lo que hay escrito, sin guardar: se mira ANTES de
+            // guardar, y antes se veia la version vieja.
             const r = await fetch(
                 `/panel/notificaciones/plantillas/${plantilla.id}/vista-previa`,
-                { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                    },
+                    body: JSON.stringify({
+                        asunto_email: data.asunto_email,
+                        plantilla_email: data.plantilla_email,
+                    }),
+                },
             );
-            setVista(await r.json());
+            const cuerpo = await r.json();
+
+            // Un 422 trae `errors` (asunto o texto vacios) en vez de `error`.
+            setVista(
+                r.ok || cuerpo.error
+                    ? cuerpo
+                    : { error: Object.values(cuerpo.errors ?? {}).flat().join(' ') || 'No se pudo componer la vista previa.' },
+            );
         } catch (e) {
             setVista({ error: 'No se pudo componer la vista previa.' });
         } finally {
@@ -203,7 +232,7 @@ function Editor({ plantilla, variables, alCerrar }) {
                     </button>
                 </header>
 
-                <form onSubmit={guardar} className="grid gap-4 lg:grid-cols-[1fr_18rem]">
+                <form onSubmit={guardar} className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_18rem]">
                     <div className="space-y-3">
                         <Campo etiqueta="Nombre" nombre="nombre" error={errors.nombre} requerido>
                             <Texto
@@ -286,7 +315,7 @@ function Editor({ plantilla, variables, alCerrar }) {
                                 disabled={processing}
                                 className="rounded-control bg-volt px-4 py-2 text-sm font-medium text-on-volt transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
-                                {processing ? 'Guardando…' : 'Guardar'}
+                                <TextoQueCambia ocupado={processing} mientras="Guardando…">Guardar</TextoQueCambia>
                             </button>
 
                             <button

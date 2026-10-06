@@ -193,6 +193,8 @@ class AjustesTest extends CasoConCatalogos
         $sinUso = collect(array_keys(Ajustes::definiciones()))
             // Los días del horario se leen de a uno con «horario.{$dia}».
             ->reject(fn (string $clave) => str_starts_with($clave, 'horario.') && $clave !== 'horario.nota')
+            // Las páginas de la web, con «paginas.{$clave}» (PaginasWeb).
+            ->reject(fn (string $clave) => str_starts_with($clave, 'paginas.'))
             ->reject(fn (string $clave) => str_contains($codigo, "'{$clave}'"))
             ->values()
             ->all();
