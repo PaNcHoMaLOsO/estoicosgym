@@ -149,30 +149,29 @@
                 </div>
 
                 {{--
-                    CADA FOTO CON SU PROPIA PROPORCIÓN. Antes era un mosaico de
-                    huecos fijos: las fotos son verticales y los huecos
-                    horizontales, así que entraban recortadas y a más de una le
-                    cortaba la cabeza. Aquí se colocan en columnas y cada una
-                    ocupa el alto que le toca, sin recortar nada.
+                    UNA GRILLA PAREJA DE CUADRADOS, chica. Antes cada foto iba con
+                    su proporción en columnas: no recortaba nada, pero con trece
+                    fotos ocupaba casi dos pantallas y quedaba desordenada (unas
+                    altas, otras bajas, huecos al final). Ahora van todas del
+                    mismo tamaño y más por fila.
 
-                    `break-inside-avoid` evita que una foto se parta entre el
-                    final de una columna y el principio de la siguiente.
+                    El recorte se apoya ARRIBA (`object-[center_30%]`): las fotos
+                    son casi todas verticales y con gente, y centrado al medio a
+                    más de una le cortaba la cabeza. Tocando una se abre entera.
                 --}}
-                <div class="columns-2 lg:columns-3 xl:columns-4 gap-4">
+                <div class="mx-auto grid max-w-5xl grid-cols-4 gap-1.5 sm:grid-cols-5 sm:gap-2 lg:grid-cols-7 lg:gap-3">
                     @foreach($fotos as $i => $foto)
-                        <figure class="animate-on-scroll group relative mb-4 break-inside-avoid overflow-hidden rounded-2xl bg-pg-negro"
-                                style="animation-delay: {{ ($i % 4) * 0.1 }}s">
-                            {{-- SIN RÓTULO ENCIMA. Las fotos del gimnasio se explican
-                                 solas y el nombre no lo puso nadie: eran títulos de
-                                 relleno tapando justo la parte de abajo de la foto.
-                                 El texto sigue en `alt`, que no se ve pero es lo que
+                        <a href="{{ $foto['imagen'] }}" target="_blank" rel="noopener"
+                           class="animate-on-scroll group relative block aspect-square overflow-hidden rounded-xl bg-pg-negro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pg-rojo-claro"
+                           style="animation-delay: {{ ($i % 7) * 0.05 }}s">
+                            {{-- Sin rótulo encima: el texto va en `alt`, que es lo que
                                  lee Google y quien navega con lector de pantalla. --}}
                             <img src="{{ $foto['imagen'] }}"
                                  alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
                                  @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
                                  loading="lazy" decoding="async"
-                                 class="w-full h-auto transition-transform duration-700 group-hover:scale-105">
-                        </figure>
+                                 class="h-full w-full object-cover object-[center_30%] transition-transform duration-700 group-hover:scale-105">
+                        </a>
                     @endforeach
                 </div>
             </div>
