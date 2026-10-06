@@ -149,31 +149,30 @@
                 </div>
 
                 {{--
-                    CADA FOTO CON SU PROPIA PROPORCIÓN, en columnas: es lo que le
-                    da el aire de collage, y no recorta cabezas (en huecos fijos
-                    las verticales entraban cortadas). Se probó una grilla de
-                    cuadrados parejos y perdía justamente eso.
-
-                    Para que no ocupe dos pantallas: más columnas, más angostas,
-                    con poca separación y un ancho máximo. Tocando una se abre
-                    entera.
+                    CADA FOTO CON SU PROPIA PROPORCIÓN. Antes era un mosaico de
+                    huecos fijos: las fotos son verticales y los huecos
+                    horizontales, así que entraban recortadas y a más de una le
+                    cortaba la cabeza. Aquí se colocan en columnas y cada una
+                    ocupa el alto que le toca, sin recortar nada.
 
                     `break-inside-avoid` evita que una foto se parta entre el
                     final de una columna y el principio de la siguiente.
                 --}}
-                <div class="mx-auto max-w-6xl columns-3 gap-2 sm:columns-4 lg:columns-6 lg:gap-3">
+                <div class="columns-2 lg:columns-3 xl:columns-4 gap-4">
                     @foreach($fotos as $i => $foto)
-                        <a href="{{ $foto['imagen'] }}" target="_blank" rel="noopener"
-                           class="animate-on-scroll group relative mb-2 block break-inside-avoid overflow-hidden rounded-xl bg-pg-negro lg:mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pg-rojo-claro"
-                           style="animation-delay: {{ ($i % 6) * 0.05 }}s">
-                            {{-- Sin rótulo encima: el texto va en `alt`, que es lo que
+                        <figure class="animate-on-scroll group relative mb-4 break-inside-avoid overflow-hidden rounded-2xl bg-pg-negro"
+                                style="animation-delay: {{ ($i % 4) * 0.1 }}s">
+                            {{-- SIN RÓTULO ENCIMA. Las fotos del gimnasio se explican
+                                 solas y el nombre no lo puso nadie: eran títulos de
+                                 relleno tapando justo la parte de abajo de la foto.
+                                 El texto sigue en `alt`, que no se ve pero es lo que
                                  lee Google y quien navega con lector de pantalla. --}}
                             <img src="{{ $foto['imagen'] }}"
                                  alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
                                  @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
                                  loading="lazy" decoding="async"
-                                 class="h-auto w-full transition-transform duration-700 group-hover:scale-105">
-                        </a>
+                                 class="w-full h-auto transition-transform duration-700 group-hover:scale-105">
+                        </figure>
                     @endforeach
                 </div>
             </div>
