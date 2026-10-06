@@ -13,8 +13,7 @@ use Tests\CasoConCatalogos;
  *
  * Con el RUT solo, cualquiera que lo supiera veía el nombre completo de la
  * persona, su plan, cuándo pagó y cuánto debía. Se pidieron además los 4
- * últimos dígitos del celular, pero casi ningún socio lo tiene guardado y la
- * consulta no le servía a nadie: desde el 6-oct-2026 vuelve a ser solo el RUT,
+ * últimos dígitos del celular; desde el 6-oct-2026 vuelve a ser solo el RUT,
  * respondiendo lo mínimo —primer nombre, plan, días y si debe algo, SIN el
  * monto— y con los frenos por conexión, por RUT y del día.
  */

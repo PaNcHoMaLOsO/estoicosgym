@@ -1946,9 +1946,8 @@ class LandingController extends Controller
 
         /*
          * SOLO EL RUT (decidido el 6-oct-2026). Se pedían además los últimos 4
-         * dígitos del celular, pero casi ningún socio lo tiene guardado (1 de
-         * 37 activos): la consulta no le servía a nadie. A cambio, lo que se
-         * muestra es lo mínimo —primer nombre, plan, días y si debe algo, sin
+         * dígitos del celular: un paso más para el socio, y sin celular
+         * guardado no podía consultar. A cambio, lo que se muestra es lo mínimo —primer nombre, plan, días y si debe algo, sin
          * el monto— y siguen los frenos por conexión, por RUT y del día.
          */
         return [$cliente, $llave, null];
