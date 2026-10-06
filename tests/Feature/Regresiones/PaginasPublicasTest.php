@@ -292,4 +292,17 @@ class PaginasPublicasTest extends CasoConCatalogos
 
         $this->assertContains($plan->id, collect($cobrables)->pluck('id')->all());
     }
+
+    /**
+     * El script de «Mi membresía» se puede leer. Tenía iconos escritos dentro
+     * de una cadena del script; el icono trae un salto de línea al final y eso
+     * rompía el script entero: «Consultar» no hacía nada.
+     */
+    public function test_el_script_de_mi_membresia_no_lleva_iconos_en_cadenas(): void
+    {
+        $html = $this->get('/mi-membresia')->assertOk()->getContent();
+
+        $this->assertDoesNotMatchRegularExpression("/innerHTML\s*=\s*'<svg/", $html);
+        $this->assertStringContainsString('id="icono-buscando"', $html);
+    }
 }
