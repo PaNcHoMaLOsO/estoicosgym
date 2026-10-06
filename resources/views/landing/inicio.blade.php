@@ -13,12 +13,12 @@
         Es el molde de cualquier plantilla: se reconoce antes de leer nada, y no
         decía de este gimnasio más de lo que dice la foto.
     --}}
-    <section id="inicio" class="relative lg:min-h-[80svh] flex items-end overflow-hidden">
+    <section id="inicio" class="relative lg:min-h-[62svh] flex items-end overflow-hidden">
         {{-- El fondo va pasando solo: vídeo, foto, vídeo, foto. Sale de «Página
              web» y de los vídeos que haya subidos. --}}
         @include('landing.partes.portada-fondo')
 
-        <div class="relative z-10 w-full max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 pt-24 lg:pt-32 pb-7 lg:pb-14 entrada">
+        <div class="relative z-10 w-full max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 pt-24 lg:pt-28 pb-7 lg:pb-10 entrada">
             {{-- EL H1 ES EL RÓTULO PEQUEÑO, no el eslogan: «Gimnasio en Los
                  Ángeles» es lo que busca la gente y lo que Google lee primero.
                  El eslogan sigue siendo lo grande, pero como párrafo. Se ven
@@ -47,7 +47,7 @@
     </section>
 
     {{-- ===== ACCESOS: una tarjeta por pagina ===== --}}
-    <section id="accesos" class="py-1 lg:py-14 bg-pg-negro">
+    <section id="accesos" class="py-1 lg:py-8 bg-pg-negro">
         @php($columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5'][min(5, max(2, count($destacados)))])
         {{-- Las clases van escritas enteras: el CSS compilado solo trae las que encuentra tal cual. --}}
         {{-- Sin tarjetas: una línea separa un acceso del siguiente. Tres cajas

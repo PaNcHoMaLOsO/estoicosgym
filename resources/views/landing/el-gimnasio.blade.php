@@ -149,28 +149,30 @@
                 </div>
 
                 {{--
-                    UNA GRILLA PAREJA DE CUADRADOS, chica. Antes cada foto iba con
-                    su proporción en columnas: no recortaba nada, pero con trece
-                    fotos ocupaba casi dos pantallas y quedaba desordenada (unas
-                    altas, otras bajas, huecos al final). Ahora van todas del
-                    mismo tamaño y más por fila.
+                    CADA FOTO CON SU PROPIA PROPORCIÓN, en columnas: es lo que le
+                    da el aire de collage, y no recorta cabezas (en huecos fijos
+                    las verticales entraban cortadas). Se probó una grilla de
+                    cuadrados parejos y perdía justamente eso.
 
-                    El recorte se apoya ARRIBA (`object-[center_30%]`): las fotos
-                    son casi todas verticales y con gente, y centrado al medio a
-                    más de una le cortaba la cabeza. Tocando una se abre entera.
+                    Para que no ocupe dos pantallas: más columnas, más angostas,
+                    con poca separación y un ancho máximo. Tocando una se abre
+                    entera.
+
+                    `break-inside-avoid` evita que una foto se parta entre el
+                    final de una columna y el principio de la siguiente.
                 --}}
-                <div class="mx-auto grid max-w-5xl grid-cols-4 gap-1.5 sm:grid-cols-5 sm:gap-2 lg:grid-cols-7 lg:gap-3">
+                <div class="mx-auto max-w-6xl columns-3 gap-2 sm:columns-4 lg:columns-6 lg:gap-3">
                     @foreach($fotos as $i => $foto)
                         <a href="{{ $foto['imagen'] }}" target="_blank" rel="noopener"
-                           class="animate-on-scroll group relative block aspect-square overflow-hidden rounded-xl bg-pg-negro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pg-rojo-claro"
-                           style="animation-delay: {{ ($i % 7) * 0.05 }}s">
+                           class="animate-on-scroll group relative mb-2 block break-inside-avoid overflow-hidden rounded-xl bg-pg-negro lg:mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pg-rojo-claro"
+                           style="animation-delay: {{ ($i % 6) * 0.05 }}s">
                             {{-- Sin rótulo encima: el texto va en `alt`, que es lo que
                                  lee Google y quien navega con lector de pantalla. --}}
                             <img src="{{ $foto['imagen'] }}"
                                  alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
                                  @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
                                  loading="lazy" decoding="async"
-                                 class="h-full w-full object-cover object-[center_30%] transition-transform duration-700 group-hover:scale-105">
+                                 class="h-auto w-full transition-transform duration-700 group-hover:scale-105">
                         </a>
                     @endforeach
                 </div>
