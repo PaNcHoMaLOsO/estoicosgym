@@ -8,8 +8,10 @@
     <!-- SEO: el nombre sale de Configuracion -> El gimnasio -->
     @php($nombreGimnasio = $gimnasio['nombre'] ?? 'PRO GYM')
     <title>@yield('title', $nombreGimnasio . ' | Profesionales del deporte')</title>
-    <meta name="description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '. Revisa los planes y consulta tu membresía en línea.')">
-    <meta name="keywords" content="gimnasio, fitness, musculación, cardio, entrenamiento">
+    {{-- Hasta 160 letras, que es lo que Google alcanza a mostrar: el resto lo corta él, a la mitad de una palabra.
+         (Las palabras clave ya no se escriben: Google no las lee desde hace años.) --}}
+    @php($descripcionDeLaPagina = \Illuminate\Support\Str::limit(trim(html_entity_decode(strip_tags($__env->yieldContent('description', 'Gimnasio ' . $nombreGimnasio . '. Revisa los planes y consulta tu membresía en línea.')), ENT_QUOTES)), 160, '…', preserveWords: true))
+    <meta name="description" content="{{ $descripcionDeLaPagina }}">
     <meta name="author" content="{{ $nombreGimnasio }}">
     {{-- Cada página puede pedir otra cosa: la consulta de membresía no se indexa. --}}
     <meta name="robots" content="{{ $web['robots'] ?? 'index, follow, max-image-preview:large' }}">
@@ -23,7 +25,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ $web['canonical'] ?? url()->current() }}">
     <meta property="og:title" content="@yield('title', $nombreGimnasio)">
-    <meta property="og:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
+    <meta property="og:description" content="{{ $descripcionDeLaPagina }}">
     <meta property="og:image" content="{{ $imagenAlCompartir }}">
     @if(!empty($web['imagen_medidas']))
         <meta property="og:image:width" content="{{ $web['imagen_medidas'][0] }}">
@@ -36,7 +38,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('title', $nombreGimnasio)">
-    <meta name="twitter:description" content="@yield('description', 'Gimnasio ' . $nombreGimnasio . '.')">
+    <meta name="twitter:description" content="{{ $descripcionDeLaPagina }}">
     <meta name="twitter:image" content="{{ $imagenAlCompartir }}">
 
     <!-- Favicon: el isotipo del logotipo -->

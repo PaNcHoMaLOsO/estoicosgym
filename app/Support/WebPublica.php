@@ -14,14 +14,19 @@ use App\Models\Membresia;
  */
 class WebPublica
 {
-    /** «PRO GYM | Gimnasio en Los Ángeles, Biobío». */
+    /**
+     * «PRO GYM | Gimnasio en Los Ángeles, Biobío, Chile».
+     *
+     * CON «CHILE»: «gimnasio los angeles» se confunde con California, y Google
+     * sugiere justamente «gimnasio los angeles chile».
+     */
     public static function tituloDeInicio(): string
     {
         $nombre = Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM';
         $ciudad = trim((string) Ajustes::obtener('web.ciudad'));
         $region = trim((string) Ajustes::obtener('web.region'));
 
-        return $nombre . ($ciudad ? " | Gimnasio en {$ciudad}" . ($region ? ", {$region}" : '') : '');
+        return $nombre . ($ciudad ? " | Gimnasio en {$ciudad}" . ($region ? ", {$region}" : '') . ', Chile' : '');
     }
 
     /** La que se arma sola: dónde está, qué hay y desde cuánto. */

@@ -7,7 +7,7 @@
                     <img src="{{ asset('images/progym-logo-320.png') }}" alt="{{ $gimnasio['nombre'] }}" width="1096" height="495" class="h-12 lg:h-14 w-auto" loading="lazy">
                 </picture>
                 <p class="text-pg-tiza/55 font-modern text-sm mt-3 lg:mt-4">
-                    {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}
+                    {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}{{ $web['ciudad'] ? ', Chile' : '' }}
                 </p>
                 @if($gimnasio['direccion'])
                     <p class="text-pg-tiza/55 font-modern text-sm mt-1">{{ $gimnasio['direccion'] }}</p>

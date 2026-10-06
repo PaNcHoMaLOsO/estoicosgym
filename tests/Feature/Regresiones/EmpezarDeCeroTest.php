@@ -14,6 +14,7 @@ use App\Models\Nota;
 use App\Models\Pago;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\CasoConCatalogos;
 
@@ -122,6 +123,27 @@ class EmpezarDeCeroTest extends CasoConCatalogos
 
         // La numeración empieza de nuevo: el primer socio de verdad es el 1.
         $this->assertSame(1, Cliente::factory()->create()->id);
+    }
+
+    /**
+     * Toda tabla que apunte a un socio (o a algo suyo) está en la lista. Se
+     * agregaron fiado_registros, socios_distintos y entradas_canje sin
+     * sumarlas aquí, y al vaciar habrían quedado filas de nadie.
+     */
+    public function test_no_se_queda_fuera_ninguna_tabla_que_cuelgue_de_los_socios(): void
+    {
+        $delSocio = EmpezarDeCero::TABLAS;
+        $faltan = [];
+
+        foreach (Schema::getTableListing(schemaQualified: false) as $tabla) {
+            foreach (Schema::getForeignKeys($tabla) as $clave) {
+                if (in_array($clave['foreign_table'], $delSocio, true) && ! in_array($tabla, $delSocio, true)) {
+                    $faltan[] = "{$tabla} -> {$clave['foreign_table']}";
+                }
+            }
+        }
+
+        $this->assertSame([], $faltan);
     }
 
     /** Antes de borrar queda un respaldo, y se puede volver a importar. */

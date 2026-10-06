@@ -142,7 +142,9 @@ class LandingController extends Controller
         $precios = array_column($mensualidades, 'precio');
         $nombres = implode(', ', array_column($mensualidades, 'nombre'));
 
-        return $this->pagina('landing.planes', 'landing.planes', 'Planes y precios',
+        // «del gimnasio»: es la palabra que se busca («precio gimnasio los
+        // ángeles»), y «Planes y precios» solo no dice de qué.
+        return $this->pagina('landing.planes', 'landing.planes', 'Planes y precios del gimnasio',
             "Planes de {$comun['gimnasio']['nombre']}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
                 . ($nombres ? ": {$nombres}." : '.')
                 . ($precios ? ' Desde ' . $this->pesos(min($precios)) . '.' : ''),
@@ -196,12 +198,13 @@ class LandingController extends Controller
         $instituciones = $this->contenidos('institucion')
             ->map(fn (array $c) => ['nombre' => $c['titulo'], 'logo' => $c['imagen']])
             ->all();
-        $nombres = collect($instituciones)->pluck('nombre')->take(4)->implode(', ');
+        // Pocos nombres: la descripción que muestra Google corta cerca de los 160.
+        $nombres = collect($instituciones)->pluck('nombre')->take(3)->implode(', ');
 
         return $this->pagina('landing.arriendo', 'landing.arriendo',
             'Arriendo de gimnasio por horas para tus clases',
-            "Arrienda horas en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ': para universidades, clubes y entrenadores que dan sus clases con sala de máquinas, peso libre y cardio, junto a los socios.'
-                . ($nombres ? " Ya entrenan aquí {$nombres}." : '') . ' Marca las horas y te respondemos.',
+            "Arrienda horas en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ', para tus clases con sala de máquinas, peso libre y cardio.'
+                . ($nombres ? " Ya entrenan aquí {$nombres}." : ''),
             [
                 'instituciones' => $instituciones,
                 'fotosDelArriendo' => $this->contenidos('arriendo')->filter(fn (array $c) => $c['imagen'])->values()->all(),
@@ -476,7 +479,19 @@ class LandingController extends Controller
 
         $especialidades = collect($comun['especialistas'])->pluck('especialidad')->unique()->implode(', ');
 
-        return $this->pagina('landing.especialistas', 'landing.especialistas', 'Especialistas',
+        // El título dice QUÉ profesionales hay —«Nutricionista, kinesiólogo y
+        // personal trainer en Los Ángeles»—, que es lo que se busca; nadie
+        // busca «especialistas». Sale de los que hay, nunca de una lista fija.
+        $grupos = array_column(Especialidades::agrupar($comun['especialistas']), 'nombre');
+        $titulo = 'Especialistas';
+        if ($grupos !== []) {
+            $grupos = array_slice($grupos, 0, 3);
+            $ultimo = array_pop($grupos);
+            $titulo = \Illuminate\Support\Str::ucfirst(\Illuminate\Support\Str::lower(($grupos ? implode(', ', $grupos) . ' y ' : '') . $ultimo))
+                . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '');
+        }
+
+        return $this->pagina('landing.especialistas', 'landing.especialistas', $titulo,
             ($especialidades
                 ? "{$especialidades} que trabajan con {$comun['gimnasio']['nombre']}."
                 : "Los profesionales que trabajan con {$comun['gimnasio']['nombre']}.")

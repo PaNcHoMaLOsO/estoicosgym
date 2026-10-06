@@ -43,6 +43,11 @@ class EmpezarDeCero extends Command
         'notificaciones',
         'historial_traspasos',
         'historial_cambios',
+        // Las que colgaban de los socios y se agregaron después: si quedaran,
+        // apuntarían a nadie (y entradas_canje guarda nombres de personas).
+        'fiado_registros',
+        'socios_distintos',
+        'entradas_canje',
         // Apuntan a socios y membresías: si se quedaran, serían contratos de
         // nadie.
         'contratos',

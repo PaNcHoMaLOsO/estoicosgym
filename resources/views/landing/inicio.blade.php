@@ -110,6 +110,15 @@
                 <div class="text-center mb-6 lg:mb-10 animate-on-scroll">
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">Lo que ofrecemos</span>
                     <h2 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">NUESTROS SERVICIOS</h2>
+                    {{-- QUÉ ES Y DÓNDE, en una frase: lo que Google y los asistentes
+                         citan cuando alguien pregunta por un gimnasio en la ciudad.
+                         Armada con lo que hay encendido, nunca con lo que no. --}}
+                    @if($web['ciudad'])
+                        <p class="mx-auto mt-4 max-w-2xl font-modern text-sm text-pg-tiza/60 lg:text-base">
+                            {{ $gimnasio['nombre'] }} es un gimnasio en el centro de {{ $web['ciudad'] }}{{ $web['region'] ? ', ' . $web['region'] : '' }}{{ $gimnasio['direccion'] ? ' (' . $gimnasio['direccion'] . ')' : '' }},
+                            con {{ \Illuminate\Support\Str::lower(collect($servicios)->pluck('titulo')->join(', ', ' y ')) }}{{ $navegacion['especialistas'] ? ', especialistas en el mismo lugar' : '' }}{{ $navegacion['convenios'] ? ' y precio especial para estudiantes con convenio' : '' }}.
+                        </p>
+                    @endif
                 </div>
                 @include('landing.partes.servicios')
                 @if($navegacion['gimnasio'])

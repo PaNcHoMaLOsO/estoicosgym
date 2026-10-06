@@ -47,7 +47,7 @@ class WebPublicaTest extends CasoConCatalogos
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('<title>PRO GYM | Gimnasio en Los Ángeles, Biobío</title>', false)
+            ->assertSee('<title>PRO GYM | Gimnasio en Los Ángeles, Biobío, Chile</title>', false)
             ->assertSee('Gimnasio en Los Ángeles', false)
             ->assertSee('<link rel="canonical" href="' . url('/') . '">', false);
     }

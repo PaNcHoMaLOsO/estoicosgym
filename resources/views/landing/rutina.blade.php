@@ -44,7 +44,8 @@
 @section('content')
     <section class="bg-pg-negro pb-16 pt-20 lg:pt-32">
         <div class="mx-auto max-w-3xl px-4 sm:px-8">
-            <p class="text-center font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Qué entrenar hoy</p>
+            {{-- El título de la página (para Google y los lectores de pantalla), con el aspecto de antes. --}}
+            <h1 class="text-center font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Qué entrenar hoy</h1>
 
             {{-- La barra de los cuatro pasos: solo cuando van de a uno. --}}
             <div data-barra hidden class="mt-4 flex gap-1.5" aria-hidden="true">
