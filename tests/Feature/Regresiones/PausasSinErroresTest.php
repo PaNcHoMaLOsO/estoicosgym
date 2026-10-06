@@ -363,14 +363,14 @@ class PausasSinErroresTest extends CasoConCatalogos
         $pausada = $this->pausada(haceDias: 30, duracion: 60, quedaban: 20);
         $pausada->cliente->update(['run_pasaporte' => '12345678-5', 'celular' => '912345678', 'nombres' => 'Camila']);
 
-        $datos = $this->postJson('/consultar-membresia', ['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'])
+        $datos = $this->postJson('/consultar-membresia', ['rut' => '12.345.678-5'])
             ->assertOk()
             ->json('data');
 
         $this->assertSame('Mensual', $datos['membresia']);
         $this->assertStringContainsString('Pausada', $datos['estado']);
         $this->assertSame(20, $datos['dias_restantes']);
-        $this->assertSame(40000, $datos['saldo']);
+        $this->assertTrue($datos['debe']);
     }
 
     // ---------- Los avisos ----------

@@ -15,7 +15,7 @@
                     <span class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">¿Ya eres miembro?</span>
                     <h1 class="font-display text-3xl md:text-4xl mt-4 text-pg-tiza">CONSULTA TU MEMBRESÍA</h1>
                     <p class="text-pg-tiza/60 mt-4 max-w-2xl mx-auto font-modern">
-                        Ingresa tu RUT y los últimos 4 dígitos de tu celular para ver cómo está tu membresía.
+                        Ingresa tu RUT para ver cómo está tu membresía.
                     </p>
                 </div>
                 
@@ -24,16 +24,6 @@
                 <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
                 <div class="max-w-md w-full mx-auto animate-on-scroll lg:order-1">
                     <div class="bg-pg-negro/50 border border-pg-tiza/10 rounded-2xl p-6">
-                        <!-- Tabs de consulta -->
-                        <div class="flex mb-6 bg-pg-carbon/50 rounded-lg p-1">
-                            <button type="button" id="tab-rut" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all bg-pg-rojo text-white">
-                                <x-icono nombre="id-card" class="mr-1" /> Con RUT
-                            </button>
-                            <button type="button" id="tab-celular" class="flex-1 py-2 px-4 rounded-md text-sm font-modern transition-all text-pg-tiza/60 hover:text-pg-tiza">
-                                <x-icono nombre="mobile-alt" class="mr-1" /> Con Celular
-                            </button>
-                        </div>
-                        
                         <div class="space-y-4">
                             <!-- Honeypot anti-bot (oculto) -->
                             <div class="hp-field" aria-hidden="true">
@@ -54,50 +44,8 @@
                                         class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-wider"
                                     >
                                 </div>
-                                <div>
-                                    <label for="digitos-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <x-icono nombre="mobile-alt" class="mr-2 text-pg-rojo-claro" />Últimos 4 dígitos de tu celular
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="digitos-consulta"
-                                        inputmode="numeric"
-                                        autocomplete="off"
-                                        placeholder="••••"
-                                        maxlength="4"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-[0.5em]"
-                                    >
-                                </div>
                             </div>
-                            
-                            <!-- Formulario Celular (oculto inicialmente) -->
-                            <div id="form-celular" class="space-y-4 hidden">
-                                <div>
-                                    <label for="celular-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <x-icono nombre="mobile-alt" class="mr-2 text-pg-rojo-claro" />Celular
-                                    </label>
-                                    <input 
-                                        type="tel" 
-                                        id="celular-consulta" 
-                                        placeholder="9 1234 5678"
-                                        maxlength="12"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center text-base tracking-wider"
-                                    >
-                                </div>
-                                <div>
-                                    <label for="nombre-consulta" class="block text-sm font-medium mb-2 text-pg-tiza font-modern">
-                                        <x-icono nombre="user" class="mr-2 text-pg-rojo-claro" />Primer Nombre
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        id="nombre-consulta" 
-                                        placeholder="Tu nombre"
-                                        maxlength="50"
-                                        class="w-full bg-pg-negro border border-pg-tiza/20 focus:border-pg-rojo rounded-lg px-4 py-3 text-pg-tiza placeholder:text-pg-tiza/30 transition-colors focus:outline-hidden focus:ring-2 focus:ring-pg-rojo/20 font-modern text-center"
-                                    >
-                                </div>
-                            </div>
-                            
+
                             <button 
                                 type="button"
                                 id="btn-consultar"
@@ -241,44 +189,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnConsultar = document.getElementById('btn-consultar');
     const btnCerrar = document.getElementById('btn-cerrar-resultado');
     const inputRut = document.getElementById('rut-consulta');
-    const inputDigitos = document.getElementById('digitos-consulta');
-    const inputCelular = document.getElementById('celular-consulta');
-    const inputNombre = document.getElementById('nombre-consulta');
     const resultadoDiv = document.getElementById('resultado-consulta');
     const errorDiv = document.getElementById('error-consulta');
-    
-    // Tabs
-    const tabRut = document.getElementById('tab-rut');
-    const tabCelular = document.getElementById('tab-celular');
-    const formRut = document.getElementById('form-rut');
-    const formCelular = document.getElementById('form-celular');
-    
-    let modoConsulta = 'rut'; // 'rut' o 'celular'
     const icono = (id) => document.getElementById(id)?.innerHTML.trim() ?? '';
-    
-    // Cambiar tabs
-    tabRut.addEventListener('click', function() {
-        modoConsulta = 'rut';
-        tabRut.classList.add('bg-pg-rojo', 'text-white');
-        tabRut.classList.remove('text-pg-tiza/60');
-        tabCelular.classList.remove('bg-pg-rojo', 'text-white');
-        tabCelular.classList.add('text-pg-tiza/60');
-        formRut.classList.remove('hidden');
-        formCelular.classList.add('hidden');
-        ocultarError();
-    });
-    
-    tabCelular.addEventListener('click', function() {
-        modoConsulta = 'celular';
-        tabCelular.classList.add('bg-pg-rojo', 'text-white');
-        tabCelular.classList.remove('text-pg-tiza/60');
-        tabRut.classList.remove('bg-pg-rojo', 'text-white');
-        tabRut.classList.add('text-pg-tiza/60');
-        formCelular.classList.remove('hidden');
-        formRut.classList.add('hidden');
-        ocultarError();
-    });
-    
+
     // Formatear RUT mientras escribe
     inputRut.addEventListener('input', function(e) {
         let value = e.target.value.replace(/[^0-9kK]/g, '');
@@ -289,84 +203,27 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.value = body + '-' + dv;
         }
     });
-    
-    // Formatear celular mientras escribe
-    inputCelular.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9]/g, '');
-        if (value.length > 9) value = value.slice(0, 9);
-        if (value.length > 1) {
-            e.target.value = value.slice(0,1) + ' ' + value.slice(1,5) + ' ' + value.slice(5);
-        } else {
-            e.target.value = value;
-        }
-    });
-    
-    // Consultar al hacer click
+
     btnConsultar.addEventListener('click', consultarMembresia);
-    
-    // Consultar con Enter
     inputRut.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') consultarMembresia();
     });
-    inputCelular.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') consultarMembresia();
-    });
-    inputNombre.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') consultarMembresia();
-    });
-    
-    // Los 4 digitos: solo numeros, y con Enter se consulta igual que en el RUT.
-    inputDigitos.addEventListener('input', function(e) {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-    });
-    inputDigitos.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') consultarMembresia();
-    });
 
-    // Cerrar resultado
+    // Consultar otra
     btnCerrar.addEventListener('click', function() {
         resultadoDiv.classList.add('hidden');
         inputRut.value = '';
-        inputCelular.value = '';
-        inputNombre.value = '';
-        inputDigitos.value = '';
-        if (modoConsulta === 'rut') {
-            inputRut.focus();
-        } else {
-            inputCelular.focus();
-        }
+        inputRut.focus();
     });
-    
+
     async function consultarMembresia() {
-        let payload = {};
-        
-        if (modoConsulta === 'rut') {
-            const rut = inputRut.value.trim();
-            if (!rut || rut.length < 7) {
-                mostrarError('Ingresa un RUT válido');
-                return;
-            }
-            const digitos = inputDigitos.value.trim();
-            if (!/^[0-9]{4}$/.test(digitos)) {
-                mostrarError('Ingresa los últimos 4 dígitos de tu celular');
-                return;
-            }
-            payload = { tipo: 'rut', rut: rut, digitos: digitos };
-        } else {
-            const celular = inputCelular.value.replace(/\s/g, '').trim();
-            const nombre = inputNombre.value.trim();
-            
-            if (!celular || celular.length < 8) {
-                mostrarError('Ingresa un celular válido');
-                return;
-            }
-            if (!nombre || nombre.length < 2) {
-                mostrarError('Ingresa tu nombre');
-                return;
-            }
-            payload = { tipo: 'celular', celular: celular, nombre: nombre };
+        const rut = inputRut.value.trim();
+        if (!rut || rut.length < 7) {
+            mostrarError('Ingresa un RUT válido');
+            return;
         }
-        
+        const payload = { rut: rut };
+
         // Mostrar loading
         btnConsultar.disabled = true;
         btnConsultar.innerHTML = icono('icono-buscando') + 'Consultando…';
@@ -437,11 +294,11 @@ document.addEventListener('DOMContentLoaded', function() {
             requestAnimationFrame(() => { barra.style.width = total ? Math.min(100, Math.round(dias / total * 100)) + '%' : '0'; });
         }
 
-        // Si debe algo, cuánto. Nada de historial: eso se ve en el mesón.
+        // Si debe algo, sin el monto: eso se dice en el mesón.
         const saldoEl = document.getElementById('resultado-saldo');
         const linea = 'mt-5 border-t border-pg-tiza/10 pt-4 font-modern text-sm ';
-        if (data.saldo && data.saldo > 0) {
-            saldoEl.textContent = 'Tienes un saldo pendiente de $' + Number(data.saldo).toLocaleString('es-CL') + '. Puedes pagarlo en el mesón.';
+        if (data.debe) {
+            saldoEl.textContent = 'Tienes un pago pendiente. Te decimos cuánto en el mesón o por WhatsApp.';
             saldoEl.className = linea + 'text-yellow-400';
         } else if (data.membresia) {
             saldoEl.textContent = 'Estás al día con los pagos.';

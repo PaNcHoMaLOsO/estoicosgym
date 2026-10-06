@@ -1880,10 +1880,8 @@ class LandingController extends Controller
             ], 429);
         }
 
-        // 3. Quién es.
-        [$cliente, $llave, $respuesta] = $request->input('tipo', 'rut') === 'celular'
-            ? $this->buscarPorCelular($request, $ip)
-            : $this->buscarPorRut($request, $ip);
+        // 3. Quién es. Solo por RUT (ver buscarPorRut).
+        [$cliente, $llave, $respuesta] = $this->buscarPorRut($request, $ip);
 
         if ($respuesta) {
             return $respuesta;
@@ -1918,14 +1916,9 @@ class LandingController extends Controller
     private function buscarPorRut(Request $request, string $ip): array
     {
         $rutInput = preg_replace('/[^0-9kK.-]/', '', strip_tags(trim($request->texto('rut', ''))));
-        $digitos = preg_replace('/[^0-9]/', '', $request->texto('digitos', ''));
 
         if (strlen($rutInput) < 7 || strlen($rutInput) > 12) {
             return [null, null, $this->invalido('Formato de RUT inválido.')];
-        }
-
-        if (strlen($digitos) !== 4) {
-            return [null, null, $this->invalido('Ingresa los últimos 4 dígitos de tu celular.')];
         }
 
         $rutLimpio = strtoupper(preg_replace('/[^0-9kK]/', '', $rutInput));
@@ -1951,57 +1944,13 @@ class LandingController extends Controller
             })
             ->first();
 
-        // El mismo camino exista o no: así la respuesta no distingue «no es
-        // socio» de «es socio pero los dígitos no son».
-        $celular = $cliente ? preg_replace('/[^0-9]/', '', (string) $cliente->celular) : '';
-        $coincide = $celular !== '' && hash_equals(substr($celular, -4), $digitos);
-
-        return [$coincide ? $cliente : null, $llave, null];
-    }
-
-    /**
-     * Por celular y primer nombre, para quien no tiene RUT.
-     *
-     * @return array{0: ?Cliente, 1: ?string, 2: ?\Illuminate\Http\JsonResponse}
-     */
-    private function buscarPorCelular(Request $request, string $ip): array
-    {
-        $celularInput = preg_replace('/[^0-9]/', '', $request->texto('celular', ''));
-        $nombreInput = trim(strip_tags($request->texto('nombre', '')));
-
-        if (strlen($celularInput) < 8 || strlen($celularInput) > 12) {
-            return [null, null, $this->invalido('Formato de celular inválido.')];
-        }
-
-        if (mb_strlen($nombreInput) < 2 || mb_strlen($nombreInput) > 50) {
-            return [null, null, $this->invalido('Nombre inválido.')];
-        }
-
-        $llave = 'consulta_fallidos_llave:' . hash('sha256', 'cel:' . substr($celularInput, -8));
-
-        if ($bloqueada = $this->llaveBloqueada($llave)) {
-            return [null, $llave, $bloqueada];
-        }
-
         /*
-         * El celular se guarda normalizado —nueve dígitos, sin +56—, así que se
-         * compara tal cual. Antes se usaba RIGHT() de MySQL, que otras bases no
-         * tienen.
-         *
-         * Y el nombre tiene que ser EL PRIMER NOMBRE, entero. Antes bastaba con
-         * que las letras escritas estuvieran dentro del nombre: «an» abría la
-         * ficha de cualquier Juan, Ana o Daniela con ese celular.
+         * SOLO EL RUT (decidido el 6-oct-2026). Se pedían además los últimos 4
+         * dígitos del celular, pero casi ningún socio lo tiene guardado (1 de
+         * 37 activos): la consulta no le servía a nadie. A cambio, lo que se
+         * muestra es lo mínimo —primer nombre, plan, días y si debe algo, sin
+         * el monto— y siguen los frenos por conexión, por RUT y del día.
          */
-        $primero = fn (string $texto) => explode(' ', trim($this->normalizarTexto($texto)))[0] ?? '';
-        $buscado = $primero($nombreInput);
-
-        $cliente = Cliente::where('activo', true)
-            ->where(fn ($q) => $q
-                ->where('celular', substr($celularInput, -9))
-                ->orWhere('celular', 'like', '%' . substr($celularInput, -8)))
-            ->get()
-            ->first(fn (Cliente $c) => $buscado !== '' && $primero((string) $c->nombres) === $buscado);
-
         return [$cliente, $llave, null];
     }
 
@@ -2077,7 +2026,9 @@ class LandingController extends Controller
             'fecha_inicio' => null,
             'fecha_fin' => null,
             'dias_restantes' => null,
-            'saldo' => 0,
+            // Si debe algo, sin el monto: con el RUT solo, cualquiera que lo
+            // sepa vería la deuda de otro. Cuánto, se dice en el mesón.
+            'debe' => false,
         ];
 
         if (! $activa) {
@@ -2097,7 +2048,7 @@ class LandingController extends Controller
                 'fecha_inicio' => $activa->fecha_inicio?->format('d/m/Y'),
                 'fecha_fin' => $activa->vencimientoAlReanudar()?->format('d/m/Y'),
                 'dias_restantes' => $activa->dias_restantes,
-                'saldo' => (int) $activa->obtenerEstadoPago()['pendiente'],
+                'debe' => (int) $activa->obtenerEstadoPago()['pendiente'] > 0,
             ];
         }
 
@@ -2118,7 +2069,7 @@ class LandingController extends Controller
             'fecha_inicio' => $activa->fecha_inicio?->format('d/m/Y'),
             'fecha_fin' => $activa->fecha_vencimiento?->format('d/m/Y'),
             'dias_restantes' => $dias === null ? null : max(0, $dias),
-            'saldo' => (int) $activa->obtenerEstadoPago()['pendiente'],
+            'debe' => (int) $activa->obtenerEstadoPago()['pendiente'] > 0,
         ];
     }
 

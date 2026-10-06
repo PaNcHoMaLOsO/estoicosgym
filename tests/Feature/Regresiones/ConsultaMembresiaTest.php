@@ -12,9 +12,11 @@ use Tests\CasoConCatalogos;
  * «Mi membresía»: la consulta pública desde la web.
  *
  * Con el RUT solo, cualquiera que lo supiera veía el nombre completo de la
- * persona, si era socia, su plan y cuándo pagó. Ahora se piden dos datos, se
- * responde lo justo y los frenos cuentan por conexión Y por RUT, para que
- * cambiar de IP no sirva para probar dígitos.
+ * persona, su plan, cuándo pagó y cuánto debía. Se pidieron además los 4
+ * últimos dígitos del celular, pero casi ningún socio lo tiene guardado y la
+ * consulta no le servía a nadie: desde el 6-oct-2026 vuelve a ser solo el RUT,
+ * respondiendo lo mínimo —primer nombre, plan, días y si debe algo, SIN el
+ * monto— y con los frenos por conexión, por RUT y del día.
  */
 class ConsultaMembresiaTest extends CasoConCatalogos
 {
@@ -56,9 +58,9 @@ class ConsultaMembresiaTest extends CasoConCatalogos
 
     // ---------- Lo que ve el socio ----------
 
-    public function test_con_el_rut_y_los_4_digitos_ve_su_membresia(): void
+    public function test_con_el_rut_ve_su_membresia(): void
     {
-        $respuesta = $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'])
+        $respuesta = $this->consultar(['rut' => '12.345.678-5'])
             ->assertOk()
             ->assertJsonPath('data.nombre', 'Camila')
             ->assertJsonPath('data.membresia', 'Mensual')
@@ -70,7 +72,8 @@ class ConsultaMembresiaTest extends CasoConCatalogos
         $this->assertNull($respuesta->json('token'));
     }
 
-    public function test_si_debe_algo_se_le_dice_cuanto(): void
+    /** Que debe, sí; cuánto, no: con el RUT solo, otro vería la deuda. */
+    public function test_si_debe_algo_se_le_dice_pero_no_cuanto(): void
     {
         Pago::factory()->create([
             'id_cliente' => $this->socio->id,
@@ -81,46 +84,35 @@ class ConsultaMembresiaTest extends CasoConCatalogos
             'id_estado' => 202,
         ]);
 
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'])
+        $this->consultar(['rut' => '12.345.678-5'])
             ->assertOk()
-            ->assertJsonPath('data.saldo', 25000);
+            ->assertJsonPath('data.debe', true)
+            ->assertJsonMissingPath('data.saldo');
     }
 
-    // ---------- Dos datos, y la misma respuesta al fallar ----------
+    // ---------- Lo que no es socio ----------
 
-    public function test_el_rut_solo_ya_no_basta(): void
+    public function test_un_rut_que_no_es_socio_no_encuentra_nada(): void
     {
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5'])->assertStatus(422);
+        $this->consultar(['rut' => '11.111.111-1'], '10.0.0.3')->assertStatus(404);
     }
 
-    /**
-     * Dígitos equivocados responden EXACTAMENTE igual que un RUT que no es socio.
-     *
-     * Si respondieran distinto, «¿esta persona es socia?» se contestaría sin
-     * saber los dígitos.
-     */
-    public function test_digitos_equivocados_responden_igual_que_un_rut_que_no_es_socio(): void
+    /** Lo que antes eran los 4 dígitos ya no se pide: si llegan, no estorban. */
+    public function test_los_digitos_ya_no_hacen_falta(): void
     {
-        $equivocados = $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '0000'], '10.0.0.2');
-        $desconocido = $this->consultar(['tipo' => 'rut', 'rut' => '11.111.111-1', 'digitos' => '5678'], '10.0.0.3');
-
-        $equivocados->assertStatus(404);
-        $desconocido->assertStatus(404);
-        $this->assertSame($desconocido->json(), $equivocados->json());
+        $this->consultar(['rut' => '12.345.678-5', 'digitos' => '0000'], '10.0.0.4')->assertOk();
     }
 
     // ---------- Los frenos ----------
 
-    /** Cinco fallos cierran ese RUT, aunque cada intento venga de otra conexión. */
+    /** Cinco fallos con un RUT lo cierran, aunque cada intento venga de otra conexión. */
     public function test_cinco_fallos_bloquean_ese_rut_aunque_cambie_la_ip(): void
     {
         foreach (range(1, 5) as $i) {
-            $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '000' . $i], "10.1.0.{$i}")
-                ->assertStatus(404);
+            $this->consultar(['rut' => '11.111.111-1'], "10.1.0.{$i}")->assertStatus(404);
         }
 
-        // Ni con los dígitos buenos, desde una conexión nueva.
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '10.9.9.9')
+        $this->consultar(['rut' => '11.111.111-1'], '10.9.9.9')
             ->assertStatus(429)
             ->assertJsonPath('blocked', true);
     }
@@ -128,44 +120,28 @@ class ConsultaMembresiaTest extends CasoConCatalogos
     public function test_mas_de_tres_consultas_seguidas_desde_la_misma_ip_se_frenan(): void
     {
         foreach (range(1, 3) as $i) {
-            $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '10.2.0.1')
+            $this->consultar(['rut' => '12.345.678-5'], '10.2.0.1')
                 ->assertOk();
         }
 
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '10.2.0.1')
+        $this->consultar(['rut' => '12.345.678-5'], '10.2.0.1')
             ->assertStatus(429);
     }
 
     public function test_la_trampa_para_bots_responde_como_si_no_existiera(): void
     {
-        $bot = $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678', 'website' => 'http://spam'], '10.3.0.1');
-        $nadie = $this->consultar(['tipo' => 'rut', 'rut' => '11.111.111-1', 'digitos' => '1234'], '10.3.0.2');
+        $bot = $this->consultar(['rut' => '12.345.678-5', 'website' => 'http://spam'], '10.3.0.1');
+        $nadie = $this->consultar(['rut' => '11.111.111-1'], '10.3.0.2');
 
         $bot->assertStatus(404);
         $this->assertSame($nadie->json(), $bot->json());
     }
 
-    // ---------- Por celular, para quien no tiene RUT ----------
-
-    /**
-     * Por celular y nombre SÍ encuentra a la persona.
-     *
-     * No funcionaba nunca: al encontrarla, el registro de la consulta usaba
-     * una variable que solo existe en la búsqueda por RUT y la respuesta era
-     * un error 500. La página mostraba «Error de conexión».
-     */
-    public function test_por_celular_y_nombre_encuentra_al_socio(): void
+    /** La búsqueda por celular y nombre ya no existe: se busca por RUT. */
+    public function test_por_celular_ya_no_se_busca(): void
     {
-        $this->consultar(['tipo' => 'celular', 'celular' => '9 1234 5678', 'nombre' => 'Camila'], '10.4.0.1')
-            ->assertOk()
-            ->assertJsonPath('data.nombre', 'Camila');
-    }
-
-    /** Antes bastaban dos letras que estuvieran dentro del nombre. */
-    public function test_dos_letras_del_nombre_ya_no_abren_la_ficha(): void
-    {
-        $this->consultar(['tipo' => 'celular', 'celular' => '912345678', 'nombre' => 'am'], '10.5.0.1')
-            ->assertStatus(404);
+        $this->consultar(['tipo' => 'celular', 'celular' => '912345678', 'nombre' => 'Camila'], '10.4.0.1')
+            ->assertStatus(422);
     }
 
     // ---------- El formulario de contacto ----------
@@ -197,10 +173,10 @@ class ConsultaMembresiaTest extends CasoConCatalogos
     {
         // Tres consultas desde tres direcciones de la misma red: el tope por conexión.
         for ($i = 1; $i <= 3; $i++) {
-            $this->consultar(['tipo' => 'rut', 'rut' => '11.111.111-2', 'digitos' => '0000'], "2800:150:1:2::{$i}");
+            $this->consultar(['rut' => '11.111.111-2'], "2800:150:1:2::{$i}");
         }
 
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '2800:150:1:2::99')
+        $this->consultar(['rut' => '12.345.678-5'], '2800:150:1:2::99')
             ->assertStatus(429);
     }
 
@@ -208,7 +184,7 @@ class ConsultaMembresiaTest extends CasoConCatalogos
     {
         \Illuminate\Support\Facades\RateLimiter::increment('consulta_fallidos:del-dia', 86400, 200);
 
-        $this->consultar(['tipo' => 'rut', 'rut' => '12.345.678-5', 'digitos' => '5678'], '10.7.0.1')
+        $this->consultar(['rut' => '12.345.678-5'], '10.7.0.1')
             ->assertStatus(429)
             ->assertJsonPath('message', 'Hoy la consulta en línea no está disponible. Pregunta en el mesón.');
     }
