@@ -42,6 +42,9 @@ class CajaController extends Controller
     /** Los talleres sin su IVA: el IVA de la factura es del SII, no del gimnasio. */
     private bool $sinIva = false;
 
+    /** Lo que entró en cada periodo ya sumado, por «desde|hasta» (ver precargar()). */
+    private array $sumados = [];
+
     public function __invoke(Request $request)
     {
         // Con solo «Ver la caja del día» la ruta deja pasar (Permisos::tambien)
@@ -53,6 +56,8 @@ class CajaController extends Controller
         $this->sinIva = $request->query('iva') === 'sin';
         $hoy = Carbon::today();
         $mes = [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()];
+
+        $this->precargar($hoy, $mes);
 
         return Inertia::render('Caja', [
             /*
@@ -132,7 +137,36 @@ class CajaController extends Controller
      */
     private function entre(Carbon $desde, Carbon $hasta): array
     {
-        return IngresosDelNegocio::entre($desde, $hasta, $this->sinIva);
+        return $this->sumados[$desde->toDateString() . '|' . $hasta->toDateString()]
+            ?? IngresosDelNegocio::entre($desde, $hasta, $this->sinIva);
+    }
+
+    /**
+     * Todos los periodos que pinta la pantalla, sumados de una vez.
+     *
+     * Hoy, ayer, el mes, el mes pasado a la fecha y los últimos meses eran
+     * diez llamadas a entre(), tres consultas cada una. IngresosDelNegocio::
+     * enVarios() los suma en tres, con la misma cuenta; entre() los toma de
+     * aquí. Los periodos son los mismos que piden más abajo.
+     */
+    private function precargar(Carbon $hoy, array $mes): void
+    {
+        $mismoDia = $hoy->copy()->subMonthNoOverflow();
+        $periodos = [
+            [$hoy, $hoy],
+            [$hoy->copy()->subDay(), $hoy->copy()->subDay()],
+            $mes,
+            [$mismoDia->copy()->startOfMonth(), $mismoDia],
+        ];
+
+        foreach (range(self::MESES - 1, 0) as $atras) {
+            $otro = $hoy->copy()->subMonthsNoOverflow($atras);
+            $periodos[] = [$otro->copy()->startOfMonth(), $otro->copy()->endOfMonth()];
+        }
+
+        foreach (IngresosDelNegocio::enVarios($periodos, $this->sinIva) as $n => $partes) {
+            $this->sumados[$periodos[$n][0]->toDateString() . '|' . $periodos[$n][1]->toDateString()] = $partes;
+        }
     }
 
     /**
@@ -197,7 +231,7 @@ class CajaController extends Controller
      */
     private function deudaPorEstado(): array
     {
-        $porEstado = Inscripcion::conDeuda()->groupBy(fn (Inscripcion $i) => (int) $i->id_estado);
+        $porEstado = Inscripcion::conDeuda(['id', 'id_estado', 'precio_final'])->groupBy(fn (Inscripcion $i) => (int) $i->id_estado);
         $sumar = fn (array $estados) => (int) collect($estados)
             ->sum(fn (int $estado) => ($porEstado[$estado] ?? collect())->sum(fn (Inscripcion $i) => $i->deuda));
         $contar = fn (array $estados) => (int) collect($estados)
@@ -223,18 +257,31 @@ class CajaController extends Controller
      */
     private function altasPorMes(Carbon $hoy): array
     {
-        return collect(range(self::MESES - 1, 0))
-            ->map(function (int $atras) use ($hoy) {
-                $mes = $hoy->copy()->subMonthsNoOverflow($atras);
+        $meses = collect(range(self::MESES - 1, 0))
+            ->map(fn (int $atras) => $hoy->copy()->subMonthsNoOverflow($atras))
+            ->all();
 
-                return [
-                    'mes' => $mes->translatedFormat('M'),
-                    'total' => Cliente::whereBetween('created_at', [
-                        $mes->copy()->startOfMonth(),
-                        $mes->copy()->endOfMonth(),
-                    ])->count(),
-                ];
-            })
+        // Una sola consulta con una cuenta por mes («CASE WHEN … BETWEEN»,
+        // los mismos bordes de antes), y no una consulta por mes.
+        $columnas = [];
+        $valores = [];
+
+        foreach ($meses as $n => $mes) {
+            $columnas[] = "COALESCE(SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END), 0) AS p{$n}";
+            array_push($valores, $mes->copy()->startOfMonth(), $mes->copy()->endOfMonth());
+        }
+
+        $cuentas = (array) Cliente::query()
+            ->whereBetween('created_at', [$meses[0]->copy()->startOfMonth(), end($meses)->copy()->endOfMonth()])
+            ->selectRaw(implode(', ', $columnas), $valores)
+            ->toBase()
+            ->first();
+
+        return collect($meses)
+            ->map(fn (Carbon $mes, int $n) => [
+                'mes' => $mes->translatedFormat('M'),
+                'total' => (int) ($cuentas["p{$n}"] ?? 0),
+            ])
             ->all();
     }
 

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Cache;
  */
 final class MedidasDeImagen
 {
+    private const CACHE = 'medidas-de-imagenes';
+
     /** @return array{0:int,1:int}|null */
     public static function de(?string $url): ?array
     {
@@ -26,11 +28,26 @@ final class MedidasDeImagen
             return null;
         }
 
-        return Cache::rememberForever('medidas-imagen:' . md5($ruta . '|' . filemtime($ruta)), function () use ($ruta) {
-            $medidas = @getimagesize($ruta);
+        /*
+         * TODAS EN UNA SOLA LLAVE. Cada foto tenía su propia llave, y como el
+         * caché vive en la base, la página de clases hacía diecisiete consultas
+         * solo para leer medidas. Ahora es una lectura por petición (memo()),
+         * por archivo y con su fecha: una foto reemplazada se vuelve a medir.
+         */
+        $fecha = filemtime($ruta);
+        $todas = Cache::memo()->get(self::CACHE, []);
 
-            return $medidas && $medidas[0] > 0 && $medidas[1] > 0 ? [(int) $medidas[0], (int) $medidas[1]] : null;
-        });
+        if (isset($todas[$ruta]) && $todas[$ruta]['fecha'] === $fecha) {
+            return $todas[$ruta]['medidas'];
+        }
+
+        $medidas = @getimagesize($ruta);
+        $medidas = $medidas && $medidas[0] > 0 && $medidas[1] > 0 ? [(int) $medidas[0], (int) $medidas[1]] : null;
+
+        $todas[$ruta] = ['fecha' => $fecha, 'medidas' => $medidas];
+        Cache::memo()->forever(self::CACHE, $todas);
+
+        return $medidas;
     }
 
     /** El archivo en disco de una dirección de la propia web, o null. */

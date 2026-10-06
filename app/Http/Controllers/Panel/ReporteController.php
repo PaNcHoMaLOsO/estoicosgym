@@ -100,20 +100,29 @@ class ReporteController extends Controller
          * probar. Y como es la pantalla del dinero, es justo la que mas falta
          * hace tener cubierta.
          *
-         * Se traen los pagos del año y se agrupan aqui: son los de un año, no
-         * los de toda la vida del gimnasio.
+         * Tampoco se traen los pagos del año a PHP para contarlos (eran miles
+         * de filas): se cuentan en la base con un rango por mes —desde el día 1
+         * hasta antes del 1 del mes siguiente—, que funciona igual en las dos.
          */
-        $totalPorMes = Pago::ingresos()
+        $columnas = [];
+        $valores = [];
+
+        foreach (range(1, 12) as $mes) {
+            $columnas[] = "COALESCE(SUM(CASE WHEN fecha_pago >= ? AND fecha_pago < ? THEN 1 ELSE 0 END), 0) AS m{$mes}";
+            array_push($valores, Carbon::create($anio, $mes, 1)->startOfDay(), Carbon::create($anio, $mes, 1)->addMonth()->startOfDay());
+        }
+
+        $cuentas = (array) Pago::ingresos()
             ->whereBetween('fecha_pago', [
                 Carbon::create($anio, 1, 1)->startOfDay(),
                 Carbon::create($anio, 12, 31)->endOfDay(),
             ])
-            ->get(['fecha_pago', 'monto_abonado'])
-            ->groupBy(fn (Pago $p) => (int) Carbon::parse($p->fecha_pago)->month)
-            ->map(fn ($pagos) => (object) [
-                'total' => (int) $pagos->sum('monto_abonado'),
-                'cantidad' => $pagos->count(),
-            ]);
+            ->toBase()
+            ->selectRaw(implode(', ', $columnas), $valores)
+            ->first();
+
+        $totalPorMes = collect(range(1, 12))
+            ->mapWithKeys(fn (int $mes) => [$mes => (object) ['cantidad' => (int) ($cuentas["m{$mes}"] ?? 0)]]);
 
         // Los doce meses SIEMPRE, aunque no haya movimiento: un hueco en la
         // serie se lee como «no se cobró», y un mes que falta parece un error.
@@ -121,9 +130,17 @@ class ReporteController extends Controller
         // Y CADA MES PARTIDO en membresías, talleres y mesón, con su total: la
         // misma cuenta que la Caja, de App\Support\IngresosDelNegocio. El
         // total del año contaba solo las membresías.
-        $meses = collect(range(1, 12))->map(function (int $mes) use ($anio, $totalPorMes) {
+        //
+        // Los doce se suman de una vez (IngresosDelNegocio::enVarios): eran
+        // doce llamadas a entre() con tres consultas cada una.
+        $sumados = IngresosDelNegocio::enVarios(array_map(
+            fn (int $mes) => [Carbon::create($anio, $mes, 1), Carbon::create($anio, $mes, 1)->endOfMonth()],
+            range(1, 12),
+        ));
+
+        $meses = collect(range(1, 12))->map(function (int $mes) use ($anio, $totalPorMes, $sumados) {
             $inicio = Carbon::create($anio, $mes, 1);
-            $partes = IngresosDelNegocio::entre($inicio, $inicio->copy()->endOfMonth());
+            $partes = $sumados[$mes - 1];
 
             return [
                 'mes' => $inicio->translatedFormat('M'),
@@ -315,14 +332,40 @@ class ReporteController extends Controller
     {
         // El año tambien en PHP, por lo mismo que arriba: YEAR() no existe
         // fuera de MySQL. Es una columna de fechas, no la tabla entera.
-        $anios = Pago::ingresos()
+        //
+        // Y sin traer todas las fechas: se busca la primera y la última, y de
+        // los años entre medio se pregunta en una consulta cuáles tienen algún
+        // pago (un año sin cobros en medio no sale, igual que antes).
+        $extremos = Pago::ingresos()
             ->whereNotNull('fecha_pago')
-            ->pluck('fecha_pago')
-            ->map(fn ($fecha) => (int) Carbon::parse($fecha)->year)
-            ->unique()
-            ->sortDesc()
-            ->values()
-            ->all();
+            ->toBase()
+            ->selectRaw('MIN(fecha_pago) AS primera, MAX(fecha_pago) AS ultima')
+            ->first();
+
+        $anios = [];
+
+        if ($extremos?->primera) {
+            $candidatos = range(Carbon::parse($extremos->primera)->year, Carbon::parse($extremos->ultima)->year);
+            $columnas = [];
+            $valores = [];
+
+            foreach ($candidatos as $n => $anio) {
+                $columnas[] = "MAX(CASE WHEN fecha_pago >= ? AND fecha_pago < ? THEN 1 ELSE 0 END) AS a{$n}";
+                array_push($valores, Carbon::create($anio, 1, 1)->startOfDay(), Carbon::create($anio + 1, 1, 1)->startOfDay());
+            }
+
+            $hay = (array) Pago::ingresos()
+                ->whereNotNull('fecha_pago')
+                ->toBase()
+                ->selectRaw(implode(', ', $columnas), $valores)
+                ->first();
+
+            $anios = collect($candidatos)
+                ->filter(fn (int $anio, int $n) => (int) ($hay["a{$n}"] ?? 0) === 1)
+                ->sortDesc()
+                ->values()
+                ->all();
+        }
 
         // El año en curso va siempre, aunque todavía no se haya cobrado nada:
         // si no, cada 1 de enero el selector aparece sin la opción de hoy.

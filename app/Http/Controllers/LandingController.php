@@ -1548,7 +1548,10 @@ class LandingController extends Controller
             })
             ->max('updated_at');
         $contenidos = fn (string ...$tipos) => ContenidoWeb::whereIn('tipo', $tipos)->max('updated_at');
-        $precios = fn () => $this->laMasNueva(\App\Models\PrecioMembresia::max('updated_at'), Membresia::max('updated_at'));
+        // Las fechas que piden varias páginas se leen una vez.
+        $ultimoPrecio = $this->laMasNueva(\App\Models\PrecioMembresia::max('updated_at'), Membresia::max('updated_at'));
+        $precios = fn () => $ultimoPrecio;
+        $ultimaRutina = \App\Models\Rutina::max('updated_at');
         $especialistas = Especialista::where('activo', true)->where('tipo', 'especialista');
 
         $paginas = array_filter([
@@ -1561,8 +1564,8 @@ class LandingController extends Controller
             (clone $especialistas)->exists() ? ['landing.especialistas', '0.7', (clone $especialistas)->max('updated_at')] : null,
             ['landing.contacto', '0.7', $ajustes('gimnasio.', 'horario.', 'web.')],
             // Qué entrenar hoy: solo la de sin respuestas (las demás son noindex).
-            ['landing.rutina', '0.6', \App\Models\Rutina::max('updated_at')],
-            ['landing.rutinas', '0.5', \App\Models\Rutina::max('updated_at')],
+            ['landing.rutina', '0.6', $ultimaRutina],
+            ['landing.rutinas', '0.5', $ultimaRutina],
             ['landing.ejercicios', '0.5', \App\Models\Ejercicio::max('updated_at')],
             ['landing.privacidad', '0.2', \App\Models\TextoLegal::where('tipo', 'privacidad')->max('updated_at')],
             ['landing.terminos', '0.2', \App\Models\TextoLegal::where('tipo', 'terminos')->max('updated_at')],

@@ -284,10 +284,25 @@ class ResumenController extends Controller
      */
     private function cumpleanos(Carbon $hoy): array
     {
+        /*
+         * UN PRIMER COLADOR BARATO, por el «mes-día» tal como viene de la base.
+         * Calcular el próximo cumpleaños con fechas de los dos mil socios era
+         * lo que más tardaba en abrir el resumen, y casi todos quedan fuera.
+         * El colador deja pasar de sobra (un día antes y uno después de la
+         * semana, y siempre los del 29 de febrero, que en año no bisiesto caen
+         * el 1 de marzo); la cuenta de siempre decide después quién queda.
+         */
+        $cerca = ['02-29' => true];
+
+        for ($d = -1; $d <= self::DIAS_CUMPLEANOS + 1; $d++) {
+            $cerca[$hoy->copy()->addDays($d)->format('m-d')] = true;
+        }
+
         return Cliente::query()
             ->where('activo', true)
             ->whereNotNull('fecha_nacimiento')
             ->get(['id', 'uuid', 'nombres', 'apellido_paterno', 'apellido_materno', 'celular', 'email', 'foto_perfil', 'fecha_nacimiento'])
+            ->filter(fn (Cliente $c) => isset($cerca[substr((string) $c->getRawOriginal('fecha_nacimiento'), 5, 5)]))
             ->map(function (Cliente $c) use ($hoy) {
                 $este = $c->fecha_nacimiento->copy()->year($hoy->year)->startOfDay();
 
@@ -296,6 +311,16 @@ class ResumenController extends Controller
                     $este->addYear();
                 }
 
+                return [$c, $este, (int) $hoy->diffInDays($este, false)];
+            })
+            // Primero se descartan los que no cumplen esta semana y después se
+            // arma la fila: el nombre, la foto y su enlace de los dos mil
+            // socios, para quedarse con cinco, era lo que más tardaba en abrir
+            // el resumen.
+            ->filter(fn (array $f) => $f[2] >= 0 && $f[2] <= self::DIAS_CUMPLEANOS)
+            ->map(function (array $f) {
+                [$c, $este, $dias] = $f;
+
                 return [
                     'uuid' => $c->uuid,
                     'socio' => $this->comoSeLlama($c),
@@ -303,12 +328,11 @@ class ResumenController extends Controller
                     'celular' => $c->celular,
                     'email' => $c->email,
                     'fecha' => $este->format('d/m'),
-                    'dias' => (int) $hoy->diffInDays($este, false),
+                    'dias' => $dias,
                     // Los que va a cumplir, que es lo que se dice al saludar.
                     'edad' => $este->year - $c->fecha_nacimiento->year,
                 ];
             })
-            ->filter(fn (array $f) => $f['dias'] >= 0 && $f['dias'] <= self::DIAS_CUMPLEANOS)
             ->sortBy('dias')
             ->values()
             ->all();

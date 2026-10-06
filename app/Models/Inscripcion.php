@@ -821,14 +821,19 @@ class Inscripcion extends Model
      * ni una cuota. El resumen, Pagos y Reportes daban tres cifras distintas y
      * ninguna era lo que se debía.
      */
-    public static function conDeuda(): \Illuminate\Database\Eloquent\Collection
+    public static function conDeuda(array $columnas = ['*']): \Illuminate\Database\Eloquent\Collection
     {
         // El filtro va en la consulta: antes se traían a PHP TODAS las
         // membresías 100/101/102 —la 102 es casi todo el historial— en cada
         // carga de Pagos, Caja y Reportes. El filtro de PHP queda detrás porque
         // `deuda` trunca a entero cada lado y así el resultado es idéntico al
         // de siempre; la consulta ya solo devuelve las que deben.
+        //
+        // `$columnas`: quien solo cuenta o suma (la lista de Membresías, la
+        // Caja) pide id, estado y precio, y no arma miles de modelos enteros.
+        // La deuda sale igual: solo mira `precio_final` y `abonado`.
         return static::queDeben()
+            ->select(array_map(fn (string $c) => "inscripciones.{$c}", $columnas))
             ->withSum('pagos as abonado', 'monto_abonado')
             ->get()
             ->filter(fn (self $inscripcion) => $inscripcion->deuda > 0)

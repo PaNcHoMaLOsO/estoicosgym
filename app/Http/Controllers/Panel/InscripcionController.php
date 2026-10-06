@@ -165,7 +165,7 @@ class InscripcionController extends Controller
 
         // Las mismas que suma «Por cobrar»: una sola definición de deuda.
         if ($filtro === 'con_deuda') {
-            return $consulta->whereIn('id', Inscripcion::conDeuda()->pluck('id'));
+            return $consulta->whereIn('id', Inscripcion::conDeuda(['id', 'precio_final'])->pluck('id'));
         }
 
         $consulta->sinPases();

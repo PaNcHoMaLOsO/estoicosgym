@@ -47,22 +47,75 @@ class IngresosDelNegocio
      */
     public static function entre(Carbon $desde, Carbon $hasta, bool $sinIva = false): array
     {
-        $inicio = $desde->copy()->startOfDay();
-        $fin = $hasta->copy()->endOfDay();
+        return self::enVarios([[$desde, $hasta]], $sinIva)[0];
+    }
 
-        $partes = [
-            'membresias' => (int) Pago::ingresos()
-                ->whereBetween('fecha_pago', [$inicio, $fin])
-                ->sum('monto_abonado'),
-            'talleres' => (int) CobroTaller::whereNotNull('pagado_en')
-                ->whereBetween('pagado_en', [$inicio->toDateString(), $fin->toDateString()])
-                ->sum($sinIva ? 'neto' : 'total'),
-            'meson' => (int) Fiado::where('pagado', true)
-                ->whereBetween('pagado_en', [$inicio, $fin])
-                ->sum('monto'),
-        ];
+    /**
+     * Lo mismo que entre(), para varios periodos a la vez: una lista de pares
+     * [desde, hasta] y una respuesta por par, en el mismo orden.
+     *
+     * TRES CONSULTAS EN TOTAL Y NO TRES POR PERIODO. La Caja pide hoy, ayer,
+     * el mes, el mes pasado y los últimos seis meses, y el informe del año
+     * doce meses: eran treinta y cuarenta idas a la base para sumar. Cada
+     * periodo es una suma con su propio «CASE WHEN … BETWEEN», con los mismos
+     * bordes que whereBetween(), así que cada cifra sale igual que antes.
+     *
+     * @param  list<array{0:Carbon,1:Carbon}>  $periodos
+     * @return list<array{membresias:int, talleres:int, meson:int, total:int}>
+     */
+    public static function enVarios(array $periodos, bool $sinIva = false): array
+    {
+        if ($periodos === []) {
+            return [];
+        }
 
-        return $partes + ['total' => array_sum($partes)];
+        $rangos = array_map(fn (array $p) => [$p[0]->copy()->startOfDay(), $p[1]->copy()->endOfDay()], $periodos);
+        $desde = min(array_column($rangos, 0));
+        $hasta = max(array_column($rangos, 1));
+
+        // Una columna por periodo: «SUM(CASE WHEN col BETWEEN ? AND ? …) AS p0».
+        $sumas = function (string $columna, string $monto, array $bordes): array {
+            $sql = [];
+            $valores = [];
+
+            foreach ($bordes as $n => [$inicio, $fin]) {
+                $sql[] = "COALESCE(SUM(CASE WHEN {$columna} BETWEEN ? AND ? THEN {$monto} ELSE 0 END), 0) AS p{$n}";
+                array_push($valores, $inicio, $fin);
+            }
+
+            return [implode(', ', $sql), $valores];
+        };
+
+        $comoFecha = fn (array $r) => [$r[0]->toDateString(), $r[1]->toDateString()];
+
+        $membresias = (array) Pago::ingresos()
+            ->whereBetween('fecha_pago', [$desde, $hasta])
+            ->selectRaw(...$sumas('pagos.fecha_pago', 'pagos.monto_abonado', $rangos))
+            ->toBase()
+            ->first();
+
+        // Los talleres se comparan por día, como en entre(): `pagado_en` es una fecha.
+        $talleres = (array) CobroTaller::whereNotNull('pagado_en')
+            ->whereBetween('pagado_en', [$desde->toDateString(), $hasta->toDateString()])
+            ->selectRaw(...$sumas('pagado_en', $sinIva ? 'neto' : 'total', array_map($comoFecha, $rangos)))
+            ->toBase()
+            ->first();
+
+        $meson = (array) Fiado::where('pagado', true)
+            ->whereBetween('pagado_en', [$desde, $hasta])
+            ->selectRaw(...$sumas('pagado_en', 'monto', $rangos))
+            ->toBase()
+            ->first();
+
+        return array_map(function (int $n) use ($membresias, $talleres, $meson) {
+            $partes = [
+                'membresias' => (int) ($membresias["p{$n}"] ?? 0),
+                'talleres' => (int) ($talleres["p{$n}"] ?? 0),
+                'meson' => (int) ($meson["p{$n}"] ?? 0),
+            ];
+
+            return $partes + ['total' => array_sum($partes)];
+        }, array_keys($rangos));
     }
 
     /**

@@ -32,6 +32,9 @@ class InscripcionCrearController extends Controller
     /** Cuántos socios devuelve cada búsqueda. */
     private const RESULTADOS = 15;
 
+    /** @var array<int,int>|null Los convenios activos (por id), leídos una vez por búsqueda. */
+    private ?array $conveniosActivos = null;
+
     use ValidatesFormToken;
     use VuelveAlSocio;
 
@@ -83,7 +86,18 @@ class InscripcionCrearController extends Controller
             return response()->json(['clientes' => []]);
         }
 
+        // El convenio de su última membresía viene en la misma consulta, y los
+        // convenios activos se leen una vez: antes eran dos consultas más por
+        // cada socio encontrado (ver convenioDe()).
+        $this->conveniosActivos = Convenio::where('activo', true)->pluck('id')->flip()->all();
+
         $clientes = BusquedaDeSocio::aplicar($this->inscribibles(), $texto)
+            ->select('clientes.*')
+            ->addSelect(['ultimo_convenio' => \App\Models\Inscripcion::select('id_convenio')
+                ->whereColumn('id_cliente', 'clientes.id')
+                ->whereNotNull('id_convenio')
+                ->orderByDesc('fecha_inicio')
+                ->limit(1)])
             ->orderBy('apellido_paterno')
             ->limit(self::RESULTADOS)
             ->get()
@@ -197,12 +211,23 @@ class InscripcionCrearController extends Controller
 
     private function convenioDe(Cliente $cliente): ?int
     {
-        $id = \App\Models\Inscripcion::where('id_cliente', $cliente->id)
-            ->whereNotNull('id_convenio')
-            ->orderByDesc('fecha_inicio')
-            ->value('id_convenio') ?? $cliente->id_convenio;
+        // Si la búsqueda ya lo trajo (`ultimo_convenio`), no se vuelve a preguntar.
+        $id = (array_key_exists('ultimo_convenio', $cliente->getAttributes())
+            ? $cliente->getAttribute('ultimo_convenio')
+            : \App\Models\Inscripcion::where('id_cliente', $cliente->id)
+                ->whereNotNull('id_convenio')
+                ->orderByDesc('fecha_inicio')
+                ->value('id_convenio')) ?? $cliente->id_convenio;
 
-        return $id && Convenio::whereKey($id)->where('activo', true)->exists() ? (int) $id : null;
+        if (! $id) {
+            return null;
+        }
+
+        $activo = $this->conveniosActivos !== null
+            ? isset($this->conveniosActivos[$id])
+            : Convenio::whereKey($id)->where('activo', true)->exists();
+
+        return $activo ? (int) $id : null;
     }
 
     /**

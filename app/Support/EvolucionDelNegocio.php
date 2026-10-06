@@ -38,22 +38,48 @@ class EvolucionDelNegocio
     /** Las membresías de cada socio, para no recorrerlas todas por cada uno. */
     private Collection $porSocio;
 
+    /** @var array<int,Carbon>|null Cuándo compró cada socio la primera, calculado una vez. */
+    private ?array $primeraDe = null;
+
     public function __construct(private readonly int $meses = 24)
     {
+        /*
+         * FILAS SUELTAS Y NO MODELOS, Y CADA FECHA SE LEE UNA VEZ. Con seis mil
+         * membresías, armar un modelo por fila y leer dos fechas por fila se
+         * llevaba más de un cuarto de segundo antes de contar nada; las fechas
+         * se repiten muchísimo (cientos de días distintos, no miles), así que
+         * cada una se lee la primera vez y se reutiliza. Las fechas no se
+         * modifican en ninguna cuenta de abajo: se copian antes de moverlas.
+         *
+         * Además de la fecha, cada membresía lleva su instante en segundos
+         * (`ini` y `fin`): comparar dos enteros es mucho más barato que
+         * comparar dos fechas, y las cuentas mes a mes hacen cientos de miles.
+         */
+        $inicios = [];
+        $finales = [];
+
         $this->membresias = Inscripcion::query()
             ->sinPases()
             ->whereNotNull('fecha_inicio')
             ->whereNotNull('fecha_vencimiento')
             ->orderBy('fecha_inicio')
+            ->toBase()
             ->get(['id_cliente', 'id_convenio', 'id_membresia', 'fecha_inicio', 'fecha_vencimiento', 'precio_final'])
-            ->map(fn (Inscripcion $i) => (object) [
-                'socio' => (int) $i->id_cliente,
-                'convenio' => $i->id_convenio ? (int) $i->id_convenio : null,
-                'plan' => (int) $i->id_membresia,
-                'desde' => Carbon::parse($i->fecha_inicio)->startOfDay(),
-                'hasta' => Carbon::parse($i->fecha_vencimiento)->endOfDay(),
-                'precio' => (int) $i->precio_final,
-            ])
+            ->map(function (object $i) use (&$inicios, &$finales) {
+                $desde = $inicios[$i->fecha_inicio] ??= Carbon::parse($i->fecha_inicio)->startOfDay();
+                $hasta = $finales[$i->fecha_vencimiento] ??= Carbon::parse($i->fecha_vencimiento)->endOfDay();
+
+                return (object) [
+                    'socio' => (int) $i->id_cliente,
+                    'convenio' => $i->id_convenio ? (int) $i->id_convenio : null,
+                    'plan' => (int) $i->id_membresia,
+                    'desde' => $desde,
+                    'hasta' => $hasta,
+                    'ini' => $desde->getTimestamp(),
+                    'fin' => $hasta->getTimestamp(),
+                    'precio' => (int) $i->precio_final,
+                ];
+            })
             ->values();
 
         $this->porSocio = $this->membresias->groupBy('socio');
@@ -66,7 +92,8 @@ class EvolucionDelNegocio
      */
     public function porMes(): array
     {
-        $primeraDe = $this->primeraDeCadaSocio();
+        // En segundos, como `ini` y `fin`: ver el constructor.
+        $primeraDe = array_map(fn (Carbon $c) => $c->getTimestamp(), $this->primeraDeCadaSocio());
         $desde = Carbon::today()->startOfMonth()->subMonths($this->meses - 1);
 
         $filas = [];
@@ -74,19 +101,23 @@ class EvolucionDelNegocio
         for ($i = 0; $i < $this->meses; $i++) {
             $mes = $desde->copy()->addMonths($i);
             $fin = $mes->copy()->endOfMonth();
+            // El fin de mes lleva fracción de segundo (23:59:59.999999), igual
+            // que `hasta`; `desde` empieza en segundo exacto. Así, comparar los
+            // segundos da lo mismo que comparar las fechas.
+            [$mesTs, $finTs] = [$mes->getTimestamp(), $fin->getTimestamp()];
 
-            $delMes = $this->membresias->filter(fn ($m) => $m->desde->between($mes, $fin));
+            $delMes = $this->membresias->filter(fn ($m) => $m->ini >= $mesTs && $m->ini <= $finTs);
 
             // ALTA es la primera membresía de esa persona, no cualquiera que
             // empiece: sin esto, el socio de siempre que renueva cada mes se
             // contaba como uno nuevo doce veces al año.
-            $altas = $delMes->filter(fn ($m) => $primeraDe[$m->socio]->equalTo($m->desde))
+            $altas = $delMes->filter(fn ($m) => $primeraDe[$m->socio] === $m->ini)
                 ->pluck('socio')->unique();
 
-            $renovaciones = $delMes->reject(fn ($m) => $primeraDe[$m->socio]->equalTo($m->desde));
+            $renovaciones = $delMes->reject(fn ($m) => $primeraDe[$m->socio] === $m->ini);
 
             $activos = $this->membresias
-                ->filter(fn ($m) => $m->desde->lte($fin) && $m->hasta->gte($fin))
+                ->filter(fn ($m) => $m->ini <= $finTs && $m->fin >= $finTs)
                 ->pluck('socio')->unique();
 
             $filas[] = [
@@ -133,17 +164,21 @@ class EvolucionDelNegocio
             return 0;
         }
 
+        // En segundos: ver porMes(). `hasta` y el fin de mes llevan la misma
+        // fracción (.999999) y el inicio de mes ninguna.
+        [$inicioTs, $finTs] = [$inicio->getTimestamp(), $fin->getTimestamp()];
+
         return $this->membresias
-            ->filter(fn ($m) => $m->hasta->between($inicio, $fin))
+            ->filter(fn ($m) => $m->fin >= $inicioTs && $m->fin <= $finTs)
             ->filter(function ($vencida) {
-                $gracia = $vencida->hasta->copy()->addDays(self::DIAS_DE_GRACIA);
+                $gracia = $vencida->hasta->copy()->addDays(self::DIAS_DE_GRACIA)->getTimestamp();
 
                 // Solo las suyas: antes se recorrían las mil setecientas por
                 // cada socio y cada mes, y el informe tardaba medio segundo.
                 return ! $this->porSocio[$vencida->socio]->contains(
                     fn ($otra) => $otra !== $vencida
-                        && $otra->hasta->gt($vencida->hasta)
-                        && $otra->desde->lte($gracia)
+                        && $otra->fin > $vencida->fin
+                        && $otra->ini <= $gracia
                 );
             })
             ->pluck('socio')
@@ -172,15 +207,18 @@ class EvolucionDelNegocio
 
         $nuevos = collect($primeraDe)->filter(fn (Carbon $cuando) => $cuando->lte($corte));
 
-        $porSocio = $this->membresias->groupBy('socio');
+        // Las mismas que agrupó el constructor: volver a agruparlas daba lo mismo.
+        $porSocio = $this->porSocio;
 
         $volvieron = $nuevos->filter(fn (Carbon $cuando, int $socio) => $porSocio[$socio]->count() > 1);
 
         // Cuántas compras hace un socio, y cuánto tiempo pasa entre la primera
         // y el final de la última: eso es lo que dura de verdad.
         $meses = $porSocio->map(function (Collection $suyas) {
-            $primera = $suyas->min('desde');
-            $ultima = $suyas->max('hasta');
+            // Por los segundos de cada una (ver el constructor): es la misma
+            // fecha que daría min('desde') y max('hasta'), sin comparar fechas.
+            $primera = $suyas->sortBy('ini')->first()->desde;
+            $ultima = $suyas->sortByDesc('fin')->first()->hasta;
 
             return max(1, (int) round($primera->diffInDays($ultima) / 30));
         });
@@ -259,9 +297,9 @@ class EvolucionDelNegocio
      */
     private function primeraDeCadaSocio(): array
     {
-        return $this->membresias
-            ->groupBy('socio')
-            ->map(fn (Collection $suyas) => $suyas->min('desde'))
+        // La piden el informe por mes y la retención: se calcula una vez.
+        return $this->primeraDe ??= $this->porSocio
+            ->map(fn (Collection $suyas) => $suyas->sortBy('ini')->first()->desde)
             ->all();
     }
 }
