@@ -155,26 +155,36 @@
                     cortaba la cabeza. Aquí se colocan en columnas y cada una
                     ocupa el alto que le toca, sin recortar nada.
 
-                    `break-inside-avoid` evita que una foto se parta entre el
-                    final de una columna y el principio de la siguiente.
+                    CON ORDEN: cada foto va a la columna que va más corta, en el
+                    orden de la lista. Así las columnas terminan casi parejas
+                    —sin una larga y otra que acaba a la mitad— y se leen de
+                    izquierda a derecha (ver App\Support\Collage). Se arma una vez por cada ancho (2, 3 y
+                    4 columnas); la que no toca está oculta y sus fotos, al ser
+                    `lazy`, no se descargan.
                 --}}
-                <div class="columns-2 lg:columns-3 xl:columns-4 gap-4">
-                    @foreach($fotos as $i => $foto)
-                        <figure class="animate-on-scroll group relative mb-4 break-inside-avoid overflow-hidden rounded-2xl bg-pg-negro"
-                                style="animation-delay: {{ ($i % 4) * 0.1 }}s">
-                            {{-- SIN RÓTULO ENCIMA. Las fotos del gimnasio se explican
-                                 solas y el nombre no lo puso nadie: eran títulos de
-                                 relleno tapando justo la parte de abajo de la foto.
-                                 El texto sigue en `alt`, que no se ve pero es lo que
-                                 lee Google y quien navega con lector de pantalla. --}}
-                            <img src="{{ $foto['imagen'] }}"
-                                 alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
-                                 @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
-                                 loading="lazy" decoding="async"
-                                 class="w-full h-auto transition-transform duration-700 group-hover:scale-105">
-                        </figure>
-                    @endforeach
-                </div>
+                @foreach([2 => 'flex lg:hidden', 3 => 'hidden lg:flex xl:hidden', 4 => 'hidden xl:flex'] as $columnas => $cuando)
+                    <div class="{{ $cuando }} items-start gap-4">
+                        @foreach(\App\Support\Collage::columnas($fotos, $columnas) as $columna)
+                            <div class="flex min-w-0 flex-1 flex-col gap-4">
+                                @foreach($columna as [$i, $foto])
+                                <figure class="animate-on-scroll group relative overflow-hidden rounded-2xl bg-pg-negro"
+                                        style="animation-delay: {{ ($i % 4) * 0.1 }}s">
+                                    {{-- SIN RÓTULO ENCIMA. Las fotos del gimnasio se explican
+                                         solas y el nombre no lo puso nadie: eran títulos de
+                                         relleno tapando justo la parte de abajo de la foto.
+                                         El texto sigue en `alt`, que no se ve pero es lo que
+                                         lee Google y quien navega con lector de pantalla. --}}
+                                    <img src="{{ $foto['imagen'] }}"
+                                         alt="{{ $foto['titulo'] }}{{ $web['ciudad'] && ! str_contains((string) $foto['titulo'], $web['ciudad']) ? ', gimnasio en ' . $web['ciudad'] : '' }}"
+                                         @if($foto['medidas']) width="{{ $foto['medidas'][0] }}" height="{{ $foto['medidas'][1] }}" @endif
+                                         loading="lazy" decoding="async"
+                                         class="w-full h-auto transition-transform duration-700 group-hover:scale-105">
+                                </figure>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                @endforeach
             </div>
         </section>
     @endif
