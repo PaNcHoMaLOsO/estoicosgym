@@ -118,7 +118,8 @@ class LandingController extends Controller
         $comun = $this->comun();
         $ciudad = $comun['web']['ciudad'];
 
-        return $this->pagina('landing.el-gimnasio', 'landing.gimnasio', 'El gimnasio',
+        // Lo que se busca («sala de máquinas», «fotos del gimnasio»), no el nombre de la sección.
+        return $this->pagina('landing.el-gimnasio', 'landing.gimnasio', 'Sala de máquinas y fotos del gimnasio',
             "Cómo es {$comun['gimnasio']['nombre']} por dentro: servicios, fotos y horario" . ($ciudad ? " de nuestro gimnasio en {$ciudad}." : '.'),
             [
                 'servicios' => $this->contenidos('servicio')->all(),
@@ -178,7 +179,8 @@ class LandingController extends Controller
             ->implode(', ');
         $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
 
-        return $this->pagina('landing.convenios', 'landing.convenios', 'Convenios para estudiantes, empresas e instituciones',
+        // «gimnasio para estudiantes» se busca y nadie en la ciudad le apunta.
+        return $this->pagina('landing.convenios', 'landing.convenios', 'Gimnasio para estudiantes y convenios' . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : ''),
             ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
                 . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : ''),
             [], $comun);
@@ -629,7 +631,7 @@ class LandingController extends Controller
         // Sin preguntas frecuentes: la lista de acordeones se quito de la pagina
         // (2026-09-17), y la ficha FAQPage se fue con ella, porque Google no
         // acepta preguntas que no estan a la vista.
-        return $this->pagina('landing.contacto', 'landing.contacto', 'Contacto y horario',
+        return $this->pagina('landing.contacto', 'landing.contacto', 'Dirección y horario del gimnasio',
             "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar y el horario. Escríbenos.",
             // La ficha del gimnasio también aquí: es la página de la dirección,
             // el teléfono y el horario, justo lo que esa ficha le dice a Google.

@@ -15,25 +15,26 @@ use App\Models\Membresia;
 class WebPublica
 {
     /**
-     * «PRO GYM | Gimnasio en Los Ángeles, Biobío, Chile».
+     * «PRO GYM | Gimnasio en el centro de Los Ángeles, Chile».
      *
      * CON «CHILE»: «gimnasio los angeles» se confunde con California, y Google
-     * sugiere justamente «gimnasio los angeles chile».
+     * sugiere justamente «gimnasio los angeles chile». Y CON «CENTRO»: es lo
+     * que distingue al gimnasio de las cadenas (Av. Alemania, Gabriela Mistral)
+     * y ningún competidor lo dice en su web (revisado el 7-oct-2026).
      */
     public static function tituloDeInicio(): string
     {
         $nombre = Ajustes::obtener('gimnasio.nombre') ?: 'PRO GYM';
         $ciudad = trim((string) Ajustes::obtener('web.ciudad'));
-        $region = trim((string) Ajustes::obtener('web.region'));
 
-        return $nombre . ($ciudad ? " | Gimnasio en {$ciudad}" . ($region ? ", {$region}" : '') . ', Chile' : '');
+        return $nombre . ($ciudad ? " | Gimnasio en el centro de {$ciudad}, Chile" : '');
     }
 
     /** La que se arma sola: dónde está, qué hay y desde cuánto. */
     public static function descripcionAutomatica(?int $desde): string
     {
         $ciudad = trim((string) Ajustes::obtener('web.ciudad'));
-        $donde = $ciudad ? "Gimnasio en {$ciudad}" : 'Gimnasio';
+        $donde = $ciudad ? "Gimnasio en el centro de {$ciudad}" : 'Gimnasio';
 
         return "{$donde}: musculación, cardio y orientación en sala."
             . ($desde !== null ? ' Planes desde ' . self::pesos($desde) . '.' : '')

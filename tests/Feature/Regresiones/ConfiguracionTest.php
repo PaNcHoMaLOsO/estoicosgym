@@ -116,8 +116,8 @@ class ConfiguracionTest extends CasoConCatalogos
     {
         $vista = $this->props('/panel/configuracion/web')['extra']['vistaGoogle'];
 
-        $this->assertSame('PRO GYM | Gimnasio en Los Ángeles, Biobío, Chile', $vista['titulo']);
-        $this->assertStringContainsString('Gimnasio en Los Ángeles', $vista['descripcionAutomatica']);
+        $this->assertSame('PRO GYM | Gimnasio en el centro de Los Ángeles, Chile', $vista['titulo']);
+        $this->assertStringContainsString('Gimnasio en el centro de Los Ángeles', $vista['descripcionAutomatica']);
     }
 
     /**

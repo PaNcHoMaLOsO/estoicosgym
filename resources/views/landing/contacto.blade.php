@@ -35,6 +35,9 @@
                                         <h2 class="font-semibold mb-1 text-pg-tiza">Dirección</h2>
                                         {{-- Completa, como en Google Maps: calle, ciudad y región. --}}
                                         <p class="text-pg-tiza/60 font-modern text-sm">{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad'], $web['region']])) }}</p>
+                                        @if($web['ciudad'])
+                                            <p class="text-pg-tiza/60 font-modern text-sm">En pleno centro de {{ $web['ciudad'] }}, a pasos de la Plaza de Armas.</p>
+                                        @endif
                                         @if($web['comunas'])
                                             <p class="text-pg-tiza/45 font-modern text-xs mt-1">Cerca de: {{ implode(', ', array_slice($web['comunas'], 0, 4)) }}</p>
                                         @endif

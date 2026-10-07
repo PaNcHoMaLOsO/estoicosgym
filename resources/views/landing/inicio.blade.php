@@ -24,7 +24,7 @@
                  El eslogan sigue siendo lo grande, pero como párrafo. Se ven
                  igual que antes: los estilos de la portada miran a los dos. --}}
             <h1 class="text-pg-rojo-claro font-modern tracking-widest uppercase text-sm">
-                {{ $web['ciudad'] ? 'Gimnasio en ' . $web['ciudad'] : 'Gimnasio ' . $gimnasio['nombre'] }}
+                {{ $web['ciudad'] ? 'Gimnasio en el centro de ' . $web['ciudad'] : 'Gimnasio ' . $gimnasio['nombre'] }}
             </h1>
             <p class="font-display text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-pg-tiza mt-4 uppercase leading-[0.95]">
                 <span class="block">{{ $portada['titulo_1'] }}</span>

@@ -107,7 +107,7 @@ class SeoDeLaWebTest extends CasoConCatalogos
     {
         $this->ajustes(['portada.titulo_1' => 'TRANSFORMA', 'portada.titulo_2' => 'TU CUERPO']);
 
-        $this->assertSame('Gimnasio en Los Ángeles', $this->h1('/'));
+        $this->assertSame('Gimnasio en el centro de Los Ángeles', $this->h1('/'));
         // El eslogan sigue en la portada, como texto grande.
         $this->get('/')->assertSee('TRANSFORMA')->assertSee('TU CUERPO');
     }
