@@ -37,7 +37,11 @@ class WebPublica
 
         return "{$donde}: musculación, cardio y orientación en sala."
             . ($desde !== null ? ' Planes desde ' . self::pesos($desde) . '.' : '')
-            . ' Revisa los precios y consulta tu membresía en línea.';
+            // La consulta en línea solo si esa página está encendida: apagada,
+            // Google mostraba una invitación a algo que da «no encontrada».
+            . (PaginasWeb::encendida('membresia')
+                ? ' Revisa los precios y consulta tu membresía en línea.'
+                : ' Revisa los precios y escríbenos por WhatsApp.');
     }
 
     /** La que se usa: la escrita en Configuración o, si no hay, la automática. */
