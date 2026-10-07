@@ -34,7 +34,13 @@
                                     <div>
                                         <h2 class="font-semibold mb-1 text-pg-tiza">Dirección</h2>
                                         {{-- Completa, como en Google Maps: calle, ciudad y región. --}}
-                                        <p class="text-pg-tiza/60 font-modern text-sm">{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad'], $web['region']])) }}</p>
+                                        {{-- Se toca y abre Google Maps. --}}
+                                        @if($web['google_maps'])
+                                            <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
+                                               class="font-modern text-sm text-pg-tiza/80 underline decoration-pg-tiza/25 underline-offset-4 transition-colors hover:text-pg-rojo-claro hover:decoration-pg-rojo-claro">{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad'], $web['region']])) }}</a>
+                                        @else
+                                            <p class="text-pg-tiza/60 font-modern text-sm">{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad'], $web['region']])) }}</p>
+                                        @endif
                                         @if($web['ciudad'])
                                             <p class="text-pg-tiza/60 font-modern text-sm">En pleno centro de {{ $web['ciudad'] }}, a pasos de la Plaza de Armas.</p>
                                         @endif

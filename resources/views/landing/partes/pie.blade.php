@@ -9,8 +9,19 @@
                 <p class="text-pg-tiza/55 font-modern text-sm mt-3 lg:mt-4">
                     {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}{{ $web['ciudad'] ? ', Chile' : '' }}
                 </p>
+                {{-- La dirección se toca y abre Google Maps: en el celular es lo
+                     primero que se intenta. --}}
                 @if($gimnasio['direccion'])
-                    <p class="text-pg-tiza/55 font-modern text-sm mt-1">{{ $gimnasio['direccion'] }}</p>
+                    <p class="font-modern text-sm mt-1">
+                        @if($web['google_maps'])
+                            <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
+                               class="inline-flex items-center gap-1.5 text-pg-tiza/55 underline decoration-pg-tiza/20 underline-offset-4 transition-colors hover:text-pg-rojo-claro hover:decoration-pg-rojo-claro">
+                                <x-icono nombre="map-marker-alt" class="text-xs" />{{ $gimnasio['direccion'] }}
+                            </a>
+                        @else
+                            <span class="text-pg-tiza/55">{{ $gimnasio['direccion'] }}</span>
+                        @endif
+                    </p>
                 @endif
                 {{-- El nombre, la dirección y el teléfono en todas las páginas, iguales
                      a los de Google Maps: es lo que Google compara. --}}
