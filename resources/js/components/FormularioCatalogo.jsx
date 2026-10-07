@@ -160,8 +160,12 @@ export function valoresDePlan(plan) {
     return {
         nombre: plan?.nombre ?? '',
         descripcion: plan?.descripcion ?? '',
-        // Meses o días: el que tenga. Un plan nuevo, en meses.
-        unidad: Number(plan?.duracion_dias ?? 0) > 0 ? 'dias' : 'meses',
+        // Meses o días: el que tenga, y si trae los dos, MESES. Los planes que
+        // vinieron con la instalación guardan «1 mes» y «30 días» a la vez:
+        // abiertos en días, al guardar se borraban los meses y el Mensual
+        // pasaba a ser un pase de días (salía de la página de planes).
+        // Un plan nuevo, en meses.
+        unidad: Number(plan?.duracion_meses ?? 0) > 0 || Number(plan?.duracion_dias ?? 0) <= 0 ? 'meses' : 'dias',
         duracion_meses: plan?.duracion_meses ?? 1,
         duracion_dias: plan?.duracion_dias ?? 0,
         dias_regalo: plan?.dias_regalo ?? 0,
