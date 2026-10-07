@@ -16,10 +16,10 @@
                         @if($web['google_maps'])
                             <a href="{{ $web['google_maps'] }}" target="_blank" rel="noopener" data-evento="como_llegar"
                                class="inline-flex items-center gap-1.5 text-pg-tiza/55 underline decoration-pg-tiza/20 underline-offset-4 transition-colors hover:text-pg-rojo-claro hover:decoration-pg-rojo-claro">
-                                <x-icono nombre="map-marker-alt" class="text-xs" />{{ $gimnasio['direccion'] }}
+                                <x-icono nombre="map-marker-alt" class="text-xs" />{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad']])) }}
                             </a>
                         @else
-                            <span class="text-pg-tiza/55">{{ $gimnasio['direccion'] }}</span>
+                            <span class="text-pg-tiza/55">{{ implode(', ', array_filter([$gimnasio['direccion'], $web['ciudad']])) }}</span>
                         @endif
                     </p>
                 @endif
