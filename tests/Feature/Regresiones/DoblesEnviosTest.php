@@ -42,6 +42,9 @@ class DoblesEnviosTest extends CasoConCatalogos
     {
         parent::setUp();
 
+        // El contrato por correo viene apagado de fábrica: estas pruebas lo usan.
+        \App\Support\Ajustes::guardar(['tareas.contrato_por_correo' => '1']);
+
         Ajustes::olvidar();
     }
 

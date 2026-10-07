@@ -37,6 +37,9 @@ class ContratoPorCorreoTest extends CasoConCatalogos
     {
         parent::setUp();
 
+        // El contrato por correo viene apagado de fábrica: estas pruebas lo usan.
+        \App\Support\Ajustes::guardar(['tareas.contrato_por_correo' => '1']);
+
         Storage::fake('public');
         Storage::fake('local');
         $this->fingirCorreo();
@@ -436,5 +439,16 @@ class ContratoPorCorreoTest extends CasoConCatalogos
             ->assertStatus(410)
             ->assertSee('Tu contrato está firmado')
             ->assertDontSee('Camila Rojas Soto');
+    }
+
+    /** Con el interruptor apagado (Avisos automáticos) no sale ningún contrato. */
+    public function test_con_el_contrato_por_correo_apagado_no_se_manda(): void
+    {
+        \App\Support\Ajustes::guardar(['tareas.contrato_por_correo' => '0']);
+        $socio = \App\Models\Cliente::factory()->create(['activo' => true]);
+
+        $motivo = app(\App\Services\ContratoDigitalService::class)->porQueNoSePuedeEnviar($socio);
+
+        $this->assertStringContainsString('apagado', (string) $motivo);
     }
 }

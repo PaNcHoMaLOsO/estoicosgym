@@ -159,6 +159,8 @@ class ClienteController extends Controller
     public function create()
     {
         return Inertia::render('Clientes/Crear', [
+            // Si se ofrece «Mandárselo por correo»: lo apaga Avisos automáticos.
+            'contratoPorCorreo' => \App\Support\Ajustes::activo('tareas.contrato_por_correo'),
             // Del más corto al más largo, que es como se ofrecen en el
             // mostrador: el pase suelto, el mes, y de ahí para arriba. Por
             // nombre salían en orden alfabético, que no significa nada.

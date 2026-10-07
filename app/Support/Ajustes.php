@@ -410,6 +410,16 @@ class Ajustes
                 'tipo' => 'si_no',
                 'defecto' => '1',
             ],
+            // APAGADO DE FÁBRICA (pedido el 7-oct-2026): mientras el contrato
+            // no esté revisado, no tiene que poder llegarle a un socio.
+            'tareas.contrato_por_correo' => [
+                'grupo' => 'tareas',
+                'seccion' => 'Correos automáticos',
+                'etiqueta' => 'Mandar el contrato por correo',
+                'ayuda' => 'Apagado, no se puede mandar el contrato para firmar por correo: ni al inscribir ni desde la ficha del socio. Anotar que lo firmó en papel sigue igual.',
+                'tipo' => 'si_no',
+                'defecto' => '0',
+            ],
             'tareas.hora_revision' => [
                 'grupo' => 'tareas',
                 'seccion' => 'A qué hora',

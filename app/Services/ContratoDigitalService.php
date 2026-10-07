@@ -103,6 +103,11 @@ class ContratoDigitalService
     /** Lo que impide mandarle el contrato, o null. */
     public function porQueNoSePuedeEnviar(Cliente $cliente): ?string
     {
+        // El interruptor de Avisos automáticos: apagado, no sale ninguno.
+        if (! Ajustes::activo('tareas.contrato_por_correo')) {
+            return 'El contrato por correo está apagado (Configuración → Avisos automáticos).';
+        }
+
         if ($cliente->datos_borrados_en) {
             return 'Sus datos personales se borraron.';
         }

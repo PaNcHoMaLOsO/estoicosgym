@@ -409,7 +409,7 @@ function YaRegistrado({ socio }) {
     );
 }
 
-export default function Crear({ membresias, convenios, motivos, metodosPago, formToken, preciosDeConvenio = {} }) {
+export default function Crear({ membresias, convenios, motivos, metodosPago, formToken, preciosDeConvenio = {}, contratoPorCorreo = true }) {
     // «Hoy» en Chile, calculado al abrir el formulario: la fecha UTC se
     // adelantaba un día desde las 21:00 y proponía cobros con fecha de mañana.
     const hoy = hoyEnChile();
@@ -841,7 +841,7 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                     <Campo etiqueta="Contrato" nombre="contrato_firmado_en" error={errors.contrato_firmado_en}>
                                         <Botones
                                             nombre="Qué pasa con el contrato"
-                                            columnas="sm:grid-cols-3"
+                                            columnas={contratoPorCorreo ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}
                                             valor={data.contrato_firmado_en ? 'papel' : data.enviar_contrato ? 'correo' : 'despues'}
                                             alElegir={(v) =>
                                                 setData((d) => ({
@@ -850,10 +850,14 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                                                     enviar_contrato: v === 'correo',
                                                 }))
                                             }
+                                            // Sin el contrato por correo (Avisos automáticos),
+                                            // la opción ni se ofrece.
                                             opciones={[
                                                 { valor: 'papel', etiqueta: 'Lo firmó en papel', pie: 'se anota la fecha' },
-                                                { valor: 'correo', etiqueta: 'Mandárselo por correo', pie: 'lo firma en su celular' },
-                                                { valor: 'despues', etiqueta: 'Todavía no', pie: 'se manda desde su ficha' },
+                                                ...(contratoPorCorreo
+                                                    ? [{ valor: 'correo', etiqueta: 'Mandárselo por correo', pie: 'lo firma en su celular' }]
+                                                    : []),
+                                                { valor: 'despues', etiqueta: 'Todavía no', pie: contratoPorCorreo ? 'se manda desde su ficha' : 'se anota cuando lo firme' },
                                             ]}
                                         />
 
