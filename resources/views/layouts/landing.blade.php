@@ -42,8 +42,12 @@
     <meta name="twitter:image" content="{{ $imagenAlCompartir }}">
 
     <!-- Favicon: el isotipo del logotipo -->
-    <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/progym-isotipo.png') }}">
+    {{-- El bíceps sobre negro: el isotipo plateado sobre transparente no se
+         veía en una pestaña clara, y Google muestra este ícono en los
+         resultados del celular (pide uno cuadrado, múltiplo de 48). --}}
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" href="{{ asset('images/progym-icono-192.png') }}" sizes="192x192">
+    <link rel="apple-touch-icon" href="{{ asset('images/progym-icono-180.png') }}">
 
     <!-- Una sola direccion para esta pagina: evita que Google la cuente dos veces -->
     <link rel="canonical" href="{{ $web['canonical'] ?? url('/') }}">

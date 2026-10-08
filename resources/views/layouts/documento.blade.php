@@ -18,7 +18,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0a0a0b">
     <title>@yield('titulo') | {{ $gimnasio['gimnasio'] }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">

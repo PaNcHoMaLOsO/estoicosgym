@@ -28,7 +28,7 @@
     <title>Página no encontrada | {{ $nombre }}{{ $ciudad ? ' ' . $ciudad : '' }}</title>
     <meta name="robots" content="noindex, follow">
     <meta name="theme-color" content="#0a0a0b">
-    <link rel="icon" type="image/png" href="{{ asset('images/progym-isotipo.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ $fuentes }}" media="print" onload="this.media='all'">
