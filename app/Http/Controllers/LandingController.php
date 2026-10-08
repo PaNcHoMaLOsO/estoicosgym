@@ -180,7 +180,13 @@ class LandingController extends Controller
         $conPrecio = collect($comun['planes'])->first(fn (array $p) => $p['precio_convenio']);
 
         // «gimnasio para estudiantes» se busca y nadie en la ciudad le apunta.
-        return $this->pagina('landing.convenios', 'landing.convenios', 'Gimnasio para estudiantes y convenios' . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : ''),
+        // Con el precio en el título: es lo primero que se mira en Google.
+        $ciudad = $comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '';
+        $titulo = $conPrecio
+            ? "Gimnasio para estudiantes{$ciudad}: convenio " . $this->pesos($conPrecio['precio_convenio'])
+            : "Gimnasio para estudiantes y convenios{$ciudad}";
+
+        return $this->pagina('landing.convenios', 'landing.convenios', $titulo,
             ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
                 . ($conPrecio ? " Con convenio, el plan {$conPrecio['nombre']} queda en " . $this->pesos($conPrecio['precio_convenio']) . '.' : ''),
             [], $comun);
@@ -484,14 +490,29 @@ class LandingController extends Controller
         // El título dice QUÉ profesionales hay —«Nutricionista, kinesiólogo y
         // personal trainer en Los Ángeles»—, que es lo que se busca; nadie
         // busca «especialistas». Sale de los que hay, nunca de una lista fija.
-        $grupos = array_column(Especialidades::agrupar($comun['especialistas']), 'nombre');
-        $titulo = 'Especialistas';
-        if ($grupos !== []) {
-            $grupos = array_slice($grupos, 0, 3);
-            $ultimo = array_pop($grupos);
-            $titulo = \Illuminate\Support\Str::ucfirst(\Illuminate\Support\Str::lower(($grupos ? implode(', ', $grupos) . ' y ' : '') . $ultimo))
-                . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '');
+        // Primero lo que más gente hace, y solo lo que cabe: Google corta el
+        // título cerca de los 60 caracteres, y con todas las especialidades
+        // seguidas pasaba de 120.
+        $ciudad = $comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '';
+        $grupos = collect(Especialidades::agrupar($comun['especialistas']))
+            ->sort(fn (array $a, array $b) => count($b['especialistas']) <=> count($a['especialistas']))
+            ->pluck('nombre')
+            ->map(fn (string $n) => Str::lower($n));
+        $elegidos = [];
+        foreach ($grupos as $nombre) {
+            $junto = [...$elegidos, $nombre];
+            $texto = (count($junto) > 1 ? implode(', ', array_slice($junto, 0, -1)) . ' y ' : '') . end($junto);
+            if ($elegidos && mb_strlen($texto . $ciudad) > 55) {
+                continue;
+            }
+            $elegidos = $junto;
+            if (count($elegidos) === 3) {
+                break;
+            }
         }
+        $titulo = $elegidos
+            ? Str::ucfirst((count($elegidos) > 1 ? implode(', ', array_slice($elegidos, 0, -1)) . ' y ' : '') . end($elegidos)) . $ciudad
+            : 'Especialistas';
 
         return $this->pagina('landing.especialistas', 'landing.especialistas', $titulo,
             ($especialidades
@@ -517,7 +538,18 @@ class LandingController extends Controller
         $grupos = Especialidades::agrupar($comun['especialistas']);
         $grupo = $grupos[$slug] ?? null;
 
-        abort_if(! $grupo, 404);
+        if (! $grupo) {
+            // Las de antes de partir «judoka y preparador físico» en dos, o de
+            // dejar fuera el detalle tras los dos puntos: a la que empieza igual.
+            $actual = collect(array_keys($grupos))
+                ->filter(fn (string $clave) => str_starts_with($slug, "{$clave}-"))
+                ->sortByDesc(fn (string $clave) => strlen($clave))
+                ->first();
+
+            abort_if(! $actual, 404);
+
+            return redirect()->route('landing.especialidad', $actual, 301);
+        }
 
         $ciudad = $comun['web']['ciudad'];
         $gimnasio = $comun['gimnasio']['nombre'];

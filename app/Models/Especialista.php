@@ -68,6 +68,15 @@ class Especialista extends Model
         // La dirección de su perfil sale del nombre. Se rehace si se corrige
         // el nombre: una dirección con el nombre mal escrito no sirve a nadie.
         static::saving(function (Especialista $especialista) {
+            // El embajador no tiene página propia: sin dirección. Si la tuviera,
+            // le quitaría el nombre a la misma persona como especialista
+            // (salía «leonardo-gutierrez-2»).
+            if ($especialista->tipo === 'embajador') {
+                $especialista->slug = null;
+
+                return;
+            }
+
             if (! $especialista->slug || $especialista->isDirty('nombre')) {
                 $anterior = $especialista->getOriginal('slug');
                 $especialista->slug = $especialista->slugLibre();

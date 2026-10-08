@@ -150,6 +150,36 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
         $this->get(route('landing.especialista', $camila->slug))->assertSee('Más Kinesiólogo en PRO GYM');
     }
 
+    /**
+     * Lo que había en la web el 8-oct-2026: el título de /especialistas salía
+     * con 120 caracteres, «Judoka y preparador físico» era una sola página y
+     * quien era embajador y especialista quedaba en «leonardo-gutierrez-2».
+     */
+    public function test_especialidades_con_detalle_o_con_y_y_el_titulo_que_cabe(): void
+    {
+        $this->assertSame(['entrenador-personal' => 'Entrenador personal'], Especialidades::de('Entrenador personal: estética y funcionalidad'));
+        $this->assertSame(['judoka' => 'Judoka', 'preparador-fisico' => 'preparador físico'], Especialidades::de('Judoka y preparador físico'));
+
+        Especialista::create(['nombre' => 'Benjamín Bascur', 'especialidad' => 'Entrenador personal: estética y funcionalidad', 'activo' => true]);
+        Especialista::create(['tipo' => 'embajador', 'nombre' => 'Leonardo Gutiérrez', 'especialidad' => 'Judoka', 'activo' => true]);
+        $leo = Especialista::create(['nombre' => 'Leonardo Gutiérrez', 'especialidad' => 'Judoka y preparador físico', 'activo' => true]);
+        Especialista::create(['nombre' => 'Isidora Aravena', 'especialidad' => 'Preparadora física y creadora de contenido', 'activo' => true]);
+
+        $this->assertSame('leonardo-gutierrez', $leo->slug);
+        $this->assertNull(Especialista::where('tipo', 'embajador')->value('slug'));
+
+        // Lo que más gente hace va primero, y solo lo que cabe.
+        $this->get('/especialistas')->assertOk()
+            ->assertSee('<title>Preparador físico y entrenador personal en Los Ángeles | PRO GYM</title>', false);
+
+        $this->get('/especialidades/preparador-fisico')->assertOk()->assertSee('Leonardo Gutiérrez')->assertSee('Isidora Aravena');
+
+        // Las direcciones de antes llevan a la nueva.
+        $this->get('/especialidades/judoka-y-preparador-fisico')->assertRedirect(route('landing.especialidad', 'judoka'))->assertStatus(301);
+        $this->get('/especialidades/entrenador-personal-estetico-y-funcionalidad')->assertRedirect(route('landing.especialidad', 'entrenador-personal'));
+        $this->get('/especialidades/judo')->assertNotFound();
+    }
+
     public function test_una_especialidad_sin_nadie_da_404(): void
     {
         $this->get('/especialidades/kinesiologo')->assertNotFound();

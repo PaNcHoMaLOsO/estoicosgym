@@ -9,8 +9,8 @@ use Illuminate\Support\Str;
  *
  * La especialidad se escribe a mano en el panel, así que la misma sale de
  * varias formas: «Kinesiólogo», «kinesiologa», «Nutricionista - Preparador
- * Fisico». Aquí se parte donde hay un guion, una barra o una coma (quien hace
- * dos cosas cuenta en las dos) y se compara sin mayúsculas, sin tildes y sin
+ * Fisico». Aquí se parte donde hay un guion, una barra, una coma o una «y»
+ * (quien hace dos cosas cuenta en las dos) y se compara sin mayúsculas, sin tildes y sin
  * el femenino de las terminaciones más comunes: «Kinesióloga» y «Kinesiólogo»
  * son la misma página.
  */
@@ -25,6 +25,14 @@ final class Especialidades
     {
         $partes = preg_split('/\s+[-–]\s+|\s*[\/,;|]\s*/u', trim((string) $especialidad)) ?: [];
         $salida = [];
+
+        // «Entrenador personal: estética y funcionalidad» es entrenador
+        // personal; lo de después de los dos puntos es el detalle. Y «judoka y
+        // preparador físico» son dos: cada uno con su página.
+        $partes = array_merge(...array_map(
+            fn (string $p) => preg_split('/\s+[ye]\s+/u', preg_replace('/\s*:.*$/u', '', $p)) ?: [],
+            $partes
+        ));
 
         foreach ($partes as $parte) {
             $parte = trim($parte);
