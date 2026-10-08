@@ -28,6 +28,9 @@ class ArreglosDeOctubreTest extends CasoConCatalogos
             'nombres' => $nombres,
             'apellido_paterno' => $paterno,
             'apellido_materno' => 'Soto',
+            // Fijo: el de la fábrica es al azar y a veces salía «juan…@», y
+            // entonces Pedro Pérez también era «juan perez».
+            'email' => \Illuminate\Support\Str::slug("{$nombres} {$paterno}") . '@prueba.cl',
         ]);
     }
 
