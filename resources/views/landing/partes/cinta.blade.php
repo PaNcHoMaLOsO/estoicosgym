@@ -7,6 +7,10 @@
     se ve como un error, no como una cinta.
 --}}
 @php
+    // SOLO LOGOS. Lo que no tiene logo subido salía con su nombre en texto,
+    // metido entre los logos («Universidad de Concepción» en letra suelta):
+    // una cinta de logos con palabras se ve rota. Sin logo, no va en la cinta.
+    $logos = array_values(array_filter($logos, fn ($c) => ! empty($c['logo'])));
     $enMovimiento = count($logos) >= 3;
     $vueltas = $enMovimiento ? (int) ceil(8 / count($logos)) : 1;
     $pista = collect(range(1, $vueltas))->flatMap(fn () => $logos)->values()->all();
@@ -26,6 +30,7 @@
         return round(min(5.5, max(3.25, sqrt(30 / ($medidas[0] / $medidas[1])))), 2) . 'rem';
     };
 @endphp
+@if(count($logos))
 {{-- La barra blanca va FUERA de la cinta: el degradado que difumina los
      extremos se aplica a la cinta, y si el blanco estuviera ahí se desvanecería
      con ella y la barra dejaría de ser una barra. --}}
@@ -47,3 +52,4 @@
     </div>
     </div>
 </div>
+@endif

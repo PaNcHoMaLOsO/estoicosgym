@@ -258,19 +258,23 @@ class PaginasPublicasTest extends CasoConCatalogos
     /** Con uno o dos convenios los logos quedan quietos: el mismo pasando una y otra vez parece un error. */
     public function test_la_cinta_de_logos_se_mueve_desde_tres_convenios(): void
     {
-        Convenio::create(['nombre' => 'UCSC', 'tipo' => 'institucion_educativa', 'activo' => true, 'mostrar_en_web' => true]);
+        // Con logo: la cinta es solo de logos (sin logo, el nombre suelto se veía roto).
+        Convenio::create(['nombre' => 'UCSC', 'tipo' => 'institucion_educativa', 'activo' => true, 'mostrar_en_web' => true, 'logo' => 'convenios/ucsc.png']);
 
         $this->get('/')->assertOk()->assertSee('class="cinta cinta-quieta"', false);
 
         foreach (['AIEP', 'Santo Tomás'] as $nombre) {
-            Convenio::create(['nombre' => $nombre, 'tipo' => 'institucion_educativa', 'activo' => true, 'mostrar_en_web' => true]);
+            Convenio::create(['nombre' => $nombre, 'tipo' => 'institucion_educativa', 'activo' => true, 'mostrar_en_web' => true, 'logo' => 'convenios/' . \Illuminate\Support\Str::slug($nombre) . '.png']);
         }
+        // Uno sin logo no entra a la cinta ni como texto.
+        Convenio::create(['nombre' => 'Sin Logo', 'tipo' => 'institucion_educativa', 'activo' => true, 'mostrar_en_web' => true]);
 
         $this->get('/')
             ->assertOk()
             ->assertDontSee('class="cinta cinta-quieta"', false)
             // Las copias que llenan la vuelta no se leen dos veces con un lector de pantalla.
-            ->assertSee('data-repetido aria-hidden="true"', false);
+            ->assertSee('data-repetido aria-hidden="true"', false)
+            ->assertDontSee('<span>Sin Logo</span>', false);
     }
     /**
      * UN PRECIO ARREGLADO CON CADA UNO NO SE ANUNCIA, pero se sigue vendiendo.
