@@ -765,6 +765,21 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                     </Campo>
                                 </div>
                             ) : null}
+
+                            {! esEmbajador ? (
+                                <div className="sm:col-span-2">
+                                    <Campo etiqueta="Página web" nombre="sitio_web" error={errors.sitio_web} ayuda="Su sitio, Linktree, Doctoralia o donde tenga su agenda. Sale como botón en su perfil.">
+                                        <Texto
+                                            nombre="sitio_web"
+                                            valor={data.sitio_web}
+                                            alCambiar={(v) => setData('sitio_web', v.trim())}
+                                            error={errors.sitio_web}
+                                            placeholder="misitio.cl"
+                                            autoComplete="off"
+                                        />
+                                    </Campo>
+                                </div>
+                            ) : null}
                         </div>
 
                         <label className="flex items-center gap-2 pt-1 text-sm text-chalk">

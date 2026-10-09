@@ -110,7 +110,7 @@ class LlevarLaConfiguracion
             // Especialistas y embajadores: su WhatsApp, Instagram y correo SÍ
             // viajan porque son su ficha pública en la web, no datos de socios.
             'especialistas' => [
-                'columnas' => ['uuid', 'tipo', 'vinculo', 'nombre', 'slug', 'slugs_anteriores', 'especialidad', 'descripcion', 'temas', 'modalidad', 'dias', 'horario', 'lugar', 'foto', 'whatsapp', 'instagram', 'tiktok', 'email', 'orden', 'activo'],
+                'columnas' => ['uuid', 'tipo', 'vinculo', 'nombre', 'slug', 'slugs_anteriores', 'especialidad', 'descripcion', 'temas', 'modalidad', 'dias', 'horario', 'lugar', 'foto', 'whatsapp', 'instagram', 'tiktok', 'sitio_web', 'email', 'orden', 'activo'],
                 'identidad' => [['uuid'], ['slug'], ['tipo', 'nombre']],
                 'imagenes' => ['foto'],
             ],

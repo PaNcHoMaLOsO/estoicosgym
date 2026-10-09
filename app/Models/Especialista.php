@@ -43,6 +43,7 @@ class Especialista extends Model
         'whatsapp',
         'instagram',
         'tiktok',
+        'sitio_web',
         'email',
         'orden',
         'activo',
@@ -206,6 +207,16 @@ class Especialista extends Model
         $busqueda = $ciudad && ! str_contains(mb_strtolower($lugar), mb_strtolower($ciudad)) ? "{$lugar}, {$ciudad}, Chile" : "{$lugar}, Chile";
 
         return 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($busqueda);
+    }
+
+    /** Lo que se muestra de su página: «misitio.cl», sin https ni www. */
+    public function sitioLegible(): ?string
+    {
+        if (! $this->sitio_web) {
+            return null;
+        }
+
+        return rtrim((string) preg_replace('#^https?://(www\.)?#i', '', $this->sitio_web), '/');
     }
 
     public function enlaceTiktok(): ?string

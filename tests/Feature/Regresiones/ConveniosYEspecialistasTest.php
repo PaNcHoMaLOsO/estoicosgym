@@ -768,4 +768,31 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         // En la tarjeta, la dirección corta.
         $this->get('/profesionales')->assertSee('Colón 250, oficina 3');
     }
+
+    /** La página web del profesional: se completa sola, solo http(s), y sale como botón. */
+    public function test_la_pagina_web_del_profesional(): void
+    {
+        foreach ([
+            'misitio.cl' => 'https://misitio.cl',
+            'www.misitio.cl/agenda' => 'https://www.misitio.cl/agenda',
+            'http://linktr.ee/camila' => 'http://linktr.ee/camila',
+        ] as $escrito => $guardado) {
+            Especialista::query()->delete();
+            $this->admin()->post('/panel/especialistas', [
+                'nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'sitio_web' => $escrito, 'activo' => true,
+            ])->assertSessionHasNoErrors();
+            $this->assertSame($guardado, Especialista::firstWhere('nombre', 'Camila Rojas')->sitio_web);
+        }
+
+        foreach (['javascript:alert(1)', 'no es una página', 'ftp://misitio.cl'] as $malo) {
+            $this->admin()->post('/panel/especialistas', [
+                'nombre' => 'Otro ' . md5($malo), 'especialidad' => 'Kine', 'sitio_web' => $malo, 'activo' => true,
+            ])->assertSessionHasErrors('sitio_web');
+        }
+
+        $this->get('/profesionales/camila-rojas')->assertOk()
+            ->assertSee('href="http://linktr.ee/camila"', false)
+            ->assertSee('linktr.ee/camila')
+            ->assertSee('"sameAs":["http://linktr.ee/camila"]', false);
+    }
 }

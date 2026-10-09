@@ -695,7 +695,7 @@ class LandingController extends Controller
                     'jobTitle' => $especialista['especialidad'] ?: null,
                     'image' => $especialista['foto'] ? url($especialista['foto']) : null,
                     'url' => $perfil,
-                    'sameAs' => array_values(array_filter([$especialista['instagram'], $especialista['tiktok']])) ?: null,
+                    'sameAs' => array_values(array_filter([$especialista['sitio'], $especialista['instagram'], $especialista['tiktok']])) ?: null,
                     // Solo quien es del gimnasio «trabaja ahí»: al recomendado no
                     // se le atribuye un empleo que no tiene.
                     'worksFor' => $especialista['recomendado'] ? null : ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
@@ -1644,6 +1644,8 @@ class LandingController extends Controller
                 'usuario' => $e->instagram,
                 'tiktok' => $e->enlaceTiktok(),
                 'usuario_tiktok' => $e->tiktok,
+                'sitio' => $e->sitio_web,
+                'sitio_legible' => $e->sitioLegible(),
                 'email' => $e->email,
             ])
             ->all();

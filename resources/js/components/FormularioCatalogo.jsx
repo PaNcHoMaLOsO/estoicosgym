@@ -222,6 +222,7 @@ export function valoresDeEspecialista(especialista, tipo = 'especialista') {
         whatsapp: especialista?.whatsapp ?? '',
         instagram: especialista?.instagram ?? '',
         tiktok: especialista?.tiktok ?? '',
+        sitio_web: especialista?.sitio_web ?? '',
         email: especialista?.email ?? '',
         activo: especialista?.uuid ? Boolean(especialista.activo) : true,
     };

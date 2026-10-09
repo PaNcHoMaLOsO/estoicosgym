@@ -63,6 +63,7 @@ class EspecialistaController extends Controller
                 'whatsapp' => $e->whatsapp ? $this->comoSeLee($e->whatsapp) : '',
                 'instagram' => $e->instagram ? '@' . $e->instagram : '',
                 'tiktok' => $e->tiktok ? '@' . $e->tiktok : '',
+                'sitio_web' => $e->sitio_web ?? '',
                 'email' => $e->email ?? '',
                 'orden' => $e->orden,
                 'activo' => (bool) $e->activo,
@@ -196,6 +197,7 @@ class EspecialistaController extends Controller
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
             'tiktok' => 'nullable|string|max:100',
+            'sitio_web' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:150',
             'activo' => 'boolean',
             // Sin SVG: puede llevar código, y se ejecutaría al abrirlo desde la web.
@@ -227,6 +229,7 @@ class EspecialistaController extends Controller
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
             'tiktok' => $this->tiktok($datos['tiktok'] ?? null),
+            'sitio_web' => $this->sitioWeb($datos['sitio_web'] ?? null),
             'email' => filled($datos['email'] ?? null) ? mb_strtolower(trim($datos['email'])) : null,
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
@@ -325,6 +328,37 @@ class EspecialistaController extends Controller
         }
 
         return $usuario;
+    }
+
+    /**
+     * «misitio.cl», «www.misitio.cl» o «https://misitio.cl/agenda» → una
+     * dirección https completa. Solo http(s) y con un dominio de verdad: lo que
+     * termina en un href de la web pública no puede ser «javascript:…».
+     */
+    private function sitioWeb(?string $valor): ?string
+    {
+        $valor = trim((string) $valor);
+
+        if ($valor === '') {
+            return null;
+        }
+
+        if (! preg_match('#^https?://#i', $valor)) {
+            $valor = 'https://' . $valor;
+        }
+
+        $partes = parse_url($valor);
+        $host = $partes['host'] ?? '';
+
+        if (! in_array(strtolower($partes['scheme'] ?? ''), ['http', 'https'], true)
+            || ! preg_match('/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i', $host)
+            || filter_var($valor, FILTER_VALIDATE_URL) === false) {
+            throw ValidationException::withMessages([
+                'sitio_web' => 'Escribe la dirección de su página: misitio.cl o https://misitio.cl',
+            ]);
+        }
+
+        return $valor;
     }
 
     /**

@@ -87,7 +87,7 @@
 
                         {{-- ESCRIBIRLE, ARRIBA. Es a lo que se viene: no tiene que
                              quedar debajo de la presentación. --}}
-                        @if($e['whatsapp'] || $e['instagram'] || $e['tiktok'] || $e['email'])
+                        @if($e['whatsapp'] || $e['instagram'] || $e['tiktok'] || $e['sitio'] || $e['email'])
                             <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                                 @if($e['whatsapp'])
                                     <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
@@ -105,6 +105,12 @@
                                     <a href="{{ $e['tiktok'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                                        class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
                                         <x-icono nombre="tiktok" class="text-lg" /> {{ '@' . $e['usuario_tiktok'] }}
+                                    </a>
+                                @endif
+                                @if($e['sitio'])
+                                    <a href="{{ $e['sitio'] }}" target="_blank" rel="noopener" data-evento="sitio_especialista" data-detalle="{{ $e['nombre'] }}"
+                                       class="inline-flex items-center justify-center gap-2.5 border border-pg-tiza/30 px-6 py-3.5 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
+                                        <x-icono nombre="arrow-up-right-from-square" class="text-sm" /> {{ $e['sitio_legible'] }}
                                     </a>
                                 @endif
                                 @if($e['email'])
