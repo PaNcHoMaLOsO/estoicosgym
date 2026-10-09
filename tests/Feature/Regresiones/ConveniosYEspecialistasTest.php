@@ -746,9 +746,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $this->get('/planes')->assertOk()
             ->assertSee('Estudiantes y convenios: $25.000')
-            ->assertSee('Estudiantes y universitarios')
-            ->assertSee('$25.000 al mes')
-            ->assertSee('También para Carabineros.')
+            ->assertSee('¿Eres estudiante o de Carabineros?')
+            // Una línea, no otra tarjeta con logos: eso está en Convenios.
+            ->assertDontSee('Estudiantes y universitarios')
             ->assertSee('href="' . route('landing.convenios') . '"', false);
     }
 }
