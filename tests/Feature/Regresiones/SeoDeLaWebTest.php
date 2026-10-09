@@ -275,8 +275,8 @@ class SeoDeLaWebTest extends CasoConCatalogos
 
         $html = $this->get(route('landing.especialista', $e->slug))->assertOk()->getContent();
 
-        $this->assertStringContainsString('<title>Camila Rojas, Nutricionista en Los Ángeles | PRO GYM</title>', $html);
-        $this->assertStringContainsString('content="Camila Rojas, Nutricionista en PRO GYM, Los Ángeles. Agenda por WhatsApp."', $html);
+        $this->assertStringContainsString('<title>Camila Rojas, nutricionista en Los Ángeles | PRO GYM</title>', $html);
+        $this->assertStringContainsString('content="Camila Rojas, Nutricionista en PRO GYM, Los Ángeles. Escríbele por WhatsApp para agendar."', $html);
     }
 
     // ---------- 10. Mapa del sitio ----------

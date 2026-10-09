@@ -183,7 +183,7 @@ class LandingController extends Controller
         // Con el precio en el título: es lo primero que se mira en Google.
         $ciudad = $comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '';
         $titulo = $conPrecio
-            ? "Gimnasio para estudiantes{$ciudad}: convenio " . $this->pesos($conPrecio['precio_convenio'])
+            ? "Gimnasio para estudiantes{$ciudad}, " . $this->pesos($conPrecio['precio_convenio'])
             : "Gimnasio para estudiantes y convenios{$ciudad}";
 
         return $this->pagina('landing.convenios', 'landing.convenios', $titulo,
@@ -210,7 +210,7 @@ class LandingController extends Controller
         $nombres = collect($instituciones)->pluck('nombre')->take(3)->implode(', ');
 
         return $this->pagina('landing.arriendo', 'landing.arriendo',
-            'Arriendo de gimnasio por horas para tus clases',
+            'Arriendo de gimnasio por horas para clases',
             "Arrienda horas en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ', para tus clases con sala de máquinas, peso libre y cardio.'
                 . ($nombres ? " Ya entrenan aquí {$nombres}." : ''),
             [
@@ -637,14 +637,24 @@ class LandingController extends Controller
 
         // «Camila Rojas, nutricionista en Los Ángeles»: lo que alguien escribe
         // en Google. pagina() ve la ciudad en el título y no la repite.
-        $titulo = "{$especialista['nombre']}, {$especialista['especialidad']}" . ($ciudad ? " en {$ciudad}" : '');
+        // Con lo PRIMERO que hace y en minúscula: «Entrenador personal:
+        // estética y funcionalidad» daba un título de 86 caracteres que Google
+        // cortaba. Lo completo va en la descripción y en la página.
+        $principal = Especialidades::de($especialista['especialidad']);
+        $oficio = $principal ? Str::lower(reset($principal)) : $especialista['especialidad'];
+        $titulo = "{$especialista['nombre']}, {$oficio}" . ($ciudad ? " en {$ciudad}" : '');
 
         return $this->pagina('landing.especialista', 'landing.especialista',
             $titulo,
             $especialista['descripcion']
                 ? Str::limit(preg_replace('/\s+/', ' ', $especialista['descripcion']), 155)
-                : "{$especialista['nombre']}, {$especialista['especialidad']} en {$nombreGimnasio}" . ($ciudad ? ", {$ciudad}" : '') . '.'
-                    . ($especialista['whatsapp'] ? ' Agenda por WhatsApp.' : ' Escríbele directo.'),
+                // Sin presentación escrita: quién es, cuándo atiende y cómo
+                // escribirle, para no dejar a Google con una línea suelta.
+                : "{$especialista['nombre']}, {$especialista['especialidad']}"
+                    . ($especialista['recomendado'] ? ", recomendado por {$nombreGimnasio}" : " en {$nombreGimnasio}")
+                    . ($ciudad ? ", {$ciudad}" : '') . '.'
+                    . ($especialista['dias'] ? " Atiende: " . Str::lower($especialista['dias']) . ($especialista['horario'] ? ", {$especialista['horario']}" : '') . '.' : '')
+                    . ($especialista['whatsapp'] ? ' Escríbele por WhatsApp para agendar.' : ' Escríbele directo.'),
             [
                 'especialista' => $especialista,
                 'otros' => $otros,
@@ -694,7 +704,7 @@ class LandingController extends Controller
         // (2026-09-17), y la ficha FAQPage se fue con ella, porque Google no
         // acepta preguntas que no estan a la vista.
         return $this->pagina('landing.contacto', 'landing.contacto', 'Dirección y horario del gimnasio',
-            "Dónde está {$comun['gimnasio']['nombre']}, cómo llegar y el horario. Escríbenos.",
+            "Dónde está {$comun['gimnasio']['nombre']}" . ($comun['gimnasio']['direccion'] ? " ({$comun['gimnasio']['direccion']})" : '') . ', cómo llegar, el horario de cada día y cómo escribirnos por WhatsApp.',
             // La ficha del gimnasio también aquí: es la página de la dirección,
             // el teléfono y el horario, justo lo que esa ficha le dice a Google.
             ['json_ld' => $comun['web']['json_ld']], $comun);
@@ -975,6 +985,7 @@ class LandingController extends Controller
             $web['imagen'] = url($datos['imagen_al_compartir']);
             $web['imagen_alt'] = $datos['imagen_alt'] ?? null;
         }
+        $web['imagen'] = \App\Support\ImagenParaCompartir::de($web['imagen']);
         $web['imagen_medidas'] = MedidasDeImagen::de($web['imagen']);
 
         unset($datos['json_ld'], $datos['migas'], $datos['robots'], $datos['imagen_al_compartir'], $datos['imagen_alt']);
@@ -1472,6 +1483,21 @@ class LandingController extends Controller
                 'priceCurrency' => 'CLP',
             ], $planes),
             'openingHoursSpecification' => $this->horarioParaGoogle(),
+            // LA TIENDA DE SUPLEMENTOS, DENTRO DEL GIMNASIO. Para Google son dos
+            // negocios del mismo lugar que se enlazan: la ficha de uno nombra
+            // al otro, y la búsqueda de cualquiera de los dos acerca al otro.
+            'department' => ($tienda = trim((string) Ajustes::obtener('tienda.url'))) !== '' ? [
+                '@type' => 'Store',
+                'name' => trim((string) Ajustes::obtener('tienda.titulo')) ?: 'Suplementos',
+                'url' => $tienda,
+                'description' => 'Suplementos deportivos dentro de ' . $gimnasio['nombre'] . '.',
+                'address' => array_filter([
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => $gimnasio['direccion'] ?: null,
+                    'addressLocality' => $ciudad ?: null,
+                    'addressCountry' => 'CL',
+                ], $vacio),
+            ] : null,
         ], $vacio);
 
         return [

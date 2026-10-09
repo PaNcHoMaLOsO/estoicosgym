@@ -14,7 +14,7 @@ class ArriendoParaInstitucionesTest extends CasoConCatalogos
     {
         $this->get('/arriendo-por-horas')
             ->assertOk()
-            ->assertSee('<title>Arriendo de gimnasio por horas para tus clases', false)
+            ->assertSee('<title>Arriendo de gimnasio por horas para clases', false)
             ->assertSee('La sala se comparte con los socios')
             ->assertSee('id="instituciones"', false)
             ->assertSee('"@type":"Service"', false);
