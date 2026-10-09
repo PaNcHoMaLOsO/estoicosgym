@@ -39,10 +39,12 @@ export default function Filtros({
   }
 
   return (
+    // EN EL TELÉFONO, UNA FILA QUE SE DESLIZA: envueltos, ocho filtros eran
+    // cinco líneas y media pantalla antes de llegar a la lista.
     <div
       role="group"
       aria-label={etiqueta}
-      className="flex flex-wrap gap-1.5"
+      className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0"
     >
       {opciones
         .filter(
@@ -65,7 +67,7 @@ export default function Filtros({
                         una raya: no es un estado más de los socios. */}
             {raya ? (
               <span
-                className="mx-1 w-px self-stretch bg-line"
+                className="mx-1 w-px shrink-0 self-stretch bg-line"
                 aria-hidden="true"
               />
             ) : null}
@@ -73,7 +75,7 @@ export default function Filtros({
               type="button"
               aria-pressed={elegido}
               onClick={() => elegir(valor)}
-              className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-sm transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 py-1 text-sm transition-colors ${
                 elegido
                   ? "border-line-strong bg-surface-2 font-medium text-chalk"
                   : "border-line text-fog hover:border-line-strong hover:text-chalk"
