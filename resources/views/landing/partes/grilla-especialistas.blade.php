@@ -7,11 +7,20 @@
 @php
     // Tantas columnas como especialistas, hasta cuatro: con dos, dos
     // paneles anchos; nunca un tercio de pantalla vacío.
-    $columnas = [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3'][count($especialistas)] ?? 'lg:grid-cols-4';
+    // CON POCOS, UN ANCHO TOPE Y AL CENTRO. Repartiendo la fila entre ellos,
+    // uno solo era un panel de lado a lado: la foto salía recortada, enorme
+    // y borrosa. Ahora cada panel mide como mucho lo que mide con cuatro.
+    $columnas = [
+        1 => 'lg:grid-cols-[minmax(0,22rem)]',
+        2 => 'lg:grid-cols-[repeat(2,minmax(0,22rem))]',
+        3 => 'lg:grid-cols-[repeat(3,minmax(0,22rem))]',
+    ][count($especialistas)] ?? 'lg:grid-cols-4';
+    $centrado = count($especialistas) < 4 ? 'justify-center' : '';
     // En el celular, de a dos: se ven todos sin deslizar de lado.
     // Deslizando se veía uno a medias y había que adivinar que
-    // había más.
-    $enCelular = count($especialistas) === 1 ? 'grid-cols-1' : 'grid-cols-2';
+    // había más. Uno solo, a lo ancho, pero sin pasar de 22rem.
+    $enCelular = count($especialistas) === 1 ? 'grid-cols-[minmax(0,22rem)]' : 'grid-cols-2';
+    $enTableta = count($especialistas) === 1 ? 'sm:grid-cols-[minmax(0,22rem)]' : 'sm:grid-cols-2';
     $nivel = ($nivel ?? 'h2') === 'h3' ? 'h3' : 'h2';
     // DENTRO DE UNA SECCIÓN, el mismo ancho para todos: si no, la sección
     // de una sola persona era un panel de lado a lado y la de cuatro, cuatro
@@ -19,10 +28,12 @@
     if (! empty($fijas)) {
         $columnas = 'lg:grid-cols-4';
         $enCelular = 'grid-cols-2';
+        $enTableta = 'sm:grid-cols-2';
+        $centrado = '';
     }
 @endphp
 
-<div class="grid {{ $enCelular }} gap-2 sm:grid-cols-2 sm:gap-3 {{ $columnas }} lg:gap-4">
+<div class="grid {{ $enCelular }} {{ $centrado }} gap-2 {{ $enTableta }} sm:gap-3 {{ $columnas }} lg:gap-4">
     @foreach($especialistas as $index => $e)
         <article class="animate-on-scroll group relative flex min-h-[15rem] flex-col justify-end overflow-hidden bg-pg-carbon sm:min-h-[20rem] lg:min-h-[24rem]" style="animation-delay: {{ ($index % 4) * 0.08 }}s">
             @if($e['foto'])
