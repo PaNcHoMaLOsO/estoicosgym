@@ -170,7 +170,7 @@ php artisan notificaciones:enviar --enviar
    MAIL_PASSWORD=tu_api_key_production
    MAIL_ENCRYPTION=tls
    MAIL_FROM_ADDRESS=noreply@tudominio.com
-   MAIL_FROM_NAME="Estoicos Gym"
+   MAIL_FROM_NAME="PRO GYM"
    ```
 
 ### **Opción 3: Cambiar a otro proveedor**

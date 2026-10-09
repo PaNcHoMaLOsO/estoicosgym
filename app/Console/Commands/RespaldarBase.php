@@ -16,7 +16,7 @@ use Symfony\Component\Process\Process;
  * lo hay— y se guardan los últimos 14 en storage/app/private/respaldos/diarios.
  *
  * Con PostgreSQL usa pg_dump: el del servidor, o el del contenedor de Docker
- * si RESPALDO_CONTENEDOR dice cuál (en este equipo, estoicosgym-pg). Con SQLite
+ * si RESPALDO_CONTENEDOR dice cuál (en este equipo, progym-pg). Con SQLite
  * copia el archivo. Si falla, queda en el registro de fallas del panel.
  *
  * Para volver a un respaldo:

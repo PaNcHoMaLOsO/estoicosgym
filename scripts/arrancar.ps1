@@ -51,7 +51,7 @@ if (Docker-Responde) {
 }
 
 # 2. La base
-docker start estoicosgym-pg *> $null
+docker start progym-pg *> $null
 Write-Host 'Base de datos lista.' -ForegroundColor Green
 
 # 3. El servidor, si no está ya

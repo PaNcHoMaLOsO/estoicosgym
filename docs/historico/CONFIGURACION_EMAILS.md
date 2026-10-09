@@ -46,7 +46,7 @@ MAIL_USERNAME=estoicosgymlosangeles@gmail.com
 MAIL_PASSWORD=SND_tu_token_aqui
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=estoicosgymlosangeles@gmail.com
-MAIL_FROM_NAME="Estoicos Gym"
+MAIL_FROM_NAME="PRO GYM"
 ```
 
 Limpia cache:
@@ -72,7 +72,7 @@ php scripts/test_sender.php
 3. Completar formulario:
    - Email: `estoicosgymlosangeles@gmail.com`
    - Password: (contraseña segura)
-   - Company Name: `Estoicos Gym`
+   - Company Name: `PRO GYM`
 
 #### 1.2. Verificar Email
 1. Revisar bandeja de entrada
@@ -124,7 +124,7 @@ MAIL_USERNAME=estoicosgymlosangeles@gmail.com
 MAIL_PASSWORD=SND_tu_token_aqui
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=estoicosgymlosangeles@gmail.com
-MAIL_FROM_NAME="Estoicos Gym"
+MAIL_FROM_NAME="PRO GYM"
 ```
 
 #### 3.2. Limpiar Cache

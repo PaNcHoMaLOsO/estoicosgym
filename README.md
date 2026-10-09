@@ -31,7 +31,7 @@ Cómo funciona cada parte por dentro está en [docs/MODULOS.md](docs/MODULOS.md)
 
 Resumen corto; el paso a paso, en [docs/INSTALACION.md](docs/INSTALACION.md).
 
-1. **Docker Desktop abierto.** PostgreSQL corre en el contenedor `estoicosgym-pg`.
+1. **Docker Desktop abierto.** PostgreSQL corre en el contenedor `progym-pg`.
 2. **El servidor, con PHP 8.4** (el `php` de XAMPP no trae PostgreSQL):
 
 ```bash

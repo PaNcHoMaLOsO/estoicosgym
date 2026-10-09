@@ -16,7 +16,7 @@ MAIL_USERNAME=estoicosgymlosangeles@gmail.com
 MAIL_PASSWORD=SND_tu_token_aqui
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=estoicosgymlosangeles@gmail.com
-MAIL_FROM_NAME="Estoicos Gym"
+MAIL_FROM_NAME="PRO GYM"
 ```
 
 **✅ Ventajas de Sender.net:**

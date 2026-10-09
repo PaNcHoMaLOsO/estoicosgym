@@ -9,7 +9,7 @@ equipo PostgreSQL va en Docker; en el servidor, el que tenga instalado.
 
 ### Lo que tiene que haber
 
-- **Docker Desktop**, abierto. La base es el contenedor `estoicosgym-pg`
+- **Docker Desktop**, abierto. La base es el contenedor `progym-pg`
   (PostgreSQL 16, volumen `estoicosgym-pg-datos`, puerto 5432). Arranca solo con
   Docker Desktop (`--restart unless-stopped`).
 - **PHP 8.4** en `C:\php84`, que trae `pdo_pgsql`. El `php` que está en el PATH
@@ -44,7 +44,7 @@ Rename-Item "$env:LOCALAPPDATA\Docker\run" "run-viejo"
 Solo si hay que crear el contenedor otra vez (la clave va en el `.env`):
 
 ```bash
-docker run -d --name estoicosgym-pg --restart unless-stopped \
+docker run -d --name progym-pg --restart unless-stopped \
   -e POSTGRES_USER=estoicos -e POSTGRES_PASSWORD=la-clave -e POSTGRES_DB=dbestoicos \
   -p 127.0.0.1:5432:5432 -v estoicosgym-pg-datos:/var/lib/postgresql/data postgres:16
 
@@ -65,24 +65,24 @@ El puerto de la base queda solo para este equipo (`127.0.0.1:5432`): con
 **Se hacen solos, uno por día** (`base:respaldar`): de madrugada con el
 programador o, sin él, con la revisión del día. Quedan los últimos 14 en
 `storage/app/private/respaldos/diarios/`, comprimidos. En este equipo
-`pg_dump` vive dentro del contenedor: `RESPALDO_CONTENEDOR=estoicosgym-pg` en
+`pg_dump` vive dentro del contenedor: `RESPALDO_CONTENEDOR=progym-pg` en
 el `.env`. En el servidor esa línea va vacía y usa el `pg_dump` instalado.
 
 Para volver a uno:
 
 ```bash
-gunzip -c respaldo-2026-09-27-033000.sql.gz | docker exec -i estoicosgym-pg psql -U estoicos dbestoicos
+gunzip -c respaldo-2026-09-27-033000.sql.gz | docker exec -i progym-pg psql -U estoicos dbestoicos
 ```
 
 A mano, como siempre:
 
 ```bash
-docker exec estoicosgym-pg pg_dump -U estoicos dbestoicos > respaldo.sql
-docker exec -i estoicosgym-pg psql -U estoicos dbestoicos < respaldo.sql
+docker exec progym-pg pg_dump -U estoicos dbestoicos > respaldo.sql
+docker exec -i progym-pg psql -U estoicos dbestoicos < respaldo.sql
 ```
 
 Los de la mudanza desde MySQL (septiembre de 2026) están en
-`D:\Projects\respaldos_estoicosgym\`.
+`D:\Projects\respaldos_progym\`.
 
 ---
 
@@ -197,9 +197,9 @@ una base aparte —**nunca la real**: las pruebas la borran— y se pasan las
 variables delante:
 
 ```bash
-docker exec estoicosgym-pg psql -U estoicos -d dbestoicos -c "CREATE DATABASE estoicosgym_pruebas"
+docker exec progym-pg psql -U estoicos -d dbestoicos -c "CREATE DATABASE progym_pruebas"
 
-DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=estoicosgym_pruebas \
+DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=progym_pruebas \
 DB_USERNAME=estoicos DB_PASSWORD=la-clave C:/php84/php.exe artisan test
 ```
 

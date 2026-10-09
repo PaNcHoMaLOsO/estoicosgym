@@ -13,7 +13,7 @@ import { useSyncExternalStore } from 'react';
  * de dia y se factura de noche— y derivarla del nombre de la marca haria que al
  * renombrar la tienda todo el mundo perdiera su preferencia de golpe.
  */
-export const CLAVE_TEMA = 'estoicosgym_panel_theme';
+export const CLAVE_TEMA = 'progym_panel_theme';
 
 const CONSULTA_OSCURO = '(prefers-color-scheme: dark)';
 

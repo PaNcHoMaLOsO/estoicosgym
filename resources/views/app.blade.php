@@ -27,7 +27,7 @@
             /* MISMA clave y MISMO vocabulario que resources/js/lib/tema.js
                ('sistema' | 'claro' | 'oscuro'). Si los dos no coinciden, este
                script pinta un tema y React cree que hay otro elegido. */
-            var CLAVE = 'estoicosgym_panel_theme';
+            var CLAVE = 'progym_panel_theme';
             var raiz = document.documentElement;
 
             try {

@@ -28,7 +28,7 @@ class EnviarNotificaciones extends Command
     {
         $this->info('');
         $this->info('╔══════════════════════════════════════════════════════════╗');
-        $this->info('║       🔔 SISTEMA DE NOTIFICACIONES - ESTOICOS GYM        ║');
+        $this->info('║       🔔 SISTEMA DE NOTIFICACIONES - PRO GYM        ║');
         $this->info('╚══════════════════════════════════════════════════════════╝');
         $this->info('');
 

@@ -322,7 +322,7 @@ class GenerarNotificaciones extends Command
     /**
      * La firma de los avisos: el nombre del gimnasio, el de Configuracion.
      *
-     * Estaba escrita a mano como «Estoicos Gym Los Angeles - Tu templo del
+     * Estaba escrita a mano como «PRO GYM Los Angeles - Tu templo del
      * fitness» en los tres avisos, y la leian los socios.
      */
     private function pieDeCorreo(): string
