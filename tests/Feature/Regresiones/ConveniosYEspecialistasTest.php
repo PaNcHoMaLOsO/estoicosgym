@@ -617,7 +617,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             'horario' => ' 15:00 a 19:00 ',
             'lugar' => 'Consulta en Colón 250',
             'activo' => true,
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHasNoErrors()->assertRedirect(); // sin «tipo»: caía con error 500
 
         $camila = Especialista::firstWhere('nombre', 'Camila Rojas');
         $this->assertSame('recomendado', $camila->vinculo);

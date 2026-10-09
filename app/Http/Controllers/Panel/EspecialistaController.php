@@ -85,7 +85,10 @@ class EspecialistaController extends Controller
             'orden' => (int) Especialista::where('tipo', $tipo)->max('orden') + 1,
         ]);
         $this->ponerFoto($especialista, $request);
-        $this->renumerar($especialista->tipo);
+        // $tipo y no $especialista->tipo: si no llegó, la base pone
+        // «especialista», pero el modelo recién creado no lo sabe (era null y
+        // el alta caía con error 500).
+        $this->renumerar($tipo);
 
         return back()->with('success', $especialista->activo
             ? "«{$especialista->nombre}» ya aparece en la web."
