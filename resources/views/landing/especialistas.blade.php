@@ -49,7 +49,7 @@
                                         </a>
                                     @endif
                                 </div>
-                                @include('landing.partes.grilla-especialistas', ['especialistas' => $seccion['especialistas'], 'nivel' => 'h3'])
+                                @include('landing.partes.grilla-especialistas', ['especialistas' => $seccion['especialistas'], 'nivel' => 'h3', 'fijas' => true])
                             </div>
                         @endforeach
                     </div>

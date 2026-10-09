@@ -13,6 +13,13 @@
     // había más.
     $enCelular = count($especialistas) === 1 ? 'grid-cols-1' : 'grid-cols-2';
     $nivel = ($nivel ?? 'h2') === 'h3' ? 'h3' : 'h2';
+    // DENTRO DE UNA SECCIÓN, el mismo ancho para todos: si no, la sección
+    // de una sola persona era un panel de lado a lado y la de cuatro, cuatro
+    // angostos, uno debajo del otro.
+    if (! empty($fijas)) {
+        $columnas = 'lg:grid-cols-4';
+        $enCelular = 'grid-cols-2';
+    }
 @endphp
 
 <div class="grid {{ $enCelular }} gap-2 sm:grid-cols-2 sm:gap-3 {{ $columnas }} lg:gap-4">
