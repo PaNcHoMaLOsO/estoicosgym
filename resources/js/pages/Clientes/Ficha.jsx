@@ -6,7 +6,9 @@ import {
     BanknoteIcon,
     CameraIcon,
     FileTextIcon,
+    MessageCircleIcon,
     PencilIcon,
+    PhoneIcon,
     PlayIcon,
     PlusIcon,
     RefreshCwIcon,
@@ -28,7 +30,7 @@ import Estado from '@/components/Estado';
 import Retrato from '@/components/Retrato';
 import { Reservado } from '@/Privado';
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
-import { celularLegible } from '@/lib/contacto';
+import { celularLegible, whatsapp } from '@/lib/contacto';
 import { puede } from '@/lib/permisos';
 
 import TextoQueCambia from '@/components/TextoQueCambia';
@@ -417,6 +419,38 @@ function ContratoDelSocio({ cliente }) {
                 </div>
             </form>
         </Bloque>
+    );
+}
+
+/**
+ * UN TELÉFONO QUE SE PUEDE USAR. El celular era texto: para escribirle había
+ * que copiarlo a mano, y en el Resumen ya había botón de WhatsApp. Ahora va el
+ * número y, al lado, WhatsApp (abre el chat, sin mensaje) y Llamar (en el
+ * celular del mesón marca directo). El de emergencia, solo Llamar.
+ */
+function Telefono({ numero, nombre = null, conWhatsapp = false }) {
+    const marcar = `tel:${String(numero).replace(/[^\d+]/g, '').replace(/^9(\d{8})$/, '+569$1')}`;
+    const boton = 'inline-flex size-7 shrink-0 items-center justify-center rounded-control border transition-colors';
+
+    return (
+        <span className="flex items-center gap-2">
+            <span className="tabular-nums">{celularLegible(numero)}</span>
+            {conWhatsapp ? (
+                <a
+                    href={whatsapp(numero)}
+                    target="progym-whatsapp"
+                    rel="noopener"
+                    title="Escribirle por WhatsApp"
+                    aria-label={`Escribirle por WhatsApp${nombre ? ` a ${nombre}` : ''}`}
+                    className={`${boton} border-[#25D366]/40 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20`}
+                >
+                    <MessageCircleIcon className="size-3.5" aria-hidden="true" />
+                </a>
+            ) : null}
+            <a href={marcar} title="Llamar" aria-label={`Llamar al ${celularLegible(numero)}`} className={`${boton} border-line text-fog hover:text-chalk`}>
+                <PhoneIcon className="size-3.5" aria-hidden="true" />
+            </a>
+        </span>
     );
 }
 
@@ -1002,7 +1036,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                 <div className="space-y-3 lg:col-span-1">
                     <Bloque titulo="Contacto">
                         <dl className="space-y-3">
-                            <Dato etiqueta="Celular">{cliente.celular ? celularLegible(cliente.celular) : null}</Dato>
+                            <Dato etiqueta="Celular">{cliente.celular ? <Telefono numero={cliente.celular} nombre={cliente.nombre} conWhatsapp /> : null}</Dato>
                             <Dato etiqueta="Correo">
                                 {cliente.email ? (
                                     <a href={`mailto:${cliente.email}`} className="break-all hover:underline">
@@ -1028,7 +1062,7 @@ export default function Ficha({ cliente, inscripciones, pagos, resumen, fiado, p
                             <dl className="grid grid-cols-2 gap-3">
                                 <Dato etiqueta="Avisar a">{cliente.contacto_emergencia}</Dato>
                                 <Dato etiqueta="Teléfono">
-                                    {cliente.telefono_emergencia ? celularLegible(cliente.telefono_emergencia) : null}
+                                    {cliente.telefono_emergencia ? <Telefono numero={cliente.telefono_emergencia} /> : null}
                                 </Dato>
                             </dl>
                         </div>
