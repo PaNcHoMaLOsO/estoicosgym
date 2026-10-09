@@ -9,6 +9,12 @@
                 <p class="text-pg-tiza/55 font-modern text-sm mt-3 lg:mt-4">
                     {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ' · Gimnasio en ' . $web['ciudad'] : '' }}{{ $web['region'] ? ', ' . $web['region'] : '' }}{{ $web['ciudad'] ? ', Chile' : '' }}
                 </p>
+                @php($conConvenioPie = collect($planes ?? [])->filter(fn ($p) => ! empty($p['precio_convenio']) && empty($p['es_pase']))->sortBy('precio_convenio')->first())
+                @if($conConvenioPie)
+                    <p class="font-modern text-sm mt-1 text-pg-tiza/55">
+                        <x-icono nombre="graduation-cap" class="mr-1 text-xs text-pg-rojo-claro" />Estudiantes con convenio: <span class="text-pg-tiza">${{ number_format($conConvenioPie['precio_convenio'], 0, ',', '.') }} al mes</span>
+                    </p>
+                @endif
                 {{-- La dirección se toca y abre Google Maps: en el celular es lo
                      primero que se intenta. --}}
                 @if($gimnasio['direccion'])
@@ -78,6 +84,19 @@
                         <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
                     @endif
                 </ul>
+
+                @if($tienda ?? null)
+                    {{-- La tienda es otra web: con su logo y la flecha de «se abre
+                         aparte», para que nadie pulse esperando quedarse aquí. --}}
+                    <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45 mt-6">Suplementos</h2>
+                    <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
+                       class="group inline-flex items-center gap-3 font-modern text-sm text-pg-tiza/55 transition-colors hover:text-pg-tiza">
+                        @if($tienda['logo'])
+                            <img src="{{ $tienda['logo'] }}" alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
+                        @endif
+                        <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[10px]" /></span>
+                    </a>
+                @endif
             </div>
 
             <div>
@@ -129,22 +148,22 @@
                             </li>
                         @endforeach
                     </ul>
+                    {{-- La nota del horario (festivos, cierres): la misma de Contacto. --}}
+                    @if($horario['nota'] ?? null)
+                        <p class="mt-2 font-modern text-xs text-pg-tiza/45 sm:text-sm">{{ $horario['nota'] }}</p>
+                    @endif
                 @else
                     <p class="text-pg-tiza/55 font-modern text-sm">Pregunta en el mesón.</p>
                 @endif
 
-                @if($tienda ?? null)
-                    {{-- La tienda es otra web: con su logo y la flecha de «se abre
-                         aparte», para que nadie pulse esperando quedarse aquí. --}}
-                    <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45 mt-6">Suplementos</h2>
-                    <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
-                       class="group inline-flex items-center gap-3 font-modern text-sm text-pg-tiza/55 transition-colors hover:text-pg-tiza">
-                        @if($tienda['logo'])
-                            <img src="{{ $tienda['logo'] }}" alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
-                        @endif
-                        <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[10px]" /></span>
+                {{-- Lo que más se hace desde el pie: escribir. --}}
+                @if($whatsapp ?? null)
+                    <a href="{{ $whatsapp }}" target="_blank" rel="noopener" data-evento="whatsapp_gimnasio"
+                       class="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 font-modern text-sm font-semibold text-pg-negro transition-opacity hover:opacity-90">
+                        <x-icono nombre="whatsapp" class="text-base" /> Escríbenos por WhatsApp
                     </a>
                 @endif
+
             </div>
         </div>
 
