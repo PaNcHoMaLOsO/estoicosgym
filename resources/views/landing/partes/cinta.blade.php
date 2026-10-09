@@ -11,6 +11,20 @@
     $vueltas = $enMovimiento ? (int) ceil(8 / count($logos)) : 1;
     $pista = collect(range(1, $vueltas))->flatMap(fn () => $logos)->values()->all();
     $duracion = max(24, count($pista) * 5);
+
+    // EL MISMO PESO A LA VISTA, NO LA MISMA ALTURA. Con una altura fija, un
+    // logo ancho (UCSC) llenaba su espacio y un escudo (Carabineros, Bomberos)
+    // quedaba diminuto. Cada uno ocupa más o menos la misma área: el alto sale
+    // de su proporción, entre 3,25 y 5,5 rem.
+    $alto = function (?string $logo): ?string {
+        $medidas = $logo ? \App\Support\MedidasDeImagen::de($logo) : null;
+
+        if (! $medidas || ! $medidas[1]) {
+            return null;
+        }
+
+        return round(min(5.5, max(3.25, sqrt(30 / ($medidas[0] / $medidas[1])))), 2) . 'rem';
+    };
 @endphp
 {{-- La barra blanca va FUERA de la cinta: el degradado que difumina los
      extremos se aplica a la cinta, y si el blanco estuviera ahí se desvanecería
@@ -21,7 +35,7 @@
         @foreach($enMovimiento ? [false, true] : [false] as $copia)
             @foreach($pista as $i => $c)
                 @php($repetido = $copia || $i >= count($logos))
-                <div class="cinta-logo" @if($repetido) data-repetido aria-hidden="true" @endif>
+                <div class="cinta-logo" @if($h = $alto($c['logo'])) style="height: {{ $h }}" @endif @if($repetido) data-repetido aria-hidden="true" @endif>
                     @if($c['logo'])
                         <img src="{{ $c['logo'] }}" alt="{{ $repetido ? '' : $c['nombre'] }}">
                     @else
