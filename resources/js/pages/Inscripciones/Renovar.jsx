@@ -213,7 +213,14 @@ export default function Renovar({ inscripcion, membresias, convenios, motivos, m
                             opciones={membresias.map((m) => ({
                                 valor: String(m.id),
                                 etiqueta: m.nombre,
-                                pie: `${m.duracion} · ${pesos.format(m.precio)}`,
+                                // La duración y, abajo, el precio: en una línea con «·» no cabía,
+                                        // el precio bajaba solo y el «·» quedaba colgando.
+                                        pie: (
+                                            <>
+                                                <span className="block">{m.duracion}</span>
+                                                <span className="block font-medium text-chalk">{pesos.format(m.precio)}</span>
+                                            </>
+                                        ),
                             }))}
                         />
                     </Campo>
