@@ -116,7 +116,7 @@
                     @if($web['ciudad'])
                         <p class="mx-auto mt-4 max-w-2xl font-modern text-sm text-pg-tiza/60 lg:text-base">
                             {{ $gimnasio['nombre'] }} es un gimnasio en el centro de {{ $web['ciudad'] }}{{ $web['region'] ? ', ' . $web['region'] : '' }}{{ $gimnasio['direccion'] ? ' (' . $gimnasio['direccion'] . ')' : '' }},
-                            con {{ \Illuminate\Support\Str::lower(collect($servicios)->pluck('titulo')->join(', ', ' y ')) }}{{ $navegacion['especialistas'] ? ', especialistas en el mismo lugar' : '' }}{{ $navegacion['convenios'] ? ' y precio especial para estudiantes con convenio' : '' }}.
+                            con {{ \Illuminate\Support\Str::lower(collect($servicios)->pluck('titulo')->join(', ', ' y ')) }}{{ $navegacion['especialistas'] ? ', profesionales del deporte en el mismo lugar' : '' }}{{ $navegacion['convenios'] ? ' y precio especial para estudiantes con convenio' : '' }}.
                         </p>
                     @endif
                 </div>

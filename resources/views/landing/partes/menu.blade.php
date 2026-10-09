@@ -14,7 +14,7 @@
         $navegacion['planes'] ? ['ruta' => 'landing.planes', 'texto' => 'Planes'] : null,
         $navegacion['clases'] ? ['ruta' => 'landing.clases', 'texto' => 'Clases', 'tambien' => 'landing.clase'] : null,
         $navegacion['rutinas'] ? ['ruta' => 'landing.rutina', 'texto' => 'Rutinas', 'tambien' => ['landing.rutina*', 'landing.ejercicios']] : null,
-        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Especialistas', 'tambien' => 'landing.especiali*'] : null,
+        $navegacion['especialistas'] ? ['ruta' => 'landing.especialistas', 'texto' => 'Profesionales', 'tambien' => 'landing.especiali*'] : null,
         $navegacion['convenios'] ? ['ruta' => 'landing.convenios', 'texto' => 'Convenios'] : null,
         $navegacion['arriendo'] ? ['ruta' => 'landing.arriendo', 'texto' => 'Arrienda horas'] : null,
         ['ruta' => 'landing.contacto', 'texto' => 'Contacto'],

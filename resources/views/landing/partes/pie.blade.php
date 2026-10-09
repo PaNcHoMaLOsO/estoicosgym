@@ -64,7 +64,7 @@
                         <li><a href="{{ route('landing.clases') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Clases</a></li>
                     @endif
                     @if($navegacion['especialistas'])
-                        <li><a href="{{ route('landing.especialistas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Especialistas</a></li>
+                        <li><a href="{{ route('landing.especialistas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Profesionales</a></li>
                     @endif
                     @if($navegacion['convenios'])
                         <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>

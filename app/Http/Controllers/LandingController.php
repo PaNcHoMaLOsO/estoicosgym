@@ -64,7 +64,7 @@ class LandingController extends Controller
         'landing.convenios' => 'Convenios',
         'landing.arriendo' => 'Arriendo de horas',
         'landing.clases' => 'Clases',
-        'landing.especialistas' => 'Especialistas',
+        'landing.especialistas' => 'Profesionales',
         'landing.contacto' => 'Contacto',
         'landing.membresia' => 'Mi membresía',
         'landing.privacidad' => 'Privacidad',
@@ -512,7 +512,7 @@ class LandingController extends Controller
         }
         $titulo = $elegidos
             ? Str::ucfirst((count($elegidos) > 1 ? implode(', ', array_slice($elegidos, 0, -1)) . ' y ' : '') . end($elegidos)) . $ciudad
-            : 'Especialistas';
+            : 'Profesionales del deporte';
 
         // SEPARADOS POR PROFESIÓN: cada uno en la sección de lo primero que
         // hace («Judoka y preparador físico» va en Judoka), para que nadie salga
@@ -600,7 +600,7 @@ class LandingController extends Controller
                     '@type' => 'BreadcrumbList',
                     'itemListElement' => [
                         ['@type' => 'ListItem', 'position' => 1, 'name' => $gimnasio, 'item' => route('landing')],
-                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Especialistas', 'item' => route('landing.especialistas')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Profesionales', 'item' => route('landing.especialistas')],
                         ['@type' => 'ListItem', 'position' => 3, 'name' => $grupo['nombre'], 'item' => $url],
                     ],
                 ],
@@ -688,7 +688,7 @@ class LandingController extends Controller
                     '@type' => 'BreadcrumbList',
                     'itemListElement' => [
                         ['@type' => 'ListItem', 'position' => 1, 'name' => $nombreGimnasio, 'item' => route('landing')],
-                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Especialistas', 'item' => route('landing.especialistas')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Profesionales', 'item' => route('landing.especialistas')],
                         ['@type' => 'ListItem', 'position' => 3, 'name' => $especialista['nombre'], 'item' => $perfil],
                     ],
                 ],
@@ -1172,7 +1172,7 @@ class LandingController extends Controller
             $destacados[] = [
                 'href' => route('landing.especialistas'),
                 'icono' => 'user-friends',
-                'titulo' => 'Especialistas',
+                'titulo' => 'Profesionales',
                 'texto' => collect($comun['especialistas'])->pluck('especialidad')->unique()->take(3)->implode(', ') . '.',
                 'accion' => 'Conócelos',
             ];

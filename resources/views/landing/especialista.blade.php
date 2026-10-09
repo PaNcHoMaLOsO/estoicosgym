@@ -19,7 +19,7 @@
     <section class="bg-pg-negro pt-24 pb-12 lg:pt-32 lg:pb-20">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             <a href="{{ route('landing.especialistas') }}" class="inline-flex items-center gap-2 font-modern text-sm text-pg-tiza/60 transition-colors hover:text-pg-tiza">
-                <x-icono nombre="arrow-left" class="text-xs" /> Especialistas
+                <x-icono nombre="arrow-left" class="text-xs" /> Profesionales
             </a>
 
             <div class="mt-6 grid gap-8 lg:mt-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
@@ -130,7 +130,7 @@
 
             @if($otros)
                 <div class="mt-16 border-t border-pg-tiza/10 pt-8 lg:mt-24">
-                    <h2 class="font-display text-2xl uppercase text-pg-tiza">Otros especialistas</h2>
+                    <h2 class="font-display text-2xl uppercase text-pg-tiza">Otros profesionales</h2>
                     <div class="mt-5 grid gap-3 sm:grid-cols-3">
                         @foreach($otros as $otro)
                             <a href="{{ $otro['perfil'] }}" class="group flex items-center gap-4 bg-pg-carbon p-3 transition-colors hover:bg-pg-grafito">

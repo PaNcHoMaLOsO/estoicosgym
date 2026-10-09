@@ -9,7 +9,7 @@
 --}}
 @section('content')
     @include('landing.partes.cabecera', [
-        'antetitulo' => 'Especialistas',
+        'antetitulo' => 'Profesionales del deporte',
         'titulo' => $tituloEspecialidad,
         'bajada' => 'Trabajan con ' . $gimnasio['nombre'] . '. Escríbeles directo.',
     ])

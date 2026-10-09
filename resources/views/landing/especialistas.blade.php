@@ -18,7 +18,8 @@
 @section('content')
     @include('landing.partes.cabecera', [
         'antetitulo' => $hayRecomendados ? 'Recomendados por ' . $gimnasio['nombre'] : 'Con quién entrenas',
-        'titulo' => 'Especialistas',
+        // «Profesionales del deporte»: el lema de la marca, y lo que hay aquí.
+        'titulo' => 'Profesionales del deporte',
         'bajada' => $hayRecomendados
             ? 'Profesionales' . ($web['ciudad'] ? ' de ' . $web['ciudad'] : '') . ' que recomendamos. Mira qué días atienden y escríbeles directo.'
             : 'Profesionales que trabajan con ' . $gimnasio['nombre'] . '. Escríbeles directo.',
