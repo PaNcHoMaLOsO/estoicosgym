@@ -75,6 +75,12 @@
                                         <x-icono :nombre="$icono" class="text-pg-rojo-claro" /> {{ $etiqueta }}
                                     </dt>
                                     <dd class="mt-1.5 font-modern text-base font-medium leading-snug text-pg-tiza">{{ $valor }}</dd>
+                                    @if($icono === 'location-dot' && $e['mapa'])
+                                        <a href="{{ $e['mapa'] }}" target="_blank" rel="noopener" data-evento="como_llegar_especialista" data-detalle="{{ $e['nombre'] }}"
+                                           class="mt-1.5 inline-flex items-center gap-1.5 font-modern text-sm text-pg-rojo-claro transition-colors hover:text-pg-tiza">
+                                            Cómo llegar <x-icono nombre="arrow-up-right-from-square" class="text-[10px]" />
+                                        </a>
+                                    @endif
                                 </div>
                             @endforeach
                         </dl>

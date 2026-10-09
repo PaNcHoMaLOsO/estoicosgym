@@ -143,7 +143,21 @@ final class Especialidades
             'kinesiologia' => 'kinesiología', 'psicologo' => 'psicólogo', 'psicologa' => 'psicóloga', 'nutricion' => 'nutrición',
             'preparacion' => 'preparación', 'educacion' => 'educación', 'rehabilitacion' => 'rehabilitación', 'masoterapia' => 'masoterapia',
         ];
-        $texto = preg_replace_callback('/\p{L}+/u', fn ($m) => $tildes[mb_strtolower($m[0])] ?? mb_strtolower($m[0]), trim($nombre));
+        $texto = preg_replace_callback('/\p{L}+/u', function ($m) use ($tildes) {
+            $palabra = $m[0];
+            $minuscula = mb_strtolower($palabra);
+
+            if (isset($tildes[$minuscula])) {
+                return $tildes[$minuscula];
+            }
+
+            // Las siglas (TRX, NSCA) y las marcas con mayúscula al medio
+            // (CrossFit) se dejan como se escribieron.
+            $sigla = mb_strlen($palabra) <= 5 && mb_strlen($palabra) > 1 && $palabra === mb_strtoupper($palabra);
+            $marca = (bool) preg_match('/^\p{L}\p{Ll}+\p{Lu}/u', $palabra);
+
+            return $sigla || $marca ? $palabra : $minuscula;
+        }, trim($nombre));
 
         return Str::ucfirst($texto);
     }

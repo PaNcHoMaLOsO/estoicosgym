@@ -751,4 +751,21 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertDontSee('Estudiantes y universitarios')
             ->assertSee('href="' . route('landing.convenios') . '"', false);
     }
+
+    /** La dirección de su consulta: con «Cómo llegar» si es una dirección, y para Google. */
+    public function test_la_direccion_de_su_consulta_con_mapa(): void
+    {
+        $camila = Especialista::create(['nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'lugar' => 'Colón 250, oficina 3', 'activo' => true]);
+        Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Kinesiólogo', 'lugar' => 'A domicilio', 'activo' => true]);
+
+        $this->assertStringContainsString('query=Col%C3%B3n%20250%2C%20oficina%203%2C%20Los%20%C3%81ngeles%2C%20Chile', $camila->enlaceMapa('Los Ángeles'));
+        $this->assertNull(Especialista::firstWhere('nombre', 'Diego Soto')->enlaceMapa('Los Ángeles'));
+
+        $this->get(route('landing.especialista', $camila->slug))->assertOk()
+            ->assertSee('Cómo llegar')
+            ->assertSee('"streetAddress":"Colón 250, oficina 3"', false);
+        $this->get(route('landing.especialista', 'diego-soto'))->assertOk()->assertDontSee('como_llegar_especialista');
+        // En la tarjeta, la dirección corta.
+        $this->get('/profesionales')->assertSee('Colón 250, oficina 3');
+    }
 }

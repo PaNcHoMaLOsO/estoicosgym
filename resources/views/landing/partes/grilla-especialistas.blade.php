@@ -66,6 +66,11 @@
                 @if($e['dias'] || $e['modalidad'])
                     <p class="mt-1.5 line-clamp-2 font-modern text-[11px] text-pg-tiza/60 sm:text-xs">{{ collect([$e['dias'], $e['dias'] ? null : $e['modalidad']])->filter()->implode(' · ') }}</p>
                 @endif
+                @if($e['lugar'])
+                    <p class="mt-1 flex items-center gap-1 truncate font-modern text-[11px] text-pg-tiza/60 sm:text-xs">
+                        <x-icono nombre="location-dot" class="shrink-0 text-[10px] text-pg-rojo-claro" /><span class="truncate">{{ $e['lugar'] }}</span>
+                    </p>
+                @endif
 
                 <div class="mt-3 flex items-center justify-between gap-2 font-modern text-xs sm:mt-4 sm:text-sm">
                     <span class="inline-flex items-center gap-1.5 border-b border-pg-tiza/30 pb-0.5 text-pg-tiza transition-colors group-hover:border-pg-rojo group-hover:text-pg-rojo-claro">

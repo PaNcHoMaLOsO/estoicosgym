@@ -699,7 +699,18 @@ class LandingController extends Controller
                     // Solo quien es del gimnasio «trabaja ahí»: al recomendado no
                     // se le atribuye un empleo que no tiene.
                     'worksFor' => $especialista['recomendado'] ? null : ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
-                    'workLocation' => $especialista['lugar'] ? ['@type' => 'Place', 'name' => $especialista['lugar']] : null,
+                    // Dónde atiende, con dirección para Google cuando es una dirección.
+                    'workLocation' => $especialista['lugar'] ? array_filter([
+                        '@type' => 'Place',
+                        'name' => $especialista['lugar'],
+                        'address' => $especialista['mapa'] ? array_filter([
+                            '@type' => 'PostalAddress',
+                            'streetAddress' => $especialista['lugar'],
+                            'addressLocality' => $ciudad ?: null,
+                            'addressCountry' => 'CL',
+                        ]) : null,
+                        'hasMap' => $especialista['mapa'],
+                    ]) : null,
                     'description' => $especialista['descripcion'] ? Str::limit(preg_replace('/\s+/', ' ', $especialista['descripcion']), 300) : null,
                     'knowsAbout' => $especialista['temas'] ?: null,
                     'areaServed' => $ciudad ? ['@type' => 'City', 'name' => $ciudad] : null,
@@ -1617,7 +1628,7 @@ class LandingController extends Controller
                 'nombre' => $e->nombre,
                 'slug' => $e->slug,
                 'perfil' => $e->slug ? route('landing.especialista', $e->slug) : null,
-                'especialidad' => $e->especialidad,
+                'especialidad' => Especialidades::bienEscrito((string) $e->especialidad),
                 'descripcion' => $e->descripcion,
                 'temas' => $e->temas ?? [],
                 'modalidad' => Especialista::MODALIDADES[$e->modalidad] ?? null,
@@ -1626,6 +1637,7 @@ class LandingController extends Controller
                 'dias' => $e->diasComoSeLeen(),
                 'horario' => $e->horario,
                 'lugar' => $e->lugar,
+                'mapa' => $e->enlaceMapa(Ajustes::obtener('web.ciudad') ?: null),
                 'foto' => $e->urlDeFoto(),
                 'whatsapp' => $e->enlaceWhatsapp($gimnasio),
                 'instagram' => $e->enlaceInstagram(),

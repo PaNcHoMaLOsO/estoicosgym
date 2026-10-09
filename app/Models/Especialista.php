@@ -190,6 +190,24 @@ class Especialista extends Model
         return $this->instagram ? 'https://www.instagram.com/' . $this->instagram . '/' : null;
     }
 
+    /**
+     * Google Maps con la dirección de su consulta, si lo que se escribió es una
+     * dirección (lleva un número: «Colón 250»). «A domicilio» u «Online» no
+     * llevan mapa. Se busca con la ciudad, para que no lo mande a otra Colón 250.
+     */
+    public function enlaceMapa(?string $ciudad): ?string
+    {
+        $lugar = trim((string) $this->lugar);
+
+        if ($lugar === '' || ! preg_match('/\d/', $lugar)) {
+            return null;
+        }
+
+        $busqueda = $ciudad && ! str_contains(mb_strtolower($lugar), mb_strtolower($ciudad)) ? "{$lugar}, {$ciudad}, Chile" : "{$lugar}, Chile";
+
+        return 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($busqueda);
+    }
+
     public function enlaceTiktok(): ?string
     {
         return $this->tiktok ? 'https://www.tiktok.com/@' . $this->tiktok : null;

@@ -663,13 +663,13 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                     </Campo>
                                 </div>
 
-                                <Campo etiqueta="Dónde atiende" nombre="lugar" error={errors.lugar}>
+                                <Campo etiqueta="Dirección de su consulta" nombre="lugar" error={errors.lugar} ayuda="Calle y número (sale «Cómo llegar» con el mapa), o «A domicilio», «Online», «En el gimnasio».">
                                     <Texto
                                         nombre="lugar"
                                         valor={data.lugar}
                                         alCambiar={(v) => setData('lugar', v)}
                                         error={errors.lugar}
-                                        placeholder="Consulta en Colón 250 · A domicilio · En el gimnasio"
+                                        placeholder="Colón 250, oficina 3"
                                         maxLength={120}
                                         autoComplete="off"
                                     />
