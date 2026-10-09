@@ -250,15 +250,20 @@ class EnvioMasivoService
 
         // SE ESCAPA lo que viene del socio: su nombre va a parar dentro del
         // HTML del correo, y un apellido con un «<» partiría el mensaje.
-        $datos = [
-            '{nombre}' => e($socio->nombre_completo),
-            '{nombres}' => e($socio->nombres),
-            '{email}' => e($socio->email),
-            '{membresia}' => e($inscripcion?->membresia?->nombre ?? 'Sin plan'),
+        $crudos = [
+            '{nombre}' => (string) $socio->nombre_completo,
+            '{nombres}' => (string) $socio->nombres,
+            '{email}' => (string) $socio->email,
+            '{membresia}' => (string) ($inscripcion?->membresia?->nombre ?? 'Sin plan'),
             '{fecha_vencimiento}' => $inscripcion?->fecha_vencimiento?->format('d/m/Y') ?? '',
         ];
+        $datos = array_map(fn (string $valor) => e($valor), $crudos);
 
-        $asunto = str_replace(array_keys($datos), array_values($datos), $asunto);
+        // El asunto no es HTML: con el texto tal cual (escapado, «D'Alessandro»
+        // llegaba como «D&#039;Alessandro»), sin saltos de línea, que en un
+        // asunto sirven para colar cabeceras.
+        $asunto = trim((string) preg_replace('/[
+]+/', ' ', str_replace(array_keys($crudos), array_values($crudos), $asunto)));
         $mensaje = str_replace(array_keys($datos), array_values($datos), $mensaje);
 
         return [

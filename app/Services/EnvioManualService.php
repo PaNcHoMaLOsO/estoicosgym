@@ -51,7 +51,7 @@ class EnvioManualService
             $contenido = $this->conNotaDelMeson($contenido, $nota);
         }
 
-        $asunto = $this->rellenar($plantilla->asunto_email, $datos);
+        $asunto = $this->rellenarAsunto($plantilla->asunto_email, $datos);
 
         return [
             'asunto' => $asunto,
@@ -111,7 +111,7 @@ class EnvioManualService
      */
     public function componerCon(TipoNotificacion $plantilla, array $datos): array
     {
-        $asunto = $this->rellenar($plantilla->asunto_email, $datos);
+        $asunto = $this->rellenarAsunto($plantilla->asunto_email, $datos);
         $contenido = $this->rellenar($plantilla->plantilla_email, $datos);
 
         return [
@@ -496,6 +496,27 @@ class EnvioManualService
         }
 
         return str_replace($buscar, $poner, (string) $plantilla);
+    }
+
+    /**
+     * El asunto NO es HTML: se rellena con el texto tal cual. Escapado como el
+     * cuerpo, «D'Alessandro» llegaba como «D&#039;Alessandro» en la bandeja.
+     * Lo que sí se quita son los saltos de línea: en un asunto sirven para
+     * colar cabeceras de correo.
+     *
+     * @param array<string,string> $datos
+     */
+    private function rellenarAsunto(?string $plantilla, array $datos): string
+    {
+        $limpio = array_map(fn ($valor) => trim((string) preg_replace('/[
+	]+/', ' ', (string) $valor)), $datos);
+
+        return trim((string) preg_replace('/[
+]+/', ' ', str_replace(
+            array_map(fn ($clave) => '{' . $clave . '}', array_keys($limpio)),
+            array_values($limpio),
+            (string) $plantilla
+        )));
     }
 
     private function conNotaDelMeson(string $contenido, string $nota): string

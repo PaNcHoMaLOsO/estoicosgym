@@ -356,4 +356,26 @@ class EnvioManualTest extends CasoConCatalogos
             );
         }
     }
+
+    /**
+     * El asunto no es HTML: «D'Alessandro» llegaba como «D&#039;Alessandro».
+     * El cuerpo sí se escapa, y un salto de línea no se cuela en el asunto.
+     */
+    public function test_el_asunto_va_con_el_nombre_tal_cual_y_el_cuerpo_escapado(): void
+    {
+        $this->fingirCorreo();
+
+        $socio = $this->socio(['nombres' => "Ana\r\nBcc: otro@x.cl", 'apellido_paterno' => "D'Alessandro <b>"]);
+        $plantilla = $this->plantilla(['plantilla_email' => '<html><body><p>Hola {nombre}</p></body></html>']);
+
+        $this->enviar($socio, $plantilla)->assertSessionHasNoErrors();
+
+        $notificacion = Notificacion::where('id_cliente', $socio->id)->firstOrFail();
+
+        $this->assertStringContainsString("D'Alessandro <b>", $notificacion->asunto);
+        $this->assertStringNotContainsString('&#039;', $notificacion->asunto);
+        $this->assertStringNotContainsString("\n", $notificacion->asunto);
+        $this->assertStringNotContainsString('<b>', $notificacion->contenido);
+        $this->assertStringContainsString('&lt;b&gt;', $notificacion->contenido);
+    }
 }
