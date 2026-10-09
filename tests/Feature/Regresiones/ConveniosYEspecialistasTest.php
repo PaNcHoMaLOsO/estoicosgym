@@ -713,4 +713,25 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $perfil = $this->get('/profesionales/camila-rojas')->assertOk();
         $perfil->assertSee('@camila.nutri')->assertSee('"sameAs":["https://www.tiktok.com/@camila.nutri"]', false);
     }
+
+    /**
+     * «Por su servicio»: Carabineros, Fuerzas Armadas y Bomberos con el precio
+     * de convenio, como reconocimiento. Sin sus emblemas (no hay acuerdo
+     * firmado): un ícono y su nombre, y fuera de la cinta de logos.
+     */
+    public function test_por_su_servicio_sin_emblemas(): void
+    {
+        foreach ([['Carabineros', 'Funcionarios con credencial vigente'], ['Fuerzas Armadas', 'Ejército, Armada y Fuerza Aérea, con credencial vigente'], ['Bomberos', 'Voluntarios con credencial vigente']] as [$nombre, $requisito]) {
+            Convenio::create(['nombre' => $nombre, 'tipo' => 'organizacion', 'activo' => true, 'mostrar_en_web' => true, 'requisito_web' => $requisito]);
+        }
+
+        $html = $this->get('/convenios')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Por su servicio', $html);
+        $this->assertStringContainsString('Un reconocimiento a quienes nos cuidan', $html);
+        $this->assertStringContainsString('Ejército, Armada y Fuerza Aérea', $html);
+        $this->assertStringContainsString('lg:grid-cols-3', $html);
+        // Sin logo no entran a la cinta de logos.
+        $this->assertStringNotContainsString('<span>Carabineros</span>', $html);
+    }
 }

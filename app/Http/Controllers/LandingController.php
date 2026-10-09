@@ -27,12 +27,24 @@ use Carbon\Carbon;
 
 class LandingController extends Controller
 {
-    /** Las categorias de convenio, en el orden en que se leen en la web. */
+    /**
+     * Las categorias de convenio, en el orden en que se leen en la web.
+     *
+     * «Instituciones» se lee POR SU SERVICIO (9-oct-2026): ahí van Carabineros,
+     * Fuerzas Armadas y Bomberos, a los que el gimnasio les da el precio de
+     * convenio como reconocimiento, sin acuerdo firmado. Por eso van sin sus
+     * emblemas: con un ícono y su nombre.
+     */
     private const CATEGORIAS_DE_CONVENIO = [
         'institucion_educativa' => 'Universidades e institutos',
-        'organizacion' => 'Instituciones',
+        'organizacion' => 'Por su servicio',
         'empresa' => 'Empresas',
         'otro' => 'Otros convenios',
+    ];
+
+    /** Una línea bajo el título de la categoría, si la lleva. */
+    private const BAJADA_DE_CONVENIO = [
+        'organizacion' => 'Un reconocimiento a quienes nos cuidan: precio de convenio presentando su credencial.',
     ];
 
     /**
@@ -1567,10 +1579,18 @@ class LandingController extends Controller
 
             $grupos[] = [
                 'titulo' => $titulo,
+                'bajada' => self::BAJADA_DE_CONVENIO[$tipo] ?? null,
                 'convenios' => $porTipo[$tipo]->map(fn (Convenio $c) => [
                     'nombre' => $c->nombre,
                     'logo' => $c->urlDeLogo(),
                     'requisito' => $c->requisito_web,
+                    // Sin logo, un ícono que diga qué es: la llama para
+                    // Bomberos, la medalla para las de uniforme.
+                    'icono' => match (true) {
+                        (bool) preg_match('/bomber/iu', $c->nombre) => 'fire',
+                        (bool) preg_match('/carabiner|polic|pdi|gendarm|armad|ej[ée]rcito|naval|a[ée]rea|militar/iu', $c->nombre) => 'medal',
+                        default => 'building-columns',
+                    },
                 ])->values()->all(),
             ];
         }

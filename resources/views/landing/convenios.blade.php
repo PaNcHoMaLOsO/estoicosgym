@@ -43,7 +43,8 @@
     <section class="bg-white text-gray-900 py-9 lg:py-20">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             {{-- Arriba pasan todos los logos; abajo, cada categoría con sus fichas. --}}
-            @php($todos = collect($convenios)->flatMap(fn ($g) => $g['convenios'])->values()->all())
+            {{-- Solo los que tienen logo: es una cinta de logos, y los de «Por su servicio» van sin. --}}
+            @php($todos = collect($convenios)->flatMap(fn ($g) => $g['convenios'])->filter(fn ($c) => $c['logo'])->values()->all())
             @if(count($todos) >= 3)
                 <p class="text-center font-modern text-xs uppercase tracking-[0.3em] text-gray-400 mb-6">Instituciones con convenio</p>
                 @include('landing.partes.cinta', ['logos' => $todos])
@@ -56,17 +57,23 @@
                         <h2 class="font-display text-2xl md:text-3xl uppercase tracking-wide text-gray-900">{{ $grupo['titulo'] }}</h2>
                         <span class="ml-auto hidden sm:block font-modern text-sm text-gray-400">{{ count($grupo['convenios']) }} {{ count($grupo['convenios']) === 1 ? 'convenio' : 'convenios' }}</span>
                     </div>
+                    @if($grupo['bajada'])
+                        <p class="animate-on-scroll -mt-3 mb-6 font-modern text-sm text-gray-500 lg:text-base">{{ $grupo['bajada'] }}</p>
+                    @endif
 
                     <div class="animate-on-scroll overflow-hidden rounded-2xl border border-gray-200 bg-gray-200">
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-px">
+                        {{-- Tantas columnas como convenios, hasta cuatro: con tres quedaba una celda gris vacía. --}}
+                        <div class="grid {{ count($grupo['convenios']) === 1 ? 'grid-cols-1' : 'grid-cols-2' }} {{ [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3'][count($grupo['convenios'])] ?? 'lg:grid-cols-4' }} gap-px">
                             @foreach($grupo['convenios'] as $c)
                                 <div class="group flex flex-col items-center bg-white px-3 py-5 lg:px-8 lg:py-9 text-center transition-colors duration-300 hover:bg-gray-50">
                                     <div class="flex h-12 lg:h-20 w-full items-center justify-center transition-transform duration-500 group-hover:scale-[1.04]">
                                         @if($c['logo'])
                                             <img src="{{ $c['logo'] }}" alt="{{ $c['nombre'] }}" loading="lazy" class="max-h-full max-w-full object-contain">
                                         @else
-                                            {{-- Sin logo subido, el nombre hace de logo. --}}
-                                            <span class="font-display text-2xl lg:text-3xl uppercase tracking-wide leading-none text-gray-800">{{ $c['nombre'] }}</span>
+                                            {{-- Sin logo, un ícono en un círculo rojo: el nombre va justo abajo. --}}
+                                            <span class="grid size-12 place-items-center rounded-full bg-pg-rojo/10 text-xl text-pg-rojo lg:size-16 lg:text-2xl">
+                                                <x-icono :nombre="$c['icono']" />
+                                            </span>
                                         @endif
                                     </div>
                                     <span class="mt-3 lg:mt-6 h-px w-8 bg-pg-rojo/70 transition-all duration-500 group-hover:w-14" aria-hidden="true"></span>
