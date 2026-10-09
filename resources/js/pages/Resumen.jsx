@@ -11,7 +11,6 @@ import {
     SearchIcon,
     TicketIcon,
     UserPlusIcon,
-    MailWarningIcon,
 } from 'lucide-react';
 
 import { ApuntarFiado, Notas } from '@/components/Libreta';
@@ -222,8 +221,14 @@ function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
         );
     }
 
+    // EN LAS LISTAS, CADA COSA EN SU LUGAR: el WhatsApp en un espacio fijo y el
+    // correo con su hueco aunque no haya. Si no, un socio sin correo corría
+    // su botón y la columna de WhatsApp quedaba en zigzag.
+    const hueco = compacto ? <span className="inline-block size-4" aria-hidden="true" /> : null;
+
     return (
-        <span className="inline-flex items-center gap-2">
+        <span className={`inline-flex items-center gap-2 ${compacto ? 'shrink-0' : ''}`}>
+            {compacto && ! celular ? <span className="inline-block w-[6.25rem]" aria-hidden="true" /> : null}
             {celular ? (
                 <a
                     href={whatsapp(celular)}
@@ -233,7 +238,7 @@ function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
                     rel="noopener"
                     title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
                     aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-control border border-[#25D366]/40 bg-[#25D366]/10 px-2.5 py-1 text-sm font-medium text-[#25D366] transition-colors hover:bg-[#25D366]/20"
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-control border border-[#25D366]/40 bg-[#25D366]/10 px-2.5 py-1 text-sm font-medium text-[#25D366] transition-colors hover:bg-[#25D366]/20 ${compacto ? 'w-[6.25rem] justify-center' : ''}`}
                 >
                     <MessageCircleIcon className="size-3.5" aria-hidden="true" />
                     WhatsApp
@@ -248,7 +253,7 @@ function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
                 >
                     <MailIcon className="size-4" aria-hidden="true" />
                 </a>
-            ) : null}
+            ) : hueco}
         </span>
     );
 }
@@ -426,11 +431,14 @@ function Llamar({ filas, cuanto, vacia }) {
                             </p>
                         </div>
 
-                        <span className="shrink-0 text-sm">
+                        {/* Ancho fijo: «Hoy», «2 d» y «hace 13 d» ocupan lo mismo y los botones quedan en columna. */}
+                        <span className={`shrink-0 text-right text-sm ${cuanto === 'Faltan' ? 'w-9' : 'w-[4.75rem]'}`}>
                             {cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums text-fog">{cuanto === 'Hace' ? 'hace ' : 'en '}{f.dias} d</span>}
                         </span>
 
-                        <Contacto celular={f.celular} email={f.email} nombre={f.socio} uuid={f.socio_uuid} compacto />
+                        <span className="inline-flex w-[7.75rem] shrink-0 justify-end">
+                            <Contacto celular={f.celular} email={f.email} nombre={f.socio} uuid={f.socio_uuid} compacto />
+                        </span>
                     </li>
                 ))}
             </ul>
