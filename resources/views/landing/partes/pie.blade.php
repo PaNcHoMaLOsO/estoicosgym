@@ -1,6 +1,6 @@
 <footer class="bg-pg-carbon border-t border-pg-tiza/5">
     <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20 py-7 lg:py-9">
-        <div class="grid grid-cols-[2fr_3fr] md:grid-cols-3 gap-x-5 gap-y-6 md:gap-10">
+        <div class="grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-[1.4fr_1fr_1fr_1.2fr] md:gap-10">
             <div class="col-span-2 md:col-span-1">
                 <picture>
                     <source srcset="{{ asset('images/progym-logo-320.webp') }}" type="image/webp">
@@ -50,9 +50,13 @@
                 @endif
             </div>
 
+            {{-- EN COLUMNAS, CADA UNA CON LO SUYO. «Páginas» lo juntaba todo —las
+                 páginas, las especialidades con «en Los Ángeles» cortadas en dos
+                 líneas y la tienda— y no se encontraba nada. La ciudad va una vez,
+                 en el título de los profesionales: sigue diciéndole a Google dónde. --}}
             <div>
-                <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Páginas</h2>
-                <ul class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-1.5 font-modern text-sm">
+                <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">El gimnasio</h2>
+                <ul class="space-y-1.5 font-modern text-sm">
                     <li><a href="{{ route('landing') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Inicio</a></li>
                     @if($navegacion['gimnasio'])
                         <li><a href="{{ route('landing.gimnasio') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">El gimnasio</a></li>
@@ -63,12 +67,6 @@
                     @if($navegacion['clases'])
                         <li><a href="{{ route('landing.clases') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Clases</a></li>
                     @endif
-                    @if($navegacion['especialistas'])
-                        <li><a href="{{ route('landing.especialistas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Profesionales</a></li>
-                        @foreach($especialidadesPie ?? [] as $esp)
-                            <li><a href="{{ $esp['url'] }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">{{ $esp['nombre'] }}{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}</a></li>
-                        @endforeach
-                    @endif
                     @if($navegacion['convenios'])
                         <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>
                     @endif
@@ -76,28 +74,35 @@
                         <li><a href="{{ route('landing.arriendo') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Arrienda horas</a></li>
                     @endif
                     <li><a href="{{ route('landing.contacto') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Contacto</a></li>
-                    @if($navegacion['rutinas'])
-                        <li><a href="{{ route('landing.rutina') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Rutinas</a></li>
-                        <li><a href="{{ route('landing.ejercicios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Ejercicios</a></li>
-                    @endif
                     @if($navegacion['membresia'])
                         <li><a href="{{ route('landing.membresia') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Mi membresía</a></li>
-                    @endif
-                    @if($tienda ?? null)
-                        {{-- La tienda es otra web: se marca con el icono para que
-                             nadie pulse esperando quedarse en la del gimnasio. --}}
-                        <li>
-                            <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
-                               class="inline-flex items-center gap-2 text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">
-                                {{ $tienda['titulo'] }}
-                                <x-icono nombre="arrow-up-right-from-square" class="text-[10px]" />
-                            </a>
-                        </li>
                     @endif
                 </ul>
             </div>
 
             <div>
+                @if($navegacion['rutinas'])
+                    <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Entrena</h2>
+                    <ul class="space-y-1.5 font-modern text-sm">
+                        <li><a href="{{ route('landing.rutina') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Qué entrenar hoy</a></li>
+                        <li><a href="{{ route('landing.rutinas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Rutinas</a></li>
+                        <li><a href="{{ route('landing.ejercicios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Ejercicios</a></li>
+                    </ul>
+                @endif
+                @if($navegacion['especialistas'])
+                    <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45 {{ $navegacion['rutinas'] ? 'mt-6' : '' }}">
+                        <a href="{{ route('landing.especialistas') }}" class="transition-colors hover:text-pg-tiza">Profesionales{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}</a>
+                    </h2>
+                    <ul class="space-y-1.5 font-modern text-sm">
+                        @foreach($especialidadesPie ?? [] as $esp)
+                            <li><a href="{{ $esp['url'] }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">{{ $esp['nombre'] }}</a></li>
+                        @endforeach
+                        <li><a href="{{ route('landing.especialistas') }}" class="inline-flex items-center gap-1.5 text-pg-rojo-claro/80 transition-colors hover:text-pg-rojo-claro">Ver todos <x-icono nombre="arrow-right" class="text-[10px]" /></a></li>
+                    </ul>
+                @endif
+            </div>
+
+            <div class="col-span-2 md:col-span-1">
                 <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45">Horario</h2>
                 @if($horario['configurado'])
                     {{-- Los dias seguidos con el mismo horario van en una sola linea:
@@ -126,6 +131,19 @@
                     </ul>
                 @else
                     <p class="text-pg-tiza/55 font-modern text-sm">Pregunta en el mesón.</p>
+                @endif
+
+                @if($tienda ?? null)
+                    {{-- La tienda es otra web: con su logo y la flecha de «se abre
+                         aparte», para que nadie pulse esperando quedarse aquí. --}}
+                    <h2 class="font-modern text-xs uppercase tracking-widest mb-3 text-pg-tiza/45 mt-6">Suplementos</h2>
+                    <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
+                       class="group inline-flex items-center gap-3 font-modern text-sm text-pg-tiza/55 transition-colors hover:text-pg-tiza">
+                        @if($tienda['logo'])
+                            <img src="{{ $tienda['logo'] }}" alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
+                        @endif
+                        <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[10px]" /></span>
+                    </a>
                 @endif
             </div>
         </div>

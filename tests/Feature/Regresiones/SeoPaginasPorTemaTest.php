@@ -265,6 +265,6 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
 
         // El pie, en cualquier página, enlaza a la especialidad.
         $this->get('/planes')->assertSee('href="' . route('landing.especialidad', 'nutricionista') . '"', false)
-            ->assertSee('Nutricionista en Los Ángeles');
+            ->assertSee('Profesionales en Los Ángeles')->assertSee('>Nutricionista</a>', false);
     }
 }

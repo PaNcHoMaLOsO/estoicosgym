@@ -978,7 +978,7 @@ class LandingController extends Controller
             'especialidadesPie' => $paginas['especialistas'] ? collect(Especialidades::agrupar($especialistas))
                 ->sortByDesc(fn (array $g) => count($g['especialistas']))
                 ->take(4)
-                ->map(fn (array $g) => ['nombre' => Str::before(Especialidades::comoSeBusca($g['slug'], $g['nombre']), ' y '), 'url' => route('landing.especialidad', $g['slug'])])
+                ->map(fn (array $g) => ['nombre' => Str::ucfirst(Str::before(Especialidades::comoSeBusca($g['slug'], $g['nombre']), ' y ')), 'url' => route('landing.especialidad', $g['slug'])])
                 ->values()
                 ->all() : [],
         ];

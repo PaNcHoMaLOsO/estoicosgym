@@ -70,7 +70,7 @@ final class Especialidades
 
         foreach ($grupos as $clave => &$g) {
             $exacta = collect($g['formas'])->first(fn (string $f) => Str::slug($f) === $clave);
-            $g['nombre'] = Str::ucfirst($exacta ?? $g['formas'][0]);
+            $g['nombre'] = self::bienEscrito($exacta ?? $g['formas'][0]);
             unset($g['formas']);
         }
         unset($g);
@@ -128,6 +128,24 @@ final class Especialidades
     public static function comoSeBusca(string $clave, string $nombre): string
     {
         return self::COMO_SE_BUSCA[$clave] ?? $nombre;
+    }
+
+    /**
+     * «Preparador Fisico» → «Preparador físico». En el panel se escribe como
+     * salga, y ese nombre termina en títulos que lee Google y en el pie: con
+     * la primera en mayúscula y lo demás en minúscula, y con las tildes de las
+     * palabras de siempre en este oficio.
+     */
+    public static function bienEscrito(string $nombre): string
+    {
+        $tildes = [
+            'fisico' => 'físico', 'fisica' => 'física', 'kinesiologo' => 'kinesiólogo', 'kinesiologa' => 'kinesióloga',
+            'kinesiologia' => 'kinesiología', 'psicologo' => 'psicólogo', 'psicologa' => 'psicóloga', 'nutricion' => 'nutrición',
+            'preparacion' => 'preparación', 'educacion' => 'educación', 'rehabilitacion' => 'rehabilitación', 'masoterapia' => 'masoterapia',
+        ];
+        $texto = preg_replace_callback('/\p{L}+/u', fn ($m) => $tildes[mb_strtolower($m[0])] ?? mb_strtolower($m[0]), trim($nombre));
+
+        return Str::ucfirst($texto);
     }
 
     /** «Kinesióloga» → «kinesiologo»; «Preparadora Física» → «preparador-fisico». */
