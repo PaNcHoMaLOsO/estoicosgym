@@ -90,8 +90,11 @@ function Fuente({ clave, nombre, mes, mesPasado, total, href }) {
             <p className="mt-2 text-xl font-semibold tabular-nums text-chalk">
                 <Reservado ancho="w-24">{pesos.format(mes)}</Reservado>
             </p>
-            <p className="apoyo mt-1 text-fog">
-                {parte}% del mes · <Comparacion ahora={mes} antes={mesPasado} cuando="el mes pasado" />
+            {/* En dos líneas a propósito: en una, la comparación no cabía, bajaba
+                sola y dejaba el «·» colgando al final de la primera. */}
+            <p className="apoyo mt-1 text-fog">{parte}% del mes</p>
+            <p className="apoyo text-fog">
+                <Comparacion ahora={mes} antes={mesPasado} cuando="el mes pasado" />
             </p>
         </Link>
     );
