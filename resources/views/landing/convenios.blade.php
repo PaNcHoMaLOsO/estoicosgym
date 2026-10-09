@@ -4,9 +4,12 @@
 @section('description', $web['descripcion'])
 
 @section('content')
+    {{-- El encabezado dice lo mismo que el título que ve Google: «gimnasio
+         para estudiantes» es lo que se busca, y «Convenios» solo no le decía
+         a Google de qué era la página. --}}
     @include('landing.partes.cabecera', [
-        'antetitulo' => 'Estudiantes, empresas e instituciones',
-        'titulo' => 'Convenios',
+        'antetitulo' => 'Convenios con instituciones',
+        'titulo' => 'Gimnasio para estudiantes',
         'bajada' => null,
     ])
 
