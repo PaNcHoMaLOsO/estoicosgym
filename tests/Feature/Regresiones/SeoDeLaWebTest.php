@@ -201,11 +201,11 @@ class SeoDeLaWebTest extends CasoConCatalogos
 
     public function test_sin_especialistas_la_pagina_no_existe(): void
     {
-        $this->get('/especialistas')->assertNotFound();
+        $this->get('/profesionales')->assertNotFound();
 
         $this->especialista();
 
-        $this->get('/especialistas')->assertOk()->assertSee('Camila Rojas');
+        $this->get('/profesionales')->assertOk()->assertSee('Camila Rojas');
     }
 
     // ---------- 7. Al compartir ----------

@@ -97,6 +97,33 @@ final class Especialidades
         'nutricionista' => 'Nutricionista',
     ];
 
+    /**
+     * DOS LÍNEAS PROPIAS PARA CADA PÁGINA DE ESPECIALIDAD. Sin ellas la página
+     * era una lista de nombres, y Google no tenía qué leer para entender que
+     * es la respuesta a «nutricionista en Los Ángeles». Corto y dicho como lo
+     * diría el mesón: para qué sirve ir y qué se trabaja. {ciudad} y
+     * {gimnasio} se cambian por los de verdad.
+     */
+    public const INTRO = [
+        'nutricionista' => 'Nutricionistas en {ciudad} para bajar de peso, ganar masa muscular o rendir más en tu deporte, con un plan de alimentación hecho para ti y controles para ver el avance.',
+        'kinesiologo' => 'Kinesiólogos en {ciudad} para recuperarte de una lesión, tratar dolores de espalda, rodilla u hombro y volver a entrenar sin miedo.',
+        'entrenador-personal' => 'Personal trainer en {ciudad}: un entrenador que te arma la rutina, te corrige la técnica y te acompaña sesión a sesión para llegar a tu objetivo.',
+        'personal-trainer' => 'Personal trainer en {ciudad}: un entrenador que te arma la rutina, te corrige la técnica y te acompaña sesión a sesión para llegar a tu objetivo.',
+        'preparador-fisico' => 'Preparadores físicos en {ciudad} para deportistas y para quien quiere más fuerza, resistencia y velocidad, con un plan por etapas.',
+        'masajista' => 'Masajes en {ciudad}: descontracturantes, de relajación y deportivos, para soltar la tensión y recuperarte después de entrenar.',
+        'quiromasajista' => 'Quiromasaje en {ciudad}: masajes descontracturantes y de relajación para soltar la tensión de espalda, cuello y piernas.',
+        'masoterapeuta' => 'Masoterapia en {ciudad}: masajes descontracturantes, de relajación y deportivos para recuperarte y entrenar mejor.',
+        'psicologo-deportivo' => 'Psicología deportiva en {ciudad} para manejar la presión, la ansiedad antes de competir y la constancia en el entrenamiento.',
+    ];
+
+    /** Las dos líneas de la página de esa especialidad, o null si no hay texto para ella. */
+    public static function intro(string $clave, ?string $ciudad): ?string
+    {
+        $texto = self::INTRO[$clave] ?? null;
+
+        return $texto ? str_replace('{ciudad}', $ciudad ?: 'la ciudad', $texto) : null;
+    }
+
     /** El nombre para el título: como se busca, o como se escribió. */
     public static function comoSeBusca(string $clave, string $nombre): string
     {

@@ -99,7 +99,7 @@ class WebPublicaTest extends CasoConCatalogos
         \App\Models\Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => true]);
 
         // Ninguna de las páginas: el menú y el pie son los mismos en todas.
-        foreach (['/', '/el-gimnasio', '/planes', '/convenios', '/especialistas', '/contacto', '/mi-membresia', '/privacidad'] as $pagina) {
+        foreach (['/', '/el-gimnasio', '/planes', '/convenios', '/profesionales', '/contacto', '/mi-membresia', '/privacidad'] as $pagina) {
             $this->get($pagina)
                 ->assertOk()
                 ->assertDontSee(route('login'), false)

@@ -146,7 +146,7 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
         $this->get('/especialidades/preparador-fisico')->assertOk()->assertSee('Diego Soto')->assertDontSee('Camila Rojas');
 
         // Enlaces desde la lista y desde el perfil.
-        $this->get('/especialistas')->assertSee('href="' . route('landing.especialidad', 'kinesiologo') . '"', false);
+        $this->get('/profesionales')->assertSee('href="' . route('landing.especialidad', 'kinesiologo') . '"', false);
         $this->get(route('landing.especialista', $camila->slug))->assertSee('Ver más de kinesiólogo');
     }
 
@@ -169,7 +169,7 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
         $this->assertNull(Especialista::where('tipo', 'embajador')->value('slug'));
 
         // Lo que más gente hace va primero, y solo lo que cabe.
-        $this->get('/especialistas')->assertOk()
+        $this->get('/profesionales')->assertOk()
             ->assertSee('<title>Preparador físico y personal trainer en Los Ángeles | PRO GYM</title>', false);
 
         // Como lo busca la gente en Chile: «personal trainer», con la otra forma al lado.
@@ -240,5 +240,31 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
         $tipo = new TipoNotificacion(['asunto_email' => 'Hola {nombre}', 'plantilla_email' => '<a href="{enlace_resena}">Reseña</a>']);
 
         $this->assertSame('<a href="https://g.page/r/progym/review">Reseña</a>', $tipo->renderizar(['nombre' => 'Ana'])['contenido']);
+    }
+
+    /**
+     * /profesionales desde el 9-oct-2026, con las direcciones de antes
+     * llevando a las nuevas; y cada especialidad con su texto propio, la
+     * lista de personas para Google y su enlace en el pie de toda la web.
+     */
+    public function test_profesionales_con_direccion_texto_y_enlaces(): void
+    {
+        $camila = Especialista::create(['nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'temas' => ['Nutrición deportiva'], 'activo' => true]);
+
+        $this->get('/especialistas')->assertStatus(301)->assertRedirect('/profesionales');
+        $this->get('/especialistas/camila-rojas')->assertStatus(301)->assertRedirect('/profesionales/camila-rojas');
+        $this->assertSame(url('/profesionales/camila-rojas'), route('landing.especialista', $camila->slug));
+
+        $html = $this->get('/especialidades/nutricionista')->assertOk()->getContent();
+        $this->assertStringContainsString('Nutricionistas en Los Ángeles para bajar de peso', $html);
+        $this->assertStringContainsString('"@type":"ItemList"', $html);
+        $this->assertStringContainsString('"jobTitle":"Nutricionista"', $html);
+
+        $this->get('/profesionales')->assertSee('"@type":"ItemList"', false);
+        $this->get(route('landing.especialista', $camila->slug))->assertSee('"knowsAbout":["Nutrición deportiva"]', false);
+
+        // El pie, en cualquier página, enlaza a la especialidad.
+        $this->get('/planes')->assertSee('href="' . route('landing.especialidad', 'nutricionista') . '"', false)
+            ->assertSee('Nutricionista en Los Ángeles');
     }
 }

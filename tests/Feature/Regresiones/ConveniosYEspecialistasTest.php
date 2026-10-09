@@ -264,7 +264,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $saludo = rawurlencode('Hola Diego Soto, te escribo desde la web de PRO GYM.');
 
-        $this->get('/especialistas')
+        $this->get('/profesionales')
             ->assertOk()
             ->assertSee('Diego Soto')
             ->assertSee('Personal trainer')
@@ -272,7 +272,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertSee(route('landing.especialista', 'diego-soto'), false);
 
         // El Instagram va en su perfil.
-        $this->get('/especialistas/diego-soto')
+        $this->get('/profesionales/diego-soto')
             ->assertOk()
             ->assertSee('https://www.instagram.com/diego.fit/', false);
 
@@ -286,7 +286,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         Especialista::create(['nombre' => 'Diego Soto', 'especialidad' => 'Personal trainer', 'activo' => false]);
 
         // Sin ninguno a la vista, la página de especialistas no existe.
-        $this->get('/especialistas')
+        $this->get('/profesionales')
             ->assertNotFound()
             ->assertDontSee('Diego Soto');
 
@@ -385,7 +385,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertDontSee('href="' . route('landing.especialistas') . '"', false);
 
         // Los embajadores no cuentan como especialistas: sin ninguno, no hay página.
-        $this->get('/especialistas')
+        $this->get('/profesionales')
             ->assertNotFound()
             ->assertDontSee('Valentina Pérez');
     }
@@ -399,7 +399,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertOk()
             ->assertDontSee('NUESTROS EMBAJADORES');
 
-        $this->get('/especialistas')
+        $this->get('/profesionales')
             ->assertOk()
             ->assertSee('Diego Soto');
     }
@@ -519,13 +519,13 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->assertSame('camila-rojas', $camila->slug);
         $this->assertSame(['Nutrición deportiva', 'Composición corporal'], $camila->temas);
 
-        $this->get('/especialistas')
+        $this->get('/profesionales')
             ->assertOk()
             ->assertSee('Camila Rojas')
             ->assertSee('Presencial y online')
             ->assertDontSee('diez años de experiencia');
 
-        $this->get('/especialistas/camila-rojas')
+        $this->get('/profesionales/camila-rojas')
             ->assertOk()
             ->assertSee('diez años de experiencia')
             ->assertSee('Trabajo con deportistas.')
@@ -538,9 +538,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         Especialista::create(['nombre' => 'Oculto Uno', 'especialidad' => 'Kine', 'activo' => false]);
         Especialista::create(['nombre' => 'Diego Atleta', 'especialidad' => 'CrossFit', 'tipo' => 'embajador', 'activo' => true]);
 
-        $this->get('/especialistas/oculto-uno')->assertNotFound();
-        $this->get('/especialistas/diego-atleta')->assertNotFound();
-        $this->get('/especialistas/no-existe')->assertNotFound();
+        $this->get('/profesionales/oculto-uno')->assertNotFound();
+        $this->get('/profesionales/diego-atleta')->assertNotFound();
+        $this->get('/profesionales/no-existe')->assertNotFound();
     }
 
     public function test_dos_con_el_mismo_nombre_tienen_direcciones_distintas(): void
@@ -572,7 +572,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         ])->assertSessionHasNoErrors();
 
         $this->assertSame('camila@correo.cl', Especialista::first()->email);
-        $this->get('/especialistas/camila-rojas')->assertOk()->assertSee('mailto:camila@correo.cl', false);
+        $this->get('/profesionales/camila-rojas')->assertOk()->assertSee('mailto:camila@correo.cl', false);
 
         $this->admin()->post('/panel/especialistas', [
             'nombre' => 'Otro', 'especialidad' => 'Kine', 'email' => 'no es correo', 'activo' => true,
@@ -585,9 +585,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $e = Especialista::create(['nombre' => 'Jose Perez', 'especialidad' => 'Kine', 'activo' => true]);
         $e->update(['nombre' => 'José Pérez Soto']);
 
-        $this->get('/especialistas/jose-perez')->assertStatus(301)
+        $this->get('/profesionales/jose-perez')->assertStatus(301)
             ->assertRedirect(route('landing.especialista', 'jose-perez-soto'));
-        $this->get('/especialistas/jose-perez-soto')->assertOk();
+        $this->get('/profesionales/jose-perez-soto')->assertOk();
     }
 
     // ---------- Profesionales recomendados (8-oct-2026) ----------
@@ -625,7 +625,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->assertSame('15:00 a 19:00', $camila->horario);
         $this->assertSame('Martes y jueves', $camila->diasComoSeLeen());
 
-        $this->get('/especialistas')->assertOk()
+        $this->get('/profesionales')->assertOk()
             ->assertSee('Recomendado')
             ->assertSee('Martes y jueves')
             ->assertSee('Recomendados por PRO GYM');
@@ -668,7 +668,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         Especialista::create(['nombre' => 'Ana Soto', 'especialidad' => 'Nutricionista deportiva', 'activo' => true]);
         Especialista::create(['nombre' => 'Diego Pérez', 'especialidad' => 'Kinesiólogo y masajista', 'activo' => true]);
 
-        $html = $this->get('/especialistas')->assertOk()->getContent();
+        $html = $this->get('/profesionales')->assertOk()->getContent();
 
         $this->assertMatchesRegularExpression('#<h2[^>]*>\s*Kinesiólogo\s*</h2>#u', $html);
         $this->assertMatchesRegularExpression('#<h2[^>]*>\s*Nutricionista\s*</h2>#u', $html);
@@ -710,7 +710,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         $this->admin()->post('/panel/especialistas', [
             'nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'tiktok' => '@camila.nutri', 'activo' => true,
         ])->assertSessionHasNoErrors();
-        $perfil = $this->get('/especialistas/camila-rojas')->assertOk();
+        $perfil = $this->get('/profesionales/camila-rojas')->assertOk();
         $perfil->assertSee('@camila.nutri')->assertSee('"sameAs":["https://www.tiktok.com/@camila.nutri"]', false);
     }
 }

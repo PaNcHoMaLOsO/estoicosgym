@@ -38,8 +38,13 @@ Route::middleware(['direccion.unica', 'security.headers'])->group(function () {
     Route::get('/arriendo-por-horas', [LandingController::class, 'arriendo'])->middleware('pagina-web:arriendo')->name('landing.arriendo');
     Route::get('/clases', [LandingController::class, 'clases'])->middleware('pagina-web:clases')->name('landing.clases');
     Route::get('/clases/{slug}', [LandingController::class, 'clase'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:clases')->name('landing.clase');
-    Route::get('/especialistas', [LandingController::class, 'especialistas'])->middleware('pagina-web:especialistas')->name('landing.especialistas');
-    Route::get('/especialistas/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:especialistas')->name('landing.especialista');
+    // /profesionales desde el 9-oct-2026: la sección se llama «Profesionales del
+    // deporte». Las direcciones de antes (/especialistas…) llevan aquí con 301:
+    // ya pueden estar en Google o compartidas.
+    Route::get('/profesionales', [LandingController::class, 'especialistas'])->middleware('pagina-web:especialistas')->name('landing.especialistas');
+    Route::get('/profesionales/{slug}', [LandingController::class, 'especialista'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:especialistas')->name('landing.especialista');
+    Route::get('/especialistas', fn () => redirect()->route('landing.especialistas', [], 301));
+    Route::get('/especialistas/{slug}', fn (string $slug) => redirect()->route('landing.especialista', $slug, 301))->where('slug', '[a-z0-9-]+');
     Route::get('/especialidades/{slug}', [LandingController::class, 'especialidad'])->where('slug', '[a-z0-9-]+')->middleware('pagina-web:especialistas')->name('landing.especialidad');
     Route::get('/contacto', [LandingController::class, 'paginaContacto'])->name('landing.contacto');
     Route::get('/mi-membresia', [LandingController::class, 'miMembresia'])->middleware('pagina-web:membresia')->name('landing.membresia');

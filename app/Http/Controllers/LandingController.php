@@ -547,6 +547,7 @@ class LandingController extends Controller
                 )),
                 'secciones' => array_values($secciones),
                 'hayRecomendados' => $hayRecomendados,
+                'json_ld' => $this->listaDePersonas($comun['especialistas'], $titulo, route('landing.especialistas'), $comun),
                 // Para que otros profesionales pidan aparecer.
                 'whatsappProfesionales' => $this->whatsappConMensaje("Hola, soy profesional y me gustaría aparecer en la web de {$comun['gimnasio']['nombre']}."),
             ], $comun);
@@ -583,6 +584,7 @@ class LandingController extends Controller
         $titulo = Especialidades::comoSeBusca($slug, $grupo['nombre']) . ($ciudad ? " en {$ciudad}" : '');
         $nombres = collect($grupo['especialistas'])->pluck('nombre');
         $url = route('landing.especialidad', $slug);
+        $intro = Especialidades::intro($slug, $ciudad);
 
         return $this->pagina('landing.especialidad', 'landing.especialidad', $titulo,
             "{$grupo['nombre']} en {$gimnasio}" . ($ciudad ? ", {$ciudad}" : '') . ': '
@@ -591,6 +593,9 @@ class LandingController extends Controller
             [
                 'grupo' => $grupo,
                 'tituloEspecialidad' => $titulo,
+                'intro' => $intro,
+                // Para Google: quiénes son, qué hacen y dónde. Cada uno con su perfil.
+                'json_ld' => $this->listaDePersonas($grupo['especialistas'], $titulo, $url, $comun),
                 'otrasEspecialidades' => array_values(array_map(
                     fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
                     array_filter($grupos, fn (array $g) => $g['slug'] !== $slug)
@@ -682,6 +687,9 @@ class LandingController extends Controller
                     // se le atribuye un empleo que no tiene.
                     'worksFor' => $especialista['recomendado'] ? null : ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
                     'workLocation' => $especialista['lugar'] ? ['@type' => 'Place', 'name' => $especialista['lugar']] : null,
+                    'description' => $especialista['descripcion'] ? Str::limit(preg_replace('/\s+/', ' ', $especialista['descripcion']), 300) : null,
+                    'knowsAbout' => $especialista['temas'] ?: null,
+                    'areaServed' => $ciudad ? ['@type' => 'City', 'name' => $ciudad] : null,
                 ]),
                 'migas' => [
                     '@context' => 'https://schema.org',
@@ -951,6 +959,15 @@ class LandingController extends Controller
             'aviso' => $this->avisoVigente(),
             'horario' => $this->horario(),
             'whatsapp' => $this->whatsappDelGimnasio($gimnasio['nombre']),
+            // Las especialidades con más gente, para el pie: así cada página de
+            // la web enlaza a «Nutricionista en Los Ángeles» y Google las
+            // encuentra y les da importancia.
+            'especialidadesPie' => $paginas['especialistas'] ? collect(Especialidades::agrupar($especialistas))
+                ->sortByDesc(fn (array $g) => count($g['especialistas']))
+                ->take(4)
+                ->map(fn (array $g) => ['nombre' => Str::before(Especialidades::comoSeBusca($g['slug'], $g['nombre']), ' y '), 'url' => route('landing.especialidad', $g['slug'])])
+                ->values()
+                ->all() : [],
         ];
     }
 
@@ -1597,6 +1614,37 @@ class LandingController extends Controller
                 'email' => $e->email,
             ])
             ->all();
+    }
+
+    /**
+     * Una lista de profesionales para Google (ItemList de Person): nombre,
+     * oficio, foto, perfil y ciudad. Así entiende que la página es de
+     * «nutricionistas en Los Ángeles» y no un texto cualquiera.
+     *
+     * @param list<array<string,mixed>> $personas
+     */
+    private function listaDePersonas(array $personas, string $titulo, string $url, array $comun): array
+    {
+        $ciudad = $comun['web']['ciudad'];
+
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'ItemList',
+            'name' => $titulo,
+            'url' => $url,
+            'itemListElement' => array_values(array_map(fn (array $e, int $i) => [
+                '@type' => 'ListItem',
+                'position' => $i + 1,
+                'item' => array_filter([
+                    '@type' => 'Person',
+                    'name' => $e['nombre'],
+                    'jobTitle' => $e['especialidad'] ?: null,
+                    'url' => $e['perfil'],
+                    'image' => $e['foto'] ? url($e['foto']) : null,
+                    'areaServed' => $ciudad ? ['@type' => 'City', 'name' => $ciudad] : null,
+                ]),
+            ], $personas, array_keys($personas))),
+        ];
     }
 
     /**

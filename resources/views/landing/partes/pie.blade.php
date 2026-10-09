@@ -65,6 +65,9 @@
                     @endif
                     @if($navegacion['especialistas'])
                         <li><a href="{{ route('landing.especialistas') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Profesionales</a></li>
+                        @foreach($especialidadesPie ?? [] as $esp)
+                            <li><a href="{{ $esp['url'] }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">{{ $esp['nombre'] }}{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}</a></li>
+                        @endforeach
                     @endif
                     @if($navegacion['convenios'])
                         <li><a href="{{ route('landing.convenios') }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">Convenios</a></li>

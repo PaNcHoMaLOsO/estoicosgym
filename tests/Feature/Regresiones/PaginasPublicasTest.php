@@ -23,7 +23,7 @@ class PaginasPublicasTest extends CasoConCatalogos
         '/el-gimnasio' => 'landing.gimnasio',
         '/planes' => 'landing.planes',
         '/convenios' => 'landing.convenios',
-        '/especialistas' => 'landing.especialistas',
+        '/profesionales' => 'landing.especialistas',
         '/contacto' => 'landing.contacto',
         '/mi-membresia' => 'landing.membresia',
         '/privacidad' => 'landing.privacidad',

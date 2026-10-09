@@ -11,7 +11,8 @@
     @include('landing.partes.cabecera', [
         'antetitulo' => 'Profesionales del deporte',
         'titulo' => $tituloEspecialidad,
-        'bajada' => (collect($grupo['especialistas'])->contains('recomendado', true) ? 'Recomendados por ' : 'Trabajan con ') . $gimnasio['nombre'] . '. '
+        'bajada' => ($intro ? $intro . ' ' : '')
+            . (collect($grupo['especialistas'])->contains('recomendado', true) ? 'Recomendados por ' : 'Trabajan con ') . $gimnasio['nombre'] . '. '
             . (count($grupo['especialistas']) > 1 ? 'Escríbeles directo.' : 'Escríbele directo.'),
     ])
 
