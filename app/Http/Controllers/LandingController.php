@@ -514,15 +514,42 @@ class LandingController extends Controller
             ? Str::ucfirst((count($elegidos) > 1 ? implode(', ', array_slice($elegidos, 0, -1)) . ' y ' : '') . end($elegidos)) . $ciudad
             : 'Especialistas';
 
+        // SEPARADOS POR PROFESIÓN: cada uno en la sección de lo primero que
+        // hace («Judoka y preparador físico» va en Judoka), para que nadie salga
+        // dos veces. Las secciones con más gente, primero.
+        $secciones = [];
+        foreach ($comun['especialistas'] as $e) {
+            $clave = array_key_first(Especialidades::de($e['especialidad'])) ?? 'otros';
+            $secciones[$clave] ??= ['slug' => $clave, 'nombre' => Str::ucfirst(Especialidades::de($e['especialidad'])[$clave] ?? 'Otros'), 'especialistas' => []];
+            $secciones[$clave]['especialistas'][] = $e;
+        }
+        $grupos = Especialidades::agrupar($comun['especialistas']);
+        foreach ($secciones as $clave => &$seccion) {
+            // El nombre de la página de esa especialidad, que ya junta tildes y femeninos.
+            $seccion['nombre'] = $grupos[$clave]['nombre'] ?? $seccion['nombre'];
+            $seccion['url'] = isset($grupos[$clave]) ? route('landing.especialidad', $clave) : null;
+        }
+        unset($seccion);
+        uasort($secciones, fn (array $a, array $b) => count($b['especialistas']) <=> count($a['especialistas']));
+
+        $hayRecomendados = collect($comun['especialistas'])->contains('recomendado', true);
+
         return $this->pagina('landing.especialistas', 'landing.especialistas', $titulo,
             ($especialidades
-                ? "{$especialidades} que trabajan con {$comun['gimnasio']['nombre']}."
-                : "Los profesionales que trabajan con {$comun['gimnasio']['nombre']}.")
-                . ' Escríbeles directo por WhatsApp o Instagram.',
-            ['especialidades' => array_values(array_map(
-                fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
-                Especialidades::agrupar($comun['especialistas'])
-            ))], $comun);
+                ? "{$especialidades}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
+                    . ($hayRecomendados ? ", recomendados por {$comun['gimnasio']['nombre']}." : " en {$comun['gimnasio']['nombre']}.")
+                : "Los profesionales que recomienda {$comun['gimnasio']['nombre']}.")
+                . ' Días, horario y contacto directo por WhatsApp.',
+            [
+                'especialidades' => array_values(array_map(
+                    fn (array $g) => ['nombre' => $g['nombre'], 'url' => route('landing.especialidad', $g['slug'])],
+                    $grupos
+                )),
+                'secciones' => array_values($secciones),
+                'hayRecomendados' => $hayRecomendados,
+                // Para que otros profesionales pidan aparecer.
+                'whatsappProfesionales' => $this->whatsappConMensaje("Hola, soy profesional y me gustaría aparecer en la web de {$comun['gimnasio']['nombre']}."),
+            ], $comun);
     }
 
     /**
@@ -641,7 +668,10 @@ class LandingController extends Controller
                     'image' => $especialista['foto'] ? url($especialista['foto']) : null,
                     'url' => $perfil,
                     'sameAs' => $especialista['instagram'] ? [$especialista['instagram']] : null,
-                    'worksFor' => ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
+                    // Solo quien es del gimnasio «trabaja ahí»: al recomendado no
+                    // se le atribuye un empleo que no tiene.
+                    'worksFor' => $especialista['recomendado'] ? null : ['@type' => 'ExerciseGym', '@id' => $comun['web']['id_gimnasio'], 'name' => $nombreGimnasio],
+                    'workLocation' => $especialista['lugar'] ? ['@type' => 'Place', 'name' => $especialista['lugar']] : null,
                 ]),
                 'migas' => [
                     '@context' => 'https://schema.org',
@@ -1524,6 +1554,11 @@ class LandingController extends Controller
                 'descripcion' => $e->descripcion,
                 'temas' => $e->temas ?? [],
                 'modalidad' => Especialista::MODALIDADES[$e->modalidad] ?? null,
+                // Recomendado (externo) o del gimnasio: cambia lo que se dice de él.
+                'recomendado' => $e->vinculo === 'recomendado',
+                'dias' => $e->diasComoSeLeen(),
+                'horario' => $e->horario,
+                'lugar' => $e->lugar,
                 'foto' => $e->urlDeFoto(),
                 'whatsapp' => $e->enlaceWhatsapp($gimnasio),
                 'instagram' => $e->enlaceInstagram(),

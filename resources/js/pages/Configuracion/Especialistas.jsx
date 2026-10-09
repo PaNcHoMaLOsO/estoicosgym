@@ -1,7 +1,7 @@
 import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, LinkIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioPersona from '@/components/FormularioPersona';
@@ -16,10 +16,10 @@ import { Celda, Fila, Tabla } from '@/components/Tabla';
 const SEGUN_TIPO = {
     especialista: {
         titulo: 'Especialistas',
-        bajada: 'Los profesionales que trabajan con el gimnasio. Salen en la página Especialistas.',
+        bajada: 'Los profesionales que recomienda el gimnasio y los que trabajan en él. Salen en la página Especialistas, separados por profesión.',
         columnas: ['Nombre', 'Especialidad', 'Contacto', 'Orden', 'En la web', ''],
         nuevo: 'Agregar especialista',
-        vacio: 'Todavía no hay ningún especialista. Agrega a un nutricionista, un personal trainer o una kinesióloga.',
+        vacio: 'Todavía no hay ningún especialista. Agrega a un nutricionista, un kinesiólogo o un masajista que recomiendes.',
     },
     embajador: {
         titulo: 'Embajadores',
@@ -41,6 +41,21 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
     const textos = SEGUN_TIPO[tipo] ?? SEGUN_TIPO.especialista;
     // null = cerrado; una fila = editando esa; {} = creando.
     const [editando, setEditando] = useState(null);
+    const [copiado, setCopiado] = useState(null);
+
+    /**
+     * El enlace a su perfil, para mandárselo y que lo ponga en su Instagram:
+     * cada enlace desde afuera ayuda a que Google suba la web del gimnasio.
+     */
+    async function copiarEnlace(especialista) {
+        try {
+            await navigator.clipboard.writeText(especialista.perfil_url);
+            setCopiado(especialista.uuid);
+            setTimeout(() => setCopiado((actual) => (actual === especialista.uuid ? null : actual)), 2000);
+        } catch {
+            window.prompt('Copia el enlace:', especialista.perfil_url);
+        }
+    }
 
     /** Sube o baja un puesto: ordenar sin pensar en números. */
     function mover(especialista, hacia) {
@@ -98,7 +113,12 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                                 {especialista.nombre}
                             </span>
                         </Celda>
-                        <Celda>{especialista.especialidad}</Celda>
+                        <Celda>
+                            {especialista.especialidad}
+                            {tipo !== 'embajador' && especialista.vinculo === 'recomendado' ? (
+                                <span className="apoyo ml-2 rounded-control bg-surface-2 px-1.5 py-0.5 text-fog">Recomendado</span>
+                            ) : null}
+                        </Celda>
                         <Celda>
                             {(tipo === 'embajador'
                                 ? [especialista.instagram]
@@ -134,6 +154,18 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                         </Celda>
                         <Celda className="text-right">
                             <div className="inline-flex items-center gap-3">
+                                {especialista.perfil_url && especialista.activo ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => copiarEnlace(especialista)}
+                                        title="Copiar el enlace a su perfil"
+                                        aria-label={`Copiar el enlace al perfil de ${especialista.nombre}`}
+                                        className="text-fog transition-colors hover:text-chalk"
+                                    >
+                                        {copiado === especialista.uuid ? <CheckIcon className="size-4 text-volt" aria-hidden="true" /> : <LinkIcon className="size-4" aria-hidden="true" />}
+                                    </button>
+                                ) : null}
+
                                 <button
                                     type="button"
                                     onClick={() => setEditando(especialista)}

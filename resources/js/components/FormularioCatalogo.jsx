@@ -211,6 +211,11 @@ export function valoresDeEspecialista(especialista, tipo = 'especialista') {
         descripcion: especialista?.descripcion ?? '',
         temas: especialista?.temas ?? [],
         modalidad: especialista?.modalidad ?? '',
+        // Los nuevos entran como recomendados: la página es sobre todo de eso.
+        vinculo: especialista?.vinculo ?? (tipo === 'embajador' ? 'equipo' : 'recomendado'),
+        dias: especialista?.dias ?? [],
+        horario: especialista?.horario ?? '',
+        lugar: especialista?.lugar ?? '',
         foto: null,
         quitar_foto: false,
         foto_url: especialista?.foto_url ?? null,

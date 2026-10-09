@@ -28,6 +28,7 @@ class Especialista extends Model
     protected $fillable = [
         'uuid',
         'tipo',
+        'vinculo',
         'nombre',
         'slug',
         'slugs_anteriores',
@@ -35,6 +36,9 @@ class Especialista extends Model
         'descripcion',
         'temas',
         'modalidad',
+        'dias',
+        'horario',
+        'lugar',
         'foto',
         'whatsapp',
         'instagram',
@@ -48,6 +52,28 @@ class Especialista extends Model
         'orden' => 'integer',
         'temas' => 'array',
         'slugs_anteriores' => 'array',
+        'dias' => 'array',
+    ];
+
+    /**
+     * Si trabaja en el gimnasio o el gimnasio lo recomienda. La página es sobre
+     * todo de recomendados: profesionales de la ciudad que no son del equipo,
+     * y a Google no se le dice que trabajan aquí.
+     */
+    public const VINCULOS = [
+        'recomendado' => 'Recomendado',
+        'equipo' => 'Del gimnasio',
+    ];
+
+    /** Los días en que atiende, en orden de semana. */
+    public const DIAS = [
+        'lun' => 'Lunes',
+        'mar' => 'Martes',
+        'mie' => 'Miércoles',
+        'jue' => 'Jueves',
+        'vie' => 'Viernes',
+        'sab' => 'Sábado',
+        'dom' => 'Domingo',
     ];
 
     /** Cómo atiende. Sin elegir, el perfil no dice nada. */
@@ -109,6 +135,36 @@ class Especialista extends Model
         }
 
         return $slug;
+    }
+
+    /**
+     * Los días como se leen: «Lunes a viernes», «Martes y jueves», «Lun, mié y
+     * vie». Seguidos de tres o más se dicen como rango.
+     */
+    public function diasComoSeLeen(): ?string
+    {
+        $claves = array_keys(self::DIAS);
+        $dias = array_values(array_filter($claves, fn (string $d) => in_array($d, $this->dias ?? [], true)));
+
+        if ($dias === []) {
+            return null;
+        }
+
+        if (count($dias) === 7) {
+            return 'Todos los días';
+        }
+
+        $posiciones = array_map(fn (string $d) => array_search($d, $claves, true), $dias);
+        $seguidos = end($posiciones) - $posiciones[0] === count($posiciones) - 1;
+
+        if ($seguidos && count($dias) >= 3) {
+            return self::DIAS[$dias[0]] . ' a ' . mb_strtolower(self::DIAS[end($dias)]);
+        }
+
+        $nombres = array_map(fn (string $d) => mb_strtolower(self::DIAS[$d]), $dias);
+        $ultimo = array_pop($nombres);
+
+        return \Illuminate\Support\Str::ucfirst($nombres ? implode(', ', $nombres) . ' y ' . $ultimo : $ultimo);
     }
 
     public function urlDeFoto(): ?string

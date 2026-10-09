@@ -41,11 +41,32 @@
                     <p class="font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro sm:text-sm">{{ $e['especialidad'] }}</p>
                     <h1 class="mt-2 font-display text-4xl uppercase leading-[0.95] text-pg-tiza md:text-6xl">{{ $e['nombre'] }}</h1>
 
-                    @if($e['modalidad'])
-                        <p class="mt-5 inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5 font-modern text-sm text-pg-tiza/80">
-                            <x-icono nombre="location-dot" class="text-pg-rojo-claro text-xs" />
-                            {{ $e['modalidad'] }}
-                        </p>
+                    @if($e['recomendado'])
+                        <p class="mt-3 font-modern text-sm text-pg-tiza/55">Profesional recomendado por {{ $gimnasio['nombre'] }}</p>
+                    @endif
+
+                    {{-- CUÁNDO Y DÓNDE: lo que se pregunta antes de escribirle. --}}
+                    @if($e['dias'] || $e['horario'] || $e['lugar'] || $e['modalidad'])
+                        <ul class="mt-5 flex flex-wrap gap-2 font-modern text-sm text-pg-tiza/80">
+                            @if($e['dias'] || $e['horario'])
+                                <li class="inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5">
+                                    <x-icono nombre="clock" class="text-pg-rojo-claro text-xs" />
+                                    {{ collect([$e['dias'], $e['horario']])->filter()->implode(' · ') }}
+                                </li>
+                            @endif
+                            @if($e['lugar'])
+                                <li class="inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5">
+                                    <x-icono nombre="location-dot" class="text-pg-rojo-claro text-xs" />
+                                    {{ $e['lugar'] }}
+                                </li>
+                            @endif
+                            @if($e['modalidad'])
+                                <li class="inline-flex items-center gap-2 border border-pg-tiza/20 px-3 py-1.5">
+                                    @unless($e['lugar'])<x-icono nombre="location-dot" class="text-pg-rojo-claro text-xs" />@endunless
+                                    {{ $e['modalidad'] }}
+                                </li>
+                            @endif
+                        </ul>
                     @endif
 
                     {{-- ESCRIBIRLE, ARRIBA. Es a lo que se viene: no tiene que

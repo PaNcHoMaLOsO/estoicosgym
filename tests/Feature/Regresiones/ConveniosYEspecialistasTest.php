@@ -589,4 +589,90 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertRedirect(route('landing.especialista', 'jose-perez-soto'));
         $this->get('/especialistas/jose-perez-soto')->assertOk();
     }
+
+    // ---------- Profesionales recomendados (8-oct-2026) ----------
+
+    /**
+     * La página es sobre todo de profesionales que el gimnasio recomienda y
+     * que no trabajan ahí: se dice eso, con qué días y dónde atienden, y a
+     * Google no se le dice que trabajan en el gimnasio.
+     */
+    public function test_el_recomendado_con_dias_horario_y_lugar(): void
+    {
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Camila Rojas',
+            'especialidad' => 'Nutricionista',
+            'vinculo' => 'recomendado',
+            'dias' => ['jue', 'mar', 'mar', 'xyz'],
+            'horario' => ' 15:00 a 19:00 ',
+            'lugar' => 'Consulta en Colón 250',
+            'activo' => true,
+        ])->assertSessionHasErrors('dias.3');
+
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Camila Rojas',
+            'especialidad' => 'Nutricionista',
+            'vinculo' => 'recomendado',
+            'dias' => ['jue', 'mar'],
+            'horario' => ' 15:00 a 19:00 ',
+            'lugar' => 'Consulta en Colón 250',
+            'activo' => true,
+        ])->assertSessionHasNoErrors();
+
+        $camila = Especialista::firstWhere('nombre', 'Camila Rojas');
+        $this->assertSame('recomendado', $camila->vinculo);
+        $this->assertSame(['mar', 'jue'], $camila->dias);
+        $this->assertSame('15:00 a 19:00', $camila->horario);
+        $this->assertSame('Martes y jueves', $camila->diasComoSeLeen());
+
+        $this->get('/especialistas')->assertOk()
+            ->assertSee('Recomendado')
+            ->assertSee('Martes y jueves')
+            ->assertSee('Recomendados por PRO GYM');
+
+        $perfil = $this->get(route('landing.especialista', $camila->slug))->assertOk();
+        $perfil->assertSee('Profesional recomendado por PRO GYM')
+            ->assertSee('Martes y jueves · 15:00 a 19:00')
+            ->assertSee('Consulta en Colón 250');
+        $this->assertStringNotContainsString('"worksFor"', $perfil->getContent());
+
+        // Editar sin mandar el vínculo no lo cambia.
+        $this->admin()->put("/panel/especialistas/{$camila->uuid}", [
+            'nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'activo' => true,
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('recomendado', $camila->fresh()->vinculo);
+    }
+
+    public function test_los_que_ya_estaban_son_del_gimnasio_y_los_dias_se_leen_bien(): void
+    {
+        $benja = Especialista::create(['nombre' => 'Benjamín Bascur', 'especialidad' => 'Entrenador personal', 'activo' => true]);
+        $this->assertSame('equipo', $benja->fresh()->vinculo);
+
+        $perfil = $this->get(route('landing.especialista', $benja->slug))->assertOk()->getContent();
+        $this->assertStringContainsString('"worksFor"', $perfil);
+        $this->assertStringNotContainsString('Profesional recomendado', $perfil);
+
+        $dias = fn (array $d) => (new Especialista(['dias' => $d]))->diasComoSeLeen();
+        $this->assertSame('Lunes a viernes', $dias(['vie', 'lun', 'mar', 'mie', 'jue']));
+        $this->assertSame('Lunes, miércoles y viernes', $dias(['lun', 'mie', 'vie']));
+        $this->assertSame('Sábado', $dias(['sab']));
+        $this->assertSame('Todos los días', $dias(['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']));
+        $this->assertNull($dias([]));
+    }
+
+    /** Separados por profesión, cada uno una sola vez. */
+    public function test_la_pagina_va_separada_por_profesion(): void
+    {
+        Especialista::create(['nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'activo' => true]);
+        Especialista::create(['nombre' => 'Ana Soto', 'especialidad' => 'Nutricionista deportiva', 'activo' => true]);
+        Especialista::create(['nombre' => 'Diego Pérez', 'especialidad' => 'Kinesiólogo y masajista', 'activo' => true]);
+
+        $html = $this->get('/especialistas')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('#<h2[^>]*>\s*Kinesiólogo\s*</h2>#u', $html);
+        $this->assertMatchesRegularExpression('#<h2[^>]*>\s*Nutricionista\s*</h2>#u', $html);
+        $this->assertSame(1, substr_count($html, '>Diego Pérez</a>'));
+        // Los nombres van bajo el título de la sección.
+        $this->assertStringContainsString('<h3', $html);
+    }
 }

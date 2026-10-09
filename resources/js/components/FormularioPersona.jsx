@@ -41,6 +41,72 @@ const MODALIDADES = [
 
 const TEXTO_MODALIDAD = { presencial: 'Presencial', online: 'Online', ambas: 'Presencial y online' };
 
+const VINCULOS = [
+    { valor: 'recomendado', etiqueta: 'Recomendado' },
+    { valor: 'equipo', etiqueta: 'Del gimnasio' },
+];
+
+const DIAS = [
+    ['lun', 'L', 'Lunes'],
+    ['mar', 'M', 'Martes'],
+    ['mie', 'M', 'Miércoles'],
+    ['jue', 'J', 'Jueves'],
+    ['vie', 'V', 'Viernes'],
+    ['sab', 'S', 'Sábado'],
+    ['dom', 'D', 'Domingo'],
+];
+
+/** Igual que Especialista::diasComoSeLeen(): «Lunes a viernes», «Martes y jueves». */
+export function diasComoSeLeen(dias = []) {
+    const elegidos = DIAS.filter(([clave]) => dias.includes(clave));
+
+    if (elegidos.length === 0) {
+        return '';
+    }
+
+    if (elegidos.length === 7) {
+        return 'Todos los días';
+    }
+
+    const posiciones = elegidos.map(([clave]) => DIAS.findIndex(([c]) => c === clave));
+    const seguidos = posiciones.at(-1) - posiciones[0] === posiciones.length - 1;
+
+    if (seguidos && elegidos.length >= 3) {
+        return `${elegidos[0][2]} a ${elegidos.at(-1)[2].toLowerCase()}`;
+    }
+
+    const nombres = elegidos.map(([, , nombre]) => nombre.toLowerCase());
+    const texto = nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1)}` : nombres[0];
+
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/** Los días de la semana, para marcar y desmarcar de un toque. */
+function Dias({ valor, alCambiar }) {
+    return (
+        <div role="group" aria-label="Días que atiende" className="flex gap-1">
+            {DIAS.map(([clave, letra, nombre]) => {
+                const marcado = valor.includes(clave);
+
+                return (
+                    <button
+                        key={clave}
+                        type="button"
+                        onClick={() => alCambiar(marcado ? valor.filter((d) => d !== clave) : [...valor, clave])}
+                        aria-pressed={marcado}
+                        title={nombre}
+                        className={`size-8 rounded-control border text-sm transition-colors ${
+                            marcado ? 'border-volt bg-volt text-on-volt' : 'border-line text-fog hover:text-chalk'
+                        }`}
+                    >
+                        {letra}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
 /**
  * Los temas como etiquetas: se escribe uno y Enter (o coma). Una lista es más
  * fácil de leer en el perfil que una frase larga con todo junto.
@@ -234,6 +300,12 @@ function PanelEspecialista({ data, foto, celular, ancho }) {
 
             <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/70 to-transparent" aria-hidden="true" />
 
+            {data.vinculo === 'recomendado' ? (
+                <span className={`absolute bg-[#0a0a0b]/75 px-2 py-0.5 ${POPPINS} uppercase tracking-[0.15em] text-[#f2f2f4]/80 ${celular ? 'left-2 top-2 text-[9px]' : 'left-3 top-3 text-[10px]'}`}>
+                    Recomendado
+                </span>
+            ) : null}
+
             <div className={`relative ${celular ? 'p-3' : 'p-6'}`}>
                 <span className={`block h-0.5 bg-[#dd2a32] ${celular ? 'w-6' : 'w-8'}`} aria-hidden="true" />
                 <p className={`line-clamp-2 ${POPPINS} uppercase leading-snug ${celular ? 'mt-2.5 text-[10px] tracking-[0.12em]' : 'mt-3 text-[11px] tracking-[0.18em]'} ${data.especialidad.trim() ? 'text-[#ef4a51]' : 'text-white/25'}`}>
@@ -242,7 +314,11 @@ function PanelEspecialista({ data, foto, celular, ancho }) {
                 <p className={`mt-1 ${OSWALD} ${celular ? 'text-lg' : 'text-[1.7rem]'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
                     {nombre || 'Nombre'}
                 </p>
-                {data.modalidad ? <p className={`mt-1.5 ${POPPINS} ${celular ? 'text-[11px]' : 'text-xs'} text-[#f2f2f4]/60`}>{TEXTO_MODALIDAD[data.modalidad]}</p> : null}
+                {diasComoSeLeen(data.dias) || data.modalidad ? (
+                    <p className={`mt-1.5 line-clamp-2 ${POPPINS} ${celular ? 'text-[11px]' : 'text-xs'} text-[#f2f2f4]/60`}>
+                        {diasComoSeLeen(data.dias) || TEXTO_MODALIDAD[data.modalidad]}
+                    </p>
+                ) : null}
 
                 <div className={`flex items-center justify-between gap-2 ${POPPINS} ${celular ? 'mt-3 text-xs' : 'mt-4 text-sm'}`}>
                     <span className="inline-flex items-center gap-1.5 border-b border-[#f2f2f4]/30 pb-0.5 text-[#f2f2f4]">Ver perfil →</span>
@@ -531,6 +607,46 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
 
                         {! esEmbajador ? (
                             <>
+                                <Campo etiqueta="Es" nombre="vinculo" error={errors.vinculo} ayuda={data.vinculo === 'recomendado' ? 'No trabaja en el gimnasio: la web dice que lo recomiendan.' : null}>
+                                    <Botones
+                                        opciones={VINCULOS}
+                                        valor={data.vinculo}
+                                        alElegir={(v) => setData('vinculo', v)}
+                                        nombre="Es"
+                                        columnas="grid-cols-2"
+                                        compacto
+                                    />
+                                </Campo>
+
+                                <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
+                                    <Campo etiqueta="Días que atiende" nombre="dias" error={errors.dias ?? errors['dias.0']}>
+                                        <Dias valor={data.dias ?? []} alCambiar={(v) => setData('dias', v)} />
+                                    </Campo>
+                                    <Campo etiqueta="Horario" nombre="horario" error={errors.horario}>
+                                        <Texto
+                                            nombre="horario"
+                                            valor={data.horario}
+                                            alCambiar={(v) => setData('horario', v)}
+                                            error={errors.horario}
+                                            placeholder="15:00 a 19:00"
+                                            maxLength={100}
+                                            autoComplete="off"
+                                        />
+                                    </Campo>
+                                </div>
+
+                                <Campo etiqueta="Dónde atiende" nombre="lugar" error={errors.lugar}>
+                                    <Texto
+                                        nombre="lugar"
+                                        valor={data.lugar}
+                                        alCambiar={(v) => setData('lugar', v)}
+                                        error={errors.lugar}
+                                        placeholder="Consulta en Colón 250 · A domicilio · En el gimnasio"
+                                        maxLength={120}
+                                        autoComplete="off"
+                                    />
+                                </Campo>
+
                                 <Campo etiqueta="Atiende" nombre="modalidad" error={errors.modalidad}>
                                     <Botones
                                         opciones={MODALIDADES}

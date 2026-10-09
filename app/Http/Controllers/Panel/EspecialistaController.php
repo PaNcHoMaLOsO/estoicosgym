@@ -47,11 +47,15 @@ class EspecialistaController extends Controller
             ->map(fn (Especialista $e) => [
                 'uuid' => $e->uuid,
                 'tipo' => $e->tipo,
+                'vinculo' => $e->vinculo ?? 'equipo',
                 'nombre' => $e->nombre,
                 'especialidad' => $e->especialidad,
                 'descripcion' => $e->descripcion,
                 'temas' => $e->temas ?? [],
                 'modalidad' => $e->modalidad ?? '',
+                'dias' => $e->dias ?? [],
+                'horario' => $e->horario ?? '',
+                'lugar' => $e->lugar ?? '',
                 // Para abrir su perfil desde el formulario.
                 'perfil_url' => $e->tipo === 'especialista' && $e->slug ? route('landing.especialista', $e->slug) : null,
                 'foto_url' => $e->urlDeFoto(),
@@ -179,6 +183,12 @@ class EspecialistaController extends Controller
             'temas' => 'nullable|array|max:8',
             'temas.*' => 'nullable|string|max:40',
             'modalidad' => 'nullable|in:' . implode(',', array_keys(Especialista::MODALIDADES)),
+            // Del gimnasio o recomendado: cambia lo que la web dice de él.
+            'vinculo' => 'nullable|in:' . implode(',', array_keys(Especialista::VINCULOS)),
+            'dias' => 'nullable|array|max:7',
+            'dias.*' => 'in:' . implode(',', array_keys(Especialista::DIAS)),
+            'horario' => 'nullable|string|max:100',
+            'lugar' => 'nullable|string|max:120',
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150',
@@ -205,6 +215,10 @@ class EspecialistaController extends Controller
                 ->values()
                 ->all() ?: null,
             'modalidad' => ($datos['modalidad'] ?? null) ?: null,
+            // En orden de semana y sin repetir, los marque como los marque.
+            'dias' => array_values(array_intersect(array_keys(Especialista::DIAS), $datos['dias'] ?? [])) ?: null,
+            'horario' => filled($datos['horario'] ?? null) ? trim($datos['horario']) : null,
+            'lugar' => filled($datos['lugar'] ?? null) ? trim($datos['lugar']) : null,
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
             'email' => filled($datos['email'] ?? null) ? mb_strtolower(trim($datos['email'])) : null,
@@ -216,6 +230,11 @@ class EspecialistaController extends Controller
         // defecto, una edición sin ese campo volvería especialista a un embajador.
         if (! empty($datos['tipo'])) {
             $fila['tipo'] = $datos['tipo'];
+        }
+
+        // Igual que el tipo: solo si llega, para no cambiarlo sin querer.
+        if (! empty($datos['vinculo'])) {
+            $fila['vinculo'] = $datos['vinculo'];
         }
 
         return $fila;
@@ -285,7 +304,7 @@ class EspecialistaController extends Controller
         $anterior = $especialista->foto;
 
         if ($request->hasFile('foto')) {
-            $especialista->update(['foto' => self::guardarLiviana($request->file('foto'), 'especialistas', 1200)]);
+            $especialista->update(['foto' => self::guardarLiviana($request->file('foto'), 'especialistas', 1600)]);
         } elseif ($request->boolean('quitar_foto')) {
             $especialista->update(['foto' => null]);
         } else {
@@ -298,12 +317,13 @@ class EspecialistaController extends Controller
     }
 
     /**
-     * La foto, liviana: en la web sale en un panel, no a pantalla completa.
-     * Si GD no la sabe leer, va tal cual.
+     * La foto, liviana pero nítida: en el perfil sale grande, y a 1200 px y
+     * calidad 80 se notaba borrosa (lo reclamó el dueño). Si GD no la sabe
+     * leer, va tal cual.
      */
     private static function guardarLiviana(\Illuminate\Http\UploadedFile $archivo, string $carpeta, int $maximo): string
     {
-        $liviana = \App\Support\FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), $maximo, 80, $archivo->getRealPath());
+        $liviana = \App\Support\FotoLiviana::desde((string) file_get_contents($archivo->getRealPath()), $maximo, 86, $archivo->getRealPath());
 
         if (! $liviana) {
             return $archivo->store($carpeta, 'public');

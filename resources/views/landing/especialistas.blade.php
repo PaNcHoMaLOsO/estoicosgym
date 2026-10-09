@@ -17,9 +17,11 @@
 
 @section('content')
     @include('landing.partes.cabecera', [
-        'antetitulo' => 'Con quién entrenas',
+        'antetitulo' => $hayRecomendados ? 'Recomendados por ' . $gimnasio['nombre'] : 'Con quién entrenas',
         'titulo' => 'Especialistas',
-        'bajada' => 'Profesionales que trabajan con ' . $gimnasio['nombre'] . '. Escríbeles directo.',
+        'bajada' => $hayRecomendados
+            ? 'Profesionales' . ($web['ciudad'] ? ' de ' . $web['ciudad'] : '') . ' que recomendamos. Mira qué días atienden y escríbeles directo.'
+            : 'Profesionales que trabajan con ' . $gimnasio['nombre'] . '. Escríbeles directo.',
     ])
 
     <section id="especialistas" class="pb-10 lg:pb-20 bg-pg-negro">
@@ -33,9 +35,37 @@
                         @endforeach
                     </p>
                 @endif
-                @include('landing.partes.grilla-especialistas', ['especialistas' => $especialistas])
+                {{-- SEPARADOS POR PROFESIÓN cuando hay más de una: nutricionistas
+                     con nutricionistas, kinesiólogos con kinesiólogos. --}}
+                @if(count($secciones) > 1)
+                    <div class="space-y-10 lg:space-y-14">
+                        @foreach($secciones as $seccion)
+                            <div>
+                                <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-pg-tiza/10 pb-2 lg:mb-4">
+                                    <h2 class="font-display text-2xl uppercase text-pg-tiza lg:text-3xl">{{ $seccion['nombre'] }}</h2>
+                                    @if($seccion['url'])
+                                        <a href="{{ $seccion['url'] }}" class="shrink-0 font-modern text-xs text-pg-tiza/55 transition-colors hover:text-pg-rojo-claro sm:text-sm">
+                                            {{ count($seccion['especialistas']) }} {{ count($seccion['especialistas']) === 1 ? 'profesional' : 'profesionales' }} <x-icono nombre="arrow-right" class="text-[10px]" />
+                                        </a>
+                                    @endif
+                                </div>
+                                @include('landing.partes.grilla-especialistas', ['especialistas' => $seccion['especialistas'], 'nivel' => 'h3'])
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    @include('landing.partes.grilla-especialistas', ['especialistas' => $especialistas])
+                @endif
             @else
                 <p class="text-center text-pg-tiza/60 font-modern py-12">Pronto vas a encontrar aquí a los profesionales que trabajan con nosotros.</p>
+            @endif
+
+            @if($whatsappProfesionales)
+                <p class="mt-10 text-center font-modern text-sm text-pg-tiza/55 lg:mt-14">
+                    ¿Eres profesional de la salud o el deporte{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}?
+                    <a href="{{ $whatsappProfesionales }}" target="_blank" rel="noopener" data-evento="profesional_quiere_aparecer"
+                       class="ml-1 whitespace-nowrap text-pg-tiza underline decoration-pg-rojo underline-offset-4 transition-colors hover:text-pg-rojo-claro">Escríbenos</a>
+                </p>
             @endif
         </div>
     </section>
