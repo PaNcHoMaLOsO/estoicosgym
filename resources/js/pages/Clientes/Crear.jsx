@@ -1,4 +1,4 @@
-import { PREFIJO, formatearRut, rutValido, separarApellidos, soloPrefijo } from '@/lib/socio';
+import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
 import { puede } from '@/lib/permisos';
 import { hoyEnChile } from '@/lib/tiempo';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, CameraIcon, ChevronDownIcon, ImageIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Seleccion, Texto } from '@/components/Campo';
-import CampoApellidos from '@/components/CampoApellidos';
 import CamaraFoto from '@/components/CamaraFoto';
 import Nota from '@/components/Nota';
 import Retrato from '@/components/Retrato';
@@ -541,12 +540,11 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
             setData('run_pasaporte', traido);
         } else {
             const [nombres, ...apellidos] = traido.split(/\s+/);
-            const { paterno, materno } = separarApellidos(apellidos.join(' '));
             setData((d) => ({
                 ...d,
                 nombres,
-                apellido_paterno: paterno,
-                apellido_materno: materno,
+                apellido_paterno: apellidos[0] ?? '',
+                apellido_materno: apellidos.slice(1).join(' '),
             }));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -733,12 +731,18 @@ export default function Crear({ membresias, convenios, motivos, metodosPago, for
                             <Texto {...texto('nombres')} />
                         </Campo>
 
-                        <CampoApellidos
-                            paterno={data.apellido_paterno}
-                            materno={data.apellido_materno}
-                            alCambiar={({ paterno, materno }) => setData((d) => ({ ...d, apellido_paterno: paterno, apellido_materno: materno }))}
-                            errores={errors}
-                        />
+                        {/* LOS DOS APELLIDOS A LA VISTA, en la misma fila. El materno
+                            iba escondido en «Completar la ficha» y casi nunca se
+                            escribía: la persona lo dice junto con el paterno. */}
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Campo etiqueta="Apellido paterno" nombre="apellido_paterno" error={errors.apellido_paterno} requerido>
+                                <Texto {...texto('apellido_paterno')} />
+                            </Campo>
+
+                            <Campo etiqueta="Apellido materno" nombre="apellido_materno" error={errors.apellido_materno}>
+                                <Texto {...texto('apellido_materno')} />
+                            </Campo>
+                        </div>
 
                         <Campo
                             etiqueta="Celular"
