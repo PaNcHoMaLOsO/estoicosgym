@@ -734,4 +734,21 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         // Sin logo no entran a la cinta de logos.
         $this->assertStringNotContainsString('<span>Carabineros</span>', $html);
     }
+
+    /**
+     * En /planes, los estudiantes con su precio y las instituciones: «gimnasio
+     * estudiantes los angeles» es lo que se busca, y una línea suelta no lo decía.
+     */
+    public function test_los_planes_nombran_a_estudiantes_e_instituciones(): void
+    {
+        $this->convenio(['mostrar_en_web' => true, 'requisito_web' => 'Estudiantes con credencial vigente']);
+        Convenio::create(['nombre' => 'Carabineros', 'tipo' => 'organizacion', 'activo' => true, 'mostrar_en_web' => true]);
+
+        $this->get('/planes')->assertOk()
+            ->assertSee('Estudiantes y convenios: $25.000')
+            ->assertSee('Estudiantes y universitarios')
+            ->assertSee('$25.000 al mes')
+            ->assertSee('También para Carabineros.')
+            ->assertSee('href="' . route('landing.convenios') . '"', false);
+    }
 }

@@ -100,7 +100,12 @@
                             </p>
 
                             @if($plan['precio_convenio'])
-                                <p class="mt-1 lg:mt-2 text-pg-rojo-claro font-modern text-xs lg:text-sm">Con convenio: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</p>
+                                {{-- «Estudiantes» y no solo «convenio»: es lo que se busca y
+                                     lo que la mayoría tiene. Lleva a la lista de convenios. --}}
+                                <a href="{{ $navegacion['convenios'] ? route('landing.convenios') : '#estudiantes' }}" class="mt-1 inline-flex items-center gap-1.5 font-modern text-xs text-pg-rojo-claro transition-colors hover:text-pg-tiza lg:mt-2 lg:text-sm">
+                                    <x-icono nombre="graduation-cap" class="shrink-0" />
+                                    Estudiantes y convenios: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}
+                                </a>
                             @endif
                         </div>
 
@@ -128,15 +133,53 @@
                 </div>
             @endif
 
-            @if(collect($mensualidades)->contains(fn ($p) => $p['precio_convenio']))
-                <p class="mt-6 text-center text-pg-tiza/60 font-modern text-sm lg:text-base">
-                    ¿Estudias o trabajas en una institución con convenio?
-                    @if($navegacion['convenios'])
-                        <a href="{{ route('landing.convenios') }}" class="text-pg-rojo-claro hover:underline">Mira los convenios</a>.
-                    @else
-                        Pregunta por el precio de convenio.
+            {{-- ESTUDIANTES Y UNIVERSITARIOS, CON SUS LOGOS. Antes era una línea
+                 suelta («¿Estudias o trabajas en una institución con convenio?»):
+                 ni decía el precio ni con quiénes. Ahora la franja dice el precio,
+                 enseña los logos de las instituciones con convenio y nombra a
+                 las de servicio. Es lo que busca la gente («gimnasio estudiantes
+                 los angeles») y lo que más se vende en el mesón. --}}
+            @php
+                $conConvenio = collect($mensualidades)->filter(fn ($p) => $p['precio_convenio'])->sortBy('precio_convenio')->first();
+                $grupoEstudiantes = collect($convenios ?? [])->firstWhere('titulo', 'Universidades e institutos');
+                $logosEstudiantes = collect($grupoEstudiantes['convenios'] ?? [])->filter(fn ($c) => $c['logo'])->values();
+                $deServicio = collect($convenios ?? [])->firstWhere('titulo', 'Por su servicio');
+            @endphp
+            @if($conConvenio)
+                <div id="estudiantes" class="animate-on-scroll mt-10 overflow-hidden rounded-2xl border border-pg-tiza/10 bg-pg-carbon lg:mt-14">
+                    <div class="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10 lg:p-8">
+                        <div>
+                            <p class="flex items-center gap-2 font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro">
+                                <x-icono nombre="graduation-cap" /> Estudiantes y universitarios
+                            </p>
+                            <h2 class="mt-2 font-display text-3xl uppercase leading-none text-pg-tiza lg:text-4xl">
+                                ${{ number_format($conConvenio['precio_convenio'], 0, ',', '.') }} al mes
+                                <span class="ml-1 align-middle font-modern text-base normal-case text-pg-tiza/40 line-through">${{ number_format($conConvenio['precio'], 0, ',', '.') }}</span>
+                            </h2>
+                            <p class="mt-2 font-modern text-sm text-pg-tiza/65 lg:text-base">
+                                Plan {{ $conConvenio['nombre'] }} con convenio, presentando tu credencial de estudiante vigente.
+                                @if($deServicio)
+                                    También para {{ collect($deServicio['convenios'])->pluck('nombre')->join(', ', ' y ') }}.
+                                @endif
+                            </p>
+                        </div>
+                        @if($navegacion['convenios'])
+                            <a href="{{ route('landing.convenios') }}" class="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-pg-rojo px-5 py-3 font-modern text-sm font-semibold text-white transition-colors hover:bg-pg-rojo-oscuro lg:self-center">
+                                Ver convenios <x-icono nombre="arrow-right" class="text-xs" />
+                            </a>
+                        @endif
+                    </div>
+                    @if($logosEstudiantes->isNotEmpty())
+                        {{-- Los logos sobre blanco: están hechos para fondo claro. --}}
+                        <ul class="grid grid-cols-2 gap-px bg-gray-200 sm:grid-cols-4">
+                            @foreach($logosEstudiantes->take(4) as $c)
+                                <li class="flex h-20 items-center justify-center bg-white px-4 lg:h-24">
+                                    <img src="{{ $c['logo'] }}" alt="Convenio {{ $c['nombre'] }}" loading="lazy" class="max-h-12 max-w-full object-contain lg:max-h-14">
+                                </li>
+                            @endforeach
+                        </ul>
                     @endif
-                </p>
+                </div>
             @endif
         </div>
     </section>
