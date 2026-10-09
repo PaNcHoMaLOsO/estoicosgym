@@ -200,6 +200,22 @@ export function limpiarInstagram(valor) {
     return (enlace ? enlace[1] : texto).replace(/^@+/, '').replace(/\s/g, '');
 }
 
+/** «https://www.tiktok.com/@usuario?lang=es» o «@usuario» → «usuario». */
+export function limpiarTiktok(valor) {
+    const texto = String(valor ?? '').trim();
+    const enlace = texto.match(/tiktok\.com\/@?([^/?#\s]+)/i);
+
+    return (enlace ? enlace[1] : texto).replace(/^@+/, '').replace(/\s/g, '');
+}
+
+function IconoTiktok() {
+    return (
+        <svg viewBox="0 0 448 512" className="size-[1em]" fill="currentColor" aria-hidden="true">
+            <path d="M448 209.9a210.1 210.1 0 0 1-122.8-39.3v178.8A162.6 162.6 0 1 1 185 188.3v89.9a74.6 74.6 0 1 0 52.2 71.2V0h88a121.2 121.2 0 0 0 1.9 22.2 122.2 122.2 0 0 0 53.9 80.2 121.4 121.4 0 0 0 67 20.1z" />
+        </svg>
+    );
+}
+
 /** Un campo con algo fijo delante: el +56, la @. */
 function ConPrefijo({ prefijo, error, ...resto }) {
     return (
@@ -337,6 +353,7 @@ function PanelEspecialista({ data, foto, celular, ancho }) {
 function PanelEmbajador({ data, foto, celular, ancho }) {
     const nombre = data.nombre.trim();
     const usuario = limpiarInstagram(data.instagram);
+    const tiktok = limpiarTiktok(data.tiktok);
 
     return (
         <figure style={{ width: ancho }} className="group relative aspect-[3/4] overflow-hidden bg-[#121214]">
@@ -356,9 +373,20 @@ function PanelEmbajador({ data, foto, celular, ancho }) {
                 <p className={`mt-1 ${OSWALD} ${celular ? 'text-2xl' : 'text-3xl'} uppercase leading-none ${nombre ? 'text-[#f2f2f4]' : 'text-white/25'}`}>
                     {nombre || 'Nombre'}
                 </p>
-                {usuario ? (
-                    <span className={`mt-2 inline-flex items-center gap-1.5 ${POPPINS} text-sm text-[#f2f2f4]/70`}>
-                        <IconoInstagram />@{usuario}
+                {usuario || tiktok ? (
+                    <span className={`mt-2.5 flex items-center gap-2 ${POPPINS} text-sm text-[#f2f2f4]/75`}>
+                        {usuario ? (
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
+                                <IconoInstagram /><span className="truncate">@{usuario}</span>
+                            </span>
+                        ) : null}
+                        {tiktok ? (
+                            usuario ? (
+                                <span className="grid size-7 shrink-0 place-items-center rounded-full border border-[#f2f2f4]/25 text-xs"><IconoTiktok /></span>
+                            ) : (
+                                <span className="inline-flex min-w-0 items-center gap-1.5"><IconoTiktok /><span className="truncate">@{tiktok}</span></span>
+                            )
+                        ) : null}
                     </span>
                 ) : null}
             </figcaption>
@@ -679,7 +707,7 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                             </>
                         ) : null}
 
-                        <div className={esEmbajador ? '' : 'grid gap-3 sm:grid-cols-2'}>
+                        <div className="grid gap-3 sm:grid-cols-2">
                             {! esEmbajador ? (
                                 <Campo etiqueta="WhatsApp" nombre="whatsapp" error={errors.whatsapp} ayuda={reparo}>
                                     <ConPrefijo
@@ -709,8 +737,21 @@ export default function FormularioPersona({ abierto, alCerrar, tipo, persona, ex
                                 />
                             </Campo>
 
+                            <Campo etiqueta="TikTok" nombre="tiktok" error={errors.tiktok}>
+                                <ConPrefijo
+                                    prefijo="@"
+                                    id="tiktok"
+                                    name="tiktok"
+                                    autoComplete="off"
+                                    placeholder="usuario o enlace del perfil"
+                                    value={limpiarTiktok(data.tiktok)}
+                                    onChange={(e) => setData('tiktok', limpiarTiktok(e.target.value))}
+                                    error={errors.tiktok}
+                                />
+                            </Campo>
+
                             {! esEmbajador ? (
-                                <div className="sm:col-span-2">
+                                <div>
                                     <Campo etiqueta="Correo" nombre="email" error={errors.email}>
                                         <Texto
                                             nombre="email"

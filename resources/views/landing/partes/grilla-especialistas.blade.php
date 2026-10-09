@@ -60,6 +60,16 @@
                     <span class="inline-flex items-center gap-1.5 border-b border-pg-tiza/30 pb-0.5 text-pg-tiza transition-colors group-hover:border-pg-rojo group-hover:text-pg-rojo-claro">
                         Ver perfil <x-icono nombre="arrow-right" class="text-xs" />
                     </span>
+                    <span class="flex shrink-0 items-center gap-1.5">
+                    @foreach([['instagram', 'instagram', 'Instagram'], ['tiktok', 'tiktok', 'TikTok']] as [$red, $icono, $nombreRed])
+                        @if($e[$red])
+                            <a href="{{ $e[$red] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
+                               aria-label="{{ $nombreRed }} de {{ $e['nombre'] }}"
+                               class="relative z-10 hidden size-9 shrink-0 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-pg-tiza hover:bg-pg-tiza hover:text-pg-negro sm:flex">
+                                <x-icono :nombre="$icono" class="text-base" />
+                            </a>
+                        @endif
+                    @endforeach
                     @if($e['whatsapp'])
                         <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                            aria-label="Escribirle a {{ $e['nombre'] }} por WhatsApp"
@@ -67,6 +77,7 @@
                             <x-icono nombre="whatsapp" class="text-sm sm:text-base" />
                         </a>
                     @endif
+                    </span>
                 </div>
             </div>
         </article>

@@ -42,6 +42,7 @@ class Especialista extends Model
         'foto',
         'whatsapp',
         'instagram',
+        'tiktok',
         'email',
         'orden',
         'activo',
@@ -187,5 +188,10 @@ class Especialista extends Model
     public function enlaceInstagram(): ?string
     {
         return $this->instagram ? 'https://www.instagram.com/' . $this->instagram . '/' : null;
+    }
+
+    public function enlaceTiktok(): ?string
+    {
+        return $this->tiktok ? 'https://www.tiktok.com/@' . $this->tiktok : null;
     }
 }

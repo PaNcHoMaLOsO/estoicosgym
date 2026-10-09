@@ -62,6 +62,7 @@ class EspecialistaController extends Controller
                 // Se enseñan como se escriben, no como se guardan.
                 'whatsapp' => $e->whatsapp ? $this->comoSeLee($e->whatsapp) : '',
                 'instagram' => $e->instagram ? '@' . $e->instagram : '',
+                'tiktok' => $e->tiktok ? '@' . $e->tiktok : '',
                 'email' => $e->email ?? '',
                 'orden' => $e->orden,
                 'activo' => (bool) $e->activo,
@@ -194,6 +195,7 @@ class EspecialistaController extends Controller
             'lugar' => 'nullable|string|max:120',
             'whatsapp' => 'nullable|string|max:20',
             'instagram' => 'nullable|string|max:100',
+            'tiktok' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150',
             'activo' => 'boolean',
             // Sin SVG: puede llevar código, y se ejecutaría al abrirlo desde la web.
@@ -224,6 +226,7 @@ class EspecialistaController extends Controller
             'lugar' => filled($datos['lugar'] ?? null) ? trim($datos['lugar']) : null,
             'whatsapp' => $this->whatsapp($datos['whatsapp'] ?? null),
             'instagram' => $this->instagram($datos['instagram'] ?? null),
+            'tiktok' => $this->tiktok($datos['tiktok'] ?? null),
             'email' => filled($datos['email'] ?? null) ? mb_strtolower(trim($datos['email'])) : null,
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
@@ -289,6 +292,35 @@ class EspecialistaController extends Controller
         if (! preg_match('/^[A-Za-z0-9._]{1,30}$/', $usuario)) {
             throw ValidationException::withMessages([
                 'instagram' => 'Escribe el usuario (@usuario) o el enlace del perfil.',
+            ]);
+        }
+
+        return $usuario;
+    }
+
+    /**
+     * «@usuario», «usuario» o el enlace del perfil (tiktok.com/@usuario) →
+     * usuario. Como el Instagram: el enlace lo arma el modelo.
+     */
+    private function tiktok(?string $valor): ?string
+    {
+        $valor = trim((string) $valor);
+
+        if ($valor === '') {
+            return null;
+        }
+
+        // El enlace corto (vm.tiktok.com/ZM…) no trae el usuario: no calza aquí
+        // y cae en el mensaje de abajo.
+        if (preg_match('#^(?:https?://)?(?:(?:www|m)\.)?tiktok\.com/@?([^/?\#]+)#i', $valor, $partes)) {
+            $valor = $partes[1];
+        }
+
+        $usuario = ltrim($valor, '@');
+
+        if (! preg_match('/^[A-Za-z0-9._]{2,24}$/', $usuario)) {
+            throw ValidationException::withMessages([
+                'tiktok' => 'Escribe el usuario (@usuario) o el enlace del perfil de TikTok.',
             ]);
         }
 

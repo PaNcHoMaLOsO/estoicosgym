@@ -48,11 +48,26 @@
                                 <p class="mt-3 font-modern text-xs uppercase tracking-[0.2em] text-pg-rojo-claro">{{ $e['disciplina'] }}</p>
                             @endif
                             <p class="mt-1 font-display text-2xl lg:text-3xl uppercase leading-none text-pg-tiza">{{ $e['nombre'] }}</p>
-                            @if($e['instagram'])
-                                <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="instagram_embajador"
-                                   class="mt-2 inline-flex items-center gap-1.5 font-modern text-sm text-pg-tiza/70 hover:text-pg-rojo-claro">
-                                    <x-icono nombre="instagram" />{{ '@' . $e['usuario'] }}
-                                </a>
+                            {{-- SUS REDES, EN UNA FILA: el usuario de la principal
+                                 (Instagram, o TikTok si no tiene) y al lado un
+                                 círculo por cada otra. Es donde se les sigue. --}}
+                            @if($e['instagram'] || $e['tiktok'])
+                                <div class="mt-2.5 flex items-center gap-2 font-modern text-sm">
+                                    @if($e['instagram'])
+                                        <a href="{{ $e['instagram'] }}" target="_blank" rel="noopener" data-evento="instagram_embajador" data-detalle="{{ $e['nombre'] }}"
+                                           aria-label="Instagram de {{ $e['nombre'] }}"
+                                           class="inline-flex min-w-0 items-center gap-1.5 text-pg-tiza/75 transition-colors hover:text-pg-rojo-claro">
+                                            <x-icono nombre="instagram" class="shrink-0" /><span class="truncate">{{ '@' . $e['usuario'] }}</span>
+                                        </a>
+                                    @endif
+                                    @if($e['tiktok'])
+                                        <a href="{{ $e['tiktok'] }}" target="_blank" rel="noopener" data-evento="tiktok_embajador" data-detalle="{{ $e['nombre'] }}"
+                                           aria-label="TikTok de {{ $e['nombre'] }}"
+                                           class="{{ $e['instagram'] ? 'grid size-7 shrink-0 place-items-center rounded-full border border-pg-tiza/25 text-xs text-pg-tiza/80 hover:border-pg-tiza hover:text-pg-tiza' : 'inline-flex min-w-0 items-center gap-1.5 text-pg-tiza/75 hover:text-pg-rojo-claro' }} transition-colors">
+                                            <x-icono nombre="tiktok" class="shrink-0" />@unless($e['instagram'])<span class="truncate">{{ '@' . $e['usuario_tiktok'] }}</span>@endunless
+                                        </a>
+                                    @endif
+                                </div>
                             @endif
                         </figcaption>
                     </figure>

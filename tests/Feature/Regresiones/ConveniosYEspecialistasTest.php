@@ -675,4 +675,41 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         // Los nombres van bajo el título de la sección.
         $this->assertStringContainsString('<h3', $html);
     }
+
+    /** El TikTok, al lado del Instagram: se guarda el usuario y el enlace lo arma el sistema. */
+    public function test_el_tiktok_de_profesionales_y_embajadores(): void
+    {
+        foreach ([
+            'https://www.tiktok.com/@always_marts?lang=es' => 'always_marts',
+            '@isi.arvna' => 'isi.arvna',
+            'progym_la' => 'progym_la',
+        ] as $escrito => $guardado) {
+            $this->admin()->post('/panel/especialistas', [
+                'tipo' => 'embajador', 'nombre' => "Atleta {$guardado}", 'especialidad' => 'Judo', 'tiktok' => $escrito, 'activo' => true,
+            ])->assertSessionHasNoErrors();
+            $this->assertSame($guardado, Especialista::firstWhere('nombre', "Atleta {$guardado}")->tiktok);
+        }
+
+        // El enlace corto no trae el usuario, y algo que no es un usuario no pasa.
+        foreach (['https://vm.tiktok.com/ZMabc123/', 'javascript:alert(1)'] as $malo) {
+            $this->admin()->post('/panel/especialistas', [
+                'tipo' => 'embajador', 'nombre' => 'Otro', 'especialidad' => 'Judo', 'tiktok' => $malo, 'activo' => true,
+            ])->assertSessionHasErrors('tiktok');
+        }
+
+        // En la portada: el Instagram con su usuario y el TikTok al lado; sin
+        // Instagram, el usuario de TikTok.
+        Especialista::firstWhere('nombre', 'Atleta always_marts')->update(['instagram' => 'always_marts']);
+        $portada = $this->get('/')->assertOk();
+        $portada->assertSee('href="https://www.tiktok.com/@always_marts"', false)
+            ->assertSee('aria-label="TikTok de Atleta always_marts"', false)
+            ->assertSee('@isi.arvna');
+
+        // En el perfil del profesional, un botón más, y para Google su TikTok.
+        $this->admin()->post('/panel/especialistas', [
+            'nombre' => 'Camila Rojas', 'especialidad' => 'Nutricionista', 'tiktok' => '@camila.nutri', 'activo' => true,
+        ])->assertSessionHasNoErrors();
+        $perfil = $this->get('/especialistas/camila-rojas')->assertOk();
+        $perfil->assertSee('@camila.nutri')->assertSee('"sameAs":["https://www.tiktok.com/@camila.nutri"]', false);
+    }
 }

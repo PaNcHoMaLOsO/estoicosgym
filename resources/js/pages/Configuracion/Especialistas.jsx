@@ -24,7 +24,7 @@ const SEGUN_TIPO = {
     embajador: {
         titulo: 'Embajadores',
         bajada: 'Socios que representan al gimnasio. Salen en la portada, antes del bloque final.',
-        columnas: ['Nombre', 'Disciplina', 'Instagram', 'Orden', 'En la web', ''],
+        columnas: ['Nombre', 'Disciplina', 'Redes', 'Orden', 'En la web', ''],
         nuevo: 'Agregar embajador',
         vacio: 'Todavía no hay ningún embajador. Agrega a los socios que compiten o que representan al gimnasio.',
     },
@@ -121,8 +121,8 @@ export default function Especialistas({ especialistas, tipo = 'especialista' }) 
                         </Celda>
                         <Celda>
                             {(tipo === 'embajador'
-                                ? [especialista.instagram]
-                                : [especialista.whatsapp, especialista.instagram]
+                                ? [especialista.instagram, especialista.tiktok && `TikTok ${especialista.tiktok}`]
+                                : [especialista.whatsapp, especialista.instagram, especialista.tiktok && `TikTok ${especialista.tiktok}`]
                             ).filter(Boolean).join(' · ') || '-'}
                         </Celda>
                         <Celda className="whitespace-nowrap">
