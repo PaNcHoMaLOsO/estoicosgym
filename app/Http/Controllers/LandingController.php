@@ -33,8 +33,8 @@ class LandingController extends Controller
      * «Instituciones» se lee POR SU SERVICIO (9-oct-2026): ahí van Carabineros,
      * Fuerzas Armadas y Bomberos, a los que el gimnasio les da el precio de
      * convenio como reconocimiento, sin acuerdo firmado. Con su emblema si se
-     * subió (lo pidió el dueño, 9-oct-2026), o con un ícono; y nunca en la cinta
-     * de «Instituciones con convenio».
+     * subió (lo pidió el dueño, 9-oct-2026), o con un ícono. En las cintas de
+     * logos salen junto a los demás: también tienen el precio de convenio.
      */
     private const CATEGORIAS_DE_CONVENIO = [
         'institucion_educativa' => 'Universidades e institutos',

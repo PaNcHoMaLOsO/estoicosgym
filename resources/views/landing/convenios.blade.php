@@ -43,9 +43,9 @@
     <section class="bg-white text-gray-900 py-9 lg:py-20">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
             {{-- Arriba pasan todos los logos; abajo, cada categoría con sus fichas. --}}
-            {{-- Solo los que tienen logo, y sin los de «Por su servicio»: la cinta
-                 dice «Instituciones con convenio», y con ellos no hay uno firmado. --}}
-            @php($todos = collect($convenios)->reject(fn ($g) => $g['titulo'] === 'Por su servicio')->flatMap(fn ($g) => $g['convenios'])->filter(fn ($c) => $c['logo'])->values()->all())
+            {{-- Todos los que tienen logo, también los de «Por su servicio»
+                 (tienen el precio de convenio): igual que la cinta de la portada. --}}
+            @php($todos = collect($convenios)->flatMap(fn ($g) => $g['convenios'])->filter(fn ($c) => $c['logo'])->values()->all())
             @if(count($todos) >= 3)
                 <p class="text-center font-modern text-xs uppercase tracking-[0.3em] text-gray-400 mb-6">Instituciones con convenio</p>
                 @include('landing.partes.cinta', ['logos' => $todos])
