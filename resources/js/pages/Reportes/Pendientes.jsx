@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
+import { useState } from 'react';
 
 import { Celda, Cifra, Fila, Tabla } from '@/components/Tabla';
 
@@ -11,7 +12,15 @@ const pesos = new Intl.NumberFormat('es-CL', {
     maximumFractionDigits: 0,
 });
 
+const sinTildes = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export default function Pendientes({ pagos, total, abonado }) {
+    // BUSCAR EN LA LISTA: con decenas de cobros abiertos, encontrar a quien
+    // llegó al mesón a pagar era recorrerla a ojo.
+    const [buscar, setBuscar] = useState('');
+    const q = sinTildes(buscar.trim());
+    const visibles = q ? pagos.filter((p) => sinTildes(`${p.socio} ${p.membresia ?? ''} ${p.metodo ?? ''}`).includes(q)) : pagos;
+
     return (
         <>
             <Head title="Por cobrar" />
@@ -47,14 +56,28 @@ export default function Pendientes({ pagos, total, abonado }) {
                 </div>
             </div>
 
+            {pagos.length > 5 ? (
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <input
+                        type="search"
+                        value={buscar}
+                        onChange={(e) => setBuscar(e.target.value)}
+                        placeholder="Buscar socio o plan"
+                        aria-label="Buscar en lo por cobrar"
+                        className="w-full max-w-sm rounded-control border border-line bg-surface px-3 py-1.5 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
+                    />
+                    {q ? <span className="apoyo text-fog">{visibles.length} de {pagos.length}</span> : null}
+                </div>
+            ) : null}
+
             {/* Ordenados por lo que se debe, de mayor a menor: si hay que
                 empezar a llamar por alguien, es por el de arriba. */}
             <Tabla
                 columnas={COLUMNAS}
-                vacia={pagos.length === 0}
-                mensajeVacio="No hay nada por cobrar. Todas las membresías están al día."
+                vacia={visibles.length === 0}
+                mensajeVacio={q ? `Nadie con «${buscar}» en lo por cobrar.` : 'No hay nada por cobrar. Todas las membresías están al día.'}
             >
-                {pagos.map((p) => (
+                {visibles.map((p) => (
                     <Fila key={p.uuid}>
                         <Celda className="font-medium text-chalk">
                             <Link href={`/panel/inscripciones/${p.uuid}`} className="hover:underline">

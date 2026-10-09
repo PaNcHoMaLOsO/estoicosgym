@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
+import { useState } from 'react';
 
 import Nota from '@/components/Nota';
 import { Celda, Fila, Tabla } from '@/components/Tabla';
@@ -25,7 +26,17 @@ function Faltan({ dias }) {
     return <span className="text-fog">{dias} d</span>;
 }
 
+const sinTildes = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export default function PorVencer({ dias, inscripciones, sinContacto }) {
+    // Buscar en la lista: también por el celular o el correo, que es lo que se
+    // tiene a mano cuando el socio escribe preguntando.
+    const [buscar, setBuscar] = useState('');
+    const q = sinTildes(buscar.trim());
+    const visibles = q
+        ? inscripciones.filter((i) => sinTildes(`${i.socio} ${i.membresia ?? ''} ${i.email ?? ''} ${i.celular ?? ''}`).replace(/\s+/g, ' ').includes(q))
+        : inscripciones;
+
     return (
         <>
             <Head title="Membresías por vencer" />
@@ -76,12 +87,26 @@ export default function PorVencer({ dias, inscripciones, sinContacto }) {
                 </Nota>
             ) : null}
 
+            {inscripciones.length > 5 ? (
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <input
+                        type="search"
+                        value={buscar}
+                        onChange={(e) => setBuscar(e.target.value)}
+                        placeholder="Buscar socio, plan, celular o correo"
+                        aria-label="Buscar en las membresías por vencer"
+                        className="w-full max-w-sm rounded-control border border-line bg-surface px-3 py-1.5 text-sm text-chalk placeholder:text-fog focus:border-line-strong focus:outline-none"
+                    />
+                    {q ? <span className="apoyo text-fog">{visibles.length} de {inscripciones.length}</span> : null}
+                </div>
+            ) : null}
+
             <Tabla
                 columnas={COLUMNAS}
-                vacia={inscripciones.length === 0}
-                mensajeVacio={`Ninguna membresía vence en los próximos ${dias} días.`}
+                vacia={visibles.length === 0}
+                mensajeVacio={q ? `Nadie con «${buscar}» en esta lista.` : `Ninguna membresía vence en los próximos ${dias} días.`}
             >
-                {inscripciones.map((i) => (
+                {visibles.map((i) => (
                     <Fila key={i.uuid}>
                         <Celda className="font-medium text-chalk">
                             <Link href={`/panel/inscripciones/${i.uuid}`} className="hover:underline">
