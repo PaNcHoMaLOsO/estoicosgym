@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeftIcon, CheckIcon } from 'lucide-react';
 
 import { Area, Campo, Grupo, Texto } from '@/components/Campo';
+import CampoApellidos from '@/components/CampoApellidos';
 import { Botones } from '@/components/Cobro';
 import { PREFIJO, formatearRut, rutValido, soloPrefijo } from '@/lib/socio';
 import useAvisoAlSalir from '@/lib/useAvisoAlSalir';
@@ -117,13 +118,13 @@ export default function Editar({ cliente }) {
                             <Texto {...texto('nombres', { autoComplete: 'off' })} />
                         </Campo>
 
-                        <Campo etiqueta="Apellido paterno" nombre="apellido_paterno" error={errors.apellido_paterno} requerido>
-                            <Texto {...texto('apellido_paterno', { autoComplete: 'off' })} />
-                        </Campo>
-
-                        <Campo etiqueta="Apellido materno" nombre="apellido_materno" error={errors.apellido_materno}>
-                            <Texto {...texto('apellido_materno', { autoComplete: 'off' })} />
-                        </Campo>
+                        <CampoApellidos
+                            paterno={data.apellido_paterno}
+                            materno={data.apellido_materno}
+                            alCambiar={({ paterno, materno }) => setData((d) => ({ ...d, apellido_paterno: paterno, apellido_materno: materno }))}
+                            errores={errors}
+                            autoComplete="off"
+                        />
 
                         <Campo etiqueta="Fecha de nacimiento" nombre="fecha_nacimiento" error={errors.fecha_nacimiento}>
                             <Texto {...texto('fecha_nacimiento', { tipo: 'date' })} />

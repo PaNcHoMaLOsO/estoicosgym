@@ -57,3 +57,40 @@ export function rutValido(texto) {
 
     return dv === (resto === 11 ? '0' : resto === 10 ? 'K' : String(resto));
 }
+
+/**
+ * Las palabras que van PEGADAS al apellido que sigue: «De la Fuente», «Del
+ * Río», «San Martín», «Van der Berg». Separando por espacios a secas, «De la
+ * Fuente Soto» quedaba con paterno «De» y materno «la Fuente Soto».
+ */
+const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'san', 'santa', 'van', 'von', 'der', 'da', 'di', 'mac', 'mc'];
+
+/** «De la Fuente Soto» → { paterno: 'De la Fuente', materno: 'Soto' }. */
+export function separarApellidos(texto) {
+    const palabras = String(texto ?? '').trim().split(/\s+/).filter(Boolean);
+    const grupos = [];
+    let pendiente = [];
+
+    for (const palabra of palabras) {
+        pendiente.push(palabra);
+
+        if (! PARTICULAS.includes(palabra.toLowerCase())) {
+            grupos.push(pendiente.join(' '));
+            pendiente = [];
+        }
+    }
+
+    // Una partícula suelta al final («Pérez de») se queda con lo anterior.
+    if (pendiente.length) {
+        if (grupos.length) {
+            grupos[grupos.length - 1] += ` ${pendiente.join(' ')}`;
+        } else {
+            grupos.push(pendiente.join(' '));
+        }
+    }
+
+    return { paterno: grupos[0] ?? '', materno: grupos.slice(1).join(' ') };
+}
+
+/** Lo contrario: los dos apellidos en una línea, para mostrarlos en un campo. */
+export const juntarApellidos = (paterno, materno) => [paterno, materno].map((a) => String(a ?? '').trim()).filter(Boolean).join(' ');
