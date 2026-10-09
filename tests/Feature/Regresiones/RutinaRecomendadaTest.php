@@ -515,4 +515,85 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         // script encuentra uno guardado de hoy.
         $this->get('/rutina')->assertOk()->assertSee('<a data-guardada hidden', false);
     }
+
+    /**
+     * Variedad (8-oct-2026): un día de rutina salía igual toda la semana y
+     * para todos los que contestaban lo mismo. Los dos básicos se quedan; lo
+     * demás cambia con el día y con la variante de cada celular.
+     */
+    public function test_los_basicos_se_quedan_y_lo_demas_cambia(): void
+    {
+        $rutina = RutinaSugerida::buscar('fuerza', 'algo', 4);
+        $piernaDeLaRutina = collect(RutinaSugerida::dias($rutina))->firstWhere('titulo', 'Pierna pesada');
+        $basicos = array_slice(array_column($piernaDeLaRutina['lineas'], 'nombre'), 0, 2);
+
+        $vistos = [];
+        foreach (range(0, 6) as $d) {
+            \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-10-12')->addDays($d));
+            foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
+                $e = EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'piernas', $v);
+                $nombres = array_column($e['lineas'], 'nombre');
+
+                $this->assertNotNull($e['dia'], 'Sale de la rutina');
+                $this->assertSame($basicos, array_slice($nombres, 0, 2), 'Los básicos no cambian');
+                $this->assertSame(count($nombres), count(array_unique($nombres)), 'Sin repetidos');
+                // Las mismas series y repeticiones de la rutina en cada puesto.
+                $this->assertSame(array_column($piernaDeLaRutina['lineas'], 'series'), array_column($e['lineas'], 'series'));
+                $vistos[implode('|', $nombres)] = true;
+            }
+        }
+        \Illuminate\Support\Carbon::setTestNow();
+
+        $this->assertGreaterThan(4, count($vistos), 'En una semana, con cuatro celulares, salen días distintos');
+
+        // El mismo celular, el mismo día: siempre lo mismo (al volver atrás o recargar).
+        $this->assertSame(
+            array_column(EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'piernas', 2)['lineas'], 'nombre'),
+            array_column(EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'piernas', 2)['lineas'], 'nombre'),
+        );
+
+        // La variante viaja en la dirección y se conserva al cambiar lo de hoy.
+        $this->get('/rutina?dias=4&nivel=algo&hice[]=nada&hoy=piernas&v=3')->assertOk()
+            ->assertSee('v=3&amp;cambiar=1', false);
+        $this->get('/rutina')->assertSee('name="v" value="" data-variante disabled', false);
+    }
+
+    /** Salía peso muerto en «Torso, más espalda» el día después de piernas. */
+    public function test_el_torso_no_carga_las_piernas(): void
+    {
+        foreach (['nunca', 'algo', 'hace_tiempo'] as $nivel) {
+            foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
+                foreach (['torso_espalda', 'torso_pecho'] as $hoy) {
+                    $e = EntrenamientoDeHoy::armar(4, $nivel, ['piernas'], $hoy, $v);
+                    $nombres = implode(', ', array_column($e['lineas'], 'nombre'));
+
+                    $this->assertStringNotContainsString('Peso muerto', $nombres, "$nivel/$hoy/$v");
+                    $this->assertStringNotContainsString('Hiperextensiones', $nombres, "$nivel/$hoy/$v");
+                }
+            }
+        }
+
+        // La espalda se trabaja tirando de arriba y de adelante: un jalón (o
+        // dominadas) y dos remos entre los tres primeros, con cualquier variante.
+        // En pecho, un press plano y uno inclinado.
+        foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
+            foreach (['espalda', 'torso_espalda'] as $hoy) {
+                $tres = array_slice(array_column(EntrenamientoDeHoy::armar(4, 'algo', ['nada'], $hoy, $v)['lineas'], 'nombre'), 0, 3);
+                $this->assertCount(1, preg_grep('/^Jalón|^Dominadas/u', $tres), "$hoy/$v: " . implode(', ', $tres));
+                $this->assertCount(2, preg_grep('/^Remo/u', $tres), "$hoy/$v: " . implode(', ', $tres));
+            }
+
+            $pecho = array_column(EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'pecho', $v)['lineas'], 'nombre');
+            $this->assertNotEmpty(preg_grep('/inclinad/u', $pecho));
+            $this->assertNotEmpty(preg_grep('/^Press (de banca|de pecho)/u', $pecho));
+        }
+    }
+
+    /** En el celular los botones flotantes tapaban «Seguir» y el ✓ de cada ejercicio. */
+    public function test_sin_botones_flotantes_en_el_telefono(): void
+    {
+        $this->get('/rutina')->assertSee('<div  class="max-lg:hidden"', false);
+        $this->get('/rutina?dias=4&nivel=algo&hice[]=nada&hoy=pecho')->assertSee('<div  class="max-lg:hidden"', false);
+        $this->get('/')->assertDontSee('class="max-lg:hidden"', false);
+    }
 }

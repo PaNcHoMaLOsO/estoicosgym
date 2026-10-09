@@ -459,8 +459,13 @@
         @yield('content')
     </main>
     @include('landing.partes.pie')
-    @include('landing.partes.whatsapp')
-    @include('landing.partes.tienda-flotante')
+    {{-- Las páginas que se usan con el teléfono en la mano mientras se entrena
+         (Qué entrenar hoy) los esconden en el teléfono: tapaban «Seguir», «Nada,
+         descansé» y el ✓ de cada ejercicio. Esas páginas traen su propio WhatsApp. --}}
+    <div @hasSection('sin-flotantes') class="max-lg:hidden" @endif>
+        @include('landing.partes.whatsapp')
+        @include('landing.partes.tienda-flotante')
+    </div>
 
     <!-- Scripts -->
     <script>

@@ -2,6 +2,7 @@
 
 @section('title', $web['titulo'])
 @section('description', $web['descripcion'])
+@section('sin-flotantes', '1')
 
 {{--
     QUÉ ENTRENAR HOY: cuatro preguntas, una a la vez.
@@ -67,6 +68,8 @@
             </div>
 
             <form method="GET" action="{{ route('landing.rutina') }}" data-preguntas data-inicio="{{ $inicio }}" data-reglas="{{ json_encode($reglas) }}" class="mt-6">
+                {{-- La variante de este celular: la llena el script. --}}
+                <input type="hidden" name="v" value="{{ request('v') }}" data-variante disabled>
 
                 {{-- 1. Días --}}
                 <fieldset data-paso class="mb-14">
@@ -363,6 +366,23 @@
             }
 
             pasos.forEach((p) => p.classList.remove('mb-14'));
+
+            // UNA VARIANTE POR CELULAR, elegida al azar la primera vez y la
+            // misma después: dos personas que contestan igual no van a la
+            // misma máquina a la vez, y la misma persona ve lo mismo al volver.
+            const variante = form.querySelector('[data-variante]');
+
+            try {
+                let v = Number(localStorage.getItem('pg-variante'));
+
+                if (! (v >= 1 && v <= {{ \App\Support\EntrenamientoDeHoy::VARIANTES }})) {
+                    v = 1 + Math.floor(Math.random() * {{ \App\Support\EntrenamientoDeHoy::VARIANTES }});
+                    localStorage.setItem('pg-variante', String(v));
+                }
+
+                variante.value = variante.value || String(v);
+                variante.disabled = false;
+            } catch (e) {}
 
             // LO QUE YA ARMÓ EN ESTE CELULAR. Si es de hoy, se ofrece seguir
             // con él. Los días y el nivel no cambian de un día a otro: se

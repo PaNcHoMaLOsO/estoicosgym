@@ -757,12 +757,15 @@ class LandingController extends Controller
         if (EntrenamientoDeHoy::respondido($dias, $nivel, $hechos) && ! $request->boolean('cambiar')) {
             $hoy = $request->texto('hoy', '');
             $hoy = isset(EntrenamientoDeHoy::GRUPOS[$hoy]) ? $hoy : EntrenamientoDeHoy::sugerencia($hechos, $dias);
-            $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'hice' => $hechos, 'hoy' => $hoy];
+            // La variante del celular (la pone el script de las preguntas): con
+            // las mismas respuestas, accesorios distintos para cada uno.
+            $variante = max(0, min(EntrenamientoDeHoy::VARIANTES, (int) $request->query('v', 0)));
+            $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'hice' => $hechos, 'hoy' => $hoy, 'v' => $variante ?: null];
 
             return $this->pagina('landing.rutina-hoy', 'landing.rutina', 'Tu entrenamiento de hoy',
                 'Un día de entrenamiento armado para lo que quieres entrenar hoy, con los ejercicios de la sala.',
                 [
-                    'entrenamiento' => EntrenamientoDeHoy::armar($dias, $nivel, $hechos, $hoy),
+                    'entrenamiento' => EntrenamientoDeHoy::armar($dias, $nivel, $hechos, $hoy, $variante),
                     'respuestas' => $respuestas,
                     'nivelNombre' => EntrenamientoDeHoy::NIVELES[$nivel],
                     'robots' => 'noindex, follow',

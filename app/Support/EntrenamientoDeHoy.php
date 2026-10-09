@@ -161,6 +161,26 @@ class EntrenamientoDeHoy
      */
     private const ACCESORIOS = '/Pullover|Encogimientos|Pájaros|brazos rectos|Aperturas|Cruce de poleas|Elevaciones laterales|Face pull|Curl|Extensión|Press francés|Abductores|Patada|Elevación de talones|Hiperextensiones/u';
 
+    /**
+     * La variante del celular que pregunta (1 a 4; 0 sin JavaScript). Con las
+     * mismas respuestas, el mismo día, dos personas ven accesorios distintos:
+     * si no, todos los que contestan igual van a la misma máquina a la vez.
+     */
+    public const VARIANTES = 4;
+
+    private static int $variante = 0;
+
+    /**
+     * LOS MOVIMIENTOS QUE NO PUEDEN FALTAR. Todos los de espalda tienen el
+     * mismo músculo principal, y salían dos jalones y un remo: la espalda se
+     * trabaja tirando de arriba (jalón, dominadas) y de adelante (remos). En
+     * pecho, un press plano y uno inclinado.
+     */
+    private const PATRONES = [
+        'espalda' => ['/^Jalón al pecho|^Dominadas|^Jalón con agarre/u', '/^Remo/u', '/^Remo/u'],
+        'pecho' => ['/^Press (de banca|de pecho)/u', '/inclinad/u', '/^Press|^Fondos|^Flexiones/u'],
+    ];
+
     /** Cuántos ejercicios lleva un día armado con el catálogo. */
     private const CUANTOS = ['pecho' => 5, 'espalda' => 5, 'piernas' => 6, 'hombros_brazos' => 6, 'torso_pecho' => 6, 'torso_espalda' => 6];
 
@@ -268,8 +288,10 @@ class EntrenamientoDeHoy
      *
      * @return array{grupo:string, titulo:string, foco:?string, lineas:list<array<string,mixed>>, principales:list<string>, secundarios:list<string>, rutina:?Rutina, dia:?int, calentamiento:list<array<string,mixed>>, estiramientos:list<array<string,mixed>>, movilidad:list<array<string,mixed>>, minutos:?int}
      */
-    public static function armar(int $dias, string $nivel, array|string $hice, string $hoy): array
+    public static function armar(int $dias, string $nivel, array|string $hice, string $hoy, int $variante = 0): array
     {
+        self::$variante = max(0, min(self::VARIANTES, $variante));
+
         if ($hoy === 'movilidad') {
             return self::diaDeMovilidad();
         }
@@ -279,12 +301,12 @@ class EntrenamientoDeHoy
         $elegido = $rutina ? self::elegirDia(RutinaSugerida::dias($rutina), $hoy, $hechos) : null;
 
         if ($elegido) {
-            $lineas = $elegido['lineas'];
+            $lineas = self::rotarAccesorios($elegido['lineas'], $hoy, $hechos);
             $titulo = $elegido['titulo'];
             $foco = $elegido['foco'];
             $numero = $elegido['numero'];
         } else {
-            $lineas = self::desdeElCatalogo($hoy, $nivel);
+            $lineas = self::desdeElCatalogo($hoy, $nivel, $hechos);
             $titulo = self::GRUPOS[$hoy];
             $foco = null;
             $numero = null;
@@ -534,7 +556,7 @@ class EntrenamientoDeHoy
      *
      * @return list<array<string,mixed>>
      */
-    public static function desdeElCatalogo(string $grupo, string $nivel): array
+    public static function desdeElCatalogo(string $grupo, string $nivel, array $hechos = []): array
     {
         $todos = Ejercicio::where('activo', true)->orderBy('orden')->orderBy('nombre')->get()
             ->map(fn (Ejercicio $e) => [
@@ -542,6 +564,18 @@ class EntrenamientoDeHoy
                 'grupo' => self::grupoDe($e->grupos()['principal'], $e->zona),
                 'basico' => $e->grupos()['secundarios'] !== [] && ! preg_match(self::ACCESORIOS, $e->nombre),
             ] + $e->grupos());
+
+        // LA PARTE DE ATRÁS DE LA PIERNA, FUERA DEL TORSO. El peso muerto y las
+        // hiperextensiones cuentan como espalda, pero cargan glúteos e isquios:
+        // salía peso muerto en «Torso, más espalda» el día después de piernas,
+        // con calentamiento de pierna y todo. En un día de torso no van nunca;
+        // en uno de espalda, no si hizo piernas estos días.
+        $piernasCansadas = array_intersect(['gluteos', 'isquios'], array_merge([], ...array_map(fn ($h) => self::CARGA[$h] ?? [], $hechos))) !== [];
+
+        if (str_starts_with($grupo, 'torso_') || ($piernasCansadas && in_array($grupo, ['espalda', 'espalda_biceps'], true))) {
+            $todos = $todos->reject(fn (array $c) => $c['grupo'] === 'espalda'
+                && array_intersect($c['secundarios'], ['gluteos', 'isquios']) !== []);
+        }
 
         $de = fn (string $g) => self::ordenar($todos->where('grupo', $g)->values()->all(), $nivel);
 
@@ -578,7 +612,7 @@ class EntrenamientoDeHoy
             // Tres de lo que pidió, uno de lo otro y dos de hombros y brazos:
             // con más pecho, hombro y tríceps; con más espalda, bíceps.
             [$mas, $menos] = $grupo === 'torso_pecho' ? ['pecho', 'espalda'] : ['espalda', 'pecho'];
-            $fuerte = self::variados(array_values(array_filter($de($mas), fn ($c) => $c['basico'])), 3);
+            $fuerte = self::porPatron(array_values(array_filter($de($mas), fn ($c) => $c['basico'])), self::PATRONES[$mas], 3);
             $otro = self::variados(array_values(array_filter($de($menos), fn ($c) => $c['basico'])), 1);
             $brazos = array_values(array_filter($de('hombros_brazos'), fn ($c) => $grupo === 'torso_pecho'
                 ? array_intersect([$c['principal']], ['hombros', 'triceps']) !== []
@@ -597,7 +631,9 @@ class EntrenamientoDeHoy
             $candidatos = array_values(array_filter($de($grupo), fn ($c) => $c['e']->zona !== 'cuerpo_completo'));
             $basicos = array_values(array_filter($candidatos, fn ($c) => $c['basico']));
             $accesorios = array_values(array_filter($candidatos, fn ($c) => ! $c['basico']));
-            $elegidos = self::variados($basicos, $grupo === 'hombros_brazos' ? 2 : 3);
+            $elegidos = isset(self::PATRONES[$grupo])
+                ? self::porPatron($basicos, self::PATRONES[$grupo], 3)
+                : self::variados($basicos, $grupo === 'hombros_brazos' ? 2 : 3);
             $elegidos = [...$elegidos, ...self::variados($accesorios, $cuantos - count($elegidos))];
 
             foreach ($basicos as $c) {
@@ -810,7 +846,91 @@ class EntrenamientoDeHoy
      */
     public static function delDia(string $nombre): int
     {
-        return crc32(now()->toDateString() . '|' . $nombre);
+        return crc32(now()->toDateString() . '|' . self::$variante . '|' . $nombre);
+    }
+
+    /**
+     * LOS BÁSICOS SE QUEDAN, LO DEMÁS CAMBIA. Un día de rutina salía igual
+     * todas las semanas y para todos los que contestaban lo mismo. Los dos
+     * primeros (los que se cargan cada vez más) se mantienen: repetirlos es
+     * lo que deja progresar. Los siguientes se cambian, cada día y según la
+     * variante del celular, por otro de la sala para el mismo músculo y del
+     * mismo tipo (básico por básico, accesorio por accesorio), con las mismas
+     * series y repeticiones. A veces sale el mismo de la rutina.
+     *
+     * @param list<array<string,mixed>> $lineas
+     * @param list<string> $hechos
+     * @return list<array<string,mixed>>
+     */
+    private static function rotarAccesorios(array $lineas, string $hoy, array $hechos): array
+    {
+        $catalogo = collect(self::desdeElCatalogoCandidatos($hoy, $hechos));
+        $enElDia = array_column($lineas, 'nombre');
+
+        foreach ($lineas as $i => $l) {
+            if ($i < 2 || ! $l['principal'] || in_array($l['zona'], ['cardio', 'core', 'cuerpo_completo'], true)) {
+                continue;
+            }
+
+            $basico = $l['secundarios'] !== [] && ! preg_match(self::ACCESORIOS, $l['nombre']);
+            $candidatos = $catalogo
+                ->filter(fn (Ejercicio $e) => $e->nombre === $l['nombre'] || (
+                    ! in_array($e->nombre, $enElDia, true)
+                    && $e->grupos()['principal'] === $l['principal']
+                    && ($e->grupos()['secundarios'] !== [] && ! preg_match(self::ACCESORIOS, $e->nombre)) === $basico
+                ))
+                ->sortBy(fn (Ejercicio $e) => self::delDia($e->nombre));
+
+            $nuevo = $candidatos->first();
+
+            if (! $nuevo || $nuevo->nombre === $l['nombre']) {
+                continue;
+            }
+
+            $reps = preg_replace('/ por (?:pierna|brazo|lado)$/u', '', $l['repeticiones']) . self::porLado($nuevo->nombre);
+            $alternativa = RutinasDeEjemplo::ALTERNATIVAS[$nuevo->nombre] ?? null;
+            $enElDia[$i] = $nuevo->nombre;
+
+            $lineas[$i] = [
+                'nombre' => $nuevo->nombre,
+                'dosis' => RutinaSugerida::dosis($l['series'], $reps),
+                'corta' => RutinaSugerida::corta($l['series'], $reps),
+                'series' => $l['series'],
+                'repeticiones' => $reps,
+                'descanso' => $l['descanso'],
+                'nota' => $nuevo->indicacion,
+                'alternativa' => $alternativa && $catalogo->contains('nombre', $alternativa) ? $alternativa : null,
+                'imagen' => $nuevo->urlDeImagen(),
+                'principal' => $nuevo->grupos()['principal'],
+                'secundarios' => $nuevo->grupos()['secundarios'],
+                'zona' => $nuevo->zona,
+            ];
+        }
+
+        return $lineas;
+    }
+
+    /**
+     * Los ejercicios de la sala que sirven hoy para cambiar uno de la rutina:
+     * activos, sin los de cardio ni cuerpo completo, y sin los que cargan la
+     * parte de atrás de la pierna en un día de torso (o en uno de espalda si
+     * hizo piernas estos días).
+     *
+     * @param list<string> $hechos
+     * @return list<Ejercicio>
+     */
+    private static function desdeElCatalogoCandidatos(string $hoy, array $hechos): array
+    {
+        $piernasCansadas = array_intersect(['gluteos', 'isquios'], array_merge([], ...array_map(fn ($h) => self::CARGA[$h] ?? [], $hechos))) !== [];
+        $sinPiernaAtras = str_starts_with($hoy, 'torso_') || ($piernasCansadas && in_array($hoy, ['espalda', 'espalda_biceps'], true));
+
+        return Ejercicio::where('activo', true)->whereNotIn('zona', ['cardio', 'cuerpo_completo'])
+            ->orderBy('orden')->orderBy('nombre')->get()
+            ->reject(fn (Ejercicio $e) => $sinPiernaAtras
+                && self::grupoDe($e->grupos()['principal'], $e->zona) === 'espalda'
+                && array_intersect($e->grupos()['secundarios'], ['gluteos', 'isquios']) !== [])
+            ->values()
+            ->all();
     }
 
     /** « por pierna» o « por brazo» para los que se hacen de a un lado. */
@@ -844,6 +964,37 @@ class EntrenamientoDeHoy
             <=> [(int) $a['basico'], $equipo[$b['e']->equipo] ?? 2, self::delDia($b['e']->nombre)]);
 
         return $candidatos;
+    }
+
+    /**
+     * Uno por patrón, en el orden de la lista (que ya viene ordenada por nivel
+     * y por el día): el primero que calza con cada uno. Lo que falte, con lo
+     * que haya.
+     *
+     * @param list<array<string,mixed>> $lista
+     * @param list<string> $patrones
+     * @return list<array<string,mixed>>
+     */
+    private static function porPatron(array $lista, array $patrones, int $cuantos): array
+    {
+        $elegidos = [];
+
+        foreach ($patrones as $patron) {
+            foreach ($lista as $c) {
+                if (preg_match($patron, $c['e']->nombre) && ! in_array($c, $elegidos, true)) {
+                    $elegidos[] = $c;
+                    break;
+                }
+            }
+        }
+
+        foreach ($lista as $c) {
+            if (count($elegidos) < $cuantos && ! in_array($c, $elegidos, true)) {
+                $elegidos[] = $c;
+            }
+        }
+
+        return array_slice($elegidos, 0, $cuantos);
     }
 
     /**

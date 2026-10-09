@@ -2,6 +2,7 @@
 
 @section('title', $web['titulo'])
 @section('description', $web['descripcion'])
+@section('sin-flotantes', '1')
 
 {{--
     TU ENTRENAMIENTO DE HOY: lo que sale de las cuatro preguntas, compacto
@@ -209,7 +210,7 @@
             </a>
 
             <p class="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 font-modern text-sm">
-                <a href="{{ route('landing.rutina', ['dias' => $respuestas['dias'], 'nivel' => $respuestas['nivel'], 'hice' => $hice, 'hoy' => $respuestas['hoy'], 'cambiar' => 1]) }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Elegir otra cosa para hoy</a>
+                <a href="{{ route('landing.rutina', ['dias' => $respuestas['dias'], 'nivel' => $respuestas['nivel'], 'hice' => $hice, 'hoy' => $respuestas['hoy'], 'v' => $respuestas['v'] ?? null, 'cambiar' => 1]) }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Elegir otra cosa para hoy</a>
                 <a href="{{ route('landing.rutinas') }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Ver todas las rutinas</a>
             </p>
             </div>
