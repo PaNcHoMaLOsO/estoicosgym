@@ -65,8 +65,10 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             // Los pasos de a uno los pone el script; sin él, nada queda escondido.
             ->assertDontSee('<fieldset data-paso hidden', false);
 
-        // Casillas solo para lo de estos días: nada de cronómetros ni de «hecho».
-        foreach (['localStorage', 'setInterval', 'type="checkbox" name="hoy"'] as $nada) {
+        // Casillas solo para lo de estos días: nada de cronómetros. (Desde el
+        // 8-oct-2026 el celular sí guarda el entrenamiento de hoy, a pedido
+        // del dueño: ver test_el_entrenamiento_de_hoy_no_se_pierde.)
+        foreach (['setInterval', 'type="checkbox" name="hoy"'] as $nada) {
             $respuesta->assertDontSee($nada, false);
         }
 
@@ -483,5 +485,34 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->get('/rutina?dias=3&nivel=nunca&hice%5B%5D=pecho&hice%5B%5D=espalda&hoy=cardio')
             ->assertOk()
             ->assertSee('href="' . e(route('landing.rutina', ['dias' => 3, 'nivel' => 'nunca', 'hice' => ['pecho', 'espalda'], 'hoy' => 'cardio', 'cambiar' => 1])) . '"', false);
+    }
+
+    /**
+     * Si se le cierra el navegador, no pierde el entrenamiento: el celular
+     * guarda la dirección y lo que marcó como hecho, y al volver a las
+     * preguntas se ofrece seguir. También se lo puede mandar por WhatsApp.
+     * Nada de esto pasa por el servidor.
+     */
+    public function test_el_entrenamiento_de_hoy_no_se_pierde(): void
+    {
+        $html = $this->get('/rutina?dias=4&nivel=algo&hice[]=nada&hoy=pecho')->assertOk()->getContent();
+
+        // Un botón de hecho por ejercicio, escondido hasta que hay JavaScript.
+        $this->assertGreaterThan(2, substr_count($html, 'data-marcar hidden'));
+        $this->assertStringContainsString("localStorage.setItem(clave", $html);
+
+        // El mensaje lleva la lista y el enlace para volver.
+        preg_match('#href="(https://wa\.me/\?text=[^"]+)"#', $html, $m);
+        $texto = rawurldecode(html_entity_decode($m[1] ?? ''));
+        $this->assertStringContainsString('Mi entrenamiento de hoy en PRO GYM: Pecho', $texto);
+        $this->assertStringContainsString("\n1. ", $texto);
+        $this->assertStringContainsString('/rutina?dias=4', $texto);
+
+        // «Volver a empezar» no ofrece seguir con el de hoy.
+        $this->assertStringContainsString('href="' . route('landing.rutina', ['nuevo' => 1]) . '"', $html);
+
+        // Las preguntas traen el aviso para seguir, escondido hasta que el
+        // script encuentra uno guardado de hoy.
+        $this->get('/rutina')->assertOk()->assertSee('<a data-guardada hidden', false);
     }
 }

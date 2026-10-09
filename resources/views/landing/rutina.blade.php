@@ -47,6 +47,18 @@
             {{-- El título de la página (para Google y los lectores de pantalla), con el aspecto de antes. --}}
             <h1 class="text-center font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Qué entrenar hoy</h1>
 
+            {{-- El de hoy, si ya lo armó en este celular: para seguir donde iba
+                 aunque se le haya cerrado el navegador. Lo llena el JavaScript. --}}
+            <a data-guardada hidden href="#"
+                class="mt-5 flex items-center gap-3 rounded-xl bg-pg-rojo/15 px-4 py-3 ring-1 ring-pg-rojo/60 transition-colors hover:bg-pg-rojo/25">
+                <span class="min-w-0 flex-1 font-modern">
+                    <span class="block text-xs uppercase tracking-widest text-pg-rojo-claro">Tu entrenamiento de hoy</span>
+                    <span data-guardada-titulo class="mt-0.5 block truncate font-display text-xl uppercase leading-tight text-pg-tiza"></span>
+                    <span data-guardada-avance class="block text-xs text-pg-tiza/60"></span>
+                </span>
+                <span class="flex shrink-0 items-center gap-1.5 font-modern text-sm font-semibold text-pg-tiza">Seguir <x-icono nombre="arrow-right" class="text-xs" /></span>
+            </a>
+
             {{-- La barra de los cuatro pasos: solo cuando van de a uno. --}}
             <div data-barra hidden class="mt-4 flex gap-1.5" aria-hidden="true">
                 @for($i = 0; $i < 4; $i++)
@@ -351,7 +363,51 @@
             }
 
             pasos.forEach((p) => p.classList.remove('mb-14'));
-            mostrar(Number(form.dataset.inicio) || 0, false);
+
+            // LO QUE YA ARMÓ EN ESTE CELULAR. Si es de hoy, se ofrece seguir
+            // con él. Los días y el nivel no cambian de un día a otro: se
+            // dejan marcados y se parte en lo de estos días. «Volver a
+            // empezar» llega con ?nuevo=1 y no usa nada de esto.
+            let inicio = Number(form.dataset.inicio) || 0;
+            let guardado = null;
+
+            try {
+                guardado = JSON.parse(localStorage.getItem('pg-rutina') || 'null');
+            } catch (e) {}
+
+            const sinRespuestas = ! location.search || /^\?nuevo=1$/.test(location.search);
+
+            if (guardado && sinRespuestas) {
+                const hoy = new Date().toLocaleDateString('sv');
+                const aviso = document.querySelector('[data-guardada]');
+
+                if (guardado.fecha === hoy && guardado.direccion && ! location.search) {
+                    aviso.href = guardado.direccion;
+                    aviso.querySelector('[data-guardada-titulo]').textContent = guardado.titulo || 'Tu entrenamiento';
+                    const hechos = (guardado.hechos || []).length;
+                    aviso.querySelector('[data-guardada-avance]').textContent = guardado.total
+                        ? (hechos === guardado.total ? '¡Listo por hoy!' : hechos + ' de ' + guardado.total + ' hechos')
+                        : '';
+                    aviso.hidden = false;
+                }
+
+                const marcar = (nombre, v) => {
+                    const input = form.querySelector('input[name="' + nombre + '"][value="' + v + '"]');
+
+                    if (input) {
+                        input.checked = true;
+                    }
+
+                    return Boolean(input);
+                };
+
+                if (inicio === 0 && ! /nuevo=1/.test(location.search) && marcar('dias', guardado.dias) && marcar('nivel', guardado.nivel)) {
+                    inicio = 2;
+                    marcarHoy(true);
+                }
+            }
+
+            mostrar(inicio, false);
         })();
     </script>
 @endsection
