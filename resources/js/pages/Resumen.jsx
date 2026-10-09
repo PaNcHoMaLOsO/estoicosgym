@@ -65,7 +65,9 @@ function Buscador() {
     }
 
     return (
-        <form onSubmit={buscar} role="search" className="flex gap-2">
+        // En el teléfono ya está el buscador del marco, arriba de todo: dos
+        // seguidos se comían media pantalla antes de llegar a lo del día.
+        <form onSubmit={buscar} role="search" className="hidden gap-2 sm:flex">
             <label className="relative flex-1">
                 <span className="sr-only">Buscar socio</span>
                 <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fog" aria-hidden="true" />
@@ -228,7 +230,7 @@ function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
 
     return (
         <span className={`inline-flex items-center gap-2 ${compacto ? 'shrink-0' : ''}`}>
-            {compacto && ! celular ? <span className="inline-block w-[6.25rem]" aria-hidden="true" /> : null}
+            {compacto && ! celular ? <span className="inline-block w-8 sm:w-[6.25rem]" aria-hidden="true" /> : null}
             {celular ? (
                 <a
                     href={whatsapp(celular)}
@@ -238,10 +240,11 @@ function Contacto({ celular, email, nombre, compacto = false, uuid = null }) {
                     rel="noopener"
                     title={`Escribirle por WhatsApp a ${celularLegible(celular)}`}
                     aria-label={`Escribirle por WhatsApp a ${nombre ?? celularLegible(celular)}`}
-                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-control border border-[#25D366]/40 bg-[#25D366]/10 px-2.5 py-1 text-sm font-medium text-[#25D366] transition-colors hover:bg-[#25D366]/20 ${compacto ? 'w-[6.25rem] justify-center' : ''}`}
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-control border border-[#25D366]/40 bg-[#25D366]/10 py-1 text-sm font-medium text-[#25D366] transition-colors hover:bg-[#25D366]/20 ${compacto ? 'h-8 w-8 justify-center px-0 sm:h-auto sm:w-[6.25rem] sm:px-2.5' : 'px-2.5'}`}
                 >
-                    <MessageCircleIcon className="size-3.5" aria-hidden="true" />
-                    WhatsApp
+                    <MessageCircleIcon className={compacto ? 'size-4 sm:size-3.5' : 'size-3.5'} aria-hidden="true" />
+                    {/* En las listas del teléfono, solo el ícono: el nombre se lee entero. */}
+                    <span className={compacto ? 'hidden sm:inline' : ''}>WhatsApp</span>
                 </a>
             ) : null}
             {email ? (
@@ -436,7 +439,7 @@ function Llamar({ filas, cuanto, vacia }) {
                             {cuanto === 'Faltan' ? <Faltan dias={f.dias} /> : <span className="tabular-nums text-fog">{cuanto === 'Hace' ? 'hace ' : 'en '}{f.dias} d</span>}
                         </span>
 
-                        <span className="inline-flex w-[7.75rem] shrink-0 justify-end">
+                        <span className="inline-flex w-[3.5rem] shrink-0 justify-end sm:w-[7.75rem]">
                             <Contacto celular={f.celular} email={f.email} nombre={f.socio} uuid={f.socio_uuid} compacto />
                         </span>
                     </li>
