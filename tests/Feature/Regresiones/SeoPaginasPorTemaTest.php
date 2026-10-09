@@ -170,7 +170,11 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
 
         // Lo que más gente hace va primero, y solo lo que cabe.
         $this->get('/especialistas')->assertOk()
-            ->assertSee('<title>Preparador físico y entrenador personal en Los Ángeles | PRO GYM</title>', false);
+            ->assertSee('<title>Preparador físico y personal trainer en Los Ángeles | PRO GYM</title>', false);
+
+        // Como lo busca la gente en Chile: «personal trainer», con la otra forma al lado.
+        $this->get('/especialidades/entrenador-personal')->assertOk()
+            ->assertSee('<title>Personal trainer y entrenador personal en Los Ángeles | PRO GYM</title>', false);
 
         $this->get('/especialidades/preparador-fisico')->assertOk()->assertSee('Leonardo Gutiérrez')->assertSee('Isidora Aravena');
 

@@ -80,6 +80,29 @@ final class Especialidades
         return $grupos;
     }
 
+    /**
+     * CÓMO LO BUSCA LA GENTE EN CHILE, cuando no es como se escribe en el
+     * panel. Sale de las sugerencias de Google desde Chile (8-oct-2026): se
+     * busca «personal trainer los angeles chile» y «masajes los angeles
+     * chile», no «entrenador personal» ni «masajista». El título de la página
+     * de esa especialidad lleva las dos formas.
+     */
+    public const COMO_SE_BUSCA = [
+        'entrenador-personal' => 'Personal trainer y entrenador personal',
+        'personal-trainer' => 'Personal trainer y entrenador personal',
+        'masajista' => 'Masajes y masajista',
+        'masoterapeuta' => 'Masajes y masoterapia',
+        'quiromasajista' => 'Masajes y quiromasaje',
+        'kinesiologo' => 'Kinesiólogo',
+        'nutricionista' => 'Nutricionista',
+    ];
+
+    /** El nombre para el título: como se busca, o como se escribió. */
+    public static function comoSeBusca(string $clave, string $nombre): string
+    {
+        return self::COMO_SE_BUSCA[$clave] ?? $nombre;
+    }
+
     /** «Kinesióloga» → «kinesiologo»; «Preparadora Física» → «preparador-fisico». */
     public static function clave(string $texto): string
     {

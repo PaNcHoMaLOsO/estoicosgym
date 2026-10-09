@@ -496,8 +496,8 @@ class LandingController extends Controller
         $ciudad = $comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '';
         $grupos = collect(Especialidades::agrupar($comun['especialistas']))
             ->sort(fn (array $a, array $b) => count($b['especialistas']) <=> count($a['especialistas']))
-            ->pluck('nombre')
-            ->map(fn (string $n) => Str::lower($n));
+            // «Personal trainer» y no «entrenador personal»: lo que se busca.
+            ->map(fn (array $g) => Str::lower(Str::before(Especialidades::comoSeBusca($g['slug'], $g['nombre']), ' y ')));
         $elegidos = [];
         foreach ($grupos as $nombre) {
             $junto = [...$elegidos, $nombre];
@@ -580,7 +580,7 @@ class LandingController extends Controller
 
         $ciudad = $comun['web']['ciudad'];
         $gimnasio = $comun['gimnasio']['nombre'];
-        $titulo = $grupo['nombre'] . ($ciudad ? " en {$ciudad}" : '');
+        $titulo = Especialidades::comoSeBusca($slug, $grupo['nombre']) . ($ciudad ? " en {$ciudad}" : '');
         $nombres = collect($grupo['especialistas'])->pluck('nombre');
         $url = route('landing.especialidad', $slug);
 
