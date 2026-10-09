@@ -48,6 +48,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'sin-dinero' => \App\Http\Middleware\EscondeElDinero::class,
             // Las páginas de la web que se apagan en Configuración.
             'pagina-web' => \App\Http\Middleware\PaginaEncendida::class,
+            // Lo que crea algo y no tiene token propio: el doble clic lo hace una vez.
+            'una-vez' => \App\Http\Middleware\EvitaDobleEnvio::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

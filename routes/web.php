@@ -530,7 +530,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * factura por hora a fin de mes. No son socios ni mensualidades.
          */
         Route::get('/talleres', [\App\Http\Controllers\Panel\TallerController::class, 'index'])->name('talleres.index');
-        Route::post('/talleres', [\App\Http\Controllers\Panel\TallerController::class, 'guardar'])->name('talleres.store');
+        Route::post('/talleres', [\App\Http\Controllers\Panel\TallerController::class, 'guardar'])->middleware('una-vez')->name('talleres.store');
         Route::get('/talleres/{taller}', [\App\Http\Controllers\Panel\TallerController::class, 'show'])->name('talleres.show');
         Route::patch('/talleres/{taller}', [\App\Http\Controllers\Panel\TallerController::class, 'actualizar'])->name('talleres.update');
         // A la papelera: sus cobros son plata facturada y no se tiran.
@@ -549,7 +549,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * con las horas que tocan y el total. Se corrigen cuando se suspende
          * una semana y se imprimen o se guardan como PDF para mandarlas.
          */
-        Route::post('/talleres/{taller}/cotizaciones', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'crear'])->name('talleres.cotizaciones.store');
+        Route::post('/talleres/{taller}/cotizaciones', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'crear'])->middleware('una-vez')->name('talleres.cotizaciones.store');
         Route::get('/talleres/cotizaciones/{cotizacion}', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'show'])->name('talleres.cotizaciones.show');
         Route::get('/talleres/cotizaciones/{cotizacion}/imprimir', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'imprimir'])->name('talleres.cotizaciones.imprimir');
         Route::patch('/talleres/cotizaciones/{cotizacion}', [\App\Http\Controllers\Panel\CotizacionTallerController::class, 'actualizar'])->name('talleres.cotizaciones.update');
@@ -589,7 +589,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Inertia no puede mandar eso con un PUT.
         Route::post('/clientes/{cliente}/foto', [\App\Http\Controllers\Panel\ClienteController::class, 'foto'])->name('clientes.foto');
         // Constancia del contrato en papel y de los permisos que dio el socio.
-        Route::post('/clientes/{cliente}/contrato', [\App\Http\Controllers\Panel\ClienteController::class, 'contrato'])->name('clientes.contrato');
+        Route::post('/clientes/{cliente}/contrato', [\App\Http\Controllers\Panel\ClienteController::class, 'contrato'])->middleware('una-vez')->name('clientes.contrato');
         // El contrato por correo: le llega un enlace para leerlo y firmarlo en su celular.
         Route::post('/clientes/{cliente}/contrato/enviar', [\App\Http\Controllers\Panel\ContratoController::class, 'enviar'])->name('clientes.contrato.enviar');
         // El contrato con sus datos, para leerlo o imprimirlo y firmarlo en el mesón.
@@ -739,9 +739,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Qué puede hacer cada perfil, con el mismo permiso que cambia las cuentas.
         Route::get('/usuarios/perfiles', [\App\Http\Controllers\Panel\PerfilController::class, 'index'])->name('usuarios.perfiles');
         Route::put('/usuarios/perfiles/{rol}', [\App\Http\Controllers\Panel\PerfilController::class, 'update'])->whereNumber('rol')->name('usuarios.perfiles.update');
-        Route::post('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'store'])->name('usuarios.store');
+        Route::post('/usuarios', [\App\Http\Controllers\Panel\UsuarioController::class, 'store'])->middleware('una-vez')->name('usuarios.store');
         Route::put('/usuarios/{usuario}', [\App\Http\Controllers\Panel\UsuarioController::class, 'update'])->whereNumber('usuario')->name('usuarios.update');
-        Route::post('/usuarios/{usuario}/enlace', [\App\Http\Controllers\Panel\UsuarioController::class, 'enlace'])->whereNumber('usuario')->name('usuarios.enlace');
+        Route::post('/usuarios/{usuario}/enlace', [\App\Http\Controllers\Panel\UsuarioController::class, 'enlace'])->whereNumber('usuario')->middleware('una-vez')->name('usuarios.enlace');
 
         Route::get('/membresias', [\App\Http\Controllers\Panel\ConfiguracionController::class, 'membresias'])->name('membresias.index');
         Route::get('/membresias/{membresia}', [\App\Http\Controllers\Panel\FichasConfiguracionController::class, 'membresia'])->name('membresias.show');
@@ -757,9 +757,9 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
          * por inscripciones y pagos, y borrarlo dejaria fichas apuntando al
          * vacio. `alternar` lo desactiva, que es lo que de verdad se quiere.
          */
-        Route::post('/membresias', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMembresia'])->name('membresias.store');
+        Route::post('/membresias', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMembresia'])->middleware('una-vez')->name('membresias.store');
         Route::put('/membresias/{membresia}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMembresia'])->name('membresias.update');
-        Route::post('/convenios', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarConvenio'])->name('convenios.store');
+        Route::post('/convenios', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarConvenio'])->middleware('una-vez')->name('convenios.store');
         Route::put('/convenios/{convenio}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarConvenio'])->name('convenios.update');
         // Lo que ESTE convenio paga por cada plan: el club que negoció su
         // mensualidad en 15.000 en vez del precio con convenio general.
@@ -768,14 +768,14 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Las rutinas de la sala (el QR «Qué entrenar hoy») y su catálogo de ejercicios.
         Route::get('/rutinas', [\App\Http\Controllers\Panel\RutinaController::class, 'index'])->name('rutinas.index');
         Route::get('/rutinas/crear', [\App\Http\Controllers\Panel\RutinaController::class, 'create'])->name('rutinas.create');
-        Route::post('/rutinas', [\App\Http\Controllers\Panel\RutinaController::class, 'store'])->name('rutinas.store');
+        Route::post('/rutinas', [\App\Http\Controllers\Panel\RutinaController::class, 'store'])->middleware('una-vez')->name('rutinas.store');
         Route::get('/rutinas/{rutina}/editar', [\App\Http\Controllers\Panel\RutinaController::class, 'edit'])->name('rutinas.edit');
         Route::put('/rutinas/{rutina}', [\App\Http\Controllers\Panel\RutinaController::class, 'update'])->name('rutinas.update');
-        Route::post('/rutinas/{rutina}/duplicar', [\App\Http\Controllers\Panel\RutinaController::class, 'duplicar'])->name('rutinas.duplicar');
+        Route::post('/rutinas/{rutina}/duplicar', [\App\Http\Controllers\Panel\RutinaController::class, 'duplicar'])->middleware('una-vez')->name('rutinas.duplicar');
         Route::patch('/rutinas/{rutina}/alternar', [\App\Http\Controllers\Panel\RutinaController::class, 'alternar'])->name('rutinas.alternar');
         Route::delete('/rutinas/{rutina}', [\App\Http\Controllers\Panel\RutinaController::class, 'destroy'])->name('rutinas.destroy');
         Route::get('/ejercicios', [\App\Http\Controllers\Panel\EjercicioController::class, 'index'])->name('ejercicios.index');
-        Route::post('/ejercicios', [\App\Http\Controllers\Panel\EjercicioController::class, 'store'])->name('ejercicios.store');
+        Route::post('/ejercicios', [\App\Http\Controllers\Panel\EjercicioController::class, 'store'])->middleware('una-vez')->name('ejercicios.store');
         Route::put('/ejercicios/{ejercicio}', [\App\Http\Controllers\Panel\EjercicioController::class, 'update'])->name('ejercicios.update');
         Route::patch('/ejercicios/{ejercicio}/alternar', [\App\Http\Controllers\Panel\EjercicioController::class, 'alternar'])->name('ejercicios.alternar');
 
@@ -791,7 +791,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Los embajadores, aparte: comparten tabla con los especialistas pero no
         // pantalla. Guardar va por las mismas rutas, con su tipo.
         Route::get('/embajadores', [\App\Http\Controllers\Panel\EspecialistaController::class, 'embajadores'])->name('embajadores.index');
-        Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->name('especialistas.store');
+        Route::post('/especialistas', [\App\Http\Controllers\Panel\EspecialistaController::class, 'store'])->middleware('una-vez')->name('especialistas.store');
         Route::put('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'update'])->name('especialistas.update');
         // Subir y bajar un puesto dentro de su lista, sin escribir números.
         Route::post('/especialistas/{especialista}/mover', [\App\Http\Controllers\Panel\EspecialistaController::class, 'mover'])->name('especialistas.mover');
@@ -799,7 +799,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         Route::delete('/especialistas/{especialista}', [\App\Http\Controllers\Panel\EspecialistaController::class, 'eliminar'])->name('especialistas.destroy');
         // La pagina web: servicios, fotos, preguntas y testimonios. Se ocultan con catalogos.alternar.
         Route::get('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'show'])->whereIn('tipo', array_keys(\App\Models\ContenidoWeb::TIPOS))->name('web.show');
-        Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', array_keys(\App\Models\ContenidoWeb::TIPOS))->name('web.store');
+        Route::post('/web/{tipo}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'store'])->whereIn('tipo', array_keys(\App\Models\ContenidoWeb::TIPOS))->middleware('una-vez')->name('web.store');
         Route::put('/web/contenido/{contenido}', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'update'])->name('web.update');
         // Borrar del todo, con su archivo: ocultar deja la foto ahí, y una
         // galería que solo crece termina siendo imposible de ordenar.
@@ -812,14 +812,14 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // Las clases del gimnasio (judo, lucha…) para la página «Clases» de la web.
         // No son los talleres: esos son arriendos a instituciones.
         Route::get('/clases', [\App\Http\Controllers\Panel\ClaseController::class, 'index'])->name('clases.index');
-        Route::post('/clases', [\App\Http\Controllers\Panel\ClaseController::class, 'store'])->name('clases.store');
+        Route::post('/clases', [\App\Http\Controllers\Panel\ClaseController::class, 'store'])->middleware('una-vez')->name('clases.store');
         Route::put('/clases/{clase}', [\App\Http\Controllers\Panel\ClaseController::class, 'update'])->name('clases.update');
         Route::patch('/clases/{clase}/alternar', [\App\Http\Controllers\Panel\ClaseController::class, 'alternar'])->name('clases.alternar');
         Route::post('/clases/{clase}/mover', [\App\Http\Controllers\Panel\ClaseController::class, 'mover'])->name('clases.mover');
         Route::delete('/clases/{clase}', [\App\Http\Controllers\Panel\ClaseController::class, 'destroy'])->name('clases.destroy');
-        Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->name('metodos-pago.store');
+        Route::post('/metodos-pago', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMetodoPago'])->middleware('una-vez')->name('metodos-pago.store');
         Route::put('/metodos-pago/{metodoPago}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMetodoPago'])->name('metodos-pago.update');
-        Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->name('motivos-descuento.store');
+        Route::post('/motivos-descuento', [\App\Http\Controllers\Panel\CatalogoController::class, 'guardarMotivo'])->middleware('una-vez')->name('motivos-descuento.store');
         Route::put('/motivos-descuento/{motivoDescuento}', [\App\Http\Controllers\Panel\CatalogoController::class, 'actualizarMotivo'])->name('motivos-descuento.update');
         Route::patch('/catalogos/{catalogo}/{id}/alternar', [\App\Http\Controllers\Panel\CatalogoController::class, 'alternar'])->name('catalogos.alternar');
     });
