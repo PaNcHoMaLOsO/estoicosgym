@@ -631,7 +631,7 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
             ->assertSee('Recomendados por PRO GYM');
 
         $perfil = $this->get(route('landing.especialista', $camila->slug))->assertOk();
-        $perfil->assertSee('Profesional recomendado por PRO GYM')
+        $perfil->assertSee('Recomendado por PRO GYM')
             ->assertSee('Martes y jueves · 15:00 a 19:00')
             ->assertSee('Consulta en Colón 250');
         $this->assertStringNotContainsString('"worksFor"', $perfil->getContent());
@@ -650,7 +650,8 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
 
         $perfil = $this->get(route('landing.especialista', $benja->slug))->assertOk()->getContent();
         $this->assertStringContainsString('"worksFor"', $perfil);
-        $this->assertStringNotContainsString('Profesional recomendado', $perfil);
+        $this->assertStringNotContainsString('Recomendado por', $perfil);
+        $this->assertStringContainsString('Equipo PRO GYM', $perfil);
 
         $dias = fn (array $d) => (new Especialista(['dias' => $d]))->diasComoSeLeen();
         $this->assertSame('Lunes a viernes', $dias(['vie', 'lun', 'mar', 'mie', 'jue']));

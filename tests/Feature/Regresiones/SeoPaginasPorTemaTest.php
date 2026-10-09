@@ -147,7 +147,7 @@ class SeoPaginasPorTemaTest extends CasoConCatalogos
 
         // Enlaces desde la lista y desde el perfil.
         $this->get('/especialistas')->assertSee('href="' . route('landing.especialidad', 'kinesiologo') . '"', false);
-        $this->get(route('landing.especialista', $camila->slug))->assertSee('Más Kinesiólogo en PRO GYM');
+        $this->get(route('landing.especialista', $camila->slug))->assertSee('Ver más de kinesiólogo');
     }
 
     /**
