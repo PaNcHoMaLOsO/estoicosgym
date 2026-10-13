@@ -63,6 +63,7 @@ export const SECCIONES_CONFIGURACION = [
             { href: '/panel/web/servicio', etiqueta: 'Servicios', permiso: 'configuracion.ver' },
             { href: '/panel/web/foto', etiqueta: 'Fotos', permiso: 'configuracion.ver' },
             { href: '/panel/web/testimonio', etiqueta: 'Testimonios', permiso: 'configuracion.ver' },
+            { href: '/panel/web/instagram', etiqueta: 'Instagram', permiso: 'configuracion.ver' },
             // Judo, lucha…: abiertas a todos y con mensualidad. No son los talleres.
             { href: '/panel/clases', etiqueta: 'Clases', permiso: 'configuracion.ver' },
             { href: '/panel/web/arriendo', etiqueta: 'Arriendo: fotos', permiso: 'configuracion.ver' },

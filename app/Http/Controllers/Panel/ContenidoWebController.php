@@ -34,6 +34,7 @@ class ContenidoWebController extends Controller
                 'texto' => $c->texto,
                 'icono' => $c->icono,
                 'imagen_url' => $c->urlDeImagen(),
+                'enlace' => $c->enlace,
                 'con_permiso' => (bool) $c->con_permiso,
                 'orden' => $c->orden,
                 'activo' => (bool) $c->activo,
@@ -55,9 +56,13 @@ class ContenidoWebController extends Controller
         // que caiga. Pedir el número a mano dejaba huecos y repetidos —dos
         // fotos con el 12 y ninguna con el 11—, y entonces el orden de la web
         // lo decidía el desempate y no quien lo escribió.
+        //
+        // SALVO EN INSTAGRAM, que va al revés: lo que se acaba de publicar es
+        // lo primero que se quiere ver, y subirlo a flechazos desde el último
+        // puesto cada vez es un trabajo que nadie haría.
         $contenido = ContenidoWeb::create($this->validar($request, $tipo, true) + [
             'tipo' => $tipo,
-            'orden' => (int) ContenidoWeb::where('tipo', $tipo)->max('orden') + 1,
+            'orden' => $tipo === 'instagram' ? 0 : (int) ContenidoWeb::where('tipo', $tipo)->max('orden') + 1,
         ]);
         $this->ponerImagen($contenido, $request);
         $this->renumerar($tipo);
@@ -277,9 +282,9 @@ class ContenidoWebController extends Controller
     /** @return array<string,mixed> */
     private function validar(Request $request, string $tipo, bool $creando): array
     {
-        $largoTitulo = ['servicio' => 60, 'foto' => 150, 'pregunta' => 150, 'testimonio' => 60, 'arriendo' => 150, 'institucion' => 100][$tipo];
-        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 200, 'arriendo' => 300, 'institucion' => 300][$tipo];
-        $conImagen = in_array($tipo, ['foto', 'arriendo', 'institucion'], true);
+        $largoTitulo = ['servicio' => 60, 'foto' => 150, 'pregunta' => 150, 'testimonio' => 60, 'arriendo' => 150, 'institucion' => 100, 'instagram' => 150][$tipo];
+        $largoTexto = ['servicio' => 200, 'foto' => 300, 'pregunta' => 1000, 'testimonio' => 200, 'arriendo' => 300, 'institucion' => 300, 'instagram' => 300][$tipo];
+        $conImagen = in_array($tipo, ['foto', 'arriendo', 'institucion', 'instagram'], true);
         // El testimonio sale en letra grande en la portada: con 400 caracteres
         // la diapositiva quedaba altísima y el carrusel saltaba de alto.
 
@@ -293,7 +298,11 @@ class ContenidoWebController extends Controller
             $reglas['icono'] = ['required', Rule::in(array_keys(ContenidoWeb::ICONOS))];
         }
 
-        if (in_array($tipo, ['foto', 'arriendo'], true)) {
+        if ($tipo === 'instagram') {
+            $reglas['enlace'] = ['required', 'string', 'max:255'];
+        }
+
+        if (in_array($tipo, ['foto', 'arriendo', 'instagram'], true)) {
             // Fotos de teléfono: hasta 8 MB, que igual se achican al guardarlas.
             // Sin SVG: puede llevar código que se ejecutaría desde la web.
             $reglas['imagen'] = [$creando ? 'required' : 'nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'];
@@ -313,6 +322,7 @@ class ContenidoWebController extends Controller
             'titulo.required' => match ($tipo) {
                 'foto', 'arriendo' => 'Describe qué muestra la foto: lo lee Google y quien no puede verla.',
                 'institucion' => 'Escribe el nombre de la institución.',
+                'instagram' => 'Escribe la primera frase de la publicación: es lo que se lee bajo la foto.',
                 'pregunta' => 'Escribe la pregunta.',
                 'testimonio' => 'Escribe el nombre como quiere que aparezca, por ejemplo «Camila R.».',
                 default => 'Ponle un nombre al servicio.',
@@ -323,6 +333,7 @@ class ContenidoWebController extends Controller
                 default => 'Escribe una línea sobre el servicio.',
             },
             'imagen.required' => 'Elige la foto.',
+            'enlace.required' => 'Pega el enlace de la publicación: en Instagram, los tres puntos → Copiar enlace.',
             'imagen.image' => 'Ese archivo no es una imagen.',
             'imagen.mimes' => 'La foto tiene que ser JPG, PNG o WEBP.',
             'imagen.max' => 'La foto no puede pesar más de 8 MB.',
@@ -334,9 +345,33 @@ class ContenidoWebController extends Controller
             'titulo' => trim($datos['titulo']),
             'texto' => isset($datos['texto']) ? trim($datos['texto']) : null,
             'icono' => $datos['icono'] ?? null,
+            'enlace' => $tipo === 'instagram' ? $this->enlaceDeInstagram($datos['enlace']) : null,
             'con_permiso' => $tipo === 'testimonio',
             'activo' => (bool) ($datos['activo'] ?? true),
         ];
+    }
+
+    /**
+     * El enlace de una publicación, limpio.
+     *
+     * «Copiar enlace» en el teléfono trae cola —?igsh=…, que identifica a quien
+     * lo copió— y a veces el usuario por delante (/progym/p/ABC/). Se guarda
+     * solo lo que abre la publicación: instagram.com/p/ABC/ o /reel/ABC/. Y
+     * solo de Instagram: es un href de la web pública.
+     */
+    private function enlaceDeInstagram(string $valor): string
+    {
+        $valor = trim($valor);
+
+        if (! preg_match('#^(?:https?://)?(?:www\.|m\.)?instagram\.com/(?:[A-Za-z0-9._]+/)?(p|reel|reels|tv)/([A-Za-z0-9_-]+)#i', $valor, $partes)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'enlace' => 'Ese no es el enlace de una publicación. Tiene que verse así: instagram.com/p/… o instagram.com/reel/…',
+            ]);
+        }
+
+        $clase = strtolower($partes[1]) === 'reels' ? 'reel' : strtolower($partes[1]);
+
+        return "https://www.instagram.com/{$clase}/{$partes[2]}/";
     }
 
     /**

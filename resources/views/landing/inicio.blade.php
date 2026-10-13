@@ -135,6 +135,9 @@
     {{-- ===== TESTIMONIOS: reales y con permiso ===== --}}
     @include('landing.partes.testimonios')
 
+    {{-- Lo último de Instagram, entre dos bloques grises: cada uno con su fondo. --}}
+    @include('landing.partes.instagram')
+
     @include('landing.partes.tienda')
     {{-- Los embajadores justo antes del bloque rojo: gente real que entrena
          aquí es lo último que se ve antes de «¿Listo para empezar?». --}}

@@ -119,6 +119,7 @@ class LandingController extends Controller
                 : [],
             'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
             'testimonios' => $this->contenidos('testimonio')->all(),
+            'publicaciones' => $this->contenidos('instagram')->take(ContenidoWeb::PUBLICACIONES_EN_PORTADA)->values()->all(),
             // Solo en la portada: es el único sitio donde salen, y así no se
             // hace una consulta más en cada página.
             'embajadores' => $this->embajadoresEnLaWeb($comun['gimnasio']['nombre']),
@@ -1060,6 +1061,8 @@ class LandingController extends Controller
                 'descripcion' => $c->texto,
                 'icono' => $c->icono,
                 'imagen' => $c->urlDeImagen(),
+                'enlace' => $c->enlace,
+                'reel' => $c->esReel(),
             ]);
     }
 
@@ -1755,7 +1758,7 @@ class LandingController extends Controller
         $especialistas = Especialista::where('activo', true)->where('tipo', 'especialista');
 
         $paginas = array_filter([
-            ['landing', '1.0', $this->laMasNueva($ajustes('portada.'), $contenidos('foto', 'servicio', 'testimonio'), $precios())],
+            ['landing', '1.0', $this->laMasNueva($ajustes('portada.'), $contenidos('foto', 'servicio', 'testimonio', 'instagram'), $precios())],
             ['landing.planes', '0.9', $precios()],
             $this->conveniosEnLaWeb() ? ['landing.convenios', '0.8', $this->laMasNueva(Convenio::max('updated_at'), $precios())] : null,
             ['landing.arriendo', '0.8', $contenidos('institucion', 'arriendo')],

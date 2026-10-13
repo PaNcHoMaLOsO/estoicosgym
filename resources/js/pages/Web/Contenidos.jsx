@@ -59,6 +59,32 @@ function camposDe(tipo, iconos) {
                 },
                 activo,
             ];
+        case 'instagram':
+            return [
+                {
+                    nombre: 'enlace',
+                    etiqueta: 'Enlace de la publicación',
+                    requerido: true,
+                    ejemplo: 'https://www.instagram.com/p/…',
+                    ayuda: 'En Instagram: los tres puntos de la publicación → Copiar enlace. Sirve para fotos y para reels.',
+                },
+                {
+                    nombre: 'imagen',
+                    etiqueta: 'Foto',
+                    tipo: 'imagen',
+                    actual: 'imagen_url',
+                    ayuda: 'La misma de la publicación (o la portada del reel). Vertical o cuadrada; se achica sola.',
+                },
+                {
+                    nombre: 'titulo',
+                    etiqueta: 'Texto',
+                    requerido: true,
+                    max: 150,
+                    ejemplo: 'Nueva zona de peso libre, ya disponible',
+                    ayuda: 'La primera frase de la publicación. Se lee bajo la foto, en dos líneas.',
+                },
+                activo,
+            ];
         case 'arriendo':
             return [
                 {
@@ -118,6 +144,7 @@ function valoresDe(tipo, fila) {
         icono: fila?.icono ?? (tipo === 'servicio' ? 'dumbbell' : ''),
         imagen: null,
         imagen_url: fila?.imagen_url ?? null,
+        enlace: fila?.enlace ?? '',
         con_permiso: Boolean(fila?.con_permiso),
         activo: fila?.uuid ? Boolean(fila.activo) : true,
     };
@@ -128,12 +155,13 @@ const COLUMNAS = {
     foto: ['Foto', 'Qué muestra', 'Orden', 'En la web', ''],
     pregunta: ['Pregunta', 'Respuesta', 'Orden', 'En la web', ''],
     testimonio: ['Nombre', 'Lo que dijo', 'Orden', 'En la web', ''],
+    instagram: ['Foto', 'Texto', 'Orden', 'En la web', ''],
     arriendo: ['Foto', 'Qué muestra', 'Orden', 'En la web', ''],
     institucion: ['Logo', 'Institución', 'Orden', 'En la web', ''],
 };
 
 /** Los tipos que llevan una imagen en la primera columna. */
-const CON_IMAGEN = ['foto', 'arriendo', 'institucion'];
+const CON_IMAGEN = ['foto', 'arriendo', 'institucion', 'instagram'];
 
 function recortar(texto, largo = 90) {
     if (! texto) {
@@ -305,7 +333,9 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                 descripcion={
                     tipo === 'testimonio'
                         ? 'Solo opiniones reales y con permiso: una inventada es publicidad engañosa.'
-                        : undefined
+                        : tipo === 'instagram'
+                          ? 'La nueva queda primera en la portada. Se muestran las 12 primeras.'
+                          : undefined
                 }
                 accion={editando?.uuid ? `/panel/web/contenido/${editando.uuid}` : `/panel/web/${tipo}`}
                 metodo={editando?.uuid ? 'put' : 'post'}

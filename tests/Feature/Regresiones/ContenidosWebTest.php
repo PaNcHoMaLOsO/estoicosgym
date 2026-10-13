@@ -289,4 +289,66 @@ class ContenidosWebTest extends CasoConCatalogos
         // sin foto antes de que alcance a correr esto.
         Storage::disk('public')->assertExists('web/vieja.jpg');
     }
+
+    /** Instagram: la publicación sale en la portada con su enlace limpio, sin la cola que identifica a quien lo copió. */
+    public function test_una_publicacion_de_instagram_sale_en_la_portada_con_su_enlace_limpio(): void
+    {
+        $this->admin()->post('/panel/web/instagram', [
+            'titulo' => 'Nueva zona de peso libre',
+            'enlace' => 'https://www.instagram.com/progym/reel/DeNRm8cvp2J/?igsh=abc123',
+            'imagen' => UploadedFile::fake()->image('reel.jpg', 720, 1280),
+        ])->assertSessionHasNoErrors();
+
+        $publicacion = ContenidoWeb::where('tipo', 'instagram')->firstOrFail();
+        $this->assertSame('https://www.instagram.com/reel/DeNRm8cvp2J/', $publicacion->enlace);
+        $this->assertTrue($publicacion->esReel());
+
+        $this->get('/')->assertOk()
+            ->assertSee('Nueva zona de peso libre')
+            ->assertSee('href="https://www.instagram.com/reel/DeNRm8cvp2J/"', false);
+    }
+
+    /** El enlace termina en un href de la web pública: solo vale el de una publicación de Instagram. */
+    public function test_un_enlace_que_no_es_de_una_publicacion_se_rechaza(): void
+    {
+        foreach (['javascript:alert(1)', 'https://instagram.com.malo.cl/p/ABC/', 'https://www.instagram.com/progym/', 'https://tiktok.com/p/ABC/'] as $enlace) {
+            $this->admin()->post('/panel/web/instagram', [
+                'titulo' => 'Algo',
+                'enlace' => $enlace,
+                'imagen' => UploadedFile::fake()->image('foto.jpg', 800, 1000),
+            ])->assertSessionHasErrors('enlace');
+        }
+
+        $this->admin()->post('/panel/web/instagram', [
+            'titulo' => 'Sin foto',
+            'enlace' => 'https://www.instagram.com/p/ABC123/',
+        ])->assertSessionHasErrors('imagen');
+
+        $this->assertSame(0, ContenidoWeb::where('tipo', 'instagram')->count());
+    }
+
+    /** Lo recién publicado es lo primero que se quiere ver: en Instagram lo nuevo va adelante, no al final. */
+    public function test_la_publicacion_nueva_queda_primera(): void
+    {
+        foreach (['Primera', 'Segunda', 'Tercera'] as $i => $titulo) {
+            $this->admin()->post('/panel/web/instagram', [
+                'titulo' => $titulo,
+                'enlace' => "instagram.com/p/POST{$i}/",
+                'imagen' => UploadedFile::fake()->image('foto.jpg', 800, 1000),
+            ])->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame(
+            ['Tercera' => 1, 'Segunda' => 2, 'Primera' => 3],
+            ContenidoWeb::where('tipo', 'instagram')->orderBy('orden')->pluck('orden', 'titulo')->all()
+        );
+
+        $this->get('/')->assertOk()->assertSeeInOrder(['Tercera', 'Segunda', 'Primera']);
+    }
+
+    /** Sin publicaciones no se pinta el bloque: un título sin nada debajo se ve roto. */
+    public function test_sin_publicaciones_no_hay_bloque_de_instagram(): void
+    {
+        $this->get('/')->assertOk()->assertDontSee('id="instagram"', false);
+    }
 }

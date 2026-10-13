@@ -20,6 +20,7 @@ class ContenidoWeb extends Model
         'texto',
         'icono',
         'imagen',
+        'enlace',
         'con_permiso',
         'orden',
         'activo',
@@ -53,6 +54,11 @@ class ContenidoWeb extends Model
             'singular' => 'testimonio',
             'descripcion' => 'Opiniones reales de socios, con su permiso. Salen en Inicio.',
         ],
+        'instagram' => [
+            'titulo' => 'Instagram',
+            'singular' => 'publicación',
+            'descripcion' => 'Lo último que se subió a Instagram. Salen en Inicio, la más nueva primero, y cada una abre su publicación.',
+        ],
         'arriendo' => [
             'titulo' => 'Arriendo: fotos',
             'singular' => 'foto',
@@ -64,6 +70,9 @@ class ContenidoWeb extends Model
             'descripcion' => 'Instituciones y clubes que ya hacen sus clases aquí. Salen en la página Arrienda horas: solo el nombre y el logo.',
         ],
     ];
+
+    /** Cuántas publicaciones de Instagram se muestran en la portada. */
+    public const PUBLICACIONES_EN_PORTADA = 12;
 
     /** Los íconos que se pueden elegir para un servicio (Font Awesome). */
     public const ICONOS = [
@@ -97,6 +106,12 @@ class ContenidoWeb extends Model
     public function getRouteKeyName()
     {
         return 'uuid';
+    }
+
+    /** Un reel se marca en su tarjeta: quien lo abre sabe que es un video. */
+    public function esReel(): bool
+    {
+        return (bool) preg_match('#instagram\.com/(reel|reels|tv)/#', (string) $this->enlace);
     }
 
     public function urlDeImagen(): ?string

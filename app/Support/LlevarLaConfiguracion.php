@@ -103,7 +103,7 @@ class LlevarLaConfiguracion
             // Las migraciones siembran textos de la web con uuid al azar: en el
             // servidor son otros, así que se reconocen también por tipo y título.
             'contenidos_web' => [
-                'columnas' => ['uuid', 'tipo', 'titulo', 'texto', 'icono', 'imagen', 'con_permiso', 'orden', 'activo'],
+                'columnas' => ['uuid', 'tipo', 'titulo', 'texto', 'icono', 'imagen', 'enlace', 'con_permiso', 'orden', 'activo'],
                 'identidad' => [['uuid'], ['tipo', 'titulo']],
                 'imagenes' => ['imagen'],
             ],
