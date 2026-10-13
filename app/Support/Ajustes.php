@@ -685,6 +685,15 @@ class Ajustes
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            'web.instagram_token' => [
+                'grupo' => 'web',
+                'seccion' => 'Redes y contacto',
+                'etiqueta' => 'Llave de Instagram',
+                'ayuda' => 'Con ella la portada trae sola las últimas publicaciones. Se saca en developers.facebook.com, en la app del gimnasio: Instagram → Generar token para la cuenta. Dura 60 días y se renueva sola. Para desconectar, escribe BORRAR.',
+                'tipo' => 'secreto',
+                'largo' => 500,
+                'defecto' => '',
+            ],
             'web.facebook' => [
                 'grupo' => 'web',
                 'seccion' => 'Redes y contacto',

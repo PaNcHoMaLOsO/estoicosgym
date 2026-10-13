@@ -108,6 +108,25 @@ class ContenidoWeb extends Model
         return 'uuid';
     }
 
+    /**
+     * El enlace de una publicación, limpio; null si no lo es.
+     *
+     * «Copiar enlace» en el teléfono trae cola —?igsh=…, que identifica a quien
+     * lo copió— y a veces el usuario por delante (/progym/p/ABC/). Se guarda
+     * solo lo que abre la publicación: instagram.com/p/ABC/ o /reel/ABC/. Y
+     * solo de Instagram: es un href de la web pública.
+     */
+    public static function enlaceDeInstagram(string $valor): ?string
+    {
+        if (! preg_match('#^(?:https?://)?(?:www\.|m\.)?instagram\.com/(?:[A-Za-z0-9._]+/)?(p|reel|reels|tv)/([A-Za-z0-9_-]+)#i', trim($valor), $partes)) {
+            return null;
+        }
+
+        $clase = strtolower($partes[1]) === 'reels' ? 'reel' : strtolower($partes[1]);
+
+        return "https://www.instagram.com/{$clase}/{$partes[2]}/";
+    }
+
     /** Un reel se marca en su tarjeta: quien lo abre sabe que es un video. */
     public function esReel(): bool
     {

@@ -98,6 +98,13 @@ Schedule::command('notificaciones:enviar --reintentar')
         Log::error('❌ Error al reintentar notificaciones');
     });
 
+// Las publicaciones nuevas de Instagram, a la portada. Sin llave no hace nada;
+// sin programador las trae la propia portada cuando alguien entra.
+Schedule::command('instagram:traer')
+    ->everyTwoHours()
+    ->withoutOverlapping()
+    ->name('instagram-a-la-portada');
+
 // El respaldo completo de la base, de madrugada: se guardan los últimos 14.
 // Sin programador lo hace la revisión del día (RevisaElDia).
 Schedule::command('base:respaldar')

@@ -1,7 +1,7 @@
 import { confirmar } from '@/components/Confirmar';
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, TrashIcon, WandSparklesIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, RefreshCwIcon, TrashIcon, WandSparklesIcon } from 'lucide-react';
 
 import Activo from '@/components/Activo';
 import FormularioCatalogo from '@/components/FormularioCatalogo';
@@ -171,7 +171,34 @@ function recortar(texto, largo = 90) {
     return texto.length > largo ? `${texto.slice(0, largo)}…` : texto;
 }
 
-export default function Contenidos({ tipo, datos, filas, iconos }) {
+/** «hace 2 horas», para la última vez que se miró Instagram. */
+function haceCuanto(iso) {
+    const minutos = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+
+    if (minutos < 2) {
+        return 'recién';
+    }
+
+    if (minutos < 60) {
+        return `hace ${minutos} minutos`;
+    }
+
+    const horas = Math.round(minutos / 60);
+
+    return horas < 24 ? `hace ${horas} ${horas === 1 ? 'hora' : 'horas'}` : `hace ${Math.round(horas / 24)} días`;
+}
+
+export default function Contenidos({ tipo, datos, filas, iconos, instagram }) {
+    const [trayendo, setTrayendo] = useState(false);
+
+    function traerDeInstagram() {
+        router.post('/panel/web/instagram/traer', {}, {
+            preserveScroll: true,
+            onStart: () => setTrayendo(true),
+            onFinish: () => setTrayendo(false),
+        });
+    }
+
     // null = cerrado; una fila = editando esa; {} = creando.
     const [editando, setEditando] = useState(null);
 
@@ -240,6 +267,48 @@ export default function Contenidos({ tipo, datos, filas, iconos }) {
                     {datos.singular === 'servicio' || datos.singular === 'testimonio' ? 'Nuevo' : 'Nueva'} {datos.singular}
                 </button>
             </header>
+
+            {/* Instagram se actualiza solo si está conectado: aquí se ve si lo
+                está, cómo salió la última vuelta y se puede forzar una. */}
+            {instagram ? (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-control border border-line px-4 py-3">
+                    {instagram.conectado ? (
+                        <p className="text-sm text-chalk">
+                            <span className="font-medium">Conectado: las publicaciones nuevas entran solas.</span>{' '}
+                            {instagram.ultima ? (
+                                <span className={instagram.ultima.bien ? 'text-fog' : 'text-danger'}>
+                                    Última revisión {haceCuanto(instagram.ultima.cuando)}: {instagram.ultima.mensaje}
+                                </span>
+                            ) : (
+                                <span className="text-fog">Todavía no se ha revisado.</span>
+                            )}
+                        </p>
+                    ) : (
+                        <p className="text-sm text-chalk">
+                            <span className="font-medium">Sin conectar: por ahora se cargan a mano.</span>{' '}
+                            <span className="text-fog">
+                                Para que entren solas, pega la llave de Instagram en{' '}
+                                <a href="/panel/configuracion/web" className="underline hover:text-chalk">
+                                    Configuración → Página web
+                                </a>
+                                .
+                            </span>
+                        </p>
+                    )}
+
+                    {instagram.conectado ? (
+                        <button
+                            type="button"
+                            onClick={traerDeInstagram}
+                            disabled={trayendo}
+                            className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:border-line-strong disabled:opacity-50"
+                        >
+                            <RefreshCwIcon className={`size-4 ${trayendo ? 'animate-spin' : ''}`} aria-hidden="true" />
+                            {trayendo ? 'Revisando…' : 'Revisar ahora'}
+                        </button>
+                    ) : null}
+                </div>
+            ) : null}
 
             <Tabla columnas={COLUMNAS[tipo]} vacia={filas.length === 0} mensajeVacio="Todavía no hay nada aquí.">
                 {filas.map((fila, indice) => (

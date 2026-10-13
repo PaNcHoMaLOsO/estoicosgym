@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContenidoWeb;
+use App\Services\InstagramDelGimnasio;
 use App\Support\FotoLiviana;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -44,6 +45,11 @@ class ContenidoWebController extends Controller
             'tipo' => $tipo,
             'datos' => ContenidoWeb::TIPOS[$tipo],
             'filas' => $filas,
+            // Solo en Instagram: si está conectado y cómo salió la última vuelta.
+            'instagram' => $tipo === 'instagram' ? [
+                'conectado' => InstagramDelGimnasio::conectado(),
+                'ultima' => InstagramDelGimnasio::ultimaVuelta(),
+            ] : null,
             'iconos' => collect(ContenidoWeb::ICONOS)
                 ->map(fn (string $etiqueta, string $valor) => ['valor' => $valor, 'etiqueta' => $etiqueta])
                 ->values(),
@@ -93,11 +99,32 @@ class ContenidoWebController extends Controller
             Storage::disk('public')->delete($contenido->imagen);
         }
 
+        // Una publicación que se quitó a mano no vuelve a entrar sola.
+        if ($contenido->tipo === 'instagram') {
+            InstagramDelGimnasio::descartar($contenido->enlace);
+        }
+
         $contenido->delete();
         // Sin esto quedaría un hueco en la cuenta: 1, 2, 4, 5…
         $this->renumerar($contenido->tipo);
 
         return back()->with('success', 'Eliminado. Ya no está en la web.');
+    }
+
+    /** Trae ahora las publicaciones nuevas de Instagram, sin esperar a la próxima vuelta. */
+    public function traerDeInstagram()
+    {
+        try {
+            $nuevas = InstagramDelGimnasio::traer();
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', match ($nuevas) {
+            0 => 'Instagram no tiene publicaciones nuevas.',
+            1 => 'Entró 1 publicación nueva. Ya está en la portada.',
+            default => "Entraron {$nuevas} publicaciones nuevas. Ya están en la portada.",
+        });
     }
 
     /**
@@ -351,27 +378,12 @@ class ContenidoWebController extends Controller
         ];
     }
 
-    /**
-     * El enlace de una publicación, limpio.
-     *
-     * «Copiar enlace» en el teléfono trae cola —?igsh=…, que identifica a quien
-     * lo copió— y a veces el usuario por delante (/progym/p/ABC/). Se guarda
-     * solo lo que abre la publicación: instagram.com/p/ABC/ o /reel/ABC/. Y
-     * solo de Instagram: es un href de la web pública.
-     */
+    /** El enlace de la publicación, limpio: ver ContenidoWeb::enlaceDeInstagram. */
     private function enlaceDeInstagram(string $valor): string
     {
-        $valor = trim($valor);
-
-        if (! preg_match('#^(?:https?://)?(?:www\.|m\.)?instagram\.com/(?:[A-Za-z0-9._]+/)?(p|reel|reels|tv)/([A-Za-z0-9_-]+)#i', $valor, $partes)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'enlace' => 'Ese no es el enlace de una publicación. Tiene que verse así: instagram.com/p/… o instagram.com/reel/…',
-            ]);
-        }
-
-        $clase = strtolower($partes[1]) === 'reels' ? 'reel' : strtolower($partes[1]);
-
-        return "https://www.instagram.com/{$clase}/{$partes[2]}/";
+        return ContenidoWeb::enlaceDeInstagram($valor) ?? throw \Illuminate\Validation\ValidationException::withMessages([
+            'enlace' => 'Ese no es el enlace de una publicación. Tiene que verse así: instagram.com/p/… o instagram.com/reel/…',
+        ]);
     }
 
     /**

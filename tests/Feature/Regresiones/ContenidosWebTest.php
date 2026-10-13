@@ -351,4 +351,84 @@ class ContenidosWebTest extends CasoConCatalogos
     {
         $this->get('/')->assertOk()->assertDontSee('id="instagram"', false);
     }
+
+    /** Lo que responde Instagram: una foto y un reel, la más nueva primero. */
+    private function instagramResponde(): void
+    {
+        $archivo = UploadedFile::fake()->image('ig.jpg', 800, 1000);
+        $foto = (string) file_get_contents($archivo->getRealPath());
+
+        \Illuminate\Support\Facades\Http::fake([
+            'graph.instagram.com/me/media*' => \Illuminate\Support\Facades\Http::response(['data' => [
+                [
+                    'id' => '111', 'media_type' => 'IMAGE', 'media_url' => 'https://scontent.cdninstagram.com/a.jpg',
+                    'permalink' => 'https://www.instagram.com/p/NUEVA1/', 'timestamp' => '2026-10-13T12:00:00+0000',
+                    'caption' => "🎃 En Pro Gym hasta los monstruos entrenan… ¿y tú cuál eres? 👻\n\nComenta tu número 👇 #gimnasio",
+                ],
+                [
+                    'id' => '222', 'media_type' => 'VIDEO', 'thumbnail_url' => 'https://scontent.cdninstagram.com/b.jpg',
+                    'permalink' => 'https://www.instagram.com/reel/REEL22/', 'timestamp' => '2026-10-06T12:00:00+0000',
+                    'caption' => '',
+                ],
+            ]]),
+            'graph.instagram.com/refresh_access_token*' => \Illuminate\Support\Facades\Http::response(['access_token' => 'llave-renovada']),
+            'scontent.cdninstagram.com/*' => \Illuminate\Support\Facades\Http::response($foto, 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+    }
+
+    /** Conectado, las publicaciones entran solas: con su foto copiada aquí, su primera frase sin emojis y la más nueva primero. */
+    public function test_instagram_trae_solas_las_publicaciones_nuevas(): void
+    {
+        \App\Support\Ajustes::guardar(['web.instagram_token' => 'llave-de-prueba']);
+        $this->instagramResponde();
+
+        // Una cargada a mano de antes: queda detrás de las que vienen de Instagram.
+        ContenidoWeb::create(['tipo' => 'instagram', 'titulo' => 'A mano', 'imagen' => 'web/a-mano.jpg', 'enlace' => 'https://www.instagram.com/p/VIEJA0/', 'orden' => 1, 'activo' => true]);
+
+        $this->admin()->post('/panel/web/instagram/traer')->assertSessionHas('success');
+
+        $filas = ContenidoWeb::where('tipo', 'instagram')->orderBy('orden')->get();
+        $this->assertSame(['En Pro Gym hasta los monstruos entrenan… ¿y tú cuál eres?', 'Publicación del 6 de octubre', 'A mano'], $filas->pluck('titulo')->all());
+        $this->assertSame('https://www.instagram.com/reel/REEL22/', $filas[1]->enlace);
+        Storage::disk('public')->assertExists($filas[0]->imagen);
+        // La llave se renovó sola y sigue guardada cifrada.
+        $this->assertSame('llave-renovada', \App\Support\Ajustes::obtener('web.instagram_token'));
+        $this->assertStringNotContainsString('llave', (string) \Illuminate\Support\Facades\DB::table('ajustes')->where('clave', 'web.instagram_token')->value('valor'));
+
+        // Otra vuelta no duplica, ni deshace lo que se corrigió u ocultó a mano.
+        $filas[0]->update(['titulo' => 'Corregido a mano', 'activo' => false]);
+        $this->artisan('instagram:traer')->assertSuccessful();
+
+        $this->assertSame(3, ContenidoWeb::where('tipo', 'instagram')->count());
+        $this->assertSame('Corregido a mano', $filas[0]->fresh()->titulo);
+        $this->assertFalse($filas[0]->fresh()->activo);
+    }
+
+    /** Una publicación eliminada a mano no vuelve a entrar en la vuelta siguiente. */
+    public function test_una_publicacion_eliminada_no_vuelve_sola(): void
+    {
+        \App\Support\Ajustes::guardar(['web.instagram_token' => 'llave-de-prueba']);
+        $this->instagramResponde();
+        $this->artisan('instagram:traer')->assertSuccessful();
+
+        $this->admin()->delete('/panel/web/contenido/' . ContenidoWeb::where('enlace', 'https://www.instagram.com/p/NUEVA1/')->firstOrFail()->uuid);
+        $this->artisan('instagram:traer')->assertSuccessful();
+
+        $this->assertSame(['https://www.instagram.com/reel/REEL22/'], ContenidoWeb::where('tipo', 'instagram')->pluck('enlace')->all());
+    }
+
+    /** Sin llave no se llama a nadie; con una llave vencida se dice qué hacer y la portada sigue en pie. */
+    public function test_instagram_sin_llave_o_con_llave_vencida_no_rompe_nada(): void
+    {
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['error' => ['message' => 'Error validating access token']], 400)]);
+
+        $this->artisan('instagram:traer')->assertSuccessful();
+        $this->get('/')->assertOk();
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+
+        \App\Support\Ajustes::guardar(['web.instagram_token' => 'vencida']);
+        $this->admin()->post('/panel/web/instagram/traer')->assertSessionHas('error');
+        $this->get('/')->assertOk();
+        $this->actingAs($this->recepcionista())->post('/panel/web/instagram/traer')->assertForbidden();
+    }
 }

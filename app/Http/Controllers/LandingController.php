@@ -104,6 +104,9 @@ class LandingController extends Controller
     {
         $comun = $this->comun();
 
+        // Si ya toca, se miran las publicaciones nuevas de Instagram después de responder.
+        \App\Services\InstagramDelGimnasio::siToca();
+
         return $this->pagina('landing.inicio', 'landing', null, null, [
             'portada' => [
                 'titulo_1' => Ajustes::obtener('portada.titulo_1'),
