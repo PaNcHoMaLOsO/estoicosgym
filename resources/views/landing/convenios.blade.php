@@ -69,7 +69,7 @@
                                 <div class="group flex flex-col items-center bg-white px-3 py-5 lg:px-8 lg:py-9 text-center transition-colors duration-300 hover:bg-gray-50">
                                     <div class="flex h-12 lg:h-20 w-full items-center justify-center transition-transform duration-500 group-hover:scale-[1.04]">
                                         @if($c['logo'])
-                                            <img src="{{ $c['logo'] }}" alt="{{ $c['nombre'] }}" loading="lazy" class="max-h-full max-w-full object-contain">
+                                            <img src="{{ $c['logo'] }}" {{ \App\Support\MedidasDeImagen::atributos($c['logo']) }} alt="{{ $c['nombre'] }}" loading="lazy" class="h-auto w-auto max-h-full max-w-full object-contain">
                                         @else
                                             {{-- Sin logo, un ícono en un círculo rojo: el nombre va justo abajo. --}}
                                             <span class="grid size-12 place-items-center rounded-full bg-pg-rojo/10 text-xl text-pg-rojo lg:size-16 lg:text-2xl">

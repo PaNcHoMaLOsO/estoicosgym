@@ -167,7 +167,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
     {
         $this->get('/rutinas/fuerza-cuerpo-completo-3-dias')
             ->assertOk()
-            ->assertSee('<title>Rutina Fuerza cuerpo completo: 3 días | PRO GYM', false)
+            ->assertSee('<title>Rutina de 3 días para ganar fuerza y músculo: Fuerza cuerpo completo | PRO GYM', false)
             ->assertSeeInOrder(['Día 1 · Día A', 'Sentadilla con barra', '4 series × 6 a 8 repeticiones', 'Descanso 120 s', 'Día 2 · Día B', 'Día 3 · Día C'])
             ->assertSee('Para avanzar:', false)
             ->assertSee('sube 2,5 kg o una repetición')

@@ -50,6 +50,21 @@ final class MedidasDeImagen
         return $medidas;
     }
 
+    /**
+     * `width="…" height="…"` listo para la etiqueta, o nada si no se pudo medir.
+     *
+     * CON SUS MEDIDAS, EL NAVEGADOR LE GUARDA EL SITIO A LA FOTO antes de
+     * bajarla: sin ellas la página salta cuando llega, y eso es justo lo que
+     * Google mide en el teléfono. El tamaño a la vista lo sigue mandando la
+     * hoja de estilos; esto solo dice la proporción.
+     */
+    public static function atributos(?string $url): \Illuminate\Support\HtmlString
+    {
+        $medidas = self::de($url);
+
+        return new \Illuminate\Support\HtmlString($medidas ? "width=\"{$medidas[0]}\" height=\"{$medidas[1]}\"" : '');
+    }
+
     /** El archivo en disco de una dirección de la propia web, o null. */
     private static function rutaLocal(?string $url): ?string
     {

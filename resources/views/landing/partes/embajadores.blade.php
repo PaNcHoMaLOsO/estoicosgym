@@ -30,7 +30,7 @@
                 @foreach($embajadores as $i => $e)
                     <figure class="animate-on-scroll group relative aspect-[3/4] w-[72%] shrink-0 snap-start overflow-hidden bg-pg-carbon sm:w-auto" style="animation-delay: {{ ($i % 4) * 0.08 }}s">
                         @if($e['foto'])
-                            <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}" loading="lazy"
+                            <img src="{{ $e['foto'] }}" {{ \App\Support\MedidasDeImagen::atributos($e['foto']) }} alt="{{ $e['nombre'] }}" loading="lazy"
                                  class="absolute inset-0 h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0">
                         @else
                             {{-- Sin foto, la inicial en hueco llena el panel: un hueco negro se ve roto. --}}

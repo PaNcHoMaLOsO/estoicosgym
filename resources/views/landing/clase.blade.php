@@ -22,7 +22,7 @@
 
             <div class="mt-6 grid gap-8 lg:mt-8 {{ $c['imagen'] ? 'lg:grid-cols-2' : '' }} lg:gap-14">
                 @if($c['imagen'])
-                    <img src="{{ $c['imagen'] }}" alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
+                    <img src="{{ $c['imagen'] }}" {{ \App\Support\MedidasDeImagen::atributos($c['imagen']) }} alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
                          loading="eager" fetchpriority="high" decoding="async"
                          class="aspect-[4/3] w-full rounded-md object-cover lg:sticky lg:top-28 lg:self-start">
                 @endif

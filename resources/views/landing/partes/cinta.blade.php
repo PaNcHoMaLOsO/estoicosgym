@@ -42,7 +42,7 @@
                 @php($repetido = $copia || $i >= count($logos))
                 <div class="cinta-logo" @if($h = $alto($c['logo'])) style="height: {{ $h }}" @endif @if($repetido) data-repetido aria-hidden="true" @endif>
                     @if($c['logo'])
-                        <img src="{{ $c['logo'] }}" alt="{{ $repetido ? '' : $c['nombre'] }}" loading="lazy" decoding="async">
+                        <img src="{{ $c['logo'] }}" {{ \App\Support\MedidasDeImagen::atributos($c['logo']) }} alt="{{ $repetido ? '' : $c['nombre'] }}" loading="lazy" decoding="async">
                     @else
                         <span>{{ $c['nombre'] }}</span>
                     @endif

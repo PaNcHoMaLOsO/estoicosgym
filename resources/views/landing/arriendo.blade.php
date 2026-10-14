@@ -46,7 +46,7 @@
                     @foreach($fotosDelArriendo as $i => $foto)
                         {{-- La primera, grande: el collage tiene un centro. --}}
                         <figure class="animate-on-scroll relative overflow-hidden rounded-xl bg-pg-carbon {{ $i === 0 ? 'col-span-2 row-span-2' : '' }}">
-                            <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" @if($i === 0) loading="eager" fetchpriority="high" @else loading="lazy" @endif decoding="async" class="absolute inset-0 h-full w-full object-cover">
+                            <img src="{{ $foto['imagen'] }}" alt="{{ $foto['titulo'] }}" {{ \App\Support\MedidasDeImagen::atributos($foto['imagen']) }} @if($i === 0) loading="eager" fetchpriority="high" @else loading="lazy" @endif decoding="async" class="absolute inset-0 h-full w-full object-cover">
                         </figure>
                     @endforeach
                 </div>

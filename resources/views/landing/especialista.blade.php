@@ -28,7 +28,7 @@
                 {{-- La foto, más chica: era casi la mitad de la pantalla y dejaba los datos apretados al lado. --}}
                 <div class="relative aspect-[4/3] w-full overflow-hidden bg-pg-carbon sm:max-w-md lg:aspect-[4/5] lg:max-w-none lg:sticky lg:top-28 lg:self-start">
                     @if($e['foto'])
-                        <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
+                        <img src="{{ $e['foto'] }}" {{ \App\Support\MedidasDeImagen::atributos($e['foto']) }} alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
                              loading="eager" fetchpriority="high"
                              class="absolute inset-0 h-full w-full object-cover object-top">
                     @else
@@ -192,7 +192,7 @@
                             <a href="{{ $otro['perfil'] }}" class="group flex items-center gap-4 bg-pg-carbon p-3 transition-colors hover:bg-pg-grafito">
                                 <span class="relative size-16 shrink-0 overflow-hidden bg-pg-negro">
                                     @if($otro['foto'])
-                                        <img src="{{ $otro['foto'] }}" alt="" loading="lazy" class="h-full w-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0">
+                                        <img src="{{ $otro['foto'] }}" {{ \App\Support\MedidasDeImagen::atributos($otro['foto']) }} alt="" loading="lazy" class="h-full w-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0">
                                     @else
                                         <span class="flex h-full items-center justify-center font-display text-3xl text-pg-rojo/60">{{ mb_strtoupper(mb_substr($otro['nombre'], 0, 1)) }}</span>
                                     @endif

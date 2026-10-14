@@ -30,6 +30,43 @@ class Rutina extends Model
         'hace_tiempo' => 'Entreno hace tiempo',
     ];
 
+    /**
+     * «para bajar de peso», «para principiantes»: como se busca en Google.
+     *
+     * Las opciones del cuestionario están dichas en primera persona («Estoy
+     * empezando», «Nunca he entrenado») y pegadas tal cual en lo que lee
+     * Google daban «Rutina de 3 días para Estoy empezando. Nunca he entrenado.»
+     */
+    public function paraQue(): string
+    {
+        return match ($this->objetivo) {
+            'empezar' => $this->nivel === 'hace_tiempo' ? 'para volver al gimnasio' : 'para principiantes',
+            'bajar_grasa' => 'para bajar de peso',
+            'fuerza' => 'para ganar fuerza y músculo',
+            'mantener' => 'para mantenerse en forma',
+            default => 'de gimnasio',
+        };
+    }
+
+    /** «si nunca has entrenado»: para quién es, dicho al que lee. */
+    public function paraQuien(): string
+    {
+        if ($this->objetivo === 'empezar') {
+            return match ($this->nivel) {
+                'nunca' => 'que nunca han entrenado',
+                'algo' => 'que ya conocen las máquinas',
+                default => 'después de un tiempo sin entrenar',
+            };
+        }
+
+        return match ($this->nivel) {
+            'nunca' => 'si nunca has entrenado',
+            'algo' => 'si ya has entrenado algo',
+            'hace_tiempo' => 'si entrenas hace tiempo',
+            default => '',
+        };
+    }
+
     protected $fillable = ['nombre', 'slug', 'objetivo', 'nivel', 'dias_por_semana', 'descripcion', 'activa', 'orden'];
 
     protected $casts = [

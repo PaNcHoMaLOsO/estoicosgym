@@ -112,7 +112,7 @@
                     <article id="{{ $ancla($c['nombre']) }}" class="animate-on-scroll flex scroll-mt-28 flex-col" style="animation-delay: {{ ($index % 3) * 0.08 }}s">
                         @if($c['imagen'])
                             <a href="{{ $c['url'] }}" tabindex="-1" aria-hidden="true">
-                            <img src="{{ $c['imagen'] }}" alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-md object-cover">
+                            <img src="{{ $c['imagen'] }}" {{ \App\Support\MedidasDeImagen::atributos($c['imagen']) }} alt="Clase de {{ $c['nombre'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-md object-cover">
                             </a>
                         @endif
 

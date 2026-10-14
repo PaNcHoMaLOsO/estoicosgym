@@ -42,7 +42,7 @@
                             <a href="{{ $p['enlace'] }}" target="_blank" rel="noopener" data-evento="instagram_publicacion" data-detalle="{{ $p['titulo'] }}"
                                class="group block">
                                 <span class="relative block aspect-[4/5] overflow-hidden rounded-lg bg-pg-carbon">
-                                    <img src="{{ $p['imagen'] }}" alt="" loading="lazy" decoding="async"
+                                    <img src="{{ $p['imagen'] }}" {{ \App\Support\MedidasDeImagen::atributos($p['imagen']) }} alt="" loading="lazy" decoding="async"
                                          class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03] group-hover:opacity-90">
                                     @if($p['reel'])
                                         {{-- Un reel: quien lo abre sabe que es un video. --}}

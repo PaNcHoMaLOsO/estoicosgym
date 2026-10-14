@@ -38,7 +38,7 @@
         <article class="animate-on-scroll group relative flex min-h-[15rem] flex-col justify-end overflow-hidden bg-pg-carbon sm:min-h-[20rem] lg:min-h-[24rem]" style="animation-delay: {{ ($index % 4) * 0.08 }}s">
             @if($e['foto'])
                 {{-- Las dos primeras son lo primero que se ve (en el celular van de a dos): sin esperar. --}}
-                <img src="{{ $e['foto'] }}" alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
+                <img src="{{ $e['foto'] }}" {{ \App\Support\MedidasDeImagen::atributos($e['foto']) }} alt="{{ $e['nombre'] }}, {{ $e['especialidad'] }} en {{ $gimnasio['nombre'] }}{{ $web['ciudad'] ? ', ' . $web['ciudad'] : '' }}"
                      @if($index < 2) loading="eager" fetchpriority="high" @else loading="lazy" @endif decoding="async"
                      class="absolute inset-0 h-full w-full object-cover object-top grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0">
             @else

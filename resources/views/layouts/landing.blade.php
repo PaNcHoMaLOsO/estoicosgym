@@ -214,7 +214,7 @@
             align-items: center;
             justify-content: center;
         }
-        .cinta-logo img { max-width: 100%; max-height: 100%; width: auto; object-fit: contain; }
+        .cinta-logo img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
         .cinta-logo span { color: #1f2937; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 1.05rem; text-align: center; }
         @keyframes cinta { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 

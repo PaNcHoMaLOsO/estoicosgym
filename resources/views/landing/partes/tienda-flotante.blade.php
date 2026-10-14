@@ -33,9 +33,9 @@
 
         {{-- El logotipo entero siempre; el icono solo queda de respaldo si no hay logotipo. --}}
         @if($tienda['logo'])
-            <img src="{{ $tienda['logo'] }}" alt="{{ $tienda['titulo'] }}" class="h-7 w-auto sm:h-9">
+            <img src="{{ $tienda['logo'] }}" {{ \App\Support\MedidasDeImagen::atributos($tienda['logo']) }} alt="{{ $tienda['titulo'] }}" class="h-7 w-auto sm:h-9">
         @else
-            <img src="{{ $tienda['icono'] }}" alt="{{ $tienda['titulo'] }}" class="h-7 w-7 object-contain">
+            <img src="{{ $tienda['icono'] }}" {{ \App\Support\MedidasDeImagen::atributos($tienda['icono']) }} alt="{{ $tienda['titulo'] }}" class="h-7 w-7 object-contain">
         @endif
     </a>
 @endif

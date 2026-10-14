@@ -92,7 +92,7 @@
                     <a href="{{ $tienda['url'] }}" target="_blank" rel="noopener" data-evento="tienda_suplementos"
                        class="group inline-flex items-center gap-3 font-modern text-sm text-pg-tiza/55 transition-colors hover:text-pg-tiza">
                         @if($tienda['logo'])
-                            <img src="{{ $tienda['logo'] }}" alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
+                            <img src="{{ $tienda['logo'] }}" {{ \App\Support\MedidasDeImagen::atributos($tienda['logo']) }} alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
                         @endif
                         <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[11px]" /></span>
                     </a>

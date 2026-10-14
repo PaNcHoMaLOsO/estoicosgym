@@ -895,8 +895,15 @@ class LandingController extends Controller
         $nombre = trim(preg_replace('/\s*·\s*\d+\s*d[ií]as?\s*$/u', '', $rutina->nombre)) ?: $rutina->nombre;
 
         return $this->pagina('landing.rutina-ver', 'landing.rutina.ver',
-            "Rutina {$nombre}: {$rutina->dias_por_semana} días",
-            \Illuminate\Support\Str::limit("Rutina de {$rutina->dias_por_semana} días para {$objetivo}. {$nivel}. " . ($rutina->descripcion ?? ''), 155),
+            // PRIMERO LO QUE SE BUSCA —«rutina de 3 días para bajar de peso»— y
+            // al final el nombre que le pusimos, que nadie escribe en Google.
+            "Rutina de {$rutina->dias_por_semana} días {$rutina->paraQue()}: {$nombre}",
+            \Illuminate\Support\Str::limit(
+                "Rutina de gimnasio de {$rutina->dias_por_semana} días {$rutina->paraQue()}"
+                    . (($quien = $rutina->paraQuien()) !== '' ? ($rutina->objetivo === 'empezar' ? ' ' : ', ') . $quien : '')
+                    . '. ' . ($rutina->descripcion ?? ''),
+                155
+            ),
             [
                 'rutina' => $rutina,
                 'nombre' => $nombre,

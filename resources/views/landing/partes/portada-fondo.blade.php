@@ -34,7 +34,7 @@
         {{-- La primera foto se ve desde el primer momento: si se esperara a que
              cargue algo, la portada arrancaría en negro. --}}
         <img class="portada-capa portada-foto h-full w-full object-cover"
-             src="{{ $cartel }}" alt="" fetchpriority="high">
+             src="{{ $cartel }}" alt="" {{ \App\Support\MedidasDeImagen::atributos($cartel) }} fetchpriority="high">
         <img class="portada-capa portada-foto h-full w-full object-cover" style="opacity: 0" src="" alt="">
 
         <video class="portada-capa portada-video h-full w-full object-cover"
