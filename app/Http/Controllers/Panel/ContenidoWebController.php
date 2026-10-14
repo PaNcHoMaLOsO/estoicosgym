@@ -415,6 +415,7 @@ class ContenidoWebController extends Controller
     {
         $ruta = $archivo->store('web/instituciones', 'public');
         \App\Support\Imagenes::recortarBordes(Storage::disk('public')->path($ruta));
+        \App\Support\Imagenes::achicar(Storage::disk('public')->path($ruta));
 
         return $ruta;
     }

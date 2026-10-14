@@ -431,4 +431,31 @@ class ContenidosWebTest extends CasoConCatalogos
         $this->get('/')->assertOk();
         $this->actingAs($this->recepcionista())->post('/panel/web/instagram/traer')->assertForbidden();
     }
+
+    /** Un logo de 3.000 píxeles pesa lo que toda la portada: se achica al subirlo, en su mismo archivo y sin perder el fondo transparente. */
+    public function test_un_logo_enorme_se_achica_al_subirlo(): void
+    {
+        $lienzo = imagecreatetruecolor(2400, 1200);
+        // Sin mezclar: lo transparente se pinta transparente, no encima del rojo.
+        imagealphablending($lienzo, false);
+        imagesavealpha($lienzo, true);
+        imagefilledrectangle($lienzo, 0, 0, 2399, 1199, imagecolorallocate($lienzo, 200, 30, 40));
+        imagefilledrectangle($lienzo, 600, 300, 1800, 900, imagecolorallocatealpha($lienzo, 0, 0, 0, 127));
+        $ruta = tempnam(sys_get_temp_dir(), 'logo') . '.png';
+        imagepng($lienzo, $ruta);
+
+        $this->admin()->post('/panel/web/institucion', [
+            'titulo' => 'Instituto de prueba',
+            'imagen' => new UploadedFile($ruta, 'logo.png', 'image/png', null, true),
+        ])->assertSessionHasNoErrors();
+
+        $guardado = Storage::disk('public')->path(ContenidoWeb::where('tipo', 'institucion')->firstOrFail()->imagen);
+        [$ancho, $alto, $tipo] = getimagesize($guardado);
+
+        $this->assertSame([480, 240, IMAGETYPE_PNG], [$ancho, $alto, $tipo]);
+        // El hueco del medio sigue transparente.
+        $this->assertSame(127, (imagecolorat(imagecreatefrompng($guardado), 240, 120) >> 24) & 0x7F);
+        // Uno que ya es chico no se toca.
+        $this->assertFalse(\App\Support\Imagenes::achicar($guardado));
+    }
 }

@@ -411,6 +411,8 @@ class CatalogoController extends Controller
             $convenio->update(['logo' => $request->file('logo')->store('convenios', 'public')]);
             // Sin el margen blanco que traen muchos logos: si no, la marca se ve diminuta.
             Imagenes::recortarBordes(Storage::disk('public')->path($convenio->logo));
+            // Y a un tamaño de logo: uno de 3.000 píxeles pesa lo que toda la portada.
+            Imagenes::achicar(Storage::disk('public')->path($convenio->logo));
         } elseif ($request->boolean('quitar_logo')) {
             $convenio->update(['logo' => null]);
         } else {

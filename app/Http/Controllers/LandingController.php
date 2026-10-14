@@ -1054,11 +1054,23 @@ class LandingController extends Controller
     /** Lo que se escribió en Página web para un tipo, en su orden. */
     private function contenidos(string $tipo): \Illuminate\Support\Collection
     {
-        return ContenidoWeb::where('tipo', $tipo)
-            ->where('activo', true)
-            ->orderBy('orden')
-            ->orderBy('id')
-            ->get()
+        // UNA consulta para todos los tipos: la portada pide seis (fotos,
+        // servicios, testimonios, Instagram…) y eran seis viajes a la base.
+        // Se guarda en la visita, no en el controlador: el controlador puede
+        // vivir más que una visita y serviría lo de la anterior.
+        $visita = request();
+
+        if (! $visita->attributes->has('contenidos_web')) {
+            $visita->attributes->set('contenidos_web', ContenidoWeb::where('activo', true)
+                ->orderBy('orden')
+                ->orderBy('id')
+                ->get()
+                ->groupBy('tipo'));
+        }
+
+        return ($visita->attributes->get('contenidos_web')[$tipo] ?? collect())
+            ->values()
+            ->toBase()
             ->map(fn (ContenidoWeb $c) => [
                 'titulo' => $c->titulo,
                 'texto' => $c->texto,

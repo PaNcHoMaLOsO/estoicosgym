@@ -95,6 +95,66 @@ class Imagenes
         };
     }
 
+    /**
+     * Achica un logo en su mismo archivo y formato, sin perder la transparencia.
+     *
+     * UN LOGO SE VE A 150 PÍXELES Y SE SUBE A 3.000: el de un convenio pesaba
+     * 728 KB para ocupar el alto de un dedo en la cinta de la portada, y con
+     * eso solo la portada doblaba su peso en un teléfono. Se deja en $maximo
+     * por su lado más largo, que sobra para una pantalla de doble densidad.
+     *
+     * En el MISMO archivo: nadie tiene que cambiar a dónde apunta, y las fotos
+     * que viajan en el repositorio siguen llamándose igual.
+     *
+     * Solo se guarda si de verdad pesa menos. Devuelve true si lo cambió.
+     */
+    public static function achicar(string $ruta, int $maximo = 480): bool
+    {
+        $medidas = is_file($ruta) ? @getimagesize($ruta) : false;
+        $tipo = $medidas[2] ?? null;
+
+        if (! $medidas || ! function_exists('imagecreatefromstring')
+            || ! in_array($tipo, [IMAGETYPE_PNG, IMAGETYPE_JPEG, IMAGETYPE_WEBP], true)
+            || max($medidas[0], $medidas[1]) <= $maximo) {
+            return false;
+        }
+
+        $original = (string) file_get_contents($ruta);
+        $imagen = @imagecreatefromstring($original);
+
+        if (! $imagen) {
+            return false;
+        }
+
+        if (! imageistruecolor($imagen)) {
+            imagepalettetotruecolor($imagen);
+        }
+
+        $escala = $maximo / max($medidas[0], $medidas[1]);
+        $ancho = max(1, (int) round($medidas[0] * $escala));
+        $alto = max(1, (int) round($medidas[1] * $escala));
+
+        $chica = imagecreatetruecolor($ancho, $alto);
+        imagealphablending($chica, false);
+        imagesavealpha($chica, true);
+        imagefill($chica, 0, 0, imagecolorallocatealpha($chica, 0, 0, 0, 127));
+        imagecopyresampled($chica, $imagen, 0, 0, 0, 0, $ancho, $alto, $medidas[0], $medidas[1]);
+
+        ob_start();
+        match ($tipo) {
+            IMAGETYPE_PNG => imagepng($chica, null, 9),
+            IMAGETYPE_JPEG => imagejpeg($chica, null, 88),
+            IMAGETYPE_WEBP => imagewebp($chica, null, 90),
+        };
+        $bytes = (string) ob_get_clean();
+
+        if ($bytes === '' || strlen($bytes) >= strlen($original)) {
+            return false;
+        }
+
+        return file_put_contents($ruta, $bytes) !== false;
+    }
+
     /** Casi transparente, o casi blanco. */
     private static function esFondo(int $color): bool
     {

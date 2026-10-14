@@ -46,7 +46,20 @@ class AligerarFotos extends Command
         $disco = Storage::disk('public');
         $hacer = (bool) $this->option('confirmar');
 
-        foreach (ContenidoWeb::whereNotNull('imagen')->get() as $contenido) {
+        // Los logos (convenios e instituciones) se achican en su mismo archivo:
+        // siguen siendo PNG con su transparencia, solo dejan de medir 3.000 píxeles.
+        $logos = \App\Models\Convenio::whereNotNull('logo')->pluck('logo')
+            ->merge(ContenidoWeb::where('tipo', 'institucion')->whereNotNull('imagen')->pluck('imagen'))
+            ->unique();
+
+        foreach ($logos as $logo) {
+            if ($disco->exists($logo)) {
+                $this->achicarLogo($disco->path($logo), $hacer);
+            }
+        }
+
+        // Los logos ya quedaron: no se pasan a WebP, que les come el fondo transparente.
+        foreach (ContenidoWeb::where('tipo', '!=', 'institucion')->whereNotNull('imagen')->get() as $contenido) {
             if ($nueva = $this->aligerar($contenido->imagen, 'web', 1600, $hacer)) {
                 $contenido->update(['imagen' => $nueva]);
                 $this->borrarViejaSiSePidio();
@@ -93,6 +106,29 @@ class AligerarFotos extends Command
     }
 
     private string $viejo = '';
+
+    /** Achica un logo en su sitio; sin --confirmar, solo cuenta cuánto ahorraría sobre una copia. */
+    private function achicarLogo(string $ruta, bool $hacer): void
+    {
+        $antes = filesize($ruta);
+        $prueba = $hacer ? $ruta : tempnam(sys_get_temp_dir(), 'logo');
+
+        if (! $hacer) {
+            copy($ruta, $prueba);
+        }
+
+        if (\App\Support\Imagenes::achicar($prueba)) {
+            clearstatcache(true, $prueba);
+            $this->antes += $antes;
+            $this->despues += filesize($prueba);
+            $this->cambiadas++;
+            $this->line(sprintf('  %s: %s → %s', basename($ruta), $this->kb($antes), $this->kb(filesize($prueba))));
+        }
+
+        if (! $hacer) {
+            @unlink($prueba);
+        }
+    }
 
     /**
      * La versión liviana de una foto: su ruta nueva, o null si no conviene.
