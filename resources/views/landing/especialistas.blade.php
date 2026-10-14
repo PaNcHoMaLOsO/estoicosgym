@@ -17,12 +17,15 @@
 
 @section('content')
     @include('landing.partes.cabecera', [
-        'antetitulo' => $hayRecomendados ? 'Recomendados por ' . $gimnasio['nombre'] : 'Con quién entrenas',
-        // «Profesionales del deporte»: el lema de la marca, y lo que hay aquí.
-        'titulo' => 'Profesionales del deporte',
+        // «Profesionales del deporte» es el lema de la marca y queda en la
+        // línea chica o en la bajada. EL TÍTULO GRANDE DICE A QUIÉN SE ENCUENTRA AQUÍ —«Nutricionista,
+        // kinesiólogo y personal trainer en Los Ángeles»—: es la vitrina de
+        // todas las áreas, y eso es lo que se busca en Google, no el lema.
+        'antetitulo' => $hayRecomendados ? 'Recomendados por ' . $gimnasio['nombre'] : 'Profesionales del deporte',
+        'titulo' => $tituloProfesionales,
         'bajada' => $hayRecomendados
-            ? 'Profesionales' . ($web['ciudad'] ? ' de ' . $web['ciudad'] : '') . ' que recomendamos. Mira qué días atienden y escríbeles directo.'
-            : 'Profesionales que trabajan con ' . $gimnasio['nombre'] . '. Escríbeles directo.',
+            ? 'Profesionales del deporte' . ($web['ciudad'] ? ' de ' . $web['ciudad'] : '') . ', cada uno en lo suyo. Mira qué hace, qué días atiende y escríbele directo.'
+            : 'Profesionales que trabajan con ' . $gimnasio['nombre'] . ', cada uno en lo suyo. Mira qué hace, qué días atiende y escríbele directo.',
     ])
 
     <section id="especialistas" class="pb-10 lg:pb-20 bg-pg-negro">
@@ -50,6 +53,9 @@
                                         </a>
                                     @endif
                                 </div>
+                                @if(!empty($seccion['intro']))
+                                    <p class="mb-4 max-w-3xl font-modern text-sm text-pg-tiza/60 lg:mb-5 lg:text-base">{{ $seccion['intro'] }}</p>
+                                @endif
                                 @include('landing.partes.grilla-especialistas', ['especialistas' => $seccion['especialistas'], 'nivel' => 'h3', 'fijas' => true])
                             </div>
                         @endforeach
@@ -62,11 +68,19 @@
             @endif
 
             @if($whatsappProfesionales)
-                <p class="mt-10 text-center font-modern text-sm text-pg-tiza/55 lg:mt-14">
-                    ¿Eres profesional de la salud o el deporte{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}?
+                {{-- PARA EL PROFESIONAL QUE LLEGA BUSCANDO DÓNDE MOSTRARSE: antes
+                     era una línea gris al final. Ahora dice qué gana: su página,
+                     su área y que le escriban directo. --}}
+                <div class="animate-on-scroll mt-10 rounded-lg border border-pg-tiza/10 px-5 py-6 text-center lg:mt-14 lg:px-10 lg:py-8">
+                    <h2 class="font-display text-2xl uppercase text-pg-tiza lg:text-3xl">¿Eres profesional de la salud o el deporte{{ $web['ciudad'] ? ' en ' . $web['ciudad'] : '' }}?</h2>
+                    <p class="mx-auto mt-3 max-w-2xl font-modern text-sm text-pg-tiza/60 lg:text-base">
+                        Kinesiología, nutrición, entrenamiento personal, masajes, psicología deportiva u otra área. Aparece aquí con tu propia página: lo que haces, tus días de atención y tu WhatsApp, para que te escriban directo.
+                    </p>
                     <a href="{{ $whatsappProfesionales }}" target="_blank" rel="noopener" data-evento="profesional_quiere_aparecer"
-                       class="ml-1 whitespace-nowrap text-pg-tiza underline decoration-pg-rojo underline-offset-4 transition-colors hover:text-pg-rojo-claro">Escríbenos</a>
-                </p>
+                       class="mt-5 inline-flex items-center gap-2 rounded-md border border-pg-tiza/25 px-5 py-3 font-modern text-sm font-semibold text-pg-tiza transition-colors hover:border-pg-rojo hover:text-pg-rojo-claro">
+                        <x-icono nombre="whatsapp" class="text-base" /> Quiero aparecer
+                    </a>
+                </div>
             @endif
         </div>
     </section>

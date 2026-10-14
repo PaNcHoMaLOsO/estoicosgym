@@ -114,6 +114,7 @@ final class Especialidades
         'quiromasajista' => 'Quiromasaje en {ciudad}: masajes descontracturantes y de relajación para soltar la tensión de espalda, cuello y piernas.',
         'masoterapeuta' => 'Masoterapia en {ciudad}: masajes descontracturantes, de relajación y deportivos para recuperarte y entrenar mejor.',
         'psicologo-deportivo' => 'Psicología deportiva en {ciudad} para manejar la presión, la ansiedad antes de competir y la constancia en el entrenamiento.',
+        'psicologo-deportiva' => 'Psicología deportiva en {ciudad} para manejar la presión, la ansiedad antes de competir y la constancia en el entrenamiento.',
     ];
 
     /** Las dos líneas de la página de esa especialidad, o null si no hay texto para ella. */
