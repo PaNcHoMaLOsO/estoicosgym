@@ -10,7 +10,10 @@
     @include('landing.partes.cabecera', [
         'antetitulo' => 'Rutina',
         'titulo' => $nombre,
-        'bajada' => "{$objetivo} · {$nivel} · {$rutina->dias_por_semana} días por semana",
+        // Cuánto dura y cómo se entrena: lo que se pregunta para llegar aquí.
+        'bajada' => "{$objetivo} · {$nivel} · {$rutina->dias_por_semana} días por semana"
+            . (($min = $rutina->minutos()) ? " · ≈ {$min} min" : '')
+            . ($rutina->estilo === 'funcional' ? ' · Funcional' : ($rutina->estilo === 'maquinas' ? ' · Con máquinas' : '')),
         'compacta' => true,
     ])
 

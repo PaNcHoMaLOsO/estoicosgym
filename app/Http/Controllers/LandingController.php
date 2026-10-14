@@ -857,30 +857,29 @@ class LandingController extends Controller
         $objetivo = $request->texto('objetivo', '');
         $filtro = isset(\App\Models\Rutina::OBJETIVOS[$objetivo]) ? $objetivo : null;
 
-        // TRES PREGUNTAS PARA LLEGAR A LA SUYA: qué busca, cuánto lleva y
-        // cuántos días puede venir. Cada respuesta es un enlace común (va en
-        // la dirección), así funciona sin JavaScript y se puede compartir.
-        // Una respuesta solo vale si la anterior está: sin objetivo no hay nivel.
-        $nivel = $request->texto('nivel', '');
-        $nivel = $filtro && isset(\App\Models\Rutina::NIVELES[$nivel]) ? $nivel : null;
-        $dias = (int) $request->query('dias', 0);
-        $dias = $nivel && $dias >= 2 && $dias <= 6 ? $dias : null;
+        // LAS PREGUNTAS PARA LLEGAR A LA SUYA: ver EligeTuRutina. Cada
+        // respuesta es un enlace común (va en la dirección), así funciona sin
+        // JavaScript y se puede compartir.
+        $elige = \App\Support\EligeTuRutina::desde($request);
+        $comun = $this->comun();
+        // Con una lesión, el kinesiólogo del gimnasio, si hay.
+        $kinesiologo = isset(Especialidades::agrupar($comun['especialistas'])['kinesiologo']) && $comun['navegacion']['especialistas']
+            ? route('landing.especialidad', 'kinesiologo')
+            : null;
 
         return $this->pagina('landing.rutinas', 'landing.rutinas', 'Rutinas de gimnasio',
             'Rutinas para empezar, bajar de peso, ganar fuerza o mantenerse, de 2 a 6 días, con los ejercicios, series y repeticiones de cada día.',
             [
                 'objetivos' => \App\Models\Rutina::OBJETIVOS,
-                'niveles' => \App\Models\Rutina::NIVELES,
                 'filtro' => $filtro,
-                'nivel' => $nivel,
-                'dias' => $dias,
-                'diasPosibles' => $nivel ? RutinaSugerida::diasPara($filtro, $nivel) : [],
-                'paraTi' => $dias ? RutinaSugerida::paraTi($filtro, $nivel, $dias) : null,
+                'elige' => $elige,
+                'resultado' => $elige->resultado(),
+                'kinesiologo' => $kinesiologo,
                 'grupos' => RutinaSugerida::porObjetivo($filtro),
                 // Filtrada es la misma lista: para Google cuenta la entera.
                 'robots' => $request->query() !== [] ? 'noindex, follow' : null,
             ],
-            $this->comun());
+            $comun);
     }
 
     /**

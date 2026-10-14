@@ -67,7 +67,58 @@ class Rutina extends Model
         };
     }
 
-    protected $fillable = ['nombre', 'slug', 'objetivo', 'nivel', 'dias_por_semana', 'descripcion', 'activa', 'orden'];
+    /** Cómo se entrena: lo pregunta la web a quien busca su rutina. */
+    public const ESTILOS = [
+        'maquinas' => 'Con máquinas',
+        'mixto' => 'Máquinas y pesas',
+        'funcional' => 'Funcional',
+    ];
+
+    /** En qué se enfoca. */
+    public const ENFOQUES = [
+        'parejo' => 'Todo el cuerpo',
+        'gluteo' => 'Glúteo y pierna',
+    ];
+
+    /**
+     * CUÁNTO DURA UNA SESIÓN, en minutos, contada de lo que tiene: cada serie
+     * con su descanso, lo que va en tiempo («30 segundos», «15 minutos») tal
+     * cual, y cinco minutos para calentar y cambiar de máquina. Es una
+     * estimación para saber si cabe en la hora de almuerzo, no un cronómetro.
+     */
+    public function minutos(): int
+    {
+        return $this->minutosCalculados ??= $this->contarMinutos();
+    }
+
+    /** Se cuenta una vez por petición: las preguntas de la web lo piden muchas veces. */
+    private ?int $minutosCalculados = null;
+
+    private function contarMinutos(): int
+    {
+        $dias = $this->relationLoaded('dias') ? $this->dias : $this->dias()->with('ejercicios')->get();
+        $porDia = $dias->map(function ($dia) {
+            $segundos = 0;
+
+            foreach ($dia->ejercicios as $l) {
+                $reps = mb_strtolower((string) $l->repeticiones);
+                $series = max(1, (int) $l->series);
+                $doble = str_contains($reps, 'por pierna') || str_contains($reps, 'por brazo') || str_contains($reps, 'por lado') ? 2 : 1;
+                $trabajo = match (true) {
+                    (bool) preg_match('/(\d+)\s*minutos?/u', $reps, $m) => (int) $m[1] * 60,
+                    (bool) preg_match('/(\d+)(?:\s*a\s*(\d+))?\s*segundos?/u', $reps, $m) => (int) ($m[2] ?? $m[1]) * $doble,
+                    default => 40 * $doble,
+                };
+                $segundos += $series * ($trabajo + (int) $l->descanso_seg) + 20;
+            }
+
+            return $segundos / 60 + 5;
+        });
+
+        return $porDia->isEmpty() ? 0 : (int) (round($porDia->avg() / 5) * 5);
+    }
+
+    protected $fillable = ['nombre', 'slug', 'objetivo', 'nivel', 'dias_por_semana', 'estilo', 'enfoque', 'descripcion', 'activa', 'orden'];
 
     protected $casts = [
         'activa' => 'boolean',

@@ -48,7 +48,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
     }
 
     /** Tres preguntas, cada respuesta un enlace, y al final la rutina de uno con lo que se hace cada día. */
-    public function test_tres_preguntas_llevan_a_la_rutina_de_cada_uno(): void
+    public function test_las_preguntas_llevan_a_la_rutina_de_cada_uno(): void
     {
         // 1: qué buscas. Sin contestar, no se pregunta lo demás.
         $this->get('/rutinas')
@@ -59,7 +59,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         // 2: cuánto llevas, con lo anterior a la vista para cambiarlo.
         $this->get('/rutinas?objetivo=fuerza')
             ->assertSee('¿Cuánto llevas entrenando?')
-            ->assertSee('Cambiar lo que buscas', false)
+            ->assertSee('Cambiar: Ganar fuerza y músculo', false)
             ->assertDontSee('¿Qué buscas?');
 
         // 3: los días, solo los que tienen rutina para eso.
@@ -71,19 +71,61 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             in_array($n, $dias, true) ? $pagina->assertSee($enlace, false) : $pagina->assertDontSee($enlace, false);
         }
 
-        // Y la suya: el nombre, los días de la semana y el botón a la rutina.
-        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3')
+        // Fuerza, algo, 3 días: hay express, funcional y de glúteo, así que
+        // se pregunta el tiempo, el estilo y el enfoque.
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3')->assertSee('¿Cuánto tiempo tienes cada vez?');
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=60')->assertSee('¿Cómo te gusta entrenar?')->assertSee('Funcional');
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=60&estilo=mixto')->assertSee('¿Quieres enfocarte en algo?');
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=60&estilo=mixto&enfoque=parejo')->assertSee('¿Tienes alguna lesión o molestia?');
+
+        // Y la suya: el nombre, lo que dura, los días de la semana y el botón.
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=60&estilo=mixto&enfoque=parejo&molestia=no')
             ->assertOk()
             ->assertSee('Fuerza cuerpo completo')
-            ->assertSee('3 días por semana · para ganar fuerza y músculo')
+            ->assertSee('3 días por semana')
+            ->assertSee('min por sesión')
             ->assertSee('Día A')
             ->assertSee('Ver la rutina completa')
             ->assertSee(route('landing.rutina.ver', 'fuerza-cuerpo-completo-3-dias'), false)
+            ->assertDontSee('consulta con un kinesiólogo')
             // Con respuestas no es la página que debe guardar Google.
             ->assertSee('noindex, follow', false);
 
+        // Cada respuesta cambia lo que sale.
+        $base = '/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=60';
+        $this->get("{$base}&estilo=funcional&molestia=no")->assertSee('Fuerza funcional')->assertSee(route('landing.rutina.ver', 'fuerza-funcional-3-dias'), false);
+        $this->get("{$base}&estilo=mixto&enfoque=gluteo&molestia=no")->assertSee(route('landing.rutina.ver', 'gluteo-y-pierna-3-dias'), false);
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3&tiempo=30&molestia=no')->assertSee(route('landing.rutina.ver', 'express-de-fuerza-3-dias'), false);
+
+        // Con una lesión, primero el kinesiólogo.
+        $this->get("{$base}&estilo=mixto&enfoque=parejo&molestia=si")->assertSee('consulta con un kinesiólogo');
+
         // Una respuesta sin la anterior no vale: se vuelve a preguntar.
         $this->get('/rutinas?nivel=algo&dias=3')->assertSee('¿Qué buscas?');
+    }
+
+    /** Lo que no cambia el resultado no se pregunta. */
+    public function test_no_pregunta_lo_que_no_cambia_nada(): void
+    {
+        // Fuerza para quien entrena hace tiempo, 2 días: cerca solo hay rutinas
+        // largas, con máquinas y pesas, de todo el cuerpo. Va directo a la última.
+        $e = \App\Support\EligeTuRutina::desde(\Illuminate\Http\Request::create('/rutinas', 'GET', ['objetivo' => 'fuerza', 'nivel' => 'hace_tiempo', 'dias' => 2]));
+        $this->assertNotContains('tiempo', $e->preguntas());
+        $this->assertSame('molestia', $e->actual());
+        $this->assertContains('molestia', $e->preguntas());
+    }
+
+    /** Cada rutina dice cuánto dura una sesión, y las express caben en media hora. */
+    public function test_cada_rutina_sabe_cuanto_dura(): void
+    {
+        $express = \App\Models\Rutina::where('nombre', 'Express de fuerza · 3 días')->firstOrFail();
+        $basicos = \App\Models\Rutina::where('nombre', 'Fuerza básicos · 2 días')->firstOrFail();
+
+        $this->assertLessThanOrEqual(30, $express->minutos());
+        $this->assertGreaterThan(40, $basicos->minutos());
+        $this->assertSame('funcional', \App\Models\Rutina::where('nombre', 'Fuerza funcional · 3 días')->value('estilo'));
+        $this->assertSame('gluteo', \App\Models\Rutina::where('nombre', 'Glúteo y pierna · 3 días')->value('enfoque'));
+        $this->assertSame('maquinas', \App\Models\Rutina::where('nombre', 'Grupos con máquinas · 5 días')->value('estilo'));
     }
 
     /** Las cuatro preguntas son un formulario común: sin JavaScript se contestan seguidas y se envían. */

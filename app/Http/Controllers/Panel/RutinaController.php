@@ -114,6 +114,8 @@ class RutinaController extends Controller
                 'nombre' => $rutina->nombre,
                 'objetivo' => $rutina->objetivo,
                 'nivel' => $rutina->nivel,
+                'estilo' => $rutina->estilo ?? 'mixto',
+                'enfoque' => $rutina->enfoque ?? 'parejo',
                 'descripcion' => $rutina->descripcion ?? '',
                 'activa' => (bool) $rutina->activa,
                 'ver' => route('landing.rutina', ['objetivo' => $rutina->objetivo, 'nivel' => $rutina->nivel, 'dias' => $rutina->dias_por_semana]),
@@ -132,6 +134,8 @@ class RutinaController extends Controller
             ] : null,
             'objetivos' => Rutina::OBJETIVOS,
             'niveles' => Rutina::NIVELES,
+            'estilos' => Rutina::ESTILOS,
+            'enfoques' => Rutina::ENFOQUES,
             'zonas' => Ejercicio::ZONAS,
             'ejercicios' => Ejercicio::where('activo', true)
                 ->orderBy('zona')
@@ -147,6 +151,8 @@ class RutinaController extends Controller
             'nombre' => 'required|string|max:80',
             'objetivo' => ['required', Rule::in(array_keys(Rutina::OBJETIVOS))],
             'nivel' => ['required', Rule::in(array_keys(Rutina::NIVELES))],
+            'estilo' => ['nullable', Rule::in(array_keys(Rutina::ESTILOS))],
+            'enfoque' => ['nullable', Rule::in(array_keys(Rutina::ENFOQUES))],
             'descripcion' => 'nullable|string|max:300',
             'activa' => 'boolean',
             'dias' => 'required|array|min:1|max:7',
@@ -179,6 +185,8 @@ class RutinaController extends Controller
             'nombre' => trim($datos['nombre']),
             'objetivo' => $datos['objetivo'],
             'nivel' => $datos['nivel'],
+            'estilo' => $datos['estilo'] ?? $rutina->estilo ?? 'mixto',
+            'enfoque' => $datos['enfoque'] ?? $rutina->enfoque ?? 'parejo',
             'descripcion' => filled($datos['descripcion'] ?? null) ? trim($datos['descripcion']) : null,
             'activa' => (bool) ($datos['activa'] ?? true),
             // Los días de la semana son los días que tiene: no se escribe aparte.

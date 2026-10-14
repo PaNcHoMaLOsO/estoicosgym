@@ -185,37 +185,6 @@ class RutinaSugerida
     }
 
     /**
-     * LA RUTINA DE QUIEN CONTESTÓ LAS TRES PREGUNTAS, lista para mostrarla sin
-     * salir de la página: qué es, qué se hace cada día y a dónde ir.
-     *
-     * Si hay dos que calzan exacto (cuerpo completo o glúteo y pierna), van
-     * las dos: elegir entre dos es fácil, entre cincuenta no. Si no hay
-     * ninguna exacta, la más cercana, y se dice que lo es.
-     *
-     * @return array{exacta:bool, rutinas: list<array<string,mixed>>}
-     */
-    public static function paraTi(string $objetivo, string $nivel, int $dias): array
-    {
-        $exactas = Rutina::where('activa', true)
-            ->where(['objetivo' => $objetivo, 'nivel' => $nivel, 'dias_por_semana' => $dias])
-            ->with('dias')->orderBy('orden')->get();
-        $cercana = $exactas->isEmpty() ? self::buscar($objetivo, $nivel, $dias) : null;
-
-        return [
-            'exacta' => $exactas->isNotEmpty(),
-            'rutinas' => ($cercana ? collect([$cercana]) : $exactas)->map(fn (Rutina $r) => [
-                'nombre' => self::sinDias($r->nombre),
-                'dias' => (int) $r->dias_por_semana,
-                'nivel' => Rutina::NIVELES[$r->nivel] ?? $r->nivel,
-                'para' => $r->paraQue(),
-                'descripcion' => $r->descripcion,
-                'jornadas' => $r->dias->sortBy('numero')->map(fn ($d) => $d->titulo)->filter()->values()->all(),
-                'url' => route('landing.rutina.ver', $r->slug),
-            ])->values()->all(),
-        ];
-    }
-
-    /**
      * Los ejercicios activos del gimnasio por grupo, en el orden del panel:
      * pecho, espalda, piernas, hombros, brazos, abdomen, cardio y cuerpo
      * completo. Cada uno con su foto o su mapa muscular.

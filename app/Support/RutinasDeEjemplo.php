@@ -148,6 +148,18 @@ class RutinasDeEjemplo
         'Crunch en máquina' => ['core', 'maquina', 'Lleva el pecho hacia las rodillas encogiendo el abdomen, sin tirar con los brazos.'],
         'Trote en trotadora' => ['cardio', 'cardio', 'Ritmo en que puedas hablar entrecortado. Brazos sueltos, sin agarrarte.'],
         'Salto de cuerda' => ['cardio', 'propio_peso', 'Saltos bajos en la punta de los pies, muñecas giran la cuerda.'],
+
+        // Funcional (2026-10-14): el propio peso, la pesa rusa y el cajón.
+        'Sentadilla con peso corporal' => ['piernas', 'propio_peso', 'Pies al ancho de los hombros. Baja como sentándote en una silla, pecho arriba, y sube empujando el suelo.'],
+        'Sentadilla con salto' => ['piernas', 'propio_peso', 'Baja a media sentadilla y salta. Cae suave, con las rodillas apenas dobladas.'],
+        'Zancada hacia atrás' => ['piernas', 'propio_peso', 'Paso largo hacia atrás hasta que la rodilla casi toque el suelo. Vuelve empujando con la pierna de adelante.'],
+        'Saltos al cajón' => ['piernas', 'propio_peso', 'Cajón bajo. Salta con los dos pies, cae suave arriba y baja caminando, no saltando.'],
+        'Peso muerto con pesa rusa' => ['piernas', 'mancuernas', 'Pesa rusa entre los pies. Cadera atrás y espalda recta; sube estirando la cadera.'],
+        'Puente de glúteos a una pierna' => ['piernas', 'propio_peso', 'Acostado, una pierna estirada arriba. Sube la cadera con la otra apretando el glúteo.'],
+        'Patada de burro' => ['piernas', 'propio_peso', 'En cuatro apoyos, lleva una pierna atrás y arriba con la rodilla doblada, apretando el glúteo.'],
+        'Thruster con mancuernas' => ['cuerpo_completo', 'mancuernas', 'Mancuernas en los hombros. Baja a sentadilla y al subir empújalas sobre la cabeza en un solo movimiento.'],
+        'Remo renegado' => ['espalda', 'mancuernas', 'En plancha sobre dos mancuernas. Sube una hacia la cadera sin girar el cuerpo y alterna.'],
+        'Jumping jacks' => ['cardio', 'propio_peso', 'Abre piernas y brazos a la vez con un salto suave y vuelve. Ritmo constante.'],
     ];
 
     /**
@@ -266,6 +278,17 @@ class RutinasDeEjemplo
         'Crunch en máquina' => ['abdomen', []],
         'Trote en trotadora' => ['cuadriceps', ['pantorrillas']],
         'Salto de cuerda' => ['pantorrillas', ['cuadriceps']],
+
+        'Sentadilla con peso corporal' => ['cuadriceps', ['gluteos']],
+        'Sentadilla con salto' => ['cuadriceps', ['gluteos', 'pantorrillas']],
+        'Zancada hacia atrás' => ['cuadriceps', ['gluteos']],
+        'Saltos al cajón' => ['cuadriceps', ['gluteos', 'pantorrillas']],
+        'Peso muerto con pesa rusa' => ['isquios', ['gluteos', 'lumbar']],
+        'Puente de glúteos a una pierna' => ['gluteos', ['isquios']],
+        'Patada de burro' => ['gluteos', []],
+        'Thruster con mancuernas' => ['cuadriceps', ['hombros', 'gluteos', 'triceps']],
+        'Remo renegado' => ['espalda', ['abdomen', 'biceps']],
+        'Jumping jacks' => ['pantorrillas', ['hombros']],
     ];
 
     /**
@@ -354,6 +377,10 @@ class RutinasDeEjemplo
         'Crunch en máquina' => 'Crunch en polea',
         'Trote en trotadora' => 'Caminata inclinada en trotadora',
         'Salto de cuerda' => 'Escaladores',
+        'Saltos al cajón' => 'Sentadilla con salto',
+        'Remo renegado' => 'Remo con mancuerna a una mano',
+        'Jumping jacks' => 'Salto de cuerda',
+        'Hip thrust en máquina' => 'Hip thrust',
     ];
 
     /**
@@ -565,6 +592,151 @@ class RutinasDeEjemplo
             ['Curl de bíceps con mancuernas', 3, '10 a 12', 60],
             ['Extensión de tríceps en polea', 3, '10 a 12', 60],
             ['Curl martillo', 2, '12', 45],
+        ]];
+
+        // ---------- Funcional (2026-10-14) ----------
+        // Con el propio peso, la pesa rusa, mancuernas y el cajón: para quien
+        // prefiere moverse a sentarse en una máquina. Se hace en un rincón de
+        // la sala y no depende de que una máquina esté libre.
+        $funcionalA = fn (int $s) => ['Funcional A', 'Peso corporal y pesa rusa', [
+            ['Sentadilla con peso corporal', $s, '12 a 15', 45],
+            ['Flexiones de brazos', $s, '6 a 10', 45, 'Con las rodillas apoyadas si cuesta.'],
+            ['Puente de glúteos', $s, '15', 45],
+            ['Remo invertido en barra', $s, '8 a 10', 45],
+            ['Plancha', 3, '20 a 30 segundos', 30],
+            ['Jumping jacks', 3, '30 segundos', 30],
+        ]];
+        $funcionalB = fn (int $s) => ['Funcional B', 'Pesa rusa, cajón y zona media', [
+            ['Zancada hacia atrás', $s, '8 por pierna', 45],
+            ['Swing con pesa rusa', $s, '12', 60, 'Liviana hasta dominar el movimiento.'],
+            ['Remo con mancuerna a una mano', $s, '10 por brazo', 45],
+            ['Subida al cajón', $s, '8 por pierna', 45],
+            ['Dead bug', 3, '8 por lado', 30],
+            ['Salto de cuerda', 3, '30 segundos', 30],
+        ]];
+        $funcionalC = fn (int $s) => ['Funcional C', 'Todo el cuerpo, de pie', [
+            ['Sentadilla goblet', $s, '12', 45],
+            ['Peso muerto con pesa rusa', $s, '12', 45],
+            ['Flexiones de brazos', $s, '8 a 10', 45],
+            ['Paseo del granjero', 3, '30 metros', 45],
+            ['Plancha lateral', 2, '20 segundos por lado', 30],
+            ['Escaladores', 3, '30 segundos', 30],
+        ]];
+        // En circuito: uno tras otro y descanso al cerrar la vuelta.
+        $circuitoFuncionalA = fn (int $v) => ['Circuito funcional A', "{$v} vueltas, 90 s entre vueltas", [
+            ['Swing con pesa rusa', $v, '15', 0],
+            ['Sentadilla con salto', $v, '12', 0],
+            ['Flexiones de brazos', $v, 'las que salgan', 0],
+            ['Remo renegado', $v, '8 por lado', 0],
+            ['Escaladores', $v, '30 segundos', 0],
+            ['Salto de cuerda', $v, '45 segundos', 90],
+        ]];
+        $circuitoFuncionalB = fn (int $v) => ['Circuito funcional B', "{$v} vueltas, 90 s entre vueltas", [
+            ['Thruster con mancuernas', $v, '12', 0],
+            ['Zancada hacia atrás', $v, '10 por pierna', 0],
+            ['Burpees', $v, '10', 0],
+            ['Peso muerto con pesa rusa', $v, '15', 0],
+            ['Plancha', $v, '40 segundos', 0],
+            ['Jumping jacks', $v, '45 segundos', 90],
+        ]];
+        $circuitoFuncionalC = fn (int $v) => ['Circuito funcional C', "{$v} vueltas y remo al final", [
+            ['Saltos al cajón', $v, '10', 0],
+            ['Paseo del granjero', $v, '30 metros', 0],
+            ['Sentadilla goblet', $v, '15', 0],
+            ['Remo invertido en barra', $v, '10', 0],
+            ['Giros rusos', $v, '20', 90],
+            ['Remo ergómetro', 1, '5 minutos', 0],
+        ]];
+        // Fuerza sin máquinas: pocas repeticiones, más peso y más descanso.
+        $fuerzaFuncionalA = ['Fuerza funcional A', 'Sentadilla, cadera y empuje', [
+            ['Sentadilla goblet', 4, '8 a 10', 90],
+            ['Swing con pesa rusa', 4, '15', 75],
+            ['Flexiones con pies elevados', 3, '8 a 12', 75],
+            ['Remo renegado', 3, '8 por lado', 75],
+            ['Paseo del granjero', 3, '30 metros', 60],
+            ['Plancha lateral', 3, '30 segundos por lado', 30],
+        ]];
+        $fuerzaFuncionalB = ['Fuerza funcional B', 'Una pierna, tirón y hombros', [
+            ['Peso muerto con pesa rusa', 4, '10', 90],
+            ['Sentadilla búlgara', 3, '8 por pierna', 75],
+            ['Press de hombros con mancuernas', 3, '8 a 10', 75],
+            ['Remo invertido en barra', 4, '8 a 10', 75],
+            ['Thruster con mancuernas', 3, '10', 75],
+            ['Rueda abdominal', 3, '8 a 10', 45],
+        ]];
+        $fuerzaFuncionalC = ['Fuerza funcional C', 'Potencia y tirón', [
+            ['Saltos al cajón', 4, '6', 90, 'Pocos y explosivos: la calidad importa más que el cansancio.'],
+            ['Zancadas caminando', 3, '10 por pierna', 75],
+            ['Fondos en paralelas', 3, '6 a 10', 75],
+            ['Dominadas asistidas', 3, '6 a 8', 90],
+            ['Swing con pesa rusa', 3, '20', 60],
+            ['Escaladores', 3, '30 segundos', 30],
+        ]];
+
+        // ---------- Express con máquinas y express de fuerza ----------
+        $expressMaquinasA = ['Express con máquinas A', 'De a pares: haz los dos seguidos y descansa', [
+            ['Prensa de piernas', 3, '12 a 15', 0],
+            ['Jalón al pecho', 3, '12', 60],
+            ['Press de pecho en máquina', 3, '12', 0],
+            ['Curl femoral', 3, '12', 60],
+            ['Plancha', 2, '30 segundos', 30],
+        ]];
+        $expressMaquinasB = ['Express con máquinas B', 'De a pares: haz los dos seguidos y descansa', [
+            ['Remo en máquina', 3, '12', 0],
+            ['Extensión de cuádriceps', 3, '12', 60],
+            ['Press de hombros en máquina', 3, '12', 0],
+            ['Abductores en máquina', 3, '15', 60],
+            ['Bicicleta estática', 1, '6 minutos', 0],
+        ]];
+        $expressMaquinasC = ['Express con máquinas C', 'De a pares: haz los dos seguidos y descansa', [
+            ['Hip thrust en máquina', 3, '12', 0],
+            ['Remo sentado en polea', 3, '12', 60],
+            ['Press inclinado en máquina', 3, '12', 0],
+            ['Curl femoral sentado', 3, '12', 60],
+            ['Crunch en máquina', 2, '15', 30],
+        ]];
+        $expressFuerzaA = ['Express de fuerza A', 'De a pares, con más peso', [
+            ['Sentadilla goblet', 4, '8 a 10', 0],
+            ['Remo con mancuerna a una mano', 4, '10 por brazo', 75],
+            ['Press de pecho con mancuernas', 3, '8 a 10', 0],
+            ['Peso muerto rumano con mancuernas', 3, '10', 75],
+        ]];
+        $expressFuerzaB = ['Express de fuerza B', 'De a pares, con más peso', [
+            ['Prensa de piernas', 4, '8 a 10', 0],
+            ['Jalón al pecho', 4, '8 a 10', 75],
+            ['Press de hombros con mancuernas', 3, '8 a 10', 0],
+            ['Hip thrust', 3, '10', 75],
+        ]];
+        $expressFuerzaC = ['Express de fuerza C', 'De a pares, con más peso', [
+            ['Sentadilla búlgara', 3, '8 por pierna', 0],
+            ['Remo sentado en polea', 3, '10', 75],
+            ['Press inclinado con mancuernas', 3, '8 a 10', 0],
+            ['Curl femoral', 3, '10', 60],
+        ]];
+
+        // ---------- Glúteo y pierna, para más niveles ----------
+        $gluteoMaquinas = ['Glúteo', 'Glúteo con máquinas', [
+            ['Hip thrust en máquina', 3, '12', 75],
+            ['Prensa de piernas', 3, '12', 75, 'Pies altos en la plataforma: trabaja más el glúteo.'],
+            ['Abductores en máquina', 3, '15', 45],
+            ['Patada de glúteo en polea', 2, '12 por pierna', 45],
+            ['Curl femoral', 2, '12', 60],
+            ['Plancha', 3, '20 a 30 segundos', 30],
+        ]];
+        $piernaMaquinasGluteo = ['Pierna y glúteo', 'Piernas con máquinas', [
+            ['Sentadilla en máquina Smith', 3, '10 a 12', 90],
+            ['Curl femoral sentado', 3, '12', 60],
+            ['Hip thrust en máquina', 3, '12', 60],
+            ['Aductores en máquina', 2, '15', 45],
+            ['Elevación de talones', 2, '15', 45],
+        ]];
+        $gluteoFuncional = ['Glúteo funcional', 'Glúteo con el propio peso y la pesa rusa', [
+            ['Swing con pesa rusa', 3, '15', 60],
+            ['Puente de glúteos a una pierna', 3, '10 por pierna', 45],
+            ['Zancada hacia atrás', 3, '10 por pierna', 45],
+            ['Sentadilla sumo con mancuerna', 3, '12', 60],
+            ['Patada de burro', 2, '15 por pierna', 30],
+            ['Plancha lateral', 2, '20 segundos por lado', 30],
         ]];
 
         return [
@@ -1340,7 +1512,156 @@ class RutinasDeEjemplo
                     $cardioYZona('30 minutos'),
                 ],
             ],
+
+            // ---------- Funcional (2026-10-14) ----------
+            [
+                'nombre' => 'Funcional desde cero · 2 días',
+                'objetivo' => 'empezar', 'nivel' => 'nunca', 'dias' => 2, 'estilo' => 'funcional',
+                'descripcion' => 'Sin máquinas: tu propio peso, una pesa rusa liviana y el cajón. Aprende a moverte bien antes de cargar peso.',
+                'dias_de' => [$funcionalA(2), $funcionalB(2)],
+            ],
+            [
+                'nombre' => 'Funcional desde cero · 3 días',
+                'objetivo' => 'empezar', 'nivel' => 'nunca', 'dias' => 3, 'estilo' => 'funcional',
+                'descripcion' => 'Tres días de movimiento con tu propio peso y la pesa rusa. Cuando todo salga fácil, suma una serie.',
+                'dias_de' => [$funcionalA(2), $funcionalB(2), $funcionalC(2)],
+            ],
+            [
+                'nombre' => 'Funcional para volver · 3 días',
+                'objetivo' => 'empezar', 'nivel' => 'hace_tiempo', 'dias' => 3, 'estilo' => 'funcional',
+                'descripcion' => 'Para quien entrenaba y lo dejó, sin pelear por una máquina: tres sesiones de cuerpo completo con tu peso y la pesa rusa.',
+                'dias_de' => [$funcionalA(3), $funcionalB(3), $funcionalC(3)],
+            ],
+            [
+                'nombre' => 'Funcional quema · 2 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'nunca', 'dias' => 2, 'estilo' => 'funcional',
+                'descripcion' => 'Dos días de circuito con tu propio peso y la pesa rusa. Haz las vueltas que puedas con buena técnica y suma caminatas los otros días.',
+                'dias_de' => [$circuitoFuncionalA(2), $circuitoFuncionalB(2)],
+            ],
+            [
+                'nombre' => 'Funcional quema · 3 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'funcional',
+                'descripcion' => 'Tres circuitos distintos, un ejercicio tras otro. Se suda, se termina rápido y no hay que esperar ninguna máquina.',
+                'dias_de' => [$circuitoFuncionalA(3), $circuitoFuncionalB(3), $circuitoFuncionalC(3)],
+            ],
+            [
+                'nombre' => 'Funcional quema · 4 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'hace_tiempo', 'dias' => 4, 'estilo' => 'funcional',
+                'descripcion' => 'Cuatro vueltas por circuito y un día de fuerza para no perder músculo mientras bajas.',
+                'dias_de' => [$circuitoFuncionalA(4), $fuerzaFuncionalA, $circuitoFuncionalB(4), $circuitoFuncionalC(4)],
+            ],
+            [
+                'nombre' => 'Fuerza funcional · 3 días',
+                'objetivo' => 'fuerza', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'funcional',
+                'descripcion' => 'Fuerza con pesa rusa, mancuernas y tu propio peso: sentadilla, cadera, empuje y tirón. Sube el peso cuando salgan todas las repeticiones.',
+                'dias_de' => [$fuerzaFuncionalA, $fuerzaFuncionalB, $fuerzaFuncionalC],
+            ],
+            [
+                'nombre' => 'Fuerza funcional · 4 días',
+                'objetivo' => 'fuerza', 'nivel' => 'hace_tiempo', 'dias' => 4, 'estilo' => 'funcional',
+                'descripcion' => 'Los tres días de fuerza y uno de circuito para el aire. Para quien ya domina el swing y la sentadilla.',
+                'dias_de' => [$fuerzaFuncionalA, $fuerzaFuncionalB, $circuitoFuncionalA(3), $fuerzaFuncionalC],
+            ],
+            [
+                'nombre' => 'Funcional para mantenerse · 2 días',
+                'objetivo' => 'mantener', 'nivel' => 'nunca', 'dias' => 2, 'estilo' => 'funcional',
+                'descripcion' => 'Dos días para moverte y sentirte bien, con tu propio peso y sin máquinas.',
+                'dias_de' => [$funcionalA(2), $funcionalC(2)],
+            ],
+            [
+                'nombre' => 'Funcional para mantenerse · 3 días',
+                'objetivo' => 'mantener', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'funcional',
+                'descripcion' => 'Un día de fuerza, uno de circuito y uno de movimiento: variado para no aburrirse.',
+                'dias_de' => [$funcionalB(3), $circuitoFuncionalA(3), $funcionalC(3)],
+            ],
+
+            // ---------- Express (2026-10-14) ----------
+            [
+                'nombre' => 'Express con máquinas · 2 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'nunca', 'dias' => 2, 'estilo' => 'maquinas',
+                'descripcion' => 'Media hora con máquinas, de a pares y casi sin pausas. Para quien empieza y tiene poco tiempo.',
+                'dias_de' => [$expressMaquinasA, $expressMaquinasB],
+            ],
+            [
+                'nombre' => 'Express con máquinas · 3 días',
+                'objetivo' => 'mantener', 'nivel' => 'nunca', 'dias' => 3, 'estilo' => 'maquinas',
+                'descripcion' => 'Tres sesiones de media hora con máquinas: entras, haces tus pares y sales.',
+                'dias_de' => [$expressMaquinasA, $expressMaquinasB, $expressMaquinasC],
+            ],
+            [
+                'nombre' => 'Express de fuerza · 2 días',
+                'objetivo' => 'fuerza', 'nivel' => 'algo', 'dias' => 2, 'estilo' => 'mixto',
+                'descripcion' => 'Fuerza en media hora: cuatro ejercicios de a pares, con peso. Para quien ya entrena y tiene el tiempo justo.',
+                'dias_de' => [$expressFuerzaA, $expressFuerzaB],
+            ],
+            [
+                'nombre' => 'Express de fuerza · 3 días',
+                'objetivo' => 'fuerza', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'mixto',
+                'descripcion' => 'Tres sesiones cortas y pesadas. Mejor media hora bien hecha que una hora que nunca llega.',
+                'dias_de' => [$expressFuerzaA, $expressFuerzaB, $expressFuerzaC],
+            ],
+            [
+                'nombre' => 'Express para volver · 2 días',
+                'objetivo' => 'empezar', 'nivel' => 'hace_tiempo', 'dias' => 2, 'estilo' => 'mixto',
+                'descripcion' => 'Para retomar con poco tiempo: dos sesiones de media hora con pesos moderados.',
+                'dias_de' => [$expressA, $expressB],
+            ],
+
+            // ---------- Glúteo y pierna (2026-10-14) ----------
+            [
+                'nombre' => 'Glúteo con máquinas · 3 días',
+                'objetivo' => 'fuerza', 'nivel' => 'nunca', 'dias' => 3, 'estilo' => 'maquinas', 'enfoque' => 'gluteo',
+                'descripcion' => 'Dos días de glúteo y pierna con máquinas y uno de torso. Las máquinas guían el movimiento mientras aprendes.',
+                'dias_de' => [$gluteoMaquinas, $torsoMaquinas(2, '12', 60), $piernaMaquinasGluteo],
+            ],
+            [
+                'nombre' => 'Glúteo y quema · 3 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'mixto', 'enfoque' => 'gluteo',
+                'descripcion' => 'Glúteo dos veces por semana con cardio al final, y un circuito de torso. Para bajar sin descuidar la pierna.',
+                'dias_de' => [self::conCardio($gluteo(3, 75), $cardioSuave('15 minutos')), $circuitoMaquinas('10 minutos'), self::conCardio($gluteoMaquinas, $cardioSuave('15 minutos'))],
+            ],
+            [
+                'nombre' => 'Glúteo y quema · 4 días',
+                'objetivo' => 'bajar_grasa', 'nivel' => 'hace_tiempo', 'dias' => 4, 'estilo' => 'mixto', 'enfoque' => 'gluteo',
+                'descripcion' => 'Glúteo, torso, pierna y un circuito. Poco descanso en los accesorios y cardio al cerrar.',
+                'dias_de' => [self::conCardio($gluteo(4, 75), $cardioSuave('15 minutos')), $torsoGluteo, self::conCardio($pierna(4, 90), $cardioSuave('10 minutos')), $circuitoFuncionalB(3)],
+            ],
+            [
+                'nombre' => 'Glúteo funcional · 3 días',
+                'objetivo' => 'mantener', 'nivel' => 'algo', 'dias' => 3, 'estilo' => 'funcional', 'enfoque' => 'gluteo',
+                'descripcion' => 'Glúteo con tu propio peso y la pesa rusa dos veces por semana, y un día de cuerpo completo.',
+                'dias_de' => [$gluteoFuncional, $funcionalA(3), $gluteoFuncional],
+            ],
+            [
+                'nombre' => 'Glúteo y pierna · 2 días',
+                'objetivo' => 'fuerza', 'nivel' => 'algo', 'dias' => 2, 'estilo' => 'mixto', 'enfoque' => 'gluteo',
+                'descripcion' => 'Un día de glúteo y uno de pierna con algo de torso. Para quien viene dos veces y quiere priorizar la pierna.',
+                'dias_de' => [$gluteo(4, 90), $pierna(3, 90)],
+            ],
         ];
+    }
+
+    /**
+     * Máquinas si casi todo es en máquina; si no, máquinas y pesas. Lo
+     * funcional se marca a mano en cada rutina: no se deduce de los ejercicios.
+     */
+    private static function estiloDe(array $dias): string
+    {
+        $equipos = [];
+
+        foreach ($dias as [, , $lineas]) {
+            foreach ($lineas as [$nombre]) {
+                $equipo = self::EJERCICIOS[$nombre][1] ?? null;
+
+                if ($equipo && $equipo !== 'cardio') {
+                    $equipos[] = $equipo;
+                }
+            }
+        }
+
+        $maquinas = count(array_filter($equipos, fn ($e) => $e === 'maquina'));
+
+        return $equipos && $maquinas / count($equipos) >= 0.75 ? 'maquinas' : 'mixto';
     }
 
     /** Un día con cardio al final. */
@@ -1386,7 +1707,17 @@ class RutinasDeEjemplo
             $ordenRutina = (int) Rutina::max('orden');
 
             foreach (self::rutinas() as $datos) {
-                if (Rutina::where('nombre', $datos['nombre'])->exists()) {
+                $estilo = $datos['estilo'] ?? self::estiloDe($datos['dias_de']);
+                $enfoque = $datos['enfoque'] ?? (str_starts_with($datos['nombre'], 'Glúteo') ? 'gluteo' : 'parejo');
+                $existente = Rutina::where('nombre', $datos['nombre'])->first();
+
+                if ($existente) {
+                    // Las de antes de las preguntas nuevas llegan sin marcar: se
+                    // marcan una vez. Si alguien ya las marcó en el panel, quedan.
+                    if ($existente->estilo === 'mixto' && $existente->enfoque === 'parejo') {
+                        $existente->update(['estilo' => $estilo, 'enfoque' => $enfoque]);
+                    }
+
                     continue;
                 }
 
@@ -1396,6 +1727,8 @@ class RutinasDeEjemplo
                     'objetivo' => $datos['objetivo'],
                     'nivel' => $datos['nivel'],
                     'dias_por_semana' => $datos['dias'],
+                    'estilo' => $estilo,
+                    'enfoque' => $enfoque,
                     'descripcion' => $datos['descripcion'],
                     'activa' => true,
                     'orden' => ++$ordenRutina,

@@ -60,12 +60,14 @@ function BotonIcono({ onClick, etiqueta, children, peligro = false, disabled = f
     );
 }
 
-export default function RutinaEditar({ rutina, objetivos, niveles, zonas, ejercicios }) {
+export default function RutinaEditar({ rutina, objetivos, niveles, estilos = {}, enfoques = {}, zonas, ejercicios }) {
     const nueva = ! rutina;
     const { data, setData, post, put, processing, errors, isDirty } = useForm({
         nombre: rutina?.nombre ?? '',
         objetivo: rutina?.objetivo ?? 'empezar',
         nivel: rutina?.nivel ?? 'nunca',
+        estilo: rutina?.estilo ?? 'mixto',
+        enfoque: rutina?.enfoque ?? 'parejo',
         descripcion: rutina?.descripcion ?? '',
         activa: rutina?.activa ?? true,
         dias: rutina?.dias?.length ? rutina.dias : [diaNuevo(1)],
@@ -161,6 +163,27 @@ export default function RutinaEditar({ rutina, objetivos, niveles, zonas, ejerci
                                     alElegir={(v) => setData('nivel', v)}
                                     nombre="Nivel"
                                     columnas="grid-cols-1 sm:grid-cols-3"
+                                    compacto
+                                />
+                            </Campo>
+                            {/* Lo que pregunta la web para elegir la rutina de cada uno. */}
+                            <Campo etiqueta="Cómo se entrena" nombre="estilo" error={errors.estilo}>
+                                <Botones
+                                    opciones={Object.entries(estilos).map(([valor, etiqueta]) => ({ valor, etiqueta }))}
+                                    valor={data.estilo}
+                                    alElegir={(v) => setData('estilo', v)}
+                                    nombre="Cómo se entrena"
+                                    columnas="grid-cols-1 sm:grid-cols-3"
+                                    compacto
+                                />
+                            </Campo>
+                            <Campo etiqueta="Enfoque" nombre="enfoque" error={errors.enfoque}>
+                                <Botones
+                                    opciones={Object.entries(enfoques).map(([valor, etiqueta]) => ({ valor, etiqueta }))}
+                                    valor={data.enfoque}
+                                    alElegir={(v) => setData('enfoque', v)}
+                                    nombre="Enfoque"
+                                    columnas="grid-cols-2"
                                     compacto
                                 />
                             </Campo>
