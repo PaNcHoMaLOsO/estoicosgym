@@ -33,17 +33,57 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertOk()
             ->assertSee('<title>Rutinas de gimnasio | PRO GYM', false)
             ->assertSeeInOrder(['Estoy empezando', 'Bajar de peso', 'Ganar fuerza y músculo', 'Mantenerme'])
-            ->assertSee('Primeros pasos · 2 días')
+            // Cada rutina en una fila, con un botón por cantidad de días.
+            ->assertSee('aria-label="Primeros pasos, 2 días por semana"', false)
             ->assertSee(route('landing.rutina.ver', 'primeros-pasos-2-dias'), false);
 
         $this->get('/rutinas?objetivo=fuerza')
             ->assertOk()
-            ->assertSee('Fuerza desde cero · 2 días')
-            ->assertDontSee('Primeros pasos · 2 días');
+            ->assertSee('aria-label="Fuerza desde cero, 2 días por semana"', false)
+            ->assertDontSee('Primeros pasos');
 
         // Los enlaces de antes a la lista siguen llegando.
         $this->get('/rutina?todas=1')->assertRedirect(route('landing.rutinas'));
         $this->get('/rutina?objetivo=fuerza')->assertRedirect(route('landing.rutinas', ['objetivo' => 'fuerza']));
+    }
+
+    /** Tres preguntas, cada respuesta un enlace, y al final la rutina de uno con lo que se hace cada día. */
+    public function test_tres_preguntas_llevan_a_la_rutina_de_cada_uno(): void
+    {
+        // 1: qué buscas. Sin contestar, no se pregunta lo demás.
+        $this->get('/rutinas')
+            ->assertSee('¿Qué buscas?')
+            ->assertSee('objetivo=fuerza#elige', false)
+            ->assertDontSee('¿Cuánto llevas entrenando?');
+
+        // 2: cuánto llevas, con lo anterior a la vista para cambiarlo.
+        $this->get('/rutinas?objetivo=fuerza')
+            ->assertSee('¿Cuánto llevas entrenando?')
+            ->assertSee('Cambiar lo que buscas', false)
+            ->assertDontSee('¿Qué buscas?');
+
+        // 3: los días, solo los que tienen rutina para eso.
+        $dias = \App\Support\RutinaSugerida::diasPara('fuerza', 'algo');
+        $this->assertContains(3, $dias);
+        $pagina = $this->get('/rutinas?objetivo=fuerza&nivel=algo')->assertSee('¿Cuántos días puedes venir a la semana?');
+        foreach ([2, 3, 4, 5, 6] as $n) {
+            $enlace = 'nivel=algo&amp;dias=' . $n . '#elige';
+            in_array($n, $dias, true) ? $pagina->assertSee($enlace, false) : $pagina->assertDontSee($enlace, false);
+        }
+
+        // Y la suya: el nombre, los días de la semana y el botón a la rutina.
+        $this->get('/rutinas?objetivo=fuerza&nivel=algo&dias=3')
+            ->assertOk()
+            ->assertSee('Fuerza cuerpo completo')
+            ->assertSee('3 días por semana · para ganar fuerza y músculo')
+            ->assertSee('Día A')
+            ->assertSee('Ver la rutina completa')
+            ->assertSee(route('landing.rutina.ver', 'fuerza-cuerpo-completo-3-dias'), false)
+            // Con respuestas no es la página que debe guardar Google.
+            ->assertSee('noindex, follow', false);
+
+        // Una respuesta sin la anterior no vale: se vuelve a preguntar.
+        $this->get('/rutinas?nivel=algo&dias=3')->assertSee('¿Qué buscas?');
     }
 
     /** Las cuatro preguntas son un formulario común: sin JavaScript se contestan seguidas y se envían. */

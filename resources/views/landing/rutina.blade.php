@@ -186,7 +186,8 @@
             </form>
 
             <p class="mt-12 text-center font-modern text-sm">
-                <a href="{{ route('landing.rutinas') }}" class="text-pg-tiza/50 underline underline-offset-4 transition-colors hover:text-pg-tiza">Ver todas las rutinas</a>
+                <span class="text-pg-tiza/50">¿Buscas una rutina para toda la semana?</span>
+                <a href="{{ route('landing.rutinas') }}" class="ml-1 whitespace-nowrap text-pg-tiza underline decoration-pg-rojo underline-offset-4 transition-colors hover:text-pg-rojo-claro">Encuentra la tuya</a>
             </p>
         </div>
     </section>

@@ -2,6 +2,9 @@
 
 @section('title', $web['titulo'])
 @section('description', $web['descripcion'])
+{{-- Sin los botones flotantes: esta página se sigue en la sala, con el
+     teléfono en la mano, y tapaban el mapa de cada día. --}}
+@section('sin-flotantes', '1')
 
 @section('content')
     @include('landing.partes.cabecera', [
@@ -22,10 +25,23 @@
                 <span class="text-pg-rojo-claro">Para avanzar:</span> {{ $progresar }}
             </p>
 
+            {{-- PARA SALTAR AL DÍA DE HOY: en el teléfono una rutina de cinco
+                 días son veinte pantallas, y el del jueves no tiene por qué
+                 pasar por las del lunes. --}}
+            @if(count($dias) > 1)
+                <nav aria-label="Días de la rutina" class="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
+                    @foreach($dias as $dia)
+                        <a href="#dia-{{ $dia['numero'] }}" class="shrink-0 rounded-lg bg-pg-grafito px-4 py-2.5 font-modern text-sm font-semibold text-pg-tiza/85 transition-colors hover:bg-pg-rojo hover:text-white">
+                            Día {{ $dia['numero'] }}<span class="ml-1.5 font-normal text-pg-tiza/50">{{ \Illuminate\Support\Str::limit($dia['titulo'], 22) }}</span>
+                        </a>
+                    @endforeach
+                </nav>
+            @endif
+
             {{-- LOS DÍAS UNO DEBAJO DEL OTRO, sin pestañas: se lee igual en
                  cualquier teléfono y se puede imprimir o compartir entera. --}}
             @foreach($dias as $dia)
-                <article class="mt-12">
+                <article id="dia-{{ $dia['numero'] }}" class="mt-10 scroll-mt-24 sm:mt-12">
                     <header class="flex items-center justify-between gap-4 border-b border-pg-tiza/10 pb-3">
                         <div>
                             <h2 class="font-display text-2xl uppercase text-pg-tiza sm:text-3xl">Día {{ $dia['numero'] }} · {{ $dia['titulo'] }}</h2>

@@ -127,10 +127,92 @@ class RutinaSugerida
                     'dias' => $r->dias_por_semana,
                     'url' => route('landing.rutina.ver', $r->slug),
                 ])->all(),
+                'familias' => self::familias($rutinas[$clave]),
             ];
         }
 
         return $grupos;
+    }
+
+    /** «Primeros pasos · 2 días» → «Primeros pasos»: los días van aparte. */
+    public static function sinDias(string $nombre): string
+    {
+        return trim((string) preg_replace('/\s*·\s*\d+\s*d[ií]as?\s*$/u', '', $nombre)) ?: $nombre;
+    }
+
+    /**
+     * LA MISMA RUTINA CON SUS DÍAS EN UNA SOLA FILA. «Primeros pasos» de 2 y
+     * de 3 días eran dos filas iguales salvo el número, y la lista llegaba a
+     * cincuenta en el teléfono. Ahora es una fila con un botón por cantidad
+     * de días.
+     *
+     * @param  \Illuminate\Support\Collection<int, Rutina>  $rutinas
+     * @return list<array{nombre:string, nivel:string, variantes: list<array{dias:int, url:string}>}>
+     */
+    private static function familias($rutinas): array
+    {
+        $orden = array_keys(Rutina::NIVELES);
+
+        return $rutinas
+            ->groupBy(fn (Rutina $r) => $r->nivel . '|' . self::sinDias($r->nombre))
+            ->map(fn ($grupo) => [
+                'nombre' => self::sinDias($grupo->first()->nombre),
+                'nivel' => Rutina::NIVELES[$grupo->first()->nivel] ?? $grupo->first()->nivel,
+                'orden' => (int) array_search($grupo->first()->nivel, $orden, true) * 10 + (int) $grupo->min('dias_por_semana'),
+                'variantes' => $grupo->sortBy('dias_por_semana')->values()->map(fn (Rutina $r) => [
+                    'dias' => (int) $r->dias_por_semana,
+                    'url' => route('landing.rutina.ver', $r->slug),
+                ])->all(),
+            ])
+            ->sortBy('orden')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Los días que tienen rutina para ese objetivo y ese nivel: la tercera
+     * pregunta solo ofrece lo que existe, así nadie elige «6 días» para
+     * recibir una de 4.
+     *
+     * @return list<int>
+     */
+    public static function diasPara(string $objetivo, string $nivel): array
+    {
+        $dias = fn (array $filtros) => Rutina::where('activa', true)->where($filtros)
+            ->orderBy('dias_por_semana')->pluck('dias_por_semana')->map(fn ($d) => (int) $d)->unique()->values()->all();
+
+        return $dias(['objetivo' => $objetivo, 'nivel' => $nivel]) ?: $dias(['objetivo' => $objetivo]);
+    }
+
+    /**
+     * LA RUTINA DE QUIEN CONTESTÓ LAS TRES PREGUNTAS, lista para mostrarla sin
+     * salir de la página: qué es, qué se hace cada día y a dónde ir.
+     *
+     * Si hay dos que calzan exacto (cuerpo completo o glúteo y pierna), van
+     * las dos: elegir entre dos es fácil, entre cincuenta no. Si no hay
+     * ninguna exacta, la más cercana, y se dice que lo es.
+     *
+     * @return array{exacta:bool, rutinas: list<array<string,mixed>>}
+     */
+    public static function paraTi(string $objetivo, string $nivel, int $dias): array
+    {
+        $exactas = Rutina::where('activa', true)
+            ->where(['objetivo' => $objetivo, 'nivel' => $nivel, 'dias_por_semana' => $dias])
+            ->with('dias')->orderBy('orden')->get();
+        $cercana = $exactas->isEmpty() ? self::buscar($objetivo, $nivel, $dias) : null;
+
+        return [
+            'exacta' => $exactas->isNotEmpty(),
+            'rutinas' => ($cercana ? collect([$cercana]) : $exactas)->map(fn (Rutina $r) => [
+                'nombre' => self::sinDias($r->nombre),
+                'dias' => (int) $r->dias_por_semana,
+                'nivel' => Rutina::NIVELES[$r->nivel] ?? $r->nivel,
+                'para' => $r->paraQue(),
+                'descripcion' => $r->descripcion,
+                'jornadas' => $r->dias->sortBy('numero')->map(fn ($d) => $d->titulo)->filter()->values()->all(),
+                'url' => route('landing.rutina.ver', $r->slug),
+            ])->values()->all(),
+        ];
     }
 
     /**
