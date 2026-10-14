@@ -809,6 +809,9 @@ class LandingController extends Controller
         }
 
         $comun = $this->comun();
+        // «¿Qué buscas?»: ?busco= (no ?objetivo=, que es de los QR de antes y
+        // lleva a la rutina de la semana). Sin contestar, el de su nivel.
+        $busco = isset(\App\Models\Rutina::OBJETIVOS[$request->texto('busco')]) ? $request->texto('busco') : null;
 
         // ?cambiar=1: volver a la última pregunta con las otras ya marcadas.
         if (EntrenamientoDeHoy::respondido($dias, $nivel, $hechos) && ! $request->boolean('cambiar')) {
@@ -817,12 +820,12 @@ class LandingController extends Controller
             // La variante del celular (la pone el script de las preguntas): con
             // las mismas respuestas, accesorios distintos para cada uno.
             $variante = max(0, min(EntrenamientoDeHoy::VARIANTES, (int) $request->query('v', 0)));
-            $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'hice' => $hechos, 'hoy' => $hoy, 'v' => $variante ?: null];
+            $respuestas = ['dias' => $dias, 'nivel' => $nivel, 'busco' => $busco, 'hice' => $hechos, 'hoy' => $hoy, 'v' => $variante ?: null];
 
             return $this->pagina('landing.rutina-hoy', 'landing.rutina', 'Tu entrenamiento de hoy',
                 'Un día de entrenamiento armado para lo que quieres entrenar hoy, con los ejercicios de la sala.',
                 [
-                    'entrenamiento' => EntrenamientoDeHoy::armar($dias, $nivel, $hechos, $hoy, $variante),
+                    'entrenamiento' => EntrenamientoDeHoy::armar($dias, $nivel, $hechos, $hoy, $variante, $busco),
                     'respuestas' => $respuestas,
                     'nivelNombre' => EntrenamientoDeHoy::NIVELES[$nivel],
                     'robots' => 'noindex, follow',
@@ -834,12 +837,13 @@ class LandingController extends Controller
         $respuestas = [
             'dias' => in_array($dias, EntrenamientoDeHoy::DIAS, true) ? $dias : null,
             'nivel' => isset(EntrenamientoDeHoy::NIVELES[$nivel]) ? $nivel : null,
+            'busco' => $busco,
             'hice' => $hechos,
             'hoy' => isset(EntrenamientoDeHoy::GRUPOS[$request->texto('hoy')]) ? $request->texto('hoy') : null,
         ];
 
         return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',
-            'Contesta cuatro preguntas y te armamos el entrenamiento de hoy con los ejercicios de la sala: series, repeticiones y descanso.',
+            'Contesta cinco preguntas y te armamos el entrenamiento de hoy con los ejercicios de la sala: series, repeticiones y descanso.',
             [
                 'respuestas' => $respuestas,
                 'reglas' => EntrenamientoDeHoy::reglas(),

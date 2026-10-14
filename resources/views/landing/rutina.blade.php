@@ -5,9 +5,13 @@
 @section('sin-flotantes', '1')
 
 {{--
-    QUÉ ENTRENAR HOY: cuatro preguntas, una a la vez.
+    QUÉ ENTRENAR HOY: cinco preguntas, una a la vez.
 
-    Es un formulario GET común con las cuatro preguntas seguidas: sin
+    «¿Qué buscas?» (14-oct-2026): con ella el día sale de las rutinas de ese
+    objetivo —bajar de peso, mantenerse, funcionales— y no solo de las de
+    fuerza. Va como ?busco=, porque ?objetivo= es de los QR de antes.
+
+    Es un formulario GET común con las preguntas seguidas: sin
     JavaScript se contestan de arriba abajo y se envía. Con JavaScript se
     muestra una por vez, pasa sola a la siguiente al tocar una opción (en la
     tercera, que es de marcar varias, con «Seguir») y en la última marca lo
@@ -37,9 +41,16 @@
     $inicio = match (true) {
         $respuestas['dias'] === null => 0,
         $respuestas['nivel'] === null => 1,
-        $hice === null => 2,
-        default => 3,
+        $respuestas['busco'] === null && $hice === null => 2,
+        $hice === null => 3,
+        default => 4,
     };
+    $busco = [
+        'empezar' => ['seedling', 'Aprender las máquinas'],
+        'bajar_grasa' => ['fire', 'Quemar grasa y tonificar'],
+        'fuerza' => ['dumbbell', 'Subir pesos y ganar músculo'],
+        'mantener' => ['heart-pulse', 'Sentirme bien'],
+    ];
 @endphp
 
 @section('content')
@@ -60,9 +71,9 @@
                 <span class="flex shrink-0 items-center gap-1.5 font-modern text-sm font-semibold text-pg-tiza">Seguir <x-icono nombre="arrow-right" class="text-xs" /></span>
             </a>
 
-            {{-- La barra de los cuatro pasos: solo cuando van de a uno. --}}
+            {{-- La barra de los cinco pasos: solo cuando van de a uno. --}}
             <div data-barra hidden class="mt-4 flex gap-1.5" aria-hidden="true">
-                @for($i = 0; $i < 4; $i++)
+                @for($i = 0; $i < 5; $i++)
                     <span class="h-1.5 flex-1 rounded-full bg-pg-tiza/15 transition-colors duration-500 data-lleno:bg-pg-rojo"></span>
                 @endfor
             </div>
@@ -74,7 +85,7 @@
                 {{-- 1. Días --}}
                 <fieldset data-paso class="mb-14">
                     <legend class="w-full">
-                        <span class="{{ $paso }}">1 de 4</span>
+                        <span class="{{ $paso }}">1 de 5</span>
                         <span class="{{ $pregunta }}">¿Cuántos días entrenas a la semana?</span>
                     </legend>
                     <div class="mt-5 grid grid-cols-5 gap-2 sm:gap-3">
@@ -94,7 +105,7 @@
                 <fieldset data-paso class="mb-14">
                     <legend class="w-full">
                         <button type="button" data-atras hidden class="{{ $atras }}"><x-icono nombre="arrow-left" class="text-xs" /> Volver</button>
-                        <span class="{{ $paso }}">2 de 4</span>
+                        <span class="{{ $paso }}">2 de 5</span>
                         <span class="{{ $pregunta }}">¿Cómo vas?</span>
                     </legend>
                     <div class="mt-5 grid gap-3 sm:grid-cols-3">
@@ -115,11 +126,36 @@
                     </div>
                 </fieldset>
 
-                {{-- 3. Estos días: se marca todo lo que entrenó. --}}
+                {{-- 3. Qué busca: de qué rutinas sale el día. --}}
                 <fieldset data-paso class="mb-14">
                     <legend class="w-full">
                         <button type="button" data-atras hidden class="{{ $atras }}"><x-icono nombre="arrow-left" class="text-xs" /> Volver</button>
-                        <span class="{{ $paso }}">3 de 4</span>
+                        <span class="{{ $paso }}">3 de 5</span>
+                        <span class="{{ $pregunta }}">¿Qué buscas?</span>
+                    </legend>
+                    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                        @foreach(\App\Models\Rutina::OBJETIVOS as $clave => $nombre)
+                            <label data-opcion class="block cursor-pointer">
+                                <input type="radio" name="busco" value="{{ $clave }}" class="peer sr-only" @checked($respuestas['busco'] === $clave) @if($loop->first) required @endif>
+                                <span class="{{ $tarjeta }} h-full items-center gap-4 px-4 py-4">
+                                    <span class="grid size-12 shrink-0 place-items-center rounded-full bg-pg-negro/60 text-xl text-pg-rojo-claro">
+                                        <x-icono :nombre="$busco[$clave][0] ?? 'dumbbell'" />
+                                    </span>
+                                    <span class="font-modern">
+                                        <span class="block font-semibold sm:text-lg">{{ $nombre }}</span>
+                                        <span class="block text-sm text-pg-tiza/55">{{ $busco[$clave][1] ?? '' }}</span>
+                                    </span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                {{-- 4. Estos días: se marca todo lo que entrenó. --}}
+                <fieldset data-paso class="mb-14">
+                    <legend class="w-full">
+                        <button type="button" data-atras hidden class="{{ $atras }}"><x-icono nombre="arrow-left" class="text-xs" /> Volver</button>
+                        <span class="{{ $paso }}">4 de 5</span>
                         <span class="{{ $pregunta }}">¿Qué entrenaste estos últimos días?</span>
                         <span class="mt-1 block font-modern text-sm text-pg-tiza/60">Marca todo lo de los últimos 2 o 3 días.</span>
                     </legend>
@@ -152,11 +188,11 @@
                     </button>
                 </fieldset>
 
-                {{-- 4. Hoy: lo que choca con lo de estos días queda como «mejor no» y se sugiere otra cosa. --}}
+                {{-- 5. Hoy: lo que choca con lo de estos días queda como «mejor no» y se sugiere otra cosa. --}}
                 <fieldset data-paso>
                     <legend class="w-full">
                         <button type="button" data-atras hidden class="{{ $atras }}"><x-icono nombre="arrow-left" class="text-xs" /> Volver</button>
-                        <span class="{{ $paso }}">4 de 4</span>
+                        <span class="{{ $paso }}">5 de 5</span>
                         <span class="{{ $pregunta }}">¿Qué te gustaría entrenar hoy?</span>
                     </legend>
                     <div class="mt-4 grid grid-cols-4 gap-1.5 sm:gap-3">
@@ -201,7 +237,7 @@
             }
 
             const pasos = Array.from(form.querySelectorAll('[data-paso]'));
-            const nombres = ['dias', 'nivel', 'hice[]', 'hoy'];
+            const nombres = ['dias', 'nivel', 'busco', 'hice[]', 'hoy'];
             const barra = document.querySelector('[data-barra]');
             const seguir = form.querySelector('[data-seguir]');
             const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -362,7 +398,7 @@
 
             barra.hidden = false;
 
-            if (Number(form.dataset.inicio) >= 3) {
+            if (Number(form.dataset.inicio) >= 4) {
                 marcarHoy(! valor('hoy'));
             }
 
@@ -422,8 +458,10 @@
                     return Boolean(input);
                 };
 
+                // Los días, el nivel y lo que busca no cambian de un día a
+                // otro: se dejan marcados y se parte en lo de estos días.
                 if (inicio === 0 && ! /nuevo=1/.test(location.search) && marcar('dias', guardado.dias) && marcar('nivel', guardado.nivel)) {
-                    inicio = 2;
+                    inicio = guardado.busco && marcar('busco', guardado.busco) ? 3 : 2;
                     marcarHoy(true);
                 }
             }

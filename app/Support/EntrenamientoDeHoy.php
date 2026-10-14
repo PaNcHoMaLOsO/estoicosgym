@@ -6,17 +6,22 @@ use App\Models\Ejercicio;
 use App\Models\Rutina;
 
 /**
- * «Tu entrenamiento de hoy»: lo que sale de las cuatro preguntas de /rutina.
+ * «Tu entrenamiento de hoy»: lo que sale de las preguntas de /rutina.
  *
- * Con los días y el nivel se busca la rutina de siempre (RutinaSugerida::buscar,
- * con el objetivo que corresponde al nivel). De esa rutina se toma el DÍA que
- * mejor calza con lo que quiere entrenar hoy y que menos pisa lo que entrenó
- * los últimos días, mirando los músculos de cada ejercicio.
+ * EL DÍA SALE DE TODAS LAS RUTINAS. Antes se buscaba una sola rutina por
+ * nivel y se tomaba un día de ella: si no calzaba con lo pedido, el día se
+ * armaba con ejercicios sueltos. Así el 79 % de las respuestas no usaba
+ * ninguna rutina y 54 de las 69 no salían nunca (medido el 14-oct-2026).
  *
- * Si ningún día calza (pide piernas y su rutina es de cuerpo completo), el día
- * se arma con el catálogo de la sala: 5 o 6 ejercicios del grupo pedido, los
- * que mueven más músculos primero y los accesorios después, con series y
- * repeticiones según el nivel.
+ * Ahora se juntan los días de todas las rutinas activas de su objetivo y su
+ * nivel (las 224 jornadas que hay) y se toma el que mejor calza con lo que
+ * quiere entrenar hoy y menos pisa lo de estos días, mirando los músculos de
+ * cada ejercicio. Si en su objetivo no hay uno así, se busca en los de su
+ * nivel; después en el nivel vecino.
+ *
+ * Solo si ninguna rutina tiene un día así, se arma con el catálogo de la
+ * sala: 5 o 6 ejercicios del grupo pedido, los que mueven más músculos
+ * primero, con series y repeticiones según el nivel.
  *
  * Antes va el calentamiento con banda y después los estiramientos de lo que
  * trabajó (CalentamientoYEstiramiento). «Estirar y movilidad» es un día
@@ -141,7 +146,10 @@ class EntrenamientoDeHoy
         'cardio', 'movilidad',
     ];
 
-    /** El objetivo que se busca según el nivel. */
+    /**
+     * El objetivo que se busca según el nivel, si no contestó «¿qué buscas?»
+     * (los enlaces y QR de antes de esa pregunta).
+     */
     public const OBJETIVO_POR_NIVEL = [
         'nunca' => 'empezar',
         'algo' => 'fuerza',
@@ -288,7 +296,7 @@ class EntrenamientoDeHoy
      *
      * @return array{grupo:string, titulo:string, foco:?string, lineas:list<array<string,mixed>>, principales:list<string>, secundarios:list<string>, rutina:?Rutina, dia:?int, calentamiento:list<array<string,mixed>>, estiramientos:list<array<string,mixed>>, movilidad:list<array<string,mixed>>, minutos:?int}
      */
-    public static function armar(int $dias, string $nivel, array|string $hice, string $hoy, int $variante = 0): array
+    public static function armar(int $dias, string $nivel, array|string $hice, string $hoy, int $variante = 0, ?string $objetivo = null): array
     {
         self::$variante = max(0, min(self::VARIANTES, $variante));
 
@@ -297,8 +305,8 @@ class EntrenamientoDeHoy
         }
 
         $hechos = self::comoLista($hice);
-        $rutina = RutinaSugerida::buscar(self::OBJETIVO_POR_NIVEL[$nivel] ?? 'empezar', $nivel, $dias);
-        $elegido = $rutina ? self::elegirDia(RutinaSugerida::dias($rutina), $hoy, $hechos) : null;
+        $objetivo = isset(Rutina::OBJETIVOS[(string) $objetivo]) ? $objetivo : (self::OBJETIVO_POR_NIVEL[$nivel] ?? 'empezar');
+        [$rutina, $elegido] = self::diaDeLasRutinas($objetivo, $nivel, $dias, $hoy, $hechos);
 
         if ($elegido) {
             $lineas = self::rotarAccesorios($elegido['lineas'], $hoy, $hechos);
@@ -331,6 +339,156 @@ class EntrenamientoDeHoy
             'movilidad' => [],
             'minutos' => null,
         ];
+    }
+
+    /**
+     * El mejor día entre todas las rutinas, o [null, null] si ninguna tiene
+     * uno que sirva. Primero las de su objetivo y su nivel; si ninguna tiene
+     * un día así, las de su nivel; después las del nivel vecino (nunca el
+     * de «entreno hace años» para quien está empezando).
+     *
+     * Entre los que quedan casi igual de bien, la variante del celular elige:
+     * dos personas que contestan lo mismo no hacen el mismo día, y se usan
+     * más rutinas. Una rutina de los días que viene la persona desempata.
+     *
+     * @param list<string> $hechos
+     * @return array{0:?Rutina, 1:?array<string,mixed>}
+     */
+    private static function diaDeLasRutinas(string $objetivo, string $nivel, int $dias, string $hoy, array $hechos): array
+    {
+        $vecino = ['nunca' => 'algo', 'algo' => 'nunca', 'hace_tiempo' => 'algo'][$nivel] ?? null;
+        $todas = self::rutinasActivas();
+
+        foreach ([
+            fn (Rutina $r) => $r->objetivo === $objetivo && $r->nivel === $nivel,
+            fn (Rutina $r) => $r->nivel === $nivel,
+            fn (Rutina $r) => $r->objetivo === $objetivo && $r->nivel === $vecino,
+        ] as $filtro) {
+            $candidatos = [];
+
+            foreach ($todas->filter($filtro) as $rutina) {
+                foreach (self::diasDe($rutina) as $dia) {
+                    $puntaje = self::puntajeDelDia($dia, $hoy, $hechos);
+
+                    if ($puntaje === null) {
+                        continue;
+                    }
+
+                    // Los días que viene: una rutina pensada para eso desempata.
+                    $puntaje += $rutina->dias_por_semana === $dias ? 0.05 : 0;
+                    $candidatos[] = [$puntaje, $rutina, $dia];
+                }
+            }
+
+            if ($candidatos === []) {
+                continue;
+            }
+
+            usort($candidatos, fn ($a, $b) => $b[0] <=> $a[0] ?: $a[1]->orden <=> $b[1]->orden ?: $a[2]['numero'] <=> $b[2]['numero']);
+            $mejor = $candidatos[0][0];
+            // Los que quedan a un pelo del mejor, sin repetir un día igual
+            // (el mismo bloque se usa en varias rutinas).
+            $parejos = [];
+
+            foreach ($candidatos as $c) {
+                $huella = implode('|', array_column($c[2]['lineas'], 'nombre'));
+
+                if ($c[0] >= $mejor - 0.08 && ! isset($parejos[$huella])) {
+                    $parejos[$huella] = $c;
+                }
+            }
+
+            $parejos = array_values($parejos);
+            $elegido = $parejos[max(0, self::$variante - 1) % count($parejos)];
+
+            return [$elegido[1], $elegido[2]];
+        }
+
+        return [null, null];
+    }
+
+    /** Las rutinas activas con sus días, una vez por petición. @return \Illuminate\Support\Collection<int, Rutina> */
+    private static function rutinasActivas(): \Illuminate\Support\Collection
+    {
+        return once(fn () => Rutina::where('activa', true)
+            ->with(['dias.ejercicios.ejercicio', 'dias.ejercicios.alternativa'])
+            ->orderBy('orden')
+            ->get());
+    }
+
+    /** Los días de una rutina listos para elegir, calculados una vez. */
+    private static function diasDe(Rutina $rutina): array
+    {
+        self::$dias ??= new \WeakMap;
+
+        return self::$dias[$rutina] ??= RutinaSugerida::dias($rutina);
+    }
+
+    /** @var \WeakMap<Rutina, list<array<string,mixed>>>|null */
+    private static ?\WeakMap $dias = null;
+
+    /**
+     * Qué tan bien sirve un día para hoy (calza menos lo que pisa), o null si
+     * no trabaja de verdad lo que pidió o es casi todo lo ya hecho. La misma
+     * cuenta de elegirDia().
+     */
+    private static function puntajeDelDia(array $dia, string $hoy, array $hechos): ?float
+    {
+        $perfil = self::perfil($dia['lineas']);
+        $calza = self::calza($perfil, $hoy);
+
+        if ($calza < ($hoy === 'cuerpo_completo' ? 0.75 : 0.5)) {
+            return null;
+        }
+
+        $puntaje = $calza - self::pisa($perfil, $hechos, $hoy);
+
+        if ($puntaje <= 0.25) {
+            return null;
+        }
+
+        // Un día de espalda o de pecho trae los movimientos que no pueden
+        // faltar (ver PATRONES) en sus tres primeros ejercicios. Si ninguna
+        // rutina tiene uno así, se arma con el catálogo, que sí los respeta.
+        $grupo = match ($hoy) {
+            'espalda', 'torso_espalda' => 'espalda',
+            'pecho', 'torso_pecho' => 'pecho',
+            default => null,
+        };
+
+        if ($grupo && ! self::cumplePatrones(array_column(array_slice($dia['lineas'], 0, 3), 'nombre'), self::PATRONES[$grupo])) {
+            return null;
+        }
+
+        return $puntaje;
+    }
+
+    /** Si cada patrón lo cumple un ejercicio distinto. @param list<string> $nombres */
+    private static function cumplePatrones(array $nombres, array $patrones): bool
+    {
+        foreach ($patrones as $patron) {
+            $i = array_key_first(preg_grep($patron, $nombres));
+
+            if ($i === null) {
+                return false;
+            }
+
+            unset($nombres[$i]);
+        }
+
+        return true;
+    }
+
+    /** El movimiento de un ejercicio, para cambiarlo por otro igual: tirar de arriba, remar, press plano o inclinado. */
+    private static function patronDe(string $nombre): ?string
+    {
+        return match (true) {
+            (bool) preg_match('/^Jalón al pecho|^Dominadas|^Jalón con agarre/u', $nombre) => 'arriba',
+            (bool) preg_match('/^Remo/u', $nombre) => 'remo',
+            (bool) preg_match('/inclinad/u', $nombre) => 'inclinado',
+            (bool) preg_match('/^Press (de banca|de pecho)/u', $nombre) => 'plano',
+            default => null,
+        };
     }
 
     /** «Estirar y movilidad»: sin pesas, de los pies a la cabeza. */
@@ -877,6 +1035,8 @@ class EntrenamientoDeHoy
                 ->filter(fn (Ejercicio $e) => $e->nombre === $l['nombre'] || (
                     ! in_array($e->nombre, $enElDia, true)
                     && $e->grupos()['principal'] === $l['principal']
+                    // El mismo movimiento: un remo por otro remo, no por un jalón.
+                    && self::patronDe($e->nombre) === self::patronDe($l['nombre'])
                     && ($e->grupos()['secundarios'] !== [] && ! preg_match(self::ACCESORIOS, $e->nombre)) === $basico
                 ))
                 ->sortBy(fn (Ejercicio $e) => self::delDia($e->nombre));

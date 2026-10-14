@@ -48,7 +48,7 @@
 @endphp
 
 @section('content')
-    <section class="bg-pg-negro pb-16 pt-20 lg:pt-32" data-entrenamiento data-titulo="{{ $e['titulo'] }}" data-dias="{{ $respuestas['dias'] }}" data-nivel="{{ $respuestas['nivel'] }}">
+    <section class="bg-pg-negro pb-16 pt-20 lg:pt-32" data-entrenamiento data-titulo="{{ $e['titulo'] }}" data-dias="{{ $respuestas['dias'] }}" data-nivel="{{ $respuestas['nivel'] }}" data-busco="{{ $respuestas['busco'] ?? '' }}">
         <div class="mx-auto max-w-6xl px-4 sm:px-8">
 
             {{-- El día, en una franja baja con su mapa chico. --}}
@@ -210,7 +210,7 @@
             </a>
 
             <p class="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 font-modern text-sm">
-                <a href="{{ route('landing.rutina', ['dias' => $respuestas['dias'], 'nivel' => $respuestas['nivel'], 'hice' => $hice, 'hoy' => $respuestas['hoy'], 'v' => $respuestas['v'] ?? null, 'cambiar' => 1]) }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Elegir otra cosa para hoy</a>
+                <a href="{{ route('landing.rutina', ['dias' => $respuestas['dias'], 'nivel' => $respuestas['nivel'], 'busco' => $respuestas['busco'] ?? null, 'hice' => $hice, 'hoy' => $respuestas['hoy'], 'v' => $respuestas['v'] ?? null, 'cambiar' => 1]) }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Elegir otra cosa para hoy</a>
                 <a href="{{ route('landing.rutinas') }}" class="text-pg-tiza/60 underline underline-offset-4 hover:text-pg-tiza">Ver todas las rutinas</a>
             </p>
             </div>
@@ -248,6 +248,7 @@
                 titulo: raiz.dataset.titulo,
                 dias: raiz.dataset.dias,
                 nivel: raiz.dataset.nivel,
+                busco: raiz.dataset.busco,
                 total: lineas.length,
             });
 

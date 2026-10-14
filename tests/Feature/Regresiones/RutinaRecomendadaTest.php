@@ -202,33 +202,60 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertSee('<h1 class="mt-1 font-display text-4xl uppercase leading-none text-pg-tiza sm:text-5xl lg:text-6xl">Cardio', false);
     }
 
-    /** Pide piernas y su rutina es de cuerpo completo: el día se arma con el catálogo. */
-    public function test_arma_con_el_catalogo_cuando_ningun_dia_calza(): void
+    /**
+     * El día sale de TODAS las rutinas (14-oct-2026). Antes salía de una sola
+     * por nivel: quien empezaba con 2 días y pedía piernas recibía ejercicios
+     * sueltos, porque su rutina era de cuerpo completo. Ahora le toca el día
+     * de pierna de otra rutina de su nivel, y el botón lleva a esa rutina.
+     */
+    public function test_el_dia_sale_de_la_rutina_que_lo_tiene(): void
     {
         $e = EntrenamientoDeHoy::armar(2, 'nunca', 'nada', 'piernas');
 
-        $this->assertSame('Primeros pasos · 2 días', $e['rutina']->nombre);
+        $this->assertNotNull($e['dia']);
+        $this->assertSame('nunca', $e['rutina']->nivel);
+        $grupos = array_count_values(array_filter(array_map(fn ($l) => EntrenamientoDeHoy::grupoDe($l['principal'], $l['zona']), $e['lineas'])));
+        arsort($grupos);
+        $this->assertSame('piernas', array_key_first($grupos));
+
+        $this->get('/rutina?dias=2&nivel=nunca&ayer=nada&hoy=piernas')
+            ->assertOk()
+            ->assertSee('href="' . route('landing.rutina.ver', $e['rutina']->slug) . '"', false);
+
+        // Lo que busca elige de qué rutinas sale: bajar de peso, de las de bajar.
+        $quema = EntrenamientoDeHoy::armar(3, 'algo', 'nada', 'cuerpo_completo', 1, 'bajar_grasa');
+        $this->assertSame('bajar_grasa', $quema['rutina']->objetivo);
+        $this->get('/rutina?dias=3&nivel=algo&busco=bajar_grasa&hice[]=nada&hoy=cuerpo_completo&v=1')
+            ->assertOk()
+            ->assertSee(route('landing.rutina.ver', $quema['rutina']->slug), false);
+    }
+
+    /** Ninguna rutina tiene un día de «torso, más pecho»: se arma con el catálogo. */
+    public function test_arma_con_el_catalogo_cuando_ningun_dia_calza(): void
+    {
+        $e = EntrenamientoDeHoy::armar(2, 'nunca', 'nada', 'torso_pecho');
+
+        $this->assertNull($e['rutina']);
         $this->assertNull($e['dia']);
         $this->assertCount(6, $e['lineas']);
-        $this->assertSame(['piernas'], array_values(array_unique(array_map(fn ($l) => EntrenamientoDeHoy::grupoDe($l['principal'], $l['zona']), $e['lineas']))));
 
         // Los que mueven más músculos primero, los accesorios después.
         $basico = array_map(fn ($l) => $l['secundarios'] !== [], $e['lineas']);
-        $this->assertSame($basico, array_values(array_merge(array_filter($basico), array_filter($basico, fn ($b) => ! $b))));
         $this->assertTrue($basico[0]);
 
         // Series y repeticiones de quien empieza.
         $this->assertSame([3, '12 a 15'], [$e['lineas'][0]['series'], $e['lineas'][0]['repeticiones']]);
 
-        $avanzado = EntrenamientoDeHoy::armar(3, 'hace_tiempo', 'nada', 'hombros_brazos');
+        $avanzado = EntrenamientoDeHoy::armar(3, 'hace_tiempo', 'nada', 'hombros_abdomen');
         $this->assertNull($avanzado['dia']);
-        $this->assertSame([5, '6 a 8'], [$avanzado['lineas'][0]['series'], $avanzado['lineas'][0]['repeticiones']]);
+        $this->assertSame('6 a 8', $avanzado['lineas'][0]['repeticiones']);
 
-        $this->get('/rutina?dias=2&nivel=nunca&ayer=nada&hoy=piernas')
+        // Sin rutina detrás, no hay botón a «la semana».
+        $this->get('/rutina?dias=2&nivel=nunca&ayer=nada&hoy=torso_pecho')
             ->assertOk()
             ->assertSee('6 ejercicios')
             ->assertSee('3 × 12-15')
-            ->assertSee('href="' . route('landing.rutina.ver', 'primeros-pasos-2-dias') . '"', false);
+            ->assertDontSee('Ver la semana');
     }
 
     /** Los QR que ya están impresos: la búsqueda de siempre, hacia su página. */
@@ -605,22 +632,24 @@ class RutinaRecomendadaTest extends CasoConCatalogos
      */
     public function test_los_basicos_se_quedan_y_lo_demas_cambia(): void
     {
-        $rutina = RutinaSugerida::buscar('fuerza', 'algo', 4);
-        $piernaDeLaRutina = collect(RutinaSugerida::dias($rutina))->firstWhere('titulo', 'Pierna pesada');
-        $basicos = array_slice(array_column($piernaDeLaRutina['lineas'], 'nombre'), 0, 2);
-
+        // Cada celular (variante) tiene su día de pierna, de alguna rutina:
+        // dos personas que contestan igual no van a la misma máquina.
         $vistos = [];
-        foreach (range(0, 6) as $d) {
-            \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-10-12')->addDays($d));
-            foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
+        foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
+            $primero = EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'piernas', $v);
+            $delDia = collect(RutinaSugerida::dias($primero['rutina']))->firstWhere('numero', $primero['dia']);
+            $basicos = array_slice(array_column($delDia['lineas'], 'nombre'), 0, 2);
+
+            foreach (range(0, 6) as $d) {
+                \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-10-12')->addDays($d));
                 $e = EntrenamientoDeHoy::armar(4, 'algo', ['nada'], 'piernas', $v);
                 $nombres = array_column($e['lineas'], 'nombre');
 
-                $this->assertNotNull($e['dia'], 'Sale de la rutina');
+                $this->assertNotNull($e['dia'], 'Sale de una rutina');
                 $this->assertSame($basicos, array_slice($nombres, 0, 2), 'Los básicos no cambian');
                 $this->assertSame(count($nombres), count(array_unique($nombres)), 'Sin repetidos');
                 // Las mismas series y repeticiones de la rutina en cada puesto.
-                $this->assertSame(array_column($piernaDeLaRutina['lineas'], 'series'), array_column($e['lineas'], 'series'));
+                $this->assertSame(array_column($delDia['lineas'], 'series'), array_column($e['lineas'], 'series'));
                 $vistos[implode('|', $nombres)] = true;
             }
         }
