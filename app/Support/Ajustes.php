@@ -703,6 +703,14 @@ class Ajustes
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            'web.sin_matricula' => [
+                'grupo' => 'web',
+                'seccion' => 'Precios',
+                'etiqueta' => 'Inscripción $0',
+                'ayuda' => 'Dice en la portada y en Planes que no se cobra matrícula: se paga solo el plan. Apágalo si algún día se cobra inscripción.',
+                'tipo' => 'si_no',
+                'defecto' => '1',
+            ],
             'web.tiktok' => [
                 'grupo' => 'web',
                 'seccion' => 'Redes y contacto',

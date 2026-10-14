@@ -43,6 +43,10 @@
                     </a>
                 @endif
             </div>
+            @if($navegacion['planes'] && \App\Support\Ajustes::activo('web.sin_matricula'))
+                {{-- Otros gimnasios cobran matrícula: que aquí no, se dice junto al botón de los planes. --}}
+                <p class="mt-4 font-modern text-sm text-pg-tiza/70"><strong class="font-semibold text-pg-tiza">Inscripción $0.</strong> Sin matrícula: pagas solo tu plan.</p>
+            @endif
         </div>
     </section>
 

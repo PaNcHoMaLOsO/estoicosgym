@@ -165,7 +165,9 @@ class LandingController extends Controller
         return $this->pagina('landing.planes', 'landing.planes', 'Planes y precios del gimnasio',
             "Planes de {$comun['gimnasio']['nombre']}" . ($comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '')
                 . ($nombres ? ": {$nombres}." : '.')
-                . ($precios ? ' Desde ' . $this->pesos(min($precios)) . '.' : ''),
+                . ($precios ? ' Desde ' . $this->pesos(min($precios)) . '.' : '')
+                // «gimnasio sin matrícula» se busca: otros la cobran aparte.
+                . (Ajustes::activo('web.sin_matricula') ? ' Sin matrícula: la inscripción cuesta $0.' : ''),
             [
                 // La misma ficha del gimnasio (el mismo @id), con lo que vende:
                 // Google junta las dos y sabe que estos precios son de él.
@@ -1199,6 +1201,7 @@ class LandingController extends Controller
                 'titulo' => 'Planes',
                 'texto' => $precios
                     ? 'Desde ' . $this->pesos(min($precios)) . ': ' . mb_strtolower(implode(', ', array_column($mensualidades, 'nombre'))) . '.'
+                        . (Ajustes::activo('web.sin_matricula') ? ' Inscripción $0.' : '')
                     : 'Pregunta por los planes en el mesón.',
                 'accion' => 'Ver planes',
             ];

@@ -32,6 +32,13 @@
 
     <section id="planes" class="pb-10 lg:pb-14 bg-pg-negro">
         <div class="max-w-[1520px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-20">
+            @if(\App\Support\Ajustes::activo('web.sin_matricula'))
+                {{-- Otros gimnasios cobran la matrícula aparte: aquí se dice antes
+                     de los precios, para que el número que se lee sea el total. --}}
+                <p class="animate-on-scroll mb-5 lg:mb-8 text-center font-modern text-sm md:text-base text-pg-tiza/75">
+                    <strong class="font-semibold text-pg-tiza">Inscripción $0.</strong> No cobramos matrícula: pagas solo tu plan.
+                </p>
+            @endif
             {{-- Los planes y los precios son los del catálogo. --}}
             {{-- Una tabla de precios, no cinco tarjetas: los planes se comparan
                  mejor en columnas separadas por una línea que en cajas sueltas,

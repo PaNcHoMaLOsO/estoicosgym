@@ -309,4 +309,16 @@ class PaginasPublicasTest extends CasoConCatalogos
         $this->assertDoesNotMatchRegularExpression("/innerHTML\s*=\s*'<svg/", $html);
         $this->assertStringContainsString('id="icono-buscando"', $html);
     }
+
+    /** Otros gimnasios cobran matrícula: que aquí la inscripción es $0 se dice en la portada y en Planes, y se puede apagar. */
+    public function test_la_inscripcion_gratis_se_anuncia_y_se_puede_apagar(): void
+    {
+        $this->get('/')->assertOk()->assertSee('Inscripción $0');
+        $this->get('/planes')->assertOk()->assertSee('No cobramos matrícula');
+
+        \App\Support\Ajustes::guardar(['web.sin_matricula' => '0']);
+
+        $this->get('/')->assertOk()->assertDontSee('Inscripción $0');
+        $this->get('/planes')->assertOk()->assertDontSee('matrícula');
+    }
 }
