@@ -504,7 +504,12 @@ class LandingController extends Controller
         // nadie, y Google la tomaría por una página pobre del sitio.
         abort_if($comun['especialistas'] === [], 404);
 
-        $especialidades = collect($comun['especialistas'])->pluck('especialidad')->unique()->implode(', ');
+        // Las áreas, una vez cada una: con lo que escribió cada profesional
+        // Google leía «Kinesiólogo, Kinesióloga, Nutricionista, Nutricionista».
+        $especialidades = Str::ucfirst(collect(Especialidades::agrupar($comun['especialistas']))
+            ->sort(fn (array $a, array $b) => count($b['especialistas']) <=> count($a['especialistas']))
+            ->map(fn (array $g) => Str::lower($g['nombre']))
+            ->implode(', '));
 
         // El título dice QUÉ profesionales hay —«Nutricionista, kinesiólogo y
         // personal trainer en Los Ángeles»—, que es lo que se busca; nadie
@@ -547,6 +552,9 @@ class LandingController extends Controller
             // El nombre de la página de esa especialidad, que ya junta tildes y femeninos.
             $seccion['nombre'] = $grupos[$clave]['nombre'] ?? $seccion['nombre'];
             $seccion['url'] = isset($grupos[$clave]) ? route('landing.especialidad', $clave) : null;
+            // Para qué sirve ir a cada uno: la página es la vitrina de todas
+            // las áreas, y sin esto era una fila de nombres bajo un oficio.
+            $seccion['intro'] = Especialidades::intro($clave, $comun['web']['ciudad']);
         }
         unset($seccion);
         uasort($secciones, fn (array $a, array $b) => count($b['especialistas']) <=> count($a['especialistas']));
@@ -566,6 +574,7 @@ class LandingController extends Controller
                 )),
                 'secciones' => array_values($secciones),
                 'hayRecomendados' => $hayRecomendados,
+                'tituloProfesionales' => $titulo,
                 'json_ld' => $this->listaDePersonas($comun['especialistas'], $titulo, route('landing.especialistas'), $comun),
                 // Para que otros profesionales pidan aparecer.
                 'whatsappProfesionales' => $this->whatsappConMensaje("Hola, soy profesional y me gustaría aparecer en la web de {$comun['gimnasio']['nombre']}."),
