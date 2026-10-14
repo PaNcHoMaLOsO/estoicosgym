@@ -127,7 +127,7 @@
                                             <h3 class="text-base font-semibold leading-tight text-pg-tiza sm:text-lg">{{ $l['nombre'] }}</h3>
                                             <p class="mt-1 flex items-center gap-1 whitespace-nowrap text-xs text-pg-tiza/50 sm:text-sm">
                                                 {{ ! empty($l['opciones']) ? 'Cómo y otras opciones' : 'Cómo se hace' }}
-                                                <x-icono nombre="chevron-right" class="text-[10px] transition-transform group-open:rotate-90" />
+                                                <x-icono nombre="chevron-right" class="text-[11px] transition-transform group-open:rotate-90" />
                                             </p>
                                         </div>
                                         @php [$series, $porLado] = $partir($l['corta']); @endphp

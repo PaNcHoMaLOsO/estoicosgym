@@ -51,7 +51,7 @@
             <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-pg-negro via-pg-negro/70 to-transparent" aria-hidden="true"></div>
 
             @if($e['recomendado'])
-                <span class="absolute left-2 top-2 bg-pg-negro/75 px-2 py-0.5 font-modern text-[9px] uppercase tracking-[0.15em] text-pg-tiza/80 sm:left-3 sm:top-3 sm:text-[10px]">Recomendado</span>
+                <span class="absolute left-2 top-2 bg-pg-negro/75 px-2 py-0.5 font-modern text-[11px] uppercase tracking-[0.15em] text-pg-tiza/80 sm:left-3 sm:top-3 sm:text-[11px]">Recomendado</span>
             @endif
 
             {{-- LO JUSTO PARA ELEGIR. La presentación iba aquí y con más de
@@ -59,7 +59,7 @@
                  todo el panel. El WhatsApp queda a mano, para quien ya sabe. --}}
             <div class="relative p-3 sm:p-5 lg:p-6">
                 <span class="block h-0.5 w-6 bg-pg-rojo transition-all duration-500 group-hover:w-12 sm:w-8" aria-hidden="true"></span>
-                <p class="mt-2.5 line-clamp-2 font-modern text-[10px] uppercase leading-snug tracking-[0.12em] text-pg-rojo-claro sm:mt-3 sm:text-[11px] sm:tracking-[0.18em]">{{ $e['especialidad'] }}</p>
+                <p class="mt-2.5 line-clamp-2 font-modern text-[11px] uppercase leading-snug tracking-[0.12em] text-pg-rojo-claro sm:mt-3 sm:text-[11px] sm:tracking-[0.18em]">{{ $e['especialidad'] }}</p>
                 <{{ $nivel }} class="mt-1 font-display text-lg uppercase leading-none text-pg-tiza sm:text-2xl lg:text-[1.7rem]">
                     <a href="{{ $e['perfil'] }}" class="after:absolute after:inset-0">{{ $e['nombre'] }}</a>
                 </{{ $nivel }}>
@@ -68,7 +68,7 @@
                 @endif
                 @if($e['lugar'])
                     <p class="mt-1 flex items-center gap-1 truncate font-modern text-[11px] text-pg-tiza/60 sm:text-xs">
-                        <x-icono nombre="location-dot" class="shrink-0 text-[10px] text-pg-rojo-claro" /><span class="truncate">{{ $e['lugar'] }}</span>
+                        <x-icono nombre="location-dot" class="shrink-0 text-[11px] text-pg-rojo-claro" /><span class="truncate">{{ $e['lugar'] }}</span>
                     </p>
                 @endif
 
@@ -89,7 +89,7 @@
                     @if($e['whatsapp'])
                         <a href="{{ $e['whatsapp'] }}" target="_blank" rel="noopener" data-evento="contacto_especialista" data-detalle="{{ $e['nombre'] }}"
                            aria-label="Escribirle a {{ $e['nombre'] }} por WhatsApp"
-                           class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-[#25D366] hover:bg-[#25D366] sm:size-9">
+                           class="relative z-10 flex size-10 shrink-0 lg:size-8 items-center justify-center rounded-full border border-pg-tiza/25 text-pg-tiza transition-colors hover:border-[#25D366] hover:bg-[#25D366] sm:size-9">
                             <x-icono nombre="whatsapp" class="text-sm sm:text-base" />
                         </a>
                     @endif

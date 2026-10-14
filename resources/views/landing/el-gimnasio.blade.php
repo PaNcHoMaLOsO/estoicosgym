@@ -109,7 +109,7 @@
                              que en el resto de la web. --}}
                         <x-icono :nombre="$dato['icono']" class="text-pg-rojo-claro text-base w-5 shrink-0 text-center" />
                         <span class="min-w-0">
-                            <span class="block text-pg-tiza/50 font-modern text-[0.65rem] lg:text-xs uppercase tracking-wider lg:tracking-widest">{{ $dato['rotulo'] }}</span>
+                            <span class="block text-pg-tiza/50 font-modern text-[0.6875rem] lg:text-xs uppercase tracking-wider lg:tracking-widest">{{ $dato['rotulo'] }}</span>
                             <span class="block text-pg-tiza font-modern text-sm lg:text-base">{{ $dato['valor'] }}</span>
                             @if($dato['apoyo'] ?? null)
                                 <span class="block text-pg-tiza/45 font-modern text-xs lg:text-sm">{{ $dato['apoyo'] }}</span>

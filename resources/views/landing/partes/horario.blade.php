@@ -17,7 +17,7 @@
                         <dt class="font-modern text-sm uppercase tracking-wider {{ $dia['clave'] === $horario['hoy'] ? 'text-pg-rojo-claro' : 'text-pg-tiza/55' }}">
                             {{ $dia['nombre'] }}
                             @if($dia['clave'] === $horario['hoy'])
-                                <span class="ml-2 lg:ml-0 inline lg:block text-[10px] tracking-widest">Hoy</span>
+                                <span class="ml-2 lg:ml-0 inline lg:block text-[11px] tracking-widest">Hoy</span>
                             @endif
                         </dt>
                         <dd class="lg:mt-2 font-modern tabular-nums leading-snug {{ $dia['tramos'] ? 'text-pg-tiza' : 'text-pg-tiza/40' }}">

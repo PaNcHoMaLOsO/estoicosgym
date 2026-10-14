@@ -74,7 +74,7 @@
                                  plan es su propia fila. --}}
                             <span class="{{ $plan['destacado'] ? 'flex mb-1.5' : 'hidden' }} lg:flex lg:mb-3 lg:h-6 items-center">
                                 @if($plan['destacado'])
-                                    <span class="whitespace-nowrap bg-pg-rojo text-white text-[0.65rem] lg:text-xs font-bold px-2.5 py-0.5 lg:px-3 lg:py-1 rounded-full font-modern tracking-wide">
+                                    <span class="whitespace-nowrap bg-pg-rojo text-white text-[0.6875rem] lg:text-xs font-bold px-2.5 py-0.5 lg:px-3 lg:py-1 rounded-full font-modern tracking-wide">
                                         EL MÁS ELEGIDO
                                     </span>
                                 @endif
@@ -111,7 +111,10 @@
                                      lo que la mayoría tiene. Lleva a la lista de convenios. --}}
                                 <a href="{{ $navegacion['convenios'] ? route('landing.convenios') : route('landing.planes') }}" class="mt-1 inline-flex items-center gap-1.5 font-modern text-xs text-pg-rojo-claro transition-colors hover:text-pg-tiza lg:mt-2 lg:text-sm">
                                     <x-icono nombre="graduation-cap" class="shrink-0" />
-                                    Estudiantes y convenios: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}
+                                    {{-- En un teléfono angosto (320 a 360) la frase entera le
+                                         comía el sitio al nombre del plan y se le montaba encima. --}}
+                                    <span class="min-[400px]:hidden">Estudiantes: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
+                                    <span class="hidden min-[400px]:inline">Estudiantes y convenios: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
                                 </a>
                             @endif
                         </div>

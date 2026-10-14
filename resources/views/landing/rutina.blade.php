@@ -19,7 +19,7 @@
     $tarjeta = 'flex rounded-xl bg-pg-grafito text-pg-tiza transition duration-200 hover:bg-pg-gris/70 peer-checked:bg-pg-rojo/15 peer-checked:ring-2 peer-checked:ring-pg-rojo peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pg-rojo-claro active:scale-[0.97]';
     $pregunta = 'mt-1 block font-display text-[1.7rem] uppercase leading-tight text-pg-tiza sm:text-5xl';
     $paso = 'block font-modern text-xs sm:text-sm uppercase tracking-widest text-pg-tiza/45';
-    $seccion = 'col-span-4 mt-1 font-modern text-[10px] sm:mt-3 sm:text-xs uppercase tracking-widest text-pg-tiza/45 first:mt-0';
+    $seccion = 'col-span-4 mt-1 font-modern text-[11px] sm:mt-3 sm:text-xs uppercase tracking-widest text-pg-tiza/45 first:mt-0';
     // Las opciones de grupos, bajas y de a cuatro (una fila por sección):
     // cada pregunta cabe entera en la pantalla del celular.
     $baja = 'h-full flex-col items-center gap-1 px-1 py-2 text-center sm:gap-2 sm:px-2 sm:py-4';
@@ -170,8 +170,8 @@
                                         @include('landing.partes.icono-grupo', ['grupo' => $clave])
                                         <span class="min-w-0">
                                             <span class="block {{ $nombreBajo }}">{{ Hoy::GRUPOS[$clave] }}</span>
-                                            <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[10px] text-pg-tiza/60 sm:text-xs">Descansa</span>
-                                            <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[10px] font-semibold text-pg-rojo-claro sm:text-xs">Sugerido</span>
+                                            <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[11px] text-pg-tiza/60 sm:text-xs">Descansa</span>
+                                            <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[11px] font-semibold text-pg-rojo-claro sm:text-xs">Sugerido</span>
                                         </span>
                                     </span>
                                 </label>

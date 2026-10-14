@@ -345,6 +345,39 @@
         .animate-on-scroll:hover h2 > svg, .animate-on-scroll:hover h3 > svg { transform: translateY(-3px) scale(1.15); }
 
 
+        /* ===== En el teléfono ===== */
+
+        /* QUE TODO SE PUEDA TOCAR. Un enlace de texto mide 20 px de alto y un
+           dedo necesita el doble: los del pie ganan aire de verdad, y los
+           sueltos dentro de la página («Ver los convenios →», «Todas las
+           rutinas») ganan una zona invisible alrededor, sin mover nada. */
+        @media (max-width: 1023px) {
+            footer li > a, footer a.text-xs { padding-block: 0.35rem; }
+            main a.inline-flex:not([class*="px-"]):not([class*="absolute"]):not([class*="size-"]):not([class*="rounded-full"]):not([class*="after:"]),
+            main a.underline { position: relative; }
+            main a.inline-flex:not([class*="px-"]):not([class*="absolute"]):not([class*="size-"]):not([class*="rounded-full"]):not([class*="after:"])::after,
+            main a.underline::after { content: ''; position: absolute; inset: -0.65rem 0; }
+        }
+
+        /* EL DEDO NO TIENE «PASAR POR ENCIMA»: lo que en el computador reacciona
+           al mouse, en el teléfono reacciona al tocarlo. Los botones se hunden
+           un pelo y las tarjetas-enlace se atenúan: se siente que respondió
+           antes de que cargue la página siguiente. */
+        @media (hover: none) {
+            a[class*="px-"][class*="py-"], button[class*="px-"], #mobile-menu-btn { transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+            a[class*="px-"][class*="py-"]:active, button[class*="px-"]:active, #mobile-menu-btn:active { transform: scale(0.97); }
+            a.group:active, a.block:active { opacity: 0.8; transition: opacity 0.1s ease; }
+        }
+
+        /* Las fotos que cargan al acercarse no aparecen de golpe: se funden. */
+        img.por-llegar { opacity: 0; }
+        img.llegando { transition: opacity 0.5s ease; }
+
+        @media (prefers-reduced-motion: reduce) {
+            a[class*="px-"]:active, button[class*="px-"]:active { transform: none; }
+            img.por-llegar { opacity: 1; }
+        }
+
         /* Los enlaces del pie se corren un poco a la derecha. */
         footer li > a { display: inline-block; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease; }
         footer li > a:hover { transform: translateX(4px); }
@@ -478,7 +511,9 @@
                 root: null,
                 // Un poco por dentro del borde: que se vea entrar, no que ya este.
                 rootMargin: '0px 0px -8% 0px',
-                threshold: 0.1
+                // Apenas asoma: con un mínimo del 10 %, un bloque más alto que
+                // diez pantallas de teléfono no llegaba nunca y quedaba invisible.
+                threshold: 0
             };
             
             const observer = new IntersectionObserver((entries) => {
@@ -522,14 +557,35 @@
                 if (reducir) {
                     return;
                 }
+                // EN EL TELÉFONO, MÁS CORTO: las tarjetas van una debajo de la
+                // otra y se llega a ellas con el dedo, rápido. Con el recorrido
+                // y los retrasos del computador se veía el hueco antes que la
+                // tarjeta. Sube menos, tarda menos y casi no espera su turno.
+                const telefono = window.innerWidth < 1024;
                 el.style.opacity = '0';
-                el.style.transform = 'translateY(28px)';
+                el.style.transform = telefono ? 'translateY(14px)' : 'translateY(28px)';
                 // El retraso escrito en cada tarjeta hace que entren de a una.
-                const retraso = el.style.animationDelay || '0s';
-                el.style.transition = `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${retraso}, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${retraso}`;
+                const escrito = parseFloat(el.style.animationDelay) || 0;
+                const retraso = (telefono ? Math.min(escrito, 0.12) : escrito) + 's';
+                const dura = telefono ? '0.55s' : '0.8s';
+                el.style.transition = `opacity ${dura} cubic-bezier(0.16, 1, 0.3, 1) ${retraso}, transform ${dura} cubic-bezier(0.16, 1, 0.3, 1) ${retraso}`;
                 observer.observe(el);
             });
             
+            // Las fotos que cargan al acercarse se funden al llegar. Solo las
+            // que aún no están: una ya cargada no parpadea.
+            if (! reducir) {
+                document.querySelectorAll('main img[loading="lazy"]').forEach(img => {
+                    if (img.complete) {
+                        return;
+                    }
+                    img.classList.add('por-llegar', 'llegando');
+                    const mostrar = () => img.classList.remove('por-llegar');
+                    img.addEventListener('load', mostrar, { once: true });
+                    img.addEventListener('error', mostrar, { once: true });
+                });
+            }
+
             // Navbar scroll effect
             const navbar = document.getElementById('navbar');
             if (navbar) {

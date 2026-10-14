@@ -94,7 +94,7 @@
                         @if($tienda['logo'])
                             <img src="{{ $tienda['logo'] }}" alt="" class="h-8 w-auto opacity-80 transition-opacity group-hover:opacity-100" loading="lazy">
                         @endif
-                        <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[10px]" /></span>
+                        <span>{{ $tienda['titulo'] }} <x-icono nombre="arrow-up-right-from-square" class="ml-0.5 text-[11px]" /></span>
                     </a>
                 @endif
             </div>
@@ -116,7 +116,7 @@
                         @foreach($especialidadesPie ?? [] as $esp)
                             <li><a href="{{ $esp['url'] }}" class="text-pg-tiza/55 hover:text-pg-rojo-claro transition-colors">{{ $esp['nombre'] }}</a></li>
                         @endforeach
-                        <li><a href="{{ route('landing.especialistas') }}" class="inline-flex items-center gap-1.5 text-pg-rojo-claro/80 transition-colors hover:text-pg-rojo-claro">Ver todos <x-icono nombre="arrow-right" class="text-[10px]" /></a></li>
+                        <li><a href="{{ route('landing.especialistas') }}" class="inline-flex items-center gap-1.5 text-pg-rojo-claro/80 transition-colors hover:text-pg-rojo-claro">Ver todos <x-icono nombre="arrow-right" class="text-[11px]" /></a></li>
                     </ul>
                 @endif
             </div>

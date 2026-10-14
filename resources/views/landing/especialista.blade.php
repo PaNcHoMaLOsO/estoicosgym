@@ -55,7 +55,7 @@
 
                         <p class="mt-4 flex flex-wrap items-center gap-2 font-modern text-xs uppercase tracking-[0.15em]">
                             <span class="inline-flex items-center gap-1.5 bg-pg-rojo/15 px-2.5 py-1 text-pg-rojo-claro ring-1 ring-pg-rojo/40">
-                                <x-icono nombre="user-check" class="text-[10px]" />
+                                <x-icono nombre="user-check" class="text-[11px]" />
                                 {{ $e['recomendado'] ? 'Recomendado por ' . $gimnasio['nombre'] : 'Equipo ' . $gimnasio['nombre'] }}
                             </span>
                             @if($e['modalidad'])
@@ -78,7 +78,7 @@
                                     @if($icono === 'location-dot' && $e['mapa'])
                                         <a href="{{ $e['mapa'] }}" target="_blank" rel="noopener" data-evento="como_llegar_especialista" data-detalle="{{ $e['nombre'] }}"
                                            class="mt-1.5 inline-flex items-center gap-1.5 font-modern text-sm text-pg-rojo-claro transition-colors hover:text-pg-tiza">
-                                            Cómo llegar <x-icono nombre="arrow-up-right-from-square" class="text-[10px]" />
+                                            Cómo llegar <x-icono nombre="arrow-up-right-from-square" class="text-[11px]" />
                                         </a>
                                     @endif
                                 </div>

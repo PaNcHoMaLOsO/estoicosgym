@@ -129,7 +129,7 @@
                                 </div>
                                 @foreach($horasArriendo as $h)
                                     <div class="grid grid-cols-[2.6rem_repeat(6,minmax(0,1fr))] {{ $loop->last ? '' : 'border-b border-pg-tiza/5' }}">
-                                        <span class="flex items-center justify-end pr-2 font-modern text-[0.65rem] tabular-nums text-pg-tiza/45">{{ sprintf('%02d:00', $h) }}</span>
+                                        <span class="flex items-center justify-end pr-2 font-modern text-[0.6875rem] tabular-nums text-pg-tiza/45">{{ sprintf('%02d:00', $h) }}</span>
                                         @foreach($diasArriendo as $dia => $corto)
                                             <label class="block cursor-pointer border-l border-pg-tiza/5">
                                                 <input type="checkbox" name="bloques[]" value="{{ $dia }}-{{ $h }}" class="peer sr-only" @checked(in_array($dia . '-' . $h, $marcados))>

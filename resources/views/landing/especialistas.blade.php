@@ -46,7 +46,7 @@
                                     <h2 class="font-display text-2xl uppercase text-pg-tiza lg:text-3xl">{{ $seccion['nombre'] }}</h2>
                                     @if($seccion['url'])
                                         <a href="{{ $seccion['url'] }}" class="shrink-0 font-modern text-xs text-pg-tiza/55 transition-colors hover:text-pg-rojo-claro sm:text-sm">
-                                            {{ count($seccion['especialistas']) }} {{ count($seccion['especialistas']) === 1 ? 'profesional' : 'profesionales' }} <x-icono nombre="arrow-right" class="text-[10px]" />
+                                            {{ count($seccion['especialistas']) }} {{ count($seccion['especialistas']) === 1 ? 'profesional' : 'profesionales' }} <x-icono nombre="arrow-right" class="text-[11px]" />
                                         </a>
                                     @endif
                                 </div>

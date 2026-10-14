@@ -46,12 +46,12 @@
                     <div class="py-3">
                         <h3 class="flex items-center gap-2 font-display text-base uppercase tracking-wide {{ $dia === $hoy ? 'text-pg-rojo-claro' : 'text-pg-tiza' }}">
                             {{ $calendario['dias'][$dia] }}
-                            @if($dia === $hoy)<span class="font-modern text-[0.65rem] normal-case tracking-normal text-pg-rojo-claro">hoy</span>@endif
+                            @if($dia === $hoy)<span class="font-modern text-[0.6875rem] normal-case tracking-normal text-pg-rojo-claro">hoy</span>@endif
                         </h3>
                         <ul class="mt-1.5 space-y-1">
                             @foreach($bloques as $b)
                                 <li>
-                                    <a href="{{ $b['url'] }}" class="flex items-center gap-2.5 font-modern text-sm">
+                                    <a href="{{ $b['url'] }}" class="flex items-center gap-2.5 py-2 font-modern text-sm lg:py-0">
                                         <span class="size-2 shrink-0 rounded-full" style="background: {{ $b['color'] }}" aria-hidden="true"></span>
                                         <span class="w-24 shrink-0 tabular-nums text-pg-tiza/55">{{ $b['desde'] }} a {{ $b['hasta'] }}</span>
                                         <span class="font-semibold text-pg-tiza">{{ $b['nombre'] }}</span>
@@ -71,7 +71,7 @@
                             <th class="w-20" scope="col"><span class="sr-only">Hora</span></th>
                             @foreach($calendario['dias'] as $clave => $nombre)
                                 <th scope="col" class="border-b-2 pb-2 text-center font-display text-sm font-normal uppercase tracking-wide {{ $clave === $hoy ? 'border-pg-rojo text-pg-rojo-claro' : 'border-pg-tiza/15 text-pg-tiza/80' }}">
-                                    {{ $nombre }}@if($clave === $hoy)<span class="ml-1.5 font-modern text-[0.65rem] normal-case tracking-normal">hoy</span>@endif
+                                    {{ $nombre }}@if($clave === $hoy)<span class="ml-1.5 font-modern text-[0.6875rem] normal-case tracking-normal">hoy</span>@endif
                                 </th>
                             @endforeach
                         </tr>
