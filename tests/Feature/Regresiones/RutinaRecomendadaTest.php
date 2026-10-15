@@ -686,4 +686,29 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->get('/rutina?dias=4&nivel=algo&hice[]=nada&hoy=pecho')->assertSee('<div  class="max-lg:hidden"', false);
         $this->get('/')->assertDontSee('class="max-lg:hidden"', false);
     }
+
+    /**
+     * Para usarlo en la sala: el círculo cuenta las series y corre el
+     * descanso, el peso se anota y cada ejercicio se puede cambiar por una de
+     * sus opciones (con su cómo). Y arriba, cuánto dura.
+     */
+    public function test_el_entrenamiento_se_usa_en_la_sala(): void
+    {
+        $e = EntrenamientoDeHoy::armar(3, 'algo', 'nada', 'pecho');
+
+        $this->assertGreaterThanOrEqual(20, $e['minutos']);
+        $this->assertSame(0, $e['minutos'] % 5);
+        $conOpciones = array_values(array_filter($e['lineas'], fn ($l) => $l['opciones']));
+        $this->assertNotEmpty($conOpciones);
+        $this->assertArrayHasKey('nota', $conOpciones[0]['opciones'][0]);
+
+        $primera = $e['lineas'][0];
+        $this->get('/rutina?dias=3&nivel=algo&hice[]=nada&hoy=pecho')
+            ->assertOk()
+            ->assertSee('≈ ' . $e['minutos'] . ' min')
+            ->assertSee('data-series="' . $primera['series'] . '" data-descanso="' . $primera['descanso'] . '"', false)
+            ->assertSee('data-reloj', false)
+            ->assertSee('data-peso-kg', false)
+            ->assertSee('Usar este');
+    }
 }

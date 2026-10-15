@@ -101,21 +101,32 @@ class Rutina extends Model
             $segundos = 0;
 
             foreach ($dia->ejercicios as $l) {
-                $reps = mb_strtolower((string) $l->repeticiones);
-                $series = max(1, (int) $l->series);
-                $doble = str_contains($reps, 'por pierna') || str_contains($reps, 'por brazo') || str_contains($reps, 'por lado') ? 2 : 1;
-                $trabajo = match (true) {
-                    (bool) preg_match('/(\d+)\s*minutos?/u', $reps, $m) => (int) $m[1] * 60,
-                    (bool) preg_match('/(\d+)(?:\s*a\s*(\d+))?\s*segundos?/u', $reps, $m) => (int) ($m[2] ?? $m[1]) * $doble,
-                    default => 40 * $doble,
-                };
-                $segundos += $series * ($trabajo + (int) $l->descanso_seg) + 20;
+                $segundos += self::segundosDeLinea((int) $l->series, (string) $l->repeticiones, (int) $l->descanso_seg);
             }
 
             return $segundos / 60 + 5;
         });
 
         return $porDia->isEmpty() ? 0 : (int) (round($porDia->avg() / 5) * 5);
+    }
+
+    /**
+     * Lo que toma un ejercicio: cada serie, lo que dura (40 s, o lo que diga:
+     * «30 segundos», «10 minutos»; el doble si es por lado) más su descanso,
+     * y 20 s para acomodar la máquina.
+     */
+    public static function segundosDeLinea(int $series, string $repeticiones, int $descanso): int
+    {
+        $reps = mb_strtolower($repeticiones);
+        $series = max(1, $series);
+        $doble = str_contains($reps, 'por pierna') || str_contains($reps, 'por brazo') || str_contains($reps, 'por lado') ? 2 : 1;
+        $trabajo = match (true) {
+            (bool) preg_match('/(\d+)\s*minutos?/u', $reps, $m) => (int) $m[1] * 60,
+            (bool) preg_match('/(\d+)(?:\s*a\s*(\d+))?\s*segundos?/u', $reps, $m) => (int) ($m[2] ?? $m[1]) * $doble,
+            default => 40 * $doble,
+        };
+
+        return $series * ($trabajo + $descanso) + 20;
     }
 
     protected $fillable = ['nombre', 'slug', 'objetivo', 'nivel', 'dias_por_semana', 'estilo', 'enfoque', 'descripcion', 'activa', 'orden'];

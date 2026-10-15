@@ -16,6 +16,16 @@
     catálogo). «Estirar y movilidad» es solo movilidad y estiramientos. Las
     respuestas van en la dirección: se puede volver y compartir.
 
+    PARA USARLO EN LA SALA (15-oct-2026), con el celular en la mano:
+    - el círculo de cada ejercicio cuenta las series: al tocarlo suma una y
+      corre el descanso en una barra abajo (vibra al terminar, se le pueden
+      sumar 15 s, saltar o deshacer el toque);
+    - el peso que usó queda anotado en el celular y se ve la próxima vez;
+    - si la máquina está ocupada, «Usar este» cambia el ejercicio por una de
+      sus otras opciones;
+    - mientras entrena, la pantalla no se apaga.
+    Todo eso es JavaScript sobre la misma página: sin él se ve como antes.
+
     QUE NO SE PIERDA SI SE CIERRA EL NAVEGADOR: el celular guarda la dirección
     del entrenamiento de hoy (y lo que va marcando como hecho) en su propio
     almacenamiento, sin mandar nada al servidor. Al volver a «Qué entrenar
@@ -62,7 +72,7 @@
                         @if($movilidad)
                             Unos {{ $e['minutos'] }} minutos
                         @else
-                            {{ count($e['lineas']) }} ejercicios<span data-avance hidden class="text-pg-rojo-claro"></span>
+                            {{ count($e['lineas']) }} ejercicios @if($e['minutos'])· ≈ {{ $e['minutos'] }} min @endif<span data-avance hidden class="text-pg-rojo-claro"></span>
                         @endif
                     </p>
                 </div>
@@ -128,6 +138,9 @@
                 {{-- Los ejercicios: una fila cada uno; el cómo y las otras opciones, al tocar. --}}
                 <section class="mt-6 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0" aria-labelledby="entrenamiento">
                     <h2 id="entrenamiento" class="{{ $titulo }}">Entrenamiento</h2>
+                    <p data-pista hidden class="mt-1.5 flex items-center gap-2 font-modern text-xs text-pg-tiza/60 sm:text-sm">
+                        <x-icono nombre="stopwatch" class="text-pg-rojo-claro" /> Toca el círculo al terminar cada serie y corre el descanso.
+                    </p>
 
                     <ol class="mt-3 grid grid-cols-1 gap-2">
                         @foreach($e['lineas'] as $i => $l)
@@ -135,11 +148,11 @@
                                 <details class="group rounded-xl bg-pg-grafito/40 transition-colors hover:bg-pg-grafito/70 open:bg-pg-grafito/70">
                                     <summary class="flex cursor-pointer list-none items-center gap-3 p-2.5 sm:gap-4 sm:p-3 [&::-webkit-details-marker]:hidden">
                                         <div class="relative transition-opacity group-data-hecho/hecho:opacity-40">
-                                            @include('landing.partes.imagen-ejercicio', ['e' => $l, 'tamano' => 'size-20 sm:size-24'])
+                                            @include('landing.partes.imagen-ejercicio', ['e' => $l, 'tamano' => 'size-20 sm:size-24', 'marca' => true])
                                             <span class="absolute -left-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-pg-rojo font-display text-sm text-white">{{ $i + 1 }}</span>
                                         </div>
                                         <div class="min-w-0 flex-1 font-modern transition-opacity group-data-hecho/hecho:opacity-40">
-                                            <h3 class="text-base font-semibold leading-tight text-pg-tiza sm:text-lg">{{ $l['nombre'] }}</h3>
+                                            <h3 data-nombre class="text-base font-semibold leading-tight text-pg-tiza sm:text-lg">{{ $l['nombre'] }}</h3>
                                             <p class="mt-1 flex items-center gap-1 whitespace-nowrap text-xs text-pg-tiza/50 sm:text-sm">
                                                 {{ ! empty($l['opciones']) ? 'Cómo y otras opciones' : 'Cómo se hace' }}
                                                 <x-icono nombre="chevron-right" class="text-[11px] transition-transform group-open:rotate-90" />
@@ -151,25 +164,46 @@
                                             <p class="mt-1 font-modern text-xs tabular-nums text-pg-tiza/55 sm:text-sm">
                                                 {{ $porLado }}{{ $porLado && $l['descanso'] ? ' · ' : '' }}@if($l['descanso'])<span class="sr-only">Descanso </span>{{ $l['descanso'] }} s @endif
                                             </p>
+                                            <p data-peso-fila hidden class="mt-0.5 font-modern text-xs font-semibold tabular-nums text-pg-tiza/80 sm:text-sm"></p>
                                         </div>
-                                        {{-- Marcarlo hecho: queda guardado en el celular. Sin JavaScript no sale. --}}
-                                        <button type="button" data-marcar hidden aria-pressed="false" aria-label="Marcar {{ $l['nombre'] }} como hecho"
-                                            class="-mr-0.5 grid size-8 shrink-0 place-items-center rounded-full border-2 border-pg-tiza/25 text-sm text-transparent transition-colors hover:border-pg-tiza/60 group-data-hecho/hecho:border-[#25D366] group-data-hecho/hecho:bg-[#25D366] group-data-hecho/hecho:text-pg-negro sm:size-10">
-                                            <x-icono nombre="circle-check" />
+                                        {{-- Las series: cada toque suma una y corre el descanso;
+                                             queda guardado en el celular. Sin JavaScript no sale. --}}
+                                        <button type="button" data-marcar hidden data-series="{{ max(1, (int) $l['series']) }}" data-descanso="{{ (int) $l['descanso'] }}" aria-label="Serie hecha de {{ $l['nombre'] }}"
+                                            class="relative -mr-1 grid size-12 shrink-0 place-items-center rounded-full text-pg-tiza transition-transform active:scale-90">
+                                            <svg viewBox="0 0 36 36" class="absolute inset-1 -rotate-90" aria-hidden="true">
+                                                <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="2.5" class="text-pg-tiza/20" />
+                                                <circle data-arco cx="18" cy="18" r="16" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100" />
+                                            </svg>
+                                            <span data-cuenta class="relative font-display text-sm tabular-nums" aria-hidden="true"></span>
+                                            <span class="absolute inset-1.5 hidden place-items-center rounded-full bg-[#25D366] text-lg text-pg-negro group-data-hecho/hecho:grid" aria-hidden="true"><x-icono nombre="circle-check" /></span>
                                         </button>
                                     </summary>
 
                                     <div class="px-3 pb-4 font-modern sm:px-4">
-                                        <p class="text-sm leading-snug text-pg-tiza/75 sm:text-base">{{ $l['nota'] ?: $l['dosis'] }}</p>
+                                        <p data-nota class="text-sm leading-snug text-pg-tiza/75 sm:text-base">{{ $l['nota'] ?: $l['dosis'] }}</p>
+                                        @if(! in_array($l['zona'] ?? null, ['cardio'], true))
+                                            <div data-peso hidden class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                <label class="flex items-center gap-2 text-sm text-pg-tiza/75">
+                                                    Peso que usaste
+                                                    <input type="number" inputmode="decimal" min="0" max="500" step="0.5" data-peso-kg
+                                                        class="w-20 rounded-lg border border-pg-tiza/20 bg-pg-negro px-2.5 py-1.5 text-center text-base tabular-nums text-pg-tiza focus:border-pg-rojo focus:outline-none">
+                                                    kg
+                                                </label>
+                                                <span data-peso-antes class="text-xs text-pg-tiza/50"></span>
+                                            </div>
+                                        @endif
                                         {{-- Otras opciones del mismo músculo, con su dibujo: para
                                              cambiarlo si la máquina está ocupada o no le acomoda. --}}
                                         @if(! empty($l['opciones']))
                                             <p class="mt-3 text-xs uppercase tracking-wider text-pg-tiza/45">Otras opciones</p>
                                             <ul class="mt-2 grid grid-cols-3 gap-2">
                                                 @foreach($l['opciones'] as $o)
-                                                    <li class="flex flex-col items-center gap-1.5 text-center text-xs text-pg-tiza/75 sm:text-sm">
-                                                        @include('landing.partes.imagen-ejercicio', ['e' => $o, 'tamano' => 'size-16 sm:size-20'])
-                                                        <span class="leading-tight">{{ $o['nombre'] }}</span>
+                                                    <li data-opcion="{{ $loop->index }}" class="flex flex-col items-center gap-1.5 text-center text-xs text-pg-tiza/75 sm:text-sm">
+                                                        @include('landing.partes.imagen-ejercicio', ['e' => $o, 'tamano' => 'size-16 sm:size-20', 'marca' => true])
+                                                        <span data-nombre class="leading-tight">{{ $o['nombre'] }}</span>
+                                                        <span data-nota hidden>{{ $o['nota'] ?? '' }}</span>
+                                                        {{-- Si la máquina está ocupada: cambiarlo ahí mismo. --}}
+                                                        <button type="button" data-usar hidden class="rounded-full border border-pg-tiza/25 px-3 py-1.5 font-semibold text-pg-tiza transition-colors hover:border-pg-tiza/60 active:bg-pg-grafito">Usar este</button>
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -240,6 +274,23 @@
         </div>
     </section>
 
+    {{-- El descanso: abajo, encima de todo, mientras corre. --}}
+    <div data-reloj hidden role="status" aria-live="polite"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-pg-tiza/10 bg-pg-negro/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
+        <div data-reloj-barrita class="absolute left-0 top-0 h-1 bg-pg-rojo" style="width: 100%"></div>
+        <div class="mx-auto flex max-w-xl items-center gap-3 font-modern">
+            <div class="min-w-0 flex-1">
+                <p data-reloj-que class="truncate text-xs text-pg-tiza/60"></p>
+                <p class="flex items-baseline gap-3">
+                    <span data-reloj-tiempo class="font-display text-4xl leading-none tabular-nums text-pg-tiza"></span>
+                    <button type="button" data-reloj-deshacer class="text-xs text-pg-tiza/50 underline underline-offset-4">Deshacer</button>
+                </p>
+            </div>
+            <button type="button" data-reloj-mas class="rounded-lg bg-pg-grafito px-3 py-3 text-sm font-semibold text-pg-tiza active:bg-pg-gris">+15 s</button>
+            <button type="button" data-reloj-saltar class="rounded-lg bg-pg-rojo px-4 py-3 text-sm font-bold text-white active:bg-pg-rojo-oscuro">Saltar</button>
+        </div>
+    </div>
+
     <script>
         (function () {
             const raiz = document.querySelector('[data-entrenamiento]');
@@ -258,6 +309,16 @@
             if (guardado.direccion !== direccion || guardado.fecha !== hoy) {
                 guardado = { direccion: direccion, fecha: hoy, hechos: [] };
             }
+            // Las series de cada ejercicio y los ejercicios cambiados. Lo
+            // guardado antes de las series: un ejercicio hecho, todas hechas.
+            guardado.series = guardado.series || {};
+            guardado.cambios = guardado.cambios || [];
+            (guardado.hechos || []).forEach((i) => {
+                const li = lineas[i];
+                if (li && guardado.series[i] === undefined) {
+                    guardado.series[i] = Number(li.querySelector('[data-marcar]').dataset.series);
+                }
+            });
 
             Object.assign(guardado, {
                 titulo: raiz.dataset.titulo,
@@ -268,46 +329,334 @@
             });
 
             function guardar() {
+                guardado.hechos = lineas.map((li, i) => i).filter((i) => hechas(i) >= totales(i));
                 try {
                     localStorage.setItem(clave, JSON.stringify(guardado));
                 } catch (e) {}
             }
 
+            const boton = (i) => lineas[i].querySelector('[data-marcar]');
+            const totales = (i) => Number(boton(i).dataset.series);
+            const hechas = (i) => Math.min(guardado.series[i] || 0, totales(i));
+            const nombre = (i) => lineas[i].querySelector('summary [data-nombre]').textContent.trim();
+
             function pintar() {
-                lineas.forEach((li) => {
-                    const hecho = guardado.hechos.includes(Number(li.dataset.linea));
+                lineas.forEach((li, i) => {
+                    const n = hechas(i);
+                    const total = totales(i);
+                    const hecho = n >= total;
                     li.toggleAttribute('data-hecho', hecho);
-                    li.querySelector('[data-marcar]').setAttribute('aria-pressed', hecho ? 'true' : 'false');
+                    const arco = li.querySelector('[data-arco]');
+                    arco.setAttribute('stroke-dasharray', (n / total * 100) + ' 100');
+                    // En cero, ni el punto de la punta redonda.
+                    arco.style.opacity = n ? 1 : 0;
+                    li.querySelector('[data-cuenta]').textContent = n && ! hecho ? n + '/' + total : '';
+                    boton(i).setAttribute('aria-label', hecho
+                        ? nombre(i) + ': hecho. Tocar para empezar de nuevo'
+                        : nombre(i) + ': serie ' + (n + 1) + ' de ' + total + ' hecha');
                 });
 
-                if (avance && guardado.hechos.length) {
+                const listos = guardado.hechos.length;
+                if (avance && listos) {
                     avance.hidden = false;
-                    avance.textContent = guardado.hechos.length === lineas.length
-                        ? ' · ¡Listo por hoy!'
-                        : ' · ' + guardado.hechos.length + ' hechos';
+                    avance.textContent = listos === lineas.length ? ' · ¡Listo por hoy!' : ' · ' + listos + ' de ' + lineas.length;
                 } else if (avance) {
                     avance.hidden = true;
                 }
             }
 
-            lineas.forEach((li) => {
-                const boton = li.querySelector('[data-marcar]');
-                boton.hidden = false;
+            // ---- La pantalla encendida mientras entrena.
+            let pantalla = null;
+            async function noApagar() {
+                if (! ('wakeLock' in navigator) || pantalla || document.visibilityState !== 'visible') {
+                    return;
+                }
+                try {
+                    pantalla = await navigator.wakeLock.request('screen');
+                    pantalla.addEventListener('release', () => { pantalla = null; });
+                } catch (e) {}
+            }
+            document.addEventListener('visibilitychange', () => {
+                if (Object.keys(guardado.series).length && guardado.hechos.length < lineas.length) {
+                    noApagar();
+                }
+            });
+
+            // ---- El descanso.
+            const reloj = document.querySelector('[data-reloj]');
+            const parte = (x) => reloj.querySelector('[data-reloj-' + x + ']');
+            let tic = null;
+            let deshacer = null;
+
+            const mmss = (seg) => Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0');
+
+            function mostrarReloj(si) {
+                reloj.hidden = ! si;
+                document.body.style.paddingBottom = si ? reloj.offsetHeight + 'px' : '';
+            }
+
+            function correr() {
+                clearInterval(tic);
+                const d = guardado.descanso;
+                if (! d) {
+                    mostrarReloj(false);
+                    return;
+                }
+                parte('que').textContent = d.que;
+                parte('deshacer').hidden = deshacer === null;
+                parte('mas').hidden = false;
+                parte('saltar').textContent = 'Saltar';
+                mostrarReloj(true);
+
+                const paso = () => {
+                    const quedan = Math.max(0, Math.ceil((d.fin - Date.now()) / 1000));
+                    parte('tiempo').textContent = mmss(quedan);
+                    parte('barrita').style.width = (quedan / d.largo * 100) + '%';
+                    if (quedan === 0) {
+                        terminar(true);
+                    }
+                };
+                paso();
+                tic = setInterval(paso, 250);
+            }
+
+            function terminar(sonar) {
+                clearInterval(tic);
+                const d = guardado.descanso;
+                guardado.descanso = null;
+                guardar();
+                if (! sonar || ! d) {
+                    mostrarReloj(false);
+                    return;
+                }
+                if (navigator.vibrate) {
+                    navigator.vibrate([250, 120, 250]);
+                }
+                parte('que').textContent = 'Se acabó el descanso';
+                parte('tiempo').textContent = d.luego;
+                parte('barrita').style.width = '0%';
+                parte('mas').hidden = true;
+                parte('deshacer').hidden = true;
+                parte('saltar').textContent = 'Listo';
+                mostrarReloj(true);
+                tic = setTimeout(() => mostrarReloj(false), 6000);
+            }
+
+            parte('mas').addEventListener('click', () => {
+                if (guardado.descanso) {
+                    guardado.descanso.fin = Math.max(guardado.descanso.fin, Date.now()) + 15000;
+                    guardado.descanso.largo += 15;
+                    guardar();
+                    correr();
+                }
+            });
+            parte('saltar').addEventListener('click', () => terminar(false));
+            parte('deshacer').addEventListener('click', () => {
+                if (deshacer !== null) {
+                    guardado.series[deshacer] = Math.max(0, hechas(deshacer) - 1);
+                    deshacer = null;
+                    terminar(false);
+                    pintar();
+                }
+            });
+
+            // ---- Las series: cada toque suma una y corre el descanso.
+            lineas.forEach((li, i) => {
+                const b = boton(i);
+                b.hidden = false;
                 // Dentro del resumen: sin esto, tocarlo también abriría la fila.
-                boton.addEventListener('click', (e) => {
+                b.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const i = Number(li.dataset.linea);
-                    guardado.hechos = guardado.hechos.includes(i)
-                        ? guardado.hechos.filter((x) => x !== i)
-                        : [...guardado.hechos, i];
+                    const total = totales(i);
+                    const n = hechas(i);
+
+                    if (n >= total) {
+                        // Ya estaba hecho: se empieza de nuevo.
+                        guardado.series[i] = 0;
+                        if (guardado.descanso && guardado.descanso.i === i) {
+                            guardado.descanso = null;
+                        }
+                        deshacer = null;
+                        guardar();
+                        pintar();
+                        correr();
+                        return;
+                    }
+
+                    guardado.series[i] = n + 1;
+                    pista.hidden = true;
+                    try {
+                        localStorage.setItem('pg-pista', '1');
+                    } catch (e) {}
+                    deshacer = i;
                     guardar();
                     pintar();
+                    noApagar();
+
+                    if (guardado.hechos.length === lineas.length) {
+                        // El último: nada de descanso.
+                        guardado.descanso = null;
+                        deshacer = null;
+                        guardar();
+                        terminarElDia();
+                        return;
+                    }
+
+                    const largo = Number(b.dataset.descanso) || 60;
+                    const siguiente = lineas.findIndex((x, k) => k > i && hechas(k) < totales(k));
+                    const otro = siguiente >= 0 ? siguiente : lineas.findIndex((x, k) => hechas(k) < totales(k));
+                    guardado.descanso = {
+                        i: i,
+                        fin: Date.now() + largo * 1000,
+                        largo: largo,
+                        que: nombre(i) + ' · serie ' + (n + 1) + ' de ' + total,
+                        luego: n + 1 < total ? 'Serie ' + (n + 2) + ' de ' + total : (otro >= 0 ? 'Sigue: ' + nombre(otro) : '¡Listo!'),
+                    };
+                    guardar();
+                    correr();
                 });
             });
 
+            function terminarElDia() {
+                clearInterval(tic);
+                if (navigator.vibrate) {
+                    navigator.vibrate([150, 80, 150, 80, 300]);
+                }
+                if (pantalla) {
+                    pantalla.release().catch(() => {});
+                }
+                parte('que').textContent = '¡Listo por hoy!';
+                parte('tiempo').textContent = 'Ahora, a estirar';
+                parte('barrita').style.width = '0%';
+                parte('mas').hidden = true;
+                parte('deshacer').hidden = true;
+                parte('saltar').textContent = 'Ver';
+                mostrarReloj(true);
+                parte('saltar').addEventListener('click', () => {
+                    const estira = document.getElementById('estira');
+                    if (estira) {
+                        estira.closest('details').open = true;
+                        estira.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, { once: true });
+            }
+
+            // ---- La pista, hasta el primer toque.
+            const pista = document.querySelector('[data-pista]');
+            if (pista) {
+                try {
+                    pista.hidden = localStorage.getItem('pg-pista') === '1';
+                } catch (e) {
+                    pista.hidden = false;
+                }
+            }
+
+            // ---- El peso: queda en el celular por nombre de ejercicio, de un día al otro.
+            let pesos = {};
+            try {
+                pesos = JSON.parse(localStorage.getItem('pg-pesos') || '{}') || {};
+            } catch (e) {}
+            const guardarPesos = () => {
+                try {
+                    localStorage.setItem('pg-pesos', JSON.stringify(pesos));
+                } catch (e) {}
+            };
+            const fecha = (f) => new Date(f + 'T12:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+
+            function pintarPeso(li) {
+                const caja = li.querySelector('[data-peso]');
+                const fila = li.querySelector('[data-peso-fila]');
+                if (! caja) {
+                    return;
+                }
+                const p = pesos[nombre(lineas.indexOf(li))];
+                const deHoy = p && p.fecha === hoy ? p : null;
+                const antes = p ? (p.fecha === hoy ? p.antes : p) : null;
+                const input = caja.querySelector('[data-peso-kg]');
+                caja.hidden = false;
+                if (document.activeElement !== input) {
+                    input.value = deHoy ? deHoy.kg : '';
+                }
+                input.placeholder = antes ? antes.kg : '';
+                caja.querySelector('[data-peso-antes]').textContent = antes ? 'La vez pasada: ' + antes.kg + ' kg (' + fecha(antes.fecha) + ')' : '';
+                const kg = deHoy ? deHoy.kg : (antes ? antes.kg : null);
+                fila.hidden = kg === null;
+                fila.textContent = kg === null ? '' : kg + ' kg';
+            }
+
+            lineas.forEach((li) => {
+                const input = li.querySelector('[data-peso-kg]');
+                if (! input) {
+                    return;
+                }
+                input.addEventListener('change', () => {
+                    const n = nombre(lineas.indexOf(li));
+                    const kg = Math.round(parseFloat(String(input.value).replace(',', '.')) * 2) / 2;
+                    const p = pesos[n];
+                    const antes = p ? (p.fecha === hoy ? p.antes : { kg: p.kg, fecha: p.fecha }) : null;
+                    if (! (kg > 0)) {
+                        // Borrado: queda lo de la vez pasada.
+                        if (antes) {
+                            pesos[n] = antes;
+                        } else {
+                            delete pesos[n];
+                        }
+                    } else {
+                        pesos[n] = { kg: kg, fecha: hoy, antes: antes };
+                    }
+                    guardarPesos();
+                    pintarPeso(li);
+                });
+            });
+
+            // ---- Cambiar el ejercicio por una de sus opciones: se intercambian
+            // la foto, el nombre y el cómo. Se guarda como una lista de cambios
+            // y al volver se repiten en orden.
+            function cambiar(i, j) {
+                const li = lineas[i];
+                const op = li.querySelector('[data-opcion="' + j + '"]');
+                const fila = li.querySelector('summary');
+                [['[data-foto]'], ['[data-nombre]'], ['[data-nota]']].forEach(([sel]) => {
+                    const a = fila.querySelector(sel) || li.querySelector('details > div > ' + sel);
+                    const b = op.querySelector(sel);
+                    const x = a.innerHTML;
+                    a.innerHTML = b.innerHTML;
+                    b.innerHTML = x;
+                });
+                // Si la opción no tiene cómo, que no quede vacío.
+                const nota = li.querySelector('details > div > [data-nota]');
+                if (! nota.textContent.trim()) {
+                    nota.textContent = 'Mismo músculo, mismas series y repeticiones.';
+                }
+                pintarPeso(li);
+            }
+
+            lineas.forEach((li, i) => {
+                li.querySelectorAll('[data-opcion]').forEach((op) => {
+                    const usar = op.querySelector('[data-usar]');
+                    usar.hidden = false;
+                    usar.addEventListener('click', () => {
+                        cambiar(i, op.dataset.opcion);
+                        guardado.cambios.push([i, op.dataset.opcion]);
+                        guardar();
+                        pintar();
+                        li.querySelector('summary').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    });
+                });
+            });
+
+            guardado.cambios = guardado.cambios.filter(([i, j]) => lineas[i] && lineas[i].querySelector('[data-opcion="' + j + '"]'));
+            guardado.cambios.forEach(([i, j]) => cambiar(i, j));
+            lineas.forEach(pintarPeso);
+
             guardar();
             pintar();
+            if (guardado.descanso && guardado.descanso.fin > Date.now()) {
+                correr();
+            } else {
+                guardado.descanso = null;
+            }
         })();
     </script>
 @endsection

@@ -1,7 +1,7 @@
 {{-- La imagen de un ejercicio: la foto o el GIF que subió el gimnasio, o el
      mapa muscular mientras no haya. Recibe $e (con imagen, nombre, principal
      y secundarios) y $tamano (las clases de ancho y alto). --}}
-<div class="{{ $tamano }} shrink-0 overflow-hidden rounded-lg bg-pg-grafito">
+<div class="{{ $tamano }} shrink-0 overflow-hidden rounded-lg bg-pg-grafito" @if($marca ?? false) data-foto @endif>
     @if($e['imagen'])
         <img src="{{ $e['imagen'] }}" alt="{{ $e['nombre'] }}" {{ \App\Support\MedidasDeImagen::atributos($e['imagen']) }} loading="lazy" decoding="async" class="size-full object-cover">
     @else

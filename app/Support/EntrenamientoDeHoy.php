@@ -359,7 +359,12 @@ class EntrenamientoDeHoy
             'calentamiento' => CalentamientoYEstiramiento::calentamiento($principales, $secundarios, $hoy),
             'estiramientos' => CalentamientoYEstiramiento::estiramientos($principales, $secundarios),
             'movilidad' => [],
-            'minutos' => null,
+            // Como en la lista de rutinas: los ejercicios y 5 minutos para el
+            // calentamiento y los estiramientos.
+            'minutos' => (int) (round((array_sum(array_map(
+                fn ($l) => \App\Models\Rutina::segundosDeLinea((int) $l['series'], (string) $l['repeticiones'], (int) $l['descanso']),
+                $lineas,
+            )) / 60 + 5) / 5) * 5),
         ];
     }
 
@@ -925,6 +930,7 @@ class EntrenamientoDeHoy
                 ->take(3)
                 ->map(fn (Ejercicio $e) => [
                     'nombre' => $e->nombre,
+                    'nota' => $e->indicacion,
                     'imagen' => $e->urlDeImagen(),
                     'principal' => $e->grupos()['principal'],
                     'secundarios' => $e->grupos()['secundarios'],
