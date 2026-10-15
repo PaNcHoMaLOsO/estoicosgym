@@ -816,6 +816,7 @@ class LandingController extends Controller
         // ?cambiar=1: volver a la última pregunta con las otras ya marcadas.
         if (EntrenamientoDeHoy::respondido($dias, $nivel, $hechos) && ! $request->boolean('cambiar')) {
             $hoy = $request->texto('hoy', '');
+            $hoy = EntrenamientoDeHoy::ALIAS[$hoy] ?? $hoy;
             $hoy = isset(EntrenamientoDeHoy::GRUPOS[$hoy]) ? $hoy : EntrenamientoDeHoy::sugerencia($hechos, $dias);
             // La variante del celular (la pone el script de las preguntas): con
             // las mismas respuestas, accesorios distintos para cada uno.
@@ -839,7 +840,7 @@ class LandingController extends Controller
             'nivel' => isset(EntrenamientoDeHoy::NIVELES[$nivel]) ? $nivel : null,
             'busco' => $busco,
             'hice' => $hechos,
-            'hoy' => isset(EntrenamientoDeHoy::GRUPOS[$request->texto('hoy')]) ? $request->texto('hoy') : null,
+            'hoy' => isset(EntrenamientoDeHoy::GRUPOS[$hoyPedido = EntrenamientoDeHoy::ALIAS[$request->texto('hoy')] ?? $request->texto('hoy')]) ? $hoyPedido : null,
         ];
 
         return $this->pagina('landing.rutina', 'landing.rutina', 'Qué entrenar hoy',

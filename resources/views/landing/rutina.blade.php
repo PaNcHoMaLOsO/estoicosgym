@@ -23,11 +23,9 @@
     $tarjeta = 'flex rounded-xl bg-pg-grafito text-pg-tiza transition duration-200 hover:bg-pg-gris/70 peer-checked:bg-pg-rojo/15 peer-checked:ring-2 peer-checked:ring-pg-rojo peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pg-rojo-claro active:scale-[0.97]';
     $pregunta = 'mt-1 block font-display text-[1.7rem] uppercase leading-tight text-pg-tiza sm:text-5xl';
     $paso = 'block font-modern text-xs sm:text-sm uppercase tracking-widest text-pg-tiza/45';
-    $seccion = 'col-span-4 mt-1 font-modern text-[11px] sm:mt-3 sm:text-xs uppercase tracking-widest text-pg-tiza/45 first:mt-0';
-    // Las opciones de grupos, bajas y de a cuatro (una fila por sección):
-    // cada pregunta cabe entera en la pantalla del celular.
-    $baja = 'h-full flex-col items-center gap-1 px-1 py-2 text-center sm:gap-2 sm:px-2 sm:py-4';
-    $nombreBajo = 'font-modern text-[11px] font-semibold leading-tight sm:text-sm';
+    $nombreBajo = 'font-modern text-sm font-semibold leading-tight';
+    // Cada grupo: su mini mapa a la izquierda y el nombre al lado, de a dos por fila.
+    $opcionGrupo = 'h-full items-center gap-2.5 px-2.5 py-2.5 text-left sm:flex-col sm:gap-2 sm:px-2 sm:py-4 sm:text-center';
     $atras = 'mb-3 inline-flex items-center gap-2 font-modern text-sm text-pg-tiza/60 transition-colors hover:text-pg-tiza';
     $iconos = ['nunca' => 'seedling', 'algo' => 'dumbbell', 'hace_tiempo' => 'medal'];
     $bajadas = ['nunca' => 'Primeras semanas', 'algo' => 'Algunos meses', 'hace_tiempo' => 'Varios años'];
@@ -159,26 +157,25 @@
                         <span class="{{ $pregunta }}">¿Qué entrenaste estos últimos días?</span>
                         <span class="mt-1 block font-modern text-sm text-pg-tiza/60">Marca todo lo de los últimos 2 o 3 días.</span>
                     </legend>
-                    <div class="mt-4 grid grid-cols-4 gap-1.5 sm:gap-3">
-                        @foreach(Hoy::SECCIONES as $titulo => $claves)
-                            @php $claves = array_values(array_filter($claves, fn ($c) => isset(Hoy::HICE[$c]))); @endphp
-                            <p class="{{ $seccion }}">{{ $titulo }}</p>
-                            @foreach($claves as $clave)
-                                <label data-opcion class="block cursor-pointer">
-                                    <input type="checkbox" name="hice[]" value="{{ $clave }}" class="peer sr-only" @checked(in_array($clave, $hechos, true))>
-                                    <span class="{{ $tarjeta }} {{ $baja }}">
-                                        @include('landing.partes.icono-grupo', ['grupo' => $clave])
-                                        <span class="{{ $nombreBajo }}">{{ Hoy::HICE[$clave] }}</span>
-                                    </span>
-                                </label>
-                            @endforeach
+                    {{-- OCHO OPCIONES, LAS MISMAS PALABRAS QUE LO DE HOY, de a dos:
+                         eran trece en cuatro secciones y costaba encontrar la
+                         propia. «Nada, descansé» cierra la grilla. --}}
+                    <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                        @foreach(Hoy::HICE as $clave => $nombre)
+                            @continue($clave === 'nada')
+                            <label data-opcion class="block cursor-pointer">
+                                <input type="checkbox" name="hice[]" value="{{ $clave }}" class="peer sr-only" @checked(in_array($clave, $hechos, true))>
+                                <span class="{{ $tarjeta }} {{ $opcionGrupo }}">
+                                    @include('landing.partes.icono-grupo', ['grupo' => $clave])
+                                    <span class="{{ $nombreBajo }}">{{ $nombre }}</span>
+                                </span>
+                            </label>
                         @endforeach
-                        {{-- Junto al cardio, en la misma fila. --}}
-                        <label data-opcion class="col-span-3 block cursor-pointer">
+                        <label data-opcion class="block cursor-pointer">
                             <input type="checkbox" name="hice[]" value="nada" class="peer sr-only" @checked($hechos === [])>
-                            <span class="{{ $tarjeta }} h-full items-center justify-center gap-2 px-3 py-2">
-                                <x-icono nombre="bed" class="text-lg text-pg-tiza/60" />
-                                <span class="font-modern text-sm font-semibold sm:text-base">{{ Hoy::HICE['nada'] }}</span>
+                            <span class="{{ $tarjeta }} {{ $opcionGrupo }}">
+                                <span class="grid h-10 w-12 shrink-0 place-items-center text-xl text-pg-tiza/60 sm:h-14 sm:w-16 sm:text-2xl" aria-hidden="true"><x-icono nombre="bed" /></span>
+                                <span class="{{ $nombreBajo }}">{{ Hoy::HICE['nada'] }}</span>
                             </span>
                         </label>
                     </div>
@@ -195,23 +192,21 @@
                         <span class="{{ $paso }}">5 de 5</span>
                         <span class="{{ $pregunta }}">¿Qué te gustaría entrenar hoy?</span>
                     </legend>
-                    <div class="mt-4 grid grid-cols-4 gap-1.5 sm:gap-3">
-                        @foreach(Hoy::SECCIONES as $titulo => $claves)
-                            <p class="{{ $seccion }}">{{ $titulo }}</p>
-                            @foreach($claves as $clave)
-                                @php $descansa = Hoy::choca($clave, $hechos); @endphp
-                                <label data-opcion class="block cursor-pointer">
-                                    <input type="radio" name="hoy" value="{{ $clave }}" class="peer sr-only" @checked($hoyMarcado === $clave)>
-                                    <span class="{{ $tarjeta }} {{ $baja }} data-descansa:opacity-55" @if($descansa) data-descansa @endif>
-                                        @include('landing.partes.icono-grupo', ['grupo' => $clave])
-                                        <span class="min-w-0">
-                                            <span class="block {{ $nombreBajo }}">{{ Hoy::GRUPOS[$clave] }}</span>
-                                            <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[11px] text-pg-tiza/60 sm:text-xs">Descansa</span>
-                                            <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[11px] font-semibold text-pg-rojo-claro sm:text-xs">Sugerido</span>
-                                        </span>
+                    <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                        @foreach(Hoy::GRUPOS as $clave => $nombre)
+                            @php $descansa = Hoy::choca($clave, $hechos); @endphp
+                            <label data-opcion class="block cursor-pointer">
+                                <input type="radio" name="hoy" value="{{ $clave }}" class="peer sr-only" @checked($hoyMarcado === $clave)>
+                                <span class="{{ $tarjeta }} {{ $opcionGrupo }} data-descansa:opacity-55" @if($descansa) data-descansa @endif>
+                                    @include('landing.partes.icono-grupo', ['grupo' => $clave])
+                                    <span class="min-w-0">
+                                        <span class="block {{ $nombreBajo }}">{{ $nombre }}</span>
+                                        <span data-bajada @if($descansa || $sugerida === $clave) hidden @endif class="mt-0.5 block font-modern text-[11px] leading-tight text-pg-tiza/50 sm:text-xs">{{ Hoy::BAJADAS[$clave] ?? '' }}</span>
+                                        <span data-mejor-no @if(! $descansa) hidden @endif class="mt-0.5 block font-modern text-[11px] text-pg-tiza/60 sm:text-xs">Descansa</span>
+                                        <span data-sugerido @if($sugerida !== $clave) hidden @endif class="mt-0.5 block font-modern text-[11px] font-semibold text-pg-rojo-claro sm:text-xs">Sugerido</span>
                                     </span>
-                                </label>
-                            @endforeach
+                                </span>
+                            </label>
                         @endforeach
                     </div>
 
@@ -315,6 +310,7 @@
                     tarjeta.toggleAttribute('data-descansa', descansa);
                     tarjeta.querySelector('[data-mejor-no]').hidden = ! descansa;
                     tarjeta.querySelector('[data-sugerido]').hidden = input.value !== sugerida;
+                    tarjeta.querySelector('[data-bajada]').hidden = descansa || input.value === sugerida;
 
                     if (elegir && input.value === sugerida) {
                         input.checked = true;

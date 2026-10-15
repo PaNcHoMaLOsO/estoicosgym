@@ -25,7 +25,9 @@
     $e = $entrenamiento;
     $rutina = $e['rutina'];
     $movilidad = $e['grupo'] === 'movilidad';
-    $conBanda = count(array_filter($e['calentamiento'], fn ($x) => $x['banda']));
+    // El calentamiento: la movilidad articular (igual siempre) y los dinámicos de hoy.
+    $articular = array_values(array_filter($e['calentamiento'], fn ($x) => ($x['tipo'] ?? null) === 'articular'));
+    $dinamicos = array_values(array_filter($e['calentamiento'], fn ($x) => ($x['tipo'] ?? null) === 'dinamico'));
     $hice = $respuestas['hice'] ?: ['nada'];
     $fila = 'flex cursor-pointer list-none items-start gap-3 [&::-webkit-details-marker]:hidden';
     $titulo = 'font-display text-xl uppercase leading-none text-pg-tiza sm:text-2xl';
@@ -75,12 +77,11 @@
                     <div class="min-w-0 flex-1">
                         <h2 id="calentamiento" class="{{ $titulo }}">
                             Calentamiento
-                            <span class="{{ $detalle }}">5 min cardio{{ $conBanda ? " + {$conBanda} con banda" : ' suave' }}</span>
+                            <span class="{{ $detalle }}">Movilidad articular{{ count($dinamicos) ? ' y ' . count($dinamicos) . ' dinámicos' : '' }} · unos {{ count($dinamicos) ? 6 : 3 }} min</span>
                         </h2>
-                        @if($conBanda)
+                        @if(count($dinamicos))
                             <ul class="mt-1.5 flex flex-wrap gap-1 font-modern">
-                                @foreach($e['calentamiento'] as $x)
-                                    @continue(! $x['banda'])
+                                @foreach($dinamicos as $x)
                                     <li class="{{ $chip }}">{{ $x['nombre'] }}</li>
                                 @endforeach
                             </ul>
@@ -88,11 +89,25 @@
                     </div>
                     <x-icono nombre="chevron-right" class="{{ $flecha }}" />
                 </summary>
-                <ul class="mt-4 space-y-4">
-                    @foreach($e['calentamiento'] as $x)
-                        @include('landing.partes.ejercicio-liviano', ['x' => $x])
+                {{-- MOVILIDAD ARTICULAR: cada articulación en círculos, de
+                     arriba abajo. Corta, en una lista: se hace de memoria. --}}
+                <h3 class="mt-4 font-modern text-xs uppercase tracking-widest text-pg-tiza/45">Movilidad articular · de arriba abajo</h3>
+                <ol class="mt-2 divide-y divide-pg-tiza/10 font-modern">
+                    @foreach($articular as $x)
+                        <li class="flex gap-3 py-2">
+                            <span class="w-24 shrink-0 font-semibold text-pg-tiza sm:w-32">{{ $x['nombre'] }}</span>
+                            <span class="min-w-0 flex-1 text-sm leading-snug text-pg-tiza/65">{{ $x['como'] }} <span class="whitespace-nowrap font-semibold text-pg-rojo-claro">{{ $x['dosis'] }}</span></span>
+                        </li>
                     @endforeach
-                </ul>
+                </ol>
+                @if(count($dinamicos))
+                    <h3 class="mt-5 font-modern text-xs uppercase tracking-widest text-pg-tiza/45">Dinámicos · para lo de hoy</h3>
+                    <ul class="mt-3 space-y-4">
+                        @foreach($dinamicos as $x)
+                            @include('landing.partes.ejercicio-liviano', ['x' => $x])
+                        @endforeach
+                    </ul>
+                @endif
             </details>
 
             @if($movilidad)

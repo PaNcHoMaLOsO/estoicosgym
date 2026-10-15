@@ -40,50 +40,64 @@ class EntrenamientoDeHoy
         'hace_tiempo' => 'Entreno hace años',
     ];
 
+    /**
+     * LO QUE SE PUEDE PEDIR PARA HOY: ocho opciones claras (15-oct-2026).
+     * Eran trece, con «Torso, más pecho», «Espalda y bíceps» y otras
+     * combinaciones que costaba distinguir en el teléfono. Las de antes
+     * siguen llegando desde enlaces viejos: ver ALIAS.
+     */
     public const GRUPOS = [
         'pecho' => 'Pecho',
         'espalda' => 'Espalda',
-        'piernas' => 'Piernas',
+        'piernas' => 'Piernas y glúteos',
         'hombros_brazos' => 'Hombros y brazos',
-        // Las combinaciones clásicas de la sala.
-        'pecho_triceps' => 'Pecho y tríceps',
-        'espalda_biceps' => 'Espalda y bíceps',
-        'piernas_gluteos' => 'Piernas y glúteos',
-        'hombros_abdomen' => 'Hombros y abdomen',
-        // Todo lo de arriba en un día (la mitad de torso y pierna), cargado
-        // hacia el pecho o hacia la espalda: así dos días de torso en la semana
-        // no son el mismo.
-        'torso_pecho' => 'Torso, más pecho',
-        'torso_espalda' => 'Torso, más espalda',
+        // Todo lo de arriba en un día: pecho, espalda, hombros y brazos.
+        'torso' => 'Tren superior',
         'cuerpo_completo' => 'Cuerpo completo',
         'cardio' => 'Cardio',
-        // Un día liviano: movilidad con banda y estiramientos.
-        'movilidad' => 'Estirar y movilidad',
+        // Un día liviano: movilidad y estiramientos.
+        'movilidad' => 'Movilidad y estirar',
     ];
 
-    /** Cómo se muestran las opciones, para que la lista larga se lea. */
+    /** Una línea bajo cada opción: qué entra en ese día. */
+    public const BAJADAS = [
+        'pecho' => 'Pecho y tríceps',
+        'espalda' => 'Espalda y bíceps',
+        'piernas' => 'Cuádriceps, isquios y glúteos',
+        'hombros_brazos' => 'Hombros, bíceps y tríceps',
+        'torso' => 'Pecho, espalda y hombros',
+        'cuerpo_completo' => 'Un poco de todo',
+        'cardio' => 'Y zona media',
+        'movilidad' => 'Día liviano',
+    ];
+
+    /** Las opciones de antes, para los enlaces y QR que ya circulan. */
+    public const ALIAS = [
+        'pecho_triceps' => 'pecho',
+        'espalda_biceps' => 'espalda',
+        'piernas_gluteos' => 'piernas',
+        'hombros_abdomen' => 'hombros_brazos',
+        'torso_pecho' => 'torso',
+        'torso_espalda' => 'torso',
+    ];
+
+    /** Cómo se muestran las opciones. */
     public const SECCIONES = [
-        'Divididos' => ['pecho', 'espalda', 'piernas', 'hombros_brazos'],
-        'Combinados' => ['pecho_triceps', 'espalda_biceps', 'piernas_gluteos', 'hombros_abdomen'],
-        'Completos' => ['torso_pecho', 'torso_espalda', 'cuerpo_completo'],
+        'Por grupo' => ['pecho', 'espalda', 'piernas', 'hombros_brazos'],
+        'Todo junto' => ['torso', 'cuerpo_completo'],
         'Otros' => ['cardio', 'movilidad'],
     ];
 
     /**
-     * Lo que se puede marcar en «¿qué entrenaste estos últimos días?». Estirar
-     * no cansa: no se pregunta.
+     * Lo que se puede marcar en «¿qué entrenaste estos últimos días?»: las
+     * mismas palabras que lo de hoy. Estirar no cansa: no se pregunta.
      */
     public const HICE = [
         'pecho' => 'Pecho',
         'espalda' => 'Espalda',
-        'piernas' => 'Piernas',
+        'piernas' => 'Piernas y glúteos',
         'hombros_brazos' => 'Hombros y brazos',
-        'pecho_triceps' => 'Pecho y tríceps',
-        'espalda_biceps' => 'Espalda y bíceps',
-        'piernas_gluteos' => 'Piernas y glúteos',
-        'hombros_abdomen' => 'Hombros y abdomen',
-        'torso_pecho' => 'Torso, más pecho',
-        'torso_espalda' => 'Torso, más espalda',
+        'torso' => 'Tren superior',
         'cuerpo_completo' => 'Cuerpo completo',
         'cardio' => 'Cardio',
         'nada' => 'Nada, descansé',
@@ -101,6 +115,7 @@ class EntrenamientoDeHoy
         'hombros_abdomen' => ['hombros', 'abdomen'],
         'torso_pecho' => ['pecho', 'hombros', 'triceps'],
         'torso_espalda' => ['espalda', 'lumbar', 'biceps'],
+        'torso' => ['pecho', 'espalda', 'hombros', 'biceps', 'triceps'],
         'cuerpo_completo' => ['pecho', 'espalda', 'hombros', 'cuadriceps', 'isquios', 'gluteos', 'abdomen'],
         'cardio' => [],
         'movilidad' => [],
@@ -121,6 +136,7 @@ class EntrenamientoDeHoy
         'hombros_abdomen' => ['hombros', 'abdomen'],
         'torso_pecho' => ['pecho', 'espalda', 'lumbar', 'hombros', 'biceps', 'triceps'],
         'torso_espalda' => ['pecho', 'espalda', 'lumbar', 'hombros', 'biceps', 'triceps'],
+        'torso' => ['pecho', 'espalda', 'lumbar', 'hombros', 'biceps', 'triceps'],
         'cuerpo_completo' => ['pecho', 'espalda', 'lumbar', 'hombros', 'biceps', 'triceps', 'abdomen', 'cuadriceps', 'isquios', 'gluteos', 'pantorrillas'],
         'cardio' => [],
         'movilidad' => [],
@@ -128,21 +144,20 @@ class EntrenamientoDeHoy
 
     /**
      * La vuelta de la semana según los días: hoy toca lo que sigue a lo último
-     * que entrenó. Con pocos días, cuerpo completo; con 4, torso y pierna se
-     * turnan; con 5, uno por grupo; con 6, las combinaciones.
+     * que entrenó. Con pocos días, cuerpo completo; con 4, tren superior y
+     * piernas se turnan; con 5 o 6, uno por grupo.
      */
     public const VUELTAS = [
         2 => ['cuerpo_completo'],
         3 => ['cuerpo_completo'],
-        4 => ['torso_pecho', 'piernas', 'torso_espalda', 'piernas_gluteos'],
+        4 => ['torso', 'piernas'],
         5 => ['pecho', 'espalda', 'piernas', 'hombros_brazos'],
-        6 => ['pecho_triceps', 'espalda_biceps', 'piernas_gluteos', 'hombros_abdomen'],
+        6 => ['pecho', 'espalda', 'piernas', 'hombros_brazos'],
     ];
 
     /** Si lo de la vuelta choca con lo ya hecho, lo primero de aquí que no choque. */
     private const RESPALDO = [
-        'espalda_biceps', 'pecho_triceps', 'piernas_gluteos', 'hombros_abdomen',
-        'espalda', 'pecho', 'piernas', 'hombros_brazos', 'torso_espalda', 'torso_pecho',
+        'espalda', 'pecho', 'piernas', 'hombros_brazos', 'torso',
         'cardio', 'movilidad',
     ];
 
@@ -207,6 +222,7 @@ class EntrenamientoDeHoy
             is_string($ayer) && $ayer !== '' => [$ayer],
             default => [],
         };
+        $valores = array_map(fn ($v) => is_string($v) ? (self::ALIAS[$v] ?? $v) : $v, $valores);
         $validos = array_values(array_unique(array_filter($valores, fn ($v) => is_string($v) && isset(self::HICE[$v]))));
 
         if ($validos === []) {
@@ -299,12 +315,13 @@ class EntrenamientoDeHoy
     public static function armar(int $dias, string $nivel, array|string $hice, string $hoy, int $variante = 0, ?string $objetivo = null): array
     {
         self::$variante = max(0, min(self::VARIANTES, $variante));
+        $hoy = self::ALIAS[$hoy] ?? $hoy;
 
         if ($hoy === 'movilidad') {
             return self::diaDeMovilidad();
         }
 
-        $hechos = self::comoLista($hice);
+        $hechos = array_map(fn ($h) => self::ALIAS[$h] ?? $h, self::comoLista($hice));
         $objetivo = isset(Rutina::OBJETIVOS[(string) $objetivo]) ? $objetivo : (self::OBJETIVO_POR_NIVEL[$nivel] ?? 'empezar');
         [$rutina, $elegido] = self::diaDeLasRutinas($objetivo, $nivel, $dias, $hoy, $hechos);
 
@@ -314,7 +331,12 @@ class EntrenamientoDeHoy
             $foco = $elegido['foco'];
             $numero = $elegido['numero'];
         } else {
-            $lineas = self::desdeElCatalogo($hoy, $nivel, $hechos);
+            // El tren superior se arma cargado al pecho o a la espalda: cambia
+            // con el día y con el celular, así dos seguidos no son iguales.
+            $paraElCatalogo = $hoy === 'torso'
+                ? ((self::delDia('torso') + self::$variante) % 2 ? 'torso_espalda' : 'torso_pecho')
+                : $hoy;
+            $lineas = self::desdeElCatalogo($paraElCatalogo, $nivel, $hechos);
             $titulo = self::GRUPOS[$hoy];
             $foco = null;
             $numero = null;
@@ -334,7 +356,7 @@ class EntrenamientoDeHoy
             'secundarios' => $secundarios,
             'rutina' => $rutina,
             'dia' => $numero,
-            'calentamiento' => [CalentamientoYEstiramiento::CARDIO_SUAVE, ...CalentamientoYEstiramiento::calentamiento($principales, $secundarios, $hoy)],
+            'calentamiento' => CalentamientoYEstiramiento::calentamiento($principales, $secundarios, $hoy),
             'estiramientos' => CalentamientoYEstiramiento::estiramientos($principales, $secundarios),
             'movilidad' => [],
             'minutos' => null,
@@ -506,7 +528,7 @@ class EntrenamientoDeHoy
             'secundarios' => [],
             'rutina' => null,
             'dia' => null,
-            'calentamiento' => [CalentamientoYEstiramiento::CARDIO_SUAVE],
+            'calentamiento' => CalentamientoYEstiramiento::articular(),
             'estiramientos' => $m['estiramientos'],
             'movilidad' => $m['movilidad'],
             'minutos' => $m['minutos'],
@@ -627,6 +649,13 @@ class EntrenamientoDeHoy
             $cubre = count(array_filter([$p['pecho'], $p['espalda'], $p['piernas'], $p['hombros_brazos']]));
 
             return $p['piernas'] > 0 && $p['pecho'] + $p['espalda'] > 0 ? $cubre / 4 : 0;
+        }
+
+        // Tren superior: pecho y espalda los dos y casi nada de pierna.
+        if ($hoy === 'torso') {
+            return $p['fuerza'] > 0 && $p['pecho'] > 0 && $p['espalda'] > 0 && $p['piernas'] / $p['fuerza'] < 0.25
+                ? ($p['pecho'] + $p['espalda'] + $p['hombros_brazos']) / $p['fuerza']
+                : 0;
         }
 
         // Torso: pecho y espalda los dos, casi nada de pierna, y más de lo
@@ -780,8 +809,6 @@ class EntrenamientoDeHoy
                 $otro[0] ?? null,
                 ...self::variados($brazos, 2),
             ]));
-        } elseif (in_array($grupo, ['pecho_triceps', 'espalda_biceps', 'piernas_gluteos', 'hombros_abdomen'], true)) {
-            $elegidos = self::combinacion($grupo, $de, $zonaMedia, $nivel);
         } else {
             // Dos o tres básicos sin repetir músculo, y los accesorios hasta completar.
             $cuantos = self::CUANTOS[$grupo] ?? 5;
@@ -853,91 +880,6 @@ class EntrenamientoDeHoy
                 'zona' => $e->zona,
             ];
         }, $elegidos);
-    }
-
-    /**
-     * Las combinaciones clásicas, del grupo grande al chico:
-     * pecho y tríceps, 3 + 2; espalda y bíceps, 3 + 2; piernas y glúteos,
-     * cuádriceps, glúteo, isquios, otro de cuádriceps y otro de glúteo;
-     * hombros y abdomen, 3 de hombro y 2 o 3 de abdomen.
-     *
-     * @param callable(string):list<array<string,mixed>> $de
-     * @param callable(int):list<array<string,mixed>> $zonaMedia
-     * @return list<array<string,mixed>>
-     */
-    private static function combinacion(string $grupo, callable $de, callable $zonaMedia, string $nivel): array
-    {
-        // Sin los de cuerpo completo (el swing, los burpees): piden más técnica.
-        $del = fn (string $g, string $musculo) => array_values(array_filter($de($g),
-            fn ($c) => $c['principal'] === $musculo && $c['e']->zona !== 'cuerpo_completo'));
-        $basicos = fn (array $lista) => array_values(array_filter($lista, fn ($c) => $c['basico']));
-        $accesorios = fn (array $lista) => array_values(array_filter($lista, fn ($c) => ! $c['basico']));
-
-        // Tres del grupo grande, uno por hueco: «basico», «accesorio» o un
-        // patrón del nombre. Lo que falte, con lo que haya.
-        $tres = function (array $lista, array $huecos) {
-            $elegidos = [];
-
-            foreach ($huecos as $hueco) {
-                foreach ($lista as $c) {
-                    $sirve = match ($hueco) {
-                        'basico' => $c['basico'],
-                        'accesorio' => ! $c['basico'],
-                        default => (bool) preg_match($hueco, $c['e']->nombre),
-                    };
-
-                    if ($sirve && ! in_array($c, $elegidos, true)) {
-                        $elegidos[] = $c;
-                        break;
-                    }
-                }
-            }
-
-            foreach ($lista as $c) {
-                if (count($elegidos) < 3 && ! in_array($c, $elegidos, true)) {
-                    $elegidos[] = $c;
-                }
-            }
-
-            return $elegidos;
-        };
-
-        // Del chico, uno de cada tipo si hay: un básico y un accesorio.
-        $dos = function (array $lista) use ($basicos, $accesorios) {
-            $elegidos = array_values(array_filter([$basicos($lista)[0] ?? null, $accesorios($lista)[0] ?? null]));
-
-            foreach ($lista as $c) {
-                if (count($elegidos) < 2 && ! in_array($c, $elegidos, true)) {
-                    $elegidos[] = $c;
-                }
-            }
-
-            return $elegidos;
-        };
-
-        return match ($grupo) {
-            'pecho_triceps' => [...$tres($del('pecho', 'pecho'), ['basico', 'basico', 'accesorio']), ...$dos($del('hombros_brazos', 'triceps'))],
-            // Un jalón (o dominadas) y dos remos.
-            'espalda_biceps' => [...$tres($del('espalda', 'espalda'), ['/Jalón al pecho|Dominadas|Jalón con agarre/u', '/^Remo/u', '/^Remo/u']), ...$dos($del('hombros_brazos', 'biceps'))],
-            'piernas_gluteos' => (function () use ($del, $basicos, $accesorios) {
-                $cuad = $del('piernas', 'cuadriceps');
-                $gluteo = $del('piernas', 'gluteos');
-                $isquios = $del('piernas', 'isquios');
-
-                return array_values(array_filter([
-                    $basicos($cuad)[0] ?? $cuad[0] ?? null,
-                    $basicos($gluteo)[0] ?? $gluteo[0] ?? null,
-                    $basicos($isquios)[0] ?? $isquios[0] ?? null,
-                    $basicos($cuad)[1] ?? null,
-                    $accesorios($gluteo)[0] ?? $basicos($gluteo)[1] ?? null,
-                ]));
-            })(),
-            'hombros_abdomen' => [
-                // Un press, una elevación lateral y uno para la parte de atrás.
-                ...$tres($del('hombros_brazos', 'hombros'), ['basico', '/Elevaciones laterales/u', '/Face pull|Pájaros|invertidas/u']),
-                ...$zonaMedia($nivel === 'nunca' ? 2 : 3),
-            ],
-        };
     }
 
     /**

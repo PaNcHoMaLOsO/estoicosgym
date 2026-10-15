@@ -138,10 +138,10 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertSeeInOrder([
                 '¿Cuántos días entrenas a la semana?', 'name="dias" value="2"', 'name="dias" value="6"',
                 '¿Cómo vas?', 'Estoy empezando', 'Ya entreno hace un tiempo', 'Entreno hace años',
-                '¿Qué entrenaste estos últimos días?', 'type="checkbox" name="hice[]" value="pecho"', 'Combinados', 'Pecho y tríceps', 'Completos', 'Cuerpo completo', 'Cardio',
+                '¿Qué buscas?', 'name="busco" value="bajar_grasa"',
+                '¿Qué entrenaste estos últimos días?', 'type="checkbox" name="hice[]" value="pecho"', 'Piernas y glúteos', 'Tren superior', 'Cuerpo completo', 'Cardio',
                 'name="hice[]" value="nada" class="peer sr-only" checked', 'Nada, descansé',
-                '¿Qué te gustaría entrenar hoy?', 'Divididos', 'name="hoy"', 'Combinados', 'Espalda y bíceps', 'Piernas y glúteos', 'Hombros y abdomen',
-                'Completos', 'Otros', 'Estirar y movilidad', '<button type="submit"',
+                '¿Qué te gustaría entrenar hoy?', 'name="hoy"', 'Pecho y tríceps', 'Hombros y brazos', 'Tren superior', 'Movilidad y estirar', '<button type="submit"',
             ], false)
             ->assertSee('href="' . route('landing.rutinas') . '"', false)
             // Los pasos de a uno los pone el script; sin él, nada queda escondido.
@@ -159,8 +159,8 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertOk()
             ->assertSee('name="dias" value="4" class="peer sr-only" checked', false)
             ->assertSee('name="hice[]" value="piernas" class="peer sr-only" checked', false)
-            // Con 4 días, después de pierna toca torso.
-            ->assertSee('name="hoy" value="torso_espalda" class="peer sr-only" checked', false)
+            // Con 4 días, después de pierna toca tren superior.
+            ->assertSee('name="hoy" value="torso" class="peer sr-only" checked', false)
             ->assertSee('opacity-55"  data-descansa', false)
             ->assertSee('<meta name="robots" content="noindex, follow">', false);
     }
@@ -230,14 +230,14 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertSee(route('landing.rutina.ver', $quema['rutina']->slug), false);
     }
 
-    /** Ninguna rutina tiene un día de «torso, más pecho»: se arma con el catálogo. */
+    /** Ninguna rutina de quien empieza a bajar de peso tiene un día de pecho: se arma con el catálogo. */
     public function test_arma_con_el_catalogo_cuando_ningun_dia_calza(): void
     {
-        $e = EntrenamientoDeHoy::armar(2, 'nunca', 'nada', 'torso_pecho');
+        $e = EntrenamientoDeHoy::armar(2, 'nunca', 'nada', 'pecho', 1, 'bajar_grasa');
 
         $this->assertNull($e['rutina']);
         $this->assertNull($e['dia']);
-        $this->assertCount(6, $e['lineas']);
+        $this->assertCount(5, $e['lineas']);
 
         // Los que mueven más músculos primero, los accesorios después.
         $basico = array_map(fn ($l) => $l['secundarios'] !== [], $e['lineas']);
@@ -246,14 +246,13 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         // Series y repeticiones de quien empieza.
         $this->assertSame([3, '12 a 15'], [$e['lineas'][0]['series'], $e['lineas'][0]['repeticiones']]);
 
-        $avanzado = EntrenamientoDeHoy::armar(3, 'hace_tiempo', 'nada', 'hombros_abdomen');
-        $this->assertNull($avanzado['dia']);
-        $this->assertSame('6 a 8', $avanzado['lineas'][0]['repeticiones']);
+        // Para quien entrena hace años, pocas repeticiones y pesadas.
+        $this->assertSame('6 a 8', EntrenamientoDeHoy::desdeElCatalogo('hombros_brazos', 'hace_tiempo')[0]['repeticiones']);
 
         // Sin rutina detrás, no hay botón a «la semana».
-        $this->get('/rutina?dias=2&nivel=nunca&ayer=nada&hoy=torso_pecho')
+        $this->get('/rutina?dias=2&nivel=nunca&busco=bajar_grasa&hice[]=nada&hoy=pecho')
             ->assertOk()
-            ->assertSee('6 ejercicios')
+            ->assertSee('5 ejercicios')
             ->assertSee('3 × 12-15')
             ->assertDontSee('Ver la semana');
     }
@@ -410,46 +409,14 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         return array_count_values(array_map(fn ($l) => $l['principal'] ?? '-', $lineas));
     }
 
-    /** Las combinaciones clásicas: el grupo grande y el chico, en sus cantidades. */
-    public function test_las_combinaciones_clasicas_arman_lo_correcto(): void
-    {
-        foreach (['nunca', 'algo', 'hace_tiempo'] as $nivel) {
-            $pt = $this->contar(EntrenamientoDeHoy::desdeElCatalogo('pecho_triceps', $nivel));
-            $this->assertSame(['pecho' => 3, 'triceps' => 2], $pt, "Pecho y tríceps ({$nivel})");
-
-            $eb = $this->contar(EntrenamientoDeHoy::desdeElCatalogo('espalda_biceps', $nivel));
-            $this->assertSame(['espalda' => 3, 'biceps' => 2], $eb, "Espalda y bíceps ({$nivel})");
-
-            $pg = $this->contar(EntrenamientoDeHoy::desdeElCatalogo('piernas_gluteos', $nivel));
-            $this->assertGreaterThanOrEqual(1, $pg['cuadriceps'] ?? 0);
-            $this->assertGreaterThanOrEqual(1, $pg['isquios'] ?? 0);
-            $this->assertSame(2, $pg['gluteos'] ?? 0, "Piernas y glúteos ({$nivel})");
-
-            $ha = EntrenamientoDeHoy::desdeElCatalogo('hombros_abdomen', $nivel);
-            $this->assertSame(3, $this->contar($ha)['hombros'] ?? 0);
-            $abdomen = count(array_filter($ha, fn ($l) => $l['zona'] === 'core'));
-            $this->assertTrue($abdomen >= 2 && $abdomen <= 3, "Hombros y abdomen ({$nivel}): {$abdomen} de abdomen");
-        }
-
-        // Pecho y tríceps: primero el pecho, después el tríceps.
-        $e = EntrenamientoDeHoy::armar(2, 'algo', 'nada', 'pecho_triceps');
-        $this->assertSame('Pecho y tríceps', $e['titulo']);
-        $this->assertSame(['pecho', 'pecho', 'pecho', 'triceps', 'triceps'], array_column($e['lineas'], 'principal'));
-
-        $this->get('/rutina?dias=2&nivel=algo&hice[]=nada&hoy=espalda_biceps')
-            ->assertOk()
-            ->assertSee('Espalda y bíceps')
-            ->assertSee('5 ejercicios');
-    }
-
     /** Lo de estos días se marca varias veces: la sugerencia y el día esquivan todo. */
     public function test_la_seleccion_multiple_evita_todo_lo_marcado(): void
     {
         foreach ([
             [5, ['pecho', 'espalda']],
-            [4, ['torso_pecho', 'piernas']],
-            [6, ['pecho_triceps', 'espalda_biceps']],
-            [3, ['pecho', 'piernas_gluteos']],
+            [4, ['torso', 'piernas']],
+            [6, ['pecho', 'espalda']],
+            [3, ['pecho', 'piernas']],
             [5, ['hombros_brazos', 'piernas', 'pecho']],
         ] as [$dias, $hechos]) {
             $hoy = EntrenamientoDeHoy::sugerencia($hechos, $dias);
@@ -474,10 +441,10 @@ class RutinaRecomendadaTest extends CasoConCatalogos
             ->assertDontSee('name="hice[]" value="nada" class="peer sr-only" checked', false);
 
         $contenido = $respuesta->getContent();
-        foreach (['pecho', 'piernas', 'pecho_triceps', 'piernas_gluteos', 'cuerpo_completo'] as $clave) {
+        foreach (['pecho', 'piernas', 'torso', 'cuerpo_completo'] as $clave) {
             $this->assertMatchesRegularExpression('/name="hoy" value="' . $clave . '"[^>]*>\s*<span[^>]*" +data-descansa *>/', $contenido, "{$clave} debería decir «mejor no».");
         }
-        foreach (['espalda', 'espalda_biceps', 'cardio', 'movilidad'] as $clave) {
+        foreach (['espalda', 'hombros_brazos', 'cardio', 'movilidad'] as $clave) {
             $this->assertDoesNotMatchRegularExpression('/name="hoy" value="' . $clave . '"[^>]*>\s*<span[^>]*" +data-descansa *>/', $contenido, "{$clave} no choca.");
         }
     }
@@ -496,38 +463,48 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->get('/rutina?dias=5&nivel=algo&hice[]=inventado')->assertOk()->assertSee('¿Qué entrenaste estos últimos días?');
     }
 
-    /** Antes, calentamiento con banda según lo de hoy; al final, estiramientos de lo trabajado. */
-    public function test_calentamiento_con_banda_y_estiramientos_de_lo_de_hoy(): void
+    /**
+     * Antes, movilidad articular (igual para todos) y dinámicos de lo que toca;
+     * al final, estiramientos de lo trabajado. Sin banda y sin cardio aparte.
+     */
+    public function test_calentamiento_articular_y_dinamico_y_estiramientos_de_lo_de_hoy(): void
     {
-        $pecho = EntrenamientoDeHoy::armar(2, 'algo', 'nada', 'pecho_triceps');
-        $this->assertSame('Cardio suave', $pecho['calentamiento'][0]['nombre']);
-        $conBanda = array_slice($pecho['calentamiento'], 1);
-        $this->assertCount(4, $conBanda);
-        foreach ($conBanda as $c) {
-            $this->assertTrue($c['banda']);
-            $this->assertSame('arriba', CalentamientoYEstiramiento::CALENTAMIENTO[$c['nombre']][2], "{$c['nombre']} no es de tren superior.");
+        $pecho = EntrenamientoDeHoy::armar(2, 'algo', 'nada', 'pecho');
+        $articular = array_values(array_filter($pecho['calentamiento'], fn ($c) => $c['tipo'] === 'articular'));
+        $dinamicos = array_values(array_filter($pecho['calentamiento'], fn ($c) => $c['tipo'] === 'dinamico'));
+
+        // Toda la movilidad articular, de arriba abajo, y después los dinámicos.
+        $this->assertSame(array_keys(CalentamientoYEstiramiento::ARTICULAR), array_column($articular, 'nombre'));
+        $this->assertSame('Cuello', $pecho['calentamiento'][0]['nombre']);
+        $this->assertCount(4, $dinamicos);
+        $this->assertSame('general', CalentamientoYEstiramiento::DINAMICO[$dinamicos[0]['nombre']][2]);
+        foreach (array_slice($dinamicos, 1) as $c) {
+            $this->assertSame('arriba', CalentamientoYEstiramiento::DINAMICO[$c['nombre']][2], "{$c['nombre']} no es de tren superior.");
         }
+        $this->assertEmpty(array_filter($pecho['calentamiento'], fn ($c) => $c['banda']));
 
         $estira = array_merge(...array_column($pecho['estiramientos'], 'musculos'));
         $this->assertContains('pecho', $estira);
         $this->assertContains('triceps', $estira);
         $this->assertTrue(count($pecho['estiramientos']) >= 3 && count($pecho['estiramientos']) <= 5);
 
-        $piernas = EntrenamientoDeHoy::armar(2, 'algo', 'nada', 'piernas_gluteos');
-        foreach (array_slice($piernas['calentamiento'], 1) as $c) {
-            $this->assertSame('abajo', CalentamientoYEstiramiento::CALENTAMIENTO[$c['nombre']][2]);
+        $piernas = EntrenamientoDeHoy::armar(2, 'algo', 'nada', 'piernas');
+        $dinamicos = array_values(array_filter($piernas['calentamiento'], fn ($c) => $c['tipo'] === 'dinamico'));
+        foreach (array_slice($dinamicos, 1) as $c) {
+            $this->assertSame('abajo', CalentamientoYEstiramiento::DINAMICO[$c['nombre']][2]);
         }
         $estira = array_merge(...array_column($piernas['estiramientos'], 'musculos'));
         foreach (['cuadriceps', 'isquios', 'gluteos'] as $m) {
             $this->assertContains($m, $estira);
         }
 
-        $this->get('/rutina?dias=2&nivel=algo&hice[]=nada&hoy=piernas_gluteos')
+        $this->get('/rutina?dias=2&nivel=algo&hice[]=nada&hoy=piernas')
             ->assertOk()
-            ->assertSeeInOrder(['Calentamiento', 'Cardio suave', '5 minutos', $piernas['calentamiento'][1]['nombre'], '2 × ',
+            ->assertSeeInOrder(['Calentamiento', 'Movilidad articular · de arriba abajo', 'Cuello', 'Tobillos',
+                'Dinámicos · para lo de hoy', $dinamicos[1]['nombre'],
                 'Entrenamiento', $piernas['lineas'][0]['nombre'],
                 'Para terminar, estira', $piernas['estiramientos'][0]['nombre'], '30 segundos'])
-            ->assertSee(', con banda</span>', false)
+            ->assertDontSee(', con banda</span>', false)
             ->assertSee('aria-label="Trabaja: glúteos', false);
     }
 
@@ -538,7 +515,9 @@ class RutinaRecomendadaTest extends CasoConCatalogos
 
         $this->assertSame([], $e['lineas']);
         $this->assertCount(5, $e['movilidad']);
-        $this->assertNotEmpty(array_filter($e['movilidad'], fn ($m) => $m['banda']));
+        $this->assertEmpty(array_filter($e['movilidad'], fn ($m) => $m['banda']));
+        // Su calentamiento es la movilidad articular.
+        $this->assertSame(array_keys(CalentamientoYEstiramiento::ARTICULAR), array_column($e['calentamiento'], 'nombre'));
         $this->assertGreaterThanOrEqual(8, count($e['estiramientos']));
         $this->assertTrue($e['minutos'] >= 15 && $e['minutos'] <= 20, "Dura {$e['minutos']} minutos.");
         // Empieza por los pies y termina en los brazos.
@@ -551,7 +530,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
 
         $this->get('/rutina?dias=3&nivel=nunca&hice[]=cuerpo_completo&hice[]=cardio')
             ->assertOk()
-            ->assertSee('Estirar y movilidad')
+            ->assertSee('Movilidad y estirar')
             ->assertSee('Unos ' . $e['minutos'] . ' minutos')
             ->assertSeeInOrder(['Calentamiento', 'Movilidad', 'Estira, de pies a cabeza', 'Pantorrilla en la pared'])
             ->assertDontSee('Entrenamiento</h2>', false)
@@ -565,7 +544,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $html = $this->get('/rutina?dias=5&nivel=algo&hice[]=nada&hoy=pecho')
             ->assertOk()
             ->assertSee('class="h-24 w-28 shrink-0 sm:h-32 sm:w-36 lg:h-40 lg:w-44"', false)
-            ->assertSeeInOrder(['Calentamiento', '5 min cardio + 4 con banda', 'Entrenamiento', 'Para terminar, estira', count($e['estiramientos']) . ' de 30 s'], false)
+            ->assertSeeInOrder(['Calentamiento', 'Movilidad articular y 4 dinámicos', 'Entrenamiento', 'Para terminar, estira', count($e['estiramientos']) . ' de 30 s'], false)
             ->assertSee('Cómo y otras opciones')
             ->getContent();
 
@@ -574,8 +553,8 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->assertStringNotContainsString(' open>', $html);
         $this->assertSame(2, substr_count($html, '<details class="group mt-5 lg:'));
 
-        // Las opciones de grupos, de a cuatro (una fila por sección) y bajas.
-        $this->get('/rutina')->assertOk()->assertSee('mt-4 grid grid-cols-4 gap-1.5 sm:gap-3', false)->assertDontSee('h-16 w-20', false);
+        // Las opciones de grupos, de a dos en el teléfono y de a cuatro en pantalla grande.
+        $this->get('/rutina')->assertOk()->assertSee('mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3', false)->assertDontSee('h-16 w-20', false);
     }
 
     /** Sin JavaScript: el formulario manda hice[] tal cual y «nada» viene marcado. */
@@ -674,7 +653,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
     {
         foreach (['nunca', 'algo', 'hace_tiempo'] as $nivel) {
             foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
-                foreach (['torso_espalda', 'torso_pecho'] as $hoy) {
+                foreach (['torso'] as $hoy) {
                     $e = EntrenamientoDeHoy::armar(4, $nivel, ['piernas'], $hoy, $v);
                     $nombres = implode(', ', array_column($e['lineas'], 'nombre'));
 
@@ -688,7 +667,7 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         // dominadas) y dos remos entre los tres primeros, con cualquier variante.
         // En pecho, un press plano y uno inclinado.
         foreach (range(1, EntrenamientoDeHoy::VARIANTES) as $v) {
-            foreach (['espalda', 'torso_espalda'] as $hoy) {
+            foreach (['espalda'] as $hoy) {
                 $tres = array_slice(array_column(EntrenamientoDeHoy::armar(4, 'algo', ['nada'], $hoy, $v)['lineas'], 'nombre'), 0, 3);
                 $this->assertCount(1, preg_grep('/^Jalón|^Dominadas/u', $tres), "$hoy/$v: " . implode(', ', $tres));
                 $this->assertCount(2, preg_grep('/^Remo/u', $tres), "$hoy/$v: " . implode(', ', $tres));
