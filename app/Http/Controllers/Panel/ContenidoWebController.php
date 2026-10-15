@@ -50,6 +50,13 @@ class ContenidoWebController extends Controller
                 'conectado' => InstagramDelGimnasio::conectado(),
                 'ultima' => InstagramDelGimnasio::ultimaVuelta(),
             ] : null,
+            // Solo en Testimonios: las reseñas de Google que salen antes.
+            'google' => $tipo === 'testimonio' ? [
+                'conectado' => \App\Services\ResenasDeGoogle::conectado(),
+                'ultima' => \App\Services\ResenasDeGoogle::ultimaVuelta(),
+                'resenas' => \App\Services\ResenasDeGoogle::paraLaPortada(),
+                'ficha' => \App\Services\ResenasDeGoogle::guardadas()['direccion'] ?? null,
+            ] : null,
             'iconos' => collect(ContenidoWeb::ICONOS)
                 ->map(fn (string $etiqueta, string $valor) => ['valor' => $valor, 'etiqueta' => $etiqueta])
                 ->values(),
@@ -124,6 +131,22 @@ class ContenidoWebController extends Controller
             0 => 'Instagram no tiene publicaciones nuevas.',
             1 => 'Entró 1 publicación nueva. Ya está en la portada.',
             default => "Entraron {$nuevas} publicaciones nuevas. Ya están en la portada.",
+        });
+    }
+
+    /** Trae ahora la nota y las reseñas de Google, sin esperar a la próxima vuelta. */
+    public function traerResenas()
+    {
+        try {
+            $enPortada = \App\Services\ResenasDeGoogle::traer();
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', match ($enPortada) {
+            0 => 'Listo, pero ninguna reseña de 4 o 5 estrellas con texto: en la portada siguen los testimonios.',
+            1 => 'Listo: 1 reseña de Google en la portada.',
+            default => "Listo: {$enPortada} reseñas de Google en la portada.",
         });
     }
 

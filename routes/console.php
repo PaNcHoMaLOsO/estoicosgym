@@ -105,6 +105,13 @@ Schedule::command('instagram:traer')
     ->withoutOverlapping()
     ->name('instagram-a-la-portada');
 
+// La nota y las reseñas de Google Maps, a la portada. Sin llave no hace nada;
+// sin programador las trae la propia portada cuando alguien entra.
+Schedule::command('resenas:traer')
+    ->twiceDaily(9, 21)
+    ->withoutOverlapping()
+    ->name('resenas-a-la-portada');
+
 // El respaldo completo de la base, de madrugada: se guardan los últimos 14.
 // Sin programador lo hace la revisión del día (RevisaElDia).
 Schedule::command('base:respaldar')

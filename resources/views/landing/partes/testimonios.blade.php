@@ -10,24 +10,63 @@
     TODAS ESTÁN EN LA PÁGINA, solo que una visible. Google y los lectores de
     pantalla las leen todas; y sin JavaScript se ven todas, una debajo de otra.
     Quien pidió menos movimiento no las ve pasar solas.
+
+    RESEÑAS DE GOOGLE (15-oct-2026): con la llave de Google conectada, las de
+    4 y 5 estrellas de la ficha de Maps van primero (ResenasDeGoogle), con sus
+    estrellas y el nombre de quien la escribió; arriba, la nota y cuántas hay.
+    Las largas, en letra más chica. Abajo, ver todas y dejar una.
 --}}
+@php
+    $google = $google ?? null;
+    $paraResenar = $web['resenas'] ?? null;
+@endphp
 @if(count($testimonios ?? []))
     <section id="testimonios" class="relative overflow-hidden py-12 lg:py-24 bg-pg-carbon" aria-roledescription="carrusel" aria-label="Lo que dicen nuestros socios">
         {{-- La comilla gigante de fondo: marca la sección sin otra caja más. --}}
         <span class="pointer-events-none absolute -top-10 left-2 lg:left-10 select-none font-display text-[16rem] lg:text-[26rem] leading-none text-pg-rojo/10" aria-hidden="true">“</span>
 
         <div class="relative max-w-5xl mx-auto px-5 sm:px-8 lg:px-12">
-            <p class="font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Lo que dicen los socios</p>
+            <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+                <p class="font-modern text-sm uppercase tracking-widest text-pg-rojo-claro">Lo que dicen los socios</p>
+                {{-- La nota de Google: se toca y abre la ficha. --}}
+                @if($google && $google['nota'])
+                    <a href="{{ $google['enlace'] ?: '#testimonios' }}" @if($google['enlace']) target="_blank" rel="noopener" data-evento="resenas_google" @endif
+                        class="flex items-center gap-2 font-modern text-sm text-pg-tiza/80 transition-colors hover:text-pg-tiza">
+                        <span class="font-display text-2xl leading-none text-pg-tiza">{{ number_format($google['nota'], 1, ',', '') }}</span>
+                        <span class="flex gap-0.5 text-amber-400" aria-label="{{ number_format($google['nota'], 1, ',', '') }} de 5 estrellas">
+                            @for($i = 1; $i <= 5; $i++)
+                                <x-icono nombre="star" class="text-sm {{ $google['nota'] >= $i - 0.25 ? '' : 'opacity-25' }}" />
+                            @endfor
+                        </span>
+                        <span>{{ $google['total'] }} {{ $google['total'] === 1 ? 'reseña' : 'reseñas' }} en Google</span>
+                    </a>
+                @endif
+            </div>
 
             <div class="mt-6 lg:mt-10" data-testimonios>
                 @foreach($testimonios as $i => $t)
+                    @php $larga = mb_strlen($t['texto']) > 120; @endphp
                     <figure data-testimonio class="{{ $i > 0 ? 'mt-10' : '' }}" id="testimonio-{{ $i + 1 }}">
-                        <blockquote class="font-display text-2xl sm:text-4xl lg:text-5xl uppercase leading-tight text-pg-tiza">
+                        @if(! empty($t['google']))
+                            <p class="mb-4 flex gap-1 text-amber-400" aria-label="{{ $t['nota'] }} de 5 estrellas">
+                                @for($k = 0; $k < $t['nota']; $k++)
+                                    <x-icono nombre="star" class="text-base" />
+                                @endfor
+                            </p>
+                        @endif
+                        <blockquote class="{{ $larga ? 'font-modern text-lg sm:text-2xl lg:text-3xl leading-snug' : 'font-display text-2xl sm:text-4xl lg:text-5xl uppercase leading-tight' }} text-pg-tiza">
                             {{ $t['texto'] }}
                         </blockquote>
-                        <figcaption class="mt-6 flex items-center gap-4 font-modern text-pg-tiza/70">
+                        <figcaption class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 font-modern text-pg-tiza/70">
                             <span class="h-px w-10 bg-pg-rojo" aria-hidden="true"></span>
-                            {{ $t['titulo'] }}
+                            @if(! empty($t['google']) && ! empty($t['enlace']))
+                                <a href="{{ $t['enlace'] }}" target="_blank" rel="noopener" class="hover:text-pg-tiza">{{ $t['titulo'] }}</a>
+                            @else
+                                {{ $t['titulo'] }}
+                            @endif
+                            @if(! empty($t['google']))
+                                <span class="text-sm text-pg-tiza/45">en Google{{ $t['cuando'] ? ' · ' . $t['cuando'] : '' }}</span>
+                            @endif
                         </figcaption>
                     </figure>
                 @endforeach
@@ -109,6 +148,23 @@
                         andar();
                     })();
                 </script>
+            @endif
+
+            @if(($google && $google['enlace']) || $paraResenar)
+                <div class="mt-8 flex flex-wrap gap-3 font-modern text-sm">
+                    @if($google && $google['enlace'])
+                        <a href="{{ $google['enlace'] }}" target="_blank" rel="noopener" data-evento="resenas_google"
+                            class="inline-flex items-center gap-2 rounded-lg border border-pg-tiza/25 px-4 py-2.5 font-semibold text-pg-tiza transition-colors hover:border-pg-tiza/60">
+                            Ver todas en Google <x-icono nombre="arrow-up-right-from-square" class="text-xs" />
+                        </a>
+                    @endif
+                    @if($paraResenar)
+                        <a href="{{ $paraResenar }}" target="_blank" rel="noopener" data-evento="dejar_resena"
+                            class="inline-flex items-center gap-2 rounded-lg bg-pg-rojo px-4 py-2.5 font-bold text-white transition-colors hover:bg-pg-rojo-oscuro">
+                            <x-icono nombre="star" class="text-xs" /> Deja tu reseña
+                        </a>
+                    @endif
+                </div>
             @endif
         </div>
     </section>

@@ -665,6 +665,15 @@ class Ajustes
                 'formato' => 'url',
                 'defecto' => '',
             ],
+            'web.google_llave' => [
+                'grupo' => 'web',
+                'seccion' => 'Cómo se ve en Google',
+                'etiqueta' => 'Llave de Google (reseñas)',
+                'ayuda' => 'Con ella la portada muestra sola la nota y las reseñas de la ficha de Google Maps. Se saca en console.cloud.google.com: activar «Places API (New)» y crear una clave de API. Para desconectar, escribe BORRAR.',
+                'tipo' => 'secreto',
+                'largo' => 200,
+                'defecto' => '',
+            ],
             'web.whatsapp' => [
                 'grupo' => 'web',
                 'seccion' => 'Redes y contacto',

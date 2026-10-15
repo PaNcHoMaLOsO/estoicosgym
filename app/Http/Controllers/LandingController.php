@@ -106,6 +106,7 @@ class LandingController extends Controller
 
         // Si ya toca, se miran las publicaciones nuevas de Instagram después de responder.
         \App\Services\InstagramDelGimnasio::siToca();
+        \App\Services\ResenasDeGoogle::siToca();
 
         return $this->pagina('landing.inicio', 'landing', null, null, [
             'portada' => [
@@ -121,7 +122,13 @@ class LandingController extends Controller
                 ? collect($comun['convenios'])->flatMap(fn (array $g) => $g['convenios'])->values()->all()
                 : [],
             'servicios' => $this->contenidos('servicio')->take(3)->values()->all(),
-            'testimonios' => $this->contenidos('testimonio')->all(),
+            // Las reseñas de Google primero y detrás las cargadas a mano.
+            'testimonios' => [...\App\Services\ResenasDeGoogle::paraLaPortada(), ...$this->contenidos('testimonio')->all()],
+            'google' => ($g = \App\Services\ResenasDeGoogle::guardadas()) ? [
+                'nota' => $g['nota'],
+                'total' => $g['total'],
+                'enlace' => $g['enlace'] ?: (Ajustes::obtener('web.google_maps') ?: null),
+            ] : null,
             'publicaciones' => $this->contenidos('instagram')->take(ContenidoWeb::PUBLICACIONES_EN_PORTADA)->values()->all(),
             // Solo en la portada: es el único sitio donde salen, y así no se
             // hace una consulta más en cada página.

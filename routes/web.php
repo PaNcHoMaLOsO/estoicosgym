@@ -810,6 +810,7 @@ Route::middleware(['auth', 'verify.session', 'puede'])->group(function () {
         // parecidas seguidas. A flechazos nadie ordena diez fotos.
         // Instagram: traer ahora las publicaciones nuevas (sola lo hace cada pocas horas).
         Route::post('/web/instagram/traer', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'traerDeInstagram'])->name('web.instagram.traer');
+        Route::post('/web/resenas/traer', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'traerResenas'])->name('web.resenas.traer');
         Route::post('/web/{tipo}/ordenar', [\App\Http\Controllers\Panel\ContenidoWebController::class, 'ordenar'])->whereIn('tipo', array_keys(\App\Models\ContenidoWeb::TIPOS))->name('web.ordenar');
         // Las clases del gimnasio (judo, lucha…) para la página «Clases» de la web.
         // No son los talleres: esos son arriendos a instituciones.

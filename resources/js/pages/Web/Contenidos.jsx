@@ -188,8 +188,16 @@ function haceCuanto(iso) {
     return horas < 24 ? `hace ${horas} ${horas === 1 ? 'hora' : 'horas'}` : `hace ${Math.round(horas / 24)} días`;
 }
 
-export default function Contenidos({ tipo, datos, filas, iconos, instagram }) {
+export default function Contenidos({ tipo, datos, filas, iconos, instagram, google }) {
     const [trayendo, setTrayendo] = useState(false);
+
+    function traerResenas() {
+        router.post('/panel/web/resenas/traer', {}, {
+            preserveScroll: true,
+            onStart: () => setTrayendo(true),
+            onFinish: () => setTrayendo(false),
+        });
+    }
 
     function traerDeInstagram() {
         router.post('/panel/web/instagram/traer', {}, {
@@ -306,6 +314,65 @@ export default function Contenidos({ tipo, datos, filas, iconos, instagram }) {
                             <RefreshCwIcon className={`size-4 ${trayendo ? 'animate-spin' : ''}`} aria-hidden="true" />
                             {trayendo ? 'Revisando…' : 'Revisar ahora'}
                         </button>
+                    ) : null}
+                </div>
+            ) : null}
+
+            {/* Las reseñas de Google salen solas antes de estos testimonios:
+                aquí se ve si está conectado y cuáles van en la portada. */}
+            {google ? (
+                <div className="mb-5 rounded-control border border-line px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        {google.conectado ? (
+                            <p className="text-sm text-chalk">
+                                <span className="font-medium">Reseñas de Google conectadas: salen solas antes de estos testimonios.</span>{' '}
+                                {google.ultima ? (
+                                    <span className={google.ultima.bien ? 'text-fog' : 'text-danger'}>
+                                        Última revisión {haceCuanto(google.ultima.cuando)}: {google.ultima.mensaje}
+                                    </span>
+                                ) : (
+                                    <span className="text-fog">Todavía no se ha revisado.</span>
+                                )}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-chalk">
+                                <span className="font-medium">Reseñas de Google sin conectar.</span>{' '}
+                                <span className="text-fog">
+                                    Para que la portada muestre sola la nota y las reseñas de Google Maps, pega la llave de Google en{' '}
+                                    <a href="/panel/configuracion/web" className="underline hover:text-chalk">
+                                        Configuración → Página web
+                                    </a>
+                                    .
+                                </span>
+                            </p>
+                        )}
+
+                        {google.conectado ? (
+                            <button
+                                type="button"
+                                onClick={traerResenas}
+                                disabled={trayendo}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-chalk transition-colors hover:border-line-strong disabled:opacity-50"
+                            >
+                                <RefreshCwIcon className={`size-4 ${trayendo ? 'animate-spin' : ''}`} aria-hidden="true" />
+                                {trayendo ? 'Revisando…' : 'Revisar ahora'}
+                            </button>
+                        ) : null}
+                    </div>
+
+                    {google.conectado && google.ficha ? (
+                        <p className="apoyo mt-1 text-fog">Ficha encontrada: {google.ficha}</p>
+                    ) : null}
+
+                    {google.resenas.length ? (
+                        <ul className="mt-3 space-y-2">
+                            {google.resenas.map((r, i) => (
+                                <li key={i} className="text-sm text-chalk">
+                                    <span className="text-volt">{'★'.repeat(r.nota)}</span> <span className="font-medium">{r.titulo}</span>
+                                    <span className="text-fog"> · {r.texto}</span>
+                                </li>
+                            ))}
+                        </ul>
                     ) : null}
                 </div>
             ) : null}
