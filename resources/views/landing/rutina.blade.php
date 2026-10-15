@@ -106,7 +106,7 @@
                         <span class="{{ $paso }}">2 de 5</span>
                         <span class="{{ $pregunta }}">¿Cómo vas?</span>
                     </legend>
-                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                         @foreach(Hoy::NIVELES as $clave => $nombre)
                             <label data-opcion class="block cursor-pointer">
                                 <input type="radio" name="nivel" value="{{ $clave }}" class="peer sr-only" @checked($respuestas['nivel'] === $clave) @if($loop->first) required @endif>

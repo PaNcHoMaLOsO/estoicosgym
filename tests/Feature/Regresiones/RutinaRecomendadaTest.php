@@ -688,8 +688,8 @@ class RutinaRecomendadaTest extends CasoConCatalogos
     }
 
     /**
-     * Para usarlo en la sala: el círculo cuenta las series y corre el
-     * descanso, el peso se anota y cada ejercicio se puede cambiar por una de
+     * Para usarlo en la sala: el círculo cuenta las series (sin cronómetro
+     * de descanso: el dueño no lo quiere), el peso se anota y cada ejercicio se puede cambiar por una de
      * sus opciones (con su cómo). Y arriba, cuánto dura.
      */
     public function test_el_entrenamiento_se_usa_en_la_sala(): void
@@ -706,8 +706,9 @@ class RutinaRecomendadaTest extends CasoConCatalogos
         $this->get('/rutina?dias=3&nivel=algo&hice[]=nada&hoy=pecho')
             ->assertOk()
             ->assertSee('≈ ' . $e['minutos'] . ' min')
-            ->assertSee('data-series="' . $primera['series'] . '" data-descanso="' . $primera['descanso'] . '"', false)
-            ->assertSee('data-reloj', false)
+            ->assertSee('data-series="' . $primera['series'] . '"', false)
+            ->assertDontSee('data-reloj', false)
+            ->assertDontSee('+15 s')
             ->assertSee('data-peso-kg', false)
             ->assertSee('Usar este');
     }

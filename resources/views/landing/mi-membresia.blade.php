@@ -21,7 +21,7 @@
                 
                 {{-- El formulario con un acompañante al lado: solo, en una pantalla
                      ancha quedaba un recuadro angosto en medio de todo negro. --}}
-                <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
                 <div class="max-w-md w-full mx-auto animate-on-scroll lg:order-1">
                     <div class="bg-pg-negro/50 border border-pg-tiza/10 rounded-2xl p-6">
                         <div class="space-y-4">

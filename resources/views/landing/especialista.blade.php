@@ -64,7 +64,7 @@
                         </p>
 
                         {{-- CUÁNDO, DÓNDE, QUÉ: lo que se pregunta antes de escribirle. --}}
-                        <dl class="mt-8 grid gap-px overflow-hidden bg-pg-tiza/10 sm:grid-cols-3">
+                        <dl class="mt-8 grid grid-cols-1 gap-px overflow-hidden bg-pg-tiza/10 sm:grid-cols-3">
                             @foreach([
                                 ['clock', 'Cuándo atiende', collect([$e['dias'], $e['horario']])->filter()->implode(' · ') ?: ($e['whatsapp'] ? 'A coordinar por WhatsApp' : 'A coordinar')],
                                 ['location-dot', 'Dónde', $e['lugar'] ?: ($e['modalidad'] === 'Online' ? 'Online' : ($web['ciudad'] ?: $gimnasio['nombre']))],
@@ -155,7 +155,7 @@
                              sabe si escribirle, si hay que pagar antes o dónde. --}}
                         <div class="mt-10">
                             <h2 class="font-display text-2xl uppercase text-pg-tiza">Cómo agendar</h2>
-                            <ol class="mt-4 grid gap-px overflow-hidden bg-pg-tiza/10 sm:grid-cols-3">
+                            <ol class="mt-4 grid grid-cols-1 gap-px overflow-hidden bg-pg-tiza/10 sm:grid-cols-3">
                                 @foreach([
                                     ['whatsapp', $e['whatsapp'] ? 'Escríbele por WhatsApp' : 'Escríbele', 'Cuéntale qué buscas.'],
                                     ['clock', 'Coordinan el día', collect([$e['dias'], $e['horario']])->filter()->implode(' · ') ?: 'El que les acomode a los dos.'],
@@ -187,7 +187,7 @@
             @if($otros)
                 <div class="mt-16 border-t border-pg-tiza/10 pt-8 lg:mt-24">
                     <h2 class="font-display text-2xl uppercase text-pg-tiza">Otros profesionales</h2>
-                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                         @foreach($otros as $otro)
                             <a href="{{ $otro['perfil'] }}" class="group flex items-center gap-4 bg-pg-carbon p-3 transition-colors hover:bg-pg-grafito">
                                 <span class="relative size-16 shrink-0 overflow-hidden bg-pg-negro">

@@ -17,9 +17,8 @@
     respuestas van en la dirección: se puede volver y compartir.
 
     PARA USARLO EN LA SALA (15-oct-2026), con el celular en la mano:
-    - el círculo de cada ejercicio cuenta las series: al tocarlo suma una y
-      corre el descanso en una barra abajo (vibra al terminar, se le pueden
-      sumar 15 s, saltar o deshacer el toque);
+    - el círculo de cada ejercicio cuenta las series: al tocarlo suma una.
+      Sin cronómetro de descanso: el dueño no lo quiere (15-oct-2026);
     - el peso que usó queda anotado en el celular y se ve la próxima vez;
     - si la máquina está ocupada, «Usar este» cambia el ejercicio por una de
       sus otras opciones;
@@ -139,7 +138,7 @@
                 <section class="mt-6 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0" aria-labelledby="entrenamiento">
                     <h2 id="entrenamiento" class="{{ $titulo }}">Entrenamiento</h2>
                     <p data-pista hidden class="mt-1.5 flex items-center gap-2 font-modern text-xs text-pg-tiza/60 sm:text-sm">
-                        <x-icono nombre="stopwatch" class="text-pg-rojo-claro" /> Toca el círculo al terminar cada serie y corre el descanso.
+                        <x-icono nombre="circle-check" class="text-pg-rojo-claro" /> Toca el círculo al terminar cada serie.
                     </p>
 
                     <ol class="mt-3 grid grid-cols-1 gap-2">
@@ -148,27 +147,34 @@
                                 <details class="group rounded-xl bg-pg-grafito/40 transition-colors hover:bg-pg-grafito/70 open:bg-pg-grafito/70">
                                     <summary class="flex cursor-pointer list-none items-center gap-3 p-2.5 sm:gap-4 sm:p-3 [&::-webkit-details-marker]:hidden">
                                         <div class="relative transition-opacity group-data-hecho/hecho:opacity-40">
-                                            @include('landing.partes.imagen-ejercicio', ['e' => $l, 'tamano' => 'size-20 sm:size-24', 'marca' => true])
+                                            @include('landing.partes.imagen-ejercicio', ['e' => $l, 'tamano' => 'size-16 min-[400px]:size-20 sm:size-24', 'marca' => true])
                                             <span class="absolute -left-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-pg-rojo font-display text-sm text-white">{{ $i + 1 }}</span>
                                         </div>
+                                        @php [$series, $porLado] = $partir($l['corta']); @endphp
                                         <div class="min-w-0 flex-1 font-modern transition-opacity group-data-hecho/hecho:opacity-40">
                                             <h3 data-nombre class="text-base font-semibold leading-tight text-pg-tiza sm:text-lg">{{ $l['nombre'] }}</h3>
                                             <p class="mt-1 flex items-center gap-1 whitespace-nowrap text-xs text-pg-tiza/50 sm:text-sm">
                                                 {{ ! empty($l['opciones']) ? 'Cómo y otras opciones' : 'Cómo se hace' }}
                                                 <x-icono nombre="chevron-right" class="text-[11px] transition-transform group-open:rotate-90" />
                                             </p>
+                                            {{-- En los teléfonos chicos las series van aquí, bajo el
+                                                 nombre: en su columna lo apretaban hasta encimarse. --}}
+                                            <p class="mt-1 flex flex-wrap items-baseline gap-x-1.5 tabular-nums min-[400px]:hidden" aria-hidden="true">
+                                                <span class="font-display text-xl leading-none text-pg-rojo-claro">{{ $series }}</span>
+                                                <span class="text-xs text-pg-tiza/55">{{ $porLado }}{{ $porLado && $l['descanso'] ? ' · ' : '' }}@if($l['descanso']){{ $l['descanso'] }} s @endif</span>
+                                                <span data-peso-fila hidden class="text-xs font-semibold text-pg-tiza/80"></span>
+                                            </p>
                                         </div>
-                                        @php [$series, $porLado] = $partir($l['corta']); @endphp
-                                        <div class="shrink-0 text-right transition-opacity group-data-hecho/hecho:opacity-40">
+                                        <div class="shrink-0 text-right transition-opacity group-data-hecho/hecho:opacity-40 max-[399px]:hidden">
                                             <p class="whitespace-nowrap font-display text-2xl leading-none tabular-nums text-pg-rojo-claro sm:text-3xl">{{ $series }}</p>
                                             <p class="mt-1 font-modern text-xs tabular-nums text-pg-tiza/55 sm:text-sm">
                                                 {{ $porLado }}{{ $porLado && $l['descanso'] ? ' · ' : '' }}@if($l['descanso'])<span class="sr-only">Descanso </span>{{ $l['descanso'] }} s @endif
                                             </p>
                                             <p data-peso-fila hidden class="mt-0.5 font-modern text-xs font-semibold tabular-nums text-pg-tiza/80 sm:text-sm"></p>
                                         </div>
-                                        {{-- Las series: cada toque suma una y corre el descanso;
+                                        {{-- Las series: cada toque suma una;
                                              queda guardado en el celular. Sin JavaScript no sale. --}}
-                                        <button type="button" data-marcar hidden data-series="{{ max(1, (int) $l['series']) }}" data-descanso="{{ (int) $l['descanso'] }}" aria-label="Serie hecha de {{ $l['nombre'] }}"
+                                        <button type="button" data-marcar hidden data-series="{{ max(1, (int) $l['series']) }}" aria-label="Serie hecha de {{ $l['nombre'] }}"
                                             class="relative -mr-1 grid size-12 shrink-0 place-items-center rounded-full text-pg-tiza transition-transform active:scale-90">
                                             <svg viewBox="0 0 36 36" class="absolute inset-1 -rotate-90" aria-hidden="true">
                                                 <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="2.5" class="text-pg-tiza/20" />
@@ -274,23 +280,6 @@
         </div>
     </section>
 
-    {{-- El descanso: abajo, encima de todo, mientras corre. --}}
-    <div data-reloj hidden role="status" aria-live="polite"
-        class="fixed inset-x-0 bottom-0 z-40 border-t border-pg-tiza/10 bg-pg-negro/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
-        <div data-reloj-barrita class="absolute left-0 top-0 h-1 bg-pg-rojo" style="width: 100%"></div>
-        <div class="mx-auto flex max-w-xl items-center gap-3 font-modern">
-            <div class="min-w-0 flex-1">
-                <p data-reloj-que class="truncate text-xs text-pg-tiza/60"></p>
-                <p class="flex items-baseline gap-3">
-                    <span data-reloj-tiempo class="font-display text-4xl leading-none tabular-nums text-pg-tiza"></span>
-                    <button type="button" data-reloj-deshacer class="text-xs text-pg-tiza/50 underline underline-offset-4">Deshacer</button>
-                </p>
-            </div>
-            <button type="button" data-reloj-mas class="rounded-lg bg-pg-grafito px-3 py-3 text-sm font-semibold text-pg-tiza active:bg-pg-gris">+15 s</button>
-            <button type="button" data-reloj-saltar class="rounded-lg bg-pg-rojo px-4 py-3 text-sm font-bold text-white active:bg-pg-rojo-oscuro">Saltar</button>
-        </div>
-    </div>
-
     <script>
         (function () {
             const raiz = document.querySelector('[data-entrenamiento]');
@@ -313,6 +302,7 @@
             // guardado antes de las series: un ejercicio hecho, todas hechas.
             guardado.series = guardado.series || {};
             guardado.cambios = guardado.cambios || [];
+            delete guardado.descanso;
             (guardado.hechos || []).forEach((i) => {
                 const li = lineas[i];
                 if (li && guardado.series[i] === undefined) {
@@ -382,85 +372,7 @@
                 }
             });
 
-            // ---- El descanso.
-            const reloj = document.querySelector('[data-reloj]');
-            const parte = (x) => reloj.querySelector('[data-reloj-' + x + ']');
-            let tic = null;
-            let deshacer = null;
-
-            const mmss = (seg) => Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0');
-
-            function mostrarReloj(si) {
-                reloj.hidden = ! si;
-                document.body.style.paddingBottom = si ? reloj.offsetHeight + 'px' : '';
-            }
-
-            function correr() {
-                clearInterval(tic);
-                const d = guardado.descanso;
-                if (! d) {
-                    mostrarReloj(false);
-                    return;
-                }
-                parte('que').textContent = d.que;
-                parte('deshacer').hidden = deshacer === null;
-                parte('mas').hidden = false;
-                parte('saltar').textContent = 'Saltar';
-                mostrarReloj(true);
-
-                const paso = () => {
-                    const quedan = Math.max(0, Math.ceil((d.fin - Date.now()) / 1000));
-                    parte('tiempo').textContent = mmss(quedan);
-                    parte('barrita').style.width = (quedan / d.largo * 100) + '%';
-                    if (quedan === 0) {
-                        terminar(true);
-                    }
-                };
-                paso();
-                tic = setInterval(paso, 250);
-            }
-
-            function terminar(sonar) {
-                clearInterval(tic);
-                const d = guardado.descanso;
-                guardado.descanso = null;
-                guardar();
-                if (! sonar || ! d) {
-                    mostrarReloj(false);
-                    return;
-                }
-                if (navigator.vibrate) {
-                    navigator.vibrate([250, 120, 250]);
-                }
-                parte('que').textContent = 'Se acabó el descanso';
-                parte('tiempo').textContent = d.luego;
-                parte('barrita').style.width = '0%';
-                parte('mas').hidden = true;
-                parte('deshacer').hidden = true;
-                parte('saltar').textContent = 'Listo';
-                mostrarReloj(true);
-                tic = setTimeout(() => mostrarReloj(false), 6000);
-            }
-
-            parte('mas').addEventListener('click', () => {
-                if (guardado.descanso) {
-                    guardado.descanso.fin = Math.max(guardado.descanso.fin, Date.now()) + 15000;
-                    guardado.descanso.largo += 15;
-                    guardar();
-                    correr();
-                }
-            });
-            parte('saltar').addEventListener('click', () => terminar(false));
-            parte('deshacer').addEventListener('click', () => {
-                if (deshacer !== null) {
-                    guardado.series[deshacer] = Math.max(0, hechas(deshacer) - 1);
-                    deshacer = null;
-                    terminar(false);
-                    pintar();
-                }
-            });
-
-            // ---- Las series: cada toque suma una y corre el descanso.
+            // ---- Las series: cada toque suma una; con todas, de nuevo a cero.
             lineas.forEach((li, i) => {
                 const b = boton(i);
                 b.hidden = false;
@@ -468,79 +380,20 @@
                 b.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const total = totales(i);
-                    const n = hechas(i);
-
-                    if (n >= total) {
-                        // Ya estaba hecho: se empieza de nuevo.
-                        guardado.series[i] = 0;
-                        if (guardado.descanso && guardado.descanso.i === i) {
-                            guardado.descanso = null;
-                        }
-                        deshacer = null;
-                        guardar();
-                        pintar();
-                        correr();
-                        return;
-                    }
-
-                    guardado.series[i] = n + 1;
+                    guardado.series[i] = hechas(i) >= totales(i) ? 0 : hechas(i) + 1;
                     pista.hidden = true;
                     try {
                         localStorage.setItem('pg-pista', '1');
                     } catch (e) {}
-                    deshacer = i;
                     guardar();
                     pintar();
-                    noApagar();
-
-                    if (guardado.hechos.length === lineas.length) {
-                        // El último: nada de descanso.
-                        guardado.descanso = null;
-                        deshacer = null;
-                        guardar();
-                        terminarElDia();
-                        return;
+                    if (guardado.hechos.length < lineas.length) {
+                        noApagar();
+                    } else if (pantalla) {
+                        pantalla.release().catch(() => {});
                     }
-
-                    const largo = Number(b.dataset.descanso) || 60;
-                    const siguiente = lineas.findIndex((x, k) => k > i && hechas(k) < totales(k));
-                    const otro = siguiente >= 0 ? siguiente : lineas.findIndex((x, k) => hechas(k) < totales(k));
-                    guardado.descanso = {
-                        i: i,
-                        fin: Date.now() + largo * 1000,
-                        largo: largo,
-                        que: nombre(i) + ' · serie ' + (n + 1) + ' de ' + total,
-                        luego: n + 1 < total ? 'Serie ' + (n + 2) + ' de ' + total : (otro >= 0 ? 'Sigue: ' + nombre(otro) : '¡Listo!'),
-                    };
-                    guardar();
-                    correr();
                 });
             });
-
-            function terminarElDia() {
-                clearInterval(tic);
-                if (navigator.vibrate) {
-                    navigator.vibrate([150, 80, 150, 80, 300]);
-                }
-                if (pantalla) {
-                    pantalla.release().catch(() => {});
-                }
-                parte('que').textContent = '¡Listo por hoy!';
-                parte('tiempo').textContent = 'Ahora, a estirar';
-                parte('barrita').style.width = '0%';
-                parte('mas').hidden = true;
-                parte('deshacer').hidden = true;
-                parte('saltar').textContent = 'Ver';
-                mostrarReloj(true);
-                parte('saltar').addEventListener('click', () => {
-                    const estira = document.getElementById('estira');
-                    if (estira) {
-                        estira.closest('details').open = true;
-                        estira.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, { once: true });
-            }
 
             // ---- La pista, hasta el primer toque.
             const pista = document.querySelector('[data-pista]');
@@ -566,7 +419,7 @@
 
             function pintarPeso(li) {
                 const caja = li.querySelector('[data-peso]');
-                const fila = li.querySelector('[data-peso-fila]');
+                const filas = li.querySelectorAll('[data-peso-fila]');
                 if (! caja) {
                     return;
                 }
@@ -581,8 +434,10 @@
                 input.placeholder = antes ? antes.kg : '';
                 caja.querySelector('[data-peso-antes]').textContent = antes ? 'La vez pasada: ' + antes.kg + ' kg (' + fecha(antes.fecha) + ')' : '';
                 const kg = deHoy ? deHoy.kg : (antes ? antes.kg : null);
-                fila.hidden = kg === null;
-                fila.textContent = kg === null ? '' : kg + ' kg';
+                filas.forEach((fila) => {
+                    fila.hidden = kg === null;
+                    fila.textContent = kg === null ? '' : kg + ' kg';
+                });
             }
 
             lineas.forEach((li) => {
@@ -652,11 +507,6 @@
 
             guardar();
             pintar();
-            if (guardado.descanso && guardado.descanso.fin > Date.now()) {
-                correr();
-            } else {
-                guardado.descanso = null;
-            }
         })();
     </script>
 @endsection
