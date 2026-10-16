@@ -138,7 +138,8 @@ class PlantillasDeFabrica
             'asunto_viejo' => '🎁 Promoción Especial - PROGYM',
             'dias' => 0,
             'manual' => true,
-            'huella_vieja' => '954fda51fd44dc64af959c83fa237c4aca8791a03b85a4780fc7999a5a603a6f',
+            // La de antes y la del 10-sep-2026, con el botón que iba a «#».
+            'huella_vieja' => ['954fda51fd44dc64af959c83fa237c4aca8791a03b85a4780fc7999a5a603a6f', 'f9f63c220c1bd1635f20994422874b48792252e89632dea7b92a975f52f54689'],
         ],
         'anuncio' => [
             'archivo' => '12_anuncio.html',
@@ -158,7 +159,8 @@ class PlantillasDeFabrica
             'asunto_viejo' => '🎉 No te pierdas nuestro evento - PROGYM',
             'dias' => 0,
             'manual' => true,
-            'huella_vieja' => '7e3b301536e8c97ba699c75ebeaabde81e696834d2277b8f1b5bc2221105c357',
+            // La de antes y la del 10-sep-2026, con el botón que iba a «#».
+            'huella_vieja' => ['7e3b301536e8c97ba699c75ebeaabde81e696834d2277b8f1b5bc2221105c357', 'f96cca30e33133089d62d000b19402adc3e8f8de01835885ea1e533030892c49'],
         ],
     ];
 
@@ -246,7 +248,7 @@ class PlantillasDeFabrica
 
             if ($huella === self::huella($nuevo)) {
                 $resultado = 'al_dia';
-            } elseif ($huella === $p['huella_vieja']) {
+            } elseif (in_array($huella, (array) $p['huella_vieja'], true)) {
                 $resultado = 'actualizada';
                 $cambios['plantilla_email'] = $nuevo;
             } else {

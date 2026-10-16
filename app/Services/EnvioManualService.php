@@ -669,12 +669,27 @@ class EnvioManualService
             'telefono_gimnasio' => $telefono,
             // Para el botón «Llámanos»: el enlace tel: no admite espacios.
             'telefono_enlace' => preg_replace('/[^0-9+]/', '', $telefono),
+            // Para los botones de promoción y evento: abre el WhatsApp del
+            // gimnasio (o llama, si no hay WhatsApp). Antes iban a «#».
+            'enlace_whatsapp' => self::enlaceDeWhatsapp($texto('web.whatsapp') ?: $telefono),
             'email_gimnasio' => $texto('gimnasio.email') ?: $texto('correo.remitente'),
             'direccion_gimnasio' => $direccion,
             'instagram' => $texto('web.instagram'),
             'enlace_mapa' => $mapa,
             'horario' => self::horarioEnUnaLinea(),
         ];
+    }
+
+    /** «9 5096 3143» o «+56 9 5096 3143» → https://wa.me/56950963143; sin número, vacío. */
+    private static function enlaceDeWhatsapp(string $numero): string
+    {
+        $digitos = preg_replace('/\D/', '', $numero);
+
+        if (strlen($digitos) === 9 && $digitos[0] === '9') {
+            $digitos = '56' . $digitos;
+        }
+
+        return strlen($digitos) >= 11 ? 'https://wa.me/' . $digitos : '';
     }
 
     /**

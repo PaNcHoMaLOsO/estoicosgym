@@ -65,6 +65,7 @@ class PlantillaController extends Controller
         'ciudad' => 'La ciudad del gimnasio',
         'telefono_gimnasio' => 'El teléfono del gimnasio (o el WhatsApp)',
         'telefono_enlace' => 'El mismo, sin espacios, para un enlace tel:',
+        'enlace_whatsapp' => 'El enlace que abre el WhatsApp del gimnasio (para un botón)',
         'email_gimnasio' => 'El correo de contacto',
         'direccion_gimnasio' => 'La dirección y la comuna',
         'instagram' => 'El enlace al Instagram',
