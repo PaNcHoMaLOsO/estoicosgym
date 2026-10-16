@@ -12,7 +12,7 @@
                 @php($conConvenioPie = collect($planes ?? [])->filter(fn ($p) => ! empty($p['precio_convenio']) && empty($p['es_pase']))->sortBy('precio_convenio')->first())
                 @if($conConvenioPie)
                     <p class="font-modern text-sm mt-1 text-pg-tiza/55">
-                        <x-icono nombre="graduation-cap" class="mr-1 text-xs text-pg-rojo-claro" />Estudiantes con convenio: <span class="text-pg-tiza">${{ number_format($conConvenioPie['precio_convenio'], 0, ',', '.') }} al mes</span>
+                        <x-icono nombre="graduation-cap" class="mr-1 text-xs text-pg-rojo-claro" />Estudiantes y funcionarios con convenio: <span class="text-pg-tiza">${{ number_format($conConvenioPie['precio_convenio'], 0, ',', '.') }} al mes</span>
                     </p>
                 @endif
                 {{-- La dirección se toca y abre Google Maps: en el celular es lo

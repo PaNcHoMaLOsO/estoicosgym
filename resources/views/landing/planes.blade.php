@@ -113,8 +113,8 @@
                                     <x-icono nombre="graduation-cap" class="shrink-0" />
                                     {{-- En un teléfono angosto (320 a 360) la frase entera le
                                          comía el sitio al nombre del plan y se le montaba encima. --}}
-                                    <span class="min-[400px]:hidden">Estudiantes: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
-                                    <span class="hidden min-[400px]:inline">Estudiantes y convenios: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
+                                    <span class="min-[400px]:hidden">Con convenio: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
+                                    <span class="hidden min-[400px]:inline">Estudiantes, funcionarios y convenios: ${{ number_format($plan['precio_convenio'], 0, ',', '.') }}</span>
                                 </a>
                             @endif
                         </div>
@@ -149,7 +149,7 @@
             @if(collect($mensualidades)->contains(fn ($p) => $p['precio_convenio']))
                 @php($deServicio = collect($convenios ?? [])->firstWhere('titulo', 'Por su servicio'))
                 <p class="mt-6 text-center text-pg-tiza/60 font-modern text-sm lg:text-base">
-                    ¿Eres estudiante{{ $deServicio ? ' o de ' . collect($deServicio['convenios'])->pluck('nombre')->join(', ', ' o ') : '' }}?
+                    ¿Estudias o trabajas en una institución con convenio{{ $deServicio ? ', o eres de ' . collect($deServicio['convenios'])->pluck('nombre')->join(', ', ' o ') : '' }}?
                     @if($navegacion['convenios'])
                         <a href="{{ route('landing.convenios') }}" class="text-pg-rojo-claro hover:underline">Mira los convenios</a>.
                     @else

@@ -6,10 +6,11 @@
 @section('content')
     {{-- El encabezado dice lo mismo que el título que ve Google: «gimnasio
          para estudiantes» es lo que se busca, y «Convenios» solo no le decía
-         a Google de qué era la página. --}}
+         a Google de qué era la página. Y funcionarios: el convenio de las
+         universidades, institutos y liceos también es para quien trabaja ahí. --}}
     @include('landing.partes.cabecera', [
         'antetitulo' => 'Convenios con instituciones',
-        'titulo' => 'Gimnasio para estudiantes',
+        'titulo' => 'Gimnasio para estudiantes y funcionarios',
         'bajada' => null,
     ])
 
@@ -92,7 +93,7 @@
             @endforelse
 
             <p class="mt-7 lg:mt-12 text-center text-gray-500 font-modern text-sm lg:text-base">
-                Presenta tu credencial vigente en el mesón al inscribirte.
+                Presenta tu credencial vigente de estudiante o de funcionario en el mesón al inscribirte.
                 ¿Tu empresa o institución quiere un convenio? <a href="{{ route('landing.contacto') }}" class="font-semibold text-pg-rojo hover:underline">Escríbenos</a>.
             </p>
         </div>

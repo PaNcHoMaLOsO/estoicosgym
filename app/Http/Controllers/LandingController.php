@@ -209,8 +209,8 @@ class LandingController extends Controller
         // Con el precio en el título: es lo primero que se mira en Google.
         $ciudad = $comun['web']['ciudad'] ? " en {$comun['web']['ciudad']}" : '';
         $titulo = $conPrecio
-            ? "Gimnasio para estudiantes{$ciudad}, " . $this->pesos($conPrecio['precio_convenio'])
-            : "Gimnasio para estudiantes y convenios{$ciudad}";
+            ? "Gimnasio para estudiantes y funcionarios{$ciudad}, " . $this->pesos($conPrecio['precio_convenio'])
+            : "Gimnasio para estudiantes, funcionarios y convenios{$ciudad}";
 
         return $this->pagina('landing.convenios', 'landing.convenios', $titulo,
             ($nombres ? "Convenios con {$nombres}." : 'Convenios del gimnasio.')
@@ -1287,8 +1287,8 @@ class LandingController extends Controller
                 'icono' => 'graduation-cap',
                 'titulo' => 'Convenios',
                 'texto' => $conPrecio
-                    ? "Plan {$conPrecio['nombre']} a " . $this->pesos($conPrecio['precio_convenio']) . ' para estudiantes e instituciones con convenio.'
-                    : 'Precios especiales para estudiantes, empresas e instituciones.',
+                    ? "Plan {$conPrecio['nombre']} a " . $this->pesos($conPrecio['precio_convenio']) . ' para estudiantes y funcionarios de instituciones con convenio.'
+                    : 'Precios especiales para estudiantes, funcionarios, empresas e instituciones.',
                 'accion' => 'Ver convenios',
             ];
         }

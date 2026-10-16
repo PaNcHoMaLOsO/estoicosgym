@@ -745,8 +745,9 @@ class ConveniosYEspecialistasTest extends CasoConCatalogos
         Convenio::create(['nombre' => 'Carabineros', 'tipo' => 'organizacion', 'activo' => true, 'mostrar_en_web' => true]);
 
         $this->get('/planes')->assertOk()
-            ->assertSee('Estudiantes y convenios: $25.000')
-            ->assertSee('¿Eres estudiante o de Carabineros?')
+            // El convenio de las instituciones también es para sus funcionarios.
+            ->assertSee('Estudiantes, funcionarios y convenios: $25.000')
+            ->assertSee('¿Estudias o trabajas en una institución con convenio, o eres de Carabineros?')
             // Una línea, no otra tarjeta con logos: eso está en Convenios.
             ->assertDontSee('Estudiantes y universitarios')
             ->assertSee('href="' . route('landing.convenios') . '"', false);

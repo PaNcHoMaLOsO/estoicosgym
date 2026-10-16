@@ -46,7 +46,7 @@
             $navegacion['convenios'] ? [
                 'icono' => 'graduation-cap',
                 'rotulo' => 'Convenios',
-                'valor' => 'Estudiantes y empresas',
+                'valor' => 'Estudiantes, funcionarios y empresas',
                 'apoyo' => 'Con credencial vigente',
                 'href' => route('landing.convenios'),
             ] : null,
