@@ -52,9 +52,17 @@ El servidor usa PostgreSQL. Después de `git pull`:
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
+php artisan configuracion:importar database/configuracion/progym.zip --confirmar
 php artisan web:aligerar-fotos --confirmar
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
+
+`database/configuracion/progym.zip` lleva lo armado en el PC: planes y precios,
+convenios, página web con sus fotos, profesionales, rutinas, plantillas y
+textos legales. Sin socios, usuarios, cuenta de correo ni llaves. Se rehace con
+`php artisan configuracion:exportar --archivo=database/configuracion/progym.zip`
+y deja fuera lo de prueba y los ejemplos inventados. Sin `--confirmar`, el
+importador solo muestra qué cambiaría.
 
 Y **el programador**, cada minuto (cron):
 

@@ -120,14 +120,20 @@ class LlevarLaConfiguracion
                 'imagenes' => ['imagen'],
                 'galerias' => ['fotos'],
             ],
+            // La foto y los músculos de cada ejercicio son los que se ven en
+            // las rutinas de la web.
             'ejercicios' => [
-                'columnas' => ['uuid', 'nombre', 'zona', 'equipo', 'indicacion', 'activo', 'orden'],
+                'columnas' => ['uuid', 'nombre', 'zona', 'equipo', 'indicacion', 'musculos', 'imagen', 'activo', 'orden'],
                 'identidad' => [['uuid'], ['nombre']],
                 'referencia' => ['uuid'],
+                'imagenes' => ['imagen'],
             ],
+            // La dirección viaja (y las de antes): los QR impresos llevan a
+            // ella. El estilo y el enfoque, para que las preguntas de /rutinas
+            // lleguen a la misma rutina que en el PC.
             'rutinas' => [
-                'columnas' => ['uuid', 'nombre', 'objetivo', 'nivel', 'dias_por_semana', 'descripcion', 'activa', 'orden'],
-                'identidad' => [['uuid'], ['nombre']],
+                'columnas' => ['uuid', 'nombre', 'slug', 'slugs_anteriores', 'objetivo', 'nivel', 'dias_por_semana', 'estilo', 'enfoque', 'descripcion', 'activa', 'orden'],
+                'identidad' => [['uuid'], ['slug'], ['nombre']],
                 'referencia' => ['uuid'],
             ],
             'rutina_dias' => [
@@ -404,7 +410,33 @@ class LlevarLaConfiguracion
             }
         }
 
-        return isset($fila['profesor']) && str_contains(mb_strtolower((string) $fila['profesor']), '(prueba)');
+        if (isset($fila['profesor']) && str_contains(mb_strtolower((string) $fila['profesor']), '(prueba)')) {
+            return true;
+        }
+
+        return self::esDeEjemplo($fila);
+    }
+
+    /**
+     * ¿Es uno de los ejemplos inventados de `web:ejemplos`? Testimonios y
+     * especialistas DE MENTIRA para ver el diseño: en el servidor serían
+     * publicidad engañosa, así que no viajan aunque alguien los deje activos.
+     */
+    private static function esDeEjemplo(array $fila): bool
+    {
+        $ejemplos = \App\Console\Commands\EjemplosDeLaWeb::class;
+
+        if (($fila['tipo'] ?? null) === 'testimonio') {
+            return in_array([(string) ($fila['titulo'] ?? ''), (string) ($fila['texto'] ?? '')], $ejemplos::TESTIMONIOS, true);
+        }
+
+        if (in_array($fila['tipo'] ?? null, ['especialista', 'embajador'], true) && isset($fila['nombre'])) {
+            $nombres = array_column([...$ejemplos::ESPECIALISTAS, ...$ejemplos::EMBAJADORES], 0);
+
+            return in_array($fila['nombre'], $nombres, true);
+        }
+
+        return false;
     }
 
     /**

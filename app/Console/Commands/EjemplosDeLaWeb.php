@@ -25,20 +25,20 @@ class EjemplosDeLaWeb extends Command
 
     protected $description = 'Carga (o quita con --quitar) especialistas, embajadores y testimonios de ejemplo para ver cómo se ve la web';
 
-    private const ESPECIALISTAS = [
+    public const ESPECIALISTAS = [
         ['Valentina Soto', 'Nutricionista', 'Planes de alimentación para ganar masa muscular o bajar de peso, con control mensual de medidas.'],
         ['Matías Fuentes', 'Personal trainer', 'Entrenamiento uno a uno para quien empieza de cero o vuelve después de una lesión.'],
         ['Carolina Muñoz', 'Kinesióloga deportiva', 'Evaluación postural y recuperación de lesiones de rodilla, hombro y espalda.'],
     ];
 
-    private const EMBAJADORES = [
+    public const EMBAJADORES = [
         ['Diego Riquelme', 'Powerlifting'],
         ['Fernanda Castro', 'Fitness bikini'],
         ['Sebastián Vera', 'Culturismo clásico'],
         ['Javiera Pino', 'CrossFit'],
     ];
 
-    private const TESTIMONIOS = [
+    public const TESTIMONIOS = [
         ['Andrea M.', 'Llegué sin saber usar ninguna máquina y desde el primer día me enseñaron. A los tres meses ya entreno sola.'],
         ['Rodrigo P.', 'El mejor ambiente de Los Ángeles. Las máquinas están siempre funcionando y el horario me acomoda para ir después del trabajo.'],
         ['Camila V.', 'Con el convenio de la universidad me sale mucho más barato. Los profes siempre están atentos a la técnica.'],

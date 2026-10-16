@@ -223,4 +223,27 @@ class LlevarLaConfiguracionTest extends CasoConCatalogos
         $this->assertSame($precio, (float) DB::table('precios_membresias')->where('id_membresia', 4)->where('activo', true)->value('precio_normal'));
         $this->assertTrue(DB::table('precios_membresias')->where('id_membresia', 4)->where('activo', false)->where('precio_normal', 1)->exists());
     }
+
+    /**
+     * Los ejemplos inventados de `web:ejemplos` no viajan aunque estén activos
+     * (en el servidor serían publicidad engañosa), y las rutinas llevan su
+     * estilo, su enfoque y su dirección.
+     */
+    public function test_los_ejemplos_inventados_no_viajan_y_las_rutinas_llevan_lo_suyo(): void
+    {
+        $this->artisan('web:ejemplos')->assertSuccessful();
+        ContenidoWeb::create(['tipo' => 'testimonio', 'titulo' => 'Socia de verdad', 'texto' => 'Me encanta entrenar aquí.', 'con_permiso' => true, 'orden' => 9, 'activo' => true]);
+        $rutina = Rutina::create(['nombre' => 'Glúteo de prueba', 'objetivo' => 'fuerza', 'nivel' => 'algo', 'dias_por_semana' => 3, 'estilo' => 'maquinas', 'enfoque' => 'gluteo', 'activa' => true, 'orden' => 1]);
+
+        $this->exportar();
+        $todo = $this->contenidoDelZip();
+
+        foreach ([...array_column(\App\Console\Commands\EjemplosDeLaWeb::TESTIMONIOS, 1), ...array_column(\App\Console\Commands\EjemplosDeLaWeb::ESPECIALISTAS, 0)] as $inventado) {
+            $this->assertStringNotContainsString(json_encode($inventado, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $todo);
+        }
+        $this->assertStringContainsString('Socia de verdad', $todo);
+        $this->assertStringContainsString('"slug": "' . $rutina->slug . '"', $todo);
+        $this->assertStringContainsString('"estilo": "maquinas"', $todo);
+        $this->assertStringContainsString('"enfoque": "gluteo"', $todo);
+    }
 }
